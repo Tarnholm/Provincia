@@ -1,0 +1,550 @@
+{
+  "romans_julii": [
+    "Etruria",
+    "Umbria",
+    "Paelignia"
+  ],
+  "roman_rebels_1": [
+    "Taras",
+    "Samnium",
+    "Apulia"
+  ],
+  "roman_rebels_2": [
+    "Campania",
+    "Lucania",
+    "Bruttium"
+  ],
+  "roman_senate": [
+    "Latium"
+  ],
+  "carthage": [
+    "Qart_Hadasht",
+    "Epikrateia",
+    "Ziz",
+    "Kyrnos",
+    "Karaly",
+    "Xatiq",
+    "Adrumet",
+    "Takapes",
+    "Ader_Lepqi",
+    "Xupon",
+    "Ay-Khol",
+    "Ting",
+    "Agadir",
+    "Malaka",
+    "Ay-Bushum"
+  ],
+  "antigonid": [
+    "Emathia",
+    "Mygdonia",
+    "Thessalia",
+    "Euboia",
+    "Korinthia",
+    "Edonis",
+    "Orestis"
+  ],
+  "ptolemaic": [
+    "Mareotis",
+    "Memphites_Nomos",
+    "Pelousiake",
+    "Thinites_Nomos",
+    "Pathyrites_Nomos",
+    "Dodekaschoinos",
+    "Epi_Theron",
+    "Deires",
+    "Hermopolites_Nomos",
+    "Ombites_Nomos",
+    "Nile_Delta",
+    "Arabike_Aigyptos",
+    "Ioudaia",
+    "Rabbat_Amman",
+    "Zidun",
+    "Paphia",
+    "Salamina",
+    "Gazaia",
+    "Zur",
+    "Pamphylia",
+    "Halikarnassia",
+    "Lesbos",
+    "Kyklades",
+    "Lykia"
+  ],
+  "seleucid": [
+    "Mesopotamia",
+    "Syria",
+    "Lydia",
+    "Lykaonia",
+    "Kilikia",
+    "Damashq",
+    "Arwad",
+    "Kyrrhestike",
+    "Apamene",
+    "Osrhoene",
+    "Mygdonia-Syria",
+    "Gordyene",
+    "Arbelitis",
+    "Babylonia",
+    "Sousiane",
+    "Charakene",
+    "Media",
+    "Paraitakene",
+    "Rhagiane",
+    "Parthia",
+    "Hyrkania",
+    "Persia",
+    "Karmania",
+    "Drangiane",
+    "Ariane",
+    "Margiane",
+    "Kardia",
+    "Propontis",
+    "Ionia",
+    "Phrygia",
+    "Pessinountis",
+    "Tingene",
+    "Orchoe",
+    "Nisaia"
+  ],
+  "bactria": [
+    "Baktriane",
+    "Anatolike_Baktriane",
+    "Sogdiane",
+    "Iaxartes"
+  ],
+  "parni": [
+    "Parnia"
+  ],
+  "saka": [
+    "Sakaia"
+  ],
+  "armenia": [
+    "Megale_Armenia",
+    "Basoropeda",
+    "Sophene",
+    "Kommagene"
+  ],
+  "pontus": [
+    "Pontos",
+    "Hieratikos_Pontos"
+  ],
+  "lusitani": [
+    "Lusitania"
+  ],
+  "getae": [
+    "Buridavensia",
+    "Carpiania"
+  ],
+  "achaea": [
+    "Achaia"
+  ],
+  "aedui": [
+    "Aeduia"
+  ],
+  "aetolia": [
+    "Aitolia"
+  ],
+  "allobroges": [
+    "Allobrogia",
+    "Lemannus_Inferior"
+  ],
+  "anartes": [
+    "Anartia"
+  ],
+  "ardiaei": [
+    "Ardiaea"
+  ],
+  "arevaci": [
+    "Arevacia"
+  ],
+  "arverni": [
+    "Arvernia"
+  ],
+  "athens": [
+    "Attike"
+  ],
+  "atropatene": [
+    "Pedias_Atropatene"
+  ],
+  "axum": [
+    "Axoumitis"
+  ],
+  "bastarnae": [
+    "Bastarnia_Vetus"
+  ],
+  "belgae": [
+    "Ambiana"
+  ],
+  "bessi": [
+    "Bessike"
+  ],
+  "bithynia": [
+    "Bithynia"
+  ],
+  "boeotia": [
+    "Boiotia"
+  ],
+  "boii": [
+    "Boihaemum",
+    "Boihaemum_Occidentale"
+  ],
+  "bosporan": [
+    "Kimmerikos_Bosporos",
+    "Phanagoreion",
+    "Maiotis"
+  ],
+  "brigantes": [
+    "Brigantia"
+  ],
+  "byzantium": [
+    "Bosporos"
+  ],
+  "caledonii": [
+    "Caledonia"
+  ],
+  "cantabri": [
+    "Cantabria"
+  ],
+  "cantiaci": [
+    "Cantiacia"
+  ],
+  "cappadocia": [
+    "Kappadokia",
+    "Melitene"
+  ],
+  "carmo": [
+    "Turdetania"
+  ],
+  "chatti": [
+    "Chattia"
+  ],
+  "cherusci": [
+    "Cheruscia"
+  ],
+  "cimbri": [
+    "Cimbria"
+  ],
+  "cisalpine_boii": [
+    "Boiaea"
+  ],
+  "cyrene": [
+    "Kyrenaike",
+    "Euesperides",
+    "Dytike_Aigyptos"
+  ],
+  "dardania": [
+    "Dardania"
+  ],
+  "delmatae": [
+    "Delmatia"
+  ],
+  "edeta": [
+    "Edetania"
+  ],
+  "epirus": [
+    "Ambrakikos_Kolpos",
+    "Chaonia"
+  ],
+  "gallaeci": [
+    "Artabria"
+  ],
+  "galatians": [
+    "Tektosagia"
+  ],
+  "garamantes": [
+    "Garamantia"
+  ],
+  "gauts": [
+    "Gautia"
+  ],
+  "gerrha": [
+    "Gerrhaia"
+  ],
+  "hadhramaut": [
+    "Ssabwat"
+  ],
+  "helvetii": [
+    "Abnobaea"
+  ],
+  "heraclea_pontica": [
+    "Hellenike_Mariandynia"
+  ],
+  "iberians": [
+    "Iberia"
+  ],
+  "ilergetes": [
+    "Ilergetia"
+  ],
+  "illyrian_kingdom": [
+    "Illyria"
+  ],
+  "ingauni": [
+    "Ingaunia"
+  ],
+  "insubres": [
+    "Insubria"
+  ],
+  "iverni": [
+    "Ivernia"
+  ],
+  "knossos": [
+    "Minoa"
+  ],
+  "kush": [
+    "Medwi",
+    "Napa",
+    "Pedeme"
+  ],
+  "liburni": [
+    "Liburnia"
+  ],
+  "lugii": [
+    "Naharvalia"
+  ],
+  "masaesyli": [
+    "Shigan"
+  ],
+  "massalia": [
+    "Segobrigia"
+  ],
+  "massylii": [
+    "Tobgaxag"
+  ],
+  "nabataea": [
+    "Raqemo"
+  ],
+  "mauri": [
+    "Mauretania"
+  ],
+  "mauryan": [
+    "Arsa",
+    "Indos",
+    "Patalene",
+    "Gedrosia",
+    "Arachosia",
+    "Kapisene",
+    "Kathaia"
+  ],
+  "musulamii": [
+    "Musulamia"
+  ],
+  "odrysians": [
+    "Odrysia"
+  ],
+  "olbia": [
+    "Olbiana"
+  ],
+  "osismii": [
+    "Osismia"
+  ],
+  "paeonia": [
+    "Paionia"
+  ],
+  "pergamon": [
+    "Kaikia"
+  ],
+  "rhodes": [
+    "Rhodos"
+  ],
+  "royal_sarmatians": [
+    "Sauromataia"
+  ],
+  "royal_scythians": [
+    "Basilike_Skythia",
+    "Nomadike_Skythia",
+    "Megale_Chersonesos"
+  ],
+  "saba": [
+    "Sabaia"
+  ],
+  "scordisci": [
+    "Scordiscia",
+    "Syrmia"
+  ],
+  "silures": [
+    "Siluria"
+  ],
+  "siraces": [
+    "Sirakene"
+  ],
+  "sotiates": [
+    "Sotiatea"
+  ],
+  "sparta": [
+    "Lakonia"
+  ],
+  "suebi": [
+    "Semnonia"
+  ],
+  "sugambri": [
+    "Sugambria"
+  ],
+  "syracuse": [
+    "Trinakria"
+  ],
+  "taurisci": [
+    "Tauriscia",
+    "Teuriscia"
+  ],
+  "treveri": [
+    "Treveria"
+  ],
+  "triballi": [
+    "Triballia"
+  ],
+  "tylis": [
+    "Tylisia",
+    "Dytike_Getaia"
+  ],
+  "venedae": [
+    "Venedia"
+  ],
+  "veneti": [
+    "Venetia"
+  ],
+  "volcae": [
+    "Volcaea"
+  ],
+  "volcae_gallia": [
+    "Arecomicia",
+    "Tectosagia"
+  ],
+  "dummies": [
+    "Tonelandia"
+  ],
+  "slave": [
+    "Terra_Incognita",
+    "Picenum",
+    "Calabria",
+    "Rhegion",
+    "Mamertina",
+    "Akragas",
+    "Sikelia",
+    "Corsica",
+    "Iliensia",
+    "Kirtan",
+    "Hekatompyle",
+    "Auseia",
+    "Numidia_Occidentalis",
+    "Auzica",
+    "Phazania",
+    "Gaetulia",
+    "Bastetania",
+    "Oretania",
+    "Contestania",
+    "Carpetania",
+    "Celticia",
+    "Tagia",
+    "Helmantike",
+    "Bracarensia",
+    "Asturia",
+    "Vaccaea",
+    "Vasconia",
+    "Bellia",
+    "Cessetania",
+    "Emporitia",
+    "Elysicea",
+    "Durania",
+    "Vocontia",
+    "Sequania",
+    "Lingonia",
+    "Senonia",
+    "Biturigia",
+    "Cenomania-Aulercia",
+    "Pictonia",
+    "Menapia",
+    "Nervia",
+    "Remia",
+    "Cenomania",
+    "Taurinia",
+    "Genuatea",
+    "Eburonia",
+    "Trinobantia",
+    "Durotrigia",
+    "Dumnonia",
+    "Ordovicia",
+    "Catuvellaunia",
+    "Eblania",
+    "Magnatia",
+    "Otadinia",
+    "Langobardia",
+    "Chaucia",
+    "Avionia",
+    "Marcomannia_Vetus",
+    "Aestia",
+    "Rugia",
+    "Hillevionia",
+    "Suionia",
+    "Ubia_Vetus",
+    "Frisia",
+    "Finnia",
+    "Cotinia",
+    "Lepontia",
+    "Rucinatea",
+    "Isarcia-Brixentia",
+    "Noricum",
+    "Eraviscia",
+    "Savia",
+    "Histria",
+    "Labeataia",
+    "Autariataia",
+    "Epetia-Salonitis",
+    "Moesia",
+    "Serdia",
+    "Anatolike_Bessike",
+    "Halmyris",
+    "Antheia",
+    "Dacia",
+    "Napocaea",
+    "Sargetiaea",
+    "Carsia",
+    "Gylakeia",
+    "Kydoniatis",
+    "Elis",
+    "Argolis",
+    "Arkadia",
+    "Kallatisia",
+    "Tyrasia",
+    "Mikra_Chersonesos",
+    "Borysthenes",
+    "Tanaitis",
+    "Aorsia",
+    "Alazonia",
+    "Sinopeia",
+    "Hellenike_Makronia",
+    "Saramene",
+    "Kianos_Kolpos",
+    "Paphlagonia",
+    "Isauria",
+    "Pisidia",
+    "Kappadoxia",
+    "Mikra_Armenia",
+    "Libya",
+    "Ammonia",
+    "Noubaia",
+    "Trogodytike",
+    "Megabaria",
+    "Mosyllia",
+    "Oponis",
+    "Palmyrene",
+    "Aouranitis",
+    "Lechienia",
+    "Yathrib",
+    "Qarnawu",
+    "Kattabaneia",
+    "Homeritis",
+    "Mapharitis",
+    "Libanophoria",
+    "Katharrheia",
+    "Omanitis",
+    "Kolchis",
+    "Albania",
+    "Koraxia",
+    "Kaspiane",
+    "Chorasmene",
+    "Anatolike_Chorasmene",
+    "Tsatsene",
+    "Talatsia",
+    "Massagetaia",
+    "Kasiane"
+  ]
+}

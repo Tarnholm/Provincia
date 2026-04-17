@@ -1,0 +1,7060 @@
+[
+  {
+    "name": "Gnaeus Cornelius Blasio",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arretium",
+    "faction": "romans_julii",
+    "x": 139,
+    "y": 136,
+    "units": [
+      "tribunus militum",
+      "roman hastati",
+      "roman hastati"
+    ]
+  },
+  {
+    "name": "Gaius Fabius Pictor",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Ariminum",
+    "faction": "romans_julii",
+    "x": 146,
+    "y": 136,
+    "units": [
+      "tribunus militum",
+      "roman hastati",
+      "roman hastati",
+      "samnite hoplites",
+      "samnite hoplites",
+      "roman principes",
+      "roman principes",
+      "roman principes",
+      "roman triarii",
+      "roman velites",
+      "roman velites",
+      "roman velites",
+      "roman equites",
+      "roman equites"
+    ]
+  },
+  {
+    "name": "Publius Sempronius Sophus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ariminum",
+    "faction": "romans_julii",
+    "x": 144,
+    "y": 135,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Marcus Atilius Regulus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Corfinum",
+    "faction": "romans_julii",
+    "x": 149,
+    "y": 146,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Lucius Caecilius Metellus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Arretium",
+    "faction": "romans_julii",
+    "x": 136,
+    "y": 135,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Lucius Genucius Clepsina",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apulia",
+    "faction": "roman_rebels_1",
+    "x": 158,
+    "y": 151,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Gaius Genucius Clepsina",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Army outside Tarentum",
+    "faction": "roman_rebels_1",
+    "x": 165,
+    "y": 156,
+    "units": [
+      "tribunus militum",
+      "roman hastati",
+      "lucanian infantry",
+      "roman principes",
+      "roman triarii",
+      "roman velites",
+      "roman velites",
+      "roman equites",
+      "campanian cavalry"
+    ]
+  },
+  {
+    "name": "Bouzos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bovianum",
+    "faction": "roman_rebels_1",
+    "x": 153,
+    "y": 150,
+    "units": [
+      "tribunus militum",
+      "roman hastati"
+    ]
+  },
+  {
+    "name": "sub faction epirus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tarentum",
+    "faction": "roman_rebels_1",
+    "x": 168,
+    "y": 158,
+    "units": [
+      "tribunus militum",
+      "roman hastati",
+      "lucanian infantry",
+      "aor italiote hoplites"
+    ]
+  },
+  {
+    "name": "Gaius Duilius Longus",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Tarentum",
+    "faction": "roman_rebels_1",
+    "x": 166,
+    "y": 159,
+    "units": [
+      "naval triremes"
+    ]
+  },
+  {
+    "name": "Lucius Cornelius Scipio",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Capua",
+    "faction": "roman_rebels_2",
+    "x": 151,
+    "y": 153,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Gnaeus Cornelius Scipio",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Rhegium",
+    "faction": "roman_rebels_2",
+    "x": 161,
+    "y": 173,
+    "units": [
+      "tribunus militum",
+      "roman equites",
+      "roman equites",
+      "roman triarii",
+      "roman triarii",
+      "roman principes",
+      "roman principes",
+      "roman principes",
+      "roman hastati",
+      "roman hastati",
+      "lucanian infantry",
+      "lucanian infantry",
+      "roman velites",
+      "roman velites",
+      "roman velites",
+      "roman velites"
+    ]
+  },
+  {
+    "name": "Nymphius",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Consentia",
+    "faction": "roman_rebels_2",
+    "x": 162,
+    "y": 166,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Statis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Grumentum",
+    "faction": "roman_rebels_2",
+    "x": 160,
+    "y": 159,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Gaius Duilius Longus",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "port of Capua",
+    "faction": "roman_rebels_2",
+    "x": 150,
+    "y": 156,
+    "units": [
+      "naval triremes"
+    ]
+  },
+  {
+    "name": "Quintus Ogulnius Gallus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rome",
+    "faction": "roman_senate",
+    "x": 142,
+    "y": 148,
+    "units": [
+      "tribunus militum",
+      "roman velites",
+      "roman velites",
+      "roman equites",
+      "roman equites",
+      "roman hastati",
+      "roman hastati",
+      "roman principes",
+      "roman principes",
+      "roman triarii"
+    ]
+  },
+  {
+    "name": "Marcus Ogulnius Gallus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Rome",
+    "faction": "roman_senate",
+    "x": 146,
+    "y": 150,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Servius Ogulnius Gallus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Rome",
+    "faction": "roman_senate",
+    "x": 143,
+    "y": 147,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
+    "name": "Hannibal",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Carthage",
+    "faction": "carthage",
+    "x": 128,
+    "y": 183,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyo phoenician infantry",
+      "libyo phoenician infantry",
+      "libyan light infantry",
+      "libyan light infantry",
+      "numidian cavalry",
+      "numidian cavalry",
+      "libyan skirmishers",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Mago",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Carthage",
+    "faction": "carthage",
+    "x": 129,
+    "y": 184,
+    "units": [
+      "naval triremes",
+      "naval triremes",
+      "naval triremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Yahua",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Lilybaion",
+    "faction": "carthage",
+    "x": 141,
+    "y": 177,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Hanno",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Near Lilybaion",
+    "faction": "carthage",
+    "x": 142,
+    "y": 178,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyo phoenician infantry",
+      "libyo phoenician infantry",
+      "libyan light infantry",
+      "libyan light infantry",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "numidian cavalry",
+      "caetrati cavalry",
+      "libyo phoenician infantry",
+      "libyo phoenician infantry",
+      "libyan skirmishers",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Hasdrubal",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hippo",
+    "faction": "carthage",
+    "x": 113,
+    "y": 182,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry",
+      "libyan skirmishers",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Boodes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hadrumetum",
+    "faction": "carthage",
+    "x": 130,
+    "y": 191,
+    "units": [
+      "carthaginian general's bodyguard"
+    ]
+  },
+  {
+    "name": "Hamilcar",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gades",
+    "faction": "carthage",
+    "x": 33,
+    "y": 173,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyo phoenician infantry",
+      "iberian heavy swordsmen",
+      "iberian heavy swordsmen",
+      "libyan light infantry",
+      "libyan light infantry",
+      "libyan light infantry",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "libyan slingers",
+      "libyo phoenician cavlary",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "Carthalo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tingi",
+    "faction": "carthage",
+    "x": 34,
+    "y": 178,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry",
+      "libyan light infantry",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "HannoB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Utica",
+    "faction": "carthage",
+    "x": 125,
+    "y": 181,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Gisgo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Leptis",
+    "faction": "carthage",
+    "x": 151,
+    "y": 215,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry",
+      "libyan light infantry",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Maharbaal",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tacape",
+    "faction": "carthage",
+    "x": 126,
+    "y": 205,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry",
+      "libyan light infantry",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Bomilcar",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Iol",
+    "faction": "carthage",
+    "x": 81,
+    "y": 181,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Adherbal",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Malaca",
+    "faction": "carthage",
+    "x": 43,
+    "y": 173,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry"
+    ]
+  },
+  {
+    "name": "Azrubaal",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ebusus",
+    "faction": "carthage",
+    "x": 79,
+    "y": 163,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Gersakon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Caralis",
+    "faction": "carthage",
+    "x": 122,
+    "y": 166,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan skirmishers"
+    ]
+  },
+  {
+    "name": "Adonibaal",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Aleria",
+    "faction": "carthage",
+    "x": 126,
+    "y": 146,
+    "units": [
+      "carthaginian general's bodyguard",
+      "libyan light infantry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "HannoC",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Panormus",
+    "faction": "carthage",
+    "x": 146,
+    "y": 175,
+    "units": [
+      "carthaginian general's bodyguard",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "AntigonosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pella",
+    "faction": "antigonid",
+    "x": 196,
+    "y": 154,
+    "units": [
+      "antigonid general",
+      "hetairoi",
+      "agema of the peltasts",
+      "merc phalangites",
+      "merc phalangites",
+      "merc phalangites",
+      "merc greek hoplites",
+      "merc greek hoplites",
+      "merc greek peltasts",
+      "merc greek peltasts",
+      "merc tarentine cavalry"
+    ]
+  },
+  {
+    "name": "DemetriosC",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Amphipopolis",
+    "faction": "antigonid",
+    "x": 205,
+    "y": 153,
+    "units": [
+      "antigonid general",
+      "merc greek hoplites",
+      "merc greek peltasts",
+      "merc tarentine cavalry"
+    ]
+  },
+  {
+    "name": "Alexandros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Larissa",
+    "faction": "antigonid",
+    "x": 196,
+    "y": 162,
+    "units": [
+      "antigonid general",
+      "merc greek hoplites",
+      "merc greek peltasts"
+    ]
+  },
+  {
+    "name": "Ameinias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thessalonike",
+    "faction": "antigonid",
+    "x": 199,
+    "y": 155,
+    "units": [
+      "antigonid general",
+      "merc thessalian lancers",
+      "merc greek hoplites",
+      "merc greek peltasts"
+    ]
+  },
+  {
+    "name": "KraterosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Corinth",
+    "faction": "antigonid",
+    "x": 201,
+    "y": 174,
+    "units": [
+      "antigonid general",
+      "merc greek hoplites",
+      "merc greek hoplites",
+      "merc greek peltasts",
+      "merc tarentine cavalry"
+    ]
+  },
+  {
+    "name": "Herakleides",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Argos Orestikon",
+    "faction": "antigonid",
+    "x": 190,
+    "y": 157,
+    "units": [
+      "antigonid general",
+      "merc greek hoplites",
+      "merc greek peltasts",
+      "merc tarentine cavalry"
+    ]
+  },
+  {
+    "name": "Halkyoneus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Chalkis",
+    "faction": "antigonid",
+    "x": 204,
+    "y": 169,
+    "units": [
+      "antigonid general"
+    ]
+  },
+  {
+    "name": "Alkaios",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Thessalonike",
+    "faction": "antigonid",
+    "x": 205,
+    "y": 155,
+    "units": [
+      "naval triremes",
+      "naval triremes",
+      "naval triremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Ptolemy",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandria",
+    "faction": "ptolemaic",
+    "x": 248,
+    "y": 217,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Andromachos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sidon",
+    "faction": "ptolemaic",
+    "x": 278,
+    "y": 194,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "greek slingers",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "PtolemyB",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field Tyre",
+    "faction": "ptolemaic",
+    "x": 278,
+    "y": 201,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "ptolemaic basilikon agema",
+      "ptolemaic phalanx of the kleruchoi",
+      "ptolemaic phalanx of the kleruchoi",
+      "ptolemaic phalanx of the kleruchoi",
+      "greek slingers",
+      "psiloi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Timarchos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Mytilene",
+    "faction": "ptolemaic",
+    "x": 220,
+    "y": 164,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "PtolemaiosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Memphis",
+    "faction": "ptolemaic",
+    "x": 257,
+    "y": 226,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "machairaphoroi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "sub faction egypt",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Philadelpheia",
+    "faction": "ptolemaic",
+    "x": 284,
+    "y": 204,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Aristolaos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Halikarnassos",
+    "faction": "ptolemaic",
+    "x": 227,
+    "y": 177,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "greek slingers",
+      "greek slingers",
+      "psiloi",
+      "psiloi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "PtolemaiosC",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Berenike Deires",
+    "faction": "ptolemaic",
+    "x": 372,
+    "y": 332,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "AristeasB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Patara",
+    "faction": "ptolemaic",
+    "x": 239,
+    "y": 182,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "aor lycian infantry",
+      "aor lycian infantry",
+      "aor lycian archers",
+      "aor lycian archers",
+      "aor lycian marines"
+    ]
+  },
+  {
+    "name": "Artemidoros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nasos",
+    "faction": "ptolemaic",
+    "x": 216,
+    "y": 179,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Charmades",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Syene-Elephantine",
+    "faction": "ptolemaic",
+    "x": 277,
+    "y": 265,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "psiloi",
+      "psiloi",
+      "greek slingers"
+    ]
+  },
+  {
+    "name": "TimarchosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thebes",
+    "faction": "ptolemaic",
+    "x": 273,
+    "y": 254,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Aison",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Jerusalem",
+    "faction": "ptolemaic",
+    "x": 279,
+    "y": 207,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Kallikles",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tachompso-Pselkis",
+    "faction": "ptolemaic",
+    "x": 276,
+    "y": 272,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "LysimachosC",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ptolemais-Hermeiou",
+    "faction": "ptolemaic",
+    "x": 266,
+    "y": 249,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "Parmenion",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gaza",
+    "faction": "ptolemaic",
+    "x": 276,
+    "y": 210,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Ameinias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pelusion",
+    "faction": "ptolemaic",
+    "x": 265,
+    "y": 216,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "machairaphoroi",
+      "machimoi archers",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Sostratos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tanis",
+    "faction": "ptolemaic",
+    "x": 261,
+    "y": 217,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "machairaphoroi",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Diodotos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tyre",
+    "faction": "ptolemaic",
+    "x": 278,
+    "y": 197,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "greek slingers",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "ApolloniosB",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field Lykia",
+    "faction": "ptolemaic",
+    "x": 245,
+    "y": 176,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "greek archers",
+      "greek archers"
+    ]
+  },
+  {
+    "name": "Melas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Myos Hormos",
+    "faction": "ptolemaic",
+    "x": 282,
+    "y": 248,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "Neoptolemos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ptolemais Theron",
+    "faction": "ptolemaic",
+    "x": 322,
+    "y": 300,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "Aetos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Side",
+    "faction": "ptolemaic",
+    "x": 250,
+    "y": 176,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "pamphylian hoplites",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Eunostos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Paphos",
+    "faction": "ptolemaic",
+    "x": 259,
+    "y": 189,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Nikias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Salamis",
+    "faction": "ptolemaic",
+    "x": 266,
+    "y": 185,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "greek hoplites",
+      "greek slingers"
+    ]
+  },
+  {
+    "name": "Archagathos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hermou Polis",
+    "faction": "ptolemaic",
+    "x": 257,
+    "y": 241,
+    "units": [
+      "ptolemaic cavalry of the court",
+      "greek hoplites",
+      "machimoi archers",
+      "greek slingers",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Patroklos",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Alexandria",
+    "faction": "ptolemaic",
+    "x": 247,
+    "y": 216,
+    "units": [
+      "naval triremes",
+      "naval triremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Artemidoros",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Mytilene",
+    "faction": "ptolemaic",
+    "x": 216,
+    "y": 163,
+    "units": [
+      "naval triremes",
+      "naval triremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes",
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Diagoras",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rabbat Amman",
+    "faction": "ptolemaic",
+    "x": 284,
+    "y": 204,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "Apollodotos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Ombos",
+    "faction": "ptolemaic",
+    "x": 275,
+    "y": 262,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "Simonides",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Near Tanis",
+    "faction": "ptolemaic",
+    "x": 259,
+    "y": 220,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "Sikheriwale",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Klysma (Arabike Aigyptos)",
+    "faction": "ptolemaic",
+    "x": 277,
+    "y": 250,
+    "units": [
+      "ptolemaic cavalry of the court"
+    ]
+  },
+  {
+    "name": "Antiochos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Lysimachia",
+    "faction": "seleucid",
+    "x": 220,
+    "y": 153,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Seleukos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Seleucia",
+    "faction": "seleucid",
+    "x": 332,
+    "y": 183,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Achaios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sardis",
+    "faction": "seleucid",
+    "x": 229,
+    "y": 167,
+    "units": [
+      "seleucid general",
+      "seleucid hypaspists",
+      "argyraspides",
+      "seleucid chalkaspides",
+      "seleucid chalkaspides",
+      "seleucid chalkaspides",
+      "thureophoroi",
+      "thureophoroi",
+      "aor lydian akontistai",
+      "aor macedonian hoplites",
+      "greek peltasts",
+      "greek archers",
+      "greek archers",
+      "greek slingers",
+      "seleucid xystophoroi",
+      "prodromoi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "AntipatrosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Abydos",
+    "faction": "seleucid",
+    "x": 219,
+    "y": 156,
+    "units": [
+      "seleucid general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "sub faction galatians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pessinous",
+    "faction": "seleucid",
+    "x": 247,
+    "y": 158,
+    "units": [
+      "seleucid general",
+      "aor phrygian spearmen",
+      "aor phrygian slingers"
+    ]
+  },
+  {
+    "name": "Timarchos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tarsos",
+    "faction": "seleucid",
+    "x": 269,
+    "y": 171,
+    "units": [
+      "seleucid general",
+      "aor cilician spearmen",
+      "aor cilician spearmen",
+      "aor cilician archers",
+      "aor kietaian hillmen",
+      "aor kietaian hillmen",
+      "aor cilician pirates"
+    ]
+  },
+  {
+    "name": "AntiochosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Antioch",
+    "faction": "seleucid",
+    "x": 278,
+    "y": 173,
+    "units": [
+      "seleucid general",
+      "seleucid chalkaspides",
+      "seleucid chalkaspides",
+      "seleucid chalkaspides",
+      "thureophoroi",
+      "thureophoroi",
+      "merc bithynian rhomphaiophoroi",
+      "aor judaean spearmen",
+      "aor macedonian hoplites",
+      "psiloi",
+      "psiloi",
+      "greek slingers",
+      "greek slingers",
+      "greek archers",
+      "greek archers",
+      "seleucid xystophoroi",
+      "prodromoi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Theodotas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ekbatana",
+    "faction": "seleucid",
+    "x": 350,
+    "y": 162,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "aor median spearmen",
+      "psiloi",
+      "greek slingers"
+    ]
+  },
+  {
+    "name": "sub faction parni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Zadrakarta",
+    "faction": "seleucid",
+    "x": 376,
+    "y": 136,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "psiloi",
+      "psiloi",
+      "greek slingers"
+    ]
+  },
+  {
+    "name": "Nenis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ikonion",
+    "faction": "seleucid",
+    "x": 254,
+    "y": 168,
+    "units": [
+      "seleucid general",
+      "aor phrygian spearmen",
+      "aor phrygian slingers",
+      "phrygian javelinmen"
+    ]
+  },
+  {
+    "name": "Marsias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Antiocheia-Margiane",
+    "faction": "seleucid",
+    "x": 414,
+    "y": 110,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "greek archers"
+    ]
+  },
+  {
+    "name": "Baias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Damascus",
+    "faction": "seleucid",
+    "x": 283,
+    "y": 193,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Choirilos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Edessa",
+    "faction": "seleucid",
+    "x": 291,
+    "y": 164,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Abantidas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kyrrhos",
+    "faction": "seleucid",
+    "x": 281,
+    "y": 170,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Asphalion",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apameia-Syria",
+    "faction": "seleucid",
+    "x": 281,
+    "y": 180,
+    "units": [
+      "seleucid general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Gyras",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Antiocheia-Mygdonia",
+    "faction": "seleucid",
+    "x": 305,
+    "y": 161,
+    "units": [
+      "seleucid general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Kleades",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arbela",
+    "faction": "seleucid",
+    "x": 322,
+    "y": 162,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Leonatos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Doura-Europos",
+    "faction": "seleucid",
+    "x": 306,
+    "y": 178,
+    "units": [
+      "seleucid general",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "sub faction parni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Uruk",
+    "faction": "seleucid",
+    "x": 343,
+    "y": 192,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Kassandros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Susa",
+    "faction": "seleucid",
+    "x": 356,
+    "y": 181,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "psiloi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Andromachos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Babylon",
+    "faction": "seleucid",
+    "x": 333,
+    "y": 186,
+    "units": [
+      "seleucid general",
+      "greek slingers"
+    ]
+  },
+  {
+    "name": "Bodas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandreia-Charax",
+    "faction": "seleucid",
+    "x": 355,
+    "y": 191,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Deinokratis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandreia-Ariane",
+    "faction": "seleucid",
+    "x": 424,
+    "y": 131,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Koinos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandreia-prophthasia",
+    "faction": "seleucid",
+    "x": 428,
+    "y": 145,
+    "units": [
+      "seleucid general",
+      "aor persian sparabara",
+      "greek hoplites",
+      "greek hoplites",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Deukalos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Persepolis",
+    "faction": "seleucid",
+    "x": 388,
+    "y": 185,
+    "units": [
+      "seleucid general",
+      "aor persian takabara",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "Polyperchon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nisa",
+    "faction": "seleucid",
+    "x": 393,
+    "y": 118,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Paramonos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Europos-Rhagai",
+    "faction": "seleucid",
+    "x": 364,
+    "y": 151,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "greek hoplites",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Kleisthenes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gabai",
+    "faction": "seleucid",
+    "x": 374,
+    "y": 170,
+    "units": [
+      "seleucid general"
+    ]
+  },
+  {
+    "name": "Neoptolemos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hekatompylos",
+    "faction": "seleucid",
+    "x": 377,
+    "y": 143,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "greek hoplites",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Melanthios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ephesos",
+    "faction": "seleucid",
+    "x": 225,
+    "y": 171,
+    "units": [
+      "seleucid general",
+      "aor ionian epibatai"
+    ]
+  },
+  {
+    "name": "Amophaon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sareisa",
+    "faction": "seleucid",
+    "x": 310,
+    "y": 156,
+    "units": [
+      "seleucid general",
+      "greek archers"
+    ]
+  },
+  {
+    "name": "Banabelos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apameia-kelainai",
+    "faction": "seleucid",
+    "x": 241,
+    "y": 168,
+    "units": [
+      "seleucid general",
+      "greek hoplites",
+      "greek hoplites",
+      "greek slingers",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Bakis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandria-karmania",
+    "faction": "seleucid",
+    "x": 421,
+    "y": 180,
+    "units": [
+      "seleucid general",
+      "greek peltasts",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "sub faction carthage",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arados",
+    "faction": "seleucid",
+    "x": 278,
+    "y": 185,
+    "units": [
+      "seleucid general",
+      "asian light spearmen",
+      "asian slingers",
+      "asian skirmishers"
+    ]
+  },
+  {
+    "name": "Diodotos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Baktra-Zariaspa",
+    "faction": "bactria",
+    "x": 441,
+    "y": 102,
+    "units": [
+      "baktrian general",
+      "baktrian chalkaspides",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "DiodotosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Baktra Basileion",
+    "faction": "bactria",
+    "x": 451,
+    "y": 91,
+    "units": [
+      "baktrian general",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Klearchos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Baktra-Zariaspa",
+    "faction": "bactria",
+    "x": 432,
+    "y": 102,
+    "units": [
+      "baktrian general",
+      "baktrian hoplites",
+      "baktrian chalkaspides",
+      "baktrian chalkaspides",
+      "bactrian xystophoroi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Antiochos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Antiocheia-Skythia",
+    "faction": "bactria",
+    "x": 440,
+    "y": 72,
+    "units": [
+      "baktrian general",
+      "greek peltasts",
+      "baktrian chalkaspides",
+      "baktrian hoplites"
+    ]
+  },
+  {
+    "name": "Maisolos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Antiocheia-Skythia",
+    "faction": "bactria",
+    "x": 435,
+    "y": 74,
+    "units": [
+      "baktrian general",
+      "baktrian hoplites",
+      "baktrian chalkaspides",
+      "baktrian chalkaspides",
+      "bactrian xystophoroi"
+    ]
+  },
+  {
+    "name": "Demetrios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Marakanda",
+    "faction": "bactria",
+    "x": 429,
+    "y": 84,
+    "units": [
+      "baktrian general",
+      "greek peltasts",
+      "baktrian chalkaspides",
+      "baktrian hoplites",
+      "baktrian hoplites"
+    ]
+  },
+  {
+    "name": "Arsakes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Parnon Taphai",
+    "faction": "parni",
+    "x": 369,
+    "y": 112,
+    "units": [
+      "parni noble cavalry",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "Phraotes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Parnia",
+    "faction": "parni",
+    "x": 372,
+    "y": 112,
+    "units": [
+      "parni noble cavalry",
+      "parni horse archers",
+      "parni horse archers",
+      "hyrkanian horsemen",
+      "hyrkanian horsemen",
+      "hyrkanian horsemen",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "Spargapeithes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sakon Taiphai",
+    "faction": "saka",
+    "x": 461,
+    "y": 28,
+    "units": [
+      "elite saka cataphracts",
+      "sarmatian archers",
+      "sarmatian archers"
+    ]
+  },
+  {
+    "name": "Azes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field",
+    "faction": "saka",
+    "x": 439,
+    "y": 43,
+    "units": [
+      "elite saka cataphracts",
+      "saka horse archers"
+    ]
+  },
+  {
+    "name": "Amorges",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field",
+    "faction": "saka",
+    "x": 437,
+    "y": 46,
+    "units": [
+      "saka horse archers"
+    ]
+  },
+  {
+    "name": "Skunkha",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field",
+    "faction": "saka",
+    "x": 435,
+    "y": 46,
+    "units": [
+      "elite saka cataphracts",
+      "saka horse archers"
+    ]
+  },
+  {
+    "name": "Skyles",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field",
+    "faction": "saka",
+    "x": 438,
+    "y": 44,
+    "units": [
+      "elite saka cataphracts",
+      "saka horse archers"
+    ]
+  },
+  {
+    "name": "Orontes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Armavir",
+    "faction": "armenia",
+    "x": 313,
+    "y": 135,
+    "units": [
+      "armenian royal bodyguards",
+      "asian light spearmen",
+      "asian light spearmen",
+      "armenian hoplites"
+    ]
+  },
+  {
+    "name": "Sames",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Armavir",
+    "faction": "armenia",
+    "x": 306,
+    "y": 138,
+    "units": [
+      "armenian royal bodyguards",
+      "asian skirmishers",
+      "asian light spearmen",
+      "asian light spearmen",
+      "caucasian hillmen",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "Artanes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thospia",
+    "faction": "armenia",
+    "x": 313,
+    "y": 147,
+    "units": [
+      "armenian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Artaxias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Karkathiokerta",
+    "faction": "armenia",
+    "x": 296,
+    "y": 155,
+    "units": [
+      "armenian royal bodyguards",
+      "armenian hoplites"
+    ]
+  },
+  {
+    "name": "Arsames",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Karkathiokerta",
+    "faction": "armenia",
+    "x": 293,
+    "y": 158,
+    "units": [
+      "armenian royal bodyguards",
+      "armenian heavy spearmen",
+      "asian skirmishers",
+      "persian foot archers",
+      "persian foot archers",
+      "armenian horse archers"
+    ]
+  },
+  {
+    "name": "Mithras",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nymphaios",
+    "faction": "armenia",
+    "x": 289,
+    "y": 159,
+    "units": [
+      "armenian royal bodyguards",
+      "armenian hoplites"
+    ]
+  },
+  {
+    "name": "Mithridates",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Amaseia",
+    "faction": "pontus",
+    "x": 268,
+    "y": 143,
+    "units": [
+      "cappadocian general",
+      "cappadocian javelinmen"
+    ]
+  },
+  {
+    "name": "Ariobarzanes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Amaseia",
+    "faction": "pontus",
+    "x": 268,
+    "y": 147,
+    "units": [
+      "cappadocian general",
+      "cappadocian levy spearmen",
+      "cappadocian levy spearmen",
+      "cappadocian light infantry",
+      "cappadocian light infantry",
+      "cappadocian light infantry",
+      "cappadocian slingers",
+      "cappadocian archers",
+      "cappadocian cavalry",
+      "cappadocian skirmisher cavalry"
+    ]
+  },
+  {
+    "name": "sub faction odrysians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Komana-Pontos",
+    "faction": "pontus",
+    "x": 273,
+    "y": 145,
+    "units": [
+      "cappadocian general",
+      "cappadocian levy spearmen"
+    ]
+  },
+  {
+    "name": "Viriatus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Oxthraca",
+    "faction": "lusitani",
+    "x": 32,
+    "y": 150,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati"
+    ]
+  },
+  {
+    "name": "Apano",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Oxthraca",
+    "faction": "lusitani",
+    "x": 27,
+    "y": 150,
+    "units": [
+      "celtiberian noble bodyguards",
+      "lusitanian spearmen",
+      "iberian skirmishers",
+      "caetrati cavalry",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "Dromichaites",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the Field",
+    "faction": "getae",
+    "x": 215,
+    "y": 125,
+    "units": [
+      "getic royal bodyguards",
+      "getic light infantry",
+      "getic light infantry",
+      "getic light infantry",
+      "getic archers",
+      "getic archers",
+      "dacian horse archers",
+      "dacian horse archers"
+    ]
+  },
+  {
+    "name": "Isanthos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Argidava",
+    "faction": "getae",
+    "x": 211,
+    "y": 127,
+    "units": [
+      "getic royal bodyguards",
+      "getic peltasts"
+    ]
+  },
+  {
+    "name": "Skyles",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Piroboridaua",
+    "faction": "getae",
+    "x": 217,
+    "y": 114,
+    "units": [
+      "getic royal bodyguards",
+      "getic light infantry"
+    ]
+  },
+  {
+    "name": "Dion",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Aigion",
+    "faction": "achaea",
+    "x": 196,
+    "y": 173,
+    "units": [
+      "achaian general",
+      "psiloi",
+      "achaian slingers"
+    ]
+  },
+  {
+    "name": "Margos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Aigion",
+    "faction": "achaea",
+    "x": 195,
+    "y": 174,
+    "units": [
+      "achaian general",
+      "foreign thureophoroi",
+      "achaian hoplites",
+      "achaian epilektoi",
+      "prodromoi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Kleinias",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Aigion",
+    "faction": "achaea",
+    "x": 194,
+    "y": 174,
+    "units": [
+      "achaian general"
+    ]
+  },
+  {
+    "name": "Metron",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Aigion",
+    "faction": "achaea",
+    "x": 195,
+    "y": 172,
+    "units": [
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Dumnorix",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Cabillonum",
+    "faction": "aedui",
+    "x": 104,
+    "y": 109,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Bellovesus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Cabillonum",
+    "faction": "aedui",
+    "x": 102,
+    "y": 111,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic swordsmen",
+      "celtic slingers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Diviciacus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Cabillonum",
+    "faction": "aedui",
+    "x": 104,
+    "y": 105,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Straton",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thermon",
+    "faction": "aetolia",
+    "x": 193,
+    "y": 170,
+    "units": [
+      "aitolian general",
+      "aitolian peltasts",
+      "aitolian peltasts"
+    ]
+  },
+  {
+    "name": "Hieron",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Thermon",
+    "faction": "aetolia",
+    "x": 191,
+    "y": 169,
+    "units": [
+      "aitolian general",
+      "aitolian slingers",
+      "aitolian prodromoi",
+      "aitolian prodromoi",
+      "aitolian hoplites",
+      "aitolian hoplites"
+    ]
+  },
+  {
+    "name": "Indutiomarus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Vienna",
+    "faction": "allobroges",
+    "x": 104,
+    "y": 119,
+    "units": [
+      "gallic royal bodyguards",
+      "arvernian champions",
+      "helvetian infantry",
+      "gaesatae",
+      "celtic skirmishers",
+      "celtic spearmen",
+      "celtic slingers",
+      "celtic archers"
+    ]
+  },
+  {
+    "name": "Seginus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Genava",
+    "faction": "allobroges",
+    "x": 111,
+    "y": 114,
+    "units": [
+      "gallic royal bodyguards",
+      "helvetian infantry",
+      "gaesatae",
+      "celtic swordsmen",
+      "celtic slingers",
+      "celtic archers"
+    ]
+  },
+  {
+    "name": "Barrivendos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Castrum Anartorum",
+    "faction": "anartes",
+    "x": 188,
+    "y": 99,
+    "units": [
+      "gallic royal bodyguards",
+      "scordiscian infantry"
+    ]
+  },
+  {
+    "name": "Sennianus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Castrum Anartorum",
+    "faction": "anartes",
+    "x": 191,
+    "y": 103,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic spearmen",
+      "treverian noble cavalry",
+      "celtic skirmishers",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Pleuratos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Rhizon",
+    "faction": "ardiaei",
+    "x": 174,
+    "y": 141,
+    "units": [
+      "illyrian warlords bodyguard",
+      "illyrian slingers",
+      "illyrian warband",
+      "southern illyrian spearmen",
+      "southern illyrian spearmen",
+      "illyrian noble spearmen",
+      "southern illyrian axemen",
+      "illyrian cavalry"
+    ]
+  },
+  {
+    "name": "Ballaios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rhizon",
+    "faction": "ardiaei",
+    "x": 176,
+    "y": 141,
+    "units": [
+      "illyrian warlords bodyguard",
+      "illyrian peltasts"
+    ]
+  },
+  {
+    "name": "Carus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Numantia",
+    "faction": "arevaci",
+    "x": 60,
+    "y": 139,
+    "units": [
+      "celtiberian noble bodyguards"
+    ]
+  },
+  {
+    "name": "Indortes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Numantia",
+    "faction": "arevaci",
+    "x": 65,
+    "y": 139,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati",
+      "caetrati cavalry",
+      "lusitanian spearmen"
+    ]
+  },
+  {
+    "name": "Ambon",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Numantia",
+    "faction": "arevaci",
+    "x": 59,
+    "y": 143,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati",
+      "caetrati cavalry",
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ]
+  },
+  {
+    "name": "Luernius",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nemetum",
+    "faction": "arverni",
+    "x": 95,
+    "y": 115,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Bituitus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Nemetum",
+    "faction": "arverni",
+    "x": 93,
+    "y": 113,
+    "units": [
+      "gallic royal bodyguards",
+      "arvernian elite skirmishers",
+      "celtic spearmen",
+      "celtic slingers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Congonnetiacus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Nemetum",
+    "faction": "arverni",
+    "x": 98,
+    "y": 120,
+    "units": [
+      "arvernian champions",
+      "celtic swordsmen",
+      "arvernian elite skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Philochoros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Athens",
+    "faction": "athens",
+    "x": 205,
+    "y": 173,
+    "units": [
+      "athenian general",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Chremonides",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Athens",
+    "faction": "athens",
+    "x": 204,
+    "y": 172,
+    "units": [
+      "athenian general",
+      "athenian hoplites",
+      "athenian hoplites",
+      "athenian epibatai",
+      "athenian epilektoi",
+      "athenian peripoloi",
+      "athenian xystophoroi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Sosistratos",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Athens",
+    "faction": "athens",
+    "x": 205,
+    "y": 175,
+    "units": [
+      "naval triremes",
+      "naval triremes"
+    ]
+  },
+  {
+    "name": "Ariobarzanes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gazaka",
+    "faction": "atropatene",
+    "x": 332,
+    "y": 153,
+    "units": [
+      "asian royal bodyguards"
+    ]
+  },
+  {
+    "name": "AtropatesB",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Gazaka",
+    "faction": "atropatene",
+    "x": 334,
+    "y": 149,
+    "units": [
+      "asian royal bodyguards",
+      "median spearmen",
+      "asian skirmishers",
+      "asian skirmishers",
+      "sogdian armoured spearmen archers",
+      "sogdian mounted javelineers",
+      "persian foot archers",
+      "asian light spearmen",
+      "asian light spearmen",
+      "asian light spearmen"
+    ]
+  },
+  {
+    "name": "Arsames",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Gazaka",
+    "faction": "atropatene",
+    "x": 336,
+    "y": 155,
+    "units": [
+      "asian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Arakamani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Auxoume",
+    "faction": "axum",
+    "x": 335,
+    "y": 329,
+    "units": [
+      "kushite general",
+      "kushite javelinmen"
+    ]
+  },
+  {
+    "name": "Kash",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Auxoume",
+    "faction": "axum",
+    "x": 333,
+    "y": 333,
+    "units": [
+      "kushite general",
+      "kushite javelinmen",
+      "kushite javelinmen",
+      "kushite light cavalry",
+      "kushite light cavalry",
+      "towered forest elephants",
+      "kushite spearmen",
+      "kushite spearmen"
+    ]
+  },
+  {
+    "name": "Inguo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Scurgum",
+    "faction": "bastarnae",
+    "x": 166,
+    "y": 61,
+    "units": [
+      "bodyguard frameae sword"
+    ]
+  },
+  {
+    "name": "Wallia",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Scurgum",
+    "faction": "bastarnae",
+    "x": 168,
+    "y": 65,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen vanguard",
+      "freemen",
+      "freemen cavalry",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "Belgiorix",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Samarobriva",
+    "faction": "belgae",
+    "x": 95,
+    "y": 85,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Belgios",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Bratuspantium",
+    "faction": "belgae",
+    "x": 98,
+    "y": 89,
+    "units": [
+      "gallic royal bodyguards",
+      "belgic infantry",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Commius",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Viromanduium",
+    "faction": "belgae",
+    "x": 98,
+    "y": 86,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Satros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bessapara",
+    "faction": "bessi",
+    "x": 205,
+    "y": 144,
+    "units": [
+      "thracian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Rhabokentos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Bessapara",
+    "faction": "bessi",
+    "x": 204,
+    "y": 141,
+    "units": [
+      "thracian royal bodyguards",
+      "bessian swordsmen",
+      "bessian swordsmen",
+      "thracian peltasts",
+      "thracian peltasts",
+      "thracian light lancers"
+    ]
+  },
+  {
+    "name": "Nikomedes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nikomedia",
+    "faction": "bithynia",
+    "x": 238,
+    "y": 149,
+    "units": [
+      "bithynian general",
+      "thracian peltasts"
+    ]
+  },
+  {
+    "name": "Drenis",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Nikomedia",
+    "faction": "bithynia",
+    "x": 236,
+    "y": 150,
+    "units": [
+      "bithynian general",
+      "bithynian hoplites",
+      "bithynian hoplites",
+      "bithynian promachoi",
+      "bithynian rhomphaiophoroi",
+      "bithynian rhomphaiophoroi",
+      "greek peltasts",
+      "thracian peltasts",
+      "bithynian hippakontistai",
+      "bithynian noble cavalry"
+    ]
+  },
+  {
+    "name": "Skaris",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Nikomedia",
+    "faction": "bithynia",
+    "x": 233,
+    "y": 146,
+    "units": [
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Thiogneitidas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Orchomenos",
+    "faction": "boeotia",
+    "x": 201,
+    "y": 170,
+    "units": [
+      "greek general",
+      "psiloi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Philokomos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Orchomenos",
+    "faction": "boeotia",
+    "x": 199,
+    "y": 169,
+    "units": [
+      "greek general",
+      "boiotian neaniskoi",
+      "boiotian neaniskoi",
+      "boiotian thureophoroi",
+      "boiotian hoplites",
+      "greek peltasts"
+    ]
+  },
+  {
+    "name": "Isagoras",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Port of Boiotia",
+    "faction": "boeotia",
+    "x": 201,
+    "y": 168,
+    "units": [
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Britomaris",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Eburodunum-Boihaemum",
+    "faction": "boii",
+    "x": 163,
+    "y": 95,
+    "units": [
+      "arvernian champions"
+    ]
+  },
+  {
+    "name": "Vindex",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Furisatis",
+    "faction": "boii",
+    "x": 164,
+    "y": 98,
+    "units": [
+      "arvernian champions",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic spearmen",
+      "celtic spearmen",
+      "boian elite skirmishers",
+      "boian elite skirmishers",
+      "gallic light cavalry",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Drustan",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Furgisatis",
+    "faction": "boii",
+    "x": 151,
+    "y": 94,
+    "units": [
+      "arvernian champions"
+    ]
+  },
+  {
+    "name": "Pairisades",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pantikapaion",
+    "faction": "bosporan",
+    "x": 264,
+    "y": 110,
+    "units": [
+      "bosporan epilektoi cavalry",
+      "scytho-bosporan infantry"
+    ]
+  },
+  {
+    "name": "Spartokos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Phanagoreia",
+    "faction": "bosporan",
+    "x": 267,
+    "y": 109,
+    "units": [
+      "bosporan epilektoi cavalry",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Apollodoros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Azara",
+    "faction": "bosporan",
+    "x": 272,
+    "y": 103,
+    "units": [
+      "bosporan epilektoi cavalry",
+      "bosporan thureophoroi"
+    ]
+  },
+  {
+    "name": "Leukon",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Pantikapaion",
+    "faction": "bosporan",
+    "x": 262,
+    "y": 112,
+    "units": [
+      "bosporan epilektoi cavalry",
+      "bosporan hoplites",
+      "bosporan hoplites",
+      "scytho-bosporan horse archers",
+      "merc paphlagonian cavalry",
+      "scytho-bosporan archers"
+    ]
+  },
+  {
+    "name": "Bromis",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Phanagoreia",
+    "faction": "bosporan",
+    "x": 271,
+    "y": 106,
+    "units": [
+      "bosporan epilektoi cavalry",
+      "bosporan hoplites",
+      "bosporan hoplites",
+      "bosporan archers",
+      "bosporan archers"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Oppidum Brigantum",
+    "faction": "brigantes",
+    "x": 83,
+    "y": 59,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic spearmen",
+      "brittonic heavy spearmen",
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Oppidum Brigantum",
+    "faction": "brigantes",
+    "x": 85,
+    "y": 53,
+    "units": [
+      "brittonic bodyguards"
+    ]
+  },
+  {
+    "name": "Kalligeiton",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Byzantium",
+    "faction": "byzantium",
+    "x": 231,
+    "y": 148,
+    "units": [
+      "greek general",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Lysias",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Byzantium",
+    "faction": "byzantium",
+    "x": 224,
+    "y": 148,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "greek hoplites",
+      "byzantine epibatai",
+      "byzantine epibatai",
+      "greek peltasts",
+      "greek peltasts",
+      "xystophoroi"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Castrum Caledoniorum",
+    "faction": "caledonii",
+    "x": 76,
+    "y": 25,
+    "units": [
+      "brittonic bodyguards"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Castrum Caledoniorum",
+    "faction": "caledonii",
+    "x": 75,
+    "y": 34,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic spearmen",
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ]
+  },
+  {
+    "name": "Avaros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Aracillum",
+    "faction": "cantabri",
+    "x": 56,
+    "y": 128,
+    "units": [
+      "celtiberian noble bodyguards"
+    ]
+  },
+  {
+    "name": "Lucco",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "",
+    "faction": "cantabri",
+    "x": 58,
+    "y": 128,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "iberian heavy swordsmen",
+      "caetrati cavalry"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Castrum Cantiacorum",
+    "faction": "cantiaci",
+    "x": 85,
+    "y": 75,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic skirmishers",
+      "brittonic spearmen",
+      "brittonic heavy spearmen",
+      "brittonic slingers",
+      "brittonic swordsmen",
+      "brittonic ambacti"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Castrum Cantiacorum",
+    "faction": "cantiaci",
+    "x": 90,
+    "y": 74,
+    "units": [
+      "brittonic bodyguards"
+    ]
+  },
+  {
+    "name": "Ariaramnes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Mazaka",
+    "faction": "cappadocia",
+    "x": 270,
+    "y": 157,
+    "units": [
+      "cappadocian general"
+    ]
+  },
+  {
+    "name": "Ariobarzanes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Mazaka",
+    "faction": "cappadocia",
+    "x": 264,
+    "y": 160,
+    "units": [
+      "cappadocian general",
+      "cappadocian levy spearmen",
+      "cappadocian levy spearmen",
+      "cappadocian temple servants",
+      "cappadocian royal infantry guard",
+      "cappadocian slingers",
+      "cappadocian archers",
+      "cappadocian javelinmen",
+      "cappadocian cavalry",
+      "cappadocian skirmisher cavalry"
+    ]
+  },
+  {
+    "name": "Holophernes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Melita",
+    "faction": "cappadocia",
+    "x": 286,
+    "y": 156,
+    "units": [
+      "cappadocian general",
+      "cappadocian levy spearmen"
+    ]
+  },
+  {
+    "name": "Akil",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Carmo",
+    "faction": "carmo",
+    "x": 39,
+    "y": 167,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "Bituitus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Carmo",
+    "faction": "carmo",
+    "x": 42,
+    "y": 167,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati cavalry",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "iberian heavy swordsmen"
+    ]
+  },
+  {
+    "name": "Istio",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Luppia",
+    "faction": "chatti",
+    "x": 140,
+    "y": 75,
+    "units": [
+      "bodyguard frameae sword"
+    ]
+  },
+  {
+    "name": "Adgandestrius",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Luppia",
+    "faction": "chatti",
+    "x": 142,
+    "y": 78,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen vanguard",
+      "freemen hundred",
+      "chattian freemen",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "Inguo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ascalingium",
+    "faction": "cherusci",
+    "x": 132,
+    "y": 70,
+    "units": [
+      "bodyguard frameae sword",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "Wallia",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Ascalingium",
+    "faction": "cherusci",
+    "x": 133,
+    "y": 73,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen vanguard",
+      "freemen vanguard",
+      "freemen",
+      "freemen",
+      "freemen hundred",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "Inguo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Cimbrium",
+    "faction": "cimbri",
+    "x": 133,
+    "y": 37,
+    "units": [
+      "bodyguard frameae sword"
+    ]
+  },
+  {
+    "name": "Wallia",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Cimbrium",
+    "faction": "cimbri",
+    "x": 131,
+    "y": 45,
+    "units": [
+      "bodyguard frameae sword",
+      "outsider skirmisher rabble",
+      "cimbrian naked spearmen"
+    ]
+  },
+  {
+    "name": "Horsa",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Cimbrium",
+    "faction": "cimbri",
+    "x": 131,
+    "y": 43,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen"
+    ]
+  },
+  {
+    "name": "Boiorix",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bononia",
+    "faction": "cisalpine_boii",
+    "x": 137,
+    "y": 129,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Critosiros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Mutina",
+    "faction": "cisalpine_boii",
+    "x": 137,
+    "y": 129,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "boian elite skirmishers",
+      "boian elite skirmishers",
+      "celtic slingers",
+      "gallic light cavalry",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Magas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kyrene",
+    "faction": "cyrene",
+    "x": 197,
+    "y": 212,
+    "units": [
+      "cyrene general",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Ophellas",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Paraitonion",
+    "faction": "cyrene",
+    "x": 234,
+    "y": 221,
+    "units": [
+      "cyrene general",
+      "kyrenaian hoplites",
+      "kyrenaian hoplites",
+      "ephebic archers",
+      "greek slingers",
+      "xystophoroi"
+    ]
+  },
+  {
+    "name": "Hermokrates",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Berenike-Kyrenaike",
+    "faction": "cyrene",
+    "x": 188,
+    "y": 221,
+    "units": [
+      "cyrene general",
+      "kyrenaian phalanx of the kleruchoi",
+      "kyrenaian phalanx of the kleruchoi",
+      "greek archers",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Ptolemaios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Berenike-Kyrenaike",
+    "faction": "cyrene",
+    "x": 188,
+    "y": 217,
+    "units": [
+      "cyrene general",
+      "greek peltasts"
+    ]
+  },
+  {
+    "name": "Apellas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Paraitonion",
+    "faction": "cyrene",
+    "x": 231,
+    "y": 219,
+    "units": [
+      "cyrene general",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Bato",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Naissos",
+    "faction": "dardania",
+    "x": 190,
+    "y": 138,
+    "units": [
+      "illyrian warlords bodyguard",
+      "illyrian slingers",
+      "illyrian peltasts",
+      "dardanian spearmen",
+      "dardanian spearmen",
+      "dardanian noble spearmen",
+      "southern illyrian axemen",
+      "dardanian light cavalry"
+    ]
+  },
+  {
+    "name": "Kinna",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Naissos",
+    "faction": "dardania",
+    "x": 192,
+    "y": 136,
+    "units": [
+      "illyrian warlords bodyguard",
+      "illyrian warband"
+    ]
+  },
+  {
+    "name": "Testimos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Delmium",
+    "faction": "delmatae",
+    "x": 168,
+    "y": 134,
+    "units": [
+      "northern illyrian general",
+      "illyrian slingers"
+    ]
+  },
+  {
+    "name": "AetorB",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Delmium",
+    "faction": "delmatae",
+    "x": 167,
+    "y": 135,
+    "units": [
+      "northern illyrian general",
+      "dalmatian footmen",
+      "dalmatian footmen",
+      "southern illyrian spearmen",
+      "southern illyrian spearmen",
+      "southern illyrian axemen",
+      "illyrian cavalry"
+    ]
+  },
+  {
+    "name": "Edeco",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arse",
+    "faction": "edeta",
+    "x": 71,
+    "y": 156,
+    "units": [
+      "celtiberian noble bodyguards",
+      "iberian slingers"
+    ]
+  },
+  {
+    "name": "EdecoA",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Edeta",
+    "faction": "edeta",
+    "x": 67,
+    "y": 157,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "iberian slingers",
+      "caetrati cavalry",
+      "caetrati cavalry",
+      "iberian heavy swordsmen",
+      "iberian skirmishers",
+      "caetrati"
+    ]
+  },
+  {
+    "name": "AlexandrosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ambrakia",
+    "faction": "epirus",
+    "x": 189,
+    "y": 165,
+    "units": [
+      "epirote general",
+      "ambrakiote phalangites",
+      "epirote phalangites",
+      "epirote phalangites",
+      "deuteroi",
+      "deuteroi",
+      "psiloi",
+      "greek slingers",
+      "xystophoroi",
+      "molossian agema"
+    ]
+  },
+  {
+    "name": "Helenos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Phoinike",
+    "faction": "epirus",
+    "x": 184,
+    "y": 161,
+    "units": [
+      "epirote general",
+      "greek hoplites",
+      "athamanian peltasts"
+    ]
+  },
+  {
+    "name": "Akil",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Portus Artabrorum",
+    "faction": "gallaeci",
+    "x": 29,
+    "y": 123,
+    "units": [
+      "celtiberian noble bodyguards"
+    ]
+  },
+  {
+    "name": "Bituitus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Portus",
+    "faction": "gallaeci",
+    "x": 31,
+    "y": 123,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "caetrati cavalry",
+      "caetrati swordsmen",
+      "iberian heavy swordsmen"
+    ]
+  },
+  {
+    "name": "Lutarios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ankyra",
+    "faction": "galatians",
+    "x": 254,
+    "y": 152,
+    "units": [
+      "galatian general"
+    ]
+  },
+  {
+    "name": "Leonnorios",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Ankyra",
+    "faction": "galatians",
+    "x": 254,
+    "y": 156,
+    "units": [
+      "arvernian champions",
+      "galatian swordsmen",
+      "galatian warbands",
+      "galatian slingers",
+      "galatian slingers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Niptasan",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Garama",
+    "faction": "garamantes",
+    "x": 143,
+    "y": 258,
+    "units": [
+      "massylian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Yutpan",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field",
+    "faction": "garamantes",
+    "x": 156,
+    "y": 233,
+    "units": [
+      "massylian royal bodyguards",
+      "numidian javelinmen",
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian light infantry"
+    ]
+  },
+  {
+    "name": "Inguo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gautum",
+    "faction": "gauts",
+    "x": 144,
+    "y": 28,
+    "units": [
+      "bodyguard frameae sword"
+    ]
+  },
+  {
+    "name": "Wallia",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Gautum",
+    "faction": "gauts",
+    "x": 148,
+    "y": 27,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen vanguard",
+      "freemen vanguard",
+      "freemen",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "Marcus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gerrha",
+    "faction": "gerrha",
+    "x": 373,
+    "y": 216,
+    "units": [
+      "tribunus militum",
+      "arab warriors",
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab slingers"
+    ]
+  },
+  {
+    "name": "Zamir Ali Zarih II",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sabbatha",
+    "faction": "hadhramaut",
+    "x": 401,
+    "y": 293,
+    "units": [
+      "sabaean general",
+      "arab levy spearmen"
+    ]
+  },
+  {
+    "name": "Nasha Karab Yuha'man",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Sabbatha",
+    "faction": "hadhramaut",
+    "x": 399,
+    "y": 297,
+    "units": [
+      "sabaean general",
+      "arab levy spearmen",
+      "arab skirmishers",
+      "arab warriors",
+      "sabaean light cavalry"
+    ]
+  },
+  {
+    "name": "Segovax",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Devona",
+    "faction": "helvetii",
+    "x": 126,
+    "y": 96,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Lugotorix",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Devona",
+    "faction": "helvetii",
+    "x": 125,
+    "y": 94,
+    "units": [
+      "gallic royal bodyguards",
+      "gaesatae",
+      "gaesatae",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Nymphis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Herakleia-Pontos",
+    "faction": "heraclea_pontica",
+    "x": 244,
+    "y": 144,
+    "units": [
+      "greek general",
+      "herakleiote hoplites",
+      "mariandynian javelinmen",
+      "greek archers"
+    ]
+  },
+  {
+    "name": "Dionysios",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Herakleia-Pontos",
+    "faction": "heraclea_pontica",
+    "x": 248,
+    "y": 142,
+    "units": [
+      "greek general",
+      "herakleiote hoplites",
+      "herakleiote hoplites",
+      "herakleiote hoplites",
+      "herakleiote epibatai",
+      "herakleiote horophylakes",
+      "greek archers",
+      "xystophoroi"
+    ]
+  },
+  {
+    "name": "Orontes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Harmozike-Seusamora",
+    "faction": "iberians",
+    "x": 313,
+    "y": 123,
+    "units": [
+      "armenian royal bodyguards",
+      "asian light spearmen"
+    ]
+  },
+  {
+    "name": "Sames",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Harmozike",
+    "faction": "iberians",
+    "x": 316,
+    "y": 122,
+    "units": [
+      "armenian royal bodyguards",
+      "asian light spearmen",
+      "caucasian hillmen",
+      "armenian heavy spearmen",
+      "asian slingers",
+      "persian foot archers",
+      "persian foot archers",
+      "armenian horse archers"
+    ]
+  },
+  {
+    "name": "Ortzi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Atanagrum",
+    "faction": "ilergetes",
+    "x": 80,
+    "y": 141,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "Leukon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ilerda",
+    "faction": "ilergetes",
+    "x": 80,
+    "y": 141,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati cavalry",
+      "caetrati cavalry",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "iberian heavy swordsmen"
+    ]
+  },
+  {
+    "name": "Mytilos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Lissos",
+    "faction": "illyrian_kingdom",
+    "x": 182,
+    "y": 150,
+    "units": [
+      "illyrian warlords bodyguard"
+    ]
+  },
+  {
+    "name": "Pleurias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sesarethos",
+    "faction": "illyrian_kingdom",
+    "x": 182,
+    "y": 150,
+    "units": [
+      "illyrian warlords bodyguard",
+      "illyrian slingers",
+      "illyrian peltasts",
+      "illyrian warband",
+      "southern illyrian spearmen",
+      "illyrian noble spearmen",
+      "illyrian cavalry"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ingaunum",
+    "faction": "ingauni",
+    "x": 120,
+    "y": 131,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Ingaunum",
+    "faction": "ingauni",
+    "x": 118,
+    "y": 127,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "scordiscian infantry"
+    ]
+  },
+  {
+    "name": "Bellovesus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Mediolanum",
+    "faction": "insubres",
+    "x": 126,
+    "y": 121,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen"
+    ]
+  },
+  {
+    "name": "Britomartus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Mediolanum",
+    "faction": "insubres",
+    "x": 128,
+    "y": 122,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic slingers",
+      "celtic skirmishers",
+      "gallic light cavalry",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ivernis",
+    "faction": "iverni",
+    "x": 50,
+    "y": 60,
+    "units": [
+      "brittonic bodyguards"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Ivernis",
+    "faction": "iverni",
+    "x": 55,
+    "y": 55,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic swordsmen",
+      "brittonic spearmen",
+      "brittonic heavy spearmen",
+      "brittonic slingers"
+    ]
+  },
+  {
+    "name": "Hermaiskos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Knosos",
+    "faction": "knossos",
+    "x": 215,
+    "y": 191,
+    "units": [
+      "knossian general",
+      "cretan slingers"
+    ]
+  },
+  {
+    "name": "Zenostratos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Knosos",
+    "faction": "knossos",
+    "x": 215,
+    "y": 193,
+    "units": [
+      "knossian general",
+      "knossian hoplites",
+      "knossian hoplites",
+      "knossian erastai",
+      "cretan slingers",
+      "knossian hippeis"
+    ]
+  },
+  {
+    "name": "Hygesiteles",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "",
+    "faction": "knossos",
+    "x": 215,
+    "y": 189,
+    "units": [
+      "naval biremes",
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Arakamani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Meroe",
+    "faction": "kush",
+    "x": 292,
+    "y": 316,
+    "units": [
+      "kushite general"
+    ]
+  },
+  {
+    "name": "Kash",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Meroe",
+    "faction": "kush",
+    "x": 295,
+    "y": 319,
+    "units": [
+      "kushite general",
+      "towered forest elephants",
+      "kushite spearmen",
+      "kushite spearmen",
+      "kushite javelinmen"
+    ]
+  },
+  {
+    "name": "Taharqa",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Napata",
+    "faction": "kush",
+    "x": 277,
+    "y": 307,
+    "units": [
+      "kushite general"
+    ]
+  },
+  {
+    "name": "Amanisio",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Mikra primis",
+    "faction": "kush",
+    "x": 264,
+    "y": 290,
+    "units": [
+      "kushite general",
+      "kushite spearmen",
+      "kushite javelinmen",
+      "kushite javelinmen"
+    ]
+  },
+  {
+    "name": "Piankhi-yerike-qa",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Mikra primis",
+    "faction": "kush",
+    "x": 266,
+    "y": 294,
+    "units": [
+      "kushite general",
+      "kushite javelinmen",
+      "kushite javelinmen",
+      "kushite light cavalry",
+      "kushite spearmen"
+    ]
+  },
+  {
+    "name": "Artas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Idassa",
+    "faction": "liburni",
+    "x": 157,
+    "y": 131,
+    "units": [
+      "northern illyrian general"
+    ]
+  },
+  {
+    "name": "Volso",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apsorrus",
+    "faction": "liburni",
+    "x": 157,
+    "y": 131,
+    "units": [
+      "northern illyrian general",
+      "liburnian pirates",
+      "liburnian pirates",
+      "liburnian marines",
+      "southern illyrian spearmen",
+      "illyrian cavalry"
+    ]
+  },
+  {
+    "name": "Lugius",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Leucaristus",
+    "faction": "lugii",
+    "x": 169,
+    "y": 75,
+    "units": [
+      "bodyguard frameae sword"
+    ]
+  },
+  {
+    "name": "Tillo",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Leucaristus",
+    "faction": "lugii",
+    "x": 171,
+    "y": 79,
+    "units": [
+      "bodyguard frameae sword",
+      "harian night fighters",
+      "freemen vanguard",
+      "freemen",
+      "outsider skirmisher rabble",
+      "freemen cavalry"
+    ]
+  },
+  {
+    "name": "Vermina",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Siga",
+    "faction": "masaesyli",
+    "x": 59,
+    "y": 187,
+    "units": [
+      "massylian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Yutpan",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Siga",
+    "faction": "masaesyli",
+    "x": 67,
+    "y": 185,
+    "units": [
+      "massylian royal bodyguards",
+      "numidian javelinmen",
+      "numidian cavalry",
+      "numidian light infantry",
+      "numidian royal cavalry",
+      "numidian archers"
+    ]
+  },
+  {
+    "name": "Apollodoros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Massalia",
+    "faction": "massalia",
+    "x": 105,
+    "y": 134,
+    "units": [
+      "massaliote foot general",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "Aristonos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Massalia",
+    "faction": "massalia",
+    "x": 107,
+    "y": 134,
+    "units": [
+      "massaliote foot general",
+      "massaliote hoplites",
+      "massaliote hoplites",
+      "massaliote epibatai",
+      "psiloi",
+      "massaliote archer",
+      "salluvian swordsmen"
+    ]
+  },
+  {
+    "name": "Gaia",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Cirta",
+    "faction": "massylii",
+    "x": 122,
+    "y": 186,
+    "units": [
+      "massylian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Naravas",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Thugga",
+    "faction": "massylii",
+    "x": 122,
+    "y": 189,
+    "units": [
+      "massylian royal bodyguards",
+      "numidian light infantry",
+      "numidian archers",
+      "numidian cavalry",
+      "numidian royal cavalry"
+    ]
+  },
+  {
+    "name": "Fara",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Raqemo",
+    "faction": "nabataea",
+    "x": 283,
+    "y": 217,
+    "units": [
+      "nabataean general",
+      "arab levy spearmen"
+    ]
+  },
+  {
+    "name": "Obaysat",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Petra",
+    "faction": "nabataea",
+    "x": 280,
+    "y": 215,
+    "units": [
+      "nabataean general",
+      "arab levy spearmen",
+      "arab skirmishers",
+      "arab warriors",
+      "nabataean light cavalry"
+    ]
+  },
+  {
+    "name": "Niptasan",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Volubilis",
+    "faction": "mauri",
+    "x": 33,
+    "y": 190,
+    "units": [
+      "massylian royal bodyguards",
+      "numidian light infantry"
+    ]
+  },
+  {
+    "name": "Yutpan",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Volubilis",
+    "faction": "mauri",
+    "x": 35,
+    "y": 191,
+    "units": [
+      "massylian royal bodyguards",
+      "numidian light infantry",
+      "numidian javelinmen",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "Ashoka",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Taxila",
+    "faction": "mauryan",
+    "x": 482,
+    "y": 100,
+    "units": [
+      "indian general",
+      "indian peltasts",
+      "indian javelinmen",
+      "indian javelinmen",
+      "indian archers",
+      "indian archers",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "merc indian elephants"
+    ]
+  },
+  {
+    "name": "Chandragupta",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandreia-Indos",
+    "faction": "mauryan",
+    "x": 491,
+    "y": 133,
+    "units": [
+      "indian general"
+    ]
+  },
+  {
+    "name": "Bindusara",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandreia-Arachosia",
+    "faction": "mauryan",
+    "x": 454,
+    "y": 137,
+    "units": [
+      "indian general",
+      "indian peltasts",
+      "indian javelinmen",
+      "indian javelinmen",
+      "indian archers",
+      "indian archers",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "indian levy spearmen"
+    ]
+  },
+  {
+    "name": "Samprati",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandreia-Kaukasia",
+    "faction": "mauryan",
+    "x": 459,
+    "y": 104,
+    "units": [
+      "indian general",
+      "indian peltasts",
+      "indian levy spearmen",
+      "indian levy spearmen"
+    ]
+  },
+  {
+    "name": "Salisuka",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sangala",
+    "faction": "mauryan",
+    "x": 502,
+    "y": 108,
+    "units": [
+      "indian general",
+      "indian levy spearmen"
+    ]
+  },
+  {
+    "name": "Dasaratha",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Patala",
+    "faction": "mauryan",
+    "x": 495,
+    "y": 172,
+    "units": [
+      "indian general"
+    ]
+  },
+  {
+    "name": "Kunala",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Poura",
+    "faction": "mauryan",
+    "x": 441,
+    "y": 181,
+    "units": [
+      "indian general",
+      "indian levy spearmen"
+    ]
+  },
+  {
+    "name": "Aristodemos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Megalopolis",
+    "faction": "megalopolis",
+    "x": 196,
+    "y": 178,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "greek hoplites",
+      "greek hoplites",
+      "arcadian peltast",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Niptasan",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tabudium",
+    "faction": "musulamii",
+    "x": 101,
+    "y": 197,
+    "units": [
+      "massylian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Yutpan",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Tabudium",
+    "faction": "musulamii",
+    "x": 106,
+    "y": 197,
+    "units": [
+      "massylian royal bodyguards",
+      "numidian light infantry",
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "Rhoigos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Odryssa",
+    "faction": "odrysians",
+    "x": 218,
+    "y": 145,
+    "units": [
+      "thracian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Rhaizdos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Odryssa",
+    "faction": "odrysians",
+    "x": 217,
+    "y": 141,
+    "units": [
+      "thracian royal bodyguards",
+      "thracian infantry",
+      "thracian archers",
+      "thracian shieldbearers",
+      "thracian longspearmen",
+      "thracian peltasts",
+      "thracian slingers",
+      "odrysian skirmisher cavalry",
+      "thracian light lancers"
+    ]
+  },
+  {
+    "name": "Hieroson",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Olbia",
+    "faction": "olbia",
+    "x": 239,
+    "y": 105,
+    "units": [
+      "greek general",
+      "olbiopolite archers"
+    ]
+  },
+  {
+    "name": "Anthesterios",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Near Olbia",
+    "faction": "olbia",
+    "x": 236,
+    "y": 102,
+    "units": [
+      "greek general",
+      "olbiopolite hoplites",
+      "olbiopolite hoplites",
+      "olbiopolite hoplites",
+      "mixhellenic archers",
+      "mixhellenic archers",
+      "prodromoi",
+      "prodromoi",
+      "olbiopolite archers"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Vorgium",
+    "faction": "osismii",
+    "x": 65,
+    "y": 92,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside",
+    "faction": "osismii",
+    "x": 76,
+    "y": 98,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Leon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bylazora",
+    "faction": "paeonia",
+    "x": 193,
+    "y": 146,
+    "units": [
+      "paionian general",
+      "thracian peltasts"
+    ]
+  },
+  {
+    "name": "Dropion",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Stobi",
+    "faction": "paeonia",
+    "x": 193,
+    "y": 146,
+    "units": [
+      "paionian general",
+      "thracian infantry guard",
+      "thracian infantry",
+      "thracian infantry",
+      "agrianian infantry",
+      "agrianian infantry",
+      "thracian peltasts",
+      "paionian cavalry",
+      "paionian cavalry"
+    ]
+  },
+  {
+    "name": "Philetairos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pergamon",
+    "faction": "pergamon",
+    "x": 224,
+    "y": 163,
+    "units": [
+      "pergamene general's bodyguard",
+      "greek slingers"
+    ]
+  },
+  {
+    "name": "Eumenes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Pergamon (Field)",
+    "faction": "pergamon",
+    "x": 226,
+    "y": 162,
+    "units": [
+      "pergamene general's bodyguard",
+      "pergamene hoplites",
+      "pergamene hoplites",
+      "pergamene hoplites",
+      "greek peltasts",
+      "greek archers",
+      "greek slingers",
+      "prodromoi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Theos",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Pergamon (Port)",
+    "faction": "pergamon",
+    "x": 221,
+    "y": 161,
+    "units": [
+      "naval biremes"
+    ]
+  },
+  {
+    "name": "Agathostratos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rhodes",
+    "faction": "rhodes",
+    "x": 232,
+    "y": 182,
+    "units": [
+      "greek general",
+      "rhodian slingers",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Philiskos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Rhodes",
+    "faction": "rhodes",
+    "x": 231,
+    "y": 183,
+    "units": [
+      "greek general",
+      "rhodian hoplites",
+      "rhodian hoplites",
+      "rhodian hoplites",
+      "rhodian ephebes",
+      "rhodian slingers",
+      "rhodian slingers",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Tereus",
+    "charType": "admiral",
+    "armyClass": "navy",
+    "location": "Sea of Rhodes",
+    "faction": "rhodes",
+    "x": 232,
+    "y": 184,
+    "units": [
+      "naval triremes",
+      "naval triremes",
+      "naval triremes"
+    ]
+  },
+  {
+    "name": "Aripharnes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sauromaton Taphai",
+    "faction": "royal_sarmatians",
+    "x": 296,
+    "y": 71,
+    "units": [
+      "armoured sarmatian general",
+      "scythian axemen"
+    ]
+  },
+  {
+    "name": "Abaikos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Sauromaton Taphai",
+    "faction": "royal_sarmatians",
+    "x": 296,
+    "y": 79,
+    "units": [
+      "armoured sarmatian general",
+      "sarmatian horse archers",
+      "scythian medium cavalry",
+      "scythian axemen"
+    ]
+  },
+  {
+    "name": "Aripharnes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Skythopolis",
+    "faction": "royal_scythians",
+    "x": 260,
+    "y": 68,
+    "units": [
+      "armoured sarmatian general",
+      "sarmatian archers"
+    ]
+  },
+  {
+    "name": "Abaikos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Skython Taphai",
+    "faction": "royal_scythians",
+    "x": 269,
+    "y": 74,
+    "units": [
+      "armoured sarmatian general",
+      "scythian medium cavalry",
+      "sarmatian horse archers"
+    ]
+  },
+  {
+    "name": "Anacharsis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Skython Taphai",
+    "faction": "royal_scythians",
+    "x": 254,
+    "y": 77,
+    "units": [
+      "scythian axemen"
+    ]
+  },
+  {
+    "name": "Taxakis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Skytike Neapolis",
+    "faction": "royal_scythians",
+    "x": 253,
+    "y": 115,
+    "units": [
+      "armoured sarmatian general",
+      "scythian axemen"
+    ]
+  },
+  {
+    "name": "Ateas",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Skytike Neapolis",
+    "faction": "royal_scythians",
+    "x": 252,
+    "y": 112,
+    "units": [
+      "armoured sarmatian general",
+      "scythian medium cavalry",
+      "sarmatian horse archers"
+    ]
+  },
+  {
+    "name": "Zamir Ali Zarih II",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Marib",
+    "faction": "saba",
+    "x": 379,
+    "y": 305,
+    "units": [
+      "sabaean general",
+      "arab levy spearmen"
+    ]
+  },
+  {
+    "name": "Nasha Karab Yuha'man",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Marib",
+    "faction": "saba",
+    "x": 379,
+    "y": 301,
+    "units": [
+      "sabaean general",
+      "arab levy spearmen",
+      "sabaean infantry",
+      "arab skirmishers",
+      "arab warriors",
+      "sabaean light cavalry",
+      "arab camel archers"
+    ]
+  },
+  {
+    "name": "Bathanattos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Singidounon",
+    "faction": "scordisci",
+    "x": 184,
+    "y": 126,
+    "units": [
+      "galatian general",
+      "galatian warbands",
+      "galatian ambacti",
+      "galatian skirmishers"
+    ]
+  },
+  {
+    "name": "Smertorix",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sirmiun",
+    "faction": "scordisci",
+    "x": 179,
+    "y": 124,
+    "units": [
+      "arvernian champions",
+      "galatian warbands",
+      "galatian skirmishers",
+      "galatian slingers"
+    ]
+  },
+  {
+    "name": "Gaulotus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the Field",
+    "faction": "scordisci",
+    "x": 180,
+    "y": 128,
+    "units": [
+      "galatian general",
+      "galatian swordsmen",
+      "galatian swordsmen",
+      "galatian infantry",
+      "galatian skirmishers",
+      "galatian skirmishers",
+      "galatian slingers",
+      "gallic light cavalry",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ratostabius",
+    "faction": "silures",
+    "x": 72,
+    "y": 69,
+    "units": [
+      "brittonic bodyguards"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Silurium",
+    "faction": "silures",
+    "x": 75,
+    "y": 66,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic skirmishers",
+      "brittonic heavy spearmen",
+      "brittonic swordsmen",
+      "brittonic spearmen"
+    ]
+  },
+  {
+    "name": "Aripharnes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Siracena",
+    "faction": "siraces",
+    "x": 282,
+    "y": 107,
+    "units": [
+      "armoured sarmatian general"
+    ]
+  },
+  {
+    "name": "Abaikos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "In the field",
+    "faction": "siraces",
+    "x": 282,
+    "y": 107,
+    "units": [
+      "armoured sarmatian general",
+      "sarmatian horse archers",
+      "sarmatian archers"
+    ]
+  },
+  {
+    "name": "Charaspes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "In the field",
+    "faction": "siraces",
+    "x": 288,
+    "y": 102,
+    "units": [
+      "armoured sarmatian general",
+      "sarmatian horse archers",
+      "sarmatian archers"
+    ]
+  },
+  {
+    "name": "Ambiorix",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Sotium",
+    "faction": "sotiates",
+    "x": 78,
+    "y": 130,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic swordsmen",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Eporedorix",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sotium",
+    "faction": "sotiates",
+    "x": 78,
+    "y": 127,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Eudamidas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sparta",
+    "faction": "sparta",
+    "x": 199,
+    "y": 181,
+    "units": [
+      "spartan general"
+    ]
+  },
+  {
+    "name": "Areus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Sparta",
+    "faction": "sparta",
+    "x": 199,
+    "y": 180,
+    "units": [
+      "spartan general",
+      "helot javelinmen",
+      "helot slingers",
+      "helot archers",
+      "perioikoi hoplites",
+      "spartan krypteia",
+      "spartan krypteia",
+      "spartan skiritai",
+      "spartan cavalry"
+    ]
+  },
+  {
+    "name": "Erminus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Susudata",
+    "faction": "suebi",
+    "x": 151,
+    "y": 71,
+    "units": [
+      "suebian bodyguard"
+    ]
+  },
+  {
+    "name": "Gaiobomarus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Susudata",
+    "faction": "suebi",
+    "x": 150,
+    "y": 74,
+    "units": [
+      "suebian bodyguard",
+      "freemen vanguard",
+      "freemen hundred",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "Inguo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sugambrium",
+    "faction": "sugambri",
+    "x": 119,
+    "y": 74,
+    "units": [
+      "bodyguard frameae sword"
+    ]
+  },
+  {
+    "name": "Wallia",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Sugambrium",
+    "faction": "sugambri",
+    "x": 122,
+    "y": 75,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen vanguard",
+      "freemen",
+      "freemen cavalry",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "Leptines",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Syracuse",
+    "faction": "syracuse",
+    "x": 157,
+    "y": 183,
+    "units": [
+      "syracusan general",
+      "syracusan hoplites"
+    ]
+  },
+  {
+    "name": "Hiero",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Kamarina",
+    "faction": "syracuse",
+    "x": 154,
+    "y": 182,
+    "units": [
+      "syracusan general",
+      "syracusan hoplites",
+      "syracusan hoplites",
+      "syracusan hoplites",
+      "sicel peltophoroi",
+      "sicel thureophoroi",
+      "syracusan neaniskoi",
+      "syracusan neaniskoi",
+      "prodromoi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Poetovio",
+    "faction": "taurisci",
+    "x": 161,
+    "y": 116,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arcobadara",
+    "faction": "taurisci",
+    "x": 200,
+    "y": 106,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Indortes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Arcobadara",
+    "faction": "taurisci",
+    "x": 196,
+    "y": 106,
+    "units": [
+      "celtic swordsmen",
+      "scordiscian infantry",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Ambon",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Poetovio",
+    "faction": "taurisci",
+    "x": 158,
+    "y": 116,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "gallic light cavalry",
+      "scordiscian infantry"
+    ]
+  },
+  {
+    "name": "Caratawc",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Treverium",
+    "faction": "treveri",
+    "x": 116,
+    "y": 89,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic skirmishers",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Orgetorix",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Oppidum Treverorum",
+    "faction": "treveri",
+    "x": 113,
+    "y": 87,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic spearmen",
+      "gallic light cavalry",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Chales",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Oiskos",
+    "faction": "triballi",
+    "x": 205,
+    "y": 132,
+    "units": [
+      "thracian royal bodyguards",
+      "galato-thracian warband"
+    ]
+  },
+  {
+    "name": "Syrmos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Oiskos",
+    "faction": "triballi",
+    "x": 201,
+    "y": 133,
+    "units": [
+      "thracian royal bodyguards",
+      "galato-thracian warband",
+      "galato-thracian warband",
+      "galato-thracian warband",
+      "thracian peltasts",
+      "thracian peltasts",
+      "thracian light lancers"
+    ]
+  },
+  {
+    "name": "Orsoaltios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tylis",
+    "faction": "tylis",
+    "x": 220,
+    "y": 135,
+    "units": [
+      "galatian general",
+      "galatian warbands"
+    ]
+  },
+  {
+    "name": "Komontorios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Helis",
+    "faction": "tylis",
+    "x": 217,
+    "y": 130,
+    "units": [
+      "galatian general",
+      "galatian swordsmen"
+    ]
+  },
+  {
+    "name": "Kerethrios",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Tylis",
+    "faction": "tylis",
+    "x": 215,
+    "y": 130,
+    "units": [
+      "galatian general",
+      "galatian swordsmen",
+      "galatian skirmishers",
+      "galatian skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Kersibaulos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Helis",
+    "faction": "tylis",
+    "x": 218,
+    "y": 134,
+    "units": [
+      "arvernian champions",
+      "galatian warbands",
+      "galatian warbands",
+      "gallic light cavalry",
+      "galatian slingers"
+    ]
+  },
+  {
+    "name": "Inguo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Venedium",
+    "faction": "venedae",
+    "x": 182,
+    "y": 43,
+    "units": [
+      "bodyguard frameae sword"
+    ]
+  },
+  {
+    "name": "Wallia",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Venedium",
+    "faction": "venedae",
+    "x": 189,
+    "y": 43,
+    "units": [
+      "bodyguard frameae sword",
+      "venedic woodsmen",
+      "venedic woodsmen",
+      "venedic woodsmen",
+      "venedic woodsmen",
+      "venedic woodsmen"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Patavium",
+    "faction": "veneti",
+    "x": 140,
+    "y": 121,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Patavium",
+    "faction": "veneti",
+    "x": 138,
+    "y": 121,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "gallic light cavalry",
+      "treverian noble cavalry",
+      "scordiscian infantry"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Menosgada",
+    "faction": "volcae",
+    "x": 136,
+    "y": 88,
+    "units": [
+      "gallic royal bodyguards"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Volcaeum",
+    "faction": "volcae",
+    "x": 132,
+    "y": 84,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic swordsmen",
+      "celtic skirmishers",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nemausus",
+    "faction": "volcae_gallia",
+    "x": 99,
+    "y": 130,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic skirmishers",
+      "gallic light cavalry",
+      "volcaean axemen",
+      "gaesatae"
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tolosa",
+    "faction": "volcae_gallia",
+    "x": 86,
+    "y": 130,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "gallic light cavalry",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "volcaean axemen",
+      "celtic slingers"
+    ]
+  },
+  {
+    "name": "Biggus Dickus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Eddopolis",
+    "faction": "dummies",
+    "x": 506,
+    "y": 345,
+    "units": [
+      "greek general"
+    ]
+  },
+  {
+    "name": "Akbar",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Eddopolis",
+    "faction": "dummies",
+    "x": 508,
+    "y": 346,
+    "units": [
+      "greek general"
+    ]
+  },
+  {
+    "name": "sub faction elis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Elis",
+    "faction": "slave",
+    "x": 192,
+    "y": 175,
+    "units": [
+      "greek general",
+      "elian hoplites",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "sub faction argos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Argos",
+    "faction": "slave",
+    "x": 200,
+    "y": 177,
+    "units": [
+      "greek general",
+      "argive epilektoi",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "sub faction kydonia",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kydonia",
+    "faction": "slave",
+    "x": 209,
+    "y": 191,
+    "units": [
+      "greek general",
+      "kretan hoplites",
+      "kretan hoplites",
+      "kretan hoplites",
+      "kydonian archers",
+      "kydonian archers",
+      "cretan slingers",
+      "cretan slingers"
+    ]
+  },
+  {
+    "name": "sub faction greeks",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apollonia-Epeiros",
+    "faction": "slave",
+    "x": 180,
+    "y": 155,
+    "units": [
+      "greek hoplites",
+      "greek hoplites",
+      "greek hoplites",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "sub faction pentapolis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kallatis",
+    "faction": "slave",
+    "x": 226,
+    "y": 129,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "sub faction pentapolis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apollonia-Pontos",
+    "faction": "slave",
+    "x": 224,
+    "y": 140,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "greek peltasts",
+      "xystophoroi"
+    ]
+  },
+  {
+    "name": "sub faction odrysians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ratiaria",
+    "faction": "slave",
+    "x": 197,
+    "y": 133,
+    "units": [
+      "thracian longspearmen",
+      "thracian longspearmen",
+      "thracian longspearmen"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Serdike",
+    "faction": "slave",
+    "x": 200,
+    "y": 139,
+    "units": [
+      "galato-thracian warband",
+      "galato-thracian warband",
+      "galato-thracian warband"
+    ]
+  },
+  {
+    "name": "sub faction odrysians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Philippopolis",
+    "faction": "slave",
+    "x": 208,
+    "y": 144,
+    "units": [
+      "thracian royal bodyguards",
+      "thracian longspearmen",
+      "thracian longspearmen",
+      "thracian longspearmen"
+    ]
+  },
+  {
+    "name": "sub faction histria",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Istrie",
+    "faction": "slave",
+    "x": 226,
+    "y": 123,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "greek hoplites",
+      "istrian archers",
+      "istrian archers"
+    ]
+  },
+  {
+    "name": "sub faction illyrian kingdom",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kapedounon",
+    "faction": "slave",
+    "x": 181,
+    "y": 132,
+    "units": [
+      "illyrian slingers",
+      "illyrian slingers",
+      "illyrian slingers"
+    ]
+  },
+  {
+    "name": "sub faction greeks",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tyras",
+    "faction": "slave",
+    "x": 231,
+    "y": 110,
+    "units": [
+      "greek hoplites",
+      "greek hoplites",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "sub faction getae",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Carsidava",
+    "faction": "slave",
+    "x": 217,
+    "y": 104,
+    "units": [
+      "getic royal bodyguards",
+      "getic archers",
+      "getic archers",
+      "getic archers"
+    ]
+  },
+  {
+    "name": "sub faction getae",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Sarmizegetusa",
+    "faction": "slave",
+    "x": 196,
+    "y": 118,
+    "units": [
+      "getic royal bodyguards",
+      "getic archers",
+      "getic archers",
+      "getic archers"
+    ]
+  },
+  {
+    "name": "sub faction getae",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Dacidava",
+    "faction": "slave",
+    "x": 189,
+    "y": 108,
+    "units": [
+      "getic royal bodyguards",
+      "getic archers",
+      "getic archers",
+      "getic archers"
+    ]
+  },
+  {
+    "name": "sub faction getae",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Napoca",
+    "faction": "slave",
+    "x": 198,
+    "y": 110,
+    "units": [
+      "getic royal bodyguards",
+      "getic archers",
+      "getic archers",
+      "getic archers"
+    ]
+  },
+  {
+    "name": "sub faction eravisci",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Aquincum",
+    "faction": "slave",
+    "x": 175,
+    "y": 106,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic skirmishers",
+      "scordiscian infantry",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Asanca",
+    "faction": "slave",
+    "x": 172,
+    "y": 95,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sarbakon",
+    "faction": "slave",
+    "x": 230,
+    "y": 95,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction chersonesus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Chersonesos",
+    "faction": "slave",
+    "x": 250,
+    "y": 118,
+    "units": [
+      "greek general",
+      "chersonesian hoplites",
+      "chersonesian hoplites",
+      "greek slingers",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Amadoka",
+    "faction": "slave",
+    "x": 252,
+    "y": 97,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tanais",
+    "faction": "slave",
+    "x": 275,
+    "y": 93,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction aorsia",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hexapolis",
+    "faction": "slave",
+    "x": 287,
+    "y": 84,
+    "units": [
+      "armoured sarmatian general",
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "sarmatian archers",
+      "scythian axemen"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Massageton Taphai",
+    "faction": "slave",
+    "x": 363,
+    "y": 43,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction albanians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sarapana",
+    "faction": "slave",
+    "x": 304,
+    "y": 123,
+    "units": [
+      "asian slingers",
+      "asian slingers",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "sub faction albanians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arsarata",
+    "faction": "slave",
+    "x": 338,
+    "y": 131,
+    "units": [
+      "asian slingers",
+      "asian slingers",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "sub faction albanians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Chabala",
+    "faction": "slave",
+    "x": 331,
+    "y": 123,
+    "units": [
+      "armenian royal bodyguards",
+      "caucasian hillmen",
+      "asian slingers",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "sub faction greeks",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Dioskourias",
+    "faction": "slave",
+    "x": 291,
+    "y": 120,
+    "units": [
+      "greek hoplites",
+      "greek hoplites",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "sub faction trapezus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Trapezous",
+    "faction": "slave",
+    "x": 289,
+    "y": 136,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "greek hoplites",
+      "greek peltasts",
+      "psiloi"
+    ]
+  },
+  {
+    "name": "sub faction armenia minor",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kamakh",
+    "faction": "slave",
+    "x": 288,
+    "y": 146,
+    "units": [
+      "armenian royal bodyguards",
+      "caucasian hillmen",
+      "armenian heavy spearmen",
+      "persian foot archers",
+      "armenian horse archers"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tsats",
+    "faction": "slave",
+    "x": 434,
+    "y": 67,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Trybaktra",
+    "faction": "slave",
+    "x": 417,
+    "y": 91,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction chorasmia",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Chorasmia",
+    "faction": "slave",
+    "x": 393,
+    "y": 86,
+    "units": [
+      "armoured sarmatian general",
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "sarmatian archers",
+      "scythian axemen"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Talats",
+    "faction": "slave",
+    "x": 440,
+    "y": 47,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction siraces",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kasia",
+    "faction": "slave",
+    "x": 471,
+    "y": 55,
+    "units": [
+      "scythian medium cavalry",
+      "scythian medium cavalry",
+      "scythian medium cavalry"
+    ]
+  },
+  {
+    "name": "sub faction labeatae",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Skodra",
+    "faction": "slave",
+    "x": 180,
+    "y": 145,
+    "units": [
+      "illyrian warlords bodyguard",
+      "labeataean light infantry",
+      "labeataean light infantry",
+      "southern illyrian axemen"
+    ]
+  },
+  {
+    "name": "sub faction issa",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Epetion-Salona",
+    "faction": "slave",
+    "x": 163,
+    "y": 135,
+    "units": [
+      "greek general",
+      "issaian hoplites",
+      "issaian epibatai",
+      "greek archers",
+      "greek archers"
+    ]
+  },
+  {
+    "name": "sub faction norici",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Noreia",
+    "faction": "slave",
+    "x": 152,
+    "y": 112,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction illyrian kingdom",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Segestica",
+    "faction": "slave",
+    "x": 162,
+    "y": 122,
+    "units": [
+      "illyrian slingers",
+      "illyrian slingers",
+      "illyrian slingers"
+    ]
+  },
+  {
+    "name": "sub faction histri",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nesactium",
+    "faction": "slave",
+    "x": 150,
+    "y": 126,
+    "units": [
+      "northern illyrian general",
+      "northern illyrian spearmen",
+      "histri swordsmen",
+      "iapodian skirmisher cavalry"
+    ]
+  },
+  {
+    "name": "sub faction massylii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tingartia",
+    "faction": "slave",
+    "x": 75,
+    "y": 190,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction massylii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Auzia",
+    "faction": "slave",
+    "x": 90,
+    "y": 185,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction massylii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Cirta",
+    "faction": "slave",
+    "x": 106,
+    "y": 185,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction massylii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Theveste",
+    "faction": "slave",
+    "x": 115,
+    "y": 193,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction musulamii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Capsa",
+    "faction": "slave",
+    "x": 118,
+    "y": 200,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction massylii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Cidamus",
+    "faction": "slave",
+    "x": 120,
+    "y": 231,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction musulamii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Vala",
+    "faction": "slave",
+    "x": 8,
+    "y": 210,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction vascones",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pompelo",
+    "faction": "slave",
+    "x": 68,
+    "y": 133,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "caetrati cavalry"
+    ]
+  },
+  {
+    "name": "sub faction belli",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Segeda",
+    "faction": "slave",
+    "x": 66,
+    "y": 144,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati cavalry",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction vaccaei",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pallantia",
+    "faction": "slave",
+    "x": 51,
+    "y": 136,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati cavalry",
+      "iberian heavy swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction emporion",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Emporion",
+    "faction": "slave",
+    "x": 92,
+    "y": 142,
+    "units": [
+      "greek general",
+      "emporionite hoplites",
+      "emporionite hoplites",
+      "psiloi",
+      "psiloi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "sub faction carpetani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Toletum",
+    "faction": "slave",
+    "x": 50,
+    "y": 152,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "iberian heavy swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction oretani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Castulo",
+    "faction": "slave",
+    "x": 50,
+    "y": 164,
+    "units": [
+      "celtiberian noble bodyguards",
+      "iberian heavy swordsmen",
+      "iberian slingers"
+    ]
+  },
+  {
+    "name": "sub faction ilici",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Ilici",
+    "faction": "slave",
+    "x": 66,
+    "y": 162,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati cavalry",
+      "iberian heavy swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction basti",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Basti",
+    "faction": "slave",
+    "x": 54,
+    "y": 170,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "caetrati cavalry"
+    ]
+  },
+  {
+    "name": "sub faction celtici",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ebora",
+    "faction": "slave",
+    "x": 27,
+    "y": 156,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction astures",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Lancia",
+    "faction": "slave",
+    "x": 46,
+    "y": 129,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction lusitani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Olisipo",
+    "faction": "slave",
+    "x": 20,
+    "y": 151,
+    "units": [
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction gallaeci",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bracarium",
+    "faction": "slave",
+    "x": 31,
+    "y": 134,
+    "units": [
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction lacetani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kesse",
+    "faction": "slave",
+    "x": 81,
+    "y": 147,
+    "units": [
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction vettones",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hermandica",
+    "faction": "slave",
+    "x": 44,
+    "y": 142,
+    "units": [
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction lacetani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Narbo",
+    "faction": "slave",
+    "x": 92,
+    "y": 134,
+    "units": [
+      "caetrati swordsmen",
+      "caetrati swordsmen",
+      "caetrati swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Segustero",
+    "faction": "slave",
+    "x": 108,
+    "y": 128,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Limonum",
+    "faction": "slave",
+    "x": 82,
+    "y": 107,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction bituriges",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Avaricum",
+    "faction": "slave",
+    "x": 93,
+    "y": 105,
+    "units": [
+      "gallic royal bodyguards",
+      "gallic light cavalry",
+      "celtic swordsmen",
+      "celtic spearmen"
+    ]
+  },
+  {
+    "name": "sub faction sequani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Vesontio",
+    "faction": "slave",
+    "x": 111,
+    "y": 106,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction cadurci",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Uxellodunum",
+    "faction": "slave",
+    "x": 87,
+    "y": 120,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction volcae",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Suindinum",
+    "faction": "slave",
+    "x": 84,
+    "y": 97,
+    "units": [
+      "gallic light cavalry",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction cadurci",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bagacum",
+    "faction": "slave",
+    "x": 103,
+    "y": 83,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic spearmen",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction senones",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Agedincum",
+    "faction": "slave",
+    "x": 98,
+    "y": 98,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Menapium",
+    "faction": "slave",
+    "x": 97,
+    "y": 78,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Durocortorum",
+    "faction": "slave",
+    "x": 102,
+    "y": 91,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Andemantunnum",
+    "faction": "slave",
+    "x": 108,
+    "y": 102,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction eburones",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Eburonium",
+    "faction": "slave",
+    "x": 111,
+    "y": 80,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "celtic skirmishers",
+      "celtic skirmishers",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction ubii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arctaunum",
+    "faction": "slave",
+    "x": 125,
+    "y": 82,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction frisii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Frisium",
+    "faction": "slave",
+    "x": 109,
+    "y": 66,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction chauci",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Fabiranum",
+    "faction": "slave",
+    "x": 128,
+    "y": 61,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen vanguard",
+      "freemen",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "sub faction langobardi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Marionis",
+    "faction": "slave",
+    "x": 136,
+    "y": 62,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen",
+      "freemen hundred",
+      "freemen cavalry",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "sub faction suebi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Finnium",
+    "faction": "slave",
+    "x": 195,
+    "y": 15,
+    "units": [
+      "freemen vanguard",
+      "freemen vanguard",
+      "freemen vanguard"
+    ]
+  },
+  {
+    "name": "sub faction suebi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hillevionum",
+    "faction": "slave",
+    "x": 147,
+    "y": 47,
+    "units": [
+      "freemen vanguard",
+      "freemen vanguard",
+      "freemen vanguard"
+    ]
+  },
+  {
+    "name": "sub faction suebi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rugium",
+    "faction": "slave",
+    "x": 120,
+    "y": 20,
+    "units": [
+      "freemen vanguard",
+      "freemen vanguard",
+      "freemen vanguard"
+    ]
+  },
+  {
+    "name": "sub faction suebi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Suindinum",
+    "faction": "slave",
+    "x": 165,
+    "y": 14,
+    "units": [
+      "celtic swordsmen",
+      "outsider skirmisher rabble",
+      "freemen cavalry"
+    ]
+  },
+  {
+    "name": "sub faction vindelici",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rucinatium",
+    "faction": "slave",
+    "x": 138,
+    "y": 98,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic swordsmen",
+      "celtic spearmen",
+      "gallic light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction marcomanni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Lupfurdum",
+    "faction": "slave",
+    "x": 151,
+    "y": 78,
+    "units": [
+      "bodyguard frameae sword",
+      "freemen vanguard",
+      "freemen cavalry",
+      "outsider skirmisher rabble"
+    ]
+  },
+  {
+    "name": "sub faction suebi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Aestium",
+    "faction": "slave",
+    "x": 180,
+    "y": 52,
+    "units": [
+      "freemen vanguard",
+      "freemen vanguard",
+      "freemen vanguard"
+    ]
+  },
+  {
+    "name": "sub faction suebi",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Avionium",
+    "faction": "slave",
+    "x": 133,
+    "y": 55,
+    "units": [
+      "freemen vanguard",
+      "freemen vanguard",
+      "freemen vanguard"
+    ]
+  },
+  {
+    "name": "sub faction trinovantes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Eblana",
+    "faction": "slave",
+    "x": 61,
+    "y": 51,
+    "units": [
+      "brittonic skirmishers",
+      "brittonic skirmishers",
+      "brittonic skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction trinovantes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Magnata",
+    "faction": "slave",
+    "x": 53,
+    "y": 44,
+    "units": [
+      "brittonic skirmishers",
+      "brittonic skirmishers",
+      "brittonic skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction trinovantes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Otadinium",
+    "faction": "slave",
+    "x": 80,
+    "y": 39,
+    "units": [
+      "brittonic skirmishers",
+      "brittonic skirmishers",
+      "brittonic skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction ordovices",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Castrum Ordovicum",
+    "faction": "slave",
+    "x": 69,
+    "y": 58,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic swordsmen",
+      "brittonic spearmen"
+    ]
+  },
+  {
+    "name": "sub faction dumnonii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Oppidum Dumnoniorum",
+    "faction": "slave",
+    "x": 64,
+    "y": 76,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic swordsmen",
+      "brittonic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction durotriges",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Durotrigium",
+    "faction": "slave",
+    "x": 75,
+    "y": 75,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic heavy spearmen",
+      "brittonic slingers"
+    ]
+  },
+  {
+    "name": "sub faction catuvellauni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Catuvellaunium",
+    "faction": "slave",
+    "x": 85,
+    "y": 69,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction trinovantes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Camulodunum",
+    "faction": "slave",
+    "x": 91,
+    "y": 69,
+    "units": [
+      "brittonic bodyguards",
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction messapians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Brundisium",
+    "faction": "slave",
+    "x": 172,
+    "y": 157,
+    "units": [
+      "tribunus militum",
+      "lucanian infantry",
+      "samnite hoplites",
+      "samnite hoplites"
+    ]
+  },
+  {
+    "name": "sub faction italics",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rhegium",
+    "faction": "slave",
+    "x": 160,
+    "y": 174,
+    "units": [
+      "lucanian infantry",
+      "lucanian infantry",
+      "lucanian infantry"
+    ]
+  },
+  {
+    "name": "sub faction picentes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Asculum",
+    "faction": "slave",
+    "x": 148,
+    "y": 140,
+    "units": [
+      "tribunus militum",
+      "lucanian infantry",
+      "samnite hoplites"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Stalia",
+    "faction": "slave",
+    "x": 124,
+    "y": 128,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction cenomani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Brixia",
+    "faction": "slave",
+    "x": 131,
+    "y": 120,
+    "units": [
+      "celtic skirmishers",
+      "celtic spearmen",
+      "celtic spearmen"
+    ]
+  },
+  {
+    "name": "sub faction cenomani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Isarcium-Brixentium",
+    "faction": "slave",
+    "x": 138,
+    "y": 113,
+    "units": [
+      "celtic skirmishers",
+      "celtic spearmen",
+      "celtic spearmen"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Oscela",
+    "faction": "slave",
+    "x": 121,
+    "y": 116,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction arverni",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Taurasia",
+    "faction": "slave",
+    "x": 118,
+    "y": 123,
+    "units": [
+      "celtic swordsmen",
+      "celtic swordsmen",
+      "celtic swordsmen"
+    ]
+  },
+  {
+    "name": "sub faction acragas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Akragas",
+    "faction": "slave",
+    "x": 147,
+    "y": 180,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "greek hoplites",
+      "sicel thureophoroi",
+      "greek archers",
+      "sicel peltophoroi",
+      "sicel peltophoroi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "sub faction italics",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Enna",
+    "faction": "slave",
+    "x": 151,
+    "y": 179,
+    "units": [
+      "sicel peltophoroi",
+      "sicel peltophoroi",
+      "sicel peltophoroi"
+    ]
+  },
+  {
+    "name": "sub faction mamertines",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Messana",
+    "faction": "slave",
+    "x": 158,
+    "y": 174,
+    "units": [
+      "tribunus militum",
+      "campanian cavalry",
+      "samnite hoplites",
+      "samnite hoplites",
+      "lucanian infantry"
+    ]
+  },
+  {
+    "name": "sub faction sardinians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Uselis",
+    "faction": "slave",
+    "x": 122,
+    "y": 161,
+    "units": [
+      "celtiberian noble bodyguards",
+      "caetrati swordsmen",
+      "iberian heavy swordsmen",
+      "merc sardinian archers",
+      "merc sardinian archers",
+      "merc sardinian archers"
+    ]
+  },
+  {
+    "name": "sub faction sardinians",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Venicum",
+    "faction": "slave",
+    "x": 124,
+    "y": 143,
+    "units": [
+      "gallic royal bodyguards",
+      "celtic spearmen"
+    ]
+  },
+  {
+    "name": "sub faction cius",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kios",
+    "faction": "slave",
+    "x": 233,
+    "y": 152,
+    "units": [
+      "greek general",
+      "greek hoplites",
+      "greek hoplites",
+      "kian archers"
+    ]
+  },
+  {
+    "name": "sub faction selge",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Isaura",
+    "faction": "slave",
+    "x": 254,
+    "y": 172,
+    "units": [
+      "greek hoplites",
+      "greek hoplites",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "sub faction seleucid",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sagalassos",
+    "faction": "slave",
+    "x": 244,
+    "y": 171,
+    "units": [
+      "seleucid general",
+      "aor pisidian javelinmen",
+      "aor phrygian spearmen",
+      "greek peltasts"
+    ]
+  },
+  {
+    "name": "sub faction paphlagonia",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gangra",
+    "faction": "slave",
+    "x": 257,
+    "y": 146,
+    "units": [
+      "paphlagonian general",
+      "paphlagonian slingers",
+      "paphlagonian levy spearmen",
+      "paphlagonian levy spearmen",
+      "paphlagonian cavalry",
+      "paphlagonian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction pontus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Taouion",
+    "faction": "slave",
+    "x": 262,
+    "y": 151,
+    "units": [
+      "asian slingers",
+      "asian slingers",
+      "asian slingers"
+    ]
+  },
+  {
+    "name": "sub faction greeks",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Amisos",
+    "faction": "slave",
+    "x": 271,
+    "y": 139,
+    "units": [
+      "greek hoplites",
+      "greek hoplites",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "sub faction sinope",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sinope",
+    "faction": "slave",
+    "x": 263,
+    "y": 135,
+    "units": [
+      "greek general",
+      "sinopian epilektoi",
+      "sinopian epibatai",
+      "sinopian archers"
+    ]
+  },
+  {
+    "name": "sub faction nabataea",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bostra",
+    "faction": "slave",
+    "x": 286,
+    "y": 200,
+    "units": [
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction palmyra",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Palmyra",
+    "faction": "slave",
+    "x": 293,
+    "y": 183,
+    "units": [
+      "nabataean general",
+      "arab warriors",
+      "arab warriors",
+      "arab skirmishers",
+      "arab skirmishers",
+      "nabataean light cavalry",
+      "nabataean light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction nabataea",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Iathrippa",
+    "faction": "slave",
+    "x": 320,
+    "y": 251,
+    "units": [
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction lihyan",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Egra",
+    "faction": "slave",
+    "x": 305,
+    "y": 238,
+    "units": [
+      "nabataean general",
+      "arab levy spearmen",
+      "arab levy spearmen",
+      "arab skirmishers",
+      "nabataean light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction minaeans",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Karna",
+    "faction": "slave",
+    "x": 376,
+    "y": 296,
+    "units": [
+      "sabaean general",
+      "arab warriors",
+      "arab skirmishers",
+      "sabaean light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction himyar",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sapphar",
+    "faction": "slave",
+    "x": 376,
+    "y": 316,
+    "units": [
+      "sabaean general",
+      "arab levy spearmen",
+      "arab levy spearmen",
+      "sabaean light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction saba",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kryptos Limen",
+    "faction": "slave",
+    "x": 443,
+    "y": 211,
+    "units": [
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction saba",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kathara",
+    "faction": "slave",
+    "x": 392,
+    "y": 217,
+    "units": [
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction saba",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Omana",
+    "faction": "slave",
+    "x": 418,
+    "y": 208,
+    "units": [
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction saba",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Saue",
+    "faction": "slave",
+    "x": 374,
+    "y": 324,
+    "units": [
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab skirmishers"
+    ]
+  },
+  {
+    "name": "sub faction qataban",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tamna",
+    "faction": "slave",
+    "x": 384,
+    "y": 307,
+    "units": [
+      "sabaean general",
+      "arab levy spearmen",
+      "arab levy spearmen",
+      "arab levy spearmen",
+      "arab skirmishers",
+      "arab skirmishers",
+      "arab warriors",
+      "arab warriors",
+      "sabaean light cavalry",
+      "sabaean light cavalry"
+    ]
+  },
+  {
+    "name": "sub faction nasamones",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Augila",
+    "faction": "slave",
+    "x": 196,
+    "y": 238,
+    "units": [
+      "massylian royal bodyguards",
+      "numidian javelinmen",
+      "numidian javelinmen",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction massylii",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ammonion",
+    "faction": "slave",
+    "x": 222,
+    "y": 236,
+    "units": [
+      "numidian cavalry",
+      "numidian cavalry",
+      "numidian cavalry"
+    ]
+  },
+  {
+    "name": "sub faction kush",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Megabaron_Kome",
+    "faction": "slave",
+    "x": 303,
+    "y": 345,
+    "units": [
+      "kushite javelinmen",
+      "kushite javelinmen",
+      "kushite javelinmen"
+    ]
+  },
+  {
+    "name": "sub faction kush",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tenoupsis",
+    "faction": "slave",
+    "x": 286,
+    "y": 312,
+    "units": [
+      "kushite javelinmen",
+      "kushite javelinmen",
+      "kushite javelinmen"
+    ]
+  },
+  {
+    "name": "sub faction kush",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Opone",
+    "faction": "slave",
+    "x": 436,
+    "y": 325,
+    "units": [
+      "kushite javelinmen",
+      "kushite javelinmen",
+      "kushite javelinmen"
+    ]
+  },
+  {
+    "name": "sub faction kush",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sabbata",
+    "faction": "slave",
+    "x": 335,
+    "y": 316,
+    "units": [
+      "kushite javelinmen",
+      "kushite javelinmen",
+      "kushite javelinmen"
+    ]
+  },
+  {
+    "name": "sub faction kush",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Mosyllon",
+    "faction": "slave",
+    "x": 414,
+    "y": 327,
+    "units": [
+      "kushite javelinmen",
+      "kushite javelinmen",
+      "kushite javelinmen"
+    ]
+  }
+]

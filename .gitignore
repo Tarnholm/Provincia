@@ -10,6 +10,14 @@
 
 # production
 /build
+/dist
+
+# local working copies / scratch dirs not meant for the repo
+/for claude/
+/cd
+/ci
+/robocopy
+/run
 
 # misc
 .DS_Store

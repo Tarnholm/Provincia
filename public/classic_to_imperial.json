@@ -1,0 +1,3055 @@
+{
+  "Rome": [
+    "Reate",
+    "Rome",
+    "Praeneste",
+    "Fregellae"
+  ],
+  "Capua": [
+    "Fregellae",
+    "Bovianum",
+    "Capua",
+    "Neapolis"
+  ],
+  "Arretium": [
+    "Pisae",
+    "Volaterrae",
+    "Sarsina",
+    "Arretium",
+    "Cosa",
+    "Perusia",
+    "Venicum",
+    "Volsinii",
+    "Falerii",
+    "Camerinum",
+    "Rome"
+  ],
+  "Tarentum": [
+    "Brundisium",
+    "Tarentum",
+    "Uria",
+    "Metapontum",
+    "Potentia"
+  ],
+  "Rhegium": [
+    "Consentia",
+    "Rhegium"
+  ],
+  "Iguvium": [
+    "Sarsina",
+    "Sena_Gallica",
+    "Iguvium",
+    "Perusia",
+    "Camerinum",
+    "Reate"
+  ],
+  "Consentia": [
+    "Potentia",
+    "Grumentum",
+    "Thurii",
+    "Consentia",
+    "Petelia"
+  ],
+  "Asculum": [
+    "Ankon",
+    "Asculum",
+    "Camerinum",
+    "Reate"
+  ],
+  "Corfinium": [
+    "Asculum",
+    "Teate",
+    "Praeneste",
+    "Larinum",
+    "Corfinium"
+  ],
+  "Bovianum": [
+    "Larinum",
+    "Aufidena",
+    "Fregellae",
+    "Bovianum",
+    "Maleventum",
+    "Compsa"
+  ],
+  "Grumentum": [
+    "Compsa",
+    "Potentia",
+    "Paestum",
+    "Grumentum"
+  ],
+  "Venusia": [
+    "Arpi",
+    "Canusium",
+    "Venusia",
+    "Compsa",
+    "Potentia"
+  ],
+  "Brundisium": [
+    "Brundisium",
+    "Uria",
+    "Tarentum"
+  ],
+  "Messana": [
+    "Tyndaris",
+    "Messana",
+    "Tauromenion",
+    "Katane"
+  ],
+  "Syracuse": [
+    "Enna",
+    "Leontinoi",
+    "Kamarina",
+    "Syracuse"
+  ],
+  "Lilybaeum": [
+    "Segesta",
+    "Lilybaion",
+    "Entella",
+    "Herakleia_Minoa",
+    "Melite"
+  ],
+  "Agrigentum": [
+    "Entella",
+    "Myttistratum",
+    "Acragas"
+  ],
+  "Panormos": [
+    "Entella",
+    "Panormos",
+    "Tyndaris",
+    "Myttistratum",
+    "Enna"
+  ],
+  "Enna": [
+    "Tyndaris",
+    "Enna",
+    "Myttistratum",
+    "Katane"
+  ],
+  "Caralis": [
+    "Cornus",
+    "Uselis",
+    "Sulci",
+    "Caralis"
+  ],
+  "Aleria": [
+    "Aleria",
+    "Venicum"
+  ],
+  "Venicum": [
+    "Venicum"
+  ],
+  "Uselis": [
+    "Pluvium",
+    "Olbia-Sardinia",
+    "Cornus",
+    "Uselis"
+  ],
+  "Carthage": [
+    "Utica",
+    "Carthage",
+    "Tunes",
+    "Clupea",
+    "Karchedonike_Neapolis",
+    "Hadrumetum",
+    "Zama"
+  ],
+  "Hadrumetum": [
+    "Hadrumetum",
+    "Tabudium",
+    "Leptis_Minor",
+    "Thapsus",
+    "Zygantis"
+  ],
+  "Leptis": [
+    "Meninx",
+    "Gigthis",
+    "Castrum_Atarantorum",
+    "Sabrata",
+    "Oea",
+    "Castrum_Macaeorum",
+    "Leptis",
+    "Euphranta",
+    "Castrum_Psyllorum"
+  ],
+  "Garama": [
+    "Garama",
+    "Euphranta",
+    "Castrum_Macaeorum",
+    "Castrum_Psyllorum",
+    "Automala",
+    "Lybike_Oasis",
+    "Sabae",
+    "Gira",
+    "Bedirum",
+    "Aithiopikon_Kome"
+  ],
+  "Hippo": [
+    "Rusicade",
+    "Hippo",
+    "Saldae",
+    "Cirta"
+  ],
+  "Cirta": [
+    "Rusicade",
+    "Cirta",
+    "Suthul",
+    "Auzea",
+    "Castrum_Nicivorum",
+    "Hekatompylos-Numidia",
+    "Tabudium"
+  ],
+  "Theveste": [
+    "Hippo",
+    "Vaga",
+    "Suthul",
+    "Bulla",
+    "Tipasa",
+    "Sicca",
+    "Hekatompylos-Numidia",
+    "Althiburos",
+    "Thala",
+    "Tabudium"
+  ],
+  "Capsa": [
+    "Tabudium",
+    "Zygantis",
+    "Capsa",
+    "Castrum_Gaetulorum",
+    "Turris_Tamalleni",
+    "Castrum_Atarantorum",
+    "Cidamus"
+  ],
+  "Iol": [
+    "Icosium",
+    "Saldae",
+    "Iol",
+    "Siga",
+    "Auzea"
+  ],
+  "Siga": [
+    "Siga",
+    "Rusadir"
+  ],
+  "Volubilis": [
+    "Tamuda",
+    "Volubilis",
+    "Molochath",
+    "Sala",
+    "Rutubis",
+    "Castrum_Baniurarum"
+  ],
+  "Tingi": [
+    "Tingi",
+    "Tamuda",
+    "Lixus",
+    "Rusadir",
+    "Volubilis",
+    "Molochath",
+    "Sala"
+  ],
+  "Tabudium": [
+    "Castrum_Nicivorum",
+    "Miglis",
+    "Tabudium",
+    "Cirta",
+    "Castrum_Gaetulorum",
+    "Zygantis"
+  ],
+  "Tingartia": [
+    "Auzea",
+    "Siga",
+    "Miglis",
+    "Castrum_Baniurarum"
+  ],
+  "Utica": [
+    "Caralis",
+    "Hippo_Diarrhytus",
+    "Utica",
+    "Hippo"
+  ],
+  "Thugga": [
+    "Bulla",
+    "Carthage",
+    "Thugga",
+    "Sicca",
+    "Zama",
+    "Tunes",
+    "Althiburos",
+    "Thala",
+    "Mactaris",
+    "Tabudium"
+  ],
+  "Tacape": [
+    "Zygantis",
+    "Macomades_Minores",
+    "Capsa",
+    "Turris_Tamalleni",
+    "Gigthis",
+    "Castrum_Atarantorum"
+  ],
+  "Cidamus": [
+    "Castrum_Gaetulorum",
+    "Cidamus",
+    "Garama",
+    "Castrum_Macaeorum",
+    "Castrum_Atarantorum",
+    "Thalubath",
+    "Gira",
+    "Castrum_Suburporium"
+  ],
+  "Auzia": [
+    "Icosium",
+    "Saldae",
+    "Auzea",
+    "Iol",
+    "Castrum_Nicivorum",
+    "Cirta",
+    "Miglis"
+  ],
+  "Vala": [
+    "Rutubis",
+    "Castrum_Autololum",
+    "Volubilis",
+    "Castrum_Baniurarum",
+    "Castrum_Dararum",
+    "Castrum_Perorsorum"
+  ],
+  "Ebusus": [
+    "Castrum_Baliarium",
+    "Bocchoris",
+    "Ebusus"
+  ],
+  "Arse": [
+    "Lutia",
+    "Ergavica",
+    "Turba",
+    "Althaea",
+    "Kelin",
+    "Edeta",
+    "Arse",
+    "Libisosa",
+    "Kili"
+  ],
+  "Emporion": [
+    "Castrum_Indicetum",
+    "Auso"
+  ],
+  "Numantia": [
+    "Varia",
+    "Segisamo",
+    "Calagurris",
+    "Contrebia_Leucada",
+    "Uxama",
+    "Numantia",
+    "Turiaso",
+    "Aratis",
+    "Termes",
+    "Segovia",
+    "Lutia",
+    "Ergavica"
+  ],
+  "Aracillum": [
+    "Aracillum",
+    "Virovesca",
+    "Beleia",
+    "Bergida",
+    "Pallantia",
+    "Segisamo",
+    "Varia"
+  ],
+  "Portus_Artabrorum": [
+    "Lucensium",
+    "Brigantium-Artabria",
+    "Tude"
+  ],
+  "Olisipo": [
+    "Talabriga",
+    "Conimbriga",
+    "Moron",
+    "Olisipo"
+  ],
+  "Toletum": [
+    "Termes",
+    "Toletum",
+    "Lutia",
+    "Tamusia",
+    "Alces",
+    "Ergavica",
+    "Consabura",
+    "Sisapo",
+    "Althaea",
+    "Oretum"
+  ],
+  "Gades": [
+    "Ilipa",
+    "Hispalis",
+    "Asta",
+    "Urso",
+    "Gades"
+  ],
+  "Malaca": [
+    "Malaca",
+    "Iliberri",
+    "Carteia",
+    "Sexi",
+    "Urso"
+  ],
+  "Carmo": [
+    "Tamusia",
+    "Nertobriga-Celticia",
+    "Iulipa",
+    "Sisapo",
+    "Corduba",
+    "Onoba",
+    "Ilipa",
+    "Munda",
+    "Iliturgi",
+    "Hispalis",
+    "Carmo",
+    "Urso",
+    "Iliberri"
+  ],
+  "Castulo": [
+    "Oretum",
+    "Althaea",
+    "Libisosa",
+    "Sisapo",
+    "Castulo",
+    "Corduba",
+    "Iliturgi",
+    "Basti"
+  ],
+  "Basti": [
+    "Munda",
+    "Basti",
+    "Ilici",
+    "Mastia",
+    "Iliberri",
+    "Baria",
+    "Sexi"
+  ],
+  "Ilici": [
+    "Kili",
+    "Saetabis",
+    "Castrum_Contestanorum",
+    "Hemeroskopeion",
+    "Contestanium",
+    "Ilici"
+  ],
+  "Ebora": [
+    "Oppidum_Lusitanorum",
+    "Mirobriga",
+    "Tamusia",
+    "Moron",
+    "Ebora",
+    "Salacia",
+    "Nertobriga-Celticia",
+    "Mirobriga_Celticorum",
+    "Lacobriga",
+    "Conistorgis",
+    "Myrtilis",
+    "Onoba"
+  ],
+  "Oxthraca": [
+    "Oxthracae",
+    "Moron",
+    "Oppidum_Lusitanorum",
+    "Ebora",
+    "Salacia"
+  ],
+  "Hermandica": [
+    "Zoelarium",
+    "Bracarium",
+    "Oxthracae",
+    "Castrum_Vettonum",
+    "Arbucala",
+    "Hermandica",
+    "Mirobriga",
+    "Vettonium",
+    "Tamusia",
+    "Oppidum_Lusitanorum"
+  ],
+  "Bracarium": [
+    "Tude",
+    "Bracarium",
+    "Zoelarium",
+    "Talabriga",
+    "Oxthracae"
+  ],
+  "Lancia": [
+    "Lucensium",
+    "Noega",
+    "Aracillum",
+    "Lancia",
+    "Tude",
+    "Bergida",
+    "Pallantia",
+    "Zoelarium"
+  ],
+  "Pallantia": [
+    "Pallantia",
+    "Intercatia",
+    "Lancia",
+    "Zoelarium",
+    "Castrum_Vettonum",
+    "Arbucala",
+    "Cauca",
+    "Uxama",
+    "Segovia",
+    "Vettonium",
+    "Toletum"
+  ],
+  "Pompelo": [
+    "Castrum_Bardyetarum",
+    "Oppidum_Vasconum",
+    "Beleia",
+    "Tarbellium",
+    "Pompelo",
+    "Tarusatium",
+    "Varia",
+    "Arsaos",
+    "Iacca",
+    "Aratis",
+    "Bolskan"
+  ],
+  "Segeda": [
+    "Aratis",
+    "Salduie",
+    "Bolskan",
+    "Nertobriga",
+    "Contrebia_Belaisca",
+    "Numantia",
+    "Segeda",
+    "Lutia",
+    "Turba"
+  ],
+  "Atanagrum": [
+    "Castrum_Bigerrorum",
+    "Iacca",
+    "Bolskan",
+    "Ilerda",
+    "Andosinium",
+    "Castrum_Bergium",
+    "Atanagrus"
+  ],
+  "Kesse": [
+    "Castrum_Bergium",
+    "Cerretanium",
+    "Castrum_Indicetum",
+    "Auso",
+    "Iesso",
+    "Barkeno",
+    "Ilercavonium",
+    "Atanagrus",
+    "Cissa",
+    "Hibera",
+    "Turba",
+    "Arse"
+  ],
+  "Nemetum": [
+    "Eborolacum",
+    "Avaricum",
+    "Decetia",
+    "Rodumna",
+    "Argentomagus",
+    "Arvernium",
+    "Durotincum",
+    "Indiciacum",
+    "Uxellodunum",
+    "Vienna",
+    "Solonium"
+  ],
+  "Vienna": [
+    "Rodumna",
+    "Cabillonum",
+    "Brioratis",
+    "Genava",
+    "Axima",
+    "Vienna",
+    "Solonium"
+  ],
+  "Cabillonum": [
+    "Alesia",
+    "Decetia",
+    "Cabillonum"
+  ],
+  "Limonum": [
+    "Ambilatrium",
+    "Limonum",
+    "Maroventum",
+    "Santonium",
+    "Durotincum"
+  ],
+  "Avaricum": [
+    "Ambilatrium",
+    "Ambiacum",
+    "Cenabum",
+    "Avaricum",
+    "Leprosum",
+    "Decetia",
+    "Argentomagus",
+    "Eborolacum"
+  ],
+  "Samarobriva": [
+    "Menapium",
+    "Morinium",
+    "Atrebatium",
+    "Samarobriva",
+    "Viromanduium",
+    "Caletium",
+    "Bellovacium",
+    "Veliocassium",
+    "Suessionium"
+  ],
+  "Treverium": [
+    "Oppidum_Eburonum",
+    "Budoris",
+    "Antunnacum",
+    "Caerosium",
+    "Oppidum_Treverorum",
+    "Tencterium",
+    "Melocabus",
+    "Borbetomagus",
+    "Treverium",
+    "Divodurum",
+    "Helvetium",
+    "Nasium"
+  ],
+  "Nemausus": [
+    "Gabalium",
+    "Tricastinium",
+    "Nemausus",
+    "Avaticium"
+  ],
+  "Eburonium": [
+    "Lugdunum-Menapia",
+    "Sunicium-Texandrium",
+    "Eburonium",
+    "Betasium",
+    "Menapium",
+    "Pleumoxium",
+    "Oppidum_Eburonum",
+    "Antunnacum",
+    "Ceutronium",
+    "Caerosium"
+  ],
+  "Tolosa": [
+    "Uxellodunum",
+    "Gabalium",
+    "Indiciacum",
+    "Tolosa",
+    "Elimberrum",
+    "Andosinium",
+    "Cerretanium",
+    "Illiberis-Ruscino"
+  ],
+  "Narbo": [
+    "Gabalium",
+    "Narbo",
+    "Illiberis-Ruscino"
+  ],
+  "Uxellodunum": [
+    "Argentomagus",
+    "Durotincum",
+    "Limonum",
+    "Santonium",
+    "Petrocorium",
+    "Uxellodunum",
+    "Nitiobrogum"
+  ],
+  "Segustero": [
+    "Axima",
+    "Vienna",
+    "Solonium",
+    "Segustero",
+    "Segusio",
+    "Tricastinium",
+    "Eburodunum",
+    "Carystum",
+    "Nemausus",
+    "Glanum"
+  ],
+  "Genava": [
+    "Vesontio",
+    "Genava",
+    "Sedunium",
+    "Axima"
+  ],
+  "Vesontio": [
+    "Andemantunnum",
+    "Vesontio",
+    "Turicum",
+    "Brenodurum",
+    "Cabillonum",
+    "Eburodunum-Veragria",
+    "Viviscus"
+  ],
+  "Andemantunnum": [
+    "Durocortorum",
+    "Nasium",
+    "Eburobriga",
+    "Tarodunum",
+    "Andemantunnum",
+    "Alesia",
+    "Vesontio"
+  ],
+  "Agedincum": [
+    "Veliocassium",
+    "Lutetia",
+    "Suessionium",
+    "Vindinum",
+    "Iatinum",
+    "Cenabum",
+    "Senonium",
+    "Eburobriga",
+    "Agedincum",
+    "Alesia",
+    "Scoliva",
+    "Decetia"
+  ],
+  "Vorgium": [
+    "Osismium",
+    "Corsiolitum",
+    "Condate",
+    "Venetium",
+    "Condevincum",
+    "Diablintium",
+    "Ambilatrium",
+    "Limonum",
+    "Ambiacum"
+  ],
+  "Suindinum": [
+    "Venellium",
+    "Caletium",
+    "Esuvium",
+    "Lexovium",
+    "Veliocassium",
+    "Vindinum",
+    "Diablintium",
+    "Condate",
+    "Cenabum",
+    "Ambilatrium"
+  ],
+  "Bagacum": [
+    "Menapium",
+    "Pleumoxium",
+    "Nervium",
+    "Ceutronium"
+  ],
+  "Menapium": [
+    "Lugdunum-Menapia",
+    "Menapium",
+    "Morinium"
+  ],
+  "Durocortorum": [
+    "Geidumnium",
+    "Ceutronium",
+    "Durocortorum",
+    "Suessionium"
+  ],
+  "Sotium": [
+    "Coequosa",
+    "Nitiobrogum",
+    "Sotium",
+    "Tarbellium",
+    "Tarusatium",
+    "Elusa",
+    "Uxellodunum",
+    "Elimberrum",
+    "Castrum_Bigerrorum",
+    "Andosinium"
+  ],
+  "Massalia": [
+    "Deciatium",
+    "Glanum",
+    "Avaticium",
+    "Aegitna",
+    "Antipolis",
+    "Massalia"
+  ],
+  "Stalia": [
+    "Clastidium",
+    "Veleia",
+    "Carystum",
+    "Stalia",
+    "Ingaunum",
+    "Apua",
+    "Friniatium"
+  ],
+  "Ingaunum": [
+    "Taurasia",
+    "Carystum",
+    "Eburodunum",
+    "Deciatium",
+    "Intimilium",
+    "Ingaunum"
+  ],
+  "Mediolanum": [
+    "Comum",
+    "Oscela",
+    "Eporedia",
+    "Mediolanum",
+    "Taurasia",
+    "Clastidium",
+    "Brixia",
+    "Acerrae",
+    "Mantua",
+    "Veleia",
+    "Mutina"
+  ],
+  "Patavium": [
+    "Saevatium-Laiancium",
+    "Teurnia",
+    "Altinum",
+    "Oppidum_Catalorum",
+    "Patavium",
+    "Ateste",
+    "Mantua",
+    "Atria"
+  ],
+  "Bononia": [
+    "Mantua",
+    "Mutina",
+    "Bononia",
+    "Spina",
+    "Apua",
+    "Sarsina"
+  ],
+  "Brixia": [
+    "Comum",
+    "Camunnium",
+    "Patavium",
+    "Brixia",
+    "Verona",
+    "Ateste",
+    "Mantua"
+  ],
+  "Taurasia": [
+    "Axima",
+    "Salassium",
+    "Eporedia",
+    "Segusio",
+    "Taurasia",
+    "Eburodunum",
+    "Carystum"
+  ],
+  "Rucinatium": [
+    "Boiodurum",
+    "Furgisatis",
+    "Alcimoennis",
+    "Sorviodurum",
+    "Rucinatium",
+    "Cambodunum",
+    "Catenatium",
+    "Bedacum",
+    "Lentia",
+    "Damasia",
+    "Gamavodurum",
+    "Turicum",
+    "Brigantium-Alpes",
+    "Ambisontium",
+    "Vennonium"
+  ],
+  "Isarcium-Brixentium": [
+    "Catenatium",
+    "Damasia",
+    "Veldidena",
+    "Brigantium-Alpes",
+    "Ambisontium",
+    "Vennonium",
+    "Isarcium-Brixenetium",
+    "Camunnium",
+    "Oscela",
+    "Comum",
+    "Patavium"
+  ],
+  "Oscela": [
+    "Brenodurum",
+    "Oscela",
+    "Sedunium",
+    "Comum",
+    "Salassium",
+    "Mediolanum"
+  ],
+  "Noreia": [
+    "Furgisatis",
+    "Eburodunum-Boihaemum",
+    "Mediolanium",
+    "Lentia",
+    "Gamavodurum",
+    "Scarbantia",
+    "Noreia",
+    "Poetovio",
+    "Ambisontium",
+    "Saevatium-Laiancium",
+    "Teurnia",
+    "Isarcium-Brixenetium",
+    "Oppidum_Catalorum",
+    "Carnium",
+    "Acervo",
+    "Nauportos"
+  ],
+  "Eburodunum-Boihaemum": [
+    "Zumium",
+    "Budorgis",
+    "Calisia",
+    "Coridorgis",
+    "Eburum",
+    "Eburodunum-Boihaemum",
+    "Singone",
+    "Mediolanium",
+    "Lentia",
+    "Anavum",
+    "Scarbantia",
+    "Ara_Bona"
+  ],
+  "Asanca": [
+    "Calisia",
+    "Anartium",
+    "Asanca",
+    "Oppidum_Anartorum",
+    "Parienna",
+    "Singone",
+    "Anavum",
+    "Eraviscium"
+  ],
+  "Menosgada": [
+    "Variscium",
+    "Marvingium",
+    "Canduum",
+    "Gravionarium",
+    "Locoritum",
+    "Melocabus",
+    "Menosgada",
+    "Strevinta",
+    "Borbetomagus",
+    "Helvetium"
+  ],
+  "Devona": [
+    "Melocabus",
+    "Borbetomagus",
+    "Helvetium",
+    "Tarodunum",
+    "Riusiava",
+    "Nasium",
+    "Vesontio",
+    "Turicum"
+  ],
+  "Furgisatis": [
+    "Menosgada",
+    "Coridorgis",
+    "Furgisatis",
+    "Eburodunum-Boihaemum",
+    "Helvetium",
+    "Alcimoennis",
+    "Boiodurum",
+    "Riusiava",
+    "Rucinatium"
+  ],
+  "Castrum_Anartorum": [
+    "Oppidum_Anartorum",
+    "Castrum_Anartorum",
+    "Parienna",
+    "Eraviscium",
+    "Oppidum_Teuriscorum",
+    "Bormanum"
+  ],
+  "Camelodunum": [
+    "Castrum_Icenorum",
+    "Oppidum_Corieltauviorum",
+    "Oppidum_Catuvellaunorum",
+    "Oppidum_Trinobantium",
+    "Castrum_Trinobantium"
+  ],
+  "Oppidum_Brigantum": [
+    "Castrum_Itunae",
+    "Brigantium",
+    "Castrum_Brigantum",
+    "Oppidum_Brigantum"
+  ],
+  "Castrum_Caledoniorum": [
+    "Castrum_Haemodaeorum",
+    "Castrum_Orcadum",
+    "Castrum_Hebudum",
+    "Castrum_Smertarum",
+    "Castrum_Cornaviorum",
+    "Castrum_Lugiorum",
+    "Castrum_Carnonacarum",
+    "Castrum_Caledoniorum",
+    "Castrum_Vacomagorum",
+    "Castrum_Taexalorum",
+    "Castrum_Damnoniorum",
+    "Castrum_Epidiorum"
+  ],
+  "Ratostabius": [
+    "Castrum_Demetarum",
+    "Oppidum_Ordovicum",
+    "Oppidum_Silurum",
+    "Ratostabius"
+  ],
+  "Ivernis": [
+    "Rhaeba",
+    "Dunum",
+    "Ivernis"
+  ],
+  "Castrum_Cantiacorum": [
+    "Oppidum_Reginorum",
+    "Castrum_Catuvellaunorum",
+    "Castrum_Reginorum",
+    "Castrum_Cantiacorum",
+    "Oppidum_Cantiacorum"
+  ],
+  "Durotrigium": [
+    "Oppidum_Silurum",
+    "Castrum_Dobunnorum",
+    "Oppidum_Dobunnorum",
+    "Oppidum_Reginorum",
+    "Durotrigium",
+    "Sorviodunum",
+    "Castrum_Durotrigum",
+    "Oppidum_Durotrigum"
+  ],
+  "Oppidum_Dumnoniorum": [
+    "Castrum_Dumnoniorum",
+    "Oppidum_Dumnoniorum",
+    "Dumnonium",
+    "Durotrigium"
+  ],
+  "Castrum_Ordovicum": [
+    "Brigantium",
+    "Castrum_Monae",
+    "Castrum_Deceanglorum",
+    "Castrum_Cornoviorum",
+    "Oppidum_Brigantum",
+    "Castrum_Ordovicum",
+    "Oppidum_Ordovicum",
+    "Viroconium",
+    "Oppidum_Silurum"
+  ],
+  "Otadinium": [
+    "Castrum_Otadinorum",
+    "Castrum_Damnoniorum",
+    "Bremenium",
+    "Castrum_Novantarum",
+    "Castrum_Itunae",
+    "Brigantium"
+  ],
+  "Catuvellaunium": [
+    "Oppidum_Brigantum",
+    "Oppidum_Corieltauviorum",
+    "Castrum_Corieltauviorum",
+    "Viroconium",
+    "Oppidum_Catuvellaunorum",
+    "Castrum_Icenorum",
+    "Catuvellaunium",
+    "Castrum_Catuvellaunorum",
+    "Castrum_Trinobantium"
+  ],
+  "Eblana": [
+    "Rhaeba",
+    "Laberus",
+    "Dunum"
+  ],
+  "Magnata": [
+    "Regia",
+    "Rhaeba",
+    "Castrum_Monaodum"
+  ],
+  "Susudata": [
+    "Cistuia",
+    "Marionis",
+    "Susudata",
+    "Ascalingium",
+    "Mersovium",
+    "Galaegia",
+    "Marvingium",
+    "Variscium"
+  ],
+  "Gautum": [
+    "Chaedinium",
+    "Suionium",
+    "Gutum",
+    "Castrum_Gutarum",
+    "Hillevionum",
+    "Oppidum_Gutarum",
+    "Favonaeum-Firaesium"
+  ],
+  "Venedium": [
+    "Aestium",
+    "Veltaeum",
+    "Venedium",
+    "Galindium"
+  ],
+  "Ascalingium": [
+    "Marionis",
+    "Tulifurdum",
+    "Ascalingium",
+    "Tulisurgium"
+  ],
+  "Finnium": [
+    "Finnium",
+    "Carbonium",
+    "Veltaeum",
+    "Castrum_Osiorum"
+  ],
+  "Leucaristus": [
+    "Bunitium",
+    "Scurgum",
+    "Coeonoenum",
+    "Helveconium",
+    "Ascaucalis",
+    "Manimium",
+    "Leucaristus",
+    "Mugilonium-Sibinium",
+    "Galaegia",
+    "Didunium",
+    "Zumium",
+    "Calisia"
+  ],
+  "Fabiranum": [
+    "Fabiranum",
+    "Ampsivarium",
+    "Tecelia",
+    "Marionis",
+    "Chasuarium",
+    "Tulifurdum",
+    "Siatutanda",
+    "Ascalingium",
+    "Munitium"
+  ],
+  "Cimbrium": [
+    "Cimbrium",
+    "Teutonium",
+    "Eudosium",
+    "Harudium",
+    "Nuithonium",
+    "Suardonium"
+  ],
+  "Scurgum": [
+    "Atmonium",
+    "Scurgum",
+    "Bunitium",
+    "Ascaucalis",
+    "Manimium"
+  ],
+  "Marionis": [
+    "Coeonoenum",
+    "Avionium",
+    "Reudignium",
+    "Cistuia",
+    "Marionis",
+    "Fabiranum",
+    "Susudata"
+  ],
+  "Frisium": [
+    "Sturium-Marsacium",
+    "Frisium",
+    "Ampsivarium",
+    "Lugdunum-Menapia"
+  ],
+  "Avionium": [
+    "Eudosium",
+    "Anglium",
+    "Avionium",
+    "Marionis"
+  ],
+  "Luppia": [
+    "Bicurgium",
+    "Tulisurgium",
+    "Canduum",
+    "Marvingium",
+    "Variscium"
+  ],
+  "Lupfurdum": [
+    "Galaegia",
+    "Mugilonium-Sibinium",
+    "Variscium",
+    "Redintuinum",
+    "Zumium",
+    "Strevinta",
+    "Budorgis",
+    "Coridorgis"
+  ],
+  "Aestium": [
+    "Aestium",
+    "Venedium",
+    "Atmonium",
+    "Galindium",
+    "Ascaucalis"
+  ],
+  "Sugambrium": [
+    "Chattuarium",
+    "Frisium",
+    "Teuderium",
+    "Sunicium-Texandrium",
+    "Siatutanda",
+    "Lugdunum-Menapia",
+    "Asciburgium",
+    "Munitium",
+    "Eburonium",
+    "Betasium",
+    "Alisum",
+    "Tecelia",
+    "Sugambrium"
+  ],
+  "Hillevionum": [
+    "Hillevionum",
+    "Daucionum",
+    "Favonaeum-Firaesium",
+    "Burgundium"
+  ],
+  "Rugium": [
+    "Rugium",
+    "Chaedinium"
+  ],
+  "Suionium": [
+    "Sitonium",
+    "Suionium",
+    "Castrum_Gutarum"
+  ],
+  "Arctaunum": [
+    "Alisum",
+    "Mattium",
+    "Betasium",
+    "Sugambrium",
+    "Canduum",
+    "Budoris",
+    "Oppidum_Eburonum",
+    "Arctaunum",
+    "Tencterium",
+    "Melocabus"
+  ],
+  "Aquincum": [
+    "Anavum",
+    "Ara_Bona",
+    "Aquincum",
+    "Bormanum",
+    "Oppidum_Eraviscorum",
+    "Sopianae",
+    "Tapae",
+    "Arcidava"
+  ],
+  "Singidunum": [
+    "Arcidava",
+    "Singidounon",
+    "Akouminkon",
+    "Arduba",
+    "Kapedounon"
+  ],
+  "Sirmium": [
+    "Sirmion",
+    "Arcidava",
+    "Cibalae",
+    "Akouminkon"
+  ],
+  "Poetovio": [
+    "Mediolanium",
+    "Lentia",
+    "Scarbantia",
+    "Ara_Bona",
+    "Poetovio",
+    "Tauriscium",
+    "Oppidum_Eraviscorum",
+    "Noreia",
+    "Acervo",
+    "Neviodunum"
+  ],
+  "Segestica": [
+    "Poetovio",
+    "Segestica",
+    "Sopianae",
+    "Neviodunum",
+    "Cibalae",
+    "Metulum",
+    "Arcidava"
+  ],
+  "Nesactium": [
+    "Altinum",
+    "Oppidum_Catalorum",
+    "Tergeste",
+    "Nesactium"
+  ],
+  "Epetion-Salona": [
+    "Promona",
+    "Scardona",
+    "Tragourion",
+    "Epetion-Salona",
+    "Issa"
+  ],
+  "Naissos": [
+    "Singidounon",
+    "Naissos",
+    "Dardanopolis",
+    "Pautalia",
+    "Autariaton_Teichos",
+    "Galabrion_Teichos",
+    "Dardanon_Teichos"
+  ],
+  "Idassa": [
+    "Acervo",
+    "Neviodunum",
+    "Tarsatica",
+    "Metulum",
+    "Athyinites",
+    "Argyruntum",
+    "Scardona"
+  ],
+  "Delmium": [
+    "Segestica",
+    "Splonum",
+    "Cibalae",
+    "Arduba",
+    "Delmium",
+    "Promona",
+    "Autariaton_Teichos",
+    "Narenson_Teichos"
+  ],
+  "Skodra": [
+    "Meteon",
+    "Olkinion",
+    "Galabrion_Teichos",
+    "Skodra"
+  ],
+  "Rhizon": [
+    "Autariaton_Teichos",
+    "Narenson_Teichos",
+    "Epetion-Salona",
+    "Narona",
+    "Rhizon",
+    "Daorson"
+  ],
+  "Kapedounon": [
+    "Kapedounon",
+    "Autariaton_Teichos",
+    "Rhizon"
+  ],
+  "Lissos": [
+    "Dournion",
+    "Galabrion_Teichos",
+    "Skodra",
+    "Lissos",
+    "Hyskana",
+    "Sesarethos",
+    "Epidamnos",
+    "Lychnidos",
+    "Stymbara",
+    "Dimale",
+    "Kreonion",
+    "Pelion"
+  ],
+  "Odryssa": [
+    "Seuthopolis",
+    "Kabyle",
+    "Debelton",
+    "Beroia-Thraike",
+    "Korelon_Teichos",
+    "Bizye",
+    "Philippopolis",
+    "Ouskoudama",
+    "Dion_Teichos",
+    "Salmydessos",
+    "Maroneia",
+    "Apros",
+    "Selymbria"
+  ],
+  "Bylazora": [
+    "Dardanopolis",
+    "Galabrion_Teichos",
+    "Dardanon_Teichos",
+    "Skoupi",
+    "Bylazora",
+    "Stoboi",
+    "Stymbara",
+    "Edessa-Bottiaia"
+  ],
+  "Byzantium": [
+    "Salmydessos",
+    "Selymbria",
+    "Byzantium",
+    "Apros",
+    "Perinthos"
+  ],
+  "Tylis": [
+    "Helis",
+    "Kapidaua",
+    "Tylis",
+    "Kabyle"
+  ],
+  "Oescus": [
+    "Saldensium",
+    "Ratiaria",
+    "Triballon_Teichos",
+    "Oiskos",
+    "Skaidaoua"
+  ],
+  "Kallatis": [
+    "Kapidaua",
+    "Tomis",
+    "Kallatis",
+    "Dionysopolis",
+    "Odessos"
+  ],
+  "Ratiaria": [
+    "Singidounon",
+    "Ratiaria",
+    "Saldensium"
+  ],
+  "Serdica": [
+    "Pautalia",
+    "Triballon_Teichos",
+    "Koilaleton_Teichos",
+    "Serdike",
+    "Philippopolis"
+  ],
+  "Philippopolis": [
+    "Philippopolis",
+    "Beroia-Thraike",
+    "Keirpara",
+    "Dion_Teichos"
+  ],
+  "Istrie": [
+    "Arpis",
+    "Trogodyton_Teichos",
+    "Aigyssos",
+    "Dourostoron",
+    "Istrie"
+  ],
+  "Helis": [
+    "Dourostoron",
+    "Kapidaua",
+    "Argedava",
+    "Helis",
+    "Skaidaoua",
+    "Artakon_Teichos"
+  ],
+  "Apollonia-Pontos": [
+    "Kapidaua",
+    "Tylis",
+    "Mesembria",
+    "Debelton",
+    "Apollonia-Pontos",
+    "Bizye",
+    "Salmydessos"
+  ],
+  "Lysimachia": [
+    "Maroneia",
+    "Apros",
+    "Keirpara",
+    "Nastos",
+    "Kypsela",
+    "Ainos",
+    "Lysimacheia",
+    "Thasos",
+    "Myrina"
+  ],
+  "Amphipolis": [
+    "Herakleia-Sintike",
+    "Keirpara",
+    "Berge",
+    "Philippoi",
+    "Amphipolis"
+  ],
+  "Bessapara": [
+    "Pautalia",
+    "Agrianon_Teichos",
+    "Serdike",
+    "Koilaleton_Teichos",
+    "Bylazora",
+    "Keirpara",
+    "Iamphorynna",
+    "Herakleia-Sintike",
+    "Idomenai"
+  ],
+  "Sarmizegetusa": [
+    "Sarmizegetusa",
+    "Tapae",
+    "Buridava",
+    "Arcidava",
+    "Arcinna",
+    "Zusidava"
+  ],
+  "Tyras": [
+    "Tyragetaike_Kome",
+    "Niosson",
+    "Nikonion",
+    "Tyras",
+    "Arpis"
+  ],
+  "Dacidava": [
+    "Oppidum_Teuriscorum",
+    "Ansamenium",
+    "Predavensium",
+    "Bormanum",
+    "Tapae",
+    "Arcidava",
+    "Drobeta",
+    "Singidounon"
+  ],
+  "Napoca": [
+    "Napoca",
+    "Agathyrson_Taphai",
+    "Rhatacensium",
+    "Ansamenium",
+    "Teuriscium",
+    "Zargidava",
+    "Apulum",
+    "Cumidava",
+    "Sarmizegetusa",
+    "Zusidava"
+  ],
+  "Argidava": [
+    "Zusidava",
+    "Netindava",
+    "Acidava",
+    "Dourostoron",
+    "Drobeta",
+    "Arcinna",
+    "Argedava",
+    "Saldensium",
+    "Skaidaoua"
+  ],
+  "Piroboridaua": [
+    "Agathyrson_Taphai",
+    "Tyragetaike_Kome",
+    "Tamasidava",
+    "Zargidava",
+    "Cumidava",
+    "Arpis",
+    "Dourostoron",
+    "Zusidava",
+    "Trogodyton_Teichos",
+    "Netindava"
+  ],
+  "Carsidava": [
+    "Agathyrson_Taphai",
+    "Vibantarium",
+    "Erakton",
+    "Tamasidava",
+    "Patridava",
+    "Zargidava"
+  ],
+  "Arcobadara": [
+    "Teuriscium",
+    "Oppidum_Teuriscorum",
+    "Agathyrson_Taphai",
+    "Ansamenium"
+  ],
+  "Apollonia-Epeiros": [
+    "Epidamnos",
+    "Dimale",
+    "Apollonia-Epeiros"
+  ],
+  "Thermon": [
+    "Ambrakia",
+    "Thermon",
+    "Stratos",
+    "Argos-Amphilochia",
+    "Leukas",
+    "Naupaktos",
+    "Same",
+    "Oiniadai",
+    "Zakynthos"
+  ],
+  "Pella": [
+    "Bylazora",
+    "Idomenai",
+    "Edessa-Bottiaia",
+    "Pella",
+    "Beroia",
+    "Herakleia_Lynkestis",
+    "Argos_Orestikon",
+    "Phalanna",
+    "Dion"
+  ],
+  "Larissa": [
+    "Argos_Orestikon",
+    "Phalanna",
+    "Aiginion",
+    "Demetrias",
+    "Trikka",
+    "Larissa",
+    "Kichyros",
+    "Argithea",
+    "Pharsalos",
+    "Pherai",
+    "Ktimene",
+    "Thebai_Phthiotides",
+    "Argos-Amphilochia",
+    "Lamia"
+  ],
+  "Orchomenos": [
+    "Elateia",
+    "Orchomenos",
+    "Tanagra",
+    "Thebes"
+  ],
+  "Chalkis": [
+    "Skyros",
+    "Oreos",
+    "Chalkis",
+    "Eretria",
+    "Karystos"
+  ],
+  "Athens": [
+    "Tanagra",
+    "Athens"
+  ],
+  "Corinth": [
+    "Megara",
+    "Sikyon",
+    "Corinth"
+  ],
+  "Aigion": [
+    "Aigion",
+    "Dyme",
+    "Sikyon"
+  ],
+  "Sparta": [
+    "Sparta",
+    "Messene",
+    "Prasiai",
+    "Gytheion"
+  ],
+  "Mytilene": [
+    "Mytilene"
+  ],
+  "Rhodes": [
+    "Rhodes",
+    "Lindos"
+  ],
+  "Thessalonike": [
+    "Berge",
+    "Thessalonike",
+    "Kassandreia",
+    "Akanthos",
+    "Torone"
+  ],
+  "Ambrakia": [
+    "Atintanopolis",
+    "Kichyros",
+    "Passaron",
+    "Dodona",
+    "Argithea",
+    "Ambrakia"
+  ],
+  "Elis": [
+    "Dyme",
+    "Elis",
+    "Olympia"
+  ],
+  "Naxos": [
+    "Naxos",
+    "Delos",
+    "Thera"
+  ],
+  "Knosos": [
+    "Oaxos",
+    "Knosos",
+    "Lato",
+    "Itanos",
+    "Aptera",
+    "Gortyna",
+    "Lyktos",
+    "Hierapytna"
+  ],
+  "Kydonia": [
+    "Polyrrhenia",
+    "Kydonia",
+    "Arsinoe"
+  ],
+  "Argos": [
+    "Argos",
+    "Trozan"
+  ],
+  "Megalopolis": [
+    "Megalopolis",
+    "Orchomenos-Arkadia",
+    "Mantineia",
+    "Lepreon"
+  ],
+  "Argos_Orestikon": [
+    "Stymbara",
+    "Herakleia_Lynkestis",
+    "Pelion",
+    "Argos_Orestikon"
+  ],
+  "Phoinike": [
+    "Dimale",
+    "Kreonion",
+    "Pelion",
+    "Atintanopolis",
+    "Orikon",
+    "Antigoneia-Chaonia",
+    "Phoinike"
+  ],
+  "Olbia": [
+    "Niosson",
+    "Olbia"
+  ],
+  "Skython_Taphai": [
+    "Skythopolis",
+    "Skython_Taphai",
+    "Androphagon_Kome",
+    "Amadoka",
+    "Basilikon_Skython_Taphai"
+  ],
+  "Amadoka": [
+    "Amadoka",
+    "Skython_Taphai",
+    "Androphagon_Kome",
+    "Basilikon_Skython_Taphai",
+    "Niosson",
+    "Trakana"
+  ],
+  "Chersonesos": [
+    "Kerkinitis",
+    "Skythike_Palaiopolis",
+    "Chersonesos"
+  ],
+  "Pantikapaion": [
+    "Pantikapaion",
+    "Theodosia",
+    "Skythike_Palaiopolis"
+  ],
+  "Phanagoreia": [
+    "Phanagoreia",
+    "Ouspe",
+    "Skopelos",
+    "Gorgippia",
+    "Seraka",
+    "Zygopolis"
+  ],
+  "Tanais": [
+    "Basilikon_Skython_Taphai",
+    "Hygreis",
+    "Kremnoi",
+    "Tanais",
+    "Amadoka",
+    "Nauaris",
+    "Gerousa"
+  ],
+  "Seraka": [
+    "Seraka",
+    "Sanaron_Kome",
+    "Hexapolis",
+    "Gerousa",
+    "Ouspe",
+    "Didouron_Kome"
+  ],
+  "Hexapolis": [
+    "Sauromaton_Taphai",
+    "Hexapolis",
+    "Hygreis",
+    "Nauaris",
+    "Gerousa",
+    "Sanaron_Kome",
+    "Didouron_Kome"
+  ],
+  "Skythike_Neapolis": [
+    "Trakana",
+    "Basilikon_Skython_Taphai",
+    "Karkine",
+    "Skythike_Palaiopolis",
+    "Kerkinitis",
+    "Chersonesos",
+    "Lampas"
+  ],
+  "Sarbakon": [
+    "Leinon",
+    "Niosson",
+    "Amadoka",
+    "Agathyrson_Taphai",
+    "Erakton",
+    "Tamasidava",
+    "Tyragetaike_Kome"
+  ],
+  "Azara": [
+    "Gerousa",
+    "Ouspe",
+    "Skopelos",
+    "Gorgippia"
+  ],
+  "Sauromaton_Taphai": [
+    "Basilon_Sauromaton_Taphai",
+    "Sauromaton_Taphai",
+    "Gelonos",
+    "Aorson_Taphai",
+    "Perierbidon_Taphai",
+    "Skythopolis"
+  ],
+  "Skythopolis": [
+    "Melanchlainopolis",
+    "Akibiopolis",
+    "Boruskopolis",
+    "Naskopolis",
+    "Skythopolis",
+    "Sauromaton_Taphai",
+    "Basilikon_Skython_Taphai",
+    "Hygreis"
+  ],
+  "Nikomedia": [
+    "Bithynion",
+    "Nikomedia",
+    "Chalkedon",
+    "Kieros",
+    "Nikaia",
+    "Kios",
+    "Daskyleion",
+    "Dorylaion"
+  ],
+  "Pergamon": [
+    "Lampsakos",
+    "Skepsis",
+    "Daskyleion",
+    "Adramyttion",
+    "Pergamon",
+    "Blaundos",
+    "Thyateira",
+    "Sardis"
+  ],
+  "Ephesos": [
+    "Kyme",
+    "Sardis",
+    "Smyrna",
+    "Magnesia-Sipylos",
+    "Chios",
+    "Erythrai",
+    "Hypaipa",
+    "Ephesos",
+    "Priene",
+    "Miletos"
+  ],
+  "Sardis": [
+    "Daskyleion",
+    "Blaundos",
+    "Thyateira",
+    "Sardis",
+    "Magnesia-Sipylos",
+    "Hypaipa",
+    "Magnesia-Maiandros",
+    "Hierapolis-Charonia",
+    "Seleukeia-Tralleis",
+    "Aphrodisias",
+    "Priene",
+    "Antiocheia-Alabanda"
+  ],
+  "Halikarnassos": [
+    "Kaunos",
+    "Aphrodisias",
+    "Antiocheia-Alabanda",
+    "Stratonikeia",
+    "Mylasa",
+    "Halikarnassos",
+    "Moscaflacopolis",
+    "Kos",
+    "Knidos"
+  ],
+  "Patara": [
+    "Kibyra",
+    "Termessos",
+    "Perge",
+    "Myra",
+    "Isinda",
+    "Tlos",
+    "Limyra",
+    "Telmessos",
+    "Phaselis"
+  ],
+  "Sagalassos": [
+    "Sagalassos",
+    "Antiocheia-Pisidia",
+    "Isinda",
+    "Etenna-Kotenna",
+    "Pednelissos",
+    "Selge",
+    "Kaunos",
+    "Kibyra",
+    "Termessos"
+  ],
+  "Apameia-Kelainai": [
+    "Dorylaion",
+    "Pessinous",
+    "Aizanoi",
+    "Synnada",
+    "Blaundos",
+    "Eukarpia",
+    "Antiocheia-Pisidia",
+    "Toriaion",
+    "Sardis",
+    "Sagalassos",
+    "Apameia-Kelainai",
+    "Hierapolis-Charonia",
+    "Isinda"
+  ],
+  "Ankyra": [
+    "Bloukion",
+    "Gangra",
+    "Tektosagikon_Phrourion",
+    "Peion",
+    "Ankyra",
+    "Gorbeous",
+    "Gordion",
+    "Ouenasa"
+  ],
+  "Ikonion": [
+    "Ikonion",
+    "Laodikeia-Katakekaumene",
+    "Toriaion",
+    "Antiocheia-Pisidia",
+    "Isaura"
+  ],
+  "Side": [
+    "Selge",
+    "Etenna-Kotenna",
+    "Side",
+    "Korakesion"
+  ],
+  "Herakleia-Pontos": [
+    "Sesamos",
+    "Tieion",
+    "Herakleia-Pontos",
+    "Bithynion",
+    "Kieros"
+  ],
+  "Sinope": [
+    "Sinope",
+    "Koloussa",
+    "Pimolisa",
+    "Gadilon"
+  ],
+  "Amaseia": [
+    "Gadilon",
+    "Pimolisa",
+    "Amaseia",
+    "Tibarenikon_Phrourion",
+    "Kabeira"
+  ],
+  "Trapezous": [
+    "Sourion",
+    "Trapezous",
+    "Makronopolis",
+    "Drilaikon_Phrourion",
+    "Kaballa"
+  ],
+  "Mazaka": [
+    "Komana-Pontos",
+    "Anisa",
+    "Mazaka",
+    "Komana-Kappadokia",
+    "Ouenasa",
+    "Garsaoura",
+    "Ikonion",
+    "Tyana",
+    "Kybistra",
+    "Laranda"
+  ],
+  "Tarsos": [
+    "Kastabala",
+    "Komana-Kappadokia",
+    "Mazaka",
+    "Kyrrhos",
+    "Tarsos",
+    "Kybistra",
+    "Mallos",
+    "Issos",
+    "Olbe",
+    "Soloi-Kilikia",
+    "Laranda",
+    "Korakesion",
+    "Seleukeia-Kalykadnos"
+  ],
+  "Kamakh": [
+    "Kaballa",
+    "Makronopolis",
+    "Gymnias",
+    "Chaldaikon_Phrourion",
+    "Mossynoikon_Metropolis",
+    "Karana",
+    "Pontikos_Phourion",
+    "Kamakh",
+    "Erez",
+    "Seltia",
+    "Kamisa",
+    "Anisa"
+  ],
+  "Abydos": [
+    "Lampsakos",
+    "Abydos",
+    "Skepsis",
+    "Alexandreia-Troas",
+    "Adramyttion"
+  ],
+  "Pessinous": [
+    "Nikaia",
+    "Peion",
+    "Dorylaion",
+    "Gordion",
+    "Daskyleion",
+    "Pessinous",
+    "Aizanoi",
+    "Synnada"
+  ],
+  "Taouion": [
+    "Taouion",
+    "Amaseia",
+    "Ekkobriga",
+    "Anisa",
+    "Ouenasa"
+  ],
+  "Melita": [
+    "Melita",
+    "Anisa",
+    "Tomisa",
+    "Komana-Kappadokia",
+    "Mazaka",
+    "Kastabala"
+  ],
+  "Amisos": [
+    "Gadilon",
+    "Themiskyra",
+    "Amisos",
+    "Kotyora",
+    "Kerasous",
+    "Amaseia",
+    "Tibarenikon_Phrourion",
+    "Mossynoikon_Metropolis"
+  ],
+  "Kios": [
+    "Kios",
+    "Kyzikos",
+    "Daskyleion"
+  ],
+  "Isaura": [
+    "Antiocheia-Pisidia",
+    "Ikonion",
+    "Laranda",
+    "Isaura",
+    "Etenna-Kotenna",
+    "Korakesion"
+  ],
+  "Komana-Pontos": [
+    "Amaseia",
+    "Komana-Pontos",
+    "Kabeira",
+    "Kamisa",
+    "Zela"
+  ],
+  "Gangra": [
+    "Koloussa",
+    "Gangra",
+    "Pimolisa",
+    "Kimiata"
+  ],
+  "Antioch": [
+    "Kyrrhos",
+    "Issos",
+    "Antioch",
+    "Seleukeia-Pieria"
+  ],
+  "Paphos": [
+    "Soloi",
+    "Salamis",
+    "Paphos"
+  ],
+  "Sidon": [
+    "Byblos",
+    "Berytos",
+    "Sidon",
+    "Chalkis-Libanos"
+  ],
+  "Damascus": [
+    "Chalkis-Libanos",
+    "Laodikeia-Libanos",
+    "Damascus",
+    "Abai",
+    "Kanatha",
+    "Gamala"
+  ],
+  "Jerusalem": [
+    "Gamala",
+    "Dora",
+    "Abila",
+    "Gadara",
+    "Ioppe",
+    "Samareia",
+    "Pella-Peraia",
+    "Jerusalem",
+    "Madaba",
+    "Hebron"
+  ],
+  "Gaza": [
+    "Ioppe",
+    "Azotos",
+    "Gaza"
+  ],
+  "Pelusion": [
+    "Gaza",
+    "Pelousion",
+    "Eboda",
+    "Tanis",
+    "Heroon_Polis",
+    "Rhaithou",
+    "Arsinoe-Klysma"
+  ],
+  "Salamis": [
+    "Salamis",
+    "Amathous"
+  ],
+  "Arados": [
+    "Arados",
+    "Herakleia-Phoinike"
+  ],
+  "Apameia-Syria": [
+    "Apameia-Syria",
+    "Beroia-Syria",
+    "Laodikeia-Paralos",
+    "Amathe",
+    "Arethousa",
+    "Arados",
+    "Laodikeia-Libanos",
+    "Herakleia-Phoinike",
+    "Damascus",
+    "Palmyra"
+  ],
+  "Tyre": [
+    "Tyre",
+    "Dora"
+  ],
+  "Kyrrhos": [
+    "Kyrrhos",
+    "Doliche",
+    "Zeugma-Kommagene",
+    "Apameia-Zeugma",
+    "Kastabala",
+    "Hierapolis",
+    "Beroia-Syria",
+    "Arimara"
+  ],
+  "Philadelpheia": [
+    "Pella-Peraia",
+    "Bostra",
+    "Philadelpheia",
+    "Madaba"
+  ],
+  "Alexandria": [
+    "Naukratis",
+    "Sais",
+    "Alexandria",
+    "Alexandrou_Parembole"
+  ],
+  "Memphis": [
+    "Myos_Hormos",
+    "Alexandrou_Parembole",
+    "Heroon_Polis",
+    "Arsinoe-Krokodeilon_Polis",
+    "Memphis",
+    "Oxyrhynchos"
+  ],
+  "Ptolemais-Hermeiou": [
+    "Myos_Hormos",
+    "Lykon_Polis",
+    "Panos_Polis",
+    "Lybike_Oasis",
+    "Hibis",
+    "Ptolemais-Hermeiou",
+    "Mikra_Apollonos_Polis"
+  ],
+  "Thebes": [
+    "Myos_Hormos",
+    "Mikra_Apollonos_Polis",
+    "Hibis",
+    "Berenike-Panchrysos",
+    "Thebes-Megale_Diospolis",
+    "Megale_Apollonos_Polis"
+  ],
+  "Kyrene": [
+    "Kyrene",
+    "Marmarike_Oasis",
+    "Tetrapyrgia"
+  ],
+  "Augila": [
+    "Kyrene",
+    "Marmarike_Oasis",
+    "Paraitonion",
+    "Tetrapyrgia",
+    "Alexandrou_Parembole",
+    "Augila",
+    "Automala",
+    "Lybike_Oasis",
+    "Castrum_Psyllorum",
+    "Ammonion",
+    "Hibis",
+    "Sabae"
+  ],
+  "Paraitonion": [
+    "Alexandrou_Parembole",
+    "Paraitonion",
+    "Alexandria"
+  ],
+  "Berenike-Kyrenaike": [
+    "Arsinoe-Kyrenaike",
+    "Ptolemais-Kyrenaike",
+    "Euesperides",
+    "Marmarike_Oasis",
+    "Automala",
+    "Augila"
+  ],
+  "Hermou_Polis": [
+    "Alexandrou_Parembole",
+    "Oxyrhynchos",
+    "Hermou_Polis",
+    "Myos_Hormos",
+    "Lybike_Oasis"
+  ],
+  "Elephantine-Syene": [
+    "Megale_Apollonos_Polis",
+    "Berenike-Panchrysos",
+    "Hibis",
+    "Syene-Elephantine",
+    "Lybike_Oasis",
+    "Tachompso-Pselkis"
+  ],
+  "Tanis": [
+    "Sebennytos-Bousiris",
+    "Mendes-Thmouis",
+    "Tanis",
+    "Sais",
+    "Athribis",
+    "Boubastis",
+    "Heroon_Polis",
+    "Alexandria",
+    "Alexandrou_Parembole",
+    "Myos_Hormos",
+    "Arsinoe-Klysma",
+    "Memphis"
+  ],
+  "Ammonion": [
+    "Marmarike_Oasis",
+    "Alexandrou_Parembole",
+    "Ammonion",
+    "Lybike_Oasis",
+    "Zeszes"
+  ],
+  "Myos_Hormos": [
+    "Myos_Hormos",
+    "Philotera",
+    "Berenike-Panchrysos",
+    "Berenike-Trogodytike"
+  ],
+  "Meroe": [
+    "Tenoupsis",
+    "Sekande",
+    "Meroe",
+    "Araba",
+    "Lybike_Oasis",
+    "Kandragori",
+    "Megabaron_Kome",
+    "Boron",
+    "Sembobitis"
+  ],
+  "Tachompso-Pselkis": [
+    "Lybike_Oasis",
+    "Tachompso-Pselkis",
+    "Berenike-Panchrysos",
+    "Premnis",
+    "Pachora",
+    "Mikra_Primis",
+    "Sabbata"
+  ],
+  "Mikra_Primis": [
+    "Lybike_Oasis",
+    "Mikra_Primis",
+    "Sabbata",
+    "Attena",
+    "Makoua"
+  ],
+  "Napata": [
+    "Sabbata",
+    "Napata",
+    "Boron",
+    "Tenoupsis",
+    "Sekande"
+  ],
+  "Tenoupsis": [
+    "Tenoupsis",
+    "Lybike_Oasis"
+  ],
+  "Ptolemais-Theron": [
+    "Sabbata",
+    "Ptolemais-Theron"
+  ],
+  "Berenike-Deires": [
+    "Sabai",
+    "Berenike-Deire",
+    "Darada",
+    "Aualites"
+  ],
+  "Mosyllon": [
+    "Dioskoridous_Kome",
+    "Aromaton_Emporion",
+    "Apokopa",
+    "Darada",
+    "Mosyllon"
+  ],
+  "Opone": [
+    "Apokopa",
+    "Opone",
+    "Darada"
+  ],
+  "Auxoume": [
+    "Adaboulopolis",
+    "Koloe",
+    "Boron",
+    "Auxoume",
+    "Asachaiopolis",
+    "Megabaron_Kome"
+  ],
+  "Megabaron_Kome": [
+    "Megabaron_Kome",
+    "Boron",
+    "Sembobitis",
+    "Aithiopikon_Kome"
+  ],
+  "Sabbata": [
+    "Berenike-Panchrysos",
+    "Berenike-Trogodytike",
+    "Sabbata",
+    "Boron",
+    "Adaboulopolis",
+    "Meroe",
+    "Darada",
+    "Koloe",
+    "Sabai",
+    "Mosyllon",
+    "Megabaron_Kome",
+    "Malao"
+  ],
+  "Petra": [
+    "Petra",
+    "Madaba",
+    "Barathena",
+    "Hebron",
+    "Eboda",
+    "Aramaua",
+    "Baklanaza",
+    "Ailana",
+    "Rhaithou"
+  ],
+  "Bostra": [
+    "Barathena",
+    "Kanatha",
+    "Bostra",
+    "Doumaitha"
+  ],
+  "Palmyra": [
+    "Thapsakos",
+    "Nikephorion",
+    "Balagala",
+    "Arimara",
+    "Rhambaion_Kome",
+    "Apameia-Syria",
+    "Barathena",
+    "Amathe",
+    "Reganna",
+    "Palmyra",
+    "Arethousa",
+    "Damascus"
+  ],
+  "Gerrha": [
+    "Koromanis",
+    "Moscaflacopolis",
+    "Labai",
+    "Sabai-Chattenia",
+    "Gerrha"
+  ],
+  "Marib": [
+    "Karna",
+    "Nestos-Arabia",
+    "Athloula",
+    "Marib",
+    "Menambis",
+    "Tamna",
+    "Marasdou",
+    "Sakatia",
+    "Mariama",
+    "Sapphar"
+  ],
+  "Omana": [
+    "Omana"
+  ],
+  "Karna": [
+    "Moscaflacopolis",
+    "Sabbatha",
+    "Karna",
+    "Negrana",
+    "Thoumata",
+    "Naskos",
+    "Sakatia",
+    "Menambis",
+    "Tamna",
+    "Nestos-Arabia"
+  ],
+  "Tamna": [
+    "Sabbatha",
+    "Tamna",
+    "Karipeta",
+    "Kane",
+    "Sapphar",
+    "Mesala"
+  ],
+  "Sabbatha": [
+    "Nagara_Metropolis",
+    "Moscha_Limen",
+    "Sadasara",
+    "Sabbatha",
+    "Syagros",
+    "Thabba",
+    "Kane",
+    "Mesala"
+  ],
+  "Egra": [
+    "Barathena",
+    "Baklanaza",
+    "Geia",
+    "Aramaua",
+    "Ailana",
+    "Leuke_Kome",
+    "Egra",
+    "Ausara"
+  ],
+  "Iathrippa": [
+    "Thaima",
+    "Ausara",
+    "Iathrippa",
+    "Makoraba",
+    "Baklanaza",
+    "Badeo"
+  ],
+  "Sapphar": [
+    "Sapphar",
+    "Marib",
+    "Tamna",
+    "Mesala",
+    "Kane",
+    "Saue",
+    "Arabias_Emporion"
+  ],
+  "Saue": [
+    "Badeo",
+    "Thoumata",
+    "Sakatia",
+    "Menambis",
+    "Marib",
+    "Sapphar",
+    "Saue",
+    "Mouza"
+  ],
+  "Kryptos_Limen": [
+    "Omana",
+    "Kryptos_Limen",
+    "Batrasauaue",
+    "Omanon_Emporion",
+    "Nagara_Metropolis",
+    "Moscha_Limen"
+  ],
+  "Kathara": [
+    "Kathara",
+    "Tylos",
+    "Omana",
+    "Moscaflacopolis",
+    "Gerrha"
+  ],
+  "Sarapana": [
+    "Seraka",
+    "Sanaron_Kome",
+    "Naana",
+    "Heniochon_Kome",
+    "Sarapana",
+    "Iberopolis",
+    "Kytaia",
+    "Dioskourias",
+    "Kolchopolis",
+    "Sourion",
+    "Baraza",
+    "Phasis",
+    "Moschon_Kome",
+    "Taochikon_Phrourion"
+  ],
+  "Harmozike-Seusamora": [
+    "Sanaron_Kome",
+    "Harmozike-Seusamora",
+    "Chabala",
+    "Bakchia",
+    "Iberopolis",
+    "Baraza",
+    "Ptoua",
+    "Taochikon_Phrourion",
+    "Olane",
+    "Armavir",
+    "Moschon_Kome",
+    "Chalybikon_Phrourion",
+    "Artageira",
+    "Kaballa"
+  ],
+  "Chabala": [
+    "Didouron_Kome",
+    "Legaiopolis",
+    "Chabala",
+    "Bakchia",
+    "Chadacha",
+    "Sakasenopolis",
+    "Ptoua",
+    "Arsarata"
+  ],
+  "Armavir": [
+    "Gorniai",
+    "Ptoua",
+    "Olane",
+    "Armavir",
+    "Sakasenopolis",
+    "Artageira",
+    "Chalybikon_Phrourion",
+    "Gymnias",
+    "Seltia",
+    "Thospia",
+    "Kapouta",
+    "Erez",
+    "Karkathiokerta",
+    "Sareisa-Satalka"
+  ],
+  "Gazaka": [
+    "Armavir",
+    "Arsarata",
+    "Kyropolis-Kadousia",
+    "Kapouta",
+    "Ouera",
+    "Pinaka",
+    "Gazaka",
+    "Adrapana",
+    "Arbela",
+    "Arrhapa"
+  ],
+  "Thospia": [
+    "Thospia",
+    "Pinaka",
+    "Seltia"
+  ],
+  "Karkathiokerta": [
+    "Erez",
+    "Kamakh",
+    "Karkathiokerta",
+    "Seltia",
+    "Tomisa",
+    "Anisa",
+    "Antiocheia-Mygdonia"
+  ],
+  "Nymphaios": [
+    "Tomisa",
+    "Nymphaios",
+    "Melita",
+    "Zeugma-Kommagene",
+    "Edessa"
+  ],
+  "Dioskourias": [
+    "Seraka",
+    "Zygopolis",
+    "Heniochon_Kome",
+    "Pityous",
+    "Dioskourias"
+  ],
+  "Arsarata": [
+    "Arsarata",
+    "Kyropolis-Kadousia"
+  ],
+  "Sareisa": [
+    "Sareisa-Satalka",
+    "Pinaka",
+    "Karkathiokerta",
+    "Kapouta",
+    "Arbela",
+    "Ninos"
+  ],
+  "Edessa": [
+    "Karkathiokerta",
+    "Ichnai",
+    "Edessa",
+    "Antiocheia-Mygdonia",
+    "Anthemousias",
+    "Assur",
+    "Karrhai",
+    "Nikephorion",
+    "Thapsakos",
+    "Doura-Europos",
+    "Balagala"
+  ],
+  "Arbela": [
+    "Pinaka",
+    "Arbela",
+    "Ninos",
+    "Sandrakai",
+    "Arrhapa",
+    "Assur",
+    "Seleucia"
+  ],
+  "Doura-Europos": [
+    "Doura-Europos",
+    "Assur",
+    "Balagala",
+    "Is",
+    "Seleucia",
+    "Charmande",
+    "Reganna"
+  ],
+  "Seleucia": [
+    "Seleucia",
+    "Thelme",
+    "Artemita",
+    "Sittake",
+    "Is",
+    "Susa",
+    "Charmande",
+    "Apameia-Sittakene",
+    "Babylon"
+  ],
+  "Uruk": [
+    "Seleucia",
+    "Apameia-Sittakene",
+    "Nippur",
+    "Uruk",
+    "Seleukeia-Erythtreia"
+  ],
+  "Alexandreia-Charax": [
+    "Susa",
+    "Alexandreia-Charax",
+    "Seleukeia-Soloke",
+    "Uruk",
+    "Seleukeia-Erythtreia",
+    "Teredon",
+    "Themne"
+  ],
+  "Susa": [
+    "Arrhapa",
+    "Chala",
+    "Antiocheia-Media",
+    "Ouxion_Kome",
+    "Artemita",
+    "Gabai",
+    "Seleucia",
+    "Kyrtion_Kome",
+    "Seleukeia-Soloke",
+    "Susa",
+    "Persepolis"
+  ],
+  "Babylon": [
+    "Birande",
+    "Charmande",
+    "Babylon",
+    "Seleucia",
+    "Nippur",
+    "Themne"
+  ],
+  "Antiocheia-Mygdonia": [
+    "Antiocheia-Mygdonia",
+    "Pinaka",
+    "Ninos",
+    "Ichnai",
+    "Assur"
+  ],
+  "Ekbatana": [
+    "Amardion_Kome",
+    "Ekbatana",
+    "Hekatompylos",
+    "Kyropolis-Kadousia",
+    "Adrapana",
+    "Kapouta",
+    "Choana",
+    "Antiocheia-Media",
+    "Gabai",
+    "Chala",
+    "Kyrtion_Kome",
+    "Seleukeia-Soloke"
+  ],
+  "Europos-Rhagai": [
+    "Tapyron_Kome",
+    "Europos-Rhagai",
+    "Amardion_Kome",
+    "Apameia-Rhagiane",
+    "Hekatompylos",
+    "Ekbatana",
+    "Choana"
+  ],
+  "Zadrakarta": [
+    "Derbikon_Taphai",
+    "Parnon_Taphai",
+    "Tapyron_Kome",
+    "Zadrakarta",
+    "Sirynx-Tambrax",
+    "Amardion_Kome",
+    "Kyropolis-Kadousia",
+    "Europos-Rhagai",
+    "Ouera"
+  ],
+  "Hekatompylos": [
+    "Apauarktike",
+    "Derbikon_Taphai",
+    "Tapyron_Kome",
+    "Sousia",
+    "Tagai",
+    "Zadrakarta",
+    "Hekatompylos"
+  ],
+  "Persepolis": [
+    "Gabai",
+    "Pasargadai",
+    "Persepolis",
+    "Antiocheia-Persis",
+    "Seleukeia-Soloke",
+    "Zetis"
+  ],
+  "Antiocheia-Margiane": [
+    "Chorasmia",
+    "Antiocheia-Margiane",
+    "Baktra-Zariaspa",
+    "Apauarktike",
+    "Alexandreia-Ariane"
+  ],
+  "Alexandreia-Ariane": [
+    "Alexandreia-Ariane",
+    "Aornos-Baktria",
+    "Baktra-Zariaspa",
+    "Arachotos",
+    "Antiocheia-Margiane",
+    "Achaia_Polis",
+    "Alexandreia-Drangiane",
+    "Sousia",
+    "Prophthasia",
+    "Hekatompylos"
+  ],
+  "Alexandreia-Prophthasia": [
+    "Alexandreia-Drangiane",
+    "Alexandreia-Ariane",
+    "Prophthasia",
+    "Sousia",
+    "Alexandreia-Arachosia",
+    "Poura",
+    "Alexandreia-Karmania"
+  ],
+  "Poura": [
+    "Poura",
+    "Alexandreia-Arachosia",
+    "Aristobathra",
+    "Alexandreia-Drangiane",
+    "Alexandreia-Oreitaia",
+    "Alexandrou_Limen",
+    "Alexandreia-Karmania"
+  ],
+  "Alexandreia-Arachosia": [
+    "Ortospana",
+    "Arachotos",
+    "Alexandreia-Boukephala",
+    "Alexandreia-Arachosia",
+    "Alexandreia-Drangiane",
+    "Poura"
+  ],
+  "Gabai": [
+    "Hekatompylos",
+    "Choana",
+    "Alexandreia-Karmania",
+    "Gabai",
+    "Kyrtion_Kome",
+    "Pasargadai"
+  ],
+  "Alexandreia-Karmania": [
+    "Hekatompylos",
+    "Alexandreia-Karmania",
+    "Sousia",
+    "Gabai",
+    "Persepolis",
+    "Zetis",
+    "Poura"
+  ],
+  "Baktra-Zariaspa": [
+    "Indikomordana",
+    "Nautaka",
+    "Alexandreia-Oxeiane",
+    "Oxeiana",
+    "Baktra-Zariaspa",
+    "Aornos-Baktria",
+    "Alexandreia-Kaukasia",
+    "Antiocheia-Margiane",
+    "Alexandreia-Ariane",
+    "Arachotos"
+  ],
+  "Baktra_Basileion": [
+    "Lithinos_Pyrgos",
+    "Baktra_Basileion",
+    "Moscaflacopolis",
+    "Indikomordana",
+    "Marouka",
+    "Darapsa",
+    "Baktra-Zariaspa",
+    "Aornos-Baktria"
+  ],
+  "Marakanda": [
+    "Amyrgion_Kome",
+    "Marakanda",
+    "Nautaka",
+    "Chorasmia"
+  ],
+  "Antiocheia-Skythia": [
+    "Sakon_Taphai",
+    "Amyrgion_Kome",
+    "Lithinos_Pyrgos",
+    "Moscaflacopolis",
+    "Antiocheia-Skythia",
+    "Tsats",
+    "Marakanda",
+    "Kyropolis"
+  ],
+  "Alexandreia-Kaukasia": [
+    "Moscaflacopolis",
+    "Alexandreia-Kaukasia",
+    "Nagara-Nysa",
+    "Arigaion",
+    "Ortospana",
+    "Aornos-Baktria"
+  ],
+  "Trybaktra": [
+    "Marakanda",
+    "Trybaktra",
+    "Chorasmia",
+    "Antiocheia-Margiane",
+    "Baktra-Zariaspa"
+  ],
+  "Taxila": [
+    "Moscaflacopolis",
+    "Taxila",
+    "Alexandreia-Boukephala",
+    "Aornos-Embolima",
+    "Bazira-Ora",
+    "Nikaia-Hydaspes",
+    "Massaga",
+    "Nagara-Nysa",
+    "Glausaiopolis",
+    "Peukelaotis",
+    "Arigaion",
+    "Arachotos",
+    "Pimprama",
+    "Sopeithopolis",
+    "Sibopolis",
+    "Amakatis",
+    "Agalassopolis",
+    "Kaspeira",
+    "Malliopolis",
+    "Abastaniopolis",
+    "Alexandreia-Arachosia",
+    "Alexandreia-Indos"
+  ],
+  "Alexandreia-Indos": [
+    "Kaspeira",
+    "Alexandreia-Indos",
+    "Antachara",
+    "Alexandreia-Arachosia",
+    "Alexandreia-Sogdia",
+    "Aristobathra",
+    "Bardaxema"
+  ],
+  "Patala": [
+    "Aristobathra",
+    "Antachara",
+    "Sindomana",
+    "Binagara",
+    "Poura",
+    "Patala",
+    "Bardaxema",
+    "Alexandrou_Limen"
+  ],
+  "Sangala": [
+    "Audoumbara",
+    "Moscaflacopolis",
+    "Nikaia-Hydaspes",
+    "Kounindapolis",
+    "The_Road_to_Palibothra",
+    "Pimprama",
+    "Kaspeira",
+    "The_Road_to_Methora",
+    "Sangala",
+    "Amakatis",
+    "Antachara"
+  ],
+  "Chorasmia": [
+    "Alikodra",
+    "Attason_Taphai",
+    "Chorasmia",
+    "Chomara",
+    "Marakanda"
+  ],
+  "Nisa": [
+    "Xandon_Taphai",
+    "Parnon_Taphai",
+    "Nisa",
+    "Apauarktike",
+    "Derbikon_Taphai",
+    "Tapyron_Kome"
+  ],
+  "Tsats": [
+    "Amyrgion_Kome",
+    "Tsats"
+  ],
+  "Talats": [
+    "Sakon_Taphai",
+    "Amyrgion_Kome"
+  ],
+  "Sakon_Taphai": [
+    "Sakaraulon_Taphai",
+    "Sakon_Taphai",
+    "Massageton_Taphai",
+    "Amyrgion_Kome"
+  ],
+  "Parnon_Taphai": [
+    "Xandon_Taphai",
+    "Parnon_Taphai",
+    "Apasiakon_Taphai",
+    "Derbikon_Taphai"
+  ],
+  "Massageton_Taphai": [
+    "Issedonon_Taphai",
+    "Massageton_Taphai",
+    "Argippon_Taphai",
+    "Attason_Taphai",
+    "Anatolon_Skython_Taphai",
+    "Amyrgion_Kome",
+    "Marakanda",
+    "Tsats",
+    "Chorasmia"
+  ],
+  "Kasia": [
+    "Sakon_Taphai",
+    "Arshi",
+    "Nroyso",
+    "Qudsril",
+    "Kushi",
+    "Moscaflacopolis",
+    "Auxakia",
+    "Numden",
+    "Qudsdoqok",
+    "Kasia",
+    "Kadota",
+    "Qamnur",
+    "Chaurana",
+    "Soita",
+    "Mpraysnrar",
+    "Amyrgion_Kome",
+    "Lithinos_Pyrgos",
+    "Qagranqok"
+  ],
+  "Moscaflacopolis": [
+    "Chaedinium",
+    "Sitonium",
+    "Carbonium",
+    "Salium",
+    "Asaiopolis",
+    "Argippon_Taphai",
+    "Issedonon_Taphai",
+    "Massageton_Taphai",
+    "Suionium",
+    "Finnium",
+    "Melanchlainopolis",
+    "Anatolon_Skython_Taphai",
+    "Thyssageton_Taphai",
+    "Veltaeum",
+    "Careotaeum",
+    "Boruskopolis",
+    "Basilon_Sauromaton_Taphai",
+    "Venedium",
+    "Stavanium",
+    "Gelonos",
+    "Sauromaton_Taphai",
+    "Akibiopolis",
+    "Aorson_Taphai",
+    "Sudenium",
+    "Galindium",
+    "Moscaflacopolis",
+    "Skythopolis",
+    "Bariyqok",
+    "Gerrhon_Taphai",
+    "Perierbidon_Taphai",
+    "Igyllionium",
+    "Hirrium",
+    "Apasiakon_Taphai",
+    "Lithinos_Pyrgos",
+    "Skython_Taphai",
+    "Baktra_Basileion",
+    "Manimium",
+    "Didunium",
+    "Neuron_Taphai",
+    "Androphagon_Kome",
+    "Carrodunum-Ambronia",
+    "Hexapolis",
+    "Coisstobocum",
+    "Leinon",
+    "Agathyrson_Taphai",
+    "Alikodra",
+    "Xandon_Taphai",
+    "Chomara",
+    "Anartium",
+    "Maetonium",
+    "Oppidum_Anartorum",
+    "Clepidava",
+    "Chorasmia",
+    "Castrum_Anartorum",
+    "Erakton",
+    "Vibantarium",
+    "Alexandreia-Kaukasia",
+    "Parnon_Taphai",
+    "Antiocheia-Margiane",
+    "Charmande",
+    "Reganna",
+    "Birande",
+    "Barathena",
+    "Themne",
+    "Doumaitha",
+    "Miglis",
+    "Seleukeia-Erythtreia",
+    "Castrum_Gaetulorum",
+    "Castrum_Baniurarum",
+    "Castrum_Dararum",
+    "Koromanis",
+    "Omana",
+    "Castrum_Autololum",
+    "Thalubath",
+    "Batrasauaue",
+    "Castrum_Perorsorum",
+    "Castrum_Pharusiorum",
+    "Garama",
+    "Geia",
+    "Gerrha",
+    "Nagara_Metropolis",
+    "Makoraba",
+    "Kathara",
+    "Thaima",
+    "Baklanaza",
+    "Egra",
+    "Ausara",
+    "Gira",
+    "Castrum_Suburporium",
+    "Thoumata",
+    "Sabae",
+    "Lybike_Oasis",
+    "Bedirum",
+    "Sabbatha",
+    "Badeo",
+    "Aithiopikon_Kome",
+    "Negrana",
+    "Nigira_Metropolis",
+    "Cuphe",
+    "Vellegia",
+    "Thamondacana",
+    "Sembobitis",
+    "Anatolians_Settlement"
+  ],
+  "Eddopolis": [
+    "Thracians_Settlement"
+  ]
+}

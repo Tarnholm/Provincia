@@ -1,0 +1,11752 @@
+{
+  "Apulia": [
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 157,
+      "y": 153
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 166,
+      "y": 155
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 157,
+      "y": 151
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 163,
+      "y": 154
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 159,
+      "y": 152
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 165,
+      "y": 156
+    }
+  ],
+  "Bruttium": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 163,
+      "y": 164
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 166,
+      "y": 166
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 162,
+      "y": 169
+    },
+    {
+      "type": "pitch",
+      "amount": 3,
+      "x": 164,
+      "y": 167
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 161,
+      "y": 165
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 163,
+      "y": 165
+    }
+  ],
+  "Calabria": [
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 173,
+      "y": 162
+    },
+    {
+      "type": "honey",
+      "amount": 3,
+      "x": 171,
+      "y": 157
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 173,
+      "y": 159
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 168,
+      "y": 157
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 174,
+      "y": 160
+    }
+  ],
+  "Campania": [
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 148,
+      "y": 153
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 152,
+      "y": 155
+    },
+    {
+      "type": "wine",
+      "amount": 4,
+      "x": 150,
+      "y": 152
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 153,
+      "y": 157
+    },
+    {
+      "type": "sulphur",
+      "amount": 2,
+      "x": 154,
+      "y": 157
+    },
+    {
+      "type": "glass",
+      "amount": 2,
+      "x": 150,
+      "y": 154
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 152,
+      "y": 157
+    }
+  ],
+  "Etruria": [
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 134,
+      "y": 140
+    },
+    {
+      "type": "marble",
+      "amount": 4,
+      "x": 131,
+      "y": 133
+    },
+    {
+      "type": "iron",
+      "amount": 3,
+      "x": 131,
+      "y": 142
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 138,
+      "y": 137
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 138,
+      "y": 144
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 140,
+      "y": 145
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 139,
+      "y": 134
+    }
+  ],
+  "Latium": [
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 143,
+      "y": 147
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 141,
+      "y": 150
+    },
+    {
+      "type": "stone",
+      "amount": 3,
+      "x": 146,
+      "y": 149
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 144,
+      "y": 146
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 145,
+      "y": 151
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 148,
+      "y": 151
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 145,
+      "y": 153
+    }
+  ],
+  "Lucania": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 160,
+      "y": 158
+    },
+    {
+      "type": "perfumes",
+      "amount": 3,
+      "x": 156,
+      "y": 161
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 156,
+      "y": 158
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 161,
+      "y": 159
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 163,
+      "y": 159
+    }
+  ],
+  "Paelignia": [
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 149,
+      "y": 145
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 151,
+      "y": 146
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 147,
+      "y": 147
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 145,
+      "y": 147
+    }
+  ],
+  "Picenum": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 149,
+      "y": 140
+    },
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 146,
+      "y": 139
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 147,
+      "y": 138
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 147,
+      "y": 141
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 148,
+      "y": 138
+    }
+  ],
+  "Rhegion": [
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 161,
+      "y": 174
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 163,
+      "y": 174
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 160,
+      "y": 177
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 163,
+      "y": 172
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 161,
+      "y": 172
+    }
+  ],
+  "Samnium": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 154,
+      "y": 147
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 154,
+      "y": 153
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 152,
+      "y": 149
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 155,
+      "y": 151
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 157,
+      "y": 155
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 154,
+      "y": 150
+    }
+  ],
+  "Taras": [
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 164,
+      "y": 162
+    },
+    {
+      "type": "purple_dye",
+      "amount": 2,
+      "x": 170,
+      "y": 159
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 164,
+      "y": 161
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 167,
+      "y": 158
+    },
+    {
+      "type": "sheep",
+      "amount": 4,
+      "x": 165,
+      "y": 159
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 164,
+      "y": 160
+    }
+  ],
+  "Umbria": [
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 146,
+      "y": 135
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 144,
+      "y": 141
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 143,
+      "y": 143
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 143,
+      "y": 134
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 147,
+      "y": 144
+    }
+  ],
+  "Boiaea": [
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 134,
+      "y": 126
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 133,
+      "y": 129
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 138,
+      "y": 127
+    },
+    {
+      "type": "pottery",
+      "amount": 3,
+      "x": 132,
+      "y": 127
+    },
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 140,
+      "y": 128
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 139,
+      "y": 131
+    }
+  ],
+  "Cenomania": [
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 135,
+      "y": 123
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 130,
+      "y": 119
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 134,
+      "y": 124
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 131,
+      "y": 123
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 134,
+      "y": 120
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 134,
+      "y": 123
+    }
+  ],
+  "Insubria": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 132,
+      "y": 125
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 128,
+      "y": 124
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 126,
+      "y": 123
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 128,
+      "y": 120
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 125,
+      "y": 123
+    }
+  ],
+  "Taurinia": [
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 117,
+      "y": 121
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 118,
+      "y": 126
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 115,
+      "y": 119
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 121,
+      "y": 126
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 120,
+      "y": 127
+    }
+  ],
+  "Venetia": [
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 146,
+      "y": 116
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 141,
+      "y": 123
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 138,
+      "y": 122
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 143,
+      "y": 121
+    },
+    {
+      "type": "amber",
+      "amount": 2,
+      "x": 145,
+      "y": 120
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 144,
+      "y": 121
+    }
+  ],
+  "Isarcia-Brixentia": [
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 141,
+      "y": 113
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 134,
+      "y": 116
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 137,
+      "y": 115
+    },
+    {
+      "type": "gemstones",
+      "amount": 2,
+      "x": 136,
+      "y": 113
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 133,
+      "y": 115
+    }
+  ],
+  "Lepontia": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 126,
+      "y": 117
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 122,
+      "y": 116
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 119,
+      "y": 117
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 124,
+      "y": 118
+    }
+  ],
+  "Noricum": [
+    {
+      "type": "iron",
+      "amount": 4,
+      "x": 153,
+      "y": 111
+    },
+    {
+      "type": "salt",
+      "amount": 4,
+      "x": 149,
+      "y": 107
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 146,
+      "y": 112
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 154,
+      "y": 116
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 159,
+      "y": 109
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 149,
+      "y": 111
+    }
+  ],
+  "Rucinatea": [
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 145,
+      "y": 99
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 139,
+      "y": 101
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 135,
+      "y": 100
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 132,
+      "y": 107
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 142,
+      "y": 102
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 129,
+      "y": 108
+    }
+  ],
+  "Abnobaea": [
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 122,
+      "y": 100
+    },
+    {
+      "type": "marble",
+      "amount": 1,
+      "x": 127,
+      "y": 100
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 131,
+      "y": 93
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 123,
+      "y": 104
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 130,
+      "y": 98
+    }
+  ],
+  "Anartia": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 181,
+      "y": 106
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 185,
+      "y": 100
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 190,
+      "y": 103
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 181,
+      "y": 109
+    }
+  ],
+  "Boihaemum": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 167,
+      "y": 101
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 157,
+      "y": 99
+    },
+    {
+      "type": "amber",
+      "amount": 2,
+      "x": 168,
+      "y": 95
+    },
+    {
+      "type": "hemp",
+      "amount": 2,
+      "x": 169,
+      "y": 105
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 162,
+      "y": 98
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 164,
+      "y": 93
+    }
+  ],
+  "Boihaemum_Occidentale": [
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 142,
+      "y": 95
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 148,
+      "y": 93
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 158,
+      "y": 90
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 154,
+      "y": 95
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 146,
+      "y": 94
+    }
+  ],
+  "Cotinia": [
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 175,
+      "y": 95
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 181,
+      "y": 94
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 175,
+      "y": 100
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 179,
+      "y": 96
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 186,
+      "y": 96
+    }
+  ],
+  "Volcaea": [
+    {
+      "type": "tin",
+      "amount": 1,
+      "x": 147,
+      "y": 86
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 142,
+      "y": 89
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 150,
+      "y": 84
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 134,
+      "y": 87
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 143,
+      "y": 83
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 136,
+      "y": 86
+    }
+  ],
+  "Brigantia": [
+    {
+      "type": "coal",
+      "amount": 2,
+      "x": 86,
+      "y": 52
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 79,
+      "y": 53
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 87,
+      "y": 50
+    },
+    {
+      "type": "lead",
+      "amount": 3,
+      "x": 80,
+      "y": 61
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 80,
+      "y": 47
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 80,
+      "y": 57
+    }
+  ],
+  "Caledonia": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 76,
+      "y": 34
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 81,
+      "y": 19
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 73,
+      "y": 27
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 77,
+      "y": 32
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 71,
+      "y": 36
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 79,
+      "y": 25
+    }
+  ],
+  "Cantiacia": [
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 86,
+      "y": 76
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 82,
+      "y": 73
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 80,
+      "y": 74
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 88,
+      "y": 75
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 83,
+      "y": 77
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 84,
+      "y": 76
+    }
+  ],
+  "Catuvellaunia": [
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 82,
+      "y": 68
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 83,
+      "y": 64
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 79,
+      "y": 64
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 86,
+      "y": 72
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 89,
+      "y": 61
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 89,
+      "y": 60
+    }
+  ],
+  "Dumnonia": [
+    {
+      "type": "tin",
+      "amount": 5,
+      "x": 61,
+      "y": 77
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 68,
+      "y": 75
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 64,
+      "y": 75
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 68,
+      "y": 78
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 67,
+      "y": 72
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 62,
+      "y": 76
+    }
+  ],
+  "Durotrigia": [
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 79,
+      "y": 78
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 76,
+      "y": 72
+    },
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 75,
+      "y": 72
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 77,
+      "y": 75
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 77,
+      "y": 69
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 73,
+      "y": 76
+    }
+  ],
+  "Eblania": [
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 62,
+      "y": 52
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 53,
+      "y": 50
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 58,
+      "y": 52
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 57,
+      "y": 49
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 60,
+      "y": 54
+    }
+  ],
+  "Ivernia": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 56,
+      "y": 60
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 45,
+      "y": 59
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 50,
+      "y": 57
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 55,
+      "y": 58
+    }
+  ],
+  "Magnatia": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 64,
+      "y": 45
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 62,
+      "y": 47
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 57,
+      "y": 47
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 65,
+      "y": 47
+    }
+  ],
+  "Ordovicia": [
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 73,
+      "y": 61
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 68,
+      "y": 59
+    },
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 72,
+      "y": 58
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 70,
+      "y": 62
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 77,
+      "y": 55
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 78,
+      "y": 60
+    }
+  ],
+  "Otadinia": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 82,
+      "y": 39
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 82,
+      "y": 45
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 79,
+      "y": 39
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 72,
+      "y": 43
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 75,
+      "y": 43
+    }
+  ],
+  "Siluria": [
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 68,
+      "y": 65
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 72,
+      "y": 66
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 65,
+      "y": 66
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 71,
+      "y": 68
+    },
+    {
+      "type": "iron",
+      "amount": 3,
+      "x": 74,
+      "y": 67
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 64,
+      "y": 67
+    }
+  ],
+  "Trinobantia": [
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 90,
+      "y": 65
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 93,
+      "y": 70
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 94,
+      "y": 67
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 91,
+      "y": 68
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 91,
+      "y": 66
+    }
+  ],
+  "Aestia": [
+    {
+      "type": "amber",
+      "amount": 5,
+      "x": 177,
+      "y": 53
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 177,
+      "y": 63
+    }
+  ],
+  "Avionia": [
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 129,
+      "y": 55
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 134,
+      "y": 57
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 135,
+      "y": 57
+    }
+  ],
+  "Bastarnia_Vetus": [
+    {
+      "type": "honey",
+      "amount": 3,
+      "x": 165,
+      "y": 64
+    },
+    {
+      "type": "amber",
+      "amount": 3,
+      "x": 170,
+      "y": 56
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 159,
+      "y": 59
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 155,
+      "y": 63
+    }
+  ],
+  "Chattia": [
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 142,
+      "y": 81
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 142,
+      "y": 76
+    },
+    {
+      "type": "horses",
+      "amount": 3,
+      "x": 137,
+      "y": 82
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 134,
+      "y": 81
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 137,
+      "y": 79
+    }
+  ],
+  "Chaucia": [
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 125,
+      "y": 70
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 130,
+      "y": 65
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 128,
+      "y": 74
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 124,
+      "y": 66
+    }
+  ],
+  "Cheruscia": [
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 134,
+      "y": 69
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 133,
+      "y": 73
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 134,
+      "y": 76
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 140,
+      "y": 71
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 131,
+      "y": 77
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 134,
+      "y": 71
+    }
+  ],
+  "Cimbria": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 134,
+      "y": 42
+    },
+    {
+      "type": "amber",
+      "amount": 2,
+      "x": 126,
+      "y": 48
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 142,
+      "y": 51
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 129,
+      "y": 44
+    }
+  ],
+  "Finnia": [
+    {
+      "type": "amber",
+      "amount": 2,
+      "x": 185,
+      "y": 25
+    },
+    {
+      "type": "wild_animals",
+      "amount": 3,
+      "x": 219,
+      "y": 11
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 190,
+      "y": 12
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 216,
+      "y": 12
+    }
+  ],
+  "Frisia": [
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 113,
+      "y": 64
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 112,
+      "y": 67
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 120,
+      "y": 63
+    }
+  ],
+  "Gautia": [
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 141,
+      "y": 15
+    },
+    {
+      "type": "wild_animals",
+      "amount": 3,
+      "x": 158,
+      "y": 29
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 149,
+      "y": 36
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 151,
+      "y": 29
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 162,
+      "y": 41
+    }
+  ],
+  "Hillevionia": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 149,
+      "y": 48
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 149,
+      "y": 40
+    },
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 156,
+      "y": 42
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 151,
+      "y": 44
+    }
+  ],
+  "Langobardia": [
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 147,
+      "y": 63
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 148,
+      "y": 57
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 135,
+      "y": 61
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 143,
+      "y": 61
+    }
+  ],
+  "Marcomannia_Vetus": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 162,
+      "y": 82
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 155,
+      "y": 81
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 165,
+      "y": 87
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 159,
+      "y": 79
+    }
+  ],
+  "Naharvalia": [
+    {
+      "type": "amber",
+      "amount": 2,
+      "x": 173,
+      "y": 74
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 159,
+      "y": 74
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 166,
+      "y": 71
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 184,
+      "y": 80
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 169,
+      "y": 80
+    }
+  ],
+  "Rugia": [
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 118,
+      "y": 17
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 126,
+      "y": 17
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 125,
+      "y": 1
+    }
+  ],
+  "Semnonia": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 151,
+      "y": 70
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 147,
+      "y": 75
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 150,
+      "y": 76
+    }
+  ],
+  "Sugambria": [
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 118,
+      "y": 75
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 118,
+      "y": 78
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 116,
+      "y": 69
+    },
+    {
+      "type": "iron",
+      "amount": 3,
+      "x": 122,
+      "y": 79
+    },
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 125,
+      "y": 77
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 124,
+      "y": 75
+    }
+  ],
+  "Suionia": [
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 160,
+      "y": 10
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 158,
+      "y": 18
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 161,
+      "y": 12
+    }
+  ],
+  "Ubia_Vetus": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 122,
+      "y": 86
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 126,
+      "y": 87
+    },
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 119,
+      "y": 81
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 128,
+      "y": 79
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 128,
+      "y": 83
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 124,
+      "y": 81
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 128,
+      "y": 85
+    }
+  ],
+  "Venedia": [
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 189,
+      "y": 54
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 192,
+      "y": 37
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 182,
+      "y": 46
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 186,
+      "y": 41
+    }
+  ],
+  "Eraviscia": [
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 172,
+      "y": 108
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 170,
+      "y": 113
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 172,
+      "y": 116
+    },
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 179,
+      "y": 117
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 178,
+      "y": 110
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 173,
+      "y": 105
+    }
+  ],
+  "Scordiscia": [
+    {
+      "type": "tin",
+      "amount": 1,
+      "x": 178,
+      "y": 129
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 186,
+      "y": 125
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 185,
+      "y": 132
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 185,
+      "y": 128
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 181,
+      "y": 129
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 185,
+      "y": 131
+    }
+  ],
+  "Syrmia": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 175,
+      "y": 126
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 177,
+      "y": 125
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 181,
+      "y": 126
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 177,
+      "y": 127
+    }
+  ],
+  "Tauriscia": [
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 157,
+      "y": 116
+    },
+    {
+      "type": "amber",
+      "amount": 2,
+      "x": 161,
+      "y": 112
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 167,
+      "y": 108
+    },
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 168,
+      "y": 112
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 158,
+      "y": 114
+    }
+  ],
+  "Ardiaea": [
+    {
+      "type": "timber",
+      "amount": 3,
+      "x": 175,
+      "y": 141
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 174,
+      "y": 144
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 169,
+      "y": 139
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 178,
+      "y": 141
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 174,
+      "y": 138
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 170,
+      "y": 140
+    }
+  ],
+  "Autariataia": [
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 184,
+      "y": 136
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 181,
+      "y": 136
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 182,
+      "y": 138
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 178,
+      "y": 135
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 177,
+      "y": 136
+    }
+  ],
+  "Dardania": [
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 187,
+      "y": 139
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 189,
+      "y": 141
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 186,
+      "y": 143
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 184,
+      "y": 145
+    },
+    {
+      "type": "slave_trade",
+      "amount": 2,
+      "x": 190,
+      "y": 138
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 183,
+      "y": 143
+    }
+  ],
+  "Delmatia": [
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 169,
+      "y": 137
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 174,
+      "y": 131
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 171,
+      "y": 134
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 165,
+      "y": 131
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 168,
+      "y": 127
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 172,
+      "y": 131
+    }
+  ],
+  "Epetia-Salonitis": [
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 162,
+      "y": 141
+    },
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 163,
+      "y": 139
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 162,
+      "y": 136
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 166,
+      "y": 138
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 164,
+      "y": 135
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 162,
+      "y": 134
+    }
+  ],
+  "Histria": [
+    {
+      "type": "amber",
+      "amount": 2,
+      "x": 149,
+      "y": 121
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 147,
+      "y": 119
+    },
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 149,
+      "y": 127
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 149,
+      "y": 124
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 146,
+      "y": 120
+    }
+  ],
+  "Illyria": [
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 183,
+      "y": 147
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 184,
+      "y": 155
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 188,
+      "y": 150
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 187,
+      "y": 155
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 187,
+      "y": 150
+    }
+  ],
+  "Labeataia": [
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 178,
+      "y": 144
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 180,
+      "y": 142
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 177,
+      "y": 146
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 181,
+      "y": 144
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 179,
+      "y": 143
+    }
+  ],
+  "Liburnia": [
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 155,
+      "y": 123
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 156,
+      "y": 129
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 160,
+      "y": 128
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 152,
+      "y": 127
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 158,
+      "y": 133
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 161,
+      "y": 131
+    }
+  ],
+  "Savia": [
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 165,
+      "y": 123
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 168,
+      "y": 122
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 170,
+      "y": 124
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 175,
+      "y": 123
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 163,
+      "y": 125
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 166,
+      "y": 124
+    }
+  ],
+  "Anatolike_Bessike": [
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 210,
+      "y": 146
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 208,
+      "y": 148
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 207,
+      "y": 145
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 212,
+      "y": 148
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 210,
+      "y": 147
+    }
+  ],
+  "Antheia": [
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 223,
+      "y": 143
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 221,
+      "y": 138
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 221,
+      "y": 142
+    },
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 223,
+      "y": 142
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 225,
+      "y": 143
+    }
+  ],
+  "Bessike": [
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 202,
+      "y": 145
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 195,
+      "y": 143
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 199,
+      "y": 148
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 199,
+      "y": 145
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 200,
+      "y": 150
+    }
+  ],
+  "Bosporos": [
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 229,
+      "y": 149
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 231,
+      "y": 148
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 227,
+      "y": 148
+    },
+    {
+      "type": "fish",
+      "amount": 4,
+      "x": 223,
+      "y": 150
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 222,
+      "y": 150
+    }
+  ],
+  "Dytike_Getaia": [
+    {
+      "type": "hemp",
+      "amount": 2,
+      "x": 221,
+      "y": 128
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 218,
+      "y": 130
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 211,
+      "y": 137
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 216,
+      "y": 134
+    }
+  ],
+  "Kardia": [
+    {
+      "type": "pottery",
+      "amount": 3,
+      "x": 218,
+      "y": 155
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 213,
+      "y": 152
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 208,
+      "y": 155
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 218,
+      "y": 150
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 212,
+      "y": 159
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 211,
+      "y": 150
+    }
+  ],
+  "Edonis": [
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 207,
+      "y": 152
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 204,
+      "y": 152
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 202,
+      "y": 151
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 205,
+      "y": 153
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 201,
+      "y": 152
+    }
+  ],
+  "Halmyris": [
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 230,
+      "y": 120
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 223,
+      "y": 119
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 228,
+      "y": 117
+    },
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 226,
+      "y": 122
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 224,
+      "y": 120
+    }
+  ],
+  "Kallatisia": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 224,
+      "y": 134
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 223,
+      "y": 132
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 226,
+      "y": 128
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 225,
+      "y": 131
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 225,
+      "y": 129
+    }
+  ],
+  "Moesia": [
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 193,
+      "y": 134
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 191,
+      "y": 130
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 190,
+      "y": 132
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 193,
+      "y": 132
+    }
+  ],
+  "Odrysia": [
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 215,
+      "y": 141
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 213,
+      "y": 147
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 209,
+      "y": 140
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 220,
+      "y": 149
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 222,
+      "y": 147
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 216,
+      "y": 140
+    }
+  ],
+  "Paionia": [
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 188,
+      "y": 147
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 191,
+      "y": 147
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 193,
+      "y": 143
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 194,
+      "y": 149
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 195,
+      "y": 146
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 189,
+      "y": 147
+    }
+  ],
+  "Serdia": [
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 199,
+      "y": 138
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 204,
+      "y": 143
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 202,
+      "y": 141
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 203,
+      "y": 140
+    }
+  ],
+  "Triballia": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 207,
+      "y": 133
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 206,
+      "y": 139
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 208,
+      "y": 139
+    }
+  ],
+  "Tylisia": [
+    {
+      "type": "hemp",
+      "amount": 3,
+      "x": 222,
+      "y": 134
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 216,
+      "y": 137
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 218,
+      "y": 138
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 220,
+      "y": 132
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 218,
+      "y": 134
+    }
+  ],
+  "Akragas": [
+    {
+      "type": "sulphur",
+      "amount": 4,
+      "x": 148,
+      "y": 180
+    },
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 146,
+      "y": 180
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 150,
+      "y": 182
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 146,
+      "y": 181
+    }
+  ],
+  "Epikrateia": [
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 142,
+      "y": 176
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 146,
+      "y": 178
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 143,
+      "y": 178
+    },
+    {
+      "type": "stone",
+      "amount": 3,
+      "x": 145,
+      "y": 179
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 151,
+      "y": 192
+    }
+  ],
+  "Mamertina": [
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 157,
+      "y": 178
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 157,
+      "y": 175
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 156,
+      "y": 180
+    },
+    {
+      "type": "sulphur",
+      "amount": 3,
+      "x": 155,
+      "y": 176
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 156,
+      "y": 176
+    }
+  ],
+  "Sikelia": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 150,
+      "y": 179
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 154,
+      "y": 178
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 152,
+      "y": 181
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 153,
+      "y": 180
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 147,
+      "y": 179
+    }
+  ],
+  "Trinakria": [
+    {
+      "type": "honey",
+      "amount": 3,
+      "x": 154,
+      "y": 183
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 156,
+      "y": 185
+    },
+    {
+      "type": "grain",
+      "amount": 4,
+      "x": 155,
+      "y": 181
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 153,
+      "y": 184
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 152,
+      "y": 183
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 154,
+      "y": 185
+    }
+  ],
+  "Ziz": [
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 149,
+      "y": 178
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 147,
+      "y": 177
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 151,
+      "y": 177
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 145,
+      "y": 176
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 147,
+      "y": 176
+    }
+  ],
+  "Buridavensia": [
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 212,
+      "y": 127
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 202,
+      "y": 127
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 207,
+      "y": 131
+    },
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 221,
+      "y": 125
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 198,
+      "y": 129
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 207,
+      "y": 128
+    }
+  ],
+  "Carpiania": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 224,
+      "y": 110
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 213,
+      "y": 117
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 213,
+      "y": 110
+    },
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 212,
+      "y": 121
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 217,
+      "y": 122
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 221,
+      "y": 118
+    }
+  ],
+  "Carsia": [
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 212,
+      "y": 99
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 215,
+      "y": 104
+    },
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 210,
+      "y": 104
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 212,
+      "y": 107
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 219,
+      "y": 105
+    }
+  ],
+  "Dacia": [
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 193,
+      "y": 126
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 194,
+      "y": 118
+    },
+    {
+      "type": "gold",
+      "amount": 3,
+      "x": 195,
+      "y": 114
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 185,
+      "y": 121
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 191,
+      "y": 109
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 183,
+      "y": 110
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 190,
+      "y": 121
+    }
+  ],
+  "Napocaea": [
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 197,
+      "y": 116
+    },
+    {
+      "type": "salt",
+      "amount": 3,
+      "x": 198,
+      "y": 113
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 205,
+      "y": 115
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 208,
+      "y": 113
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 204,
+      "y": 111
+    }
+  ],
+  "Sargetiaea": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 198,
+      "y": 125
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 205,
+      "y": 121
+    },
+    {
+      "type": "salt",
+      "amount": 3,
+      "x": 199,
+      "y": 122
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 202,
+      "y": 124
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 194,
+      "y": 122
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 204,
+      "y": 120
+    }
+  ],
+  "Tyrasia": [
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 229,
+      "y": 114
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 228,
+      "y": 104
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 229,
+      "y": 107
+    },
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 233,
+      "y": 110
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 229,
+      "y": 110
+    }
+  ],
+  "Teuriscia": [
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 203,
+      "y": 106
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 199,
+      "y": 105
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 193,
+      "y": 106
+    },
+    {
+      "type": "salt",
+      "amount": 3,
+      "x": 205,
+      "y": 108
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 195,
+      "y": 109
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 195,
+      "y": 108
+    }
+  ],
+  "Achaia": [
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 194,
+      "y": 174
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 198,
+      "y": 174
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 196,
+      "y": 175
+    }
+  ],
+  "Aitolia": [
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 190,
+      "y": 170
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 194,
+      "y": 170
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 187,
+      "y": 170
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 195,
+      "y": 172
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 191,
+      "y": 169
+    }
+  ],
+  "Ambrakikos_Kolpos": [
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 187,
+      "y": 164
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 187,
+      "y": 162
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 188,
+      "y": 167
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 189,
+      "y": 163
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 187,
+      "y": 165
+    }
+  ],
+  "Argolis": [
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 199,
+      "y": 177
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 203,
+      "y": 179
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 198,
+      "y": 178
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 201,
+      "y": 178
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 203,
+      "y": 177
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 203,
+      "y": 178
+    }
+  ],
+  "Arkadia": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 197,
+      "y": 177
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 195,
+      "y": 180
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 198,
+      "y": 177
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 197,
+      "y": 180
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 195,
+      "y": 179
+    }
+  ],
+  "Attike": [
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 207,
+      "y": 176
+    },
+    {
+      "type": "honey",
+      "amount": 4,
+      "x": 204,
+      "y": 173
+    },
+    {
+      "type": "marble",
+      "amount": 3,
+      "x": 206,
+      "y": 174
+    },
+    {
+      "type": "pottery",
+      "amount": 3,
+      "x": 204,
+      "y": 174
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 206,
+      "y": 173
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 205,
+      "y": 173
+    }
+  ],
+  "Boiotia": [
+    {
+      "type": "papyrus",
+      "amount": 1,
+      "x": 200,
+      "y": 171
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 197,
+      "y": 171
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 203,
+      "y": 172
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 199,
+      "y": 169
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 204,
+      "y": 172
+    }
+  ],
+  "Chaonia": [
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 182,
+      "y": 165
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 182,
+      "y": 163
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 186,
+      "y": 158
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 183,
+      "y": 158
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 186,
+      "y": 160
+    }
+  ],
+  "Elis": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 191,
+      "y": 176
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 194,
+      "y": 179
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 192,
+      "y": 177
+    },
+    {
+      "type": "coal",
+      "amount": 2,
+      "x": 195,
+      "y": 177
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 193,
+      "y": 177
+    }
+  ],
+  "Emathia": [
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 195,
+      "y": 154
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 196,
+      "y": 159
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 195,
+      "y": 160
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 197,
+      "y": 155
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 196,
+      "y": 151
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 197,
+      "y": 157
+    }
+  ],
+  "Euboia": [
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 208,
+      "y": 173
+    },
+    {
+      "type": "marble",
+      "amount": 2,
+      "x": 209,
+      "y": 167
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 202,
+      "y": 168
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 209,
+      "y": 173
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 207,
+      "y": 170
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 204,
+      "y": 169
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 203,
+      "y": 169
+    }
+  ],
+  "Gylakeia": [
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 180,
+      "y": 157
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 181,
+      "y": 154
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 180,
+      "y": 153
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 181,
+      "y": 157
+    }
+  ],
+  "Korinthia": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 203,
+      "y": 174
+    },
+    {
+      "type": "pottery",
+      "amount": 4,
+      "x": 200,
+      "y": 175
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 200,
+      "y": 176
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 199,
+      "y": 176
+    }
+  ],
+  "Kydoniatis": [
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 208,
+      "y": 192
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 206,
+      "y": 193
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 210,
+      "y": 193
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 208,
+      "y": 194
+    }
+  ],
+  "Kyklades": [
+    {
+      "type": "slave_trade",
+      "amount": 5,
+      "x": 215,
+      "y": 177
+    },
+    {
+      "type": "marble",
+      "amount": 4,
+      "x": 216,
+      "y": 179
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 215,
+      "y": 182
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 219,
+      "y": 181
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 211,
+      "y": 181
+    },
+    {
+      "type": "sulphur",
+      "amount": 3,
+      "x": 210,
+      "y": 183
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 215,
+      "y": 178
+    }
+  ],
+  "Lakonia": [
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 195,
+      "y": 182
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 197,
+      "y": 181
+    },
+    {
+      "type": "marble",
+      "amount": 2,
+      "x": 198,
+      "y": 183
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 202,
+      "y": 187
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 199,
+      "y": 185
+    }
+  ],
+  "Lesbos": [
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 217,
+      "y": 165
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 218,
+      "y": 163
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 218,
+      "y": 165
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 219,
+      "y": 165
+    }
+  ],
+  "Minoa": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 218,
+      "y": 194
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 222,
+      "y": 194
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 214,
+      "y": 192
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 216,
+      "y": 195
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 214,
+      "y": 195
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 217,
+      "y": 194
+    }
+  ],
+  "Mygdonia": [
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 200,
+      "y": 153
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 203,
+      "y": 157
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 202,
+      "y": 160
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 199,
+      "y": 155
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 204,
+      "y": 156
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 203,
+      "y": 154
+    }
+  ],
+  "Orestis": [
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 190,
+      "y": 153
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 191,
+      "y": 156
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 192,
+      "y": 159
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 189,
+      "y": 160
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 189,
+      "y": 153
+    }
+  ],
+  "Rhodos": [
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 230,
+      "y": 186
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 227,
+      "y": 188
+    },
+    {
+      "type": "pottery",
+      "amount": 4,
+      "x": 231,
+      "y": 183
+    },
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 226,
+      "y": 191
+    },
+    {
+      "type": "glass",
+      "amount": 4,
+      "x": 230,
+      "y": 185
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 230,
+      "y": 184
+    }
+  ],
+  "Thessalia": [
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 199,
+      "y": 164
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 197,
+      "y": 164
+    },
+    {
+      "type": "horses",
+      "amount": 3,
+      "x": 195,
+      "y": 165
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 193,
+      "y": 164
+    },
+    {
+      "type": "marble",
+      "amount": 1,
+      "x": 197,
+      "y": 162
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 196,
+      "y": 165
+    }
+  ],
+  "Alazonia": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 236,
+      "y": 91
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 235,
+      "y": 98
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 223,
+      "y": 101
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 235,
+      "y": 90
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 229,
+      "y": 101
+    }
+  ],
+  "Aorsia": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 304,
+      "y": 87
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 298,
+      "y": 81
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 295,
+      "y": 94
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 288,
+      "y": 86
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 294,
+      "y": 102
+    }
+  ],
+  "Basilike_Skythia": [
+    {
+      "type": "hemp",
+      "amount": 2,
+      "x": 249,
+      "y": 60
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 280,
+      "y": 86
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 279,
+      "y": 79
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 265,
+      "y": 71
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 264,
+      "y": 61
+    }
+  ],
+  "Borysthenes": [
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 256,
+      "y": 100
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 244,
+      "y": 86
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 256,
+      "y": 92
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 248,
+      "y": 104
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 252,
+      "y": 96
+    }
+  ],
+  "Kimmerikos_Bosporos": [
+    {
+      "type": "slave_trade",
+      "amount": 2,
+      "x": 263,
+      "y": 111
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 258,
+      "y": 113
+    },
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 261,
+      "y": 113
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 263,
+      "y": 113
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 260,
+      "y": 114
+    }
+  ],
+  "Maiotis": [
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 278,
+      "y": 101
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 275,
+      "y": 106
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 270,
+      "y": 101
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 283,
+      "y": 102
+    }
+  ],
+  "Megale_Chersonesos": [
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 246,
+      "y": 108
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 253,
+      "y": 113
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 250,
+      "y": 112
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 256,
+      "y": 113
+    },
+    {
+      "type": "honey",
+      "amount": 3,
+      "x": 255,
+      "y": 118
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 254,
+      "y": 118
+    }
+  ],
+  "Mikra_Chersonesos": [
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 245,
+      "y": 115
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 249,
+      "y": 114
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 251,
+      "y": 118
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 251,
+      "y": 120
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 246,
+      "y": 114
+    }
+  ],
+  "Nomadike_Skythia": [
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 268,
+      "y": 85
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 262,
+      "y": 84
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 252,
+      "y": 82
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 237,
+      "y": 81
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 249,
+      "y": 70
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 244,
+      "y": 83
+    }
+  ],
+  "Olbiana": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 237,
+      "y": 106
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 240,
+      "y": 101
+    },
+    {
+      "type": "hemp",
+      "amount": 2,
+      "x": 246,
+      "y": 97
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 237,
+      "y": 104
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 234,
+      "y": 103
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 237,
+      "y": 102
+    }
+  ],
+  "Phanagoreion": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 266,
+      "y": 112
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 280,
+      "y": 114
+    },
+    {
+      "type": "slave_trade",
+      "amount": 2,
+      "x": 273,
+      "y": 114
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 268,
+      "y": 110
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 274,
+      "y": 111
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 270,
+      "y": 114
+    }
+  ],
+  "Sauromataia": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 294,
+      "y": 69
+    },
+    {
+      "type": "wild_animals",
+      "amount": 3,
+      "x": 285,
+      "y": 52
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 301,
+      "y": 63
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 287,
+      "y": 63
+    }
+  ],
+  "Sirakene": [
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 298,
+      "y": 113
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 284,
+      "y": 106
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 302,
+      "y": 104
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 288,
+      "y": 104
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 310,
+      "y": 111
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 289,
+      "y": 115
+    }
+  ],
+  "Tanaitis": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 269,
+      "y": 96
+    },
+    {
+      "type": "wild_animals",
+      "amount": 3,
+      "x": 270,
+      "y": 91
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 278,
+      "y": 95
+    },
+    {
+      "type": "slave_trade",
+      "amount": 3,
+      "x": 263,
+      "y": 100
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 277,
+      "y": 92
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 264,
+      "y": 94
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 259,
+      "y": 102
+    }
+  ],
+  "Bithynia": [
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 233,
+      "y": 150
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 234,
+      "y": 148
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 236,
+      "y": 149
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 244,
+      "y": 150
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 239,
+      "y": 153
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 242,
+      "y": 153
+    }
+  ],
+  "Halikarnassia": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 235,
+      "y": 179
+    },
+    {
+      "type": "perfumes",
+      "amount": 3,
+      "x": 231,
+      "y": 180
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 228,
+      "y": 177
+    },
+    {
+      "type": "marble",
+      "amount": 3,
+      "x": 232,
+      "y": 175
+    },
+    {
+      "type": "honey",
+      "amount": 3,
+      "x": 226,
+      "y": 181
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 224,
+      "y": 181
+    }
+  ],
+  "Hellenike_Makronia": [
+    {
+      "type": "timber",
+      "amount": 3,
+      "x": 294,
+      "y": 135
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 292,
+      "y": 138
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 292,
+      "y": 136
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 286,
+      "y": 139
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 291,
+      "y": 137
+    }
+  ],
+  "Hellenike_Mariandynia": [
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 247,
+      "y": 143
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 244,
+      "y": 147
+    },
+    {
+      "type": "timber",
+      "amount": 3,
+      "x": 247,
+      "y": 146
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 249,
+      "y": 141
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 253,
+      "y": 140
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 249,
+      "y": 143
+    }
+  ],
+  "Hieratikos_Pontos": [
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 274,
+      "y": 148
+    },
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 271,
+      "y": 147
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 275,
+      "y": 146
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 272,
+      "y": 151
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 268,
+      "y": 147
+    }
+  ],
+  "Ionia": [
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 224,
+      "y": 169
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 219,
+      "y": 176
+    },
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 223,
+      "y": 174
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 224,
+      "y": 171
+    },
+    {
+      "type": "perfumes",
+      "amount": 5,
+      "x": 218,
+      "y": 171
+    },
+    {
+      "type": "olive_oil",
+      "amount": 4,
+      "x": 226,
+      "y": 171
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 220,
+      "y": 169
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 226,
+      "y": 169
+    }
+  ],
+  "Isauria": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 255,
+      "y": 174
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 259,
+      "y": 173
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 259,
+      "y": 172
+    }
+  ],
+  "Kaikia": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 226,
+      "y": 164
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 232,
+      "y": 163
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 227,
+      "y": 161
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 222,
+      "y": 160
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 222,
+      "y": 163
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 228,
+      "y": 163
+    }
+  ],
+  "Kappadokia": [
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 279,
+      "y": 153
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 260,
+      "y": 164
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 269,
+      "y": 161
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 275,
+      "y": 154
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 268,
+      "y": 165
+    },
+    {
+      "type": "stone",
+      "amount": 3,
+      "x": 272,
+      "y": 162
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 266,
+      "y": 163
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 277,
+      "y": 150
+    }
+  ],
+  "Kappadoxia": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 266,
+      "y": 152
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 261,
+      "y": 154
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 263,
+      "y": 157
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 266,
+      "y": 150
+    }
+  ],
+  "Kianos_Kolpos": [
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 226,
+      "y": 154
+    },
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 231,
+      "y": 157
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 228,
+      "y": 156
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 232,
+      "y": 152
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 234,
+      "y": 152
+    }
+  ],
+  "Kilikia": [
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 271,
+      "y": 168
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 274,
+      "y": 167
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 265,
+      "y": 173
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 277,
+      "y": 168
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 272,
+      "y": 171
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 278,
+      "y": 170
+    }
+  ],
+  "Lydia": [
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 235,
+      "y": 171
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 229,
+      "y": 171
+    },
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 227,
+      "y": 172
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 231,
+      "y": 169
+    },
+    {
+      "type": "dyes",
+      "amount": 3,
+      "x": 230,
+      "y": 167
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 229,
+      "y": 165
+    }
+  ],
+  "Lykaonia": [
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 256,
+      "y": 164
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 251,
+      "y": 168
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 256,
+      "y": 170
+    }
+  ],
+  "Lykia": [
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 245,
+      "y": 181
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 238,
+      "y": 181
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 241,
+      "y": 183
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 239,
+      "y": 179
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 245,
+      "y": 176
+    }
+  ],
+  "Melitene": [
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 282,
+      "y": 156
+    },
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 281,
+      "y": 157
+    },
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 285,
+      "y": 155
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 284,
+      "y": 158
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 275,
+      "y": 162
+    }
+  ],
+  "Mikra_Armenia": [
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 294,
+      "y": 142
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 289,
+      "y": 145
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 285,
+      "y": 144
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 290,
+      "y": 144
+    }
+  ],
+  "Pamphylia": [
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 261,
+      "y": 178
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 249,
+      "y": 176
+    },
+    {
+      "type": "slave_trade",
+      "amount": 3,
+      "x": 256,
+      "y": 179
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 252,
+      "y": 176
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 256,
+      "y": 176
+    }
+  ],
+  "Paphlagonia": [
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 260,
+      "y": 145
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 256,
+      "y": 141
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 252,
+      "y": 145
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 258,
+      "y": 146
+    }
+  ],
+  "Pessinountis": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 236,
+      "y": 160
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 245,
+      "y": 158
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 248,
+      "y": 154
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 252,
+      "y": 160
+    }
+  ],
+  "Phrygia": [
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 249,
+      "y": 165
+    },
+    {
+      "type": "marble",
+      "amount": 4,
+      "x": 240,
+      "y": 165
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 238,
+      "y": 170
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 237,
+      "y": 168
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 237,
+      "y": 169
+    }
+  ],
+  "Pisidia": [
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 244,
+      "y": 174
+    },
+    {
+      "type": "perfumes",
+      "amount": 3,
+      "x": 248,
+      "y": 174
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 247,
+      "y": 170
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 239,
+      "y": 175
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 245,
+      "y": 170
+    }
+  ],
+  "Pontos": [
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 266,
+      "y": 142
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 269,
+      "y": 142
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 265,
+      "y": 147
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 270,
+      "y": 144
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 274,
+      "y": 142
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 271,
+      "y": 143
+    }
+  ],
+  "Propontis": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 223,
+      "y": 156
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 222,
+      "y": 156
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 220,
+      "y": 161
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 218,
+      "y": 160
+    }
+  ],
+  "Saramene": [
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 269,
+      "y": 139
+    },
+    {
+      "type": "fruits",
+      "amount": 4,
+      "x": 280,
+      "y": 140
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 273,
+      "y": 139
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 283,
+      "y": 141
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 282,
+      "y": 140
+    }
+  ],
+  "Sinopeia": [
+    {
+      "type": "coal",
+      "amount": 2,
+      "x": 260,
+      "y": 138
+    },
+    {
+      "type": "dyes",
+      "amount": 4,
+      "x": 267,
+      "y": 138
+    },
+    {
+      "type": "fish",
+      "amount": 4,
+      "x": 262,
+      "y": 136
+    },
+    {
+      "type": "pottery",
+      "amount": 3,
+      "x": 262,
+      "y": 137
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 264,
+      "y": 138
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 260,
+      "y": 137
+    }
+  ],
+  "Tektosagia": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 251,
+      "y": 152
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 253,
+      "y": 155
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 255,
+      "y": 151
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 256,
+      "y": 160
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 253,
+      "y": 153
+    }
+  ],
+  "Aouranitis": [
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 287,
+      "y": 200
+    },
+    {
+      "type": "camels",
+      "amount": 2,
+      "x": 292,
+      "y": 204
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 297,
+      "y": 196
+    },
+    {
+      "type": "incense",
+      "amount": 1,
+      "x": 289,
+      "y": 202
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 291,
+      "y": 204
+    }
+  ],
+  "Apamene": [
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 278,
+      "y": 180
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 284,
+      "y": 187
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 282,
+      "y": 180
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 285,
+      "y": 178
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 283,
+      "y": 183
+    },
+    {
+      "type": "papyrus",
+      "amount": 2,
+      "x": 282,
+      "y": 185
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 279,
+      "y": 181
+    }
+  ],
+  "Arwad": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 280,
+      "y": 185
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 279,
+      "y": 188
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 279,
+      "y": 185
+    }
+  ],
+  "Damashq": [
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 285,
+      "y": 190
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 284,
+      "y": 197
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 285,
+      "y": 194
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 281,
+      "y": 190
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 282,
+      "y": 189
+    }
+  ],
+  "Gazaia": [
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 277,
+      "y": 204
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 277,
+      "y": 211
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 277,
+      "y": 207
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 276,
+      "y": 210
+    },
+    {
+      "type": "incense",
+      "amount": 4,
+      "x": 277,
+      "y": 212
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 277,
+      "y": 205
+    }
+  ],
+  "Ioudaia": [
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 282,
+      "y": 201
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 278,
+      "y": 211
+    },
+    {
+      "type": "pitch",
+      "amount": 3,
+      "x": 281,
+      "y": 210
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 278,
+      "y": 208
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 279,
+      "y": 204
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 280,
+      "y": 213
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 280,
+      "y": 198
+    }
+  ],
+  "Kyrrhestike": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 288,
+      "y": 174
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 284,
+      "y": 173
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 285,
+      "y": 168
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 281,
+      "y": 168
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 281,
+      "y": 169
+    }
+  ],
+  "Paphia": [
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 263,
+      "y": 185
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 262,
+      "y": 186
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 258,
+      "y": 189
+    },
+    {
+      "type": "copper",
+      "amount": 5,
+      "x": 261,
+      "y": 187
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 262,
+      "y": 185
+    }
+  ],
+  "Pelousiake": [
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 271,
+      "y": 216
+    },
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 276,
+      "y": 222
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 275,
+      "y": 232
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 267,
+      "y": 216
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 272,
+      "y": 214
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 278,
+      "y": 234
+    }
+  ],
+  "Rabbat_Amman": [
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 288,
+      "y": 207
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 283,
+      "y": 205
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 283,
+      "y": 208
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 284,
+      "y": 203
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 287,
+      "y": 208
+    }
+  ],
+  "Salamina": [
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 265,
+      "y": 185
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 262,
+      "y": 190
+    },
+    {
+      "type": "salt",
+      "amount": 3,
+      "x": 265,
+      "y": 187
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 267,
+      "y": 184
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 264,
+      "y": 189
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 263,
+      "y": 188
+    }
+  ],
+  "Syria": [
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 277,
+      "y": 174
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 277,
+      "y": 176
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 280,
+      "y": 176
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 279,
+      "y": 178
+    },
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 280,
+      "y": 173
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 276,
+      "y": 175
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 279,
+      "y": 172
+    }
+  ],
+  "Zidun": [
+    {
+      "type": "timber",
+      "amount": 5,
+      "x": 279,
+      "y": 191
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 277,
+      "y": 194
+    },
+    {
+      "type": "purple_dye",
+      "amount": 3,
+      "x": 278,
+      "y": 189
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 279,
+      "y": 195
+    },
+    {
+      "type": "glass",
+      "amount": 3,
+      "x": 278,
+      "y": 193
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 279,
+      "y": 190
+    }
+  ],
+  "Zur": [
+    {
+      "type": "glass",
+      "amount": 3,
+      "x": 278,
+      "y": 199
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 278,
+      "y": 197
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 279,
+      "y": 198
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 279,
+      "y": 201
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 277,
+      "y": 202
+    },
+    {
+      "type": "purple_dye",
+      "amount": 5,
+      "x": 277,
+      "y": 198
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 277,
+      "y": 197
+    }
+  ],
+  "Ammonia": [
+    {
+      "type": "dates",
+      "amount": 3,
+      "x": 221,
+      "y": 237
+    },
+    {
+      "type": "dyes",
+      "amount": 3,
+      "x": 249,
+      "y": 238
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 223,
+      "y": 238
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 219,
+      "y": 224
+    }
+  ],
+  "Arabike_Aigyptos": [
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 293,
+      "y": 263
+    },
+    {
+      "type": "gemstones",
+      "amount": 4,
+      "x": 287,
+      "y": 259
+    },
+    {
+      "type": "gold",
+      "amount": 3,
+      "x": 282,
+      "y": 259
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 275,
+      "y": 238
+    },
+    {
+      "type": "marble",
+      "amount": 4,
+      "x": 275,
+      "y": 244
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 270,
+      "y": 238
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 265,
+      "y": 232
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 282,
+      "y": 256
+    }
+  ],
+  "Dytike_Aigyptos": [
+    {
+      "type": "salt",
+      "amount": 4,
+      "x": 249,
+      "y": 225
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 239,
+      "y": 224
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 235,
+      "y": 220
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 229,
+      "y": 220
+    }
+  ],
+  "Euesperides": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 189,
+      "y": 223
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 189,
+      "y": 217
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 191,
+      "y": 216
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 188,
+      "y": 219
+    },
+    {
+      "type": "perfumes",
+      "amount": 4,
+      "x": 189,
+      "y": 220
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 186,
+      "y": 221
+    }
+  ],
+  "Hermopolites_Nomos": [
+    {
+      "type": "papyrus",
+      "amount": 2,
+      "x": 258,
+      "y": 234
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 256,
+      "y": 239
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 256,
+      "y": 244
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 260,
+      "y": 244
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 256,
+      "y": 237
+    }
+  ],
+  "Kyrenaike": [
+    {
+      "type": "horses",
+      "amount": 3,
+      "x": 202,
+      "y": 214
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 195,
+      "y": 213
+    },
+    {
+      "type": "perfumes",
+      "amount": 5,
+      "x": 196,
+      "y": 214
+    },
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 194,
+      "y": 215
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 206,
+      "y": 218
+    }
+  ],
+  "Libya": [
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 215,
+      "y": 261
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 197,
+      "y": 232
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 195,
+      "y": 238
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 195,
+      "y": 222
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 247,
+      "y": 256
+    }
+  ],
+  "Mareotis": [
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 251,
+      "y": 216
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 253,
+      "y": 217
+    },
+    {
+      "type": "papyrus",
+      "amount": 2,
+      "x": 249,
+      "y": 218
+    },
+    {
+      "type": "glass",
+      "amount": 5,
+      "x": 247,
+      "y": 219
+    },
+    {
+      "type": "grain",
+      "amount": 5,
+      "x": 249,
+      "y": 221
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 252,
+      "y": 219
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 247,
+      "y": 221
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 252,
+      "y": 218
+    }
+  ],
+  "Memphites_Nomos": [
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 257,
+      "y": 228
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 259,
+      "y": 226
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 256,
+      "y": 230
+    },
+    {
+      "type": "papyrus",
+      "amount": 2,
+      "x": 257,
+      "y": 232
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 253,
+      "y": 229
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 255,
+      "y": 231
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 259,
+      "y": 227
+    }
+  ],
+  "Nile_Delta": [
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 254,
+      "y": 219
+    },
+    {
+      "type": "papyrus",
+      "amount": 4,
+      "x": 259,
+      "y": 220
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 259,
+      "y": 216
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 261,
+      "y": 214
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 261,
+      "y": 222
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 257,
+      "y": 224
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 252,
+      "y": 224
+    }
+  ],
+  "Ombites_Nomos": [
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 279,
+      "y": 265
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 275,
+      "y": 266
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 275,
+      "y": 260
+    },
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 276,
+      "y": 268
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 274,
+      "y": 261
+    }
+  ],
+  "Pathyrites_Nomos": [
+    {
+      "type": "incense",
+      "amount": 1,
+      "x": 273,
+      "y": 250
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 271,
+      "y": 253
+    },
+    {
+      "type": "dates",
+      "amount": 2,
+      "x": 271,
+      "y": 257
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 274,
+      "y": 251
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 274,
+      "y": 255
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 271,
+      "y": 256
+    }
+  ],
+  "Thinites_Nomos": [
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 270,
+      "y": 250
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 267,
+      "y": 253
+    },
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 263,
+      "y": 246
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 263,
+      "y": 249
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 264,
+      "y": 253
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 263,
+      "y": 252
+    }
+  ],
+  "Axoumitis": [
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 335,
+      "y": 324
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 331,
+      "y": 326
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 337,
+      "y": 333
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 330,
+      "y": 329
+    },
+    {
+      "type": "elephants",
+      "amount": 2,
+      "x": 321,
+      "y": 337
+    },
+    {
+      "type": "gemstones",
+      "amount": 2,
+      "x": 338,
+      "y": 328
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 321,
+      "y": 333
+    }
+  ],
+  "Deires": [
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 369,
+      "y": 331
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 369,
+      "y": 334
+    },
+    {
+      "type": "elephants",
+      "amount": 2,
+      "x": 371,
+      "y": 336
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 366,
+      "y": 330
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 372,
+      "y": 336
+    }
+  ],
+  "Dodekaschoinos": [
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 278,
+      "y": 273
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 270,
+      "y": 282
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 269,
+      "y": 287
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 275,
+      "y": 272
+    }
+  ],
+  "Epi_Theron": [
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 321,
+      "y": 304
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 321,
+      "y": 300
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 324,
+      "y": 303
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 320,
+      "y": 301
+    }
+  ],
+  "Medwi": [
+    {
+      "type": "iron",
+      "amount": 4,
+      "x": 290,
+      "y": 318
+    },
+    {
+      "type": "cotton",
+      "amount": 3,
+      "x": 287,
+      "y": 328
+    },
+    {
+      "type": "papyrus",
+      "amount": 2,
+      "x": 294,
+      "y": 313
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 294,
+      "y": 316
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 288,
+      "y": 323
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 311,
+      "y": 327
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 291,
+      "y": 323
+    }
+  ],
+  "Megabaria": [
+    {
+      "type": "wild_animals",
+      "amount": 3,
+      "x": 294,
+      "y": 342
+    },
+    {
+      "type": "elephants",
+      "amount": 2,
+      "x": 314,
+      "y": 345
+    },
+    {
+      "type": "papyrus",
+      "amount": 3,
+      "x": 297,
+      "y": 337
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 317,
+      "y": 342
+    }
+  ],
+  "Mosyllia": [
+    {
+      "type": "spices",
+      "amount": 3,
+      "x": 420,
+      "y": 327
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 428,
+      "y": 317
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 418,
+      "y": 329
+    },
+    {
+      "type": "incense",
+      "amount": 3,
+      "x": 430,
+      "y": 317
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 421,
+      "y": 329
+    }
+  ],
+  "Napa": [
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 279,
+      "y": 309
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 275,
+      "y": 313
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 277,
+      "y": 305
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 276,
+      "y": 310
+    }
+  ],
+  "Noubaia": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 283,
+      "y": 309
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 279,
+      "y": 317
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 280,
+      "y": 323
+    }
+  ],
+  "Oponis": [
+    {
+      "type": "slave_trade",
+      "amount": 2,
+      "x": 437,
+      "y": 326
+    },
+    {
+      "type": "elephants",
+      "amount": 2,
+      "x": 414,
+      "y": 348
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 434,
+      "y": 345
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 429,
+      "y": 341
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 432,
+      "y": 321
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 416,
+      "y": 345
+    }
+  ],
+  "Pedeme": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 267,
+      "y": 310
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 266,
+      "y": 293
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 267,
+      "y": 305
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 265,
+      "y": 304
+    }
+  ],
+  "Trogodytike": [
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 343,
+      "y": 316
+    },
+    {
+      "type": "elephants",
+      "amount": 2,
+      "x": 352,
+      "y": 344
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 339,
+      "y": 320
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 328,
+      "y": 322
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 332,
+      "y": 314
+    },
+    {
+      "type": "gold",
+      "amount": 3,
+      "x": 279,
+      "y": 281
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 400,
+      "y": 349
+    }
+  ],
+  "Gerrhaia": [
+    {
+      "type": "incense",
+      "amount": 3,
+      "x": 378,
+      "y": 217
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 369,
+      "y": 212
+    },
+    {
+      "type": "dates",
+      "amount": 3,
+      "x": 372,
+      "y": 216
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 375,
+      "y": 221
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 380,
+      "y": 215
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 383,
+      "y": 222
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 383,
+      "y": 223
+    }
+  ],
+  "Homeritis": [
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 376,
+      "y": 315
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 386,
+      "y": 318
+    },
+    {
+      "type": "perfumes",
+      "amount": 3,
+      "x": 376,
+      "y": 320
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 379,
+      "y": 321
+    },
+    {
+      "type": "incense",
+      "amount": 2,
+      "x": 382,
+      "y": 327
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 386,
+      "y": 322
+    }
+  ],
+  "Katharrheia": [
+    {
+      "type": "gemstones",
+      "amount": 2,
+      "x": 386,
+      "y": 219
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 404,
+      "y": 226
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 393,
+      "y": 224
+    },
+    {
+      "type": "cotton",
+      "amount": 1,
+      "x": 385,
+      "y": 217
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 391,
+      "y": 227
+    }
+  ],
+  "Kattabaneia": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 382,
+      "y": 307
+    },
+    {
+      "type": "incense",
+      "amount": 4,
+      "x": 385,
+      "y": 307
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 382,
+      "y": 314
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 389,
+      "y": 304
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 391,
+      "y": 310
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 392,
+      "y": 311
+    }
+  ],
+  "Lechienia": [
+    {
+      "type": "dates",
+      "amount": 2,
+      "x": 298,
+      "y": 230
+    },
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 304,
+      "y": 238
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 300,
+      "y": 242
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 307,
+      "y": 244
+    },
+    {
+      "type": "incense",
+      "amount": 3,
+      "x": 300,
+      "y": 231
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 309,
+      "y": 240
+    }
+  ],
+  "Libanophoria": [
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 428,
+      "y": 215
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 445,
+      "y": 213
+    },
+    {
+      "type": "dates",
+      "amount": 2,
+      "x": 441,
+      "y": 221
+    },
+    {
+      "type": "incense",
+      "amount": 3,
+      "x": 437,
+      "y": 220
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 438,
+      "y": 214
+    }
+  ],
+  "Mapharitis": [
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 376,
+      "y": 326
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 363,
+      "y": 306
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 367,
+      "y": 313
+    },
+    {
+      "type": "slave_trade",
+      "amount": 2,
+      "x": 367,
+      "y": 321
+    },
+    {
+      "type": "spices",
+      "amount": 3,
+      "x": 371,
+      "y": 328
+    },
+    {
+      "type": "incense",
+      "amount": 2,
+      "x": 372,
+      "y": 326
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 369,
+      "y": 325
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 374,
+      "y": 330
+    }
+  ],
+  "Omanitis": [
+    {
+      "type": "gemstones",
+      "amount": 3,
+      "x": 419,
+      "y": 206
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 419,
+      "y": 210
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 415,
+      "y": 216
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 417,
+      "y": 216
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 417,
+      "y": 211
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 418,
+      "y": 211
+    }
+  ],
+  "Palmyrene": [
+    {
+      "type": "dates",
+      "amount": 2,
+      "x": 292,
+      "y": 182
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 294,
+      "y": 175
+    },
+    {
+      "type": "incense",
+      "amount": 1,
+      "x": 292,
+      "y": 185
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 297,
+      "y": 182
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 292,
+      "y": 190
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 287,
+      "y": 182
+    }
+  ],
+  "Qarnawu": [
+    {
+      "type": "incense",
+      "amount": 2,
+      "x": 361,
+      "y": 290
+    },
+    {
+      "type": "camels",
+      "amount": 2,
+      "x": 372,
+      "y": 292
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 383,
+      "y": 293
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 376,
+      "y": 298
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 380,
+      "y": 291
+    }
+  ],
+  "Raqemo": [
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 283,
+      "y": 216
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 285,
+      "y": 222
+    },
+    {
+      "type": "incense",
+      "amount": 3,
+      "x": 287,
+      "y": 220
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 283,
+      "y": 213
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 282,
+      "y": 224
+    },
+    {
+      "type": "camels",
+      "amount": 2,
+      "x": 303,
+      "y": 215
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 283,
+      "y": 221
+    }
+  ],
+  "Sabaia": [
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 369,
+      "y": 305
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 378,
+      "y": 309
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 380,
+      "y": 305
+    },
+    {
+      "type": "incense",
+      "amount": 2,
+      "x": 378,
+      "y": 302
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 374,
+      "y": 314
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 380,
+      "y": 302
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 371,
+      "y": 313
+    }
+  ],
+  "Ssabwat": [
+    {
+      "type": "perfumes",
+      "amount": 3,
+      "x": 423,
+      "y": 286
+    },
+    {
+      "type": "incense",
+      "amount": 5,
+      "x": 438,
+      "y": 268
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 402,
+      "y": 309
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 397,
+      "y": 300
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 398,
+      "y": 306
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 398,
+      "y": 296
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 399,
+      "y": 295
+    }
+  ],
+  "Yathrib": [
+    {
+      "type": "incense",
+      "amount": 3,
+      "x": 322,
+      "y": 257
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 322,
+      "y": 253
+    },
+    {
+      "type": "camels",
+      "amount": 3,
+      "x": 325,
+      "y": 260
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 304,
+      "y": 254
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 323,
+      "y": 257
+    }
+  ],
+  "Albania": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 335,
+      "y": 127
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 344,
+      "y": 123
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 326,
+      "y": 122
+    },
+    {
+      "type": "tin",
+      "amount": 2,
+      "x": 325,
+      "y": 130
+    },
+    {
+      "type": "cotton",
+      "amount": 1,
+      "x": 340,
+      "y": 128
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 320,
+      "y": 121
+    }
+  ],
+  "Basoropeda": [
+    {
+      "type": "salt",
+      "amount": 3,
+      "x": 312,
+      "y": 147
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 314,
+      "y": 150
+    },
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 317,
+      "y": 146
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 319,
+      "y": 152
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 310,
+      "y": 150
+    }
+  ],
+  "Gordyene": [
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 308,
+      "y": 159
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 313,
+      "y": 158
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 322,
+      "y": 156
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 321,
+      "y": 159
+    }
+  ],
+  "Iberia": [
+    {
+      "type": "gold",
+      "amount": 3,
+      "x": 314,
+      "y": 127
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 319,
+      "y": 124
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 305,
+      "y": 132
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 317,
+      "y": 129
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 311,
+      "y": 123
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 306,
+      "y": 131
+    }
+  ],
+  "Kaspiane": [
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 340,
+      "y": 131
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 336,
+      "y": 134
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 343,
+      "y": 133
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 337,
+      "y": 131
+    }
+  ],
+  "Kolchis": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 295,
+      "y": 122
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 298,
+      "y": 126
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 300,
+      "y": 123
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 308,
+      "y": 122
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 303,
+      "y": 128
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 298,
+      "y": 132
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 309,
+      "y": 121
+    }
+  ],
+  "Kommagene": [
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 287,
+      "y": 162
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 283,
+      "y": 165
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 290,
+      "y": 158
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 283,
+      "y": 163
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 284,
+      "y": 162
+    }
+  ],
+  "Koraxia": [
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 283,
+      "y": 116
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 288,
+      "y": 120
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 292,
+      "y": 121
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 293,
+      "y": 119
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 287,
+      "y": 118
+    }
+  ],
+  "Megale_Armenia": [
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 318,
+      "y": 133
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 310,
+      "y": 132
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 323,
+      "y": 135
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 306,
+      "y": 149
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 315,
+      "y": 136
+    },
+    {
+      "type": "horses",
+      "amount": 3,
+      "x": 321,
+      "y": 141
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 323,
+      "y": 138
+    }
+  ],
+  "Pedias_Atropatene": [
+    {
+      "type": "horses",
+      "amount": 3,
+      "x": 337,
+      "y": 151
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 323,
+      "y": 151
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 324,
+      "y": 144
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 325,
+      "y": 152
+    },
+    {
+      "type": "salt",
+      "amount": 3,
+      "x": 330,
+      "y": 152
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 325,
+      "y": 147
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 330,
+      "y": 153
+    }
+  ],
+  "Sophene": [
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 298,
+      "y": 153
+    },
+    {
+      "type": "cotton",
+      "amount": 1,
+      "x": 301,
+      "y": 158
+    },
+    {
+      "type": "stone",
+      "amount": 3,
+      "x": 297,
+      "y": 159
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 300,
+      "y": 155
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 295,
+      "y": 156
+    }
+  ],
+  "Osrhoene": [
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 291,
+      "y": 172
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 290,
+      "y": 164
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 297,
+      "y": 167
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 293,
+      "y": 173
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 292,
+      "y": 169
+    }
+  ],
+  "Corsica": [
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 123,
+      "y": 146
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 125,
+      "y": 143
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 124,
+      "y": 150
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 123,
+      "y": 147
+    }
+  ],
+  "Iliensia": [
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 126,
+      "y": 156
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 124,
+      "y": 153
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 124,
+      "y": 160
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 122,
+      "y": 156
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 118,
+      "y": 156
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 121,
+      "y": 159
+    }
+  ],
+  "Karaly": [
+    {
+      "type": "silver",
+      "amount": 3,
+      "x": 119,
+      "y": 166
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 121,
+      "y": 165
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 119,
+      "y": 163
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 121,
+      "y": 168
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 120,
+      "y": 159
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 124,
+      "y": 166
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 123,
+      "y": 165
+    }
+  ],
+  "Kyrnos": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 126,
+      "y": 146
+    },
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 124,
+      "y": 147
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 125,
+      "y": 149
+    }
+  ],
+  "Arbelitis": [
+    {
+      "type": "camels",
+      "amount": 2,
+      "x": 314,
+      "y": 172
+    },
+    {
+      "type": "horses",
+      "amount": 3,
+      "x": 326,
+      "y": 170
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 321,
+      "y": 172
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 319,
+      "y": 162
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 314,
+      "y": 169
+    }
+  ],
+  "Babylonia": [
+    {
+      "type": "dates",
+      "amount": 3,
+      "x": 334,
+      "y": 192
+    },
+    {
+      "type": "grain",
+      "amount": 4,
+      "x": 332,
+      "y": 186
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 335,
+      "y": 187
+    },
+    {
+      "type": "papyrus",
+      "amount": 1,
+      "x": 339,
+      "y": 193
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 334,
+      "y": 189
+    },
+    {
+      "type": "stone",
+      "amount": 3,
+      "x": 333,
+      "y": 193
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 338,
+      "y": 191
+    }
+  ],
+  "Charakene": [
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 362,
+      "y": 198
+    },
+    {
+      "type": "incense",
+      "amount": 1,
+      "x": 363,
+      "y": 200
+    },
+    {
+      "type": "papyrus",
+      "amount": 1,
+      "x": 353,
+      "y": 190
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 356,
+      "y": 195
+    },
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 350,
+      "y": 193
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 353,
+      "y": 191
+    }
+  ],
+  "Mesopotamia": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 351,
+      "y": 187
+    },
+    {
+      "type": "glass",
+      "amount": 2,
+      "x": 333,
+      "y": 182
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 336,
+      "y": 185
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 331,
+      "y": 180
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 331,
+      "y": 184
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 331,
+      "y": 185
+    }
+  ],
+  "Mygdonia-Syria": [
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 312,
+      "y": 165
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 304,
+      "y": 161
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 308,
+      "y": 162
+    }
+  ],
+  "Orchoe": [
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 342,
+      "y": 195
+    },
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 337,
+      "y": 189
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 346,
+      "y": 193
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 347,
+      "y": 191
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 339,
+      "y": 189
+    }
+  ],
+  "Sousiane": [
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 354,
+      "y": 179
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 358,
+      "y": 183
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 340,
+      "y": 170
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 342,
+      "y": 172
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 348,
+      "y": 174
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 356,
+      "y": 176
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 375,
+      "y": 185
+    }
+  ],
+  "Tingene": [
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 313,
+      "y": 178
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 307,
+      "y": 180
+    },
+    {
+      "type": "pitch",
+      "amount": 4,
+      "x": 317,
+      "y": 181
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 320,
+      "y": 185
+    }
+  ],
+  "Arachosia": [
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 480,
+      "y": 118
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 465,
+      "y": 118
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 453,
+      "y": 137
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 459,
+      "y": 117
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 472,
+      "y": 127
+    }
+  ],
+  "Ariane": [
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 428,
+      "y": 128
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 420,
+      "y": 135
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 433,
+      "y": 139
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 421,
+      "y": 127
+    },
+    {
+      "type": "tin",
+      "amount": 1,
+      "x": 429,
+      "y": 135
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 416,
+      "y": 145
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 421,
+      "y": 143
+    }
+  ],
+  "Drangiane": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 438,
+      "y": 157
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 429,
+      "y": 143
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 444,
+      "y": 138
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 437,
+      "y": 160
+    }
+  ],
+  "Gedrosia": [
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 466,
+      "y": 148
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 442,
+      "y": 183
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 484,
+      "y": 166
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 447,
+      "y": 163
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 450,
+      "y": 188
+    }
+  ],
+  "Hyrkania": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 379,
+      "y": 130
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 379,
+      "y": 135
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 371,
+      "y": 139
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 368,
+      "y": 144
+    },
+    {
+      "type": "gemstones",
+      "amount": 2,
+      "x": 353,
+      "y": 147
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 360,
+      "y": 146
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 376,
+      "y": 120
+    }
+  ],
+  "Karmania": [
+    {
+      "type": "dates",
+      "amount": 3,
+      "x": 420,
+      "y": 181
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 427,
+      "y": 194
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 418,
+      "y": 181
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 414,
+      "y": 180
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 416,
+      "y": 194
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 411,
+      "y": 184
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 417,
+      "y": 191
+    }
+  ],
+  "Margiane": [
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 410,
+      "y": 111
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 414,
+      "y": 114
+    },
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 407,
+      "y": 116
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 420,
+      "y": 116
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 416,
+      "y": 107
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 422,
+      "y": 108
+    }
+  ],
+  "Media": [
+    {
+      "type": "horses",
+      "amount": 5,
+      "x": 353,
+      "y": 154
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 343,
+      "y": 162
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 359,
+      "y": 161
+    },
+    {
+      "type": "tin",
+      "amount": 1,
+      "x": 366,
+      "y": 164
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 353,
+      "y": 160
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 362,
+      "y": 168
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 367,
+      "y": 172
+    }
+  ],
+  "Paraitakene": [
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 381,
+      "y": 168
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 373,
+      "y": 175
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 382,
+      "y": 179
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 378,
+      "y": 181
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 375,
+      "y": 176
+    }
+  ],
+  "Parthia": [
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 395,
+      "y": 133
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 384,
+      "y": 148
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 404,
+      "y": 124
+    },
+    {
+      "type": "dates",
+      "amount": 2,
+      "x": 378,
+      "y": 142
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 400,
+      "y": 135
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 398,
+      "y": 141
+    }
+  ],
+  "Persia": [
+    {
+      "type": "wine",
+      "amount": 3,
+      "x": 387,
+      "y": 181
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 389,
+      "y": 189
+    },
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 407,
+      "y": 178
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 394,
+      "y": 192
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 393,
+      "y": 184
+    },
+    {
+      "type": "gemstones",
+      "amount": 2,
+      "x": 381,
+      "y": 189
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 409,
+      "y": 178
+    }
+  ],
+  "Rhagiane": [
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 362,
+      "y": 155
+    },
+    {
+      "type": "cotton",
+      "amount": 1,
+      "x": 367,
+      "y": 155
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 374,
+      "y": 156
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 359,
+      "y": 153
+    },
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 363,
+      "y": 153
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 371,
+      "y": 152
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 360,
+      "y": 157
+    }
+  ],
+  "Anatolike_Baktriane": [
+    {
+      "type": "gemstones",
+      "amount": 5,
+      "x": 460,
+      "y": 91
+    },
+    {
+      "type": "camels",
+      "amount": 2,
+      "x": 444,
+      "y": 96
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 454,
+      "y": 96
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 447,
+      "y": 96
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 453,
+      "y": 103
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 451,
+      "y": 100
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 453,
+      "y": 86
+    }
+  ],
+  "Anatolike_Chorasmene": [
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 418,
+      "y": 98
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 419,
+      "y": 90
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 419,
+      "y": 101
+    },
+    {
+      "type": "camels",
+      "amount": 2,
+      "x": 415,
+      "y": 99
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 418,
+      "y": 92
+    }
+  ],
+  "Baktriane": [
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 439,
+      "y": 94
+    },
+    {
+      "type": "cotton",
+      "amount": 1,
+      "x": 438,
+      "y": 100
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 436,
+      "y": 106
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 444,
+      "y": 108
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 430,
+      "y": 100
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 434,
+      "y": 103
+    },
+    {
+      "type": "perfumes",
+      "amount": 3,
+      "x": 442,
+      "y": 89
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 446,
+      "y": 108
+    }
+  ],
+  "Iaxartes": [
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 444,
+      "y": 68
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 443,
+      "y": 69
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 439,
+      "y": 77
+    },
+    {
+      "type": "horses",
+      "amount": 4,
+      "x": 446,
+      "y": 64
+    },
+    {
+      "type": "cotton",
+      "amount": 1,
+      "x": 445,
+      "y": 62
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 455,
+      "y": 56
+    }
+  ],
+  "Kapisene": [
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 460,
+      "y": 107
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 470,
+      "y": 103
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 462,
+      "y": 106
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 459,
+      "y": 111
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 465,
+      "y": 103
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 470,
+      "y": 102
+    }
+  ],
+  "Sogdiane": [
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 432,
+      "y": 90
+    },
+    {
+      "type": "silk",
+      "amount": 3,
+      "x": 428,
+      "y": 86
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 430,
+      "y": 85
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 424,
+      "y": 92
+    },
+    {
+      "type": "tin",
+      "amount": 2,
+      "x": 428,
+      "y": 80
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 425,
+      "y": 99
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 420,
+      "y": 89
+    }
+  ],
+  "Arsa": [
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 492,
+      "y": 100
+    },
+    {
+      "type": "glass",
+      "amount": 2,
+      "x": 483,
+      "y": 102
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 478,
+      "y": 101
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 486,
+      "y": 97
+    },
+    {
+      "type": "salt",
+      "amount": 3,
+      "x": 486,
+      "y": 107
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 489,
+      "y": 111
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 474,
+      "y": 96
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 484,
+      "y": 92
+    }
+  ],
+  "Indos": [
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 490,
+      "y": 140
+    },
+    {
+      "type": "cotton",
+      "amount": 3,
+      "x": 486,
+      "y": 152
+    },
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 506,
+      "y": 143
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 505,
+      "y": 160
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 491,
+      "y": 136
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 506,
+      "y": 152
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 504,
+      "y": 159
+    }
+  ],
+  "Kathaia": [
+    {
+      "type": "elephants",
+      "amount": 4,
+      "x": 506,
+      "y": 106
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 499,
+      "y": 108
+    },
+    {
+      "type": "dyes",
+      "amount": 2,
+      "x": 504,
+      "y": 117
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 505,
+      "y": 101
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 496,
+      "y": 120
+    },
+    {
+      "type": "spices",
+      "amount": 2,
+      "x": 501,
+      "y": 104
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 494,
+      "y": 127
+    }
+  ],
+  "Patalene": [
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 494,
+      "y": 162
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 486,
+      "y": 156
+    },
+    {
+      "type": "dyes",
+      "amount": 3,
+      "x": 492,
+      "y": 161
+    },
+    {
+      "type": "spices",
+      "amount": 5,
+      "x": 504,
+      "y": 178
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 493,
+      "y": 172
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 500,
+      "y": 163
+    },
+    {
+      "type": "gemstones",
+      "amount": 2,
+      "x": 507,
+      "y": 166
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 501,
+      "y": 163
+    }
+  ],
+  "Chorasmene": [
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 397,
+      "y": 90
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 391,
+      "y": 79
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 385,
+      "y": 82
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 387,
+      "y": 90
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 396,
+      "y": 89
+    }
+  ],
+  "Massagetaia": [
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 350,
+      "y": 37
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 351,
+      "y": 49
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 380,
+      "y": 54
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 360,
+      "y": 47
+    }
+  ],
+  "Nisaia": [
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 398,
+      "y": 113
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 391,
+      "y": 119
+    },
+    {
+      "type": "horses",
+      "amount": 3,
+      "x": 388,
+      "y": 118
+    },
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 397,
+      "y": 121
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 396,
+      "y": 116
+    }
+  ],
+  "Parnia": [
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 370,
+      "y": 106
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 370,
+      "y": 117
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 379,
+      "y": 112
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 366,
+      "y": 118
+    }
+  ],
+  "Sakaia": [
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 423,
+      "y": 43
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 463,
+      "y": 25
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 455,
+      "y": 38
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 445,
+      "y": 34
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 435,
+      "y": 41
+    }
+  ],
+  "Talatsia": [
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 439,
+      "y": 49
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 447,
+      "y": 52
+    }
+  ],
+  "Tsatsene": [
+    {
+      "type": "copper",
+      "amount": 3,
+      "x": 437,
+      "y": 64
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 428,
+      "y": 68
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 434,
+      "y": 62
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 427,
+      "y": 67
+    }
+  ],
+  "Kasiane": [
+    {
+      "type": "silk",
+      "amount": 3,
+      "x": 475,
+      "y": 53
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 499,
+      "y": 56
+    },
+    {
+      "type": "camels",
+      "amount": 1,
+      "x": 503,
+      "y": 44
+    },
+    {
+      "type": "gemstones",
+      "amount": 3,
+      "x": 480,
+      "y": 62
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 499,
+      "y": 7
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 487,
+      "y": 23
+    },
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 481,
+      "y": 48
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 509,
+      "y": 27
+    }
+  ],
+  "Terra_Incognita": [
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 330,
+      "y": 71
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 194,
+      "y": 90
+    },
+    {
+      "type": "incense",
+      "amount": 1,
+      "x": 343,
+      "y": 277
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 476,
+      "y": 79
+    }
+  ],
+  "Ader_Lepqi": [
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 143,
+      "y": 215
+    },
+    {
+      "type": "marble",
+      "amount": 1,
+      "x": 145,
+      "y": 218
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 146,
+      "y": 223
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 156,
+      "y": 217
+    },
+    {
+      "type": "purple_dye",
+      "amount": 3,
+      "x": 131,
+      "y": 206
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 131,
+      "y": 215
+    }
+  ],
+  "Adrumet": [
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 132,
+      "y": 194
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 131,
+      "y": 197
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 127,
+      "y": 191
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 125,
+      "y": 199
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 128,
+      "y": 198
+    }
+  ],
+  "Auseia": [
+    {
+      "type": "dates",
+      "amount": 3,
+      "x": 114,
+      "y": 204
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 119,
+      "y": 205
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 120,
+      "y": 198
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 115,
+      "y": 198
+    }
+  ],
+  "Auzica": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 82,
+      "y": 185
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 90,
+      "y": 183
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 87,
+      "y": 186
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 87,
+      "y": 191
+    }
+  ],
+  "Ay-Khol": [
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 70,
+      "y": 185
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 76,
+      "y": 182
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 86,
+      "y": 181
+    },
+    {
+      "type": "timber",
+      "amount": 3,
+      "x": 94,
+      "y": 181
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 80,
+      "y": 182
+    }
+  ],
+  "Gaetulia": [
+    {
+      "type": "purple_dye",
+      "amount": 2,
+      "x": 3,
+      "y": 204
+    },
+    {
+      "type": "spices",
+      "amount": 1,
+      "x": 11,
+      "y": 211
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 26,
+      "y": 204
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 16,
+      "y": 205
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 6,
+      "y": 202
+    }
+  ],
+  "Garamantia": [
+    {
+      "type": "slave_trade",
+      "amount": 2,
+      "x": 145,
+      "y": 261
+    },
+    {
+      "type": "cotton",
+      "amount": 1,
+      "x": 142,
+      "y": 256
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 137,
+      "y": 263
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 150,
+      "y": 249
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 132,
+      "y": 269
+    }
+  ],
+  "Hekatompyle": [
+    {
+      "type": "marble",
+      "amount": 2,
+      "x": 115,
+      "y": 187
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 118,
+      "y": 191
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 113,
+      "y": 193
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 118,
+      "y": 188
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 117,
+      "y": 195
+    }
+  ],
+  "Kirtan": [
+    {
+      "type": "cotton",
+      "amount": 2,
+      "x": 104,
+      "y": 188
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 109,
+      "y": 192
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 99,
+      "y": 186
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 103,
+      "y": 192
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 106,
+      "y": 195
+    }
+  ],
+  "Mauretania": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 43,
+      "y": 194
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 23,
+      "y": 195
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 36,
+      "y": 196
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 44,
+      "y": 190
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 31,
+      "y": 198
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 29,
+      "y": 195
+    }
+  ],
+  "Musulamia": [
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 109,
+      "y": 202
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 96,
+      "y": 196
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 100,
+      "y": 208
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 104,
+      "y": 198
+    }
+  ],
+  "Numidia_Occidentalis": [
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 65,
+      "y": 193
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 76,
+      "y": 187
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 72,
+      "y": 194
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 63,
+      "y": 197
+    }
+  ],
+  "Phazania": [
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 128,
+      "y": 227
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 108,
+      "y": 255
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 92,
+      "y": 233
+    }
+  ],
+  "Qart_Hadasht": [
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 124,
+      "y": 186
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 131,
+      "y": 187
+    },
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 126,
+      "y": 185
+    },
+    {
+      "type": "fruits",
+      "amount": 3,
+      "x": 127,
+      "y": 189
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 129,
+      "y": 186
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 132,
+      "y": 184
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 127,
+      "y": 183
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 125,
+      "y": 187
+    }
+  ],
+  "Shigan": [
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 60,
+      "y": 190
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 61,
+      "y": 186
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 55,
+      "y": 189
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 64,
+      "y": 186
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 54,
+      "y": 191
+    }
+  ],
+  "Takapes": [
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 129,
+      "y": 200
+    },
+    {
+      "type": "dates",
+      "amount": 1,
+      "x": 124,
+      "y": 206
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 128,
+      "y": 210
+    }
+  ],
+  "Ting": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 33,
+      "y": 180
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 39,
+      "y": 187
+    },
+    {
+      "type": "timber",
+      "amount": 3,
+      "x": 36,
+      "y": 183
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 44,
+      "y": 187
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 36,
+      "y": 182
+    }
+  ],
+  "Tobgaxag": [
+    {
+      "type": "marble",
+      "amount": 3,
+      "x": 126,
+      "y": 194
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 120,
+      "y": 193
+    },
+    {
+      "type": "elephants",
+      "amount": 1,
+      "x": 123,
+      "y": 189
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 120,
+      "y": 194
+    }
+  ],
+  "Xatiq": [
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 127,
+      "y": 182
+    },
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 120,
+      "y": 184
+    },
+    {
+      "type": "salt",
+      "amount": 2,
+      "x": 125,
+      "y": 183
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 123,
+      "y": 183
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 123,
+      "y": 182
+    }
+  ],
+  "Xupon": [
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 116,
+      "y": 183
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 110,
+      "y": 184
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 104,
+      "y": 183
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 118,
+      "y": 184
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 110,
+      "y": 183
+    }
+  ],
+  "Agadir": [
+    {
+      "type": "fish",
+      "amount": 5,
+      "x": 33,
+      "y": 171
+    },
+    {
+      "type": "flax",
+      "amount": 3,
+      "x": 33,
+      "y": 168
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 36,
+      "y": 168
+    },
+    {
+      "type": "pottery",
+      "amount": 3,
+      "x": 35,
+      "y": 171
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 34,
+      "y": 175
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 36,
+      "y": 173
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 36,
+      "y": 170
+    }
+  ],
+  "Arevacia": [
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 62,
+      "y": 146
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 57,
+      "y": 142
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 65,
+      "y": 142
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 61,
+      "y": 137
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 57,
+      "y": 144
+    }
+  ],
+  "Artabria": [
+    {
+      "type": "tin",
+      "amount": 3,
+      "x": 31,
+      "y": 122
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 39,
+      "y": 126
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 32,
+      "y": 125
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 35,
+      "y": 129
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 31,
+      "y": 125
+    }
+  ],
+  "Cantabria": [
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 59,
+      "y": 131
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 56,
+      "y": 135
+    },
+    {
+      "type": "lead",
+      "amount": 3,
+      "x": 55,
+      "y": 128
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 58,
+      "y": 127
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 63,
+      "y": 130
+    }
+  ],
+  "Asturia": [
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 48,
+      "y": 129
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 43,
+      "y": 136
+    },
+    {
+      "type": "amber",
+      "amount": 1,
+      "x": 42,
+      "y": 123
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 51,
+      "y": 130
+    },
+    {
+      "type": "gold",
+      "amount": 4,
+      "x": 41,
+      "y": 132
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 45,
+      "y": 130
+    }
+  ],
+  "Ay-Bushum": [
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 79,
+      "y": 165
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 89,
+      "y": 159
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 89,
+      "y": 162
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 87,
+      "y": 160
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 80,
+      "y": 163
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 88,
+      "y": 159
+    }
+  ],
+  "Bastetania": [
+    {
+      "type": "silver",
+      "amount": 4,
+      "x": 65,
+      "y": 171
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 55,
+      "y": 175
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 51,
+      "y": 172
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 63,
+      "y": 170
+    },
+    {
+      "type": "hemp",
+      "amount": 3,
+      "x": 59,
+      "y": 168
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 58,
+      "y": 174
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 51,
+      "y": 170
+    }
+  ],
+  "Bellia": [
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 65,
+      "y": 148
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 69,
+      "y": 146
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 69,
+      "y": 143
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 72,
+      "y": 148
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 71,
+      "y": 143
+    }
+  ],
+  "Bracarensia": [
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 33,
+      "y": 136
+    },
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 37,
+      "y": 137
+    },
+    {
+      "type": "tin",
+      "amount": 2,
+      "x": 35,
+      "y": 132
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 29,
+      "y": 137
+    }
+  ],
+  "Carpetania": [
+    {
+      "type": "glass",
+      "amount": 2,
+      "x": 57,
+      "y": 155
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 54,
+      "y": 149
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 49,
+      "y": 155
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 47,
+      "y": 154
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 46,
+      "y": 156
+    }
+  ],
+  "Celticia": [
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 22,
+      "y": 164
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 38,
+      "y": 151
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 33,
+      "y": 157
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 30,
+      "y": 163
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 32,
+      "y": 157
+    }
+  ],
+  "Cessetania": [
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 75,
+      "y": 147
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 80,
+      "y": 146
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 85,
+      "y": 142
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 74,
+      "y": 152
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 85,
+      "y": 147
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 84,
+      "y": 140
+    }
+  ],
+  "Contestania": [
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 68,
+      "y": 166
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 63,
+      "y": 165
+    },
+    {
+      "type": "marble",
+      "amount": 1,
+      "x": 66,
+      "y": 161
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 71,
+      "y": 164
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 65,
+      "y": 163
+    }
+  ],
+  "Edetania": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 63,
+      "y": 156
+    },
+    {
+      "type": "honey",
+      "amount": 2,
+      "x": 62,
+      "y": 151
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 70,
+      "y": 155
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 69,
+      "y": 158
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 59,
+      "y": 150
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 66,
+      "y": 159
+    }
+  ],
+  "Emporitia": [
+    {
+      "type": "flax",
+      "amount": 3,
+      "x": 91,
+      "y": 142
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 90,
+      "y": 145
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 89,
+      "y": 142
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 92,
+      "y": 141
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 91,
+      "y": 141
+    }
+  ],
+  "Helmantike": [
+    {
+      "type": "tin",
+      "amount": 1,
+      "x": 39,
+      "y": 145
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 44,
+      "y": 147
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 41,
+      "y": 148
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 42,
+      "y": 140
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 38,
+      "y": 143
+    }
+  ],
+  "Ilergetia": [
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 71,
+      "y": 141
+    },
+    {
+      "type": "salt",
+      "amount": 4,
+      "x": 82,
+      "y": 143
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 76,
+      "y": 144
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 82,
+      "y": 140
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 81,
+      "y": 144
+    }
+  ],
+  "Lusitania": [
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 33,
+      "y": 145
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 34,
+      "y": 151
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 29,
+      "y": 152
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 35,
+      "y": 149
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 35,
+      "y": 144
+    }
+  ],
+  "Malaka": [
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 38,
+      "y": 176
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 37,
+      "y": 174
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 46,
+      "y": 173
+    },
+    {
+      "type": "marble",
+      "amount": 1,
+      "x": 40,
+      "y": 174
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 36,
+      "y": 176
+    }
+  ],
+  "Oretania": [
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 54,
+      "y": 167
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 52,
+      "y": 164
+    },
+    {
+      "type": "lead",
+      "amount": 3,
+      "x": 48,
+      "y": 161
+    },
+    {
+      "type": "timber",
+      "amount": 3,
+      "x": 56,
+      "y": 165
+    },
+    {
+      "type": "hemp",
+      "amount": 2,
+      "x": 57,
+      "y": 161
+    },
+    {
+      "type": "dyes",
+      "amount": 4,
+      "x": 50,
+      "y": 160
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 50,
+      "y": 163
+    }
+  ],
+  "Tagia": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 26,
+      "y": 147
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 29,
+      "y": 141
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 19,
+      "y": 153
+    },
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 21,
+      "y": 149
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 29,
+      "y": 140
+    }
+  ],
+  "Turdetania": [
+    {
+      "type": "gold",
+      "amount": 3,
+      "x": 40,
+      "y": 163
+    },
+    {
+      "type": "copper",
+      "amount": 4,
+      "x": 33,
+      "y": 162
+    },
+    {
+      "type": "olive_oil",
+      "amount": 3,
+      "x": 41,
+      "y": 165
+    },
+    {
+      "type": "dyes",
+      "amount": 3,
+      "x": 45,
+      "y": 164
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 43,
+      "y": 168
+    },
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 39,
+      "y": 170
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 41,
+      "y": 160
+    }
+  ],
+  "Vaccaea": [
+    {
+      "type": "flax",
+      "amount": 1,
+      "x": 45,
+      "y": 140
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 53,
+      "y": 139
+    },
+    {
+      "type": "horses",
+      "amount": 2,
+      "x": 46,
+      "y": 137
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 54,
+      "y": 142
+    },
+    {
+      "type": "sheep",
+      "amount": 3,
+      "x": 49,
+      "y": 140
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 49,
+      "y": 143
+    }
+  ],
+  "Vasconia": [
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 70,
+      "y": 133
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 72,
+      "y": 136
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 63,
+      "y": 133
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 72,
+      "y": 138
+    }
+  ],
+  "Aeduia": [
+    {
+      "type": "coal",
+      "amount": 2,
+      "x": 100,
+      "y": 111
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 103,
+      "y": 112
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 105,
+      "y": 106
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 103,
+      "y": 105
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 105,
+      "y": 109
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 102,
+      "y": 112
+    }
+  ],
+  "Allobrogia": [
+    {
+      "type": "fruits",
+      "amount": 2,
+      "x": 107,
+      "y": 116
+    },
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 102,
+      "y": 124
+    },
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 103,
+      "y": 118
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 111,
+      "y": 121
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 101,
+      "y": 121
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 102,
+      "y": 121
+    }
+  ],
+  "Ambiana": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 94,
+      "y": 82
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 91,
+      "y": 86
+    },
+    {
+      "type": "wild_animals",
+      "amount": 2,
+      "x": 99,
+      "y": 88
+    },
+    {
+      "type": "grain",
+      "amount": 2,
+      "x": 94,
+      "y": 90
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 95,
+      "y": 85
+    }
+  ],
+  "Arecomicia": [
+    {
+      "type": "wine",
+      "amount": 2,
+      "x": 100,
+      "y": 129
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 95,
+      "y": 133
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 96,
+      "y": 130
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 95,
+      "y": 134
+    }
+  ],
+  "Arvernia": [
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 96,
+      "y": 114
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 94,
+      "y": 118
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 97,
+      "y": 111
+    },
+    {
+      "type": "marble",
+      "amount": 1,
+      "x": 93,
+      "y": 120
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 99,
+      "y": 116
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 97,
+      "y": 120
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 92,
+      "y": 123
+    }
+  ],
+  "Biturigia": [
+    {
+      "type": "gold",
+      "amount": 3,
+      "x": 90,
+      "y": 113
+    },
+    {
+      "type": "iron",
+      "amount": 3,
+      "x": 85,
+      "y": 104
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 92,
+      "y": 104
+    },
+    {
+      "type": "horses",
+      "amount": 1,
+      "x": 89,
+      "y": 107
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 94,
+      "y": 107
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 85,
+      "y": 109
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 94,
+      "y": 111
+    }
+  ],
+  "Cenomania-Aulercia": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 81,
+      "y": 91
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 89,
+      "y": 99
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 78,
+      "y": 85
+    },
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 77,
+      "y": 93
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 79,
+      "y": 89
+    }
+  ],
+  "Durania": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 81,
+      "y": 125
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 80,
+      "y": 118
+    },
+    {
+      "type": "silver",
+      "amount": 2,
+      "x": 89,
+      "y": 115
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 90,
+      "y": 124
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 89,
+      "y": 124
+    }
+  ],
+  "Eburonia": [
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 111,
+      "y": 76
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 110,
+      "y": 82
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 116,
+      "y": 81
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 110,
+      "y": 86
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 115,
+      "y": 79
+    }
+  ],
+  "Elysicea": [
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 90,
+      "y": 139
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 92,
+      "y": 137
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 91,
+      "y": 136
+    },
+    {
+      "type": "salt",
+      "amount": 1,
+      "x": 94,
+      "y": 134
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 91,
+      "y": 133
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 92,
+      "y": 132
+    }
+  ],
+  "Lemannus_Inferior": [
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 112,
+      "y": 115
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 110,
+      "y": 116
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 115,
+      "y": 116
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 114,
+      "y": 115
+    }
+  ],
+  "Lingonia": [
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 106,
+      "y": 100
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 112,
+      "y": 103
+    },
+    {
+      "type": "hemp",
+      "amount": 1,
+      "x": 114,
+      "y": 97
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 107,
+      "y": 96
+    }
+  ],
+  "Menapia": [
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 99,
+      "y": 79
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 105,
+      "y": 74
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 97,
+      "y": 81
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 103,
+      "y": 77
+    }
+  ],
+  "Nervia": [
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 102,
+      "y": 81
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 107,
+      "y": 82
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 104,
+      "y": 79
+    }
+  ],
+  "Osismia": [
+    {
+      "type": "tin",
+      "amount": 3,
+      "x": 63,
+      "y": 95
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 73,
+      "y": 97
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 62,
+      "y": 90
+    },
+    {
+      "type": "lead",
+      "amount": 2,
+      "x": 69,
+      "y": 93
+    },
+    {
+      "type": "timber",
+      "amount": 3,
+      "x": 71,
+      "y": 99
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 68,
+      "y": 92
+    }
+  ],
+  "Pictonia": [
+    {
+      "type": "grain",
+      "amount": 1,
+      "x": 79,
+      "y": 103
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 81,
+      "y": 106
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 78,
+      "y": 115
+    },
+    {
+      "type": "fish",
+      "amount": 2,
+      "x": 75,
+      "y": 110
+    },
+    {
+      "type": "tin",
+      "amount": 1,
+      "x": 76,
+      "y": 104
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 83,
+      "y": 111
+    }
+  ],
+  "Remia": [
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 105,
+      "y": 91
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 105,
+      "y": 89
+    },
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 108,
+      "y": 93
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 101,
+      "y": 92
+    }
+  ],
+  "Senonia": [
+    {
+      "type": "grain",
+      "amount": 3,
+      "x": 94,
+      "y": 94
+    },
+    {
+      "type": "iron",
+      "amount": 2,
+      "x": 91,
+      "y": 95
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 100,
+      "y": 100
+    },
+    {
+      "type": "dyes",
+      "amount": 1,
+      "x": 102,
+      "y": 95
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 96,
+      "y": 96
+    }
+  ],
+  "Sequania": [
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 108,
+      "y": 111
+    },
+    {
+      "type": "hemp",
+      "amount": 3,
+      "x": 115,
+      "y": 111
+    },
+    {
+      "type": "livestock",
+      "amount": 3,
+      "x": 120,
+      "y": 110
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 117,
+      "y": 114
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 124,
+      "y": 112
+    }
+  ],
+  "Tectosagia": [
+    {
+      "type": "gold",
+      "amount": 2,
+      "x": 84,
+      "y": 138
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 88,
+      "y": 134
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 86,
+      "y": 128
+    },
+    {
+      "type": "copper",
+      "amount": 2,
+      "x": 95,
+      "y": 125
+    },
+    {
+      "type": "hemp",
+      "amount": 2,
+      "x": 92,
+      "y": 127
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 97,
+      "y": 128
+    }
+  ],
+  "Treveria": [
+    {
+      "type": "iron",
+      "amount": 3,
+      "x": 122,
+      "y": 94
+    },
+    {
+      "type": "livestock",
+      "amount": 1,
+      "x": 110,
+      "y": 92
+    },
+    {
+      "type": "sulphur",
+      "amount": 1,
+      "x": 118,
+      "y": 85
+    },
+    {
+      "type": "stone",
+      "amount": 3,
+      "x": 117,
+      "y": 87
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 122,
+      "y": 89
+    },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 118,
+      "y": 94
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 118,
+      "y": 96
+    }
+  ],
+  "Vocontia": [
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 107,
+      "y": 124
+    },
+    {
+      "type": "perfumes",
+      "amount": 2,
+      "x": 105,
+      "y": 126
+    },
+    {
+      "type": "gemstones",
+      "amount": 1,
+      "x": 112,
+      "y": 126
+    },
+    {
+      "type": "flax",
+      "amount": 2,
+      "x": 103,
+      "y": 129
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 109,
+      "y": 130
+    }
+  ],
+  "Sotiatea": [
+    {
+      "type": "sheep",
+      "amount": 1,
+      "x": 73,
+      "y": 121
+    },
+    {
+      "type": "pitch",
+      "amount": 2,
+      "x": 72,
+      "y": 129
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 77,
+      "y": 134
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 81,
+      "y": 129
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 77,
+      "y": 125
+    }
+  ],
+  "Segobrigia": [
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 109,
+      "y": 137
+    },
+    {
+      "type": "wine",
+      "amount": 4,
+      "x": 102,
+      "y": 134
+    },
+    {
+      "type": "slave_trade",
+      "amount": 1,
+      "x": 115,
+      "y": 134
+    },
+    {
+      "type": "olive_oil",
+      "amount": 2,
+      "x": 110,
+      "y": 133
+    },
+    {
+      "type": "pottery",
+      "amount": 2,
+      "x": 106,
+      "y": 134
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 110,
+      "y": 134
+    }
+  ],
+  "Genuatea": [
+    {
+      "type": "coal",
+      "amount": 2,
+      "x": 126,
+      "y": 128
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 131,
+      "y": 130
+    },
+    {
+      "type": "sheep",
+      "amount": 2,
+      "x": 124,
+      "y": 126
+    },
+    {
+      "type": "glass",
+      "amount": 1,
+      "x": 127,
+      "y": 126
+    },
+    {
+      "type": "timber",
+      "amount": 2,
+      "x": 129,
+      "y": 129
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 128,
+      "y": 131
+    }
+  ],
+  "Ingaunia": [
+    {
+      "type": "stone",
+      "amount": 1,
+      "x": 115,
+      "y": 128
+    },
+    {
+      "type": "fish",
+      "amount": 1,
+      "x": 119,
+      "y": 133
+    },
+    {
+      "type": "livestock",
+      "amount": 2,
+      "x": 117,
+      "y": 128
+    },
+    {
+      "type": "fruits",
+      "amount": 1,
+      "x": 120,
+      "y": 130
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 119,
+      "y": 128
+    }
+  ],
+  "Tonelandia": [
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 505,
+      "y": 346
+    }
+  ]
+}

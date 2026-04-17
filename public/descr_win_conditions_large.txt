@@ -1,0 +1,653 @@
+romans_julii
+hold_regions Rome, Acragas, Kamarina, Syracuse, Leontinoi, Katane, Enna, Myttistratum, Tauromenion, Tyndaris, Messana, Panormos, Herakleia_Minoa, Eryx, Segesta, Lilybaion, Melite, Rhegium, Brundisium, Uria, Asculum, Ankon, Sarsina, Spina, Friniatium, Apua, Bononia, Mutina, Veleia, Mantua, Verona, Acerrae, Mediolanum, Mastia, Carthage
+take_regions 100
+short_campaign outlive_factions 
+syracuse insubres epirus
+
+carthage
+hold_regions Carthage, Garama, Vellegia, Syracuse, Messana, Capua, Neapolis, Bovianum, Maleventum, Rome, Bononia, Mediolanum, Massalia, Edeta, Numantia, Oxthracae, Cirta, Arvernium, Cabillonum, Kyrene, Seleucia, Mastia
+take_regions 100
+short_campaign outlive_factions 
+syracuse masaesyli massylii edeta
+
+antigonid
+hold_regions Pella, Athens, Aigion, Sparta, Orchomenos, Ambrakia, Thermon, Rhizon, Ouskoudama, Singidounon, Dourostoron, Pergamon, Rhodes, Nikaia, Ankyra, Amaseia, Mazaka, Armavir, Gazaka, Seleucia, Nisa, Baktra-Zariaspa, Patala, Alexandria, Petra, Kyrene, Syracuse, Rome, Bononia, Mediolanum
+take_regions 100
+short_campaign outlive_factions 
+epirus aetolia athens boeotia achaea sparta
+
+ptolemaic
+hold_regions Alexandria, Meroe, Opone, Marib, Petra, Omana, Kyrene, Carthage, Cirta, Seleucia, Baktra-Zariaspa, Patala, Nisa, Mazaka, Amaseia, Armavir, Gazaka, Pergamon, Rhodes, Nikaia, Ankyra, Ouskoudama, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Syracuse, Rome
+take_regions 200
+short_campaign outlive_factions 
+cyrene rhodes selge athens knossos gortyn 
+
+seleucid
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 200
+short_campaign outlive_factions 
+pergamon rhodes bithynia bactria athens lyttos
+
+bactria
+hold_regions Baktra-Zariaspa, Sakon_Taphai, Nisa, Patala, Seleucia, Gazaka, Armavir, Marib, Meroe, Alexandria, Kyrene, Rhodes, Pergamon, Nikaia, Ankyra, Amaseia, Mazaka, Seraka, Pantikapaion
+take_regions 100
+short_campaign outlive_factions
+parni mauryan
+
+parni
+hold_regions Nisa, Baktra-Zariaspa, Patala, Sakon_Taphai, Seleucia, Omana, Marib, Petra, Alexandria, Meroe, Gazaka, Armavir, Seraka, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Kyrene
+take_regions 100
+short_campaign outlive_factions 
+bactria saka
+
+saka
+hold_regions Sakon_Taphai, Baktra-Zariaspa, Nisa, Patala, Seleucia, Gazaka, Armavir, Marib, Meroe, Alexandria, Kyrene, Rhodes, Pergamon, Nikaia, Ankyra, Amaseia, Mazaka, Seraka, Pantikapaion, Castrum_Osiorum, Gelonos
+take_regions 100
+short_campaign outlive_factions
+bactria parni
+
+armenia
+hold_regions Armavir, Gazaka, Amaseia, Mazaka, Seleucia, Nisa, Seraka, Pantikapaion, Ankyra, Nikaia, Pergamon, Rhodes, Alexandria, Baktra-Zariaspa, Patala, Omana, Marib, Petra, Meroe, Kyrene
+take_regions 100
+short_campaign outlive_factions 
+atropatene cappadocia pontus
+
+pontus
+hold_regions Amaseia, Mazaka, Ankyra, Nikaia, Pergamon, Rhodes, Armavir, Gazaka, Seleucia, Alexandria, Kyrene, Seraka, Pantikapaion, Ouskoudama, Tylis, Dourostoron, Singidounon, Rhizon, Rome, Bononia, Mediolanum, Syracuse, Pella, Orchomenos, Athens, Aigion, Sparta, Ambrakia
+take_regions 100
+short_campaign outlive_factions 
+sinope trapezus heraclea_pontica armenia galatians bosporan
+
+lusitani
+hold_regions Oxthracae, Numantia, Edeta, Cirta, Carthage, Massalia, Arvernium, Vienna, Cabillonum, Mediolanum, Eburodunum-Boihaemum, Rhizon, Singidounon, Canduum, Leucaristus, Susudata, Viromanduium, Castrum_Trinobantium, Bononia, Rome, Syracuse
+take_regions 100
+short_campaign outlive_factions 
+arevaci edeta emporion
+
+getae
+hold_regions Dourostoron, Tylis, Ouskoudama, Pantikapaion, Seraka, Sarmizegetusa, Singidounon, Eburodunum-Boihaemum, Rhizon, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Pergamon, Nikaia, Rhodes, Amaseia, Mazaka, Ankyra, Leucaristus, Susudata, Canduum, Cimbrium, Menosgada
+take_regions 100
+short_campaign outlive_factions 
+tylis histria pentapolis odrysians
+
+acarnania
+hold_regions Stratos, Oiniadai, Leukas, Thermon, Naupaktos, Delphoi, Same
+take_regions 100
+short_campaign outlive_factions
+aetolia epirus
+
+achaea
+hold_regions Aigion, Dyme, Elis, Olympia, Sikyon, Corinth, Argos, Trozan, Tegea, Mantineia, Orchomenos-Arkadia, Megalopolis, Lepreon, Sparta, Messene, Prasiai, Gytheion
+take_regions 100
+short_campaign outlive_factions
+aetolia elis messene acarnania sparta antigonid
+
+acragas
+hold_regions Acragas, Kamarina, Syracuse, Leontinoi, Katane, Enna, Myttistratum, Tauromenion, Tyndaris, Messana, Panormos, Herakleia_Minoa, Eryx, Segesta, Lilybaion, Melite
+take_regions 100
+short_campaign outlive_factions
+syracuse
+
+aedui
+hold_regions Cabillonum, Vienna, Arvernium, Massalia, Viromanduium, Castrum_Trinobantium, Bononia, Mediolanum, Rome, Syracuse, Edeta, Numantia, Oxthracae, Menosgada, Canduum, Susudata, Leucaristus, Eburodunum-Boihaemum, Singidounon, Rhizon, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama
+take_regions 100
+short_campaign outlive_factions
+arverni allobroges massalia insubres
+
+aetolia
+hold_regions Oreos, Eretria, Karystos, Tanagra, Thebes, Orchomenos, Elateia, Opous, Megara, Piraeus, Athens, Lamia, Delphoi, Naupaktos, Thermon, Thebai_Phthiotides, Demetrias, Pharsalos, Pherai, Argithea, Zakynthos, Same, Leukas, Stratos
+take_regions 100
+short_campaign outlive_factions
+achaea boeotia elis sparta antigonid
+
+allobroges
+hold_regions Vienna, Arvernium, Cabillonum, Massalia, Viromanduium, Castrum_Trinobantium, Bononia, Mediolanum, Rome, Syracuse, Edeta, Numantia, Oxthracae, Menosgada, Canduum, Susudata, Leucaristus, Eburodunum-Boihaemum, Singidounon, Rhizon, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama
+take_regions 100
+short_campaign outlive_factions
+insubres aedui massalia arverni
+
+ardiaei
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Naissos, Skodra, Epidamnos
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+arevaci
+hold_regions Numantia, Oxthracae, Edeta, Cirta, Carthage, Massalia, Arvernium, Vienna, Cabillonum, Mediolanum, Eburodunum-Boihaemum, Rhizon, Singidounon, Canduum, Leucaristus, Susudata, Viromanduium, Castrum_Trinobantium, Bononia, Rome, Syracuse
+take_regions 100
+short_campaign outlive_factions
+edeta emporion lusitani
+
+argos
+hold_regions Argos, Sparta
+take_regions 100
+short_campaign outlive_factions
+achaea elis messene sparta
+
+arverni
+hold_regions Arvernium, Vienna, Cabillonum, Massalia, Viromanduium, Castrum_Trinobantium, Bononia, Mediolanum, Rome, Syracuse, Edeta, Numantia, Oxthracae, Menosgada, Canduum, Susudata, Leucaristus, Eburodunum-Boihaemum, Singidounon, Rhizon, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama
+take_regions 100
+short_campaign outlive_factions
+aedui massalia allobroges insubres
+
+asti
+hold_regions Bizye, Salmydessos, Selymbria, Byzantium, Perinthos, Apros, Lysimacheia, Kypsela, Ainos, Maroneia, Ouskoudama, Korelon_Teichos, Kabyle, Debelton, Apollonia-Pontos, Mesembria
+take_regions 100
+short_campaign outlive_factions
+byzantium pentapolis cabyle odrysians
+
+athens
+hold_region, Myrina, Samothrake, Athens, Piraeus, Tanagra, Karystos, Eretria, Megara, Chalkis, Opous, Orchomenos, Oreos, Trozan, Corinth, Argos, Prasiai, Sikyon, Delos, Paros, Naxos, Thera, Thasos
+take_regions 100
+short_campaign outlive_factions
+sparta boeotia antigonid pergamon rhodes
+
+atropatene
+hold_regions Armavir, Gazaka, Amaseia, Mazaka, Seleucia, Nisa, Seraka, Pantikapaion, Ankyra, Nikaia, Pergamon, Rhodes, Alexandria, Baktra-Zariaspa, Patala, Omana, Marib, Petra, Meroe, Kyrene
+take_regions 100
+short_campaign outlive_factions
+armenia cappadocia parni
+
+belgae
+hold_regions Viromanduium, Vienna, Cabillonum, Massalia, Arvernium, Castrum_Trinobantium, Bononia, Mediolanum, Rome, Syracuse, Edeta, Numantia, Oxthracae, Menosgada, Canduum, Susudata, Leucaristus, Eburodunum-Boihaemum, Singidounon, Rhizon, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama
+take_regions 100
+short_campaign outlive_factions
+trinovantes cimbri chatti
+
+bessi
+hold_regions Philippopolis, Keirpara, Dion_Teichos, Nastos, Maroneia, Kypsela, Ouskoudama, Korelon_Teichos, Beroia-Thraike, Kabyle, Abdera-Thraike, Philippoi, Amphipolis, Berge, Herakleia-Sintike, Iamphorynna, Agrianon_Teichos, Pautalia, Serdike, Koilaleton_Teichos, Seuthopolis
+take_regions 100
+short_campaign outlive_factions
+dentheletae maedi odrysians
+
+bithynia
+hold_regions Nikaia, Mazaka, Ankyra, Amaseia, Pergamon, Rhodes, Armavir, Gazaka, Seleucia, Alexandria, Kyrene, Seraka, Pantikapaion, Ouskoudama, Tylis, Dourostoron, Singidounon, Rhizon, Rome, Bononia, Mediolanum, Syracuse, Pella, Orchomenos, Athens, Aigion, Sparta, Ambrakia
+take_regions 100
+short_campaign outlive_factions
+byzantium heraclea_pontica cius cyzicus odrysians pergamon galatians
+
+boeotia
+hold_regions Oreos, Eretria, Karystos, Tanagra, Thebes, Orchomenos, Elateia, Opous, Megara, Piraeus, Athens, Lamia, Delphoi, Naupaktos, Thermon, Thebai_Phthiotides, Demetrias, Pharsalos, Pherai, Argithea
+take_regions 100
+short_campaign outlive_factions
+aetolia athens achaea antigonid
+
+boii
+hold_regions Bononia, Vienna, Cabillonum, Massalia, Viromanduium, Castrum_Trinobantium, Arvernium, Mediolanum, Rome, Syracuse, Edeta, Numantia, Oxthracae, Menosgada, Canduum, Susudata, Leucaristus, Eburodunum-Boihaemum, Singidounon, Rhizon, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama
+take_regions 100
+short_campaign outlive_factions
+insubres volcae allobroges scordisci
+
+bosporan
+hold_regions Pantikapaion, Seraka, Gelonos, Castrum_Osiorum, Dourostoron, Tylis, Ouskoudama, Sarmizegetusa, Singidounon, Rhizon, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Nikaia, Pergamon, Rhodes, Amaseia, Mazaka, Armavir, Gazaka, Seleucia, Alexandria, Petra, Kyrene
+take_regions 100
+short_campaign outlive_factions
+siraces chersonesus pontus
+
+byzantium
+hold_regions Byzantium, Chalkedon
+take_regions 100
+short_campaign outlive_factions
+asti pentapolis bithynia cius
+
+cabyle
+hold_regions Kabyle, Korelon_Teichos, Ouskoudama, Dion_Teichos, Philippopolis, Koilaleton_Teichos, Seuthopolis, Beroia-Thraike, Artakon_Teichos, Tylis, Odessos, Mesembria, Debelton, Apollonia-Pontos, Bizye, Salmydessos
+take_regions 100
+short_campaign outlive_factions
+odrysians asti pentapolis
+
+cappadocia
+hold_regions Mazaka, Nikaia, Ankyra, Amaseia, Pergamon, Rhodes, Armavir, Gazaka, Seleucia, Alexandria, Kyrene, Seraka, Pantikapaion, Ouskoudama, Tylis, Dourostoron, Singidounon, Rhizon, Rome, Bononia, Mediolanum, Syracuse, Pella, Orchomenos, Athens, Aigion, Sparta, Ambrakia
+take_regions 100
+short_campaign outlive_factions
+armenia pontus galatians atropatene
+
+chatti
+hold_regions Canduum, Susudata, Leucaristus, Viromanduium, Menosgada, Eburodunum-Boihaemum, Sarmizegetusa, Castrum_Trinobantium, Cabillonum, Vienna, Arvernium, Massalia, Mediolanum, Bononia, Rome, Pantikapaion, Dourostoron, Chaedinium, Salium
+take_regions 100
+short_campaign outlive_factions
+suebi, cimbri, belgae, trinovantes
+
+chersonesus
+hold_regions Chersonesos, Karkine
+take_regions 100
+short_campaign outlive_factions
+siraces bosporan
+
+chios
+hold_regions Priene, Miletos, Samos, Ephesos, Erythrai, Chios, Halikarnassos, Mylasa, Kos
+take_regions 100
+short_campaign outlive_factions
+priene pergamon rhodes athens
+
+chrysaoria
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 100
+short_campaign outlive_factions
+rhodes priene
+
+cilicians
+hold_regions Gangra, Ekkobriga, Ankyra, Bloukion, Kimiata, Pimolisa, Taouion, Gorbeous
+take_regions 100
+short_campaign outlive_factions
+pontus cappadocia selge
+
+cimbri
+hold_regions Canduum, Leucaristus, Susudata, Viromanduium, Menosgada, Eburodunum-Boihaemum, Sarmizegetusa, Castrum_Trinobantium, Cabillonum, Vienna, Arvernium, Massalia, Mediolanum, Bononia, Rome, Pantikapaion, Dourostoron, Chaedinium, Salium
+take_regions 100
+short_campaign outlive_factions
+suebi, chatti, belgae, trinovantes
+
+cius
+hold_regions Kios, Kyzikos, Daskyleion, Nikaia, Nikomedia, Chalkedon
+take_regions 100
+short_campaign outlive_factions
+cyzicus pergamon bithynia byzantium
+
+cyrene
+hold_regions Kyrene, Alexandria, Meroe, Petra, Marib, Carthage, Cirta, Syracuse, Rome, Massalia, Mediolanum, Bononia, Rhizon, Singidounon, Ambrakia, Pella, Thermon, Orchomenos, Aigion, Athens, Sparta, Ouskoudama, Tylis, Dourostoron, Pergamon, Nikaia, Rhodes, Ankyra, Amaseia, Mazaka, Armavir, Gazaka, Seleucia
+take_regions 100
+short_campaign outlive_factions
+knossos, gortyn, lyttos, kydonia, rhodes, nabataea
+
+cyzicus
+hold_regions Kyzikos, Daskyleion, Kios, Lampsakos, Abydos, Skepsis, Alexandreia-Troas, Abydos
+take_regions 100
+short_campaign outlive_factions
+pergamon cius byzantium bithynia
+
+daesitiates
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Naissos, Skodra, Epidamnos, Arduba, Metulum
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+dardania
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Naissos, Skodra, Epidamnos, Arduba, Metulum
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+delmatae
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Skodra, Epidamnos, Arduba, Naissos, Metulum
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+dentheletae
+hold_regions Pautalia, Agrianon_Teichos, Iamphorynna, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Herakleia-Sintike, Serdike
+take_regions 100
+short_campaign outlive_factions
+paeonia maedi bessi
+
+edeta
+hold_regions Edeta, Numantia, Oxthracae, Cirta, Carthage, Massalia, Arvernium, Vienna, Cabillonum, Mediolanum, Eburodunum-Boihaemum, Rhizon, Singidounon, Canduum, Leucaristus, Susudata, Viromanduium, Castrum_Trinobantium, Bononia, Rome, Syracuse
+take_regions 100
+short_campaign outlive_factions
+emporion, arevaci, lusitani
+
+egypt
+hold_regions Alexandria, Meroe, Opone, Marib, Petra, Omana, Kyrene, Carthage, Cirta, Seleucia, Baktra-Zariaspa, Patala, Nisa, Mazaka, Amaseia, Armavir, Gazaka, Pergamon, Rhodes, Nikaia, Ankyra, Ouskoudama, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Syracuse, Rome
+take_regions 100
+short_campaign outlive_factions
+ptolemaic
+
+elis
+hold_regions Aigion, Dyme, Elis, Olympia, Sikyon, Corinth, Argos, Trozan, Tegea, Mantineia, Orchomenos-Arkadia, Megalopolis, Lepreon, Sparta, Messene, Prasiai, Gytheion
+take_regions 100
+short_campaign outlive_factions
+achaea sparta messene
+
+emporion
+hold_regions Emporion, Rhode, Castrum_Indicetum, Illiberis-Ruscino, Barkeno, Cissa, Narbo, Agathe, Nemausus, Glanum, Massalia, Aegitna, Antipolis
+take_regions 100
+short_campaign outlive_factions
+massalia edeta
+
+epirus
+hold_regions Ambrakia, Pella, Sparta, Epidamnos
+take_regions 100
+short_campaign outlive_factions
+antigonid, acarnania, aetolia, ardiaei
+
+galatians
+hold_regions Ankyra, Mazaka, Amaseia, Nikaia, Pergamon, Rhodes, Armavir, Gazaka, Seraka, Pantikapaion, Dourostoron, Sarmizegetusa, Tylis, Ouskoudama, Pella, Ambrakia, Rhizon, Singidounon, Orchomenos, Thermon, Athens, Aigion, Sparta, Eburodunum-Boihaemum
+take_regions 100
+short_campaign outlive_factions
+cappadocia pontus bithynia pergamon
+
+gortyn
+hold_regions Itanos, Hierapytna, Lato, Lyktos, Knosos, Gortyna, Oaxos, Arsinoe, Kydonia, Polyrrhenia, Kythera, Thera
+take_regions 100
+short_campaign outlive_factions
+kydonia lyttos knossos rhodes
+
+greeks
+hold_regions Ouskoudama, Tylis, Dourostoron, Pantikapaion, Seraka, Sarmizegetusa, Singidounon, Eburodunum-Boihaemum, Rhizon, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Pergamon, Nikaia, Rhodes, Amaseia, Mazaka, Ankyra, Leucaristus, Susudata, Canduum, Menosgada
+take_regions 200
+short_campaign outlive_factions
+antigonid seleucid ptolemaic
+
+heraclea_pontica
+hold_regions Herakleia-Pontos, Kieros, Tieion, Sesamos, Bithynion, Nikomedia, Nikaia, Kios, Chalkedon
+take_regions 100
+short_campaign outlive_factions
+sinope bithynia paphlagonia pontus
+
+histri
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Skodra, Epidamnos, Arduba, Naissos
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+histria
+hold_regions Istrie, Nikonion
+take_regions 100
+short_campaign outlive_factions
+pentapolis olbia getae
+
+iapodes
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Skodra, Epidamnos, Arduba, Naissos, Metulum
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+illyrian_kingdom
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Skodra, Epidamnos, Arduba, Naissos, Metulum
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+indo_greeks
+hold_regions Baktra-Zariaspa, Sakon_Taphai, Nisa, Patala, Seleucia, Gazaka, Armavir, Marib, Meroe, Alexandria, Kyrene, Rhodes, Pergamon, Nikaia, Ankyra, Amaseia, Mazaka, Seraka, Pantikapaion
+take_regions 100
+short_campaign outlive_factions
+bactria, mauryan
+
+insubres
+hold_regions Mediolanum, Vienna, Cabillonum, Massalia, Viromanduium, Castrum_Trinobantium, Bononia, Arvernium, Rome, Syracuse, Edeta, Numantia, Oxthracae, Menosgada, Canduum, Susudata, Leucaristus, Eburodunum-Boihaemum, Singidounon, Rhizon, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama
+take_regions 100
+short_campaign outlive_factions
+arverni aedui allobroges massalia
+
+issa
+hold_regions Issa, Epetion-Salona, Melaina_Korkyra, Pharos, Narona, Daorson, Delmium, Rhizon, Promona, Scardona, Idassa, Argyruntum
+take_regions 100
+short_campaign outlive_factions
+ardiaei epirus
+
+knossos
+hold_regions Itanos, Hierapytna, Lato, Lyktos, Knosos, Gortyna, Oaxos, Arsinoe, Kydonia, Polyrrhenia, Kythera, Thera
+take_regions 100
+short_campaign outlive_factions
+kydonia lyttos gortyn rhodes
+
+kush
+hold_regions Meroe, Marib, Petra, Alexandria, Seleucia, Mazaka, Amaseia, Armavir, Gazaka, Kyrene, Pergamon, Nikaia, Nisa, Baktra-Zariaspa, Seraka, Pantikapaion, Taxila, Sakon_Taphai
+take_regions 100
+short_campaign outlive_factions
+saba nabataea cyrene
+
+kydonia
+hold_regions Itanos, Hierapytna, Lato, Lyktos, Knosos, Gortyna, Oaxos, Arsinoe, Kydonia, Polyrrhenia, Kythera, Thera
+take_regions 100
+short_campaign outlive_factions
+lyttos gortyn knossos rhodes
+
+labeatae
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Skodra, Epidamnos, Metulum
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+liburni
+hold_regions Rhizon, Lissos, Delmium, Singidounon, Ambrakia, Pella, Ouskoudama, Dourostoron, Tylis, Sarmizegetusa, Thermon, Orchomenos, Athens, Sparta, Aigion, Pergamon, Nikaia, Amaseia, Mazaka, Rhodes, Idassa, Bononia, Eburodunum-Boihaemum, Mediolanum, Rome, Massalia, Syracuse, Carthage, Pantikapaion, Skodra, Epidamnos, Metulum
+take_regions 100
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+lugii
+hold_regions Leucaristus, Canduum, Susudata, Viromanduium, Menosgada, Eburodunum-Boihaemum, Sarmizegetusa, Castrum_Trinobantium, Cabillonum, Vienna, Arvernium, Massalia, Mediolanum, Bononia, Rome, Pantikapaion, Dourostoron, Chaedinium, Salium
+take_regions 100
+short_campaign outlive_factions
+suebi chatti volcae belgae trinovantes
+
+lycia
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 100
+short_campaign outlive_factions
+rhodes selge
+
+lysiad
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 100
+short_campaign outlive_factions
+galatians paphlagonia
+
+lyttos
+hold_regions Itanos, Hierapytna, Lato, Lyktos, Knosos, Gortyna, Oaxos, Arsinoe, Kydonia, Polyrrhenia, Kythera, Thera
+take_regions 100
+short_campaign outlive_factions
+kydonia gortyn knossos rhodes
+
+maedi
+hold_regions Iamphorynna, Herakleia-Sintike, Agrianon_Teichos, Pautalia, Bylazora, Stoboi, Berge, Amphipolis, Philippoi, Nastos, Abdera-Thraike
+take_regions 100
+short_campaign outlive_factions
+paeonia dentheletae bessi
+
+masaesyli
+hold_region, Cirta, Carthage, Kyrene, Alexandria, Meroe, Omana, Marib, Petra, Seleucia, Vellegia, Garama, Numantia, Edeta, Oxthracae, Massalia, Bononia, Mediolanum, Rome, Syracuse
+take_regions 100
+short_campaign outlive_factions
+massylii carthage
+
+massalia
+hold_regions Emporion, Rhode, Castrum_Indicetum, Illiberis-Ruscino, Barkeno, Cissa, Narbo, Agathe, Nemausus, Glanum, Massalia, Aegitna, Antipolis
+take_regions 100
+short_campaign outlive_factions
+emporion allobroges insubres edeta
+
+massylii
+hold_regions Cirta, Carthage, Kyrene, Alexandria, Meroe, Omana, Marib, Petra, Seleucia, Vellegia, Garama, Numantia, Edeta, Oxthracae, Massalia, Bononia, Mediolanum, Rome, Syracuse
+take_regions 100
+short_campaign outlive_factions
+masaesyli carthage
+
+mauryan
+hold_regions Taxila, Marib, Meroe, Alexandria, Seleucia, Mazaka, Amaseia, Armavir, Gazaka, Kyrene, Pergamon, Nikaia, Nisa, Baktra-Zariaspa, Seraka, Pantikapaion, Petra, Sakon_Taphai
+take_regions 150
+short_campaign outlive_factions
+bactria saka
+
+megalopolis
+hold_regions Megalopolis
+take_regions 100
+short_campaign outlive_factions
+elis achaea messene sparta
+
+messene
+hold_regions Aigion, Dyme, Elis, Olympia, Sikyon, Corinth, Argos, Trozan, Tegea, Mantineia, Orchomenos-Arkadia, Megalopolis, Lepreon, Sparta, Messene, Prasiai, Gytheion
+take_regions 100
+short_campaign outlive_factions
+elis achaea sparta
+
+miletus
+hold_regions Miletos, Halikarnassos, Mylasa, Antiocheia-Alabanda, Stratonikeia, Priene, Samos, Ephesos
+take_regions 100
+short_campaign outlive_factions
+priene chios rhodes pergamon athens
+
+nabataea
+hold_regions Petra, Marib, Meroe, Alexandria, Seleucia, Mazaka, Amaseia, Armavir, Gazaka, Kyrene, Pergamon, Nikaia, Nisa, Baktra-Zariaspa, Seraka, Pantikapaion, Taxila, Sakon_Taphai
+take_regions 100
+short_campaign outlive_factions
+saba kush cyrene
+
+odrysians
+hold_regions Ouskoudama, Tylis, Dourostoron, Pantikapaion, Seraka, Sarmizegetusa, Singidounon, Eburodunum-Boihaemum, Rhizon, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Pergamon, Nikaia, Rhodes, Amaseia, Mazaka, Ankyra, Leucaristus, Susudata, Canduum, Menosgada
+take_regions 100
+short_campaign outlive_factions
+bessi cabyle byzantium asti pentapolis tylis getae bithynia
+
+olbia
+hold_regions Olbia, Niosson, Nikonion, Karkine, Tyras
+take_regions 100
+short_campaign outlive_factions
+histria chersonesus
+
+paeonia
+hold_regions Bylazora, Stoboi, Skoupi, Stymbara, Hyskana, Herakleia_Lynkestis, Lychnidos
+take_regions 100
+short_campaign outlive_factions
+dentheletae maedi
+
+paphlagonia
+hold_regions Gangra, Ekkobriga, Ankyra, Bloukion, Kimiata, Pimolisa, Taouion, Gorbeous
+take_regions 100
+short_campaign outlive_factions
+sinope pontus heraclea_pontica galatians
+
+pentapolis
+hold_regions Apollonia-Pontos, Mesembria, Odessos, Kallatis, Tomis, Dionysopolis
+take_regions 100
+short_campaign outlive_factions
+byzantium asti cabyle histria
+
+pergamon
+hold_regions Pergamon, Kyme, Adramyttion, Mytilene, Methymna, Skepsis,Alexandreia-Troas, Thyateira, Sardis, Hypaipa, Magnesia-Sipylos, Seleukeia-Tralleis, Magnesia-Maiandros, Aphrodisias, Antiocheia-Alabanda, Stratonikeia, Priene, Miletos, Samos, Ephesos, Erythrai, Chios, Halikarnassos, Mylasa, Kos, Knidos, Kaunos, Telmessos, Daskyleion, Kyzikos, Lampsakos, Samothrake, Elaious, Abydos, Lysimacheia
+take_regions 100
+short_campaign outlive_factions
+cyzicus priene rhodes bithynia galatians athens
+
+priene
+hold_regions Priene, Miletos, Samos, Ephesos, Erythrai, Chios, Halikarnassos, Mylasa, Kos
+take_regions 100
+short_campaign outlive_factions
+chios rhodes pergamon athens
+
+rhodes
+hold_regions Rhodes, Lindos, Knidos, Kos, Halikarnassos, Kaunos, Telmessos, Xanthos, Patara, Itanos, Hierapytna, Lato, Lyktos, Knosos, Gortyna, Oaxos, Arsinoe, Kydonia, Polyrrhenia, Kythera, Delos, Paros, Naxos, Thera, Thasos, Samos, Chios, Mytilene, Methymna, Myrina, Samothrake
+take_regions 100
+short_campaign outlive_factions
+priene, athens, knossos, gortyn, cius, sparta, cyrene
+
+saba
+hold_regions Marib, Petra, Meroe, Alexandria, Seleucia, Mazaka, Amaseia, Armavir, Gazaka, Kyrene, Pergamon, Nikaia, Nisa, Baktra-Zariaspa, Seraka, Pantikapaion, Taxila, Sakon_Taphai
+take_regions 100
+short_campaign outlive_factions
+kush nabataea
+
+scordisci
+hold_regions Singidounon, Rhizon, Eburodunum-Boihaemum, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama, Pella, Ambrakia, Thermon, Orchomenos, Athens, Sparta, Aigion, Pantikapaion, Seraka, Pergamon, Nikaia, Rhodes, Ankyra, Amaseia, Mazaka, Bononia, Mediolanum, Rome, Syracuse
+take_regions 100
+short_campaign outlive_factions
+ardiaei boii tylis
+
+selge
+hold_regions Selge, Pednelissos, Isinda, Termessos, Phaselis, Limyra, Perge, Aspendos, Etenna-Kotenna, Side, Korakesion, Isaura, Sagalassos
+take_regions 100
+short_campaign outlive_factions
+galatians paphlagonia cappadocia
+
+sinope
+hold_regions Sinope, Gadilon, Amisos, Themiskyra, Koloussa, Sesamos
+take_regions 100
+short_campaign outlive_factions
+heraclea_pontica trapezus paphlagonia
+
+siraces
+hold_regions Seraka, Pantikapaion, Gelonos, Sakon_Taphai, Nisa, Baktra-Zariaspa, Castrum_Osiorum, Sarmizegetusa, Dourostoron, Tylis, Ouskoudama, Armavir, Seleucia, Gazaka
+take_regions 100
+short_campaign outlive_factions
+bosporan chersonesus armenia pontus
+
+sparta
+hold_regions Aigion, Dyme, Elis, Olympia, Sikyon, Corinth, Argos, Trozan, Tegea, Mantineia, Orchomenos-Arkadia, Megalopolis, Lepreon, Sparta, Messene, Prasiai, Gytheion
+take_regions 100
+short_campaign outlive_factions
+athens messene elis achaea antigonid
+
+suebi
+hold_regions Susudata, Canduum, Leucaristus, Viromanduium, Menosgada, Eburodunum-Boihaemum, Sarmizegetusa, Castrum_Trinobantium, Cabillonum, Vienna, Arvernium, Massalia, Mediolanum, Bononia, Rome, Pantikapaion, Dourostoron, Chaedinium, Salium
+take_regions 100
+short_campaign outlive_factions
+chatti lugii cimbri volcae
+
+syracuse
+hold_regions Acragas, Kamarina, Syracuse, Leontinoi, Katane, Enna, Myttistratum, Tauromenion, Tyndaris, Messana, Panormos, Herakleia_Minoa, Eryx, Segesta, Lilybaion, Melite
+take_regions 100
+short_campaign outlive_factions
+acragas issa ardiaei athens massalia
+
+taras
+hold_regions Tarentum, Rhegium
+take_regions 100
+short_campaign outlive_factions
+epirus
+
+thessaly
+hold_regions Larissa, Pharsalos, Pherai, Trikka, Phalanna, Thebai_Phthiotides
+take_regions 100
+short_campaign outlive_factions
+antigonid
+
+trapezus
+hold_regions Trapezous, Drilaikon_Phrourion, Kerasous, Chalybikon_Phrourion, Kotyora, Tibarenikon_Phrourion, Themiskyra, Amisos
+take_regions 100
+short_campaign outlive_factions
+sinope pontus
+
+triballi
+hold_regions Oiskos, Triballon_Teichos, Koilaleton_Teichos, Seuthopolis, Artakon_Teichos, Skaidaoua, Beroia-Thraike, Saldensium, Ratiaria, Serdike, Pautalia, Agrianon_Teichos, Keirpara, Philippopolis, Dion_Teichos, Naissos
+take_regions 100
+short_campaign outlive_factions
+getae tylis scordisci
+
+trinovantes
+hold_regions Castrum_Trinobantium, Castrum_Caledoniorum, Viromanduium, Cabillonum, Arvernium, Massalia, Canduum, Susudata, Leucaristus, Numantia, Oxthracae, Edeta
+take_regions 100
+short_campaign outlive_factions
+belgae lusitani cimbri arverni
+
+tylis
+hold_regions Tylis, Rhizon, Eburodunum-Boihaemum, Sarmizegetusa, Dourostoron, Singidounon, Ouskoudama, Pella, Ambrakia, Thermon, Orchomenos, Athens, Sparta, Aigion, Pantikapaion, Seraka, Pergamon, Nikaia, Rhodes, Ankyra, Amaseia, Mazaka, Bononia, Mediolanum, Rome, Syracuse
+take_regions 100
+short_campaign outlive_factions
+pentapolis cabyle getae odrysians getae
+
+volcae
+hold_regions Menosgada, Canduum, Leucaristus, Susudata, Eburodunum-Boihaemum, Sarmizegetusa, Rhizon, Singidounon, Bononia, Mediolanum, Rome, Massalia, Arvernium, Cabillonum, Vienna, Viromanduium, Castrum_Trinobantium, Edeta, Numantia, Oxthracae, Syracuse, Dourostoron, Tylis, Ouskoudama
+take_regions 100
+short_campaign outlive_factions
+chatti boii suebi
+
+hellenistic_rebels
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 100
+short_campaign outlive_factions
+antigonid
+
+ptolemaic_rebels
+hold_regions Alexandria, Meroe, Opone, Marib, Petra, Omana, Kyrene, Carthage, Cirta, Seleucia, Baktra-Zariaspa, Patala, Nisa, Mazaka, Amaseia, Armavir, Gazaka, Pergamon, Rhodes, Nikaia, Ankyra, Ouskoudama, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Syracuse, Rome
+take_regions 200
+short_campaign outlive_factions
+ptolemaic
+
+seleucid_rebels
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 200
+short_campaign outlive_factions
+seleucid
+
+seleucid_rebels2
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 200
+short_campaign outlive_factions
+seleucid
+
+dummies
+hold_regions Eddopolis
+take_regions 200
+short_campaign outlive_factions
+greeks

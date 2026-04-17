@@ -1,0 +1,21 @@
+.custom-scroll-area {
+  position: relative;
+  overflow: hidden !important;
+}
+.custom-scroll-viewport {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  scrollbar-color: transparent transparent !important;
+  overscroll-behavior: contain;
+  margin-right: -14px !important;
+}
+.custom-scroll-viewport::-webkit-scrollbar,
+.custom-scroll-viewport::-webkit-scrollbar-thumb,
+.custom-scroll-viewport::-webkit-scrollbar-track,
+.custom-scroll-viewport::-webkit-scrollbar-corner {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+  border: none !important;
+}

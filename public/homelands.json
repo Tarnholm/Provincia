@@ -1,0 +1,718 @@
+{
+  "acarnania": [
+    "akarnanian"
+  ],
+  "achaea": [
+    "achaian"
+  ],
+  "acragas": [
+    "akragantine"
+  ],
+  "aedui": [
+    "aeduia"
+  ],
+  "aetolia": [
+    "aitolian"
+  ],
+  "allobroges": [
+    "allobrogia"
+  ],
+  "antigonid": [
+    "antigonid"
+  ],
+  "ardiaei": [
+    "ardiaian"
+  ],
+  "arevaci": [
+    "arevacian"
+  ],
+  "belli": [
+    "arevacian"
+  ],
+  "edeta": [
+    "edetanian"
+  ],
+  "arse": [
+    "edetanian"
+  ],
+  "lusitani": [
+    "lusitanian"
+  ],
+  "argos": [
+    "argive"
+  ],
+  "armenia": [
+    "armenian"
+  ],
+  "armenia_minor": [
+    "armenian"
+  ],
+  "arverni": [
+    "arvernia"
+  ],
+  "asti": [
+    "astian"
+  ],
+  "athens": [
+    "athenian"
+  ],
+  "atropatene": [
+    "media"
+  ],
+  "bactria": [
+    "bactrian"
+  ],
+  "belgae": [
+    "belgica"
+  ],
+  "bithynia": [
+    "bithynian"
+  ],
+  "boeotia": [
+    "boiotian"
+  ],
+  "boii": [
+    "boiaea"
+  ],
+  "cisalpine_boii": [
+    "boiaea"
+  ],
+  "bosporan": [
+    "bosporan"
+  ],
+  "byzantium": [
+    "byzantine"
+  ],
+  "cappadocia": [
+    "cappadocian"
+  ],
+  "carthage": [
+    "carthaginian"
+  ],
+  "gades": [
+    "carthaginian"
+  ],
+  "chatti": [
+    "chattian"
+  ],
+  "chersonesus": [
+    "chersonesus"
+  ],
+  "chios": [
+    "chian"
+  ],
+  "chrysaoria": [
+    "chrysaorian"
+  ],
+  "cilicians": [
+    "cilician_home"
+  ],
+  "cimbri": [
+    "cimbrian"
+  ],
+  "cius": [
+    "kian"
+  ],
+  "cyrene": [
+    "kyrenaian"
+  ],
+  "cyzicus": [
+    "kyzikan"
+  ],
+  "dentheletae": [
+    "dentheletaian"
+  ],
+  "egypt": [
+    "egyptian_native"
+  ],
+  "elis": [
+    "elean"
+  ],
+  "emporion": [
+    "emporionite"
+  ],
+  "epirus": [
+    "epirote"
+  ],
+  "galatians": [
+    "galatian"
+  ],
+  "getae": [
+    "getic"
+  ],
+  "tyragetae": [
+    "getic"
+  ],
+  "gortyn": [
+    "gortynian"
+  ],
+  "greeks": [
+    "greek"
+  ],
+  "hellenistic_rebels": [
+    "hellenistic"
+  ],
+  "heraclea_pontica": [
+    "herakleiote"
+  ],
+  "histria": [
+    "istrian"
+  ],
+  "insubres": [
+    "insubria"
+  ],
+  "issa": [
+    "issaian"
+  ],
+  "cabyle": [
+    "kabylian"
+  ],
+  "knossos": [
+    "knossian"
+  ],
+  "kush": [
+    "kushite"
+  ],
+  "kydonia": [
+    "kydonian"
+  ],
+  "lugii": [
+    "lugian"
+  ],
+  "lycia": [
+    "lycian"
+  ],
+  "lysiad": [
+    "lysiad"
+  ],
+  "lyttos": [
+    "lyttian"
+  ],
+  "maedi": [
+    "maedian"
+  ],
+  "masaesyli": [
+    "numidian"
+  ],
+  "massylii": [
+    "numidian"
+  ],
+  "massalia": [
+    "massaliote"
+  ],
+  "mauryan": [
+    "indian"
+  ],
+  "indians": [
+    "indian"
+  ],
+  "megalopolis": [
+    "megalopolitan"
+  ],
+  "messene": [
+    "messenian"
+  ],
+  "miletus": [
+    "milesian"
+  ],
+  "nabataea": [
+    "nabataean"
+  ],
+  "saba": [
+    "sabaean"
+  ],
+  "odrysians": [
+    "odrysian"
+  ],
+  "olbia": [
+    "olbian"
+  ],
+  "paeonia": [
+    "paionian"
+  ],
+  "paphlagonia": [
+    "paphlagonian"
+  ],
+  "parni": [
+    "dahaea"
+  ],
+  "chorasmia": [
+    "dahaea"
+  ],
+  "pentapolis": [
+    "pentapolitan"
+  ],
+  "pergamon": [
+    "pergamene"
+  ],
+  "pontus": [
+    "pontic_home"
+  ],
+  "priene": [
+    "prienian"
+  ],
+  "ptolemaic": [
+    "ptolemaic"
+  ],
+  "ptolemaic_rebels": [
+    "ptolemaic"
+  ],
+  "rhodes": [
+    "rhodian"
+  ],
+  "saka": [
+    "saka"
+  ],
+  "siraces": [
+    "siraces"
+  ],
+  "scordisci": [
+    "scordiscia"
+  ],
+  "seleucid": [
+    "seleucid"
+  ],
+  "seleucid_rebels": [
+    "seleucid"
+  ],
+  "seleucid_rebels2": [
+    "seleucid"
+  ],
+  "selge": [
+    "selgian"
+  ],
+  "sinope": [
+    "sinopian"
+  ],
+  "sparta": [
+    "spartan"
+  ],
+  "suebi": [
+    "suebian"
+  ],
+  "syracuse": [
+    "syracusan"
+  ],
+  "taras": [
+    "tarentine"
+  ],
+  "thessaly": [
+    "thessalian"
+  ],
+  "trapezus": [
+    "trapezountine"
+  ],
+  "triballi": [
+    "triballian"
+  ],
+  "trinovantes": [
+    "trinovantian"
+  ],
+  "tylis": [
+    "tylisia"
+  ],
+  "volcae": [
+    "volcaea"
+  ],
+  "volcae_gallia": [
+    "volcaea"
+  ],
+  "histri": [
+    "histri"
+  ],
+  "liburni": [
+    "liburnian"
+  ],
+  "iapodes": [
+    "iapodian"
+  ],
+  "delmatae": [
+    "dalmatian"
+  ],
+  "daesitiates": [
+    "daesitiates"
+  ],
+  "labeatae": [
+    "labeataean"
+  ],
+  "dardania": [
+    "dardanian"
+  ],
+  "illyrian_kingdom": [
+    "illyrian_kingdom"
+  ],
+  "volsinii": [
+    "volsinian"
+  ],
+  "picentes": [
+    "picenian"
+  ],
+  "capua": [
+    "capuan"
+  ],
+  "samnites": [
+    "samnite"
+  ],
+  "lucanians": [
+    "lucanian"
+  ],
+  "messapians": [
+    "messapian"
+  ],
+  "bruttians": [
+    "bruttian"
+  ],
+  "mamertines": [
+    "mamertine"
+  ],
+  "sardinians": [
+    "sardinian"
+  ],
+  "mauri": [
+    "maurian"
+  ],
+  "musulamii": [
+    "musulamian"
+  ],
+  "garamantes": [
+    "garamantian"
+  ],
+  "nasamones": [
+    "nasamonesian"
+  ],
+  "romans_julii": [
+    "c_italy",
+    "rome"
+  ],
+  "roman_senate": [
+    "c_italy",
+    "rome"
+  ],
+  "roman_rebels_1": [
+    "c_italy",
+    "rome"
+  ],
+  "roman_rebels_2": [
+    "c_italy",
+    "rome"
+  ],
+  "italics": [
+    "c_italy",
+    "rome"
+  ],
+  "astures": [
+    "asturian"
+  ],
+  "basti": [
+    "bastetanian"
+  ],
+  "cantabri": [
+    "cantabrian"
+  ],
+  "carpetani": [
+    "carpetanian"
+  ],
+  "celtici": [
+    "celtician"
+  ],
+  "ilici": [
+    "contestanian"
+  ],
+  "gallaeci": [
+    "gallaecian"
+  ],
+  "ilergetes": [
+    "ilergetian"
+  ],
+  "lacetani": [
+    "lacetanian"
+  ],
+  "oretani": [
+    "oretanian"
+  ],
+  "asta": [
+    "turdetanian"
+  ],
+  "carmo": [
+    "turdetanian"
+  ],
+  "vaccaei": [
+    "vaccaean"
+  ],
+  "vascones": [
+    "vasconian"
+  ],
+  "vettones": [
+    "vettonian"
+  ],
+  "anartes": [
+    "anartian"
+  ],
+  "apuani": [
+    "apuanian"
+  ],
+  "ingauni": [
+    "ingaunian"
+  ],
+  "helvetii": [
+    "helvetian"
+  ],
+  "cenomani": [
+    "cenomanian"
+  ],
+  "aulerci": [
+    "cenomanian"
+  ],
+  "vindelici": [
+    "vindelician"
+  ],
+  "veneti": [
+    "venetian"
+  ],
+  "veneti_gallia": [
+    "venetian"
+  ],
+  "bituriges": [
+    "biturigian"
+  ],
+  "norici": [
+    "norician"
+  ],
+  "salassi": [
+    "salassian"
+  ],
+  "eravisci": [
+    "eraviscian"
+  ],
+  "osismii": [
+    "osismian"
+  ],
+  "salluvii": [
+    "salluvian"
+  ],
+  "senones": [
+    "senonian"
+  ],
+  "sequani": [
+    "sequanian"
+  ],
+  "sotiates": [
+    "sotiates"
+  ],
+  "taurisci": [
+    "tauriscian"
+  ],
+  "frisii": [
+    "frisian"
+  ],
+  "ubii": [
+    "ubian"
+  ],
+  "usipetes": [
+    "usipete"
+  ],
+  "tencteri": [
+    "tencterian"
+  ],
+  "eburones": [
+    "eburonian"
+  ],
+  "treveri": [
+    "treverian"
+  ],
+  "nervii": [
+    "nervian"
+  ],
+  "ordovices": [
+    "ordovices"
+  ],
+  "dumnonii": [
+    "dumnonian"
+  ],
+  "silures": [
+    "silurean"
+  ],
+  "durotriges": [
+    "durotriges"
+  ],
+  "catuvellauni": [
+    "catuvellaunian"
+  ],
+  "caledonii": [
+    "caledonian"
+  ],
+  "brigantes": [
+    "brigantean"
+  ],
+  "sugambri": [
+    "sugambrian"
+  ],
+  "chauci": [
+    "chaucian"
+  ],
+  "cherusci": [
+    "cheruscian"
+  ],
+  "gauts": [
+    "gautic"
+  ],
+  "bastarnae": [
+    "bastarnian"
+  ],
+  "langobardi": [
+    "langobardian"
+  ],
+  "marcomanni": [
+    "marcomannian"
+  ],
+  "quadi": [
+    "quadian"
+  ],
+  "hermunduri": [
+    "hermundurian"
+  ],
+  "costoboci": [
+    "costobocian"
+  ],
+  "buri": [
+    "burian"
+  ],
+  "crobyzi": [
+    "crobyzian"
+  ],
+  "royal_scythians": [
+    "royal_scythian"
+  ],
+  "royal_sarmatians": [
+    "sarmatian"
+  ],
+  "aorsi": [
+    "aorsian"
+  ],
+  "iazyges": [
+    "iazyges"
+  ],
+  "rhoxolani": [
+    "rhoxolanian"
+  ],
+  "scythians": [
+    "scythian"
+  ],
+  "arshi": [
+    "arshian"
+  ],
+  "kucha": [
+    "kuchaean"
+  ],
+  "colchians": [
+    "colchian"
+  ],
+  "iberians": [
+    "caucasian_iberian"
+  ],
+  "albanians": [
+    "albanian"
+  ],
+  "sophene": [
+    "sophenian"
+  ],
+  "commagene": [
+    "commagenian"
+  ],
+  "arados": [
+    "arados"
+  ],
+  "tyre": [
+    "tyre"
+  ],
+  "hasmonean": [
+    "judaean"
+  ],
+  "osrhoene": [
+    "osrhoenian"
+  ],
+  "characene": [
+    "characenian"
+  ],
+  "persis": [
+    "persia"
+  ],
+  "thamud": [
+    "thamudian"
+  ],
+  "lihyan": [
+    "lihyanite"
+  ],
+  "minaeans": [
+    "minaean"
+  ],
+  "qataban": [
+    "qatabanian"
+  ],
+  "himyar": [
+    "himyarite"
+  ],
+  "hadhramaut": [
+    "hadhramite"
+  ],
+  "gerrha": [
+    "gerrhaean"
+  ],
+  "bessi": [
+    "bessian"
+  ],
+  "libyans": [
+    "libyan"
+  ],
+  "corsi": [
+    "corsican"
+  ],
+  "cadurci": [
+    "gallic"
+  ],
+  "rhaetians": [
+    "gallic"
+  ],
+  "gauls": [
+    "gallic"
+  ],
+  "teurisci": [
+    "celtic"
+  ],
+  "ambrones": [
+    "celtic"
+  ],
+  "iverni": [
+    "hibernian"
+  ],
+  "cantiaci": [
+    "cantiacian"
+  ],
+  "venedae": [
+    "venedic"
+  ],
+  "germanics": [
+    "germanic"
+  ],
+  "byllis": [
+    "byllionia"
+  ],
+  "heniochi": [
+    "caucasian"
+  ],
+  "mossynoeci": [
+    "caucasian"
+  ],
+  "palmyra": [
+    "arab"
+  ],
+  "sidon": [
+    "sidon"
+  ],
+  "axum": [
+    "ethiopian"
+  ],
+  "timbuktu": [
+    "ethiopian"
+  ]
+}

@@ -1,0 +1,244 @@
+/* ── Welcome / What's New overlay ─────────────────────────────────── */
+
+.ws-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  /* Note: backdrop-filter removed intentionally — it was covering the bottom-right
+     mute/Dev controls even though they sit at a higher z-index, because Chromium's
+     backdrop-filter stacking can bleed through nested contexts. The rgba background
+     alone provides enough visual separation. */
+}
+
+.ws-card {
+  position: relative;
+  width: 580px;
+  max-width: 92vw;
+  max-height: 88vh;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Light mode */
+.ws-card {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a1a1a;
+}
+body.dark-mode .ws-card {
+  background: rgba(28, 30, 32, 0.94);
+  color: #e6e6e6;
+}
+
+/* ── Hero image (onboarding page 1) ──────────────────────────────── */
+
+.ws-hero {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* ── Body ────────────────────────────────────────────────────────── */
+
+.ws-body {
+  padding: 24px 28px 8px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b7893a #d3c6a4;
+}
+
+.ws-title {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ws-subtitle {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+.ws-text {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.ws-tip {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 3px solid #dca64a;
+}
+.ws-tip { background: rgba(220, 166, 74, 0.1); color: #7a5a1a; }
+body.dark-mode .ws-tip { background: rgba(220, 166, 74, 0.12); color: #e8c873; }
+
+/* ── Dots navigation ─────────────────────────────────────────────── */
+
+.ws-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 4px;
+}
+
+.ws-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.ws-dot { background: rgba(0, 0, 0, 0.18); }
+.ws-dot--active { background: #dca64a; transform: scale(1.25); }
+body.dark-mode .ws-dot { background: rgba(255, 255, 255, 0.2); }
+body.dark-mode .ws-dot--active { background: #dca64a; }
+
+/* ── Navigation buttons ──────────────────────────────────────────── */
+
+.ws-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px 18px;
+  gap: 8px;
+}
+
+.ws-nav-right {
+  display: flex;
+  gap: 8px;
+}
+
+.ws-btn {
+  font-size: 0.9rem;
+  padding: 7px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.1s, opacity 0.15s;
+}
+.ws-btn:hover { transform: translateY(-1px); }
+.ws-btn:active { transform: translateY(0); }
+
+.ws-btn--primary {
+  background: #dca64a;
+  color: #1a1a1a;
+}
+.ws-btn--primary:hover { background: #e8b65a; }
+
+.ws-btn--secondary {
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+body.dark-mode .ws-btn--secondary { background: rgba(255, 255, 255, 0.1); }
+
+.ws-btn--skip {
+  background: transparent;
+  color: inherit;
+  opacity: 0.5;
+  font-weight: 400;
+}
+.ws-btn--skip:hover { opacity: 0.8; }
+
+/* ── Version tag ─────────────────────────────────────────────────── */
+
+.ws-version {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 0.7rem;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ── Changelog entries ───────────────────────────────────────────── */
+
+.ws-changelog {
+  margin-top: 4px;
+}
+
+.ws-entry {
+  margin-bottom: 16px;
+}
+
+.ws-entry-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.ws-entry-version {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.ws-entry-date {
+  font-size: 0.8rem;
+  opacity: 0.45;
+}
+
+.ws-entry-list {
+  margin: 0;
+  padding: 0 0 0 4px;
+  list-style: none;
+}
+
+.ws-entry-item {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  padding: 3px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ws-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* ── What's new card sizing ──────────────────────────────────────── */
+
+.ws-whatsnew .ws-body {
+  max-height: 60vh;
+}
+
+/* ── UI highlight glow during onboarding ─────────────────────────── */
+
+.ws-ui-glow {
+  outline: 2px solid #dca64a !important;
+  outline-offset: 3px;
+  border-radius: 10px;
+  animation: ws-pulse 1.8s ease-in-out infinite;
+  z-index: 10001 !important;
+  position: relative;
+}
+
+@keyframes ws-pulse {
+  0%, 100% { outline-color: #dca64a; box-shadow: 0 0 8px rgba(220, 166, 74, 0.3); }
+  50%      { outline-color: #e8c873; box-shadow: 0 0 18px rgba(220, 166, 74, 0.5); }
+}

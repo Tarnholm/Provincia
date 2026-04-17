@@ -1,38 +1,182 @@
-.App {
-  text-align: center;
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #222; /* background drawn by canvas in App */
+  color: #f6f6f6;
+}
+#root { height: 100vh; width: 100vw; }
+
+button {
+  cursor: pointer;
+  border: none;
+  background: #eee;
+  color: #222;
+  padding: 6px 16px;
+  border-radius: 7px;
+  font-size: 1rem;
+  margin: 5px;
+  transition: background 0.15s, color 0.15s, opacity 0.15s, filter 0.15s;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Panels are translucent so the marble shows; dark mode is lightly darkened */
+.panel {
+  background: rgba(255,255,255,0.85);
+  color: #222;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 12px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+.panel-tight { padding: 2px 1px !important; }
+
+.factions-panel {
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 15px), transparent 100%);
+  mask-image: linear-gradient(to bottom, black calc(100% - 15px), transparent 100%);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Region Info text */
+.region-info { font-size: 0.93rem; line-height: 1.1; letter-spacing: 0; }
+.region-info h2, .region-info .region-title { font-size: 1.1rem; font-weight: 700; margin: 0 0 8px 0; padding: 0; line-height: 1.2; }
+.region-info > div, .region-info p, .region-info span, .region-info li { margin-bottom: 0 !important; }
+.region-info .region-detail-row { display: block; margin-bottom: 0 !important; padding-bottom: 0 !important; }
+.region-info .region-tags, .region-info .region-last { margin-bottom: 6px !important; }
+
+/* Tooltip */
+.tooltip {
+  background: #222;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 15px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  padding: 6px 12px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* In-map zoom buttons (lower-right of map) */
+.zoom-controls .zoom-btn {
+  width: 36px; height: 36px; padding: 0; margin: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.35);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 20px; line-height: 1;
+  background: #eeeeee; color: #222;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+}
+.zoom-controls .zoom-btn:hover:not(:disabled) { filter: brightness(0.95); }
+
+/* Unified scrollbar styling fallbacks.
+   The injected style from scrollbarSkin.js will override these with images. */
+.panel, .factions-panel {
+  scrollbar-width: thin;                /* Firefox width (colors below) */
+  scrollbar-color: #b7893a #d3c6a4;     /* Firefox colors fallback */
+}
+.panel::-webkit-scrollbar,
+.factions-panel::-webkit-scrollbar { width: 16px; }
+
+/* Track fallback (overridden by injected CSS with the actual image) */
+.panel::-webkit-scrollbar-track:vertical,
+.factions-panel::-webkit-scrollbar-track:vertical {
+  background: linear-gradient(#d9ccb1, #beb093);
+  border-radius: 10px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+/* Thumb fallback (overridden by injected CSS with the actual image) */
+.panel::-webkit-scrollbar-thumb:vertical,
+.factions-panel::-webkit-scrollbar-thumb:vertical {
+  background: linear-gradient(#dca64a, #b67e28);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
 
-.App-link {
-  color: #61dafb;
+/* Arrow buttons show only if we have sprites for them (your sheet has none) */
+:root[data-feral-arrows="1"] .panel::-webkit-scrollbar-button:single-button:vertical:decrement,
+:root[data-feral-arrows="1"] .factions-panel::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background: var(--feral-scroll-up) center/contain no-repeat;
+  height: 18px;
+}
+:root[data-feral-arrows="1"] .panel::-webkit-scrollbar-button:single-button:vertical:increment,
+:root[data-feral-arrows="1"] .factions-panel::-webkit-scrollbar-button:single-button:vertical:increment {
+  background: var(--feral-scroll-down) center/contain no-repeat;
+  height: 18px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* If no arrow sprites, collapse the buttons so the rail fills the column */
+:root:not([data-feral-arrows="1"]) .panel::-webkit-scrollbar-button,
+:root:not([data-feral-arrows="1"]) .factions-panel::-webkit-scrollbar-button { height: 0; }
+
+/* Dark mode: panels only slightly darker so marble shows through */
+body.dark-mode { background: #181a1b !important; color: #e6e6e6 !important; }
+body.dark-mode .panel {
+  background: rgba(24,26,27,0.18) !important;
+  color: #e6e6e6 !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+}
+body.dark-mode .tooltip { background: #111 !important; color: #eee !important; }
+body.dark-mode .zoom-controls .zoom-btn {
+  background: rgba(35,39,43,0.86);
+  color: #f6f6f6;
+  border-color: rgba(255,255,255,0.08);
+}
+
+/* --- Polished top bar tab buttons --- */
+.map-mode-btn {
+  transition: all 0.15s ease !important;
+  position: relative;
+}
+.map-mode-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+.map-mode-btn:active:not(:disabled) {
+  transform: translateY(0px);
+  filter: brightness(0.95);
+}
+.map-mode-btn--active {
+  box-shadow: 0 2px 0 #dca64a, 0 1px 6px rgba(220,166,74,0.3) !important;
+}
+
+/* --- Dev toolbar button hover --- */
+.dev-btn {
+  transition: all 0.15s ease !important;
+}
+.dev-btn:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+/* --- Search input focus glow --- */
+.legend-search-input:focus {
+  border-color: rgba(220,166,74,0.6) !important;
+  box-shadow: 0 0 0 2px rgba(220,166,74,0.2);
+}
+.legend-search-input::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+
+/* --- Zoom controls dark glass hover --- */
+.zoom-controls .zoom-btn {
+  background: rgba(20,22,26,0.7) !important;
+  color: #e8e8e8 !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.15s ease !important;
+}
+.zoom-controls .zoom-btn:hover:not(:disabled) {
+  background: rgba(40,44,52,0.85) !important;
+  border-color: rgba(255,255,255,0.25) !important;
+  filter: none !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+body.dark-mode .zoom-controls .zoom-btn {
+  background: rgba(20,22,26,0.75) !important;
+  color: #f6f6f6 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+.faction-tile:hover {
+  transform: scale(1.06) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
