@@ -1,16 +1,17 @@
 {
   "name": "provincia",
-  "version": "0.9.2-21",
+  "version": "0.10.0-2",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
   "homepage": ".",
   "main": "main.js",
   "scripts": {
-    "start": "react-scripts start",
+    "start": "vite",
     "bundle-data": "node scripts/bundle-mod-data.js",
     "prebuild": "node scripts/bundle-mod-data.js",
-    "build": "react-scripts build",
+    "build": "vite build",
+    "test": "vitest run",
     "electron": "electron .",
     "electron-dev": "electron .",
     "dist": "electron-builder",
@@ -25,9 +26,11 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
     "electron": "^41.2.1",
     "electron-builder": "^26.8.1",
-    "react-scripts": "^5.0.1"
+    "vite": "^7.3.2",
+    "vitest": "^4.1.4"
   },
   "build": {
     "extends": null,

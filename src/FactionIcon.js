@@ -8,7 +8,7 @@ const tgaCache = {};
 // and populate the module-level tgaCache so a later <FactionIcon> mount renders
 // instantly. Call this during splash to preload.
 export function preloadIcon(iconPath) {
-  const url = (process.env.PUBLIC_URL || "./") + "/" + iconPath;
+  const url = (import.meta.env.BASE_URL || "./") + "/" + iconPath;
   if (tgaCache[url]) return Promise.resolve();
   return fetch(url)
     .then(r => r.ok ? r.arrayBuffer() : null)
@@ -35,14 +35,14 @@ function decodeTgaToDataUrl(buf, cacheKey) {
 // copy (TGA decoded to PNG, or plain PNG if iconPath ends in .png).
 export default function FactionIcon({ iconPath, alt = "", size = 84, tightCrop = false, modIconsDir }) {
   const [src, setSrc] = useState(null);
-  const bundledUrl = (process.env.PUBLIC_URL || "./") + "/" + iconPath;
+  const bundledUrl = (import.meta.env.BASE_URL || "./") + "/" + iconPath;
   const factionName = iconPath.replace("faction_icons/", "").replace(/\.(png|tga)$/, "");
   const isBundledTga = iconPath.endsWith(".tga");
 
   useEffect(() => {
     // Bundled fallback: if the faction-specific TGA isn't present, try the
     // generic slave.tga (used by dummy/placeholder factions).
-    const bundledSlaveUrl = (process.env.PUBLIC_URL || "./") + "/faction_icons/slave.tga";
+    const bundledSlaveUrl = (import.meta.env.BASE_URL || "./") + "/faction_icons/slave.tga";
     const loadBundledSlave = () => {
       if (tgaCache[bundledSlaveUrl]) { setSrc(tgaCache[bundledSlaveUrl]); return; }
       fetch(bundledSlaveUrl)

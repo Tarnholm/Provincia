@@ -15,13 +15,17 @@
 const fs = require("fs");
 const path = require("path");
 
-// Shared parsers (imported via CJS — same module App.js imports via ES interop)
-const {
-  parseDescrRegions,
-  parseDescrStratFactions,
-  parseDescrStratBuildings,
-  parseDescrStratResources,
-} = require("../src/parsers");
+// parsers.js is ESM (consumed by src/App.js via Vite). Load it via dynamic
+// import from this CJS script. The load is async, so the whole pipeline runs
+// inside an async main() at the bottom of this file.
+let parseDescrRegions, parseDescrStratFactions, parseDescrStratBuildings, parseDescrStratResources;
+async function loadParsers() {
+  const mod = await import("../src/parsers.js");
+  parseDescrRegions = mod.parseDescrRegions;
+  parseDescrStratFactions = mod.parseDescrStratFactions;
+  parseDescrStratBuildings = mod.parseDescrStratBuildings;
+  parseDescrStratResources = mod.parseDescrStratResources;
+}
 
 const MOD_ROOT = process.env.RIS_MOD_ROOT || "C:\\RIS\\RIS";
 const CLASSIC_DIR = process.env.RIS_CLASSIC_DIR || "C:\\RIS\\_submods\\RIS_Classic\\data\\world\\maps\\campaign\\ris_classic";
@@ -262,8 +266,12 @@ function run() {
   log("done.");
 }
 
-try { run(); }
-catch (e) {
-  console.error("[bundle] FATAL:", e.stack || e.message);
-  process.exit(1);
-}
+(async () => {
+  try {
+    await loadParsers();
+    run();
+  } catch (e) {
+    console.error("[bundle] FATAL:", e.stack || e.message);
+    process.exit(1);
+  }
+})();

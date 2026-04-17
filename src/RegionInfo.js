@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 
-const PUBLIC_URL = process.env.PUBLIC_URL || "./";
+const PUBLIC_URL = import.meta.env.BASE_URL || "./";
 
 // Religion colors for ethnicity bar (duplicated subset from App.js)
 const ETHNICITY_COLORS = {

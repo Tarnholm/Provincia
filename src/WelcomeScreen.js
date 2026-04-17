@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import CHANGELOG from "./changelog";
 import "./WelcomeScreen.css";
 
-const PUBLIC_URL = process.env.PUBLIC_URL || ".";
+const PUBLIC_URL = import.meta.env.BASE_URL || ".";
 
 /* ── Onboarding pages (first install) ────────────────────────────── */
 const ONBOARDING_PAGES = [

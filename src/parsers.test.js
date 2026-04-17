@@ -1,11 +1,12 @@
-const {
+import { describe, test, expect } from "vitest";
+import {
   parseSmFactions,
   parseDescrRegions,
   parseDescrStratFactions,
   parseDescrStratBuildings,
   parseDescrStratResources,
   parseDescrStratArmies,
-} = require("./parsers");
+} from "./parsers.js";
 
 describe("parseSmFactions", () => {
   test("extracts primary + secondary RGB from a minimal factions block", () => {

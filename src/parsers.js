@@ -224,7 +224,7 @@ function parseDescrStratArmies(text) {
   return armies;
 }
 
-module.exports = {
+export {
   parseSmFactions,
   parseDescrRegions,
   parseDescrStratFactions,

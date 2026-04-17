@@ -8,6 +8,9 @@ import CustomScrollArea from "./CustomScrollArea";
 import "./CustomScrollArea.css";
 import TGA from "./tga";
 import WelcomeScreen from "./WelcomeScreen";
+import UpdateBanner from "./UpdateBanner";
+import Toasts from "./Toasts";
+import MuteButton from "./MuteButton";
 import {
   parseSmFactions,
   parseDescrRegions,
@@ -34,7 +37,7 @@ const SPLASH_MIN_MS = 800;   // tiny floor so splash is briefly visible even on 
 const SPLASH_HARD_MAX_MS = 30000; // safety cap if something gets wedged
 const THUMB_MIN_PX = Math.round(ICON_SIZE * 0.46);
 const SCROLL_SKIN = {
-  img: (process.env.PUBLIC_URL || "./") + "/feral_slider_composite.png",
+  img: (import.meta.env.BASE_URL || "./") + "/feral_slider_composite.png",
   track: { x: 38, y: 3, w: 21, h: 296 },
   thumb: { x: 341, y: 108, w: 19, h: 84 },
 };
@@ -122,7 +125,7 @@ const _tgaPending = new Map();
 async function decodeTgaAsync(buffer) {
   if (!_tgaWorker && !_tgaWorkerMissing) {
     try {
-      const url = (process.env.PUBLIC_URL || "") + "/tga-worker.js";
+      const url = (import.meta.env.BASE_URL || "") + "/tga-worker.js";
       _tgaWorker = new Worker(url);
       _tgaWorker.onmessage = (ev) => {
         const { id, ok, width, height, pixels, error } = ev.data || {};
@@ -1126,7 +1129,7 @@ function App() {
   // Victory conditions
   const [victoryConditions, setVictoryConditions] = useState({});
 
-  const PUBLIC_URL = process.env.PUBLIC_URL || "./";
+  const PUBLIC_URL = import.meta.env.BASE_URL || "./";
 
   // Load a campaign data file: tries userData (persisted imports) first, falls back to bundled fetch.
   const loadCampaignData = useCallback(async (fileName) => {
@@ -1185,11 +1188,11 @@ function App() {
   const [buildingDisplayNames, setBuildingDisplayNames] = useState(null); // { levelName: "Display Name" }
   // Load building lookups on mount
   useEffect(() => {
-    fetch((process.env.PUBLIC_URL || ".") + "/building_levels.json")
+    fetch((import.meta.env.BASE_URL || ".") + "/building_levels.json")
       .then(r => r.json())
       .then(data => setBuildingLevelsLookup(data))
       .catch(e => pushToast(`Failed to load building level data (${e.message}). Building upgrades will show raw names.`));
-    fetch((process.env.PUBLIC_URL || ".") + "/building_display_names.json")
+    fetch((import.meta.env.BASE_URL || ".") + "/building_display_names.json")
       .then(r => r.json())
       .then(data => setBuildingDisplayNames(data))
       .catch(e => pushToast(`Failed to load building display names (${e.message}). Buildings will show technical names.`));
@@ -1981,7 +1984,7 @@ function App() {
 
   // Load homelands data (shared across campaigns)
   useEffect(() => {
-    fetch((process.env.PUBLIC_URL || "./") + "/homelands.json")
+    fetch((import.meta.env.BASE_URL || "./") + "/homelands.json")
       .then(r => r.json())
       .then(d => setHomelandsData(d))
       .catch(() => setHomelandsData({}));
@@ -2726,7 +2729,7 @@ function App() {
     if (!willShowOnboarding) return;
     musicStartedRef.current = true;
     try {
-      const audio = new Audio((process.env.PUBLIC_URL || ".") + "/startup.wav");
+      const audio = new Audio((import.meta.env.BASE_URL || ".") + "/startup.wav");
       audioOriginalVolumeRef.current = 0.7;
       const mutedAtStart = audioMutedRef.current;
       audio.volume = mutedAtStart ? 0 : audioOriginalVolumeRef.current;
@@ -3685,12 +3688,12 @@ function App() {
     let mapping = classicToImperial;
     let classicVC = classicVictory;
     if (!mapping) {
-      const r = await fetch((process.env.PUBLIC_URL || "./") + "/classic_to_imperial.json");
+      const r = await fetch((import.meta.env.BASE_URL || "./") + "/classic_to_imperial.json");
       mapping = await r.json();
       setClassicToImperial(mapping);
     }
     if (!classicVC) {
-      const r2 = await fetch((process.env.PUBLIC_URL || "./") + "/descr_win_conditions_classic.txt");
+      const r2 = await fetch((import.meta.env.BASE_URL || "./") + "/descr_win_conditions_classic.txt");
       classicVC = parseVictoryConditions(await r2.text());
       setClassicVictory(classicVC);
     }
@@ -4295,30 +4298,11 @@ function App() {
             below the welcome overlay. */}
         {createPortal(
         <div style={{ position: "fixed", bottom: 12, right: 12, zIndex: 10003, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, pointerEvents: "auto" }}>
-          <button
-            onClick={toggleAudioMuted}
-            title={audioMuted ? "Unmute startup sound" : "Mute startup sound"}
-            aria-label={audioMuted ? "Unmute" : "Mute"}
-            style={{
-              ...btnStyle(false),
-              background: audioMuted ? "rgba(90,50,50,0.85)" : "rgba(60,60,60,0.85)",
-              color: audioMuted ? "#d88" : "#ccc",
-              border: `1px solid ${audioMuted ? "#844" : "#555"}`,
-              minWidth: 40, padding: "4px 10px",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-            }}
-          >
-            {audioMuted ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 12 10.73 4.27 3zM12 4l-2.09 2.09L12 8.18V4z" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-              </svg>
-            )}
-          </button>
+          <MuteButton
+            muted={audioMuted}
+            onToggle={toggleAudioMuted}
+            buttonStyle={btnStyle(false)}
+          />
           {devMode && (<>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
@@ -5022,7 +5006,7 @@ function App() {
       });
     };
 
-    const PUBLIC = process.env.PUBLIC_URL || "./";
+    const PUBLIC = import.meta.env.BASE_URL || "./";
 
     return (
       <div style={{
@@ -5842,46 +5826,16 @@ function App() {
         style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}
       />
       {updateReady && (
-        <div style={{
-          position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)",
-          zIndex: 10000, padding: "10px 16px", borderRadius: 8,
-          background: "rgba(20,40,30,0.95)", border: "1px solid #4a8a5a",
-          color: "#d6f2e0", fontSize: "0.85rem",
-          boxShadow: "0 2px 14px rgba(0,0,0,0.6)",
-          display: "flex", alignItems: "center", gap: 12,
-        }}>
-          <span>Provincia {updateReady.version} is ready to install.</span>
-          <button onClick={() => window.electronAPI?.updaterQuitAndInstall?.()} style={{
-            padding: "4px 12px", borderRadius: 4, border: "1px solid #7acb90",
-            background: "#4a8a5a", color: "#fff", fontWeight: 600, cursor: "pointer",
-          }}>Restart & install</button>
-          <button onClick={() => setUpdateReady(null)} style={{
-            padding: "4px 10px", borderRadius: 4, border: "1px solid #555",
-            background: "transparent", color: "#aaa", cursor: "pointer",
-          }}>Later</button>
-        </div>
+        <UpdateBanner
+          version={updateReady.version}
+          onRestart={() => window.electronAPI?.updaterQuitAndInstall?.()}
+          onDismiss={() => setUpdateReady(null)}
+        />
       )}
-      {toasts.length > 0 && (
-        <div style={{
-          position: "fixed", top: 12, right: 12, zIndex: 9999,
-          display: "flex", flexDirection: "column", gap: 6, maxWidth: 380,
-        }}>
-          {toasts.map(t => (
-            <div key={t.id}
-              onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
-              style={{
-                padding: "10px 14px", borderRadius: 6,
-                border: `1px solid ${t.kind === "error" ? "#c44" : "#888"}`,
-                background: "rgba(30,20,20,0.95)", color: "#f2e6e6",
-                fontSize: "0.85rem", cursor: "pointer",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
-              }}>
-              {t.message}
-              <div style={{ fontSize: "0.7rem", opacity: 0.6, marginTop: 4 }}>click to dismiss</div>
-            </div>
-          ))}
-        </div>
-      )}
+      <Toasts
+        toasts={toasts}
+        onDismiss={(id) => setToasts(prev => prev.filter(x => x.id !== id))}
+      />
       <div
         style={{
           position: "relative",
@@ -5896,7 +5850,7 @@ function App() {
         {showSplash && !assetError && (
           <div className="splash" style={overlayBase}>
             <img
-              src={(process.env.PUBLIC_URL || "./") + "/splash.png"}
+              src={(import.meta.env.BASE_URL || "./") + "/splash.png"}
               alt="Splash"
               style={{
                 display: "block",
@@ -6148,7 +6102,7 @@ function App() {
                     aria-label="Reset view"
                   >
                     <img
-                      src={(process.env.PUBLIC_URL || "./") + "/reset-alt.svg"}
+                      src={(import.meta.env.BASE_URL || "./") + "/reset-alt.svg"}
                       alt="Reset"
                       width={18}
                       height={18}
