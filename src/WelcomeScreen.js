@@ -100,7 +100,14 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
   const effectiveOnboardingDone = isStaleSavedVersion ? false : onboardingDone;
 
   const shouldShowOnboarding = FORCE_TEST_MODE || forceOnboarding || !effectiveOnboardingDone;
-  const newEntries = FORCE_TEST_MODE ? CHANGELOG : (effectiveLastSeen ? getNewEntries(effectiveLastSeen) : CHANGELOG);
+  // In test builds the changelog is part of what we want to verify, so show
+  // at least the latest entry regardless of what the user has already seen.
+  // Release builds keep the normal "only entries newer than lastSeen" logic.
+  const newEntries = FORCE_TEST_MODE
+    ? CHANGELOG
+    : forceOnboarding
+      ? (previousEntry ? getNewEntries(previousEntry) : CHANGELOG.slice(0, 1))
+      : (effectiveLastSeen ? getNewEntries(effectiveLastSeen) : CHANGELOG);
   const [phase, setPhase] = useState(shouldShowOnboarding ? "onboarding" : "whatsnew");
 
   // Let the parent know which phase is currently active (used to gate music).

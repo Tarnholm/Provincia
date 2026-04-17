@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.3",
+    date: "2026-04-17",
+    items: [
+      { type: "improvement", text: "Faster launch: the Vite build system replaces the old bundler — 10× faster dev iteration and a smaller install footprint" },
+      { type: "improvement", text: "Cleaner internals: the UI code is split into smaller modules (mute button, update banner, toasts now live on their own)" },
+      { type: "fix", text: "Dropped 31 npm dependency vulnerabilities carried over from the old build system" },
+    ],
+  },
+  {
     // The 4th segment is a silent "edition" counter — bump it to force the
     // changelog to reappear once after adding new items to an existing version.
     // The UI strips it (users see "v0.9.2"), and gating uses it for comparison.
