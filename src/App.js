@@ -1362,20 +1362,8 @@ function App() {
   // Also overlay positions from live log-moves — those are pixel-accurate
   // truth straight from the engine.
   const armiesToRender = useMemo(() => {
-    // saveLiveArmies carries raw bottom-up y from the save (descr_strat
-    // convention). armiesData is the bundled JSON, which was pre-flipped
-    // to top-down by bundle-mod-data.js (y = mapHeight - 1 - snapY).
-    // The render below applies ONE more (mapY = imgSize.height - 1 - y)
-    // flip, which is correct for bottom-up input. To feed the render
-    // consistently, un-flip the bundled data back to bottom-up so both
-    // sources match conventions.
-    const rawSrc = saveLiveArmies && saveLiveArmies.length > 0 ? saveLiveArmies : armiesData;
-    if (!rawSrc || rawSrc.length === 0) return [];
-    const usingBundled = !(saveLiveArmies && saveLiveArmies.length > 0);
-    const h = imgSize?.height || 0;
-    const src = usingBundled && h > 0
-      ? rawSrc.map(a => ({ ...a, y: typeof a.y === "number" ? (h - 1 - a.y) : a.y }))
-      : rawSrc;
+    const src = saveLiveArmies && saveLiveArmies.length > 0 ? saveLiveArmies : armiesData;
+    if (!src || src.length === 0) return [];
     // Build a quick Set of "x,y" strings for all settlement tiles.
     const settlementTiles = new Set();
     for (const cp of (cityPixels || [])) settlementTiles.add(`${cp.x},${cp.y}`);
@@ -1505,12 +1493,8 @@ function App() {
           armyByPos.set(`${a.x},${a.y}`, a);
         }
       }
-      for (const dRaw of armiesData) {
-        if (typeof dRaw.x !== "number" || typeof dRaw.y !== "number") continue;
-        // Un-flip y the same way the main src block does, so the position
-        // key lines up with the (already bottom-up) saveLiveArmies entries
-        // and the render's single flip lands on the correct tile.
-        const d = h > 0 ? { ...dRaw, y: h - 1 - dRaw.y } : dRaw;
+      for (const d of armiesData) {
+        if (typeof d.x !== "number" || typeof d.y !== "number") continue;
         const key = `${d.x},${d.y}`;
         const existing = armyByPos.get(key);
         if (existing) {
@@ -1530,7 +1514,7 @@ function App() {
       }
     }
     return result;
-  }, [saveLiveArmies, armiesData, cityPixels, imgSize, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn]);
+  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn]);
   const [homelandsData, setHomelandsData] = useState({}); // faction → [hidden_resource, ...]
   const [showGarrisons, setShowGarrisons] = useState(true);
   const [showFieldArmies, setShowFieldArmies] = useState(true);
@@ -7970,16 +7954,8 @@ function App() {
               if (isActiveCampaign(camp)) setResourcesData(resources);
               updated.push(`resources (${resCount})`);
             }
-            // Extract armies from descr_strat.txt.
-            // parseDescrStratArmies returns raw bottom-up y (descr_strat
-            // convention). The bundled JSON format produced by
-            // scripts/bundle-mod-data.js is top-down (pre-flipped). Flip
-            // here so a fresh import produces the same shape as the bundle,
-            // keeping a single armiesData convention downstream.
-            const rawArmies = parseDescrStratArmies(text);
-            const armies = (mapHeight > 0)
-              ? rawArmies.map(a => ({ ...a, y: typeof a.y === "number" ? (mapHeight - 1 - a.y) : a.y }))
-              : rawArmies;
+            // Extract armies from descr_strat.txt
+            const armies = parseDescrStratArmies(text);
             if (armies.length > 0) {
               if (canSave) await window.electronAPI.saveFile(camp.out.armies, JSON.stringify(armies));
               if (isActiveCampaign(camp)) setArmiesData(armies);

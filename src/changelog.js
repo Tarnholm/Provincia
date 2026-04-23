@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.87",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Revert 0.9.84/0.9.86 y-flip 'fixes' — they produced 0 armies because the y convention in the wild is more varied than I assumed. Back to the old behavior (sea-side armies in RIS) until I have a reliable way to detect bottom-up vs top-down per data source." },
+    ],
+  },
+  {
     version: "0.9.86",
     date: "2026-04-23",
     items: [
