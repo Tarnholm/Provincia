@@ -26,8 +26,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   findFactionIconsDir: (modDir) => ipcRenderer.invoke("find-faction-icons-dir", modDir),
   readFactionIcon: (filePath) => ipcRenderer.invoke("read-faction-icon", filePath),
-  resolveBuildingIcon: (modDataDir, culture, levelName) =>
-    ipcRenderer.invoke("resolve-building-icon", modDataDir, culture, levelName),
+  resolveBuildingIcon: (modDataDir, culture, levelName, chainName) =>
+    ipcRenderer.invoke("resolve-building-icon", modDataDir, culture, levelName, chainName),
   resolveBuildingBanner: (modDataDir, culture, levelName, chainName) =>
     ipcRenderer.invoke("resolve-building-banner", modDataDir, culture, levelName, chainName),
   resolveUnitCard: (modDataDir, faction, unitName) =>

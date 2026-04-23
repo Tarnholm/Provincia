@@ -1320,7 +1320,7 @@ function pickGenericCategory(chain, level) {
   if (/academ|school|philos|library|scribe|odeon|lyceum/.test(s)) return "school";
   if (/temple|shrine|pantheon|religion|awesome_temple/.test(s)) return "religion";
   if (/forge|smith|mine|iron|bronze|armoury/.test(s)) return "mining";
-  if (/govern|palace|villa|procon|imperial|regional/.test(s)) return "government";
+  if (/govern|palace|villa|procon|imperial|regional|\bgov\d?\b/.test(s)) return "government";
   if (/law|court|magistrat/.test(s)) return "law";
   if (/tavern|brothel|circus|arena|amphi|hippodrom|colis/.test(s)) return "arena";
   return null;
