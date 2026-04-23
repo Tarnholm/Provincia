@@ -7970,8 +7970,16 @@ function App() {
               if (isActiveCampaign(camp)) setResourcesData(resources);
               updated.push(`resources (${resCount})`);
             }
-            // Extract armies from descr_strat.txt
-            const armies = parseDescrStratArmies(text);
+            // Extract armies from descr_strat.txt.
+            // parseDescrStratArmies returns raw bottom-up y (descr_strat
+            // convention). The bundled JSON format produced by
+            // scripts/bundle-mod-data.js is top-down (pre-flipped). Flip
+            // here so a fresh import produces the same shape as the bundle,
+            // keeping a single armiesData convention downstream.
+            const rawArmies = parseDescrStratArmies(text);
+            const armies = (mapHeight > 0)
+              ? rawArmies.map(a => ({ ...a, y: typeof a.y === "number" ? (mapHeight - 1 - a.y) : a.y }))
+              : rawArmies;
             if (armies.length > 0) {
               if (canSave) await window.electronAPI.saveFile(camp.out.armies, JSON.stringify(armies));
               if (isActiveCampaign(camp)) setArmiesData(armies);

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.86",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Dev-import path now produces armies with the same top-down y convention as the bundled JSON. parseDescrStratArmies returns raw bottom-up y (straight from descr_strat); the bundler pre-flips to top-down; the renderer's un-flip assumed top-down. A fresh import (RIS) fed bottom-up armies into a code path tuned for top-down, double-un-flipping them. Now the import flips before saving/setting state so both paths agree." },
+    ],
+  },
+  {
     version: "0.9.85",
     date: "2026-04-23",
     items: [
