@@ -48,13 +48,25 @@ function parseSmFactions(text) {
 }
 
 function parseDescrRegions(text) {
+  // RTW:R uses 8-line region blocks (region, city, faction, culture, RGB,
+  // tags, farm_level, pop_level). Original RTW added a 9th "ethnicities"
+  // line. Detect by checking whether the line after pop_level looks like
+  // a new region start (non-indented name) vs. an ethnicities value.
   const lines = text.split(/\r?\n/);
   const regions = {};
+  const isRegionStart = (raw) => {
+    if (raw == null) return false;
+    if (/^\s/.test(raw)) return false; // indented → field, not region name
+    const t = raw.trim();
+    if (!t || t.startsWith(";")) return false;
+    return /^[A-Za-z][A-Za-z0-9_]*$/.test(t);
+  };
   let i = 0;
   while (i < lines.length) {
-    const line = lines[i].trim();
+    const raw = lines[i];
+    const line = (raw || "").trim();
     if (!line || line.startsWith(";")) { i++; continue; }
-    if (i + 8 >= lines.length) break;
+    if (i + 7 >= lines.length) break;
     const region = line;
     const city = lines[i + 1].trim();
     const faction = lines[i + 2].trim();
@@ -65,9 +77,17 @@ function parseDescrRegions(text) {
     const tags = lines[i + 5].trim();
     const farm_level = lines[i + 6].trim();
     const pop_level = lines[i + 7].trim();
-    const ethnicities = lines[i + 8].trim();
+    // Look at line 8: is it ethnicities (RTW original) or the start of the
+    // next region block (RTW:R)?
+    let ethnicities = "";
+    let step = 8;
+    const nextRaw = lines[i + 8];
+    if (nextRaw != null && !isRegionStart(nextRaw)) {
+      const nt = (nextRaw || "").trim();
+      if (nt && !nt.startsWith(";")) { ethnicities = nt; step = 9; }
+    }
     regions[rgbKey] = { region, city, faction, culture, tags, farm_level, pop_level, ethnicities };
-    i += 9;
+    i += step;
   }
   return regions;
 }
@@ -194,31 +214,73 @@ function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
 }
 
 function parseDescrStratArmies(text) {
+  // Walk the file once, tracking the current faction and the most recent
+  // `character ...` line. When an `army` keyword follows, collect the unit
+  // list until a non-unit keyword breaks the block. descr_strat characters
+  // look like:
+  //   character Adymos of_Lissus, general, age 41, , x 10, y 50
+  //   army
+  //   unit hoplites    exp 0 armour 0 weapon_lvl 0
+  //   unit javelin skirmishers    exp 0 armour 0 weapon_lvl 0
+  // Returns [{ faction, character, x, y, units: [{ name, exp }] }].
   const armies = [];
   const lines = text.split(/\r?\n/);
-  let currentFaction = null;
-  let i = 0;
-  while (i < lines.length) {
+  let curFaction = null;
+  let curChar = null;   // { character, x, y }
+  for (let i = 0; i < lines.length; i++) {
     const s = lines[i].trim();
+    if (!s || s.startsWith(";")) continue;
     const fm = s.match(/^faction\s+(\w+)/);
-    if (fm) { currentFaction = fm[1].toLowerCase(); i++; continue; }
-    const am = s.match(/^(army|navy)\s+(.+)/);
-    if (am && currentFaction) {
-      const entry = { faction: currentFaction, type: am[1], name: am[2].replace(/,.*/, "").trim() };
-      i++;
-      while (i < lines.length) {
-        const sl = lines[i].trim();
-        if (!sl || sl.startsWith(";") || sl.startsWith("faction") || sl.startsWith("army") || sl.startsWith("navy") || sl.startsWith("settlement")) break;
-        const cm = sl.match(/^character\s+(.+)/);
-        if (cm) { entry.character = cm[1].split(",")[0].trim(); }
-        const csm = sl.match(/^character_sub\s+(.+)/);
-        if (csm) { entry.character = csm[1].split(",")[0].trim(); }
-        if (sl.startsWith("mercenary_pool") || sl.startsWith("denari")) break;
-        i++;
+    if (fm) { curFaction = fm[1].toLowerCase(); curChar = null; continue; }
+    const cm = s.match(/^character(?:_sub)?\s+(.+)$/);
+    if (cm) {
+      const parts = cm[1].split(",").map((p) => p.trim());
+      const name = parts[0];
+      // Role is the second field and identifies admirals (naval commanders).
+      const role = parts[1] || null;
+      let x = null, y = null;
+      for (const p of parts) {
+        const mx = p.match(/^x\s+(-?\d+)/); if (mx) x = parseInt(mx[1], 10);
+        const my = p.match(/^y\s+(-?\d+)/); if (my) y = parseInt(my[1], 10);
       }
-      armies.push(entry);
-    } else {
-      i++;
+      curChar = { character: name, role, x, y };
+      continue;
+    }
+    if ((s === "army" || s === "navy") && curFaction && curChar) {
+      const units = [];
+      let j = i + 1;
+      while (j < lines.length) {
+        const sl = lines[j].trim();
+        if (!sl || sl.startsWith(";")) { j++; continue; }
+        const um = sl.match(/^unit\s+(.+?)(?:\s+exp\s|\s{2,}|$)/);
+        if (um) {
+          const uname = um[1].replace(/,$/, "").trim();
+          let exp = 0;
+          const ex = sl.match(/exp\s+(\d+)/); if (ex) exp = parseInt(ex[1], 10);
+          units.push({ name: uname, exp });
+          j++;
+          continue;
+        }
+        // Any other keyword terminates the army block.
+        break;
+      }
+      // Navy detection: explicit `navy` keyword, OR the army is commanded
+      // by an admiral, OR every unit's name starts with "naval " (boats).
+      const isAdmiral = (curChar.role || "").toLowerCase() === "admiral";
+      const allNaval = units.length > 0 && units.every((u) => /^naval\b/.test((u.name || "").toLowerCase()));
+      const armyClass = (s === "navy" || isAdmiral || allNaval) ? "navy" : "field";
+      armies.push({
+        faction: curFaction,
+        type: s,
+        armyClass,
+        character: curChar.character,
+        role: curChar.role,
+        x: curChar.x,
+        y: curChar.y,
+        units,
+      });
+      i = j - 1;
+      curChar = null;
     }
   }
   return armies;

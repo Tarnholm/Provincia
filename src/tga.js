@@ -37,6 +37,7 @@ TGA.prototype.parse = function (data) {
   this.width = width;
   this.height = height;
   this.hasAlpha = pixelSize === 32;
+  this.flags = flags;
 
   let offset = 18 + idLength;
   let pixels;

@@ -181,7 +181,7 @@
     ]
   },
   {
-    "name": "Gaius Duilius Longus",
+    "name": "Gaius",
     "charType": "admiral",
     "armyClass": "navy",
     "location": "Port of Volaterrae",
@@ -302,11 +302,11 @@
   {
     "name": "Sextus Quinctilius Varus",
     "charType": "general",
-    "armyClass": "garrison",
-    "location": "Bovianum",
+    "armyClass": "field",
+    "location": "Outside Maleventum",
     "faction": "romans_julii",
-    "x": 306,
-    "y": 301,
+    "x": 308,
+    "y": 305,
     "units": [
       "tribunus militum"
     ]
@@ -348,7 +348,7 @@
     ]
   },
   {
-    "name": "Gaius Duilius Longus",
+    "name": "Manius",
     "charType": "admiral",
     "armyClass": "navy",
     "location": "Port of Tarentum",
@@ -362,11 +362,11 @@
   {
     "name": "Gnaeus Cornelius Scipio",
     "charType": "general",
-    "armyClass": "garrison",
-    "location": "Capua",
+    "armyClass": "field",
+    "location": "Outside Fregellae",
     "faction": "romans_julii",
-    "x": 303,
-    "y": 307,
+    "x": 287,
+    "y": 299,
     "units": [
       "tribunus militum"
     ]
@@ -454,11 +454,11 @@
   {
     "name": "Tiberius Sempronius Gracchus",
     "charType": "general",
-    "armyClass": "garrison",
-    "location": "Grumentum",
+    "armyClass": "field",
+    "location": "Outside Paestum",
     "faction": "romans_julii",
-    "x": 321,
-    "y": 319,
+    "x": 315,
+    "y": 318,
     "units": [
       "tribunus militum"
     ]
@@ -466,11 +466,11 @@
   {
     "name": "Marcus Livius Drusus",
     "charType": "general",
-    "armyClass": "garrison",
-    "location": "Consentia",
+    "armyClass": "field",
+    "location": "Outside Metapontum",
     "faction": "romans_julii",
-    "x": 325,
-    "y": 333,
+    "x": 329,
+    "y": 320,
     "units": [
       "tribunus militum"
     ]
@@ -478,17 +478,17 @@
   {
     "name": "Lucius Valerius Flaccus",
     "charType": "general",
-    "armyClass": "garrison",
-    "location": "Petelia",
+    "armyClass": "field",
+    "location": "Outside Thurii",
     "faction": "romans_julii",
-    "x": 335,
-    "y": 333,
+    "x": 327,
+    "y": 325,
     "units": [
       "tribunus militum"
     ]
   },
   {
-    "name": "Gaius Duilius Longus",
+    "name": "Lucius",
     "charType": "admiral",
     "armyClass": "navy",
     "location": "Port of Capua",
@@ -1381,7 +1381,7 @@
     ]
   },
   {
-    "name": "Kallikrates",
+    "name": "KallikratesB",
     "charType": "admiral",
     "armyClass": "navy",
     "location": "Port of Mytilene",
@@ -5343,6 +5343,34 @@
     ]
   },
   {
+    "name": "Titus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Consentia",
+    "faction": "bruttians",
+    "x": 325,
+    "y": 333,
+    "units": [
+      "tribunus militum",
+      "lucanian infantry",
+      "samnite hoplites",
+      "samnite hoplites",
+      "campanian cavalry"
+    ]
+  },
+  {
+    "name": "Aulus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Petelia",
+    "faction": "bruttians",
+    "x": 335,
+    "y": 333,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
     "name": "Dromichaites",
     "charType": "general",
     "armyClass": "garrison",
@@ -5697,6 +5725,34 @@
     "y": 313,
     "units": [
       "asian royal bodyguards"
+    ]
+  },
+  {
+    "name": "Titus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Capua",
+    "faction": "capua",
+    "x": 303,
+    "y": 307,
+    "units": [
+      "tribunus militum",
+      "lucanian infantry",
+      "samnite hoplites",
+      "samnite hoplites",
+      "campanian cavalry"
+    ]
+  },
+  {
+    "name": "Aulus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Capua",
+    "faction": "capua",
+    "x": 302,
+    "y": 306,
+    "units": [
+      "tribunus militum"
     ]
   },
   {
@@ -8367,6 +8423,30 @@
     ]
   },
   {
+    "name": "Ashoka",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Alexandreia-Kaukasia",
+    "faction": "indians",
+    "x": 919,
+    "y": 209,
+    "units": [
+      "indian general",
+      "indian peltasts",
+      "indian javelinmen",
+      "indian javelinmen",
+      "indian archers",
+      "indian archers",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "indian levy spearmen",
+      "merc indian elephants",
+      "merc indian elephants"
+    ]
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -8941,6 +9021,34 @@
     ]
   },
   {
+    "name": "Titus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Grumentum",
+    "faction": "lucanians",
+    "x": 321,
+    "y": 319,
+    "units": [
+      "tribunus militum",
+      "lucanian infantry",
+      "samnite hoplites",
+      "samnite hoplites",
+      "campanian cavalry"
+    ]
+  },
+  {
+    "name": "Aulus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Potentia",
+    "faction": "lucanians",
+    "x": 320,
+    "y": 313,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
     "name": "Lugius",
     "charType": "general",
     "armyClass": "garrison",
@@ -9390,10 +9498,10 @@
     "name": "Ashoka",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Taxila",
+    "location": "The Road to Palibothra",
     "faction": "mauryan",
-    "x": 963,
-    "y": 201,
+    "x": 1018,
+    "y": 205,
     "units": [
       "indian general",
       "indian peltasts",
@@ -10689,6 +10797,34 @@
     ]
   },
   {
+    "name": "Titus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Bovianum",
+    "faction": "samnites",
+    "x": 306,
+    "y": 301,
+    "units": [
+      "tribunus militum",
+      "lucanian infantry",
+      "samnite hoplites",
+      "samnite hoplites",
+      "campanian cavalry"
+    ]
+  },
+  {
+    "name": "Aulus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Compsa",
+    "faction": "samnites",
+    "x": 315,
+    "y": 311,
+    "units": [
+      "tribunus militum"
+    ]
+  },
+  {
     "name": "Arganthonios",
     "charType": "general",
     "armyClass": "garrison",
@@ -11304,7 +11440,7 @@
     ]
   },
   {
-    "name": "Hierokles",
+    "name": "Dionysios",
     "charType": "admiral",
     "armyClass": "navy",
     "location": "Port of Syracuse",

@@ -19,6 +19,14 @@
 /robocopy
 /run
 
+# Sample save files used for parser reverse-engineering — never committed
+/sample-*.sav
+*.sav
+
+# Parser reverse-engineering scratch dir (diagnostics, trace scripts,
+# intermediate findings). Not production code.
+/calibration
+
 # misc
 .DS_Store
 .env.local

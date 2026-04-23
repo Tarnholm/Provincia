@@ -507,66 +507,6 @@
         ]
       },
       {
-        "region": "Carricinia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Pentria",
-        "level": "town",
-        "population": 1800,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Hirpinia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
         "region": "Frentania",
         "level": "town",
         "population": 1500,
@@ -859,66 +799,6 @@
         ]
       },
       {
-        "region": "Campania",
-        "level": "city",
-        "population": 6750,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_palace"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_wall"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "grain_industry",
-            "level": "mill"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "paved_roads"
-          },
-          {
-            "type": "hospitals",
-            "level": "hospital_2"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "canal_network"
-          },
-          {
-            "type": "market",
-            "level": "market"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_3"
-          },
-          {
-            "type": "port_buildings",
-            "level": "shipwright"
-          },
-          {
-            "type": "wine_industry",
-            "level": "wine_2"
-          }
-        ]
-      },
-      {
         "region": "Parthenope",
         "level": "large_town",
         "population": 3750,
@@ -1015,26 +895,6 @@
         ]
       },
       {
-        "region": "Lucania_Vetus",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
         "region": "Poseidonia",
         "level": "large_town",
         "population": 3000,
@@ -1055,122 +915,6 @@
           {
             "type": "governmentC",
             "level": "gov3"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "irrigation_ditches"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          },
-          {
-            "type": "port_buildings",
-            "level": "port"
-          }
-        ]
-      },
-      {
-        "region": "Lucania",
-        "level": "large_town",
-        "population": 2250,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "highland_pastoralism",
-            "level": "slope_herding"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          },
-          {
-            "type": "port_buildings",
-            "level": "port"
-          }
-        ]
-      },
-      {
-        "region": "Chonia",
-        "level": "large_town",
-        "population": 1500,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Bruttium",
-        "level": "large_town",
-        "population": 3000,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
           },
           {
             "type": "health",
@@ -4099,13 +3843,13 @@
       },
       {
         "region": "Thinites-Diospolites_Mikros_Nomoi",
-        "level": "large_town",
+        "level": "city",
         "population": 3000,
         "faction_creator": "ptolemaic",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -5195,8 +4939,8 @@
       },
       {
         "region": "Apollonopolites-Latopolites_Nomoi",
-        "level": "large_town",
-        "population": 4000,
+        "level": "town",
+        "population": 2000,
         "faction_creator": "egypt",
         "buildings": [
           {
@@ -5205,7 +4949,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",
@@ -5311,7 +5055,7 @@
       },
       {
         "region": "Oxyrhynchites-Herakleopolites_Nomoi",
-        "level": "large_town",
+        "level": "city",
         "population": 4000,
         "faction_creator": "egypt",
         "buildings": [
@@ -5321,7 +5065,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -5603,13 +5347,13 @@
       },
       {
         "region": "Prote_Oasis",
-        "level": "town",
+        "level": "large_town",
         "population": 400,
         "faction_creator": "massylii",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "hinterland_region",
@@ -6815,13 +6559,13 @@
       },
       {
         "region": "Boubastites-Arabia_Nomoi",
-        "level": "town",
+        "level": "city",
         "population": 1400,
         "faction_creator": "egypt",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_palace"
           },
           {
             "type": "governmentB",
@@ -6872,7 +6616,7 @@
       {
         "region": "Panopolites-Antaiopolites_Nomoi",
         "level": "large_town",
-        "population": 2500,
+        "population": 1500,
         "faction_creator": "egypt",
         "buildings": [
           {
@@ -6943,13 +6687,13 @@
       },
       {
         "region": "Athribites-Leontopolites_Nomoi",
-        "level": "town",
+        "level": "city",
         "population": 1800,
         "faction_creator": "egypt",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_palace"
           },
           {
             "type": "governmentA",
@@ -7023,13 +6767,13 @@
       },
       {
         "region": "Mendesios-Diospolites_Kato_Nomoi",
-        "level": "large_town",
+        "level": "city",
         "population": 2000,
         "faction_creator": "egypt",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -8192,7 +7936,7 @@
       },
       {
         "region": "Rhagiane",
-        "level": "city",
+        "level": "large_town",
         "population": 3000,
         "faction_creator": "parni",
         "buildings": [
@@ -8206,7 +7950,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_palace"
+            "level": "governors_villa"
           },
           {
             "type": "defenses",
@@ -8248,7 +7992,7 @@
       },
       {
         "region": "Parthia",
-        "level": "large_town",
+        "level": "city",
         "population": 2000,
         "faction_creator": "parni",
         "buildings": [
@@ -8258,7 +8002,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -8408,7 +8152,7 @@
       },
       {
         "region": "Anaouon",
-        "level": "large_town",
+        "level": "city",
         "population": 2250,
         "faction_creator": "parni",
         "buildings": [
@@ -8418,7 +8162,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -10040,13 +9784,13 @@
       },
       {
         "region": "Hesperos_Ariane",
-        "level": "large_town",
+        "level": "town",
         "population": 2000,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",
@@ -10208,8 +9952,8 @@
       },
       {
         "region": "Syromedia",
-        "level": "large_town",
-        "population": 2800,
+        "level": "town",
+        "population": 1800,
         "faction_creator": "atropatene",
         "buildings": [
           {
@@ -10218,7 +9962,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",
@@ -10308,13 +10052,13 @@
       },
       {
         "region": "Komisene",
-        "level": "town",
+        "level": "large_town",
         "population": 1500,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentB",
@@ -10328,13 +10072,13 @@
       },
       {
         "region": "Amardokaia-Anariakaia",
-        "level": "large_town",
-        "population": 2000,
+        "level": "town",
+        "population": 1000,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",
@@ -10372,7 +10116,7 @@
       },
       {
         "region": "Hyrkania",
-        "level": "large_town",
+        "level": "city",
         "population": 3200,
         "faction_creator": "parni",
         "buildings": [
@@ -10382,7 +10126,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -11564,13 +11308,13 @@
       },
       {
         "region": "Nisaia",
-        "level": "large_town",
-        "population": 2500,
+        "level": "town",
+        "population": 1500,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",
@@ -11672,13 +11416,13 @@
       },
       {
         "region": "Sagartia",
-        "level": "town",
+        "level": "large_town",
         "population": 1600,
         "faction_creator": "atropatene",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentB",
@@ -11712,13 +11456,13 @@
       },
       {
         "region": "Notia_Karmania",
-        "level": "town",
+        "level": "large_town",
         "population": 1000,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentB",
@@ -11821,13 +11565,13 @@
     "settlements": [
       {
         "region": "Baktriane",
-        "level": "large_town",
+        "level": "city",
         "population": 3950,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -11873,13 +11617,13 @@
       },
       {
         "region": "Anatolike_Baktriane",
-        "level": "large_town",
+        "level": "city",
         "population": 2300,
         "faction_creator": "bactria",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -11917,7 +11661,7 @@
       },
       {
         "region": "Sogdiane",
-        "level": "city",
+        "level": "large_city",
         "population": 3000,
         "faction_creator": "parni",
         "buildings": [
@@ -11927,7 +11671,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_palace"
+            "level": "proconsuls_palace"
           },
           {
             "type": "defenses",
@@ -12017,13 +11761,13 @@
       },
       {
         "region": "Darapsia",
-        "level": "large_town",
+        "level": "city",
         "population": 2000,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -12058,7 +11802,7 @@
       {
         "region": "Mardyenia",
         "level": "large_town",
-        "population": 2350,
+        "population": 1350,
         "faction_creator": "parni",
         "buildings": [
           {
@@ -12101,13 +11845,13 @@
       },
       {
         "region": "Kyreschata",
-        "level": "town",
+        "level": "large_town",
         "population": 1800,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentA",
@@ -12121,13 +11865,13 @@
       },
       {
         "region": "Oxos",
-        "level": "town",
+        "level": "large_town",
         "population": 1700,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentD",
@@ -12141,13 +11885,13 @@
       },
       {
         "region": "Anatolike_Sogdiane",
-        "level": "town",
+        "level": "large_town",
         "population": 1550,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentC",
@@ -12181,13 +11925,13 @@
       },
       {
         "region": "Oxeiane",
-        "level": "large_town",
-        "population": 4500,
+        "level": "town",
+        "population": 1500,
         "faction_creator": "bactria",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",
@@ -12225,7 +11969,7 @@
       },
       {
         "region": "Ano_Baktriane",
-        "level": "town",
+        "level": "large_town",
         "population": 1200,
         "faction_creator": "parni",
         "buildings": [
@@ -12235,7 +11979,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentC",
@@ -16202,7 +15946,76 @@
   },
   {
     "faction": "bruttians",
-    "settlements": []
+    "settlements": [
+      {
+        "region": "Bruttium",
+        "level": "large_town",
+        "population": 3000,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "irrigation_ditches"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          },
+          {
+            "type": "port_buildings",
+            "level": "port"
+          }
+        ]
+      },
+      {
+        "region": "Chonia",
+        "level": "large_town",
+        "population": 1500,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      }
+    ]
   },
   {
     "faction": "buri",
@@ -16931,7 +16744,64 @@
   },
   {
     "faction": "capua",
-    "settlements": []
+    "settlements": [
+      {
+        "region": "Campania",
+        "level": "city",
+        "population": 6750,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_palace"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "grain_industry",
+            "level": "mill"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "paved_roads"
+          },
+          {
+            "type": "hospitals",
+            "level": "hospital_2"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "canal_network"
+          },
+          {
+            "type": "market",
+            "level": "market"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_3"
+          },
+          {
+            "type": "port_buildings",
+            "level": "shipwright"
+          },
+          {
+            "type": "wine_industry",
+            "level": "wine_2"
+          }
+        ]
+      }
+    ]
   },
   {
     "faction": "carmo",
@@ -18249,7 +18119,7 @@
     "settlements": [
       {
         "region": "Kyrenaike",
-        "level": "city",
+        "level": "large_city",
         "population": 6200,
         "faction_creator": "cyrene",
         "buildings": [
@@ -18259,7 +18129,7 @@
           },
           {
             "type": "core_building",
-            "level": "governors_palace"
+            "level": "proconsuls_palace"
           },
           {
             "type": "defenses",
@@ -18329,13 +18199,13 @@
       },
       {
         "region": "Euesperidai",
-        "level": "large_town",
-        "population": 3000,
+        "level": "town",
+        "population": 2000,
         "faction_creator": "cyrene",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",
@@ -18377,13 +18247,13 @@
       },
       {
         "region": "Barke",
-        "level": "large_town",
+        "level": "city",
         "population": 3000,
         "faction_creator": "cyrene",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -20188,6 +20058,10 @@
     ]
   },
   {
+    "faction": "gauls",
+    "settlements": []
+  },
+  {
     "faction": "gauts",
     "settlements": [
       {
@@ -20287,6 +20161,10 @@
         ]
       }
     ]
+  },
+  {
+    "faction": "germanics",
+    "settlements": []
   },
   {
     "faction": "gerrha",
@@ -22191,7 +22069,244 @@
   },
   {
     "faction": "indians",
-    "settlements": []
+    "settlements": [
+      {
+        "region": "Kapisene",
+        "level": "city",
+        "population": 2100,
+        "faction_creator": "seleucid",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_palace"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "highland_pastoralism",
+            "level": "slope_herding"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Paropamisadai",
+        "level": "town",
+        "population": 1800,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Gandaritis",
+        "level": "large_town",
+        "population": 3700,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "highland_pastoralism",
+            "level": "highland_pasturing"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Hesperos_Assakenia",
+        "level": "town",
+        "population": 1400,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Gouraia",
+        "level": "city",
+        "population": 1850,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_palace"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Anatolike_Assakenia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Assakenia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          }
+        ]
+      },
+      {
+        "region": "Aspasia",
+        "level": "large_town",
+        "population": 1700,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      }
+    ]
   },
   {
     "faction": "ingauni",
@@ -23366,6 +23481,10 @@
     ]
   },
   {
+    "faction": "libyans",
+    "settlements": []
+  },
+  {
     "faction": "lihyan",
     "settlements": [
       {
@@ -23416,7 +23535,76 @@
   },
   {
     "faction": "lucanians",
-    "settlements": []
+    "settlements": [
+      {
+        "region": "Lucania",
+        "level": "large_town",
+        "population": 2250,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "highland_pastoralism",
+            "level": "slope_herding"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          },
+          {
+            "type": "port_buildings",
+            "level": "port"
+          }
+        ]
+      },
+      {
+        "region": "Lucania_Vetus",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      }
+    ]
   },
   {
     "faction": "lugii",
@@ -24088,26 +24276,22 @@
     "faction": "mauryan",
     "settlements": [
       {
-        "region": "Arsa",
-        "level": "large_city",
-        "population": 7000,
+        "region": "The_Road_to_Palibothra",
+        "level": "city",
+        "population": 10500,
         "faction_creator": "mauryan",
         "buildings": [
           {
-            "type": "academic",
-            "level": "ludus_magnus"
-          },
-          {
             "type": "core_building",
-            "level": "proconsuls_palace"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
             "level": "wooden_wall"
           },
           {
-            "type": "governmentC",
-            "level": "gov3"
+            "type": "governmentD",
+            "level": "gov4"
           },
           {
             "type": "health",
@@ -24122,1112 +24306,8 @@
             "level": "paved_roads"
           },
           {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "market"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_3"
-          },
-          {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
-            "type": "silk_trader",
-            "level": "silk_1"
-          }
-        ]
-      },
-      {
-        "region": "Gedrosia",
-        "level": "town",
-        "population": 1000,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Arachosia",
-        "level": "large_town",
-        "population": 2150,
-        "faction_creator": "seleucid",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "garrison",
-            "level": "garrison"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "highland_pastoralism",
-            "level": "slope_herding"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          }
-        ]
-      },
-      {
-        "region": "Kapisene",
-        "level": "city",
-        "population": 2100,
-        "faction_creator": "seleucid",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_palace"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "highland_pastoralism",
-            "level": "slope_herding"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Paropamisadai",
-        "level": "town",
-        "population": 1800,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Eoritia",
-        "level": "town",
-        "population": 1400,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Gandaritis",
-        "level": "large_town",
-        "population": 3700,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "highland_pastoralism",
-            "level": "highland_pasturing"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Hesperos_Assakenia",
-        "level": "town",
-        "population": 1400,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Gouraia",
-        "level": "town",
-        "population": 1850,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Anatolike_Assakenia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Assakenia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          }
-        ]
-      },
-      {
-        "region": "Indos",
-        "level": "town",
-        "population": 1900,
-        "faction_creator": "bactria",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "irrigation_ditches"
-          }
-        ]
-      },
-      {
-        "region": "Sibia",
-        "level": "town",
-        "population": 1850,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "irrigation_ditches"
-          }
-        ]
-      },
-      {
-        "region": "Pandoouia",
-        "level": "large_town",
-        "population": 2600,
-        "faction_creator": "bactria",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Oreitaia",
-        "level": "town",
-        "population": 1100,
-        "faction_creator": "seleucid",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Samboia",
-        "level": "large_town",
-        "population": 3000,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "irrigation_ditches"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Kaspeiraia",
-        "level": "town",
-        "population": 1900,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "irrigation_ditches"
-          }
-        ]
-      },
-      {
-        "region": "Hydaspes",
-        "level": "town",
-        "population": 1650,
-        "faction_creator": "bactria",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Patalene",
-        "level": "city",
-        "population": 6100,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_palace"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_wall"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "paved_roads"
-          },
-          {
-            "type": "hospitals",
-            "level": "hospital_2"
-          },
-          {
-            "type": "hunters",
-            "level": "fur_market"
-          },
-          {
-            "type": "jewelry",
-            "level": "jewelry_1"
-          },
-          {
-            "type": "market",
-            "level": "market"
-          },
-          {
-            "type": "marsh_reclamation",
-            "level": "reclamation_dike"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_2"
-          },
-          {
-            "type": "port_buildings",
-            "level": "shipwright"
-          },
-          {
-            "type": "spices_trading",
-            "level": "spices_1"
-          }
-        ]
-      },
-      {
-        "region": "Sopeitheia",
-        "level": "large_town",
-        "population": 3500,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Glausaia",
-        "level": "town",
-        "population": 1450,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Audoumbaria",
-        "level": "town",
-        "population": 1800,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Adraistaia",
-        "level": "large_town",
-        "population": 2350,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          },
-          {
-            "type": "shifting_cultivation",
-            "level": "shifting_cultivation_fields"
-          }
-        ]
-      },
-      {
-        "region": "Kathaia",
-        "level": "large_town",
-        "population": 1300,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "dyes_production",
-            "level": "dyes_1"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Agalassia",
-        "level": "large_town",
-        "population": 950,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Sydrakaia",
-        "level": "large_town",
-        "population": 3200,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Mallia",
-        "level": "large_town",
-        "population": 850,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Abastania",
-        "level": "town",
-        "population": 1750,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Kounindia",
-        "level": "large_town",
-        "population": 3150,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          },
-          {
-            "type": "shifting_cultivation",
-            "level": "shifting_cultivation_fields"
-          }
-        ]
-      },
-      {
-        "region": "Sogdia-Indos",
-        "level": "town",
-        "population": 1450,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "irrigation_ditches"
-          }
-        ]
-      },
-      {
-        "region": "Chatriaia",
-        "level": "town",
-        "population": 1850,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Mousikania",
-        "level": "city",
-        "population": 4500,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_palace"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_wall"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "sewers"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "paved_roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "canal_network"
+            "type": "ivory_trade",
+            "level": "ivory_2"
           },
           {
             "type": "market",
@@ -25238,128 +24318,8 @@
             "level": "mic_2"
           },
           {
-            "type": "silk_trader",
-            "level": "silk_1"
-          }
-        ]
-      },
-      {
-        "region": "Portikania",
-        "level": "large_town",
-        "population": 3450,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Syrastrene",
-        "level": "town",
-        "population": 1750,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Aspasia",
-        "level": "town",
-        "population": 1700,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Arbia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "mauryan",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
+            "type": "shifting_cultivation",
+            "level": "slash_and_burn"
           }
         ]
       },
@@ -25420,26 +24380,54 @@
         ]
       },
       {
-        "region": "The_Road_to_Palibothra",
-        "level": "city",
-        "population": 10500,
+        "region": "Audoumbaria",
+        "level": "town",
+        "population": 1800,
         "faction_creator": "mauryan",
         "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Adraistaia",
+        "level": "city",
+        "population": 2350,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
           {
             "type": "core_building",
             "level": "governors_palace"
           },
           {
             "type": "defenses",
-            "level": "wooden_wall"
+            "level": "wooden_pallisade"
           },
           {
-            "type": "governmentD",
-            "level": "gov4"
+            "type": "governmentB",
+            "level": "gov2"
           },
           {
             "type": "health",
-            "level": "sewers"
+            "level": "cisterns"
           },
           {
             "type": "hinterland_region",
@@ -25447,23 +24435,115 @@
           },
           {
             "type": "hinterland_roads",
-            "level": "paved_roads"
-          },
-          {
-            "type": "ivory_trade",
-            "level": "ivory_2"
+            "level": "roads"
           },
           {
             "type": "market",
-            "level": "market"
+            "level": "trader"
           },
           {
             "type": "military_industrial_complex",
-            "level": "mic_2"
+            "level": "mic_1"
           },
           {
             "type": "shifting_cultivation",
-            "level": "slash_and_burn"
+            "level": "shifting_cultivation_fields"
+          }
+        ]
+      },
+      {
+        "region": "Kathaia",
+        "level": "town",
+        "population": 1300,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "dyes_production",
+            "level": "dyes_1"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Kounindia",
+        "level": "town",
+        "population": 1150,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentA",
+            "level": "gov1"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          },
+          {
+            "type": "shifting_cultivation",
+            "level": "shifting_cultivation_fields"
           }
         ]
       }
@@ -27054,13 +26134,13 @@
     "settlements": [
       {
         "region": "Persia",
-        "level": "large_town",
+        "level": "city",
         "population": 2750,
         "faction_creator": "persis",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_palace"
           },
           {
             "type": "defenses",
@@ -28076,7 +27156,68 @@
   },
   {
     "faction": "samnites",
-    "settlements": []
+    "settlements": [
+      {
+        "region": "Pentria",
+        "level": "large_town",
+        "population": 1800,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Carricinia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Hirpinia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "romans_julii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      }
+    ]
   },
   {
     "faction": "sardinians",
@@ -28235,6 +27376,10 @@
         ]
       }
     ]
+  },
+  {
+    "faction": "scythians",
+    "settlements": []
   },
   {
     "faction": "selge",
@@ -40060,6 +39205,878 @@
         ]
       },
       {
+        "region": "Arsa",
+        "level": "large_city",
+        "population": 7000,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "academic",
+            "level": "ludus_magnus"
+          },
+          {
+            "type": "core_building",
+            "level": "proconsuls_palace"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "health",
+            "level": "sewers"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "paved_roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "market"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_3"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
+          },
+          {
+            "type": "silk_trader",
+            "level": "silk_1"
+          }
+        ]
+      },
+      {
+        "region": "Kaspeiraia",
+        "level": "town",
+        "population": 1900,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "irrigation_ditches"
+          }
+        ]
+      },
+      {
+        "region": "Sogdia-Indos",
+        "level": "town",
+        "population": 1450,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "irrigation_ditches"
+          }
+        ]
+      },
+      {
+        "region": "Chatriaia",
+        "level": "town",
+        "population": 1850,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Mousikania",
+        "level": "city",
+        "population": 4500,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_palace"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "sewers"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "paved_roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "canal_network"
+          },
+          {
+            "type": "market",
+            "level": "market"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_2"
+          },
+          {
+            "type": "silk_trader",
+            "level": "silk_1"
+          }
+        ]
+      },
+      {
+        "region": "Portikania",
+        "level": "large_town",
+        "population": 3450,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Syrastrene",
+        "level": "town",
+        "population": 1750,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Arbia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Oreitaia",
+        "level": "town",
+        "population": 1100,
+        "faction_creator": "seleucid",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Samboia",
+        "level": "large_town",
+        "population": 3000,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "irrigation_ditches"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Patalene",
+        "level": "city",
+        "population": 6100,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_palace"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "paved_roads"
+          },
+          {
+            "type": "hospitals",
+            "level": "hospital_2"
+          },
+          {
+            "type": "hunters",
+            "level": "fur_market"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
+          },
+          {
+            "type": "market",
+            "level": "market"
+          },
+          {
+            "type": "marsh_reclamation",
+            "level": "reclamation_dike"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_2"
+          },
+          {
+            "type": "port_buildings",
+            "level": "shipwright"
+          },
+          {
+            "type": "spices_trading",
+            "level": "spices_1"
+          }
+        ]
+      },
+      {
+        "region": "Mallia",
+        "level": "town",
+        "population": 850,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Abastania",
+        "level": "town",
+        "population": 1750,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Sydrakaia",
+        "level": "town",
+        "population": 1200,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Agalassia",
+        "level": "town",
+        "population": 950,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Indos",
+        "level": "large_town",
+        "population": 1900,
+        "faction_creator": "bactria",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "irrigation_ditches"
+          }
+        ]
+      },
+      {
+        "region": "Sibia",
+        "level": "town",
+        "population": 1850,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "irrigation_ditches"
+          }
+        ]
+      },
+      {
+        "region": "Pandoouia",
+        "level": "town",
+        "population": 1600,
+        "faction_creator": "bactria",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Hydaspes",
+        "level": "town",
+        "population": 1650,
+        "faction_creator": "bactria",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Sopeitheia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Glausaia",
+        "level": "large_town",
+        "population": 1450,
+        "faction_creator": "mauryan",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Gedrosia",
+        "level": "large_town",
+        "population": 1000,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Arachosia",
+        "level": "city",
+        "population": 2150,
+        "faction_creator": "seleucid",
+        "buildings": [
+          {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
+            "type": "core_building",
+            "level": "governors_palace"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "highland_pastoralism",
+            "level": "slope_herding"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          }
+        ]
+      },
+      {
+        "region": "Eoritia",
+        "level": "town",
+        "population": 1400,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
         "region": "Xandia-Paria",
         "level": "town",
         "population": 1900,
@@ -40121,13 +40138,13 @@
       },
       {
         "region": "Amyrgia",
-        "level": "large_town",
-        "population": 2200,
+        "level": "town",
+        "population": 1200,
         "faction_creator": "parni",
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_villa"
+            "level": "governors_house"
           },
           {
             "type": "defenses",

@@ -14,9 +14,6 @@
     "Etruria_Orientalis",
     "Camertia-Nahartia",
     "Samnium",
-    "Carricinia",
-    "Pentria",
-    "Hirpinia",
     "Frentania",
     "Daunia",
     "Peucetia",
@@ -24,15 +21,10 @@
     "Metapontion",
     "Taras",
     "Thourioi",
-    "Campania",
     "Parthenope",
     "Latium_Novum",
     "Latium",
-    "Lucania_Vetus",
     "Poseidonia",
-    "Lucania",
-    "Chonia",
-    "Bruttium",
     "Lokroi_Epizephyrioi"
   ],
   "carthage": [
@@ -521,6 +513,10 @@
     "Brigantia_Centralis",
     "Brigantia_Orientalis"
   ],
+  "bruttians": [
+    "Bruttium",
+    "Chonia"
+  ],
   "buri": [
     "Buridavensia",
     "Buridavensia_Meridionalis"
@@ -556,6 +552,9 @@
     "Garsaouritis",
     "Morimene-Chammanene",
     "Saraouene-Laouiniasene"
+  ],
+  "capua": [
+    "Campania"
   ],
   "carmo": [
     "Turdetania_Centralis"
@@ -819,6 +818,16 @@
     "Parthinia",
     "Basilike_Dassaretia"
   ],
+  "indians": [
+    "Kapisene",
+    "Paropamisadai",
+    "Gandaritis",
+    "Hesperos_Assakenia",
+    "Gouraia",
+    "Anatolike_Assakenia",
+    "Assakenia",
+    "Aspasia"
+  ],
   "ingauni": [
     "Ingaunia"
   ],
@@ -876,6 +885,10 @@
     "Lechienia",
     "Notia_Lechienia"
   ],
+  "lucanians": [
+    "Lucania",
+    "Lucania_Vetus"
+  ],
   "lugii": [
     "Naharvalia",
     "Helveconia-Helisia",
@@ -914,44 +927,12 @@
     "Mauretania"
   ],
   "mauryan": [
-    "Arsa",
-    "Gedrosia",
-    "Arachosia",
-    "Kapisene",
-    "Paropamisadai",
-    "Eoritia",
-    "Gandaritis",
-    "Hesperos_Assakenia",
-    "Gouraia",
-    "Anatolike_Assakenia",
-    "Assakenia",
-    "Indos",
-    "Sibia",
-    "Pandoouia",
-    "Oreitaia",
-    "Samboia",
-    "Kaspeiraia",
-    "Hydaspes",
-    "Patalene",
-    "Sopeitheia",
-    "Glausaia",
+    "The_Road_to_Palibothra",
+    "The_Road_to_Methora",
     "Audoumbaria",
     "Adraistaia",
     "Kathaia",
-    "Agalassia",
-    "Sydrakaia",
-    "Mallia",
-    "Abastania",
-    "Kounindia",
-    "Sogdia-Indos",
-    "Chatriaia",
-    "Mousikania",
-    "Portikania",
-    "Syrastrene",
-    "Aspasia",
-    "Arbia",
-    "The_Road_to_Methora",
-    "The_Road_to_Palibothra"
+    "Kounindia"
   ],
   "megalopolis": [
     "Arkadia"
@@ -1088,6 +1069,11 @@
   "salluvii": [
     "Salluvia",
     "Avaticia"
+  ],
+  "samnites": [
+    "Pentria",
+    "Carricinia",
+    "Hirpinia"
   ],
   "sardinians": [
     "Balaria",
@@ -1701,6 +1687,30 @@
     "Taochia",
     "Chalybia",
     "Chaldaia-Pontos",
+    "Arsa",
+    "Kaspeiraia",
+    "Sogdia-Indos",
+    "Chatriaia",
+    "Mousikania",
+    "Portikania",
+    "Syrastrene",
+    "Arbia",
+    "Oreitaia",
+    "Samboia",
+    "Patalene",
+    "Mallia",
+    "Abastania",
+    "Sydrakaia",
+    "Agalassia",
+    "Indos",
+    "Sibia",
+    "Pandoouia",
+    "Hydaspes",
+    "Sopeitheia",
+    "Glausaia",
+    "Gedrosia",
+    "Arachosia",
+    "Eoritia",
     "Xandia-Paria",
     "Attasia",
     "Apasiakaia",

@@ -69,10 +69,7 @@ function listOrEmpty(val) {
 
 // Extract label: prefer explicit label, then name, then type; if "(...)" exists, use only the text inside the last parentheses
 function labelFrom(raw, idx) {
-  const pick = raw?.label || raw?.name || raw?.type || `Building ${idx + 1}`;
-  const m = typeof pick === "string" ? pick.match(/\(([^)]*)\)\s*$/) : null;
-  if (m && m[1]) return m[1].trim();
-  return pick;
+  return raw?.label || raw?.name || raw?.type || `Building ${idx + 1}`;
 }
 
 // Resolve icon paths; supports a single string or an array of candidates.
@@ -82,6 +79,9 @@ function resolveIcon(icon) {
     if (!val) return null;
     let out = String(val).trim();
     if (!out) return null;
+    // Blob URLs come from the mod/game icon loader (buildingIcons.js). They
+    // are valid <img src> values as-is; pass through.
+    if (out.startsWith("blob:") || out.startsWith("data:")) return out;
     if (!/\.(png|jpg|jpeg|gif|webp)$/i.test(out)) out += ".png";
 
     // Encode literal '#' so files like "#roman_wooden_wall.png" load correctly
@@ -111,7 +111,14 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo }) {
+  // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
+  // campaign). Parsed from the game's expanded_bi.txt.
+  const factionLabel = (fid) => {
+    if (!fid) return "";
+    const dn = factionDisplayNames && factionDisplayNames[fid];
+    return dn || String(fid).replace(/_/g, " ");
+  };
   const buildings = useMemo(() => buildingsProp || buildingsGetter(info) || [], [info, buildingsProp]);
 
   if (!info) {
@@ -127,6 +134,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   const tagsList = listOrEmpty(tags);
   const ethnicitiesList = listOrEmpty(ethnicities);
 
+  const toRoman = (n) => {
+    if (!n || n < 1) return "";
+    const map = [["M",1000],["CM",900],["D",500],["CD",400],["C",100],["XC",90],["L",50],["XL",40],["X",10],["IX",9],["V",5],["IV",4],["I",1]];
+    let out = "", v = n;
+    for (const [s, k] of map) { while (v >= k) { out += s; v -= k; } }
+    return out;
+  };
   const buildingItems = buildings.map((b, idx) => {
     const label = labelFrom(b, idx);
     const icon =
@@ -136,7 +150,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       resolveIcon(b?.iconPath) ||
       resolveIcon(b?.img) ||
       null;
-    return { key: `${label}-${idx}`, label, icon, type: b?.type || "", health: b?.health };
+    return {
+      key: `${label}-${idx}`,
+      label,
+      icon,
+      type: b?.type || "",
+      health: b?.health,
+      tier: b?.tier,
+      tierRoman: toRoman(b?.tier),
+      queued: !!b?.queued,
+      // Progress is the fraction complete (0..1). If unknown for a queued
+      // building, default to 0 so the overlay fills the whole icon — that's
+      // the game's visual for "just started construction".
+      progress: typeof b?.progress === "number" ? b.progress : (b?.queued ? 0 : null),
+    };
   });
 
   const row = (label, value) =>
@@ -153,7 +180,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         width: "100%",
         minHeight: "100%",
         display: "grid",
-        gridTemplateColumns: "240px 220px 1fr", // info | tags | buildings
+        gridTemplateColumns: "260px auto 300px minmax(320px, 1fr)", // info+tags | buildings | recruitable | garrison+field armies
         gap: 6,
         paddingBottom: 4,
         color: "#f7f7f7",
@@ -171,7 +198,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           </div>
         )}
         {row("City:", city)}
-        {row("Faction:", faction)}
+        {row("Faction:", liveOwner || faction)}
         {row("Culture:", culture)}
         {devMode && row("RGB:", rgb)}
         {farm_level !== undefined && farm_level !== null && row("Farm Level:", farm_level)}
@@ -211,50 +238,23 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <strong>{modeExtra.label}:</strong> {modeExtra.value}
           </div>
         )}
-      </div>
-
-      {/* Middle: tags section, wraps into multiple rows */}
-      <div
-        style={{
-          borderLeft: "1px solid #8882",
-          paddingLeft: 6,
-          boxSizing: "border-box",
-          height: "100%",
-          maxWidth: 280,
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Tags:</div>
-        {tagsList.length > 0 ? (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "2px 4px",
-              alignContent: "flex-start",
-            }}
-          >
-            {tagsList.map((t, i) => (
-              <span
-                key={`${t}-${i}`}
-                style={{
-                  padding: "1px 5px",
-                  borderRadius: 4,
+        {tagsList.length > 0 && (
+          <div style={{ marginTop: 6 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignContent: "flex-start" }}>
+              {tagsList.map((t, i) => (
+                <span key={`${t}-${i}`} style={{
+                  padding: "1px 5px", borderRadius: 4,
                   background: "rgba(255,255,255,0.08)",
-                  fontSize: "0.75rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {t}
-              </span>
-            ))}
+                  fontSize: "0.7rem", whiteSpace: "nowrap",
+                }}>{t}</span>
+              ))}
+            </div>
           </div>
-        ) : (
-          <span style={{ color: "#bbb", fontStyle: "italic" }}>No tags</span>
         )}
       </div>
 
-      {/* Right: buildings */}
+      {/* Right: buildings + garrison */}
       <div
         style={{
           borderLeft: "1px solid #8882",
@@ -264,41 +264,310 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           height: "100%",
         }}
       >
+        {characters && characters.length > 0 && (
+          <div style={{ marginBottom: 4 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#fd8" }}>
+              Characters:
+              <span
+                title={saveFile ? `As of: ${saveFile}` : "From save file"}
+                style={{ fontSize: "0.65rem", color: "#a98", marginLeft: 6, fontWeight: 400, cursor: "help" }}>(live)</span>
+            </div>
+            <div style={{ maxHeight: 80, overflowY: "auto", fontSize: "0.72rem" }}>
+              {characters.map((c, i) => {
+                const sym = c.isLeader ? "👑" : c.isHeir ? "★" : c.gender === "female" ? "♀" : "";
+                const status = c.isDead ? " (dead)" : "";
+                return (
+                  <div key={i} style={{ display: "flex", gap: 6, padding: "1px 0" }}>
+                    <span style={{ flex: 1, color: "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {sym ? sym + " " : ""}{c.firstName}{c.lastName ? " " + c.lastName.replace(/_/g, " ") : ""}{status}
+                    </span>
+                    <span style={{ color: "#ccc", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>age {c.age}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
         {buildingItems.length > 0 ? (
+          (() => {
+            // Fixed 10×2 = 20-slot grid. The column always reserves space
+            // for a full stack so the layout doesn't shift as settlements
+            // fill up or get compared side-by-side.
+            return (
           <div
             style={{
-              columnWidth: 110,
-              columnGap: 4,
-              columnFill: "auto",
-              height: 130,
-              overflow: "hidden",
+              display: "grid",
+              gridTemplateColumns: "repeat(10, 82px)",
+              gridAutoRows: "min-content",
+              gap: 4,
+              justifyContent: "start",
             }}
           >
-            {buildingItems.map((b) => (
-              <div key={b.key} title={b.type ? `${b.type.replace(/_/g, " ")}: ${b.label}` : b.label} style={{
-                display: "flex", alignItems: "center", gap: 4,
+            {buildingItems.map((b) => {
+              // Overlay: queued buildings get a green bar matching progress;
+              // damaged buildings (health < 100) get a red bar matching
+              // damage. Fraction = portion of icon covered from the bottom.
+              let overlayColor = null, overlayFraction = 0;
+              if (b.queued) {
+                overlayColor = "rgba(60,200,80,0.55)";
+                // Green = fraction COMPLETED, growing from bottom as the build
+                // progresses — same as the game's construction-queue visual.
+                overlayFraction = typeof b.progress === "number" ? Math.min(1, Math.max(0, b.progress)) : 0;
+              } else if (b.health != null && b.health < 100) {
+                overlayColor = "rgba(220,60,60,0.55)";
+                overlayFraction = (100 - b.health) / 100;
+              }
+              return (
+              <div key={b.key}
+                onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "building", name: b.level, chainName: b.type, culture: b.culture || null, label: b.label }); } }}
+                title={b.type ? `${b.type.replace(/_/g, " ")}: ${b.label}${b.queued ? " (in construction)" : ""}` : b.label} style={{
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                 background: "rgba(0,0,0,0.25)", borderRadius: 4,
-                padding: "2px 5px 2px 2px", marginBottom: 2,
-                breakInside: "avoid", WebkitColumnBreakInside: "avoid",
+                padding: "6px 4px",
+                minWidth: 0,
+                border: b.queued ? "2px solid #e89030" : "2px solid transparent",
               }}>
-                {b.icon && (
-                  <img
-                    src={b.icon}
-                    alt={b.label}
-                    style={{ width: 20, height: 20, objectFit: "contain", display: "block", flexShrink: 0 }}
-                  />
-                )}
-                <span style={{ color: "#f4f4f4", fontSize: "0.72rem" }}>{b.label}</span>
-                {b.health != null && b.health < 100 && (
-                  <span style={{ color: b.health < 50 ? "#f66" : "#fa4", fontSize: "0.65rem", marginLeft: 2 }}>{b.health}%</span>
+                <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
+                  {b.icon && (
+                    <img
+                      src={b.icon}
+                      alt={b.label}
+                      style={{ width: 52, height: 52, objectFit: "contain", display: "block" }}
+                      // Hide broken-image glyph when the URL fails to load
+                      // (TGA decode failed, blob revoked, or path 404).
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  )}
+                  {overlayColor && (
+                    <div style={{
+                      position: "absolute", left: 0, right: 0, bottom: 0,
+                      height: `${overlayFraction * 100}%`,
+                      background: overlayColor,
+                      pointerEvents: "none",
+                      borderRadius: 2,
+                    }} />
+                  )}
+                </div>
+                <span style={{ color: "#f4f4f4", fontSize: "0.78rem", textAlign: "center", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
+                  {b.tierRoman && <span style={{ color: "#dca64a", fontWeight: 700, marginRight: 4 }}>{b.tierRoman}</span>}
+                  {b.label}
+                </span>
+              </div>
+              );
+            })}
+          </div>
+            );
+          })()
+        ) : (
+          <span style={{ color: "#bbb", fontStyle: "italic" }}>No buildings</span>
+        )}
+      </div>
+
+      {/* Fourth column: recruitable units in this settlement (from EDB) */}
+      <div
+        style={{
+          borderLeft: "1px solid #8882",
+          paddingLeft: 12,
+          boxSizing: "border-box",
+          minWidth: 0,
+          height: "100%",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#9fc78a" }}>Recruitable:</div>
+        {recruitable && recruitable.length > 0 ? (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, minmax(0, 52px))",
+            gridAutoRows: "min-content",
+            gap: 3,
+            justifyContent: "start",
+          }}>
+            {recruitable.map((u, i) => (
+              <div key={i}
+                onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
+                title={u.unit.replace(/_/g, " ")} style={{
+                padding: 2, background: "rgba(0,0,0,0.35)", borderRadius: 3,
+                minWidth: 0,
+              }}>
+                {u.icon ? (
+                  <img src={u.icon} alt={u.unit}
+                    style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 2 }}
+                    onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                ) : (
+                  <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 2 }} />
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <span style={{ color: "#bbb", fontStyle: "italic" }}>No buildings</span>
+          <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>Nothing recruitable</span>
         )}
+      </div>
+
+      {/* Fifth column: garrison + field armies for this region */}
+      <div
+        style={{
+          borderLeft: "1px solid #8882",
+          paddingLeft: 12,
+          boxSizing: "border-box",
+          minWidth: 0,
+          height: "100%",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf" }}>
+          Garrison:
+        </div>
+        {garrisonCommander && (
+          <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
+            {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}
+          </div>
+        )}
+        {garrison && garrison.length > 0 ? (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(10, minmax(0, 28px))",
+            gridAutoRows: "min-content",
+            gap: 2,
+            justifyContent: "start",
+          }}>
+            {garrison.map((u, i) => {
+              const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
+              const tooltip = `${u.unit.replace(/_/g, " ")}${u.soldiers != null ? ` — ${u.soldiers}${u.max != null ? `/${u.max}` : ""}` : ""}${u.xp ? ` — ${u.xp} chevrons` : ""}`;
+              return (
+                <div key={i}
+                  onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
+                  title={tooltip} style={{
+                  position: "relative", padding: 1,
+                  background: "rgba(0,0,0,0.35)", borderRadius: 2,
+                  minWidth: 0,
+                }}>
+                  {u.icon ? (
+                    <img src={u.icon} alt={u.unit}
+                      style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 1 }}
+                      onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  ) : (
+                    <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 1 }} />
+                  )}
+                  {pct != null && (
+                    <div style={{ width: "100%", height: 3, background: "rgba(0,0,0,0.6)", marginTop: 1, borderRadius: 1, overflow: "hidden" }}>
+                      <div style={{
+                        width: `${pct * 100}%`, height: "100%",
+                        background: pct > 0.66 ? "#6c6" : pct > 0.33 ? "#fa4" : "#f66",
+                      }} />
+                    </div>
+                  )}
+                  {typeof u.soldiers === "number" && (
+                    <div style={{
+                      position: "absolute", bottom: 4, left: 1, right: 1,
+                      textAlign: "center", color: "#fff", fontSize: "0.55rem",
+                      lineHeight: 1, fontVariantNumeric: "tabular-nums",
+                      textShadow: "0 0 3px #000, 0 0 2px #000",
+                      pointerEvents: "none",
+                    }}>{u.soldiers}</div>
+                  )}
+                  {u.xp > 0 && (
+                    <div style={{ position: "absolute", top: 0, right: 1, color: "#fc6", fontSize: "0.5rem", textShadow: "0 0 2px #000" }}>
+                      {"\u25B2".repeat(Math.min(u.xp, 3))}{u.xp > 3 ? "+" : ""}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>
+            No units stationed
+          </span>
+        )}
+        {(() => {
+          const renderArmyList = (list) => (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {list.map((a, ai) => (
+                <div key={ai}>
+                  <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
+                    {a.character}{a.faction ? ` — ${factionLabel(a.faction)}` : ""}
+                  </div>
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(10, minmax(0, 28px))",
+                    gap: 2,
+                    justifyContent: "start",
+                  }}>
+                    {a.units.map((u, ui) => {
+                      const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
+                      const tooltip = `${u.unit.replace(/_/g, " ")}${u.soldiers != null ? ` — ${u.soldiers}${u.max != null ? `/${u.max}` : ""}` : ""}${u.xp ? ` — ${u.xp} chevrons` : ""}`;
+                      return (
+                      <div key={ui}
+                        onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
+                        title={tooltip} style={{
+                        position: "relative", padding: 1,
+                        background: "rgba(0,0,0,0.35)", borderRadius: 2,
+                      }}>
+                        {u.icon ? (
+                          <img src={u.icon} alt={u.unit}
+                            style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 1 }}
+                            onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                        ) : (
+                          <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 1 }} />
+                        )}
+                        {pct != null && (
+                          <div style={{ width: "100%", height: 3, background: "rgba(0,0,0,0.6)", marginTop: 1, borderRadius: 1, overflow: "hidden" }}>
+                            <div style={{
+                              width: `${pct * 100}%`, height: "100%",
+                              background: pct > 0.66 ? "#6c6" : pct > 0.33 ? "#fa4" : "#f66",
+                            }} />
+                          </div>
+                        )}
+                        {typeof u.soldiers === "number" && (
+                          <div style={{
+                            position: "absolute", bottom: 4, left: 1, right: 1,
+                            textAlign: "center", color: "#fff", fontSize: "0.55rem",
+                            lineHeight: 1, fontVariantNumeric: "tabular-nums",
+                            textShadow: "0 0 3px #000, 0 0 2px #000",
+                            pointerEvents: "none",
+                          }}>{u.soldiers}</div>
+                        )}
+                        {u.xp > 0 && (
+                          <div style={{ position: "absolute", top: 0, right: 1, color: "#fc6", fontSize: "0.5rem", textShadow: "0 0 2px #000" }}>
+                            {"\u25B2".repeat(Math.min(u.xp, 3))}
+                          </div>
+                        )}
+                      </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+          const own = fieldArmies?.own || [];
+          const others = fieldArmies?.others || [];
+          return (
+            <>
+              {own.length > 0 && (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: 8, marginBottom: 3, color: "#fc6" }}>Region owners armies:</div>
+                  {renderArmyList(own)}
+                </>
+              )}
+              {others.length > 0 && (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: 8, marginBottom: 3, color: "#d88" }}>Other faction armies:</div>
+                  {renderArmyList(others)}
+                </>
+              )}
+              {own.length === 0 && others.length === 0 && (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: 8, marginBottom: 3, color: "#fc6" }}>Field armies:</div>
+                  <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>None</span>
+                </>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );

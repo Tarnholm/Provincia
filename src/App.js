@@ -1,6 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
+import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
+import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
+import InfoPopup from "./InfoPopup";
 import FactionIcon, { preloadIcon } from "./FactionIcon";
 import Tooltip from "./Tooltip";
 import "./App.css";
@@ -25,7 +28,7 @@ const MAP_PADDING = 6;
 const PANELS_GAP = 6;
 const PANEL_WIDTH = 220;
 const MAP_WIDTH_ADJUST = 0;
-const REGIONINFO_HEIGHT = 180;
+const REGIONINFO_HEIGHT = 320;
 const ICON_SIZE = 72;
 const ICON_GAP = 3;
 const ICON_SIDE_PAD = 0;
@@ -624,14 +627,14 @@ function classifyCultureGroup(regionData) {
 // Palette for culture/population/farm color modes
 // ── Dev map-mode palettes ──────────────────────────────────────────────
 const TERRAIN_COLORS = {
-  river_valley:                   [ 40, 180,  60],   // bright green
+  river_valley:                   [179, 234, 220],   // #B3EADC
   floodplains_delta:              [112, 224, 174],   // #70E0AE
-  grassland:                      [180, 215, 160],   // pale sage green
+  grassland:                      [181, 230,  29],   // #B5E61D
   mountain_valley:                [165, 185, 140],   // muted olive-sage
-  forest:                         [ 15,  90,  40],   // dark forest green
+  forest:                         [ 18,  92,  12],   // #125C0C
   steppe:                         [235, 175,  45],   // orange-yellow
   hills:                          [175, 130,  30],   // dark golden brown
-  wetlands:                       [ 25, 120,  80],   // teal green
+  wetlands:                       [ 85, 160, 115],   // #55A073
   small_islands_and_rocky_coast:  [ 80,  70, 130],   // muted purple-blue
   plateau:                        [136,   0,  21],   // #880015
   karst_terrain:                  [235, 159, 146],   // #EB9F92
@@ -1021,6 +1024,7 @@ function App() {
   const [devGrid, setDevGrid] = useState(false);
   const [devCultureBorders, setDevCultureBorders] = useState(false);
   const [showSettlementTier, setShowSettlementTier] = useState(false);
+  const [showArmies, setShowArmies] = useState(false);
   const [showLabels, setShowLabels] = useState("off"); // "off" | "city" | "region"
   const [cityPixels, setCityPixels] = useState([]); // [{x, y, rgbKey}] — black pixel positions mapped to nearest region
   const [hoveredCity, setHoveredCity] = useState(null); // { city, region, x, y, tier, screenX, screenY }
@@ -1119,6 +1123,9 @@ function App() {
 
   const [factionRegionsMap, setFactionRegionsMap] = useState({});
   const [factions, setFactions] = useState([]);
+  // Ref mirror so handlers inside effects always see the up-to-date list.
+  const factionsRef = useRef(factions);
+  useEffect(() => { factionsRef.current = factions; }, [factions]);
   const [selectedFaction, setSelectedFaction] = useState(
     () => localStorage.getItem("selectedFaction") || null
   );
@@ -1154,6 +1161,19 @@ function App() {
   const [buildingsData, setBuildingsData] = useState([]);
   const [saveBuildingsData, setSaveBuildingsData] = useState(null); // { city: { building: {level,health} } } from save parser
   const [saveArmiesData, setSaveArmiesData] = useState(null); // { region: [{unit, soldiers, max}] } from save parser
+  const [saveQueues, setSaveQueues] = useState(null); // { city: [chainName, ...] } currently-queued buildings from save parser
+  const [liveSaveFile, setLiveSaveFile] = useState(null); // filename of the .sav file currently reflected in saveBuildingsData/saveArmiesData
+  const [saveCharactersByRegion, setSaveCharactersByRegion] = useState(null); // { region: [character, ...] }
+  const [saveScriptedByFaction, setSaveScriptedByFaction] = useState(null); // { faction: [char with x,y, traits, ...] } from v2 parser
+  const [saveCurrentYear, setSaveCurrentYear] = useState(null); // current in-game year from save header
+  const [saveCurrentTurn, setSaveCurrentTurn] = useState(null); // current turn number from save header
+  const [saveUnitsByRegion, setSaveUnitsByRegion] = useState(null); // { region: [unit, ...] } — from new unit parser
+  const [builtBuildingsByCity, setBuiltBuildingsByCity] = useState(null); // { city: [chainName, ...] } — real built buildings from the save
+  const [queuedBuildingsByCity, setQueuedBuildingsByCity] = useState(null); // { city: [chainName, ...] } — currently-queued chains, EDB-filtered
+  const [initialOwnerByCity, setInitialOwnerByCity] = useState(null); // { city: factionId } — turn-0 ownership from descr_strat
+  const [currentOwnerByCity, setCurrentOwnerByCity] = useState(null); // { city: factionId } — current ownership decoded from save
+  const [factionDisplayNames, setFactionDisplayNames] = useState(null); // { factionId: displayName } from mod text/expanded_bi.txt
+  const [factionCultures, setFactionCultures] = useState(null); // { factionId: cultureFolderName } from descr_sm_factions.txt
   const [activeSieges, setActiveSieges] = useState({}); // { settlementName: { general, x, y } }
   const [modIconsDir, setModIconsDir] = useState(() => {
     try { return localStorage.getItem("modIconsDir") || null; } catch { return null; }
@@ -1184,24 +1204,313 @@ function App() {
       }
     });
   }, [modIconsDir]);
-  const [buildingLevelsLookup, setBuildingLevelsLookup] = useState(null); // { chain: [level0Name, level1Name, ...] }
-  const [buildingDisplayNames, setBuildingDisplayNames] = useState(null); // { levelName: "Display Name" }
-  // Load building lookups on mount
+  // Faction display-name → internal-id map, loaded from the mod's text files
+  // (campaign_descriptions.txt). Lets us match "The House of Claudii" in a
+  // save filename to the internal `romans_julii` faction key.
+  const factionDisplayMapRef = useRef({});
+
+  const [modDataDir, setModDataDir] = useState(null);
+  const [iconCacheVersion, setIconCacheVersion] = useState(0);
+  const [gameDisplayNames, setGameDisplayNames] = useState(null); // from game's export_buildings.txt (culture-aware)
+  // Derive the mod's data directory from modIconsDir and initialize the
+  // character/unit parsers in the main process. Idempotent — safe to re-call.
   useEffect(() => {
-    fetch((import.meta.env.BASE_URL || ".") + "/building_levels.json")
-      .then(r => r.json())
-      .then(data => setBuildingLevelsLookup(data))
+    if (!modIconsDir) return;
+    const api = window.electronAPI;
+    if (!api?.charactersInit) return;
+    const normalized = modIconsDir.replace(/\\/g, "/");
+    const candidates = [];
+    const dataIdx = normalized.toLowerCase().lastIndexOf("/data/");
+    if (dataIdx !== -1) candidates.push(normalized.slice(0, dataIdx + "/data".length));
+    candidates.push(normalized.replace(/\/[^/]+\/?$/, "").replace(/\/ui$/, ""));
+    if (candidates[0]) setModDataDir(candidates[0]);
+    for (const dir of candidates) {
+      api.charactersInit(dir).then(result => {
+        if (result?.ok) {
+          console.log("[characters] initialized: " + result.names + " names, " + result.traits + " traits, " + result.surnames + " surnames, " + result.chains + " chains, " + result.factionDisplay + " faction display names");
+          // Fetch the faction display map too
+          if (api.getFactionDisplayMap) {
+            api.getFactionDisplayMap().then(map => {
+              factionDisplayMapRef.current = map || {};
+              console.log("[faction] loaded display map, entries:", Object.keys(map || {}).length);
+            });
+          }
+          if (api.getFactionDisplayNames) {
+            api.getFactionDisplayNames().then(map => {
+              setFactionDisplayNames(map || {});
+              console.log("[faction] loaded display names, entries:", Object.keys(map || {}).length);
+            });
+          }
+          if (api.getFactionCultures) {
+            api.getFactionCultures().then(map => {
+              setFactionCultures(map || {});
+              console.log("[faction] loaded cultures, entries:", Object.keys(map || {}).length);
+            });
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [modIconsDir]);
+
+  // Load culture-aware building display names AND faction→culture map from
+  // the game/mod. Must run independently of modIconsDir so users playing
+  // vanilla or Alexander (without a mod) still get proper names/cultures.
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (api?.getBuildingDisplayNames) {
+      api.getBuildingDisplayNames(modDataDir || null).then((map) => {
+        if (map) {
+          console.log("[display-names] loaded, entries:", Object.keys(map).length,
+            "modDataDir:", modDataDir || "(none)",
+            "sample_farms+2:", JSON.stringify(map["farms+2"]),
+            "sample_farms+2_greek:", JSON.stringify(map["farms+2_greek"]),
+            "sample_forum_greek:", JSON.stringify(map["forum_greek"]));
+          setGameDisplayNames(map);
+        }
+      }).catch((e) => console.warn("[display-names] load failed:", e?.message));
+    }
+    if (api?.getBuildingChainLevels) {
+      api.getBuildingChainLevels(modDataDir || null).then((map) => {
+        if (map && Object.keys(map).length > 0) {
+          console.log("[chain-levels] parsed export_descr_buildings.txt, chains:", Object.keys(map).length,
+            "sample_barracks:", JSON.stringify(map.barracks),
+            "sample_caravans:", JSON.stringify(map.caravans),
+            "sample_hinterland_farms:", JSON.stringify(map.hinterland_farms));
+          setBuildingLevelsLookup(map);
+        } else {
+          console.warn("[chain-levels] IPC returned empty map — likely game install not detected, falling back to bundled");
+        }
+      }).catch((e) => console.warn("[chain-levels] load failed:", e?.message));
+    }
+    if (api?.getBuildingRecruits) {
+      api.getBuildingRecruits(modDataDir || null).then((map) => {
+        if (map && Object.keys(map).length > 0) {
+          console.log("[building-recruits] parsed EDB, chains with recruits:", Object.keys(map).length);
+          setBuildingRecruits(map);
+        }
+      }).catch((e) => console.warn("[building-recruits] load failed:", e?.message));
+    }
+    if (api?.getUnitOwnership) {
+      api.getUnitOwnership(modDataDir || null).then((map) => {
+        if (map && Object.keys(map).length > 0) {
+          console.log("[unit-ownership] parsed EDU, units:", Object.keys(map).length);
+          setUnitOwnership(map);
+        }
+      }).catch((e) => console.warn("[unit-ownership] load failed:", e?.message));
+    }
+    if (api?.getFactionCultures) {
+      api.getFactionCultures(modDataDir || null).then((map) => {
+        if (map && Object.keys(map).length > 0) setFactionCultures(map);
+      }).catch(() => {});
+    }
+    if (api?.getFactionDisplayNames) {
+      api.getFactionDisplayNames(modDataDir || null).then((map) => {
+        if (map && Object.keys(map).length > 0) setFactionDisplayNames(map);
+      }).catch(() => {});
+    }
+  }, [modDataDir]);
+
+  const [buildingLevelsLookup, setBuildingLevelsLookup] = useState(null); // { chain: [level0Name, level1Name, ...] }
+  const [buildingRecruits, setBuildingRecruits] = useState(null); // { chain: { level: [{unit, factions?}, ...] } }
+  const [unitOwnership, setUnitOwnership] = useState(null); // { unitName: [faction, ...] } — from export_descr_unit.txt
+  const [infoPopup, setInfoPopup] = useState(null); // { type, faction, name, chainName?, culture?, label? }
+  const [buildingDisplayNames, setBuildingDisplayNames] = useState(null); // { levelName: "Display Name" }
+  // Load building lookups on mount.
+  // NOTE: in Electron with file:// protocol, BASE_URL is "./" and the old
+  // `BASE_URL + "/" + name` pattern produced URLs like ".//building_levels.json"
+  // that file:// rejected in some configurations — leaving the lookups null and
+  // upgrades unable to resolve. Use loadCampaignData (same path other JSONs use)
+  // for reliability.
+  useEffect(() => {
+    // Bundled JSONs only fill in when the runtime EDB parse (getBuildingChainLevels
+    // in the [modDataDir] effect) doesn't yield data — e.g. the game install
+    // isn't detected. Never overwrite an already-populated lookup.
+    loadCampaignData("building_levels.json")
+      .then(r => setBuildingLevelsLookup(prev => prev && Object.keys(prev).length > 0 ? prev : JSON.parse(r.text)))
       .catch(e => pushToast(`Failed to load building level data (${e.message}). Building upgrades will show raw names.`));
-    fetch((import.meta.env.BASE_URL || ".") + "/building_display_names.json")
-      .then(r => r.json())
-      .then(data => setBuildingDisplayNames(data))
+    loadCampaignData("building_display_names.json")
+      .then(r => setBuildingDisplayNames(JSON.parse(r.text)))
       .catch(e => pushToast(`Failed to load building display names (${e.message}). Buildings will show technical names.`));
-  }, [pushToast]);
+  }, [loadCampaignData, pushToast]);
   const [resourcesData, setResourcesData] = useState({});
   const [resourceImages, setResourceImages] = useState({});
   // null = all shown; Set<string> = only those types shown
   const [resourceFilter, setResourceFilter] = useState(null);
   const [armiesData, setArmiesData] = useState([]);
+  const [startingArmiesByRegion, setStartingArmiesByRegion] = useState({}); // { region: [{character, x, y, units: [{name, exp}]}] } — from descr_strat
+  const [saveLiveArmies, setSaveLiveArmies] = useState(null); // [{faction, character, x, y, armyClass, units}] from save parser
+  // Live-log character positions — authoritative for turn-by-turn moves.
+  const liveCharPositions = useRef(new Map());
+  const [liveCharPositionsVersion, setLiveCharPositionsVersion] = useState(0);
+  // User toggle: whether to override save positions with live-log positions.
+  // Default ON (pixel-accurate for live play). Turn off when reviewing old
+  // saves — the log might be from a later turn than the save, which would
+  // show "future" positions.
+  const [useLiveOverride, setUseLiveOverride] = useState(() => {
+    try { return localStorage.getItem("useLiveOverride") !== "0"; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("useLiveOverride", useLiveOverride ? "1" : "0"); } catch {}
+  }, [useLiveOverride]);
+  // Final army list for rendering: live save armies if present, else starting
+  // armies from descr_strat. Apply garrison classification using cityPixels
+  // (black-pixel positions on map_regions.tga that mark settlements).
+  // Also overlay positions from live log-moves — those are pixel-accurate
+  // truth straight from the engine.
+  const armiesToRender = useMemo(() => {
+    const src = saveLiveArmies && saveLiveArmies.length > 0 ? saveLiveArmies : armiesData;
+    if (!src || src.length === 0) return [];
+    // Build a quick Set of "x,y" strings for all settlement tiles.
+    const settlementTiles = new Set();
+    for (const cp of (cityPixels || [])) settlementTiles.add(`${cp.x},${cp.y}`);
+    const livePos = liveCharPositions.current;
+    // Track which live-position keys we've used (so we can add un-matched
+    // log-only entries as synthetic armies at the end). Skip all live-log
+    // processing if user has disabled the override.
+    const matchedKeys = new Set();
+    const useLive = useLiveOverride;
+    // If the loaded save is from an older turn than the log's tail, only
+    // apply log events whose turn is <= save turn. Prevents "future"
+    // positions leaking into a historical save view. saveCurrentTurn is
+    // null until the save is loaded — in that case no filter is applied.
+    const maxTurn = (saveCurrentTurn != null) ? saveCurrentTurn : Infinity;
+    const inTurn = (e) => (e.turn || 0) <= maxTurn;
+    const result = src.map(a => {
+      // Try to upgrade (x, y) from live log events. Key lookup tries
+      // (firstName, lastNameStub, faction) then (firstName, "", faction).
+      let x = a.x, y = a.y;
+      const faction = (a.faction || "").toLowerCase();
+      const first = (a.firstName || (a.character || "").split(" ")[0] || "").toLowerCase();
+      const lastStub = (a.lastName || "").toLowerCase().replace(/[_]/g, "").split(/\s+/)[0] || "";
+      // Primary: exact match on (firstName|lastNameStub|faction).
+      // Fallback 1: any entry with same firstName and faction (different lastName).
+      // Fallback 2: (for unknown-faction armies) any entry with same firstName.
+      let liveEntry = null;
+      let matchedKey = null;
+      if (useLive) {
+        // Tier 0: direct uuid match. The save's primaryUuid (character id)
+        // equals the log's charUuid (last 8 hex chars). This bypasses all
+        // name-based fuzzy matching when both sides agree on identity —
+        // handles same-name generals across factions, renamed captains,
+        // and cases where the save and log spell a lastName differently.
+        if (a.primaryUuid) {
+          const hex = a.primaryUuid.toString(16).padStart(8, "0");
+          for (const [k, v] of livePos) {
+            if (v.charUuid === hex && inTurn(v)) { liveEntry = v; matchedKey = k; break; }
+          }
+        }
+        const fullKey = first + "|" + lastStub + "|" + faction;
+        if (!liveEntry) {
+          const primary = livePos.get(fullKey);
+          if (primary && inTurn(primary)) { liveEntry = primary; matchedKey = fullKey; }
+        }
+        if (!liveEntry && faction) {
+          for (const [k, v] of livePos) {
+            if (k.startsWith(first + "|") && k.endsWith("|" + faction) && inTurn(v)) {
+              liveEntry = v; matchedKey = k; break;
+            }
+          }
+        }
+        if (!liveEntry && (!faction || faction === "unknown") && first) {
+          for (const [k, v] of livePos) {
+            if (k.startsWith(first + "|") && inTurn(v)) { liveEntry = v; matchedKey = k; break; }
+          }
+        }
+        if (matchedKey) matchedKeys.add(matchedKey);
+      }
+      if (liveEntry) { x = liveEntry.x; y = liveEntry.y; }
+      let armyClass = a.armyClass || "field";
+      // Upgrade classification from log role if we have it.
+      if (liveEntry && liveEntry.role === "admiral") armyClass = "navy";
+      else if (armyClass === "field" && settlementTiles.has(`${x},${y}`)) {
+        armyClass = "garrison";
+      } else if (liveEntry && armyClass === "garrison" && !settlementTiles.has(`${x},${y}`)) {
+        // A garrison that's moved out of its settlement is now a field army.
+        // Only apply this flip when we have a live position (save-time
+        // classifications are trusted as-is).
+        armyClass = "field";
+      }
+      return { ...a, x, y, armyClass, liveTracked: !!liveEntry };
+    });
+    // Append log-only armies — characters the log has positions for but
+    // the save parser didn't cover. Typically generated captains (brigands,
+    // rebels) whose lightweight records aren't in the v2 parser's output.
+    // Dedupe by (faction, x, y) so stacked captains share one marker.
+    const alreadyAtPos = new Set();
+    for (const a of result) alreadyAtPos.add((a.faction || "") + "|" + a.x + "," + a.y);
+    const logOnlyByPos = new Map(); // "faction|x,y" → [entries]
+    if (useLive) {
+      for (const [key, entry] of livePos) {
+        if (matchedKeys.has(key)) continue;
+        if (!inTurn(entry)) continue; // skip entries newer than the loaded save
+        const posKey = (entry.faction || "") + "|" + entry.x + "," + entry.y;
+        if (alreadyAtPos.has(posKey)) continue; // save-parser already shows an army there
+        if (!logOnlyByPos.has(posKey)) logOnlyByPos.set(posKey, []);
+        logOnlyByPos.get(posKey).push(entry);
+      }
+    }
+    for (const [posKey, entries] of logOnlyByPos) {
+      const lead = entries[0];
+      const passengers = entries.slice(1).map(e => ({ firstName: (e.name || "").replace(/^(Captain|Admiral|General)\s+/, "").split(/\s+/)[0], name: e.name }));
+      let armyClass = "field";
+      // Prefer log role for classification; fall back to name prefix.
+      if (lead.role === "admiral" || /^admiral\s+/i.test(lead.name || "")) armyClass = "navy";
+      else if (settlementTiles.has(`${lead.x},${lead.y}`)) armyClass = "garrison";
+      result.push({
+        faction: lead.faction || "unknown",
+        character: lead.name,
+        firstName: (lead.name || "").replace(/^(Captain|Admiral|General)\s+/, "").split(/\s+/)[0],
+        lastName: null,
+        x: lead.x, y: lead.y,
+        armyClass,
+        units: [],
+        traits: [],
+        age: null,
+        liveTracked: true,
+        logOnly: true,
+        passengers,
+      });
+    }
+    // descr_strat fallback: for each starting-army position descr_strat knows
+    // about that the save-parser left uncovered, add a synthetic entry. This
+    // restores the initial captain-led garrisons (Borus at Pella, Attalos at
+    // Sparta, etc.) that the save stores as generic captain records with no
+    // named-character entry — the descr_strat name is a useful placeholder
+    // even though it's not preserved in-game. Only applies when armiesData
+    // is the descr_strat source (not the already-loaded save's liveArmies).
+    if (saveLiveArmies && saveLiveArmies.length > 0 && armiesData && armiesData.length > 0) {
+      const posTaken = new Set();
+      // Index existing armies by position so we can either merge units in
+      // (when the save-derived army has none — typically captains placed by
+      // the descr_strat fallback in main.js) or skip duplicates.
+      const armyByPos = new Map(); // "x,y" → army from result
+      for (const a of result) {
+        if (typeof a.x === "number" && typeof a.y === "number") {
+          armyByPos.set(`${a.x},${a.y}`, a);
+        }
+      }
+      for (const d of armiesData) {
+        if (typeof d.x !== "number" || typeof d.y !== "number") continue;
+        const key = `${d.x},${d.y}`;
+        const existing = armyByPos.get(key);
+        if (existing) {
+          // If save-side army has no units (captain at descr_strat coords),
+          // borrow descr_strat's unit list so the tooltip isn't empty.
+          if ((!existing.units || existing.units.length === 0) && d.units && d.units.length > 0) {
+            existing.units = d.units;
+            existing._unitsFromDescrStrat = true;
+          }
+          continue;
+        }
+        let armyClass = d.armyClass || "field";
+        if (armyClass === "field" && settlementTiles.has(key)) armyClass = "garrison";
+        const synth = { ...d, armyClass, descrStratOnly: true };
+        result.push(synth);
+        armyByPos.set(key, synth);
+      }
+    }
+    return result;
+  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn]);
   const [homelandsData, setHomelandsData] = useState({}); // faction → [hidden_resource, ...]
   const [showGarrisons, setShowGarrisons] = useState(true);
   const [showFieldArmies, setShowFieldArmies] = useState(true);
@@ -1227,8 +1536,33 @@ function App() {
   const [liveLogActive, setLiveLogActive] = useState(false);
   const [liveLogEvents, setLiveLogEvents] = useState([]); // [{type, text, turn, ts}]
   const [liveLogTurn, setLiveLogTurn] = useState(null); // {turn, year, season, faction}
+  // Number of Turn-End events seen since activation. Used to gate save-derived
+  // building overrides — the heuristic save parser produces false positives
+  // when the game is still on turn 0, so only trust it once a turn has ended.
+  const [liveTurnsEnded, setLiveTurnsEnded] = useState(0);
+  // Player's faction for live mode. Persisted so repeat launches remember.
+  const [playerFaction, setPlayerFaction] = useState(() => {
+    try { return localStorage.getItem("playerFaction") || null; } catch { return null; }
+  });
+  // Ref mirror so the save-snapshot handler (inside an effect) always sees the
+  // current playerFaction without re-subscribing on every change.
+  const playerFactionRef = useRef(playerFaction);
+  useEffect(() => { playerFactionRef.current = playerFaction; }, [playerFaction]);
+  const [showFactionPicker, setShowFactionPicker] = useState(false);
   const [liveLogDir, setLiveLogDir] = useState(() => {
     try { return localStorage.getItem("liveLogDir") || null; } catch { return null; }
+  });
+  // Save dir is per-campaign (Alex saves to .../Alexander/saves, BI to
+  // .../Barbarian Invasion/saves, vanilla to .../Rome/saves) — independent
+  // of the log dir (RR writes logs into .../Rome/logs regardless).
+  const [liveSaveDir, setLiveSaveDir] = useState(() => {
+    try { return localStorage.getItem("liveSaveDir") || null; } catch { return null; }
+  });
+  // User-pinned save filename. null = follow the newest-by-mtime (default).
+  // When set, the save-watcher reparses this specific file on every change,
+  // so loading an older save in-game + re-saving it over itself updates the UI.
+  const [pinnedSaveFile, setPinnedSaveFile] = useState(() => {
+    try { return localStorage.getItem("pinnedSaveFile") || null; } catch { return null; }
   });
   const [liveHistory, setLiveHistory] = useState([]); // all events across sessions, persisted
   const [liveSliderTurn, setLiveSliderTurn] = useState(null); // null = live/latest, number = rewound to turn N
@@ -1381,6 +1715,29 @@ function App() {
         });
         continue;
       }
+      // Settlement damage (riot, disaster, siege damage) from message_log
+      // settlement 'Suza' damaged (riot, 968 deaths)
+      const damMatch = line.match(/^settlement '([^']+)' damaged \(([^,]+), (\d+) deaths\)/);
+      if (damMatch) {
+        events.push({
+          type: "settlement_damaged",
+          settlement: damMatch[1],
+          cause: damMatch[2].trim(),
+          deaths: parseInt(damMatch[3]),
+        });
+        continue;
+      }
+      // Autoresolved battle outcome from message_log
+      // Name(uuid) has defeated Name(uuid) in an autoresolved battle
+      const battleMatch = line.match(/^(.+?)\([0-9a-f]+\) has defeated (.+?)\([0-9a-f]+\) in an autoresolved battle/);
+      if (battleMatch) {
+        events.push({
+          type: "battle_outcome",
+          winner: battleMatch[1].trim(),
+          loser: battleMatch[2].trim(),
+        });
+        continue;
+      }
     }
     return events;
   }, []);
@@ -1448,8 +1805,11 @@ function App() {
         }
         currentTurnRef.current = ev.turn;
         setLiveLogTurn(prev => ({ ...prev, turn: ev.turn, phase: ev.phase, year: ev.year, season: ev.season, campaign: ev.campaign }));
-        // On turn end, trigger save file parse for building/army updates
+        // On turn end, trigger save file parse for building/army updates,
+        // and mark that we've seen at least one real turn so the UI can
+        // trust save-derived data from here on.
         if (ev.phase === "End" && !isBackfill) {
+          setLiveTurnsEnded(n => n + 1);
           const api = window.electronAPI;
           if (api?.saveCheckNow) api.saveCheckNow();
         }
@@ -1563,7 +1923,7 @@ function App() {
 
     // Add to visible event log (keep last 200)
     setLiveLogEvents(prev => {
-      const important = newHistory.filter(e => ["capture", "region_attach", "siege", "turn", "protectorate", "round_start", "building_new", "building_upgrade", "building_removed", "building_damaged", "army_arrived", "army_left", "army_changed"].includes(e.type));
+      const important = newHistory.filter(e => ["capture", "region_attach", "siege", "turn", "protectorate", "round_start", "building_new", "building_upgrade", "building_removed", "building_damaged", "army_arrived", "army_left", "army_changed", "settlement_damaged", "battle_outcome"].includes(e.type));
       if (important.length === 0) return prev;
       // If reset, start fresh
       if (needsReset) return important.slice(-200);
@@ -1582,6 +1942,59 @@ function App() {
 
     // Start watching
     api.logWatchStart(liveLogDir);
+
+    // Listen for live character moves — authoritative positions from the
+    // engine's own movement events, used to keep army markers pixel-
+    // accurate between save snapshots.
+    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset }) => {
+      if (reset) { liveCharPositions.current = new Map(); setLiveCharPositionsVersion(v => v + 1); return; }
+      // Key format: "firstName|lastNameStub|faction". lastNameStub is the
+      // first word of the character's surname (log: "of Rhodes" → "of",
+      // save: "of_Rhodes" → "of_Rhodes" or similar). Empty if no surname.
+      const keyFromName = (name, faction) => {
+        const clean = (name || "").toLowerCase().replace(/^(captain|admiral|general)\s+/, "");
+        const parts = clean.split(/\s+/);
+        const first = parts[0] || "";
+        const lastStub = (parts[1] || "").replace(/[_]/g, "");
+        return first + "|" + lastStub + "|" + (faction || "").toLowerCase();
+      };
+      // Store positions ONLY under the canonical key (first|lastStub|faction).
+      // Events keep their turn so the armiesToRender memo can filter out
+      // events from turns past the currently-loaded save's turn (avoids
+      // showing "future" positions when reviewing an older save).
+      let changed = false;
+      if (moves) {
+        for (const m of moves) {
+          if (m.x == null || m.y == null || !m.name) continue;
+          if (m.x < 0 || m.x > 200 || m.y < 0 || m.y > 150) continue;
+          const key = keyFromName(m.name, m.faction);
+          liveCharPositions.current.set(key, {
+            x: m.x, y: m.y, name: m.name, faction: m.faction, role: m.role || null,
+            charUuid: m.charUuid || null, turn: m.turn || 0,
+          });
+          changed = true;
+        }
+      }
+      if (deaths) {
+        for (const d of deaths) {
+          if (d.name) {
+            const key = keyFromName(d.name, d.faction);
+            if (liveCharPositions.current.delete(key)) changed = true;
+          } else if (d.charUuid) {
+            // Uuid-only death: iterate the map and drop entries whose stored
+            // charUuid matches. Covers "character ptr(uuid) deleted" events
+            // where we don't have a name to key by.
+            for (const [k, v] of liveCharPositions.current) {
+              if (v.charUuid === d.charUuid) {
+                liveCharPositions.current.delete(k);
+                changed = true;
+              }
+            }
+          }
+        }
+      }
+      if (changed) setLiveCharPositionsVersion(v => v + 1);
+    }) : null;
 
     // Listen for new lines
     const unsub = api.onLogLines(({ source, text }) => {
@@ -1606,6 +2019,7 @@ function App() {
     return () => {
       api.logWatchStop();
       if (unsub) unsub();
+      if (unsubMoves) unsubMoves();
     };
   }, [liveLogActive, liveLogDir, parseLogLines, processLogEvents]);
 
@@ -1619,8 +2033,10 @@ function App() {
     const api = window.electronAPI;
     if (!api?.saveWatchStart) return;
 
-    // Derive saves dir from logs dir: .../logs → .../saves
-    const saveDir = liveLogDir.replace(/[/\\]logs\/?$/, "/saves");
+    // Saves dir is stored separately (campaigns have their own /saves but
+    // share /logs under /Rome/logs). Fall back to log-dir-derived path for
+    // backwards compatibility with old saved state.
+    const saveDir = liveSaveDir || liveLogDir.replace(/[/\\]logs\/?$/, "/saves");
 
     // Set up listeners BEFORE starting the watcher
     const unsubEvents = api.onSaveEvents(({ file, events }) => {
@@ -1633,16 +2049,101 @@ function App() {
       if (saveEvents.length > 0) processLogEventsRef.current(saveEvents);
     });
 
+    // Re-detect player faction from a save filename. Returns the faction key
+    // (or null if no match). Shared between live-mode start and each save
+    // snapshot — a new campaign load should flip the detected faction.
+    // Uses factionsRef to always see the latest faction list (avoids stale
+    // closure if factions load after this effect runs).
+    const detectFactionFromSaveName = (filename) => {
+      const factionList = factionsRef.current;
+      const displayMap = factionDisplayMapRef.current || {};
+      if (!filename || !factionList || !factionList.length) {
+        console.log("[faction] detect skipped: filename=" + filename + " factions=" + (factionList ? factionList.length : "null"));
+        return null;
+      }
+      const m = filename.match(/save_Autosave\s+(.+?)\s+Turn\s+\d+/i);
+      if (!m) { console.log("[faction] filename regex didn't match:", filename); return null; }
+      const hint = m[1].trim().toLowerCase();
+      // 1. Display map lookup ("The House of Claudii" → "romans_julii")
+      let match = displayMap[hint];
+      if (match && !factionList.includes(match)) match = null;
+      // 2. Direct internal-id match
+      if (!match) match = factionList.find(f => f.toLowerCase() === hint);
+      // 3. Underscore-to-space match
+      if (!match) match = factionList.find(f => f.replace(/_/g, " ").toLowerCase() === hint);
+      // 4. Last-word fallback ("Julii" → romans_julii)
+      if (!match) {
+        const lastWord = hint.split(/\s+/).pop();
+        match = factionList.find(f => f.endsWith("_" + lastWord) || f === lastWord);
+      }
+      console.log("[faction] hint=\"" + hint + "\" → match=" + (match || "NONE") + " (displayMap=" + Object.keys(displayMap).length + " factions=" + factionList.length + ")");
+      return match || null;
+    };
+
     const unsubSnapshot = api.onSaveSnapshot(({ file, data }) => {
       if (data && data.buildings) setSaveBuildingsData(data.buildings);
       if (data && data.armies) setSaveArmiesData(data.armies);
+      if (data && data.queues) setSaveQueues(data.queues);
+      if (data && data.charactersByRegion) setSaveCharactersByRegion(data.charactersByRegion);
+      if (data && data.unitsByRegion) setSaveUnitsByRegion(data.unitsByRegion);
+      if (data && data.scriptedByFaction) setSaveScriptedByFaction(data.scriptedByFaction);
+      if (data && data.currentYear != null) setSaveCurrentYear(data.currentYear);
+      if (data && data.currentTurn != null) setSaveCurrentTurn(data.currentTurn);
+      if (data && data.liveArmies) setSaveLiveArmies(data.liveArmies);
+      if (data && data.builtBuildingsByCity) setBuiltBuildingsByCity(data.builtBuildingsByCity);
+      if (data && data.queuedBuildingsByCity) setQueuedBuildingsByCity(data.queuedBuildingsByCity);
+      if (data && data.initialOwnerByCity) setInitialOwnerByCity(data.initialOwnerByCity);
+      if (data && data.currentOwnerByCity) setCurrentOwnerByCity(data.currentOwnerByCity);
+      if (file) setLiveSaveFile(file);
+      // Re-detect faction on every save — catches campaign switches while live
+      // mode stays active (e.g. user quits Dummies and loads a Julii save).
+      if (file) {
+        const match = detectFactionFromSaveName(file);
+        if (match && match !== playerFactionRef.current) {
+          setPlayerFaction(match);
+          try { localStorage.setItem("playerFaction", match); } catch {}
+          setShowFactionPicker(false);
+          pushToast(`Detected player faction: ${match.replace(/_/g, " ")}`, "info");
+        }
+      }
     });
 
-    // Start watcher — returns initial parsed data directly
-    api.saveWatchStart(saveDir).then(result => {
+    // Start watcher — returns initial parsed data directly.
+    // If the baseline filename encodes the player's faction long name (e.g.
+    // "save_Autosave The House of Claudii Turn 1 End.sav"), try to fuzzy-match
+    // it against the known faction list and auto-fill playerFaction. If we
+    // can't match, the user still has the picker.
+    api.saveWatchStart(saveDir, pinnedSaveFile).then(result => {
       if (result?.initialData) {
-        if (result.initialData.buildings) setSaveBuildingsData(result.initialData.buildings);
-        if (result.initialData.armies) setSaveArmiesData(result.initialData.armies);
+        const d = result.initialData;
+        if (d.buildings) setSaveBuildingsData(d.buildings);
+        if (d.armies) setSaveArmiesData(d.armies);
+        if (d.queues) setSaveQueues(d.queues);
+        // New parser outputs were missing from the initial-load path — until
+        // the user triggered a save, Units / Built / Queued stayed empty.
+        if (d.charactersByRegion) setSaveCharactersByRegion(d.charactersByRegion);
+        if (d.unitsByRegion) setSaveUnitsByRegion(d.unitsByRegion);
+        if (d.scriptedByFaction) setSaveScriptedByFaction(d.scriptedByFaction);
+        if (d.currentYear != null) setSaveCurrentYear(d.currentYear);
+        if (d.currentTurn != null) setSaveCurrentTurn(d.currentTurn);
+        if (d.liveArmies) setSaveLiveArmies(d.liveArmies);
+        if (d.builtBuildingsByCity) setBuiltBuildingsByCity(d.builtBuildingsByCity);
+        if (d.queuedBuildingsByCity) setQueuedBuildingsByCity(d.queuedBuildingsByCity);
+        if (d.initialOwnerByCity) setInitialOwnerByCity(d.initialOwnerByCity);
+        if (d.currentOwnerByCity) setCurrentOwnerByCity(d.currentOwnerByCity);
+      }
+      if (result?.baseline) setLiveSaveFile(result.baseline);
+      if (result?.baseline) {
+        const match = detectFactionFromSaveName(result.baseline);
+        if (match && match !== playerFactionRef.current) {
+          setPlayerFaction(match);
+          try { localStorage.setItem("playerFaction", match); } catch {}
+          setShowFactionPicker(false);
+          pushToast(`Detected player faction: ${match.replace(/_/g, " ")}`, "info");
+        } else if (!match && !playerFactionRef.current) {
+          const m = result.baseline.match(/save_Autosave\s+(.+?)\s+Turn\s+\d+/i);
+          if (m) pushToast(`Couldn't identify faction from save name "${m[1].trim()}" — pick manually.`, "info");
+        }
       }
     });
 
@@ -1652,8 +2153,16 @@ function App() {
       if (unsubSnapshot) unsubSnapshot();
       setSaveBuildingsData(null);
       setSaveArmiesData(null);
+      setSaveQueues(null);
+      setSaveCharactersByRegion(null);
+      setSaveUnitsByRegion(null);
+      setBuiltBuildingsByCity(null);
+      setQueuedBuildingsByCity(null);
+      setInitialOwnerByCity(null);
+      setCurrentOwnerByCity(null);
+      setLiveSaveFile(null);
     };
-  }, [liveLogActive, liveLogDir]);
+  }, [liveLogActive, liveLogDir, liveSaveDir, pinnedSaveFile]);
 
   // Effect: playback auto-advance (1.5s per turn)
   useEffect(() => {
@@ -2006,6 +2515,13 @@ function App() {
     loadCampaignData(campaign.armiesFile)
       .then((r) => setArmiesData(JSON.parse(r.text)))
       .catch(() => setArmiesData([]));
+    // starting_armies is the region→armies-with-units lookup saved by the
+    // import flow. Fall back to empty if the bundled campaign didn't ship
+    // this file (older imports).
+    const startFile = campaign.armiesFile.replace(/armies_/, "starting_armies_");
+    loadCampaignData(startFile)
+      .then((r) => setStartingArmiesByRegion(JSON.parse(r.text)))
+      .catch(() => setStartingArmiesByRegion({}));
   }, [loadCampaignData, mapCampaign]);
 
   // Pre-load resource icon images when in resource mode
@@ -2051,11 +2567,14 @@ function App() {
     });
   }, [colorMode, resourcesData, PUBLIC_URL]);
 
-  // Hook up building getter — static data as base, save data merged on top for live updates
-  useEffect(() => {
-    const HIDDEN_CHAINS = new Set(['hinterland_region','hinterland_roads','health','default_set']);
-
-    function getBuildings(regionInfo, raw = false) {
+  // Hook up building getter — static data as base, save data merged on top for live updates.
+  // Defined inline (NOT inside useEffect) so each render sees the latest state.
+  // The previous setBuildingsGetter-via-useEffect approach lagged by one render
+  // (state changes → render with stale getter → useEffect updates getter), which
+  // caused stale building data in the UI. Wrapped in useCallback for stable
+  // identity when nothing changed.
+  const HIDDEN_CHAINS = useMemo(() => new Set(['hinterland_region','hinterland_roads','health','default_set']), []);
+  const getBuildings = useCallback((regionInfo, raw = false) => {
       if (!regionInfo || !regionInfo.region) return [];
       const pretty = (s) => (s || "").toString().replace(/_/g, " ").trim();
 
@@ -2081,77 +2600,196 @@ function App() {
         }
       }
 
-      // 2. If save data available, merge: keep static entries, add new ones from save
-      const cityName = regionInfo.city || regionInfo.region;
-      const saveBuildings = saveBuildingsData?.[cityName] || saveBuildingsData?.[regionInfo.region];
+      // Save-file building merge (as of 2026-04-20, parser is reliable).
+      // The buildingParser.js inverted-block model correctly identifies each
+      // settlement's built chains via the mic_1 demolish experiment. Keys in
+      // builtBuildingsByCity are CITY names (e.g. "Eddopolis", "Rome"), so
+      // look up by regionInfo.city — not regionInfo.region.
+      const cityKey = regionInfo.city;
+      const saveChains = (liveLogActive && builtBuildingsByCity && cityKey)
+        ? builtBuildingsByCity[cityKey] : null;
 
       let merged = [...staticBuildings];
-      if (saveBuildings) {
-        // Remove buildings that were demolished (in static but level 0 or absent in save)
-        merged = merged.filter(b => {
-          const chain = (b.type || "").toLowerCase();
-          if (HIDDEN_CHAINS.has(chain)) return true; // keep hidden ones as-is
-          const sv = saveBuildings[chain];
-          if (!sv) return true; // not tracked in save, keep static
-          const lvl = typeof sv === 'object' ? sv.level : sv;
-          return lvl != null && lvl > 0; // remove if level 0 (demolished)
-        });
-
-        // Track which chains are in the filtered list
-        const existingChains = new Set(merged.map(b => (b.type || "").toLowerCase()));
-
-        // Add buildings from save that aren't in static data (newly built)
-        for (const [chainName, val] of Object.entries(saveBuildings)) {
-          if (HIDDEN_CHAINS.has(chainName)) continue;
-          const lvl = typeof val === 'object' ? val.level : val;
-          if (lvl == null || lvl <= 0) continue;
-          if (existingChains.has(chainName)) continue;
-
-          const levelNames = buildingLevelsLookup?.[chainName];
-          const levelName = levelNames?.[lvl - 1] || chainName;
-          const displayName = buildingDisplayNames?.[levelName] || null;
-
-          merged.push({
-            type: chainName,
-            level: levelName,
-            name: displayName || levelName,
-            _fromSave: true,
-          });
+      if (saveChains && saveChains.length > 0) {
+        // Chains present in save = CURRENTLY BUILT. Chains absent = demolished
+        // or never built. Replace the static list with save-derived chains
+        // using save-derived levels (so upgrades reflect; static data alone
+        // would only show turn-0 levels).
+        // saveChains entries can be either { name, level } (from new parser
+        // with level decoding) or plain string (legacy parsed without level).
+        const staticByChain = {};
+        for (const b of staticBuildings) {
+          if (b.type) staticByChain[b.type.toLowerCase()] = b;
         }
-
-        // Add health info from save to all buildings
-        for (let i = 0; i < merged.length; i++) {
-          const chain = (merged[i].type || "").toLowerCase();
-          const sv = saveBuildings[chain];
-          if (sv) {
-            const hp = typeof sv === 'object' ? sv.health : null;
-            if (hp != null && hp < 100) {
-              merged[i] = { ...merged[i], health: hp };
-            }
+        merged = [];
+        for (const entry of saveChains) {
+          const chainName = (typeof entry === "string") ? entry : entry.name;
+          const saveLevel = (typeof entry === "object") ? entry.level : null;
+          const saveHealth = (typeof entry === "object") ? entry.health : null;
+          const stat = staticByChain[chainName.toLowerCase()];
+          // Resolve the concrete level name for the current save-level index.
+          const levelNames = buildingLevelsLookup?.[chainName];
+          let levelName = null;
+          if (typeof saveLevel === "number" && levelNames && saveLevel >= 0 && saveLevel < levelNames.length) {
+            levelName = levelNames[saveLevel];
+          }
+          if (stat) {
+            const finalLevel = levelName || stat.level;
+            merged.push({ ...stat, level: finalLevel, health: saveHealth });
+          } else {
+            const finalLevel = levelName || (levelNames?.[0]) || chainName;
+            merged.push({ type: chainName, level: finalLevel, health: saveHealth, _fromSave: true });
           }
         }
       }
 
       if (raw) return merged;
 
-      return merged.map((b, idx) => {
+      // Culture comes ONLY from faction (via descr_sm_factions.txt). No
+      // silent fallbacks — if we can't resolve a culture, UI shows raw
+      // level names so the failure is visible and fixable.
+      let culture = null;
+      const ownerId = (currentOwnerByCity && currentOwnerByCity[regionInfo.city])
+        || (initialOwnerByCity && initialOwnerByCity[regionInfo.city])
+        || regionInfo.faction
+        || null;
+      if (ownerId && factionCultures && factionCultures[ownerId]) {
+        culture = factionCultures[ownerId];
+      }
+      if (!culture) {
+        console.warn("[buildings] NO CULTURE for", regionInfo.city,
+          "ownerId:", ownerId,
+          "factionCultures loaded:", !!factionCultures && Object.keys(factionCultures).length,
+          "regionInfo.faction:", regionInfo.faction);
+      }
+      // Kick off icon prefetch for all merged buildings. Don't gate on modDataDir
+      // — the main-process resolver falls back to the vanilla / Alexander
+      // game installs so users who haven't selected a mod still get icons.
+      if (culture) {
+        const triples = merged.map((b) => [culture, b.level, b.type]).filter(([, l]) => l);
+        prefetchBuildingIcons(modDataDir, triples, () => {
+          setIconCacheVersion((v) => v + 1);
+        });
+      }
+
+      const resolved = merged.map((b, idx) => {
         const icons = guessIconNames(b.type, b.level);
+        // Display-name lookup: prefer the game's export_buildings.txt
+        // with culture-aware variant (e.g. `forum_greek` → "Agora"),
+        // then the plain level key, then the bundled JSON as a fallback.
+        const lvl = b.level;
+        let displayName = null;
+        if (lvl && gameDisplayNames) {
+          if (culture && gameDisplayNames[`${lvl}_${culture}`]) {
+            displayName = gameDisplayNames[`${lvl}_${culture}`];
+          } else if (gameDisplayNames[lvl]) {
+            displayName = gameDisplayNames[lvl];
+          } else {
+            console.warn("[buildings] NO DISPLAY NAME for level", JSON.stringify(lvl),
+              "culture:", culture,
+              "gameDisplayNames keys:", Object.keys(gameDisplayNames).length,
+              "has_culture_key:", !!gameDisplayNames[`${lvl}_${culture}`],
+              "has_generic:", !!gameDisplayNames[lvl]);
+          }
+        } else if (!gameDisplayNames) {
+          console.warn("[buildings] gameDisplayNames is NULL when resolving", JSON.stringify(lvl));
+        }
         const label =
+          displayName ||
           (b.level && b.level.trim && b.level.trim() && pretty(b.level)) ||
           (b.name && b.name.trim && b.name.trim() && pretty(b.name)) ||
           deriveLabelFromIcons(icons, b.type) ||
           (b.type && b.type.trim && b.type.trim() && pretty(b.type)) ||
           `Building ${idx + 1}`;
 
+        // Mod/game icon takes priority. No Roman fallback — if the culture's
+        // icon isn't found, show no icon at all (user explicitly doesn't want
+        // misleading Roman stand-ins).
+        const modIconUrl = culture ? getCachedBuildingIcon(culture, b.level) : null;
+        const iconCandidates = modIconUrl ? [modIconUrl] : null;
+
+        // Tier (1-based) = 1 + index of this level within the chain's level
+        // list from `export_descr_buildings.txt`. No hardcoded sequences —
+        // every mod's EDB defines its own chains and levels, we just parse it.
+        // The chain name from descr_strat (`b.type`) maps directly to EDB's
+        // `building <chain> { … }` block; the `levels` line inside is the
+        // canonical ladder.
+        let tier = null;
+        if (b.type && b.level && buildingLevelsLookup) {
+          const chainLevels = buildingLevelsLookup[b.type];
+          if (chainLevels) {
+            const idx = chainLevels.indexOf(b.level);
+            if (idx >= 0) tier = idx + 1;
+          }
+          // Some mods rename a chain but keep the level names — cross-chain
+          // scan as a safety net so a level still resolves to its position.
+          if (tier == null) {
+            for (const levels of Object.values(buildingLevelsLookup)) {
+              const idx = levels.indexOf(b.level);
+              if (idx >= 0) { tier = idx + 1; break; }
+            }
+          }
+        }
         return {
           ...b,
           label,
-          icon: icons.length ? icons : null,
+          icon: iconCandidates,
+          tier,
+          culture, // RTW culture (greek/roman/eastern/…) for the info popup
         };
       });
-    }
-    setBuildingsGetter(getBuildings);
-  }, [buildingsData, saveBuildingsData, buildingLevelsLookup, buildingDisplayNames]);
+      // For each queued (in-construction) chain, REPLACE the built entry
+      // in-place with the target level. The row then shows the next-tier
+      // icon with an orange frame + green progress overlay instead of the
+      // old tier's icon — matches how the game itself surfaces upgrades
+      // in the construction queue.
+      const queuedChains = (liveLogActive && queuedBuildingsByCity && cityKey)
+        ? queuedBuildingsByCity[cityKey] : null;
+      if (queuedChains && queuedChains.length > 0 && culture) {
+        for (const entry of queuedChains) {
+          const chainName = typeof entry === "string" ? entry : entry.name;
+          const percent = typeof entry === "object" && entry && typeof entry.percent === "number" ? entry.percent : null;
+          const chainLevels = buildingLevelsLookup?.[chainName] || null;
+          const rowIdx = resolved.findIndex((b) => b.type === chainName);
+          const currLevel = rowIdx >= 0 ? resolved[rowIdx].level : null;
+          let targetLevelName = null;
+          let targetTier = null;
+          if (chainLevels) {
+            const currIdx = currLevel ? chainLevels.indexOf(currLevel) : -1;
+            const nextIdx = currIdx + 1;
+            if (nextIdx >= 0 && nextIdx < chainLevels.length) {
+              targetLevelName = chainLevels[nextIdx];
+              targetTier = nextIdx + 1;
+            }
+          }
+          if (!targetLevelName) continue;
+          prefetchBuildingIcons(modDataDir, [[culture, targetLevelName, chainName]], () => {
+            setIconCacheVersion((v) => v + 1);
+          });
+          let tLabel = null;
+          if (gameDisplayNames) {
+            if (culture && gameDisplayNames[`${targetLevelName}_${culture}`]) tLabel = gameDisplayNames[`${targetLevelName}_${culture}`];
+            else if (gameDisplayNames[targetLevelName]) tLabel = gameDisplayNames[targetLevelName];
+          }
+          if (!tLabel) tLabel = targetLevelName.replace(/_/g, " ");
+          const tIcon = getCachedBuildingIcon(culture, targetLevelName);
+          const row = {
+            type: chainName,
+            level: targetLevelName,
+            label: tLabel,
+            icon: tIcon ? [tIcon] : null,
+            tier: targetTier,
+            queued: true,
+            progress: percent != null ? percent / 100 : 0,
+            culture,
+          };
+          if (rowIdx >= 0) resolved[rowIdx] = row; else resolved.push(row);
+        }
+      }
+      return resolved;
+  }, [buildingsData, builtBuildingsByCity, liveLogActive, buildingLevelsLookup, buildingDisplayNames, HIDDEN_CHAINS, modDataDir, iconCacheVersion, gameDisplayNames, factionCultures, currentOwnerByCity, initialOwnerByCity, queuedBuildingsByCity]);
+  // Keep the legacy module-level getter in sync for any code that still calls it.
+  useEffect(() => { setBuildingsGetter(getBuildings); }, [getBuildings]);
 
   // Load victory conditions
   useEffect(() => {
@@ -2352,7 +2990,7 @@ function App() {
 
   // Build colored overlay canvas for culture/population/farm/religion/dev modes
   useEffect(() => {
-    const NON_OVERLAY = new Set(["resource", "victory", "armies"]);
+    const NON_OVERLAY = new Set(["resource", "victory"]);
     if (NON_OVERLAY.has(colorMode) || !pixelDataRef.current || !offscreen) {
       setColoredOffscreen(null);
       setStripeOverlay(null);
@@ -2953,11 +3591,11 @@ function App() {
       }
     }
 
-    // Draw army markers (armies mode only)
-    // Each marker is centered on the army's pixel with radius = 0.25 image pixels
-    // (half of a 1px settlement pixel = diameter 0.5px), minimum 1.5 screen pixels so
-    // it stays visible when zoomed out.
-    if (armiesData.length > 0 && colorMode === "armies") {
+    // Draw army markers when the Armies overlay toggle is on — works over
+    // any colorMode, not just a dedicated armies map mode. Uses armiesToRender
+    // which picks the save-parsed live armies when available, else falls
+    // back to descr_strat starting armies.
+    if (armiesToRender.length > 0 && showArmies) {
       // radius in image-pixel space: half of half a pixel = 0.25
       // but enforce a minimum screen size of 1.5px
       const r = Math.max(1.5 / totalScale, 0.25);
@@ -2968,24 +3606,37 @@ function App() {
         navy:     'rgba(40,110,210,0.95)',
       };
 
-      for (const army of armiesData) {
+      for (const army of armiesToRender) {
         if (army.armyClass === 'garrison' && !showGarrisons) continue;
         if (army.armyClass === 'field'    && !showFieldArmies) continue;
         if (army.armyClass === 'navy'     && !showNavies) continue;
-
+        // Skip armies missing coords — parser output shapes have drifted
+        // (descr_strat armies have x/y, but some bundled data lacks them).
+        if (typeof army.x !== 'number' || typeof army.y !== 'number') continue;
+        // Strat coords are bottom-up (y=0 at bottom); the rendered map is
+        // top-down (tga.js flips). Flip y against map height to match.
+        const mapY = (imgSize.height - 1) - army.y;
         const sx = army.x * totalScale + baseOffsetX + offset.x;
-        const sy = army.y * totalScale + baseOffsetY + offset.y;
+        const sy = mapY * totalScale + baseOffsetY + offset.y;
         const margin = r * totalScale + 2;
         if (sx < -margin || sx > canvasSize.width + margin) continue;
         if (sy < -margin || sy > canvasSize.height + margin) continue;
 
         ctx.save();
         ctx.beginPath();
-        ctx.arc(army.x + 0.5, army.y + 0.5, r, 0, Math.PI * 2);
+        ctx.arc(army.x + 0.5, mapY + 0.5, r, 0, Math.PI * 2);
         ctx.fillStyle = COLORS[army.armyClass] || COLORS.field;
         ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,0.85)";
-        ctx.lineWidth = Math.max(0.3 / totalScale, 0.15);
+        // Faction-colored border when we know the faction and have color data.
+        // Falls back to black stroke for unknown factions.
+        const fc = factionColors[(army.faction || "").toLowerCase()];
+        if (fc && fc.primary) {
+          ctx.strokeStyle = `rgb(${fc.primary[0]},${fc.primary[1]},${fc.primary[2]})`;
+          ctx.lineWidth = Math.max(0.5 / totalScale, 0.2);
+        } else {
+          ctx.strokeStyle = "rgba(0,0,0,0.85)";
+          ctx.lineWidth = Math.max(0.3 / totalScale, 0.15);
+        }
         ctx.stroke();
         ctx.restore();
       }
@@ -3089,10 +3740,13 @@ function App() {
     legendFilter,
     dimOverlay,
     armiesData,
+    armiesToRender,
     activeSieges,
+    showArmies,
     showGarrisons,
     showFieldArmies,
     showNavies,
+    factionColors,
   ]);
 
   // Load map image (PNG or TGA depending on campaign)
@@ -3426,18 +4080,20 @@ function App() {
         setHoveredResource(null);
       }
 
-      // Army marker hover detection (only in armies mode)
-      if (colorMode === "armies" && armiesData.length > 0) {
+      // Army marker hover detection (only when overlay is on)
+      if (showArmies && armiesToRender.length > 0) {
         const { totalScale: ts, baseOffsetX: bx, baseOffsetY: by } = computeTransform();
         // Hit area: at least 6 screen pixels so it's clickable even when tiny
         const hitPx = Math.max(6, 0.25 * ts);
         let foundArmy = null;
-        for (const army of armiesData) {
+        for (const army of armiesToRender) {
           if (army.armyClass === 'garrison' && !showGarrisons) continue;
           if (army.armyClass === 'field'    && !showFieldArmies) continue;
           if (army.armyClass === 'navy'     && !showNavies) continue;
+          if (typeof army.x !== 'number' || typeof army.y !== 'number') continue;
+          const mapY = (imgSize.height - 1) - army.y;
           const sx = (army.x + 0.5) * ts + bx + offset.x;
-          const sy = (army.y + 0.5) * ts + by + offset.y;
+          const sy = (mapY + 0.5) * ts + by + offset.y;
           if (Math.abs(mouseScreenX - sx) <= hitPx && Math.abs(mouseScreenY - sy) <= hitPx) {
             foundArmy = { army, screenX: mouseScreenX, screenY: mouseScreenY };
             break;
@@ -3820,16 +4476,16 @@ function App() {
           style={{
             display: "grid",
             gridTemplateColumns: `repeat(auto-fill, ${ICON_SIZE}px)`,
-            columnGap: ICON_GAP,
-            rowGap: ICON_GAP,
+            columnGap: Math.max(ICON_GAP, 6),
+            rowGap: Math.max(ICON_GAP, 6),
             justifyContent: "center",
-            padding: "2px 0",
+            padding: "4px 4px",
           }}
         >
           {list.filter(f => !factionSearch || f.toLowerCase().includes(factionSearch.toLowerCase())).map((faction) => {
             const isSelected = selectedFactions.has(faction);
             return (
-              <Tooltip label={faction} key={faction}>
+              <Tooltip label={(factionDisplayNames && factionDisplayNames[faction]) || faction.replace(/_/g, " ")} key={faction}>
                 <div
                   className="faction-tile"
                   style={{
@@ -4260,7 +4916,6 @@ function App() {
       { key: "population", label: "Population" },
       { key: "farm", label: "Fertility" },
       { key: "resource", label: "Resources" },
-      { key: "armies", label: "Armies" },
       { key: "homeland", label: "Homeland" },
       { key: "government", label: "Government" },
     ];
@@ -4689,6 +5344,8 @@ function App() {
             style={{ ...btnStyle(devCultureBorders), minWidth: 0 }}>Borders</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
+          <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
+            style={{ ...btnStyle(showArmies), minWidth: 0 }}>Armies</button>
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
             style={{ ...btnStyle(showLabels !== "off"), minWidth: 0 }}>{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
           <button className="map-mode-btn" onClick={async () => {
@@ -4699,23 +5356,82 @@ function App() {
             } else {
               const api = window.electronAPI;
               let dir = liveLogDir;
-              // Auto-detect log dir if not saved
-              if (!dir) {
+              const importedCampaign = (() => { try { return localStorage.getItem("importedCampaign"); } catch { return null; } })();
+              console.log("[live] activating. saved liveLogDir:", JSON.stringify(dir), "liveSaveDir:", JSON.stringify(liveSaveDir), "importedCampaign:", JSON.stringify(importedCampaign));
+              // Log dir is always Rome/logs so we only sanity-check the
+              // SAVE dir against the imported campaign. If they disagree
+              // (saved Rome/saves but imported Alexander), clear and redetect.
+              if (liveSaveDir && importedCampaign) {
+                const norm = liveSaveDir.toLowerCase().replace(/\\/g, "/");
+                const expected = "/" + importedCampaign.toLowerCase() + "/saves";
+                const matches = norm.includes(expected);
+                console.log("[live] saveDir/campaign match check:", "norm=", norm, "expected=", expected, "matches=", matches);
+                if (!matches) {
+                  console.log("[live] CLEARING stale dirs (save dir campaign mismatch)");
+                  dir = null;
+                  setLiveLogDir(null);
+                  setLiveSaveDir(null);
+                  try { localStorage.removeItem("liveLogDir"); } catch {}
+                  try { localStorage.removeItem("liveSaveDir"); } catch {}
+                }
+              } else if (dir && !liveSaveDir && importedCampaign) {
+                // Legacy saved state: only liveLogDir set (pointed at Rome
+                // in older builds). Force re-detect to populate liveSaveDir
+                // per-campaign.
+                console.log("[live] legacy liveLogDir without liveSaveDir — forcing redetect");
+                dir = null;
+                setLiveLogDir(null);
+                try { localStorage.removeItem("liveLogDir"); } catch {}
+              }
+              // No saved path yet — pick a campaign folder. Priority:
+              //   1. The campaign the user last imported files from
+              //      (saved in localStorage as "importedCampaign", set by
+              //      the import flow when it detects alexander/ or bi/ in
+              //      the chosen source path).
+              //   2. Among installed campaigns, whichever has the newest
+              //      .sav file — the one the user is most likely playing.
+              let saveDirChoice = liveSaveDir;
+              if (!dir || !saveDirChoice) {
                 const paths = await api?.getAppPaths();
-                const tryPaths = [];
-                if (paths?.localAppData) {
-                  // Windows: %LOCALAPPDATA%\Feral Interactive\Total War ROME REMASTERED\VFS\Local\Rome\logs
-                  tryPaths.push(paths.localAppData.replace(/\\/g, "/") + "/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/logs");
+                const roots = [];
+                if (paths?.localAppData) roots.push(paths.localAppData.replace(/\\/g, "/") + "/Feral Interactive/Total War ROME REMASTERED/VFS/Local");
+                if (paths?.home) roots.push(paths.home.replace(/\\/g, "/") + "/Library/Application Support/Feral Interactive/Total War Rome Remastered/VFS/Local");
+                console.log("[live] auto-detect roots:", JSON.stringify(roots));
+                const camps = ["Alexander", "Barbarian Invasion", "Rome"];
+                // RR writes logs into .../Rome/logs regardless of which
+                // campaign the game is running, but each campaign has its
+                // own .../<camp>/saves folder. So we pick the save dir
+                // per-campaign and always use Rome/logs for the log dir.
+                let chosenSaveDir = null;
+                let chosenRoot = null;
+                if (importedCampaign && camps.includes(importedCampaign)) {
+                  for (const root of roots) {
+                    const saveDir = root + "/" + importedCampaign + "/saves";
+                    const latest = await api?.getLatestSaveMtime?.(saveDir);
+                    console.log("[live] trying imported-campaign saveDir:", saveDir, "latestSave:", latest?.file || "(none)");
+                    if (latest) { chosenSaveDir = saveDir; chosenRoot = root; break; }
+                  }
                 }
-                if (paths?.home) {
-                  // Mac: ~/Library/Application Support/Feral Interactive/Total War Rome Remastered/VFS/Local/Rome/logs
-                  tryPaths.push(paths.home.replace(/\\/g, "/") + "/Library/Application Support/Feral Interactive/Total War Rome Remastered/VFS/Local/Rome/logs");
+                if (!chosenSaveDir) {
+                  let best = null;
+                  for (const c of camps) {
+                    for (const root of roots) {
+                      const saveDir = root + "/" + c + "/saves";
+                      const latest = await api?.getLatestSaveMtime?.(saveDir);
+                      if (!latest) continue;
+                      const mtime = latest.mtime || 0;
+                      console.log("[live] candidate:", c, "latestSave:", latest.file, "mtime:", mtime);
+                      if (!best || mtime > best.mtime) best = { saveDir, root, camp: c, mtime };
+                      break;
+                    }
+                  }
+                  if (best) { chosenSaveDir = best.saveDir; chosenRoot = best.root; console.log("[live] picking newest-save winner:", best.camp, best.saveDir); }
                 }
-                for (const p of tryPaths) {
-                  const check = await api?.readFile(p + "/message_log.txt");
-                  if (check) { dir = p; break; }
+                if (chosenRoot) {
+                  dir = chosenRoot + "/Rome/logs"; // RR's log dir is always under /Rome/logs
+                  saveDirChoice = chosenSaveDir;
                 }
-                // If auto-detect failed, ask user
+                // Last resort: ask user.
                 if (!dir) {
                   dir = await api?.selectLogFolder();
                   if (!dir) return;
@@ -4726,119 +5442,71 @@ function App() {
                     if (check2) { dir = norm + "/logs"; }
                     else { alert("message_log.txt not found.\nNavigate to the 'logs' folder inside your Rome Remastered data directory."); return; }
                   }
+                  saveDirChoice = saveDirChoice || dir.replace(/[/\\]logs\/?$/, "/saves");
                 }
                 setLiveLogDir(dir);
                 try { localStorage.setItem("liveLogDir", dir); } catch {}
+                if (saveDirChoice) {
+                  setLiveSaveDir(saveDirChoice);
+                  try { localStorage.setItem("liveSaveDir", saveDirChoice); } catch {}
+                  console.log("[live] final dirs — log:", dir, "save:", saveDirChoice);
+                }
               }
-              // Save base state snapshots for replay (before any events applied)
+              // Clean-slate activation: we don't replay historical logs because
+              // the RR log files don't distinguish "events from before you opened
+              // Provincia" from "events happening right now". Instead we:
+              //   - Snapshot the starting state (for future diff references).
+              //   - Clear any previous live history / events / sieges.
+              //   - Let the useEffects for log-watch and save-watch start from EOF
+              //     / latest autosave and produce forward-only events.
               baseRegionsRef.current = JSON.parse(JSON.stringify(regions));
               baseFactionMapRef.current = JSON.parse(JSON.stringify(factionRegionsMap));
 
-              // Collect all events: persistent history + current log session
-              let allEvents = [];
-
-              // Load persistent history from previous sessions
-              try {
-                const saved = await api?.readUserFile("live_history.json");
-                if (saved) {
-                  const parsed = JSON.parse(saved);
-                  if (Array.isArray(parsed) && parsed.length > 0) allEvents = parsed;
-                }
-              } catch {}
-
-              // Read current log file for new events
-              if (api?.logReadFull) {
-                const { msg, ai } = await api.logReadFull(dir);
-                const logEvents = [];
-                if (msg) logEvents.push(...parseLogLines("message", msg));
-                if (ai) logEvents.push(...parseLogLines("ai", ai));
-                // Tag with turn numbers
-                let curTurn = 0;
-                if (allEvents.length > 0) {
-                  const lastT = allEvents.filter(e => e.type === "turn").pop();
-                  if (lastT) curTurn = lastT._turn || lastT.turn || 0;
-                }
-                for (const ev of logEvents) {
-                  if (ev.type === "turn") curTurn = ev.turn;
-                  allEvents.push({ ...ev, _turn: curTurn, ts: Date.now() });
-                }
-              }
-
-              // Only keep events from the CURRENT campaign — find the last Turn 1 and discard everything before it
-              let lastTurn1Idx = -1;
-              for (let i = allEvents.length - 1; i >= 0; i--) {
-                if (allEvents[i].type === "turn" && allEvents[i].turn === 1 && allEvents[i].phase === "End") {
-                  lastTurn1Idx = i;
-                  break;
-                }
-              }
-              if (lastTurn1Idx > 0) {
-                allEvents = allEvents.slice(lastTurn1Idx);
-              }
-
-              // Set refs
-              const lastTurn = allEvents.filter(e => e.type === "turn").pop();
-              if (lastTurn) {
-                currentTurnRef.current = lastTurn._turn || lastTurn.turn || 0;
-                if (lastTurn.campaign) currentCampaignRef.current = lastTurn.campaign;
-              }
-
-              // Save combined history
-              setLiveHistory(allEvents);
-              if (api?.saveUserFile) api.saveUserFile("live_history.json", JSON.stringify(allEvents));
-
-              // Set visible event log
-              const important = allEvents.filter(e => ["capture", "region_attach", "siege", "turn", "protectorate", "round_start"].includes(e.type));
-              setLiveLogEvents(important.slice(-200));
-
-              // Set turn info
-              if (lastTurn) {
-                setLiveLogTurn({ turn: lastTurn.turn, phase: lastTurn.phase, year: lastTurn.year, season: lastTurn.season, campaign: lastTurn.campaign });
-              }
-
-              // Replay all events onto base state to get current map
-              const maxTurn = currentTurnRef.current;
-              replayToTurn(maxTurn, allEvents, baseRegionsRef.current, baseFactionMapRef.current);
-
-              // Replay army movements and sieges from backfill
-              const mh = (CAMPAIGNS[mapCampaign]?.mapHeight || 350) - 1;
-              const backfillSieges = {};
-              setArmiesData(prev => {
-                const updated = [...prev];
-                for (const ev of allEvents) {
-                  if (ev.type === "army_move") {
-                    const useFrom = ev.action === 'BESIEGE' || ev.action === 'ASSAULT' || ev.action === 'CAPTURE_RESIDENCE';
-                    const mapX = useFrom ? ev.fromX : ev.toX;
-                    const mapY = mh - (useFrom ? ev.fromY : ev.toY);
-                    const idx = updated.findIndex(a => a.name === ev.name && a.faction === ev.faction);
-                    if (idx >= 0) {
-                      updated[idx] = { ...updated[idx], x: mapX, y: mapY };
-                    }
-                  }
-                  if (ev.type === "siege") {
-                    if (ev.status === "begun") {
-                      backfillSieges[ev.settlement] = { general: ev.general, x: ev.x, y: ev.y };
-                    } else if (ev.status === "ended") {
-                      delete backfillSieges[ev.settlement];
-                    }
-                  }
-                }
-                return updated;
-              });
-              setActiveSieges(backfillSieges);
+              currentTurnRef.current = 0;
+              currentCampaignRef.current = null;
+              setLiveHistory([]);
+              setLiveLogEvents([]);
+              setLiveLogTurn(null);
+              setActiveSieges({});
+              setLiveTurnsEnded(0);
+              if (api?.saveUserFile) api.saveUserFile("live_history.json", "[]");
 
               setLiveLogActive(true);
+              pushToast(`Live mode: ${saveDirChoice || dir}`, "info");
+              // Faction gets auto-detected from the autosave filename inside
+              // the save-watch effect — no manual prompt needed.
             }
           }}
             style={{ ...btnStyle(liveLogActive), minWidth: 0, color: liveLogActive ? "#4f8" : undefined }}>Live</button>
-          {liveLogDir && !liveLogActive && (
-            <button className="map-mode-btn" onClick={() => {
-              setLiveLogDir(null);
-              setLiveHistory([]);
-              try { localStorage.removeItem("liveLogDir"); } catch {}
-              const api = window.electronAPI;
-              if (api?.saveUserFile) api.saveUserFile("live_history.json", "[]");
-            }} style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 4px" }} title="Clear saved log path and history">x</button>
+          {liveLogActive && (
+            <button
+              className="map-mode-btn"
+              onClick={async () => {
+                const api = window.electronAPI;
+                const res = await api?.selectSaveFile?.(liveSaveDir);
+                if (!res) return;
+                if (res.error) { alert(res.error); return; }
+                setPinnedSaveFile(res.file);
+                try { localStorage.setItem("pinnedSaveFile", res.file); } catch {}
+                pushToast(`Tracking ${res.file}`, "info");
+              }}
+              title={pinnedSaveFile ? `Pinned: ${pinnedSaveFile}\nClick to pick a different save.` : "Pick a specific save to track instead of the newest one."}
+              style={{ ...btnStyle(!!pinnedSaveFile), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px" }}
+            >
+              {pinnedSaveFile ? "Pinned" : "Pick save…"}
+            </button>
+          )}
+          {liveLogActive && pinnedSaveFile && (
+            <button
+              className="map-mode-btn"
+              onClick={() => {
+                setPinnedSaveFile(null);
+                try { localStorage.removeItem("pinnedSaveFile"); } catch {}
+                pushToast("Following newest save again", "info");
+              }}
+              title="Stop pinning — resume newest-by-mtime tracking"
+              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 4px" }}
+            >×</button>
           )}
         </div>
         {/* Live log event feed + turn slider */}
@@ -4931,6 +5599,8 @@ function App() {
                     {ev.type === "army_arrived" && <span style={{ color: "#8cf" }}>{ev.region}: army arrived ({ev.units} units, {ev.soldiers} men)</span>}
                     {ev.type === "army_left" && <span style={{ color: "#ca8" }}>{ev.region}: army departed ({ev.units} units)</span>}
                     {ev.type === "army_changed" && <span style={{ color: "#aaf" }}>{ev.region}: army changed ({ev.prevUnits}&rarr;{ev.units} units, {ev.soldiers} men)</span>}
+                    {ev.type === "settlement_damaged" && <span style={{ color: "#f66" }}>{ev.settlement}: {ev.cause} ({ev.deaths} dead)</span>}
+                    {ev.type === "battle_outcome" && <span style={{ color: "#fc8" }}>{ev.winner} defeated {ev.loser}</span>}
                   </div>
                 ))}
               </div>
@@ -5758,7 +6428,7 @@ function App() {
                     background: `rgb(${color[0]},${color[1]},${color[2]})`,
                     outline: selected ? "2px solid #dca64a" : "none",
                   }} />
-                  <span style={{ flex: 1, textTransform: "capitalize", fontSize: "0.66rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={factionName.replace(/_/g, " ")}>{factionName.replace(/_/g, " ")}</span>
+                  <span style={{ flex: 1, textTransform: "capitalize", fontSize: "0.66rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={(factionDisplayNames && factionDisplayNames[factionName]) || factionName.replace(/_/g, " ")}>{(factionDisplayNames && factionDisplayNames[factionName]) || factionName.replace(/_/g, " ")}</span>
                   {collisionTip && (
                     <span title={collisionTip} style={{
                       fontSize: "0.62rem", color: "#e8a030", flexShrink: 0,
@@ -5836,6 +6506,52 @@ function App() {
         toasts={toasts}
         onDismiss={(id) => setToasts(prev => prev.filter(x => x.id !== id))}
       />
+      {showFactionPicker && factions && factions.length > 0 && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 10004,
+          background: "rgba(0,0,0,0.55)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={() => setShowFactionPicker(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "rgba(22,24,28,0.98)", border: "1px solid #555",
+            borderRadius: 10, padding: 16, maxWidth: "80vw", maxHeight: "80vh",
+            overflowY: "auto", color: "#eee", boxShadow: "0 6px 30px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>
+              Select your faction
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "#aaa", marginBottom: 12 }}>
+              Live mode uses this to label events and filter the save correctly. You can change it later.
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 96px)", gap: 8 }}>
+              {factions.map(f => (
+                <button key={f} onClick={() => {
+                  setPlayerFaction(f);
+                  try { localStorage.setItem("playerFaction", f); } catch {}
+                  setShowFactionPicker(false);
+                }} style={{
+                  background: "rgba(40,42,48,0.8)", border: "1px solid #555",
+                  borderRadius: 6, padding: 6, cursor: "pointer", color: "#eee",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                }}>
+                  <div style={{ width: 72, height: 72, filter: ICON_DROP_SHADOW }}>
+                    <FactionIcon iconPath={`faction_icons/${f}.tga`} alt={f} size={72} tightCrop modIconsDir={modIconsDir} />
+                  </div>
+                  <span style={{ fontSize: "0.7rem", textTransform: "capitalize" }}>
+                    {f.replace(/_/g, " ")}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+              <button onClick={() => setShowFactionPicker(false)} style={{
+                padding: "6px 14px", borderRadius: 6, border: "1px solid #555",
+                background: "transparent", color: "#aaa", cursor: "pointer",
+              }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div
         style={{
           position: "relative",
@@ -5952,7 +6668,7 @@ function App() {
                     ))}
                   </div>
                 )}
-                {colorMode === "armies" && armiesData.length > 0 && (
+                {showArmies && armiesToRender.length > 0 && (
                   <div style={{
                     position: "absolute", top: 8, right: 8, zIndex: 4,
                     background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
@@ -5960,17 +6676,33 @@ function App() {
                     color: "#f6f6f6", fontSize: "0.82rem", display: "flex", flexDirection: "column", gap: 6,
                   }}>
                     <div style={{ fontWeight: 700, marginBottom: 2 }}>Army Types</div>
-                    {[
-                      { key: 'garrison',  label: '🏰 Garrisons', color: '#dca040', get: showGarrisons,   set: setShowGarrisons },
-                      { key: 'field',     label: '⚔ Armies',       color: '#b42828', get: showFieldArmies, set: setShowFieldArmies },
-                      { key: 'navy',      label: '⚓ Navies',      color: '#2872d2', get: showNavies,      set: setShowNavies },
-                    ].map(({ key, label, color, get, set }) => (
-                      <div key={key} onClick={() => set(s => !s)}
-                        style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", opacity: get ? 1 : 0.4 }}>
-                        <span style={{ width: 12, height: 12, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
-                        <span>{label}</span>
-                      </div>
-                    ))}
+                    <div onClick={() => setUseLiveOverride(v => !v)}
+                      style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: "0.72rem", color: useLiveOverride ? "#9ec" : "#888", marginBottom: 4, paddingBottom: 4, borderBottom: "1px solid #444" }}
+                      title="When ON, positions from the message log override save positions (pixel-accurate for live play). Turn OFF when reviewing older saves.">
+                      <span>{useLiveOverride ? "🟢" : "⚪"}</span>
+                      <span>Live-log override</span>
+                    </div>
+                    {(() => {
+                      // Count armies per class (for the legend subtext).
+                      const counts = { garrison: 0, field: 0, navy: 0 };
+                      for (const a of armiesToRender) {
+                        if (counts[a.armyClass] != null) counts[a.armyClass]++;
+                      }
+                      return [
+                        { key: 'garrison',  label: '🏰 Garrisons', color: '#dca040', get: showGarrisons,   set: setShowGarrisons },
+                        { key: 'field',     label: '⚔ Armies',       color: '#b42828', get: showFieldArmies, set: setShowFieldArmies },
+                        { key: 'navy',      label: '⚓ Navies',      color: '#2872d2', get: showNavies,      set: setShowNavies },
+                      ].map(({ key, label, color, get, set }) => (
+                        <div key={key} onClick={() => set(s => !s)}
+                          style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", opacity: get ? 1 : 0.4 }}>
+                          <span style={{ width: 12, height: 12, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
+                          <span>{label}</span>
+                          <span style={{ color: "#9ab", marginLeft: "auto", fontVariantNumeric: "tabular-nums", fontSize: "0.76rem" }}>
+                            {counts[key]}
+                          </span>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 )}
                 <canvas
@@ -6017,15 +6749,48 @@ function App() {
                     maxWidth: 260,
                   }}>
                     <div style={{ fontWeight: 700, marginBottom: 2 }}>
-                      {hoveredArmy.army.armyClass === 'navy' ? '⚓' : hoveredArmy.army.armyClass === 'garrison' ? '🏰' : '⚔'} {hoveredArmy.army.name}
+                      {hoveredArmy.army.armyClass === 'navy' ? '⚓' : hoveredArmy.army.armyClass === 'garrison' ? '🏰' : '⚔'} {hoveredArmy.army.character || hoveredArmy.army.name || '(unnamed)'}
+                      {typeof hoveredArmy.army.age === 'number' ? <span style={{ color: "#9ab", fontWeight: 400, marginLeft: 6 }}>age {hoveredArmy.army.age}</span> : null}
                     </div>
                     <div style={{ color: "#bbb", marginBottom: 4 }}>
-                      {hoveredArmy.army.faction.replace(/_/g, " ")} &mdash; {hoveredArmy.army.armyClass} &mdash; {hoveredArmy.army.units.length} unit{hoveredArmy.army.units.length !== 1 ? 's' : ''}
-                      {hoveredArmy.army.location && <> ({hoveredArmy.army.location})</>}
+                      {(hoveredArmy.army.faction || '').replace(/_/g, " ")}
+                      {hoveredArmy.army.units && hoveredArmy.army.units.length > 0 ? <> &mdash; {hoveredArmy.army.units.length} unit{hoveredArmy.army.units.length !== 1 ? 's' : ''}</> : null}
+                      {hoveredArmy.army.logOnly ? <span style={{ color: "#88a", marginLeft: 6 }}>(log-tracked)</span> : hoveredArmy.army.liveTracked ? <span style={{ color: "#4a8", marginLeft: 6 }} title="Position updated from the live log, not the save">(live)</span> : null}
                     </div>
-                    {hoveredArmy.army.units.map((u, i) => (
-                      <div key={i} style={{ color: "#ddd", paddingLeft: 6 }}>{u}</div>
-                    ))}
+                    {hoveredArmy.army.passengers && hoveredArmy.army.passengers.length > 0 ? (
+                      <div style={{ color: "#aaa", fontSize: "0.76rem", marginBottom: 4, paddingLeft: 6 }}>
+                        with {hoveredArmy.army.passengers.map(p => (typeof p === 'string' ? p : (p.firstName || p.name || ''))).filter(Boolean).join(", ")}
+                      </div>
+                    ) : null}
+                    {hoveredArmy.army.traits && hoveredArmy.army.traits.length > 0 ? (() => {
+                      const keyTraits = hoveredArmy.army.traits.filter(t =>
+                        /^(Factionleader|Factionheir|GoodCommander|NaturalMilitarySkill|GoodAdministrator|GoodAttacker|GoodDefender|BattleScarred|Brave|Intelligent|Loyal)$/.test(t.name)
+                      ).slice(0, 4);
+                      if (keyTraits.length === 0) return null;
+                      return (
+                        <div style={{ color: "#9ab", fontSize: "0.72rem", marginTop: 4, paddingLeft: 6 }}>
+                          {keyTraits.map(t => `${t.name.replace(/([A-Z])/g, ' $1').trim()}${t.level > 0 ? ` ${t.level}` : ''}`).join(" · ")}
+                        </div>
+                      );
+                    })() : null}
+                    {(hoveredArmy.army.units || []).slice(0, 12).map((u, i) => {
+                      const uname = typeof u === 'string' ? u : (u.name || '');
+                      const soldiers = typeof u === 'object' ? u.soldiers : null;
+                      const maxSoldiers = typeof u === 'object' ? u.maxSoldiers : null;
+                      return (
+                        <div key={i} style={{ color: "#ddd", paddingLeft: 6, display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span>{uname.replace(/_/g, " ")}</span>
+                          {typeof soldiers === 'number' && typeof maxSoldiers === 'number' && maxSoldiers > 0 ? (
+                            <span style={{ color: "#9ba", fontVariantNumeric: "tabular-nums" }}>{soldiers}/{maxSoldiers}</span>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                    {(hoveredArmy.army.units || []).length > 12 ? (
+                      <div style={{ color: "#999", paddingLeft: 6, fontStyle: "italic" }}>
+                        … +{(hoveredArmy.army.units || []).length - 12} more
+                      </div>
+                    ) : null}
                   </div>
                 )}
 
@@ -6329,7 +7094,367 @@ function App() {
               >
                 {(lockedRegionInfo || regionInfo) ? (
                   <div className="region-info">
-                    <RegionInfo info={lockedRegionInfo || regionInfo} modeExtra={getModeExtra(lockedRegionInfo || regionInfo)} devMode={devMode}
+                    <RegionInfo
+                      info={lockedRegionInfo || regionInfo}
+                      modeExtra={getModeExtra(lockedRegionInfo || regionInfo)}
+                      devMode={devMode}
+                      onShowInfo={setInfoPopup}
+                      factionDisplayNames={factionDisplayNames}
+                      // Compute buildings here so React re-renders when save state
+                      // changes (RegionInfo's internal useMemo can't see those).
+                      buildings={(() => {
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
+                        try { return getBuildings(r); }
+                        catch { return null; }
+                      })()}
+                      garrisonCommander={(() => {
+                        // The governor commanding the garrison, if any —
+                        // rendered as a character line under the "Garrison:"
+                        // header to match the "Region owners armies:" /
+                        // "Other faction armies:" layout.
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !liveLogActive) return null;
+                        const settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                        if (!settlementTile) return null;
+                        for (const list of Object.values(saveCharactersByRegion || {})) {
+                          for (const c of list) {
+                            if (c.x === settlementTile.x && c.y === settlementTile.y && c.secondaryUuid) {
+                              return {
+                                character: c.lastName
+                                  ? `${c.firstName} ${c.lastName.replace(/_/g, " ")}`
+                                  : c.firstName,
+                                faction: c.faction || null,
+                              };
+                            }
+                          }
+                        }
+                        return null;
+                      })()}
+                      garrison={(() => {
+                        // Live mode: use the save-file parser data (fresh =
+                        // saveUnitsByRegion, legacy = saveArmiesData fallback).
+                        // Non-live: fall back to startingArmiesByRegion — the
+                        // descr_strat turn-0 garrison resolved to regions
+                        // during import.
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
+                        let normalised = null;
+                        if (liveLogActive) {
+                          const fresh = saveUnitsByRegion?.[r.region];
+                          const legacy = saveArmiesData?.[r.region] || saveArmiesData?.[r.city];
+                          const rawFresh = fresh || null;
+                          // Coord-based garrison definition: units whose
+                          // commander is at the settlement tile, plus units
+                          // with no commander (generic garrison defenders).
+                          const settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                          const charByUuid = new Map();
+                          for (const list of Object.values(saveCharactersByRegion || {})) {
+                            for (const c of list) { if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c); }
+                          }
+                          if (rawFresh) {
+                            // Garrison = units with no commander at all,
+                            // OR units whose commander is a governor — a
+                            // named character positioned EXACTLY on the
+                            // settlement tile (those stacks are the city's
+                            // garrison, not a field army).
+                            normalised = rawFresh.filter((u) => {
+                              const cmd = u.inferredCmd || u.commanderUuid;
+                              if (!cmd) return true;
+                              const commander = charByUuid.get(cmd);
+                              if (!commander) return false; // unknown cmd = field army we couldn't identify
+                              if (settlementTile && commander.x != null && commander.y != null) {
+                                return commander.x === settlementTile.x && commander.y === settlementTile.y;
+                              }
+                              return false;
+                            }).map((u) => ({ unit: u.name, soldiers: u.soldiers, max: u.maxSoldiers }));
+                          } else {
+                            normalised = legacy;
+                          }
+                        } else {
+                          // startingArmiesByRegion is now { region: {
+                          //   garrison: [armies], field: [armies] } }. The
+                          // garrison prop shows only units on the settlement
+                          // tile; field armies render in a separate section.
+                          const regData = startingArmiesByRegion?.[r.region];
+                          const garrisonArmies = regData?.garrison || [];
+                          if (garrisonArmies.length > 0) {
+                            normalised = [];
+                            for (const a of garrisonArmies) {
+                              for (const u of a.units || []) {
+                                normalised.push({ unit: u.name, xp: u.exp || 0 });
+                              }
+                            }
+                          }
+                        }
+                        if (!normalised || normalised.length === 0) return null;
+                        const ownerId =
+                          (currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (initialOwnerByCity && initialOwnerByCity[r.city])
+                          || r.faction;
+                        if (ownerId) {
+                          const triples = normalised.map((u) => [ownerId, u.unit]).filter(([, n]) => n);
+                          prefetchUnitIcons(modDataDir, triples, () => setIconCacheVersion((v) => v + 1));
+                        }
+                        return normalised.map((u) => ({
+                          ...u,
+                          faction: ownerId,
+                          icon: ownerId ? getCachedUnitIcon(ownerId, u.unit) : null,
+                        }));
+                      })()}
+                      recruitable={(() => {
+                        // Compute the union of recruit entries across every
+                        // chain/level built in the settlement, filtered by
+                        // the owner faction when the EDB entry scopes it.
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !buildingRecruits) return null;
+                        let builtList = null;
+                        try { builtList = getBuildings(r, true); } catch {}
+                        if (!builtList || builtList.length === 0) return null;
+                        const ownerId = (
+                          (currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (initialOwnerByCity && initialOwnerByCity[r.city])
+                          || r.faction
+                          || ""
+                        ).toLowerCase();
+                        const culture = factionCultures?.[ownerId] || null;
+                        const seen = new Set();
+                        const result = [];
+                        for (const b of builtList) {
+                          const lvls = buildingRecruits[b.type];
+                          if (!lvls) continue;
+                          const recs = lvls[b.level];
+                          if (!recs) continue;
+                          for (const rec of recs) {
+                            // EDB recruit-level faction filter (rare — most
+                            // recruits leave it off and rely on EDU).
+                            if (rec.factions && rec.factions.length > 0 && ownerId && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
+                            // EDU ownership is the ground truth. Only keep
+                            // units whose ownership list includes this
+                            // faction or culture. If unitOwnership didn't
+                            // load, fall back to keeping everything.
+                            if (unitOwnership) {
+                              const owners = unitOwnership[rec.unit];
+                              if (!owners) {
+                                console.warn("[recruit] unit not in EDU, dropping:", rec.unit, "chain:", b.type, "level:", b.level);
+                                continue;
+                              }
+                              if (ownerId && !owners.includes(ownerId) && !owners.includes(culture)) continue;
+                            }
+                            if (seen.has(rec.unit)) continue;
+                            seen.add(rec.unit);
+                            result.push(rec.unit);
+                          }
+                        }
+                        if (result.length === 0) return null;
+                        if (ownerId) {
+                          prefetchUnitIcons(modDataDir, result.map((n) => [ownerId, n]), () => setIconCacheVersion((v) => v + 1));
+                        }
+                        return result.map((name) => ({
+                          unit: name,
+                          faction: ownerId,
+                          icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
+                        }));
+                      })()}
+                      fieldArmies={(() => {
+                        // Live mode: use commander coords (extracted from
+                        // the save's world-object records) to classify each
+                        // army as garrison (on settlement tile), player's
+                        // own field army, or foreign. Falls back to EDU-
+                        // ownership heuristic when coords aren't available.
+                        if (liveLogActive) {
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r) return null;
+                          const raw = saveUnitsByRegion?.[r.region];
+                          if (!raw || raw.length === 0) return null;
+                          const ownerId = (
+                            (currentOwnerByCity && currentOwnerByCity[r.city])
+                            || (initialOwnerByCity && initialOwnerByCity[r.city])
+                            || r.faction
+                            || ""
+                          ).toLowerCase();
+                          const culture = factionCultures?.[ownerId] || null;
+                          const settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                          const byCmd = new Map();
+                          for (const u of raw) {
+                            // Group by inferredCmd (sequential-grouping pass
+                            // from main.js) so non-bodyguard units follow
+                            // their stack's bodyguard rather than all
+                            // falling into the cmd=0 garrison bucket.
+                            // Fall back to raw commanderUuid if inference
+                            // is absent (e.g. old save payload).
+                            const key = u.inferredCmd || u.commanderUuid || 0;
+                            if (!byCmd.has(key)) byCmd.set(key, []);
+                            byCmd.get(key).push(u);
+                          }
+                          // Build uuid → character info (from save) for
+                          // position and name lookup.
+                          const charByUuid = new Map();
+                          for (const list of Object.values(saveCharactersByRegion || {})) {
+                            for (const c of list) {
+                              if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c);
+                            }
+                          }
+                          const ownerFactionOfUnits = (units) => {
+                            if (!unitOwnership) return null;
+                            for (const u of units) {
+                              const o = unitOwnership[u.name];
+                              if (o && ((ownerId && o.includes(ownerId)) || (culture && o.includes(culture)))) return "own";
+                            }
+                            for (const u of units) {
+                              const o = unitOwnership[u.name];
+                              if (o) return o.find((f) => f !== "slave" && f !== "mercs") || o[0];
+                            }
+                            return null;
+                          };
+                          // Merge unidentified commander groups into one
+                          // "Unknown armies" bucket per faction — cleaner
+                          // than dozens of "Army #XXX" single-unit entries
+                          // when the save parser's character coverage is
+                          // incomplete.
+                          const mergedOwn = []; // identified own-faction armies
+                          const mergedOthers = []; // identified foreign armies
+                          const unknownByFaction = new Map(); // fac → units[]
+                          for (const [cmd, units] of byCmd) {
+                            if (!cmd) continue; // unassigned units = Garrison
+                            const commander = charByUuid.get(cmd);
+                            // A commander standing EXACTLY on the settlement
+                            // tile is a governor — his stack is the garrison.
+                            // (Alexander at Pella turns out to NOT be on the
+                            // settlement tile per user — so this rule doesn't
+                            // mis-classify him as garrison there. Vaumisa at
+                            // Halicarnassus IS on-tile → correctly garrison.)
+                            let isGarrison = false;
+                            if (settlementTile && commander && commander.x != null && commander.y != null) {
+                              isGarrison = commander.x === settlementTile.x && commander.y === settlementTile.y;
+                            }
+                            if (isGarrison) continue;
+                            // Prefer the commander's actual faction (from
+                            // the save's character record) over guessing
+                            // from unit ownership. Parmenion's hoplites can
+                            // be recruited by greek_cities, but Parmenion
+                            // himself is macedon — use macedon for him.
+                            const commanderFaction = commander?.faction || null;
+                            const factionGuess = commanderFaction || ownerFactionOfUnits(units);
+                            const isOwnFieldArmy = commanderFaction
+                              ? commanderFaction === ownerId
+                              : factionGuess === "own";
+                            const fac = isOwnFieldArmy ? ownerId : (commanderFaction || factionGuess || "");
+                            const entry = {
+                              character: commander
+                                ? (commander.lastName
+                                    ? `${commander.firstName} ${commander.lastName.replace(/_/g, " ")}`
+                                    : commander.firstName)
+                                : null,
+                              faction: fac,
+                              _units: units,
+                            };
+                            if (!commander) {
+                              // Aggregate unknown commanders by faction so
+                              // Parmenion-in-hostile-region doesn't render
+                              // as 10 separate one-unit "armies".
+                              const key = (isOwnFieldArmy ? "__own__" : fac) || "__unknown__";
+                              if (!unknownByFaction.has(key)) unknownByFaction.set(key, { fac, isOwn: isOwnFieldArmy, units: [] });
+                              unknownByFaction.get(key).units.push(...units);
+                              continue;
+                            }
+                            (isOwnFieldArmy ? mergedOwn : mergedOthers).push(entry);
+                          }
+                          for (const { fac, isOwn, units } of unknownByFaction.values()) {
+                            (isOwn ? mergedOwn : mergedOthers).push({
+                              character: "(unidentified army)",
+                              faction: fac,
+                              _units: units,
+                            });
+                          }
+                          const buildEntry = (e) => {
+                            prefetchUnitIcons(modDataDir, e._units.map((u) => [e.faction, u.name]), () => setIconCacheVersion((v) => v + 1));
+                            return {
+                              character: e.character,
+                              faction: e.faction,
+                              units: e._units.map((u) => ({
+                                unit: u.name, xp: 0,
+                                soldiers: typeof u.soldiers === "number" ? u.soldiers : null,
+                                max: typeof u.maxSoldiers === "number" ? u.maxSoldiers : null,
+                                faction: e.faction,
+                                icon: e.faction ? getCachedUnitIcon(e.faction, u.name) : null,
+                              })),
+                            };
+                          };
+                          const own = mergedOwn.map(buildEntry);
+                          const others = mergedOthers.map(buildEntry);
+                          if (own.length === 0 && others.length === 0) return null;
+                          return { own, others };
+                        }
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
+                        const regData = startingArmiesByRegion?.[r.region];
+                        const armies = regData?.field || [];
+                        if (armies.length === 0) return null;
+                        const ownerFaction = (
+                          (currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (initialOwnerByCity && initialOwnerByCity[r.city])
+                          || r.faction
+                          || ""
+                        ).toLowerCase();
+                        // Use each army's OWN faction for unit card lookup —
+                        // a Macedon character standing in a Parthian region
+                        // still has Macedonian units; their cards live under
+                        // ui/units/macedon/, not ui/units/parthia/.
+                        const triples = [];
+                        for (const a of armies) {
+                          const fac = (a.faction || "").toLowerCase();
+                          for (const u of a.units || []) if (fac) triples.push([fac, u.name]);
+                        }
+                        if (triples.length) prefetchUnitIcons(modDataDir, triples, () => setIconCacheVersion((v) => v + 1));
+                        const own = [];
+                        const others = [];
+                        for (const a of armies) {
+                          const fac = (a.faction || "").toLowerCase();
+                          const entry = {
+                            character: a.character,
+                            faction: fac,
+                            units: (a.units || []).map((u) => ({
+                              unit: u.name, xp: u.exp || 0,
+                              faction: fac || null,
+                              icon: fac ? getCachedUnitIcon(fac, u.name) : null,
+                            })),
+                          };
+                          (fac && ownerFaction && fac === ownerFaction ? own : others).push(entry);
+                        }
+                        return { own, others };
+                      })()}
+                      /* `queue` prop removed — queued upgrades now render
+                         inline in the main Buildings grid as an orange-bordered
+                         card with green progress overlay (see getBuildings). */
+                      saveFile={liveLogActive ? liveSaveFile : null}
+                      characters={(() => {
+                        if (!saveCharactersByRegion || !liveLogActive) return null;
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
+                        return saveCharactersByRegion[r.region] || null;
+                      })()}
+                      liveUnits={(() => {
+                        if (!saveUnitsByRegion || !liveLogActive) return null;
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
+                        return saveUnitsByRegion[r.region] || null;
+                      })()}
+                      liveOwner={(() => {
+                        if (!liveLogActive) return null;
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !r.city) return null;
+                        // Prefer the current owner decoded from the save (handles
+                        // mid-campaign conquests). Fall back to descr_strat starting
+                        // owner for settlements without resolved current owner.
+                        const id = (currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (initialOwnerByCity && initialOwnerByCity[r.city])
+                          || null;
+                        if (!id) return null;
+                        // Translate internal faction id to in-game display name when known
+                        // (e.g., "roman_rebels_2" → "The House of Cornelii").
+                        return (factionDisplayNames && factionDisplayNames[id]) || id;
+                      })()}
                     />
                   </div>
                 ) : (
@@ -6831,6 +7956,89 @@ function App() {
               if (canSave) await window.electronAPI.saveFile(camp.out.armies, JSON.stringify(armies));
               if (isActiveCampaign(camp)) setArmiesData(armies);
               updated.push(`armies (${armies.length})`);
+              // Pre-compute {region: [armies]} using the map_regions.tga
+              // pixel lookup. A settlement's tile is the BLACK (0,0,0) pixel
+              // inside the region's colored area — only armies sitting on
+              // that exact tile are the GARRISON; others in the same region
+              // are field armies and shouldn't clutter the city view.
+              if (tgaBin && regionsForLookup) {
+                const ab = tgaBin instanceof ArrayBuffer ? tgaBin : (tgaBin.buffer || tgaBin);
+                const view = new DataView(ab);
+                const idLen = view.getUint8(0);
+                const w = view.getUint16(12, true);
+                const h = view.getUint16(14, true);
+                const bpp = view.getUint8(16);
+                const bytesPerPx = bpp / 8;
+                const dataOff = 18 + idLen;
+                const descriptor = view.getUint8(17);
+                const topDown = (descriptor & 0x20) !== 0;
+                const bytes = new Uint8Array(ab);
+                const rgbToRegion = {};
+                for (const [rgb, r] of Object.entries(regionsForLookup)) {
+                  if (r.region) rgbToRegion[rgb] = r.region;
+                }
+                // Map strat (x, y) → buffer row. TGAs can be top-down or
+                // bottom-up; strat y=0 is the bottom, so bottom-up matches
+                // buffer rows directly and top-down needs flipping.
+                const bufRow = (stratY) => topDown ? (h - 1 - stratY) : stratY;
+                const pixelRgb = (stratX, stratY) => {
+                  const by = bufRow(stratY);
+                  if (stratX < 0 || stratX >= w || by < 0 || by >= h) return null;
+                  const idx = dataOff + (by * w + stratX) * bytesPerPx;
+                  return bytes[idx + 2] + "," + bytes[idx + 1] + "," + bytes[idx];
+                };
+                // 1) Find each region's settlement tile (black pixel with a
+                // region-coloured neighbour).
+                const settlementByRegion = {};
+                for (let by = 0; by < h; by++) {
+                  for (let x = 0; x < w; x++) {
+                    const i = dataOff + (by * w + x) * bytesPerPx;
+                    if (bytes[i] !== 0 || bytes[i+1] !== 0 || bytes[i+2] !== 0) continue;
+                    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                      const nx = x + dx, ny = by + dy;
+                      if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+                      const j = dataOff + (ny * w + nx) * bytesPerPx;
+                      const key = bytes[j+2] + "," + bytes[j+1] + "," + bytes[j];
+                      const reg = rgbToRegion[key];
+                      if (reg) {
+                        const stratY = topDown ? (h - 1 - by) : by;
+                        if (!settlementByRegion[reg]) settlementByRegion[reg] = { x, y: stratY };
+                        break;
+                      }
+                    }
+                  }
+                }
+                // 2) Classify each army as garrison (on settlement tile) or
+                // field (inside region but elsewhere). Characters sitting on
+                // the settlement tile have pixel_rgb (0,0,0) — we match by
+                // coords not color for those.
+                const tileKeyToRegion = {};
+                for (const [reg, p] of Object.entries(settlementByRegion)) {
+                  tileKeyToRegion[`${p.x},${p.y}`] = reg;
+                }
+                const byRegion = {}; // { region: { garrison: [armies], field: [armies], settlement: {x,y} } }
+                // Seed the settlement tile coords for every region we found.
+                for (const [reg, p] of Object.entries(settlementByRegion)) {
+                  byRegion[reg] = { garrison: [], field: [], settlement: p };
+                }
+                for (const a of armies) {
+                  if (a.x == null || a.y == null) continue;
+                  let region = tileKeyToRegion[`${a.x},${a.y}`];
+                  let isGarrison = !!region;
+                  if (!region) {
+                    const rgb = pixelRgb(a.x, a.y);
+                    region = rgb && rgbToRegion[rgb];
+                  }
+                  if (!region) continue; // in sea or unowned
+                  if (!byRegion[region]) byRegion[region] = { garrison: [], field: [], settlement: settlementByRegion[region] || null };
+                  byRegion[region][isGarrison ? "garrison" : "field"].push(a);
+                }
+                const startingFile = camp.out.armies.replace(/armies_/, "starting_armies_");
+                if (canSave) await window.electronAPI.saveFile(startingFile, JSON.stringify(byRegion));
+                if (isActiveCampaign(camp)) setStartingArmiesByRegion(byRegion);
+                const regionCount = Object.keys(byRegion).length;
+                updated.push(`starting garrisons (${regionCount} regions)`);
+              }
             }
           }
           if (fileContents["descr_win_conditions.txt"]) {
@@ -6898,6 +8106,35 @@ function App() {
               if (text) fileContents[name] = text;
             }
           }
+          // Remember which RR campaign this import came from so Live mode
+          // can default to the right logs/saves folder. Sniff the source
+          // paths for `/alexander/` or `/bi/` path segments (case-insensitive);
+          // if neither, the import is from vanilla Rome. Also invalidate any
+          // previously-saved liveLogDir that points at a DIFFERENT campaign —
+          // otherwise the stale path wins and the watcher stays on Rome even
+          // after you import Alex.
+          try {
+            const allPaths = Object.values(campaignResult.found || {}).join("\n").toLowerCase().replace(/\\/g, "/");
+            let importedCampaign = "Rome";
+            if (/\/alexander\//.test(allPaths)) importedCampaign = "Alexander";
+            else if (/\/bi\//.test(allPaths) || /\/barbarian[ _]invasion\//.test(allPaths)) importedCampaign = "Barbarian Invasion";
+            const prev = localStorage.getItem("importedCampaign");
+            localStorage.setItem("importedCampaign", importedCampaign);
+            console.log("[import] detected campaign:", importedCampaign, "(previous:", prev + ")");
+            // If a saved log dir exists but doesn't match the new campaign,
+            // clear it so the next Live click runs auto-detect afresh.
+            try {
+              const saved = localStorage.getItem("liveLogDir") || "";
+              const norm = saved.toLowerCase().replace(/\\/g, "/");
+              const matchesNew = norm.includes("/" + importedCampaign.toLowerCase() + "/");
+              if (saved && !matchesNew) {
+                console.log("[import] clearing stale liveLogDir:", saved);
+                localStorage.removeItem("liveLogDir");
+                setLiveLogDir(null);
+                pushToast(`Import is from ${importedCampaign}. Click Live again to track its saves.`, "info");
+              }
+            } catch {}
+          } catch {}
           const foundNames = Object.keys(campaignResult.found);
           const missingNames = NEEDED_FILES.filter(n => !foundNames.includes(n));
           const res = await applyFiles(fileContents, binaryContents, camp, sourcePaths);
@@ -7131,6 +8368,14 @@ function App() {
           </div>
         );
       })()}
+      {infoPopup && (
+        <InfoPopup
+          payload={infoPopup}
+          modDataDir={modDataDir}
+          factionDisplayNames={factionDisplayNames}
+          onClose={() => setInfoPopup(null)}
+        />
+      )}
     </>
   );
 }

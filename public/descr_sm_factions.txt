@@ -3663,15 +3663,15 @@
 			"loading screen icon": "data/ui/faction_icons/belli.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       21,
+			"standard index":       193,
 			"rebel standard index": 21,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       21,
+			"logo index":       190,
 			"rebel logo index": 21,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_celtiberian_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_belli.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_celtiberian_rebel.CAS",
 		},
 
@@ -5309,15 +5309,15 @@
 			"loading screen icon": "data/ui/faction_icons/carpetani.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       21,
+			"standard index":       192,
 			"rebel standard index": 21,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       21,
+			"logo index":       189,
 			"rebel logo index": 21,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_celtiberian_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_carpetani.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_celtiberian_rebel.CAS",
 		},
 
@@ -10365,7 +10365,7 @@
 		;;faction colours (some base game factions may have hardcoded overrides)
 		"colours":
 		{
-			"primary":   [  255,  165, 0,  ],
+			"primary":   [  91,  43, 171,  ],
 			"secondary": [  255, 255, 255,  ],
 
 			"family tree":

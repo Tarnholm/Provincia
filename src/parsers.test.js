@@ -231,21 +231,27 @@ resource wine, 1, 100, 50
 
 describe("parseDescrStratArmies", () => {
   test("captures army/navy entries with character names", () => {
+    // Real descr_strat format: `character` line first (with name + coords),
+    // then bare `army`/`navy` keyword, then `unit` lines until something
+    // else. The character is the army's commander; the army has no name.
     const text = `
 faction romans_julii, balanced
-army First Legion
-  character Gaius Junius, general, age 40, x 100, y 50
-  unit roman hastati
-army Second Legion
-  character Marcus Tullius, general, age 35, x 200, y 80
+character Gaius Junius, general, age 40, , x 100, y 50
+army
+unit roman hastati    exp 0 armour 0 weapon_lvl 0
+character Marcus Tullius, general, age 35, , x 200, y 80
+army
+unit roman triarii    exp 1 armour 0 weapon_lvl 0
 faction carthage, balanced
-navy Sicilian Fleet
-  character Hannibal Barca, admiral, age 30, x 300, y 100
+character Hannibal Barca, admiral, age 30, , x 300, y 100
+navy
+unit naval bireme    exp 0 armour 0 weapon_lvl 0
 `;
     const result = parseDescrStratArmies(text);
     expect(result).toHaveLength(3);
-    expect(result[0]).toMatchObject({ faction: "romans_julii", type: "army", name: "First Legion", character: "Gaius Junius" });
-    expect(result[1]).toMatchObject({ faction: "romans_julii", type: "army", name: "Second Legion" });
-    expect(result[2]).toMatchObject({ faction: "carthage", type: "navy", name: "Sicilian Fleet" });
+    expect(result[0]).toMatchObject({ faction: "romans_julii", type: "army", character: "Gaius Junius", x: 100, y: 50 });
+    expect(result[0].units).toEqual([{ name: "roman hastati", exp: 0 }]);
+    expect(result[1]).toMatchObject({ faction: "romans_julii", type: "army", character: "Marcus Tullius" });
+    expect(result[2]).toMatchObject({ faction: "carthage", type: "navy", character: "Hannibal Barca", armyClass: "navy" });
   });
 });

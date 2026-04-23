@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.3",
+  "version": "0.9.82",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -14,10 +14,10 @@
     "test": "vitest run",
     "electron": "electron .",
     "electron-dev": "electron .",
-    "dist": "electron-builder",
-    "dist:win": "electron-builder --win nsis",
-    "dist:mac": "electron-builder --mac dmg",
-    "dist:linux": "electron-builder --linux AppImage",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win nsis",
+    "dist:mac": "npm run build && electron-builder --mac dmg",
+    "dist:linux": "npm run build && electron-builder --linux AppImage",
     "submit-fp": "node scripts/submit-false-positive.js"
   },
   "dependencies": {
@@ -45,7 +45,14 @@
       "build/**",
       "main.js",
       "preload.js",
-      "package.json"
+      "package.json",
+      "src/characterParser.js",
+      "src/characterParserV2.js",
+      "src/messageLogParser.js",
+      "src/unitParser.js",
+      "src/buildingParser.js",
+      "src/ownershipParser.js",
+      "src/saveOwnershipParser.js"
     ],
     "extraMetadata": {
       "main": "main.js"
