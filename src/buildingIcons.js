@@ -46,7 +46,9 @@ export function loadBuildingIcon(modDataDir, culture, levelName, chainName) {
     try {
       const res = await api.resolveBuildingIcon(modDataDir, culture, levelName, chainName || null);
       if (!res || !res.buffer) {
-        console.log("[buildingIcons] NO FILE for", culture, levelName);
+        // Log culture + chain + level so missing icons can be identified
+        // and the real TGA path provided instead of a fallback.
+        console.log("[buildingIcons] MISSING ICON:", culture, "/", chainName || "?", "/", levelName);
         cache.set(key, "none");
         return null;
       }

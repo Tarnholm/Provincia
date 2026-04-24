@@ -12952,22 +12952,22 @@
   "16,16,16": {
     "region": "Anatolians_Region",
     "city": "Anatolians_Settlement",
-    "faction": "selge",
-    "culture": "Lydians",
+    "faction": "roman_rebels_1",
+    "culture": "Romans",
     "tags": "nobuild, cg_antibonus",
     "farm_level": "5",
     "pop_level": "1",
-    "ethnicities": "lydian 100"
+    "ethnicities": "italic 100"
   },
   "8,8,8": {
     "region": "Thracians_Region",
     "city": "Thracians_Settlement",
-    "faction": "odrysians",
-    "culture": "Odrysians",
+    "faction": "roman_rebels_2",
+    "culture": "Romans",
     "tags": "nobuild, cg_antibonus",
     "farm_level": "5",
     "pop_level": "1",
-    "ethnicities": "thracian 100"
+    "ethnicities": "italic 100"
   },
   "24,24,24": {
     "region": "Cilicians_Region",
@@ -12982,12 +12982,12 @@
   "40,40,40": {
     "region": "Illyrians_Region",
     "city": "Illyrians_Settlement",
-    "faction": "ardiaei",
-    "culture": "Dardanians",
+    "faction": "roman_senate",
+    "culture": "Romans",
     "tags": "nobuild, cg_antibonus",
     "farm_level": "5",
     "pop_level": "1",
-    "ethnicities": "illyrian 100"
+    "ethnicities": "italic 100"
   },
   "72,72,72": {
     "region": "Hellenistic_Rebels_Region",

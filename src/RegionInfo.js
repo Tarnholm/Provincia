@@ -328,14 +328,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 minWidth: 0,
                 border: b.queued ? "2px solid #e89030" : "2px solid transparent",
               }}>
-                <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
+                <div style={{ position: "relative", width: 70, height: 56, flexShrink: 0 }}>
                   {b.icon && (
                     <img
                       src={b.icon}
                       alt={b.label}
-                      style={{ width: 52, height: 52, objectFit: "contain", display: "block" }}
-                      // Hide broken-image glyph when the URL fails to load
-                      // (TGA decode failed, blob revoked, or path 404).
+                      // Frame 70×56 matches RTW's 156×124 aspect (≈1.26:1)
+                      // so 'contain' fills the frame edge-to-edge with no
+                      // letterbox AND no cropping. Card width (82px) has
+                      // enough room for a 70-wide icon with room for the
+                      // label below.
+                      style={{ width: 70, height: 56, objectFit: "contain", display: "block" }}
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                   )}

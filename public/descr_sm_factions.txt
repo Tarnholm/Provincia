@@ -298,7 +298,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -2533,7 +2533,7 @@
 			"defeat": "data/fmv/lose/argos.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -4332,13 +4332,13 @@
 			;;units to use if we emerge inside a settlement
 			"settlement units":
 			[
-				"italic velites",
-				"lucanian infantry",
-				"italic hastati",
-				"italic principes",
-				"italic triarii",
-				"samnite hoplites",
-				"campanian cavalry",
+				"oscan javelinmen",
+				"oscan spearmen southern",
+				"oscan heavy skirmisher",
+				"oscan thureophoroi",
+				"oscan hoplites",
+				"oscan axemen",
+				"oscan cavalry",
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
@@ -4389,7 +4389,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -5144,12 +5144,12 @@
 			;;units to use if we emerge inside a settlement
 			"settlement units":
 			[
-				"italic velites",
-				"lucanian infantry",
-				"italic hastati",
-				"italic principes",
-				"italic triarii",
-				"samnite hoplites",
+				"campanian javelinmen",
+				"oscan spearmen",
+				"oscan heavy skirmisher",
+				"campanian thureophoroi",
+				"campanian hoplites",
+				"oscan axemen",
 				"campanian cavalry",
 			],
 
@@ -5201,7 +5201,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -10663,13 +10663,13 @@
 			;;units to use if we emerge inside a settlement
 			"settlement units":
 			[
-				"italic velites",
-				"lucanian infantry",
-				"italic hastati",
-				"italic principes",
-				"italic triarii",
-				"samnite hoplites",
-				"campanian cavalry",
+				"oscan javelinmen",
+				"oscan spearmen",
+				"oscan heavy skirmisher",
+				"oscan thureophoroi",
+				"oscan hoplites",
+				"oscan axemen",
+				"oscan cavalry",
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
@@ -10720,7 +10720,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -11600,13 +11600,13 @@
 			;;units to use if we emerge inside a settlement
 			"settlement units":
 			[
-				"italic velites",
-				"lucanian infantry",
-				"italic hastati",
-				"italic principes",
-				"italic triarii",
-				"samnite hoplites",
-				"campanian cavalry",
+				"oscan javelinmen",
+				"oscan spearmen southern",
+				"oscan heavy skirmisher",
+				"oscan thureophoroi",
+				"oscan hoplites",
+				"oscan axemen",
+				"oscan cavalry",
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
@@ -11657,7 +11657,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -11992,7 +11992,7 @@
 			"defeat": "data/fmv/lose/lysiad.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "macedonian",
 		"default battle ai personality": "default_personality",
@@ -12086,7 +12086,7 @@
 			"defeat": "data/fmv/lose/lyttos.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -12180,7 +12180,7 @@
 			"defeat": "data/fmv/lose/maedi.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -12357,7 +12357,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -12909,7 +12909,7 @@
 			"defeat": "data/fmv/lose/megalopolis.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "arcadian",
 		"default battle ai personality": "default_personality",
@@ -12982,7 +12982,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -13075,7 +13075,7 @@
 			"defeat": "data/fmv/lose/messene.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -13869,7 +13869,7 @@
 			"defeat": "data/fmv/lose/olbia.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -14754,7 +14754,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -15727,13 +15727,13 @@
 			;;units to use if we emerge inside a settlement
 			"settlement units":
 			[
-				"italic velites",
-				"lucanian infantry",
-				"italic hastati",
-				"italic principes",
-				"italic triarii",
+				"oscan javelinmen",
+				"oscan spearmen",
+				"oscan heavy skirmisher",
+				"samnite thureophoroi",
 				"samnite hoplites",
-				"campanian cavalry",
+				"samnite axemen",
+				"oscan cavalry",
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
@@ -15784,7 +15784,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -15857,7 +15857,7 @@
 			"defeat": "data/fmv/lose/edeta.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -16410,7 +16410,7 @@
 			"defeat": "data/fmv/lose/sinope.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -17638,7 +17638,7 @@
 			"defeat": "data/fmv/lose/trapezus.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -17806,7 +17806,7 @@
 			"defeat": "data/fmv/lose/triballi.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "triballian",
 		"default battle ai personality": "default_personality",
@@ -18279,11 +18279,11 @@
 			"loading screen icon": "data/ui/faction_icons/vaccaei.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       21,
+			"standard index":       195,
 			"rebel standard index": 21,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       21,
+			"logo index":       192,
 			"rebel logo index": 21,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
@@ -18352,11 +18352,11 @@
 			"loading screen icon": "data/ui/faction_icons/vascones.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       21,
+			"standard index":       194,
 			"rebel standard index": 21,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       21,
+			"logo index":       191,
 			"rebel logo index": 21,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
@@ -18974,7 +18974,7 @@
 			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",

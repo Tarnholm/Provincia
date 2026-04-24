@@ -18,14 +18,21 @@
     "Daunia",
     "Peucetia",
     "Kanysion",
-    "Metapontion",
-    "Taras",
     "Thourioi",
     "Parthenope",
     "Latium_Novum",
     "Latium",
     "Poseidonia",
     "Lokroi_Epizephyrioi"
+  ],
+  "roman_rebels_1": [
+    "Anatolians_Region"
+  ],
+  "roman_rebels_2": [
+    "Thracians_Region"
+  ],
+  "roman_senate": [
+    "Illyrians_Region"
   ],
   "carthage": [
     "Qart-Khadasht",
@@ -739,27 +746,6 @@
     "Gortynia",
     "Ida"
   ],
-  "greeks": [
-    "Greeks_Region",
-    "Massalike_Kontestania",
-    "Ankon_Petra",
-    "Liburnonesoi",
-    "Gylakeia",
-    "Athamania",
-    "Phokis-Doris",
-    "Olygirtos",
-    "Mantineia",
-    "Tegeatis",
-    "Hierapytnia",
-    "Thasos",
-    "Tyrasia",
-    "Hellenike_Tyragetia",
-    "Koraxia",
-    "Hellenike_Mossynoikia",
-    "Hellenike_Tibarenia",
-    "Saramene",
-    "Amastris"
-  ],
   "hadhramaut": [
     "Ssabwat",
     "Raybun",
@@ -819,14 +805,21 @@
     "Basilike_Dassaretia"
   ],
   "indians": [
+    "Gandaritis",
     "Kapisene",
     "Paropamisadai",
-    "Gandaritis",
     "Hesperos_Assakenia",
     "Gouraia",
     "Anatolike_Assakenia",
     "Assakenia",
-    "Aspasia"
+    "Aspasia",
+    "Sydrakaia",
+    "Agalassia",
+    "Sibia",
+    "Pandoouia",
+    "Hydaspes",
+    "Sopeitheia",
+    "Glausaia"
   ],
   "ingauni": [
     "Ingaunia"
@@ -1140,6 +1133,10 @@
     "Anatolike_Sikelia",
     "Katania"
   ],
+  "taras": [
+    "Taras",
+    "Metapontion"
+  ],
   "taurisci": [
     "Tauriscia",
     "Tauriscia_Occidentalis",
@@ -1233,9 +1230,6 @@
   ],
   "volsinii": [
     "Velzna"
-  ],
-  "hellenistic_rebels": [
-    "Hellenistic_Rebels_Region"
   ],
   "seleucid_rebels": [
     "Hebros",
@@ -1530,7 +1524,6 @@
     "Maezaeia",
     "Mania",
     "Olkinia",
-    "Illyrians_Region",
     "Daorsia",
     "Savia",
     "Naissitania",
@@ -1564,11 +1557,29 @@
     "Caucoensia",
     "Aigyssia",
     "Thynia",
-    "Thracians_Region",
     "Eumolpia",
     "Diotike",
     "Sapaia-Bistonia",
     "Ratiariai",
+    "Greeks_Region",
+    "Massalike_Kontestania",
+    "Ankon_Petra",
+    "Liburnonesoi",
+    "Gylakeia",
+    "Athamania",
+    "Phokis-Doris",
+    "Olygirtos",
+    "Mantineia",
+    "Tegeatis",
+    "Hierapytnia",
+    "Thasos",
+    "Tyrasia",
+    "Hellenike_Tyragetia",
+    "Koraxia",
+    "Hellenike_Mossynoikia",
+    "Hellenike_Tibarenia",
+    "Saramene",
+    "Amastris",
     "Sikyonia",
     "Malis-Ainis",
     "Dolopia-Oitaia",
@@ -1602,7 +1613,6 @@
     "Kamisene",
     "Boreia_Paphlagonia",
     "Hesperos_Pisidia",
-    "Anatolians_Region",
     "Kibyratis",
     "Isauria",
     "Anatolike_Isauria",
@@ -1700,14 +1710,7 @@
     "Patalene",
     "Mallia",
     "Abastania",
-    "Sydrakaia",
-    "Agalassia",
     "Indos",
-    "Sibia",
-    "Pandoouia",
-    "Hydaspes",
-    "Sopeitheia",
-    "Glausaia",
     "Gedrosia",
     "Arachosia",
     "Eoritia",
@@ -1735,6 +1738,7 @@
     "Nroysoqak",
     "Qudsdo",
     "Bariy",
-    "Cilicians_Region"
+    "Cilicians_Region",
+    "Hellenistic_Rebels_Region"
   ]
 }

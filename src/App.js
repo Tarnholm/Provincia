@@ -1236,7 +1236,7 @@ function App() {
             });
           }
           if (api.getFactionDisplayNames) {
-            api.getFactionDisplayNames(dir).then(map => {
+            api.getFactionDisplayNames(dir, mapCampaign).then(map => {
               setFactionDisplayNames(map || {});
               console.log("[faction] loaded display names, entries:", Object.keys(map || {}).length);
             });
@@ -1308,11 +1308,11 @@ function App() {
       }).catch(() => {});
     }
     if (api?.getFactionDisplayNames) {
-      api.getFactionDisplayNames(modDataDir || null).then((map) => {
+      api.getFactionDisplayNames(modDataDir || null, mapCampaign).then((map) => {
         if (map && Object.keys(map).length > 0) setFactionDisplayNames(map);
       }).catch(() => {});
     }
-  }, [modDataDir]);
+  }, [modDataDir, mapCampaign]);
 
   const [buildingLevelsLookup, setBuildingLevelsLookup] = useState(null); // { chain: [level0Name, level1Name, ...] }
   const [buildingRecruits, setBuildingRecruits] = useState(null); // { chain: { level: [{unit, factions?}, ...] } }
@@ -3617,8 +3617,12 @@ function App() {
         // Skip armies missing coords — parser output shapes have drifted
         // (descr_strat armies have x/y, but some bundled data lacks them).
         if (typeof army.x !== 'number' || typeof army.y !== 'number') continue;
-        // Strat coords are bottom-up (y=0 at bottom); the rendered map is
-        // top-down (tga.js flips). Flip y against map height to match.
+        // descr_strat coords are bottom-up (y=0 at bottom), both from the
+        // live save parser AND from dev-imported parseDescrStratArmies.
+        // Flip to canvas top-down. (The old pre-bundled JSON was already
+        // top-down — but as soon as the user runs a dev import it gets
+        // replaced with bottom-up data, and the live-mode path always
+        // produces bottom-up, so flipping is right for every fresh path.)
         const mapY = (imgSize.height - 1) - army.y;
         const sx = army.x * totalScale + baseOffsetX + offset.x;
         const sy = mapY * totalScale + baseOffsetY + offset.y;
@@ -6338,18 +6342,50 @@ function App() {
 
     // Faction legend
     if (colorMode === "faction") {
-      // Build faction → { color, count, rgbKeys } from regions and sm_factions colors
+      // Aggregate from descr_strat ownership (factionRegionsMap), matching the
+      // map coloring logic. The `r.faction` field in descr_regions is the
+      // rebel-default faction (used for unowned regions), NOT the owner —
+      // counting it would inflate factions like Sparta to 45 cities when the
+      // mod actually places only 3 settlements under that faction.
       const factionMap = {};
+      const ownedKeys = new Set();
+      const nameLookup = {};
       for (const [rgbKey, r] of Object.entries(regions)) {
-        const f = r.faction;
-        if (!f) continue;
+        if (r.region) (nameLookup[r.region.toLowerCase()] = nameLookup[r.region.toLowerCase()] || []).push(rgbKey);
+        if (r.city) (nameLookup[r.city.toLowerCase()] = nameLookup[r.city.toLowerCase()] || []).push(rgbKey);
+      }
+      const ensure = (f, rgbKey) => {
         if (!factionMap[f]) {
           const fc = factionColors[f.toLowerCase()];
-          const color = (fc && fc.primary) ? fc.primary : rgbKey.split(",").map(Number);
+          const color = (fc && fc.primary) ? fc.primary : (rgbKey ? rgbKey.split(",").map(Number) : [128,128,128]);
           factionMap[f] = { color, count: 0, rgbKeys: [] };
         }
-        factionMap[f].count++;
-        factionMap[f].rgbKeys.push(rgbKey);
+      };
+      for (const [faction, regionNames] of Object.entries(factionRegionsMap || {})) {
+        for (const rn of (regionNames || [])) {
+          const keys = nameLookup[rn.toLowerCase()] || [];
+          for (const rgbKey of keys) {
+            if (ownedKeys.has(rgbKey)) continue;
+            ensure(faction, rgbKey);
+            factionMap[faction].count++;
+            factionMap[faction].rgbKeys.push(rgbKey);
+            ownedKeys.add(rgbKey);
+          }
+        }
+      }
+      // Remaining regions (no descr_strat owner) are rebels/slaves in-game.
+      let rebelCount = 0;
+      const rebelKeys = [];
+      for (const rgbKey of Object.keys(regions)) {
+        if (!ownedKeys.has(rgbKey)) { rebelCount++; rebelKeys.push(rgbKey); }
+      }
+      if (rebelCount > 0) {
+        const fc = factionColors["slave"] || factionColors["rebels"];
+        factionMap["slave"] = {
+          color: (fc && fc.primary) ? fc.primary : [120, 120, 120],
+          count: rebelCount,
+          rgbKeys: rebelKeys,
+        };
       }
       const factionEntries = Object.entries(factionMap).sort((a, b) => b[1].count - a[1].count);
       if (factionEntries.length === 0) return null;
@@ -7207,9 +7243,14 @@ function App() {
                         }));
                       })()}
                       recruitable={(() => {
-                        // Compute the union of recruit entries across every
-                        // chain/level built in the settlement, filtered by
-                        // the owner faction when the EDB entry scopes it.
+                        // Compute the union of recruit entries the city can
+                        // currently train. RTW building chains are cumulative:
+                        // owning level N satisfies the requirements for all
+                        // levels 0..N in the same chain (army_barracks lets
+                        // you train hastati/principes/triarii because the
+                        // lower militia/city levels are implicitly still
+                        // present). We therefore walk every level UP TO AND
+                        // INCLUDING the current one in each built chain.
                         const r = lockedRegionInfo || regionInfo;
                         if (!r || !buildingRecruits) return null;
                         let builtList = null;
@@ -7227,27 +7268,85 @@ function App() {
                         for (const b of builtList) {
                           const lvls = buildingRecruits[b.type];
                           if (!lvls) continue;
-                          const recs = lvls[b.level];
-                          if (!recs) continue;
-                          for (const rec of recs) {
-                            // EDB recruit-level faction filter (rare — most
-                            // recruits leave it off and rely on EDU).
-                            if (rec.factions && rec.factions.length > 0 && ownerId && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
-                            // EDU ownership is the ground truth. Only keep
-                            // units whose ownership list includes this
-                            // faction or culture. If unitOwnership didn't
-                            // load, fall back to keeping everything.
-                            if (unitOwnership) {
-                              const owners = unitOwnership[rec.unit];
-                              if (!owners) {
-                                console.warn("[recruit] unit not in EDU, dropping:", rec.unit, "chain:", b.type, "level:", b.level);
-                                continue;
-                              }
-                              if (ownerId && !owners.includes(ownerId) && !owners.includes(culture)) continue;
+                          // Levels in EDB order (low → high tier). buildingLevelsLookup
+                          // is keyed by chain name. Trim to <= current level.
+                          const allLevels = (buildingLevelsLookup && buildingLevelsLookup[b.type]) || null;
+                          let levelsToCheck;
+                          if (allLevels && allLevels.length > 0) {
+                            const idx = allLevels.indexOf(b.level);
+                            if (idx >= 0) {
+                              levelsToCheck = allLevels.slice(0, idx + 1);
+                            } else {
+                              // Current level not found in the ordered list —
+                              // fall back to whatever the level happens to be.
+                              levelsToCheck = [b.level];
                             }
-                            if (seen.has(rec.unit)) continue;
-                            seen.add(rec.unit);
-                            result.push(rec.unit);
+                          } else {
+                            levelsToCheck = [b.level];
+                          }
+                          for (const lvl of levelsToCheck) {
+                            const recs = lvls[lvl];
+                            if (!recs) continue;
+                            for (const rec of recs) {
+                              // EDB recruit-level faction filter.
+                              if (rec.factions && rec.factions.length > 0 && ownerId && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
+                              if (rec.requires) {
+                                // Drop event-gated recruits (player must
+                                // trigger a reform — not knowable from the
+                                // save alone).
+                                if (/\bmajor_event\b/.test(rec.requires)) continue;
+                                // Negative faction filter.
+                                if (/\bnot\s+factions\b/.test(rec.requires)) {
+                                  const nm = rec.requires.match(/not\s+factions\s*\{\s*([^}]*)\}/);
+                                  if (nm) {
+                                    const excluded = nm[1].split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+                                    if (ownerId && excluded.includes(ownerId)) continue;
+                                    if (culture && excluded.includes(culture)) continue;
+                                  }
+                                }
+                                // hidden_resource X — we don't know which
+                                // hidden_resources a region carries unless
+                                // we parse descr_regions for them. Conserv-
+                                // atively drop for now.
+                                if (/\bhidden_resource\b/.test(rec.requires)) continue;
+                                // Tier aliases (mic_tier_2 etc.) actually
+                                // expand to building_present_min_level
+                                // requirements. Evaluate against the city's
+                                // built buildings using the alias map
+                                // captured by the EDB parser.
+                                const aliasMap = buildingRecruits.__aliases || {};
+                                const tierTokens = rec.requires.match(/\b(mic_tier|gov_tier|colony_tier|culture_tier)_\d+\b/g) || [];
+                                let ok = true;
+                                for (const tok of tierTokens) {
+                                  const branches = aliasMap[tok];
+                                  if (!branches) { ok = false; break; }
+                                  // Each branch = {chain, level}. Need at
+                                  // least one to be satisfied by builtList.
+                                  // building_present_min_level needs the
+                                  // chain at >= the named level.
+                                  const branchOk = branches.some(({ chain, level }) => {
+                                    const built = builtList.find(b => b.type === chain);
+                                    if (!built) return false;
+                                    const order = (buildingLevelsLookup && buildingLevelsLookup[chain]) || null;
+                                    if (!order) return built.level === level;
+                                    const haveIdx = order.indexOf(built.level);
+                                    const needIdx = order.indexOf(level);
+                                    return haveIdx >= 0 && needIdx >= 0 && haveIdx >= needIdx;
+                                  });
+                                  if (!branchOk) { ok = false; break; }
+                                }
+                                if (!ok) continue;
+                              }
+                              // EDU ownership is the ground truth.
+                              if (unitOwnership) {
+                                const owners = unitOwnership[rec.unit];
+                                if (!owners) continue;
+                                if (ownerId && !owners.includes(ownerId) && !owners.includes(culture)) continue;
+                              }
+                              if (seen.has(rec.unit)) continue;
+                              seen.add(rec.unit);
+                              result.push(rec.unit);
+                            }
                           }
                         }
                         if (result.length === 0) return null;

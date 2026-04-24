@@ -6,23 +6,23 @@
     "location": "Rome",
     "faction": "romans_julii",
     "x": 285,
-    "y": 295,
+    "y": 404,
     "units": [
-      "tribunus militum",
-      "roman velites",
-      "roman velites",
-      "roman velites",
-      "roman velites",
-      "roman hastati",
-      "roman hastati",
-      "roman hastati",
-      "roman hastati",
-      "roman principes",
-      "roman principes",
-      "roman principes",
-      "roman triarii",
-      "roman triarii",
-      "roman triarii"
+      "roman general",
+      "roman leves",
+      "roman leves",
+      "roman leves",
+      "roman leves",
+      "roman hastati early",
+      "roman hastati early",
+      "roman hastati early",
+      "roman hastati early",
+      "roman principes early",
+      "roman principes early",
+      "roman principes early",
+      "roman triarii early",
+      "roman triarii early",
+      "roman triarii early"
     ]
   },
   {
@@ -32,9 +32,9 @@
     "location": "",
     "faction": "romans_julii",
     "x": 283,
-    "y": 297,
+    "y": 402,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -44,9 +44,9 @@
     "location": "",
     "faction": "romans_julii",
     "x": 282,
-    "y": 295,
+    "y": 404,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -56,22 +56,22 @@
     "location": "Arretium",
     "faction": "romans_julii",
     "x": 278,
-    "y": 272,
+    "y": 427,
     "units": [
-      "tribunus militum",
-      "roman equites",
-      "roman equites",
-      "roman triarii",
-      "roman principes",
-      "roman principes",
-      "roman hastati",
-      "roman hastati",
-      "lucanian infantry",
-      "lucanian infantry",
-      "roman velites",
-      "roman velites",
-      "roman velites",
-      "roman velites"
+      "roman general",
+      "roman equites early",
+      "roman equites early",
+      "roman triarii early",
+      "roman principes early",
+      "roman principes early",
+      "roman hastati early",
+      "roman hastati early",
+      "roman rorarii",
+      "roman rorarii",
+      "roman leves",
+      "roman leves",
+      "roman leves",
+      "roman leves"
     ]
   },
   {
@@ -81,9 +81,9 @@
     "location": "Volaterrae",
     "faction": "romans_julii",
     "x": 268,
-    "y": 273,
+    "y": 426,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -93,11 +93,11 @@
     "location": "Sena Gallica",
     "faction": "romans_julii",
     "x": 292,
-    "y": 269,
+    "y": 430,
     "units": [
-      "tribunus militum",
-      "roman hastati",
-      "roman hastati"
+      "roman general",
+      "roman hastati early",
+      "roman hastati early"
     ]
   },
   {
@@ -107,9 +107,9 @@
     "location": "Cosa",
     "faction": "romans_julii",
     "x": 271,
-    "y": 287,
+    "y": 412,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -119,11 +119,11 @@
     "location": "Falerii",
     "faction": "romans_julii",
     "x": 283,
-    "y": 289,
+    "y": 410,
     "units": [
-      "tribunus militum",
-      "roman hastati",
-      "roman hastati"
+      "roman general",
+      "roman hastati early",
+      "roman hastati early"
     ]
   },
   {
@@ -133,9 +133,9 @@
     "location": "Corfinium",
     "faction": "romans_julii",
     "x": 299,
-    "y": 292,
+    "y": 407,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -145,11 +145,11 @@
     "location": "Iguvium",
     "faction": "romans_julii",
     "x": 285,
-    "y": 274,
+    "y": 425,
     "units": [
-      "tribunus militum",
-      "roman hastati",
-      "roman hastati"
+      "roman general",
+      "roman hastati early",
+      "roman hastati early"
     ]
   },
   {
@@ -159,11 +159,11 @@
     "location": "Pisae",
     "faction": "romans_julii",
     "x": 263,
-    "y": 268,
+    "y": 431,
     "units": [
-      "tribunus militum",
-      "roman hastati",
-      "roman hastati"
+      "roman general",
+      "roman hastati early",
+      "roman hastati early"
     ]
   },
   {
@@ -173,11 +173,11 @@
     "location": "Reate",
     "faction": "romans_julii",
     "x": 289,
-    "y": 288,
+    "y": 411,
     "units": [
-      "tribunus militum",
-      "roman hastati",
-      "roman hastati"
+      "roman general",
+      "roman hastati early",
+      "roman hastati early"
     ]
   },
   {
@@ -187,7 +187,7 @@
     "location": "Port of Volaterrae",
     "faction": "romans_julii",
     "x": 261,
-    "y": 274,
+    "y": 425,
     "units": [
       "naval biremes"
     ]
@@ -199,9 +199,9 @@
     "location": "Etruria",
     "faction": "romans_julii",
     "x": 275,
-    "y": 274,
+    "y": 425,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -211,15 +211,15 @@
     "location": "Maleventum",
     "faction": "romans_julii",
     "x": 309,
-    "y": 306,
+    "y": 393,
     "units": [
-      "tribunus militum",
-      "roman hastati",
-      "roman hastati",
-      "lucanian infantry",
-      "lucanian infantry",
-      "roman velites",
-      "roman velites"
+      "roman general",
+      "roman hastati early",
+      "roman hastati early",
+      "roman rorarii",
+      "roman rorarii",
+      "roman leves",
+      "roman leves"
     ]
   },
   {
@@ -229,9 +229,9 @@
     "location": "Venusia",
     "faction": "romans_julii",
     "x": 320,
-    "y": 309,
+    "y": 390,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -241,23 +241,9 @@
     "location": "Canusium",
     "faction": "romans_julii",
     "x": 324,
-    "y": 305,
+    "y": 394,
     "units": [
-      "tribunus militum"
-    ]
-  },
-  {
-    "name": "sub faction greeks",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Metapontum",
-    "faction": "romans_julii",
-    "x": 331,
-    "y": 317,
-    "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "lucanian infantry"
+      "roman general"
     ]
   },
   {
@@ -267,36 +253,11 @@
     "location": "Thurii",
     "faction": "romans_julii",
     "x": 327,
-    "y": 327,
+    "y": 372,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "lucanian infantry"
-    ]
-  },
-  {
-    "name": "sub faction epirus",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Tarentum",
-    "faction": "romans_julii",
-    "x": 336,
-    "y": 315,
-    "units": [
-      "tribunus militum",
-      "roman equites",
-      "roman equites",
-      "roman triarii",
-      "roman principes",
-      "roman principes",
-      "roman hastati",
-      "roman hastati",
-      "lucanian infantry",
-      "lucanian infantry",
-      "roman velites",
-      "roman velites",
-      "roman velites",
-      "roman velites"
+      "roman general",
+      "roman rorarii",
+      "roman rorarii"
     ]
   },
   {
@@ -306,9 +267,9 @@
     "location": "Outside Maleventum",
     "faction": "romans_julii",
     "x": 308,
-    "y": 305,
+    "y": 394,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -318,9 +279,9 @@
     "location": "Arpi",
     "faction": "romans_julii",
     "x": 318,
-    "y": 300,
+    "y": 399,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -330,9 +291,9 @@
     "location": "Larinum",
     "faction": "romans_julii",
     "x": 311,
-    "y": 297,
+    "y": 402,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -342,9 +303,22 @@
     "location": "Outside Taras",
     "faction": "romans_julii",
     "x": 337,
-    "y": 314,
+    "y": 385,
     "units": [
-      "tribunus militum"
+      "roman general",
+      "roman equites early",
+      "roman equites early",
+      "roman triarii early",
+      "roman principes early",
+      "roman principes early",
+      "roman hastati early",
+      "roman hastati early",
+      "roman rorarii",
+      "roman rorarii",
+      "roman leves",
+      "roman leves",
+      "roman leves",
+      "roman leves"
     ]
   },
   {
@@ -354,7 +328,7 @@
     "location": "Port of Tarentum",
     "faction": "romans_julii",
     "x": 333,
-    "y": 319,
+    "y": 380,
     "units": [
       "naval biremes"
     ]
@@ -366,9 +340,9 @@
     "location": "Outside Fregellae",
     "faction": "romans_julii",
     "x": 287,
-    "y": 299,
+    "y": 400,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -378,28 +352,28 @@
     "location": "Outside Rhegium",
     "faction": "romans_julii",
     "x": 322,
-    "y": 347,
+    "y": 352,
     "units": [
-      "tribunus militum",
-      "roman hastati",
-      "roman hastati",
-      "roman hastati",
-      "lucanian infantry",
+      "roman general",
+      "roman hastati early",
+      "roman hastati early",
+      "roman hastati early",
+      "roman rorarii",
       "aor italiote epibatai",
       "aor italiote epibatai",
       "aor italiote epibatai",
       "aor italiote epibatai",
-      "roman principes",
-      "roman principes",
-      "roman principes",
-      "roman triarii",
-      "roman triarii",
-      "roman velites",
-      "roman velites",
-      "roman velites",
-      "roman velites",
-      "roman equites",
-      "campanian cavalry"
+      "roman principes early",
+      "roman principes early",
+      "roman principes early",
+      "roman triarii early",
+      "roman triarii early",
+      "roman leves",
+      "roman leves",
+      "roman leves",
+      "roman leves",
+      "roman equites early",
+      "roman equites early"
     ]
   },
   {
@@ -409,9 +383,9 @@
     "location": "Neapolis",
     "faction": "romans_julii",
     "x": 303,
-    "y": 310,
+    "y": 389,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -421,10 +395,10 @@
     "location": "Paestum",
     "faction": "romans_julii",
     "x": 312,
-    "y": 317,
+    "y": 382,
     "units": [
-      "tribunus militum",
-      "lucanian infantry"
+      "roman general",
+      "roman rorarii"
     ]
   },
   {
@@ -434,9 +408,9 @@
     "location": "Epizephyrian Locri",
     "faction": "romans_julii",
     "x": 325,
-    "y": 348,
+    "y": 351,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -446,9 +420,9 @@
     "location": "Fregellae",
     "faction": "romans_julii",
     "x": 295,
-    "y": 300,
+    "y": 399,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -458,9 +432,9 @@
     "location": "Outside Paestum",
     "faction": "romans_julii",
     "x": 315,
-    "y": 318,
+    "y": 381,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -470,9 +444,9 @@
     "location": "Outside Metapontum",
     "faction": "romans_julii",
     "x": 329,
-    "y": 320,
+    "y": 379,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -482,9 +456,9 @@
     "location": "Outside Thurii",
     "faction": "romans_julii",
     "x": 327,
-    "y": 325,
+    "y": 374,
     "units": [
-      "tribunus militum"
+      "roman general"
     ]
   },
   {
@@ -494,9 +468,45 @@
     "location": "Port of Capua",
     "faction": "romans_julii",
     "x": 298,
-    "y": 308,
+    "y": 391,
     "units": [
       "naval biremes"
+    ]
+  },
+  {
+    "name": "Biggus Dickus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Anatolians Settlement",
+    "faction": "roman_rebels_1",
+    "x": 1010,
+    "y": 4,
+    "units": [
+      "roman general"
+    ]
+  },
+  {
+    "name": "Biggus Dickus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thracians Settlement",
+    "faction": "roman_rebels_2",
+    "x": 1010,
+    "y": 7,
+    "units": [
+      "roman general"
+    ]
+  },
+  {
+    "name": "Biggus Dickus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Illyrians Settlement",
+    "faction": "roman_senate",
+    "x": 1006,
+    "y": 1,
+    "units": [
+      "roman general"
     ]
   },
   {
@@ -506,7 +516,7 @@
     "location": "Lilybaion",
     "faction": "carthage",
     "x": 283,
-    "y": 355,
+    "y": 344,
     "units": [
       "carthaginian general's bodyguard",
       "towered forest elephants",
@@ -531,7 +541,7 @@
     "location": "Herakleia_Minoa",
     "faction": "carthage",
     "x": 292,
-    "y": 360,
+    "y": 339,
     "units": [
       "carthaginian general's bodyguard"
     ]
@@ -543,7 +553,7 @@
     "location": "Caralis",
     "faction": "carthage",
     "x": 246,
-    "y": 332,
+    "y": 367,
     "units": [
       "carthaginian general's bodyguard"
     ]
@@ -555,7 +565,7 @@
     "location": "Port of Lilybaion",
     "faction": "carthage",
     "x": 289,
-    "y": 361,
+    "y": 338,
     "units": [
       "naval biremes"
     ]
@@ -567,7 +577,7 @@
     "location": "Carthage",
     "faction": "carthage",
     "x": 257,
-    "y": 366,
+    "y": 333,
     "units": [
       "carthaginian general's bodyguard",
       "libyo phoenician infantry",
@@ -589,7 +599,7 @@
     "location": "Leptis",
     "faction": "carthage",
     "x": 302,
-    "y": 429,
+    "y": 270,
     "units": [
       "carthaginian general's bodyguard"
     ]
@@ -601,7 +611,7 @@
     "location": "Hippo",
     "faction": "carthage",
     "x": 227,
-    "y": 364,
+    "y": 335,
     "units": [
       "carthaginian general's bodyguard"
     ]
@@ -613,7 +623,7 @@
     "location": "Hadrumetum",
     "faction": "carthage",
     "x": 260,
-    "y": 381,
+    "y": 318,
     "units": [
       "carthaginian general's bodyguard"
     ]
@@ -625,7 +635,7 @@
     "location": "Tingi",
     "faction": "carthage",
     "x": 69,
-    "y": 356,
+    "y": 343,
     "units": [
       "carthaginian general's bodyguard",
       "libyan light infantry"
@@ -638,7 +648,7 @@
     "location": "Port of Carthage",
     "faction": "carthage",
     "x": 259,
-    "y": 367,
+    "y": 332,
     "units": [
       "naval biremes"
     ]
@@ -650,7 +660,7 @@
     "location": "Carteia",
     "faction": "carthage",
     "x": 75,
-    "y": 351,
+    "y": 348,
     "units": [
       "carthaginian general's bodyguard",
       "caetrati swordsmen",
@@ -672,7 +682,7 @@
     "location": "Port of Gades",
     "faction": "carthage",
     "x": 79,
-    "y": 353,
+    "y": 346,
     "units": [
       "naval biremes"
     ]
@@ -684,7 +694,7 @@
     "location": "Malaca",
     "faction": "carthage",
     "x": 87,
-    "y": 347,
+    "y": 352,
     "units": [
       "carthaginian general's bodyguard",
       "caetrati swordsmen"
@@ -697,7 +707,7 @@
     "location": "Pella",
     "faction": "antigonid",
     "x": 393,
-    "y": 308,
+    "y": 391,
     "units": [
       "antigonid general",
       "hetairoi",
@@ -719,7 +729,7 @@
     "location": "Chalkis",
     "faction": "antigonid",
     "x": 409,
-    "y": 340,
+    "y": 359,
     "units": [
       "antigonid general",
       "merc greek hoplites",
@@ -736,7 +746,7 @@
     "location": "Larissa",
     "faction": "antigonid",
     "x": 394,
-    "y": 325,
+    "y": 374,
     "units": [
       "antigonid general"
     ]
@@ -748,7 +758,7 @@
     "location": "Demetrias",
     "faction": "antigonid",
     "x": 400,
-    "y": 329,
+    "y": 370,
     "units": [
       "antigonid general",
       "merc thessalian lancers",
@@ -765,7 +775,7 @@
     "location": "Corinth",
     "faction": "antigonid",
     "x": 402,
-    "y": 350,
+    "y": 349,
     "units": [
       "antigonid general",
       "merc greek hoplites",
@@ -782,7 +792,7 @@
     "location": "Outside of Corinth",
     "faction": "antigonid",
     "x": 401,
-    "y": 349,
+    "y": 350,
     "units": [
       "antigonid general"
     ]
@@ -794,7 +804,7 @@
     "location": "Amphipolis",
     "faction": "antigonid",
     "x": 409,
-    "y": 306,
+    "y": 393,
     "units": [
       "antigonid general",
       "merc greek peltasts"
@@ -807,7 +817,7 @@
     "location": "Eretria",
     "faction": "antigonid",
     "x": 412,
-    "y": 341,
+    "y": 358,
     "units": [
       "antigonid general"
     ]
@@ -819,7 +829,7 @@
     "location": "Megara",
     "faction": "antigonid",
     "x": 406,
-    "y": 347,
+    "y": 352,
     "units": [
       "antigonid general"
     ]
@@ -831,7 +841,7 @@
     "location": "Kassandreia",
     "faction": "antigonid",
     "x": 403,
-    "y": 316,
+    "y": 383,
     "units": [
       "antigonid general"
     ]
@@ -843,7 +853,7 @@
     "location": "Thessalonike",
     "faction": "antigonid",
     "x": 399,
-    "y": 310,
+    "y": 389,
     "units": [
       "antigonid general",
       "merc greek peltasts"
@@ -856,7 +866,7 @@
     "location": "Dion",
     "faction": "antigonid",
     "x": 394,
-    "y": 317,
+    "y": 382,
     "units": [
       "antigonid general",
       "merc greek peltasts"
@@ -869,7 +879,7 @@
     "location": "Herakleia-Sintike",
     "faction": "antigonid",
     "x": 400,
-    "y": 299,
+    "y": 400,
     "units": [
       "antigonid general",
       "merc agrianian infantry"
@@ -882,7 +892,7 @@
     "location": "Karystos",
     "faction": "antigonid",
     "x": 418,
-    "y": 346,
+    "y": 353,
     "units": [
       "antigonid general",
       "merc greek peltasts"
@@ -895,7 +905,7 @@
     "location": "Argos Orestikon",
     "faction": "antigonid",
     "x": 380,
-    "y": 313,
+    "y": 386,
     "units": [
       "antigonid general",
       "merc thracian skirmisher cavalry"
@@ -908,7 +918,7 @@
     "location": "Herakleia Lynkestis",
     "faction": "antigonid",
     "x": 381,
-    "y": 306,
+    "y": 393,
     "units": [
       "antigonid general",
       "merc greek peltasts"
@@ -921,7 +931,7 @@
     "location": "Aiginion",
     "faction": "antigonid",
     "x": 381,
-    "y": 323,
+    "y": 376,
     "units": [
       "antigonid general"
     ]
@@ -933,7 +943,7 @@
     "location": "Pharsalos",
     "faction": "antigonid",
     "x": 393,
-    "y": 330,
+    "y": 369,
     "units": [
       "antigonid general"
     ]
@@ -945,7 +955,7 @@
     "location": "Philippoi",
     "faction": "antigonid",
     "x": 412,
-    "y": 303,
+    "y": 396,
     "units": [
       "antigonid general"
     ]
@@ -957,7 +967,7 @@
     "location": "Beroia",
     "faction": "antigonid",
     "x": 390,
-    "y": 312,
+    "y": 387,
     "units": [
       "antigonid general"
     ]
@@ -969,7 +979,7 @@
     "location": "Edessa-Bottiaia",
     "faction": "antigonid",
     "x": 388,
-    "y": 308,
+    "y": 391,
     "units": [
       "antigonid general"
     ]
@@ -981,7 +991,7 @@
     "location": "Akanthos",
     "faction": "antigonid",
     "x": 409,
-    "y": 312,
+    "y": 387,
     "units": [
       "antigonid general"
     ]
@@ -993,7 +1003,7 @@
     "location": "Torone",
     "faction": "antigonid",
     "x": 410,
-    "y": 318,
+    "y": 381,
     "units": [
       "antigonid general"
     ]
@@ -1005,7 +1015,7 @@
     "location": "Berge",
     "faction": "antigonid",
     "x": 404,
-    "y": 306,
+    "y": 393,
     "units": [
       "antigonid general"
     ]
@@ -1017,7 +1027,7 @@
     "location": "Stymbara",
     "faction": "antigonid",
     "x": 381,
-    "y": 302,
+    "y": 397,
     "units": [
       "antigonid general"
     ]
@@ -1029,7 +1039,7 @@
     "location": "Pherai",
     "faction": "antigonid",
     "x": 397,
-    "y": 328,
+    "y": 371,
     "units": [
       "antigonid general"
     ]
@@ -1041,7 +1051,7 @@
     "location": "Trikka",
     "faction": "antigonid",
     "x": 387,
-    "y": 326,
+    "y": 373,
     "units": [
       "antigonid general"
     ]
@@ -1053,7 +1063,7 @@
     "location": "Phalanna",
     "faction": "antigonid",
     "x": 391,
-    "y": 324,
+    "y": 375,
     "units": [
       "antigonid general"
     ]
@@ -1065,7 +1075,7 @@
     "location": "Thebai Phthiotides",
     "faction": "antigonid",
     "x": 398,
-    "y": 331,
+    "y": 368,
     "units": [
       "antigonid general"
     ]
@@ -1077,7 +1087,7 @@
     "location": "Piraeus",
     "faction": "antigonid",
     "x": 411,
-    "y": 349,
+    "y": 350,
     "units": [
       "antigonid general",
       "merc greek hoplites",
@@ -1094,7 +1104,7 @@
     "location": "Trozan",
     "faction": "antigonid",
     "x": 408,
-    "y": 355,
+    "y": 344,
     "units": [
       "antigonid general"
     ]
@@ -1106,7 +1116,7 @@
     "location": "Lychnidos",
     "faction": "antigonid",
     "x": 375,
-    "y": 304,
+    "y": 395,
     "units": [
       "antigonid general"
     ]
@@ -1118,7 +1128,7 @@
     "location": "Pelion",
     "faction": "antigonid",
     "x": 376,
-    "y": 311,
+    "y": 388,
     "units": [
       "antigonid general"
     ]
@@ -1130,7 +1140,7 @@
     "location": "Idomenai",
     "faction": "antigonid",
     "x": 394,
-    "y": 301,
+    "y": 398,
     "units": [
       "antigonid general"
     ]
@@ -1142,7 +1152,7 @@
     "location": "Port of Thessalonike",
     "faction": "antigonid",
     "x": 399,
-    "y": 315,
+    "y": 384,
     "units": [
       "naval biremes",
       "naval biremes"
@@ -1155,7 +1165,7 @@
     "location": "Alexandria",
     "faction": "ptolemaic",
     "x": 497,
-    "y": 434,
+    "y": 265,
     "units": [
       "ptolemaic cavalry of the court",
       "ptolemaic basilikon agema",
@@ -1186,7 +1196,7 @@
     "location": "Arka (Field)",
     "faction": "ptolemaic",
     "x": 561,
-    "y": 371,
+    "y": 328,
     "units": [
       "ptolemaic cavalry of the court",
       "ptolemaic basilikon agema",
@@ -1217,7 +1227,7 @@
     "location": "Patara",
     "faction": "ptolemaic",
     "x": 479,
-    "y": 364,
+    "y": 335,
     "units": [
       "ptolemaic cavalry of the court",
       "aor lycian infantry",
@@ -1231,7 +1241,7 @@
     "location": "Mytilene",
     "faction": "ptolemaic",
     "x": 441,
-    "y": 327,
+    "y": 372,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1243,7 +1253,7 @@
     "location": "Memphis",
     "faction": "ptolemaic",
     "x": 516,
-    "y": 451,
+    "y": 248,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1255,7 +1265,7 @@
     "location": "Thebes-Megale Diospolis",
     "faction": "ptolemaic",
     "x": 545,
-    "y": 509,
+    "y": 190,
     "units": [
       "ptolemaic cavalry of the court",
       "greek slingers",
@@ -1269,7 +1279,7 @@
     "location": "Halikarnassos",
     "faction": "ptolemaic",
     "x": 455,
-    "y": 356,
+    "y": 343,
     "units": [
       "ptolemaic cavalry of the court",
       "ptolemaic agema of the kleruchoi",
@@ -1300,7 +1310,7 @@
     "location": "Megas Katarrhaktes (Field)",
     "faction": "ptolemaic",
     "x": 536,
-    "y": 572,
+    "y": 127,
     "units": [
       "ptolemaic cavalry of the court",
       "ptolemaic phalanx of the kleruchoi",
@@ -1324,7 +1334,7 @@
     "location": "Telmessos",
     "faction": "ptolemaic",
     "x": 475,
-    "y": 359,
+    "y": 340,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1336,7 +1346,7 @@
     "location": "Naxos",
     "faction": "ptolemaic",
     "x": 431,
-    "y": 358,
+    "y": 341,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi",
@@ -1350,7 +1360,7 @@
     "location": "Samos",
     "faction": "ptolemaic",
     "x": 447,
-    "y": 347,
+    "y": 352,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1362,7 +1372,7 @@
     "location": "Miletos",
     "faction": "ptolemaic",
     "x": 452,
-    "y": 349,
+    "y": 350,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1374,7 +1384,7 @@
     "location": "Port of Alexandria",
     "faction": "ptolemaic",
     "x": 495,
-    "y": 433,
+    "y": 266,
     "units": [
       "naval biremes",
       "naval biremes"
@@ -1387,7 +1397,7 @@
     "location": "Port of Mytilene",
     "faction": "ptolemaic",
     "x": 434,
-    "y": 324,
+    "y": 375,
     "units": [
       "naval biremes",
       "naval biremes"
@@ -1400,7 +1410,7 @@
     "location": "Jerusalem",
     "faction": "ptolemaic",
     "x": 559,
-    "y": 414,
+    "y": 285,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi",
@@ -1414,7 +1424,7 @@
     "location": "Paphos",
     "faction": "ptolemaic",
     "x": 518,
-    "y": 379,
+    "y": 320,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1426,7 +1436,7 @@
     "location": "Ptolemais-Hermeiou",
     "faction": "ptolemaic",
     "x": 532,
-    "y": 499,
+    "y": 200,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi",
@@ -1440,7 +1450,7 @@
     "location": "Gaza",
     "faction": "ptolemaic",
     "x": 551,
-    "y": 421,
+    "y": 278,
     "units": [
       "ptolemaic cavalry of the court",
       "machairaphoroi"
@@ -1453,7 +1463,7 @@
     "location": "Pelousion",
     "faction": "ptolemaic",
     "x": 530,
-    "y": 431,
+    "y": 268,
     "units": [
       "ptolemaic cavalry of the court",
       "ptolemaic phalanx of the kleruchoi"
@@ -1466,7 +1476,7 @@
     "location": "Kos",
     "faction": "ptolemaic",
     "x": 453,
-    "y": 359,
+    "y": 340,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1478,7 +1488,7 @@
     "location": "Knidos",
     "faction": "ptolemaic",
     "x": 455,
-    "y": 361,
+    "y": 338,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1490,7 +1500,7 @@
     "location": "Mylasa",
     "faction": "ptolemaic",
     "x": 458,
-    "y": 352,
+    "y": 347,
     "units": [
       "ptolemaic cavalry of the court",
       "greek archers"
@@ -1503,7 +1513,7 @@
     "location": "Phaselis",
     "faction": "ptolemaic",
     "x": 491,
-    "y": 357,
+    "y": 342,
     "units": [
       "ptolemaic cavalry of the court",
       "aor pisidian javelinmen"
@@ -1516,7 +1526,7 @@
     "location": "Termessos",
     "faction": "ptolemaic",
     "x": 489,
-    "y": 351,
+    "y": 348,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi",
@@ -1530,7 +1540,7 @@
     "location": "Soloi",
     "faction": "ptolemaic",
     "x": 521,
-    "y": 373,
+    "y": 326,
     "units": [
       "ptolemaic cavalry of the court",
       "aor cilician spearmen"
@@ -1543,7 +1553,7 @@
     "location": "Amathous",
     "faction": "ptolemaic",
     "x": 526,
-    "y": 377,
+    "y": 322,
     "units": [
       "ptolemaic cavalry of the court",
       "machairaphoroi"
@@ -1556,7 +1566,7 @@
     "location": "Salamis",
     "faction": "ptolemaic",
     "x": 533,
-    "y": 369,
+    "y": 330,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi"
@@ -1569,7 +1579,7 @@
     "location": "Ioppe",
     "faction": "ptolemaic",
     "x": 553,
-    "y": 412,
+    "y": 287,
     "units": [
       "ptolemaic cavalry of the court",
       "greek archers"
@@ -1582,7 +1592,7 @@
     "location": "Rhaithou",
     "faction": "ptolemaic",
     "x": 551,
-    "y": 469,
+    "y": 230,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi"
@@ -1595,7 +1605,7 @@
     "location": "Arsinoe-Klysma",
     "faction": "ptolemaic",
     "x": 531,
-    "y": 446,
+    "y": 253,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi"
@@ -1608,7 +1618,7 @@
     "location": "Naukratis",
     "faction": "ptolemaic",
     "x": 505,
-    "y": 438,
+    "y": 261,
     "units": [
       "ptolemaic cavalry of the court",
       "machairaphoroi"
@@ -1621,7 +1631,7 @@
     "location": "Arsinoe-Krokodeilon Polis",
     "faction": "ptolemaic",
     "x": 513,
-    "y": 460,
+    "y": 239,
     "units": [
       "ptolemaic cavalry of the court",
       "machairaphoroi",
@@ -1635,7 +1645,7 @@
     "location": "Oxyrhynchos",
     "faction": "ptolemaic",
     "x": 512,
-    "y": 472,
+    "y": 227,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi"
@@ -1648,7 +1658,7 @@
     "location": "Hermou Polis",
     "faction": "ptolemaic",
     "x": 516,
-    "y": 482,
+    "y": 217,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1660,7 +1670,7 @@
     "location": "Myos Hormos",
     "faction": "ptolemaic",
     "x": 565,
-    "y": 497,
+    "y": 202,
     "units": [
       "ptolemaic cavalry of the court",
       "greek archers"
@@ -1673,7 +1683,7 @@
     "location": "Megale Apollonos Polis",
     "faction": "ptolemaic",
     "x": 550,
-    "y": 518,
+    "y": 181,
     "units": [
       "ptolemaic cavalry of the court",
       "prodromoi",
@@ -1688,7 +1698,7 @@
     "location": "Berenike-Trogodytike",
     "faction": "ptolemaic",
     "x": 588,
-    "y": 526,
+    "y": 173,
     "units": [
       "ptolemaic cavalry of the court",
       "greek peltasts"
@@ -1701,7 +1711,7 @@
     "location": "Syene-Elephantine",
     "faction": "ptolemaic",
     "x": 554,
-    "y": 530,
+    "y": 169,
     "units": [
       "ptolemaic cavalry of the court",
       "greek archers",
@@ -1715,7 +1725,7 @@
     "location": "Pachora",
     "faction": "ptolemaic",
     "x": 540,
-    "y": 562,
+    "y": 137,
     "units": [
       "ptolemaic cavalry of the court",
       "greek peltasts"
@@ -1728,7 +1738,7 @@
     "location": "Ptolemais-Theron",
     "faction": "ptolemaic",
     "x": 645,
-    "y": 600,
+    "y": 99,
     "units": [
       "ptolemaic cavalry of the court",
       "greek peltasts"
@@ -1741,7 +1751,7 @@
     "location": "Berenike-Deire",
     "faction": "ptolemaic",
     "x": 745,
-    "y": 665,
+    "y": 34,
     "units": [
       "ptolemaic cavalry of the court",
       "greek archers"
@@ -1754,7 +1764,7 @@
     "location": "Delos",
     "faction": "ptolemaic",
     "x": 429,
-    "y": 353,
+    "y": 346,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1766,7 +1776,7 @@
     "location": "Samothrake",
     "faction": "ptolemaic",
     "x": 427,
-    "y": 309,
+    "y": 390,
     "units": [
       "ptolemaic cavalry of the court",
       "aor lycian drepanophoroi"
@@ -1779,7 +1789,7 @@
     "location": "Thera",
     "faction": "ptolemaic",
     "x": 433,
-    "y": 368,
+    "y": 331,
     "units": [
       "ptolemaic cavalry of the court",
       "aor pamphylian heavy javelinmen"
@@ -1792,7 +1802,7 @@
     "location": "Paros",
     "faction": "ptolemaic",
     "x": 428,
-    "y": 359,
+    "y": 340,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1804,7 +1814,7 @@
     "location": "Methymna",
     "faction": "ptolemaic",
     "x": 436,
-    "y": 325,
+    "y": 374,
     "units": [
       "ptolemaic cavalry of the court",
       "aor mysian javelineers"
@@ -1817,7 +1827,7 @@
     "location": "Erythrai",
     "faction": "ptolemaic",
     "x": 441,
-    "y": 338,
+    "y": 361,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1829,7 +1839,7 @@
     "location": "Xanthos",
     "faction": "ptolemaic",
     "x": 476,
-    "y": 363,
+    "y": 336,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1841,7 +1851,7 @@
     "location": "Limyra",
     "faction": "ptolemaic",
     "x": 487,
-    "y": 361,
+    "y": 338,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1853,7 +1863,7 @@
     "location": "Aspendos",
     "faction": "ptolemaic",
     "x": 498,
-    "y": 350,
+    "y": 349,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1865,7 +1875,7 @@
     "location": "Etenna-Kotenna",
     "faction": "ptolemaic",
     "x": 502,
-    "y": 348,
+    "y": 351,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1877,7 +1887,7 @@
     "location": "Myra",
     "faction": "ptolemaic",
     "x": 484,
-    "y": 362,
+    "y": 337,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1889,7 +1899,7 @@
     "location": "Askalon",
     "faction": "ptolemaic",
     "x": 553,
-    "y": 418,
+    "y": 281,
     "units": [
       "ptolemaic cavalry of the court",
       "aor karian light infantry"
@@ -1902,7 +1912,7 @@
     "location": "Gamala",
     "faction": "ptolemaic",
     "x": 562,
-    "y": 397,
+    "y": 302,
     "units": [
       "ptolemaic cavalry of the court",
       "machairaphoroi"
@@ -1915,7 +1925,7 @@
     "location": "Pella-Peraia",
     "faction": "ptolemaic",
     "x": 562,
-    "y": 404,
+    "y": 295,
     "units": [
       "ptolemaic cavalry of the court",
       "greek slingers"
@@ -1928,7 +1938,7 @@
     "location": "Chalkis-Lebanos",
     "faction": "ptolemaic",
     "x": 562,
-    "y": 386,
+    "y": 313,
     "units": [
       "ptolemaic cavalry of the court",
       "thureophoroi"
@@ -1941,7 +1951,7 @@
     "location": "Sais",
     "faction": "ptolemaic",
     "x": 508,
-    "y": 436,
+    "y": 263,
     "units": [
       "ptolemaic cavalry of the court",
       "aor egyptian skirmishers"
@@ -1954,7 +1964,7 @@
     "location": "Sebennytos-Bousiris",
     "faction": "ptolemaic",
     "x": 513,
-    "y": 435,
+    "y": 264,
     "units": [
       "ptolemaic cavalry of the court",
       "aor egyptian slingers"
@@ -1967,7 +1977,7 @@
     "location": "Mendes-Thmouis",
     "faction": "ptolemaic",
     "x": 516,
-    "y": 435,
+    "y": 264,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -1979,7 +1989,7 @@
     "location": "Tachompso-Pselkis",
     "faction": "ptolemaic",
     "x": 555,
-    "y": 546,
+    "y": 153,
     "units": [
       "ptolemaic cavalry of the court",
       "aor egyptian slingers"
@@ -1992,7 +2002,7 @@
     "location": "Itanos",
     "faction": "ptolemaic",
     "x": 444,
-    "y": 384,
+    "y": 315,
     "units": [
       "ptolemaic cavalry of the court",
       "aor kretan hoplites"
@@ -2005,7 +2015,7 @@
     "location": "Korakesion",
     "faction": "ptolemaic",
     "x": 508,
-    "y": 354,
+    "y": 345,
     "units": [
       "ptolemaic cavalry of the court"
     ]
@@ -2017,7 +2027,7 @@
     "location": "Tlos",
     "faction": "ptolemaic",
     "x": 478,
-    "y": 360,
+    "y": 339,
     "units": [
       "ptolemaic cavalry of the court",
       "greek slingers",
@@ -2034,7 +2044,7 @@
     "location": "Outside Tlos",
     "faction": "ptolemaic",
     "x": 478,
-    "y": 357,
+    "y": 342,
     "units": [
       "ptolemaic cavalry of the court",
       "merc lycian infantry"
@@ -2047,7 +2057,7 @@
     "location": "Outside Tlos",
     "faction": "ptolemaic",
     "x": 477,
-    "y": 359,
+    "y": 340,
     "units": [
       "ptolemaic cavalry of the court",
       "merc lycian infantry"
@@ -2060,7 +2070,7 @@
     "location": "Kaunos",
     "faction": "ptolemaic",
     "x": 469,
-    "y": 357,
+    "y": 342,
     "units": [
       "ptolemaic cavalry of the court",
       "merc karian light infantry"
@@ -2073,7 +2083,7 @@
     "location": "Kotiaia (in the field)",
     "faction": "seleucid",
     "x": 473,
-    "y": 317,
+    "y": 382,
     "units": [
       "seleucid general",
       "seleucid hypaspists",
@@ -2104,7 +2114,7 @@
     "location": "Massyas Pedion (Field)",
     "faction": "seleucid",
     "x": 563,
-    "y": 370,
+    "y": 329,
     "units": [
       "seleucid general",
       "seleucid hypaspists",
@@ -2135,7 +2145,7 @@
     "location": "Sardis",
     "faction": "seleucid",
     "x": 459,
-    "y": 334,
+    "y": 365,
     "units": [
       "seleucid general",
       "seleucid hypaspists",
@@ -2166,7 +2176,7 @@
     "location": "Stratonikeia",
     "faction": "seleucid",
     "x": 461,
-    "y": 351,
+    "y": 348,
     "units": [
       "seleucid general",
       "aor karian light infantry",
@@ -2180,7 +2190,7 @@
     "location": "Apameia-Kelainai",
     "faction": "seleucid",
     "x": 483,
-    "y": 337,
+    "y": 362,
     "units": [
       "seleucid general"
     ]
@@ -2192,7 +2202,7 @@
     "location": "Seleucia",
     "faction": "seleucid",
     "x": 664,
-    "y": 365,
+    "y": 334,
     "units": [
       "seleucid general"
     ]
@@ -2204,7 +2214,7 @@
     "location": "Antioch",
     "faction": "seleucid",
     "x": 557,
-    "y": 349,
+    "y": 350,
     "units": [
       "seleucid general",
       "seleucid chalkaspides",
@@ -2235,7 +2245,7 @@
     "location": "Margiane (Field)",
     "faction": "seleucid",
     "x": 843,
-    "y": 224,
+    "y": 475,
     "units": [
       "seleucid general",
       "seleucid hypaspists",
@@ -2266,7 +2276,7 @@
     "location": "Zadrakarta",
     "faction": "seleucid",
     "x": 754,
-    "y": 272,
+    "y": 427,
     "units": [
       "seleucid general",
       "psiloi",
@@ -2280,7 +2290,7 @@
     "location": "Abydos",
     "faction": "seleucid",
     "x": 438,
-    "y": 312,
+    "y": 387,
     "units": [
       "seleucid general",
       "greek hoplites"
@@ -2293,7 +2303,7 @@
     "location": "Ikonion",
     "faction": "seleucid",
     "x": 510,
-    "y": 335,
+    "y": 364,
     "units": [
       "seleucid general",
       "aor isaurian marauders"
@@ -2306,7 +2316,7 @@
     "location": "Elaious",
     "faction": "seleucid",
     "x": 435,
-    "y": 313,
+    "y": 386,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -2319,7 +2329,7 @@
     "location": "Damascus",
     "faction": "seleucid",
     "x": 567,
-    "y": 387,
+    "y": 312,
     "units": [
       "seleucid general",
       "aor cilician pirates"
@@ -2332,7 +2342,7 @@
     "location": "Tarsos",
     "faction": "seleucid",
     "x": 540,
-    "y": 342,
+    "y": 357,
     "units": [
       "seleucid general",
       "aor cilician spearmen",
@@ -2346,7 +2356,7 @@
     "location": "Sagalassos",
     "faction": "seleucid",
     "x": 488,
-    "y": 342,
+    "y": 357,
     "units": [
       "seleucid general",
       "aor pisidian javelinmen",
@@ -2361,7 +2371,7 @@
     "location": "Side",
     "faction": "seleucid",
     "x": 501,
-    "y": 352,
+    "y": 347,
     "units": [
       "seleucid general"
     ]
@@ -2373,7 +2383,7 @@
     "location": "Edessa",
     "faction": "seleucid",
     "x": 582,
-    "y": 328,
+    "y": 371,
     "units": [
       "seleucid general",
       "greek archers"
@@ -2386,7 +2396,7 @@
     "location": "Antiocheia-Mygdonia",
     "faction": "seleucid",
     "x": 610,
-    "y": 322,
+    "y": 377,
     "units": [
       "seleucid general",
       "thureophoroi"
@@ -2399,7 +2409,7 @@
     "location": "Arbela",
     "faction": "seleucid",
     "x": 645,
-    "y": 325,
+    "y": 374,
     "units": [
       "seleucid general",
       "psiloi"
@@ -2412,7 +2422,7 @@
     "location": "Doura-Europos",
     "faction": "seleucid",
     "x": 614,
-    "y": 357,
+    "y": 342,
     "units": [
       "seleucid general",
       "psiloi"
@@ -2425,7 +2435,7 @@
     "location": "Uruk",
     "faction": "seleucid",
     "x": 686,
-    "y": 385,
+    "y": 314,
     "units": [
       "seleucid general",
       "greek slingers",
@@ -2439,7 +2449,7 @@
     "location": "Susa",
     "faction": "seleucid",
     "x": 712,
-    "y": 362,
+    "y": 337,
     "units": [
       "seleucid general",
       "aor persian sparabara",
@@ -2456,7 +2466,7 @@
     "location": "Ekbatana",
     "faction": "seleucid",
     "x": 701,
-    "y": 326,
+    "y": 373,
     "units": [
       "seleucid general",
       "seleucid hypaspists",
@@ -2487,7 +2497,7 @@
     "location": "Europos-Rhagai",
     "faction": "seleucid",
     "x": 729,
-    "y": 302,
+    "y": 397,
     "units": [
       "seleucid general",
       "thureophoroi"
@@ -2500,7 +2510,7 @@
     "location": "Alexandreia-Karmania",
     "faction": "seleucid",
     "x": 839,
-    "y": 371,
+    "y": 328,
     "units": [
       "seleucid general",
       "greek peltasts",
@@ -2514,7 +2524,7 @@
     "location": "Prophthasia",
     "faction": "seleucid",
     "x": 865,
-    "y": 288,
+    "y": 411,
     "units": [
       "seleucid general",
       "aor persian sparabara",
@@ -2528,7 +2538,7 @@
     "location": "Alexandreia-Ariane",
     "faction": "seleucid",
     "x": 851,
-    "y": 262,
+    "y": 437,
     "units": [
       "seleucid general",
       "aor persian takabara",
@@ -2542,7 +2552,7 @@
     "location": "Antiocheia-Margiane",
     "faction": "seleucid",
     "x": 828,
-    "y": 221,
+    "y": 478,
     "units": [
       "seleucid general",
       "greek archers"
@@ -2555,7 +2565,7 @@
     "location": "Alexandreia-Troas",
     "faction": "seleucid",
     "x": 435,
-    "y": 319,
+    "y": 380,
     "units": [
       "seleucid general",
       "aor mysian archers",
@@ -2569,7 +2579,7 @@
     "location": "Adramyttion",
     "faction": "seleucid",
     "x": 444,
-    "y": 322,
+    "y": 377,
     "units": [
       "seleucid general",
       "greek archers",
@@ -2583,7 +2593,7 @@
     "location": "Daskyleion",
     "faction": "seleucid",
     "x": 455,
-    "y": 311,
+    "y": 388,
     "units": [
       "seleucid general"
     ]
@@ -2595,7 +2605,7 @@
     "location": "Thyateira",
     "faction": "seleucid",
     "x": 456,
-    "y": 329,
+    "y": 370,
     "units": [
       "seleucid general",
       "aor lydian akontistai"
@@ -2608,7 +2618,7 @@
     "location": "Smyrna",
     "faction": "seleucid",
     "x": 449,
-    "y": 337,
+    "y": 362,
     "units": [
       "seleucid general",
       "aor ionian epibatai"
@@ -2621,7 +2631,7 @@
     "location": "Seleukeia-Tralleis",
     "faction": "seleucid",
     "x": 457,
-    "y": 343,
+    "y": 356,
     "units": [
       "seleucid general",
       "aor thracian infantry",
@@ -2635,7 +2645,7 @@
     "location": "Magnesia-Maiandros",
     "faction": "seleucid",
     "x": 465,
-    "y": 342,
+    "y": 357,
     "units": [
       "seleucid general",
       "aor karian light infantry"
@@ -2648,7 +2658,7 @@
     "location": "Pessinous",
     "faction": "seleucid",
     "x": 496,
-    "y": 316,
+    "y": 383,
     "units": [
       "seleucid general"
     ]
@@ -2660,7 +2670,7 @@
     "location": "Outside Pessinous",
     "faction": "seleucid",
     "x": 495,
-    "y": 315,
+    "y": 384,
     "units": [
       "seleucid general"
     ]
@@ -2672,7 +2682,7 @@
     "location": "Laodikeia-Katakekaumene",
     "faction": "seleucid",
     "x": 508,
-    "y": 330,
+    "y": 369,
     "units": [
       "seleucid general"
     ]
@@ -2684,7 +2694,7 @@
     "location": "Seleukeia-Kalykadnos",
     "faction": "seleucid",
     "x": 530,
-    "y": 353,
+    "y": 346,
     "units": [
       "seleucid general",
       "greek peltasts"
@@ -2697,7 +2707,7 @@
     "location": "Seleukeia-Pieria",
     "faction": "seleucid",
     "x": 554,
-    "y": 351,
+    "y": 348,
     "units": [
       "seleucid general",
       "thureophoroi"
@@ -2710,7 +2720,7 @@
     "location": "Apameia-Syria",
     "faction": "seleucid",
     "x": 562,
-    "y": 360,
+    "y": 339,
     "units": [
       "seleucid general",
       "thureophoroi"
@@ -2723,7 +2733,7 @@
     "location": "Byblos",
     "faction": "seleucid",
     "x": 557,
-    "y": 379,
+    "y": 320,
     "units": [
       "seleucid general",
       "greek slingers",
@@ -2737,7 +2747,7 @@
     "location": "Apameia-Zeugma",
     "faction": "seleucid",
     "x": 573,
-    "y": 333,
+    "y": 366,
     "units": [
       "seleucid general",
       "psiloi"
@@ -2750,7 +2760,7 @@
     "location": "Hierapolis",
     "faction": "seleucid",
     "x": 575,
-    "y": 340,
+    "y": 359,
     "units": [
       "seleucid general",
       "greek archers",
@@ -2764,7 +2774,7 @@
     "location": "Nikephorion",
     "faction": "seleucid",
     "x": 590,
-    "y": 344,
+    "y": 355,
     "units": [
       "seleucid general",
       "greek archers"
@@ -2777,7 +2787,7 @@
     "location": "Artemita",
     "faction": "seleucid",
     "x": 664,
-    "y": 353,
+    "y": 346,
     "units": [
       "seleucid general",
       "aor persian sparabara"
@@ -2790,7 +2800,7 @@
     "location": "Nippur",
     "faction": "seleucid",
     "x": 677,
-    "y": 375,
+    "y": 324,
     "units": [
       "seleucid general",
       "psiloi"
@@ -2803,7 +2813,7 @@
     "location": "Apameia-Sittakene",
     "faction": "seleucid",
     "x": 689,
-    "y": 369,
+    "y": 330,
     "units": [
       "seleucid general",
       "psiloi"
@@ -2816,7 +2826,7 @@
     "location": "Seleukeia-Soloke",
     "faction": "seleucid",
     "x": 730,
-    "y": 373,
+    "y": 326,
     "units": [
       "seleucid general",
       "thureophoroi"
@@ -2829,7 +2839,7 @@
     "location": "Tagai",
     "faction": "seleucid",
     "x": 759,
-    "y": 281,
+    "y": 418,
     "units": [
       "seleucid general",
       "greek peltasts"
@@ -2842,7 +2852,7 @@
     "location": "Apameia-Rhagiane",
     "faction": "seleucid",
     "x": 743,
-    "y": 302,
+    "y": 397,
     "units": [
       "seleucid general",
       "thureophoroi"
@@ -2855,7 +2865,7 @@
     "location": "Antiocheia-Persis",
     "faction": "seleucid",
     "x": 761,
-    "y": 387,
+    "y": 312,
     "units": [
       "seleucid general",
       "aor persian takabara"
@@ -2868,7 +2878,7 @@
     "location": "Sousia",
     "faction": "seleucid",
     "x": 809,
-    "y": 251,
+    "y": 448,
     "units": [
       "seleucid general",
       "greek slingers",
@@ -2882,7 +2892,7 @@
     "location": "Lampsakos",
     "faction": "seleucid",
     "x": 441,
-    "y": 310,
+    "y": 389,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -2895,7 +2905,7 @@
     "location": "Skepsis",
     "faction": "seleucid",
     "x": 441,
-    "y": 317,
+    "y": 382,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -2908,7 +2918,7 @@
     "location": "Magnesia-Sipylos",
     "faction": "seleucid",
     "x": 453,
-    "y": 334,
+    "y": 365,
     "units": [
       "seleucid general"
     ]
@@ -2920,7 +2930,7 @@
     "location": "Hypaipa",
     "faction": "seleucid",
     "x": 458,
-    "y": 338,
+    "y": 361,
     "units": [
       "seleucid general"
     ]
@@ -2932,7 +2942,7 @@
     "location": "Aphrodisias",
     "faction": "seleucid",
     "x": 468,
-    "y": 344,
+    "y": 355,
     "units": [
       "seleucid general"
     ]
@@ -2944,7 +2954,7 @@
     "location": "Hierapolis-Charonia",
     "faction": "seleucid",
     "x": 472,
-    "y": 341,
+    "y": 358,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -2957,7 +2967,7 @@
     "location": "Blaundos",
     "faction": "seleucid",
     "x": 472,
-    "y": 334,
+    "y": 365,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -2970,7 +2980,7 @@
     "location": "Aizanoi",
     "faction": "seleucid",
     "x": 474,
-    "y": 322,
+    "y": 377,
     "units": [
       "seleucid general"
     ]
@@ -2982,7 +2992,7 @@
     "location": "Gorbeous",
     "faction": "seleucid",
     "x": 509,
-    "y": 308,
+    "y": 391,
     "units": [
       "seleucid general"
     ]
@@ -2994,7 +3004,7 @@
     "location": "Antiocheia-Pisidia",
     "faction": "seleucid",
     "x": 494,
-    "y": 331,
+    "y": 368,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3007,7 +3017,7 @@
     "location": "Toriaion",
     "faction": "seleucid",
     "x": 502,
-    "y": 330,
+    "y": 369,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3020,7 +3030,7 @@
     "location": "Issos",
     "faction": "seleucid",
     "x": 554,
-    "y": 340,
+    "y": 359,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3033,7 +3043,7 @@
     "location": "Ephesos",
     "faction": "seleucid",
     "x": 451,
-    "y": 343,
+    "y": 356,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3046,7 +3056,7 @@
     "location": "Antiocheia-Alabanda",
     "faction": "seleucid",
     "x": 459,
-    "y": 347,
+    "y": 352,
     "units": [
       "seleucid general"
     ]
@@ -3058,7 +3068,7 @@
     "location": "Kastabala",
     "faction": "seleucid",
     "x": 553,
-    "y": 335,
+    "y": 364,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3071,7 +3081,7 @@
     "location": "Melita",
     "faction": "seleucid",
     "x": 573,
-    "y": 313,
+    "y": 386,
     "units": [
       "seleucid general"
     ]
@@ -3083,7 +3093,7 @@
     "location": "Komana-Kappadokia",
     "faction": "seleucid",
     "x": 551,
-    "y": 319,
+    "y": 380,
     "units": [
       "seleucid general"
     ]
@@ -3095,7 +3105,7 @@
     "location": "Soloi-Kilikia",
     "faction": "seleucid",
     "x": 536,
-    "y": 345,
+    "y": 354,
     "units": [
       "seleucid general",
       "aor cilician pirates"
@@ -3108,7 +3118,7 @@
     "location": "Mallos",
     "faction": "seleucid",
     "x": 546,
-    "y": 345,
+    "y": 354,
     "units": [
       "seleucid general"
     ]
@@ -3120,7 +3130,7 @@
     "location": "Amathe",
     "faction": "seleucid",
     "x": 566,
-    "y": 363,
+    "y": 336,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3133,7 +3143,7 @@
     "location": "Lysimacheia",
     "faction": "seleucid",
     "x": 440,
-    "y": 307,
+    "y": 392,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3146,7 +3156,7 @@
     "location": "Pinaka",
     "faction": "seleucid",
     "x": 617,
-    "y": 314,
+    "y": 385,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3159,7 +3169,7 @@
     "location": "Dorylaion",
     "faction": "seleucid",
     "x": 483,
-    "y": 312,
+    "y": 387,
     "units": [
       "seleucid general"
     ]
@@ -3171,7 +3181,7 @@
     "location": "Ninos",
     "faction": "seleucid",
     "x": 635,
-    "y": 325,
+    "y": 374,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3184,7 +3194,7 @@
     "location": "Seleukeia-Erythtreia",
     "faction": "seleucid",
     "x": 720,
-    "y": 399,
+    "y": 300,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3197,7 +3207,7 @@
     "location": "Nisa",
     "faction": "seleucid",
     "x": 788,
-    "y": 237,
+    "y": 462,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3210,7 +3220,7 @@
     "location": "Alexandreia-Drangiane",
     "faction": "seleucid",
     "x": 865,
-    "y": 314,
+    "y": 385,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3223,7 +3233,7 @@
     "location": "Zetis",
     "faction": "seleucid",
     "x": 837,
-    "y": 384,
+    "y": 315,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3236,7 +3246,7 @@
     "location": "Achaia Polis",
     "faction": "seleucid",
     "x": 839,
-    "y": 263,
+    "y": 436,
     "units": [
       "seleucid general",
       "greek slingers"
@@ -3249,7 +3259,7 @@
     "location": "Port of Antioch",
     "faction": "seleucid",
     "x": 551,
-    "y": 353,
+    "y": 346,
     "units": [
       "naval biremes"
     ]
@@ -3261,7 +3271,7 @@
     "location": "Baktra-Zariaspa",
     "faction": "bactria",
     "x": 881,
-    "y": 204,
+    "y": 495,
     "units": [
       "baktrian general",
       "baktrian chalkaspides",
@@ -3282,7 +3292,7 @@
     "location": "Baktra Basileion",
     "faction": "bactria",
     "x": 903,
-    "y": 183,
+    "y": 516,
     "units": [
       "baktrian general",
       "baktrian chalkaspides",
@@ -3298,7 +3308,7 @@
     "location": "Alexandreia-Oxeiane",
     "faction": "bactria",
     "x": 871,
-    "y": 186,
+    "y": 513,
     "units": [
       "baktrian general",
       "baktrian chalkaspides",
@@ -3314,7 +3324,7 @@
     "location": "Antiocheia-Skythia",
     "faction": "bactria",
     "x": 880,
-    "y": 145,
+    "y": 554,
     "units": [
       "baktrian general",
       "baktrian hoplites",
@@ -3329,7 +3339,7 @@
     "location": "Oxeiana",
     "faction": "bactria",
     "x": 878,
-    "y": 195,
+    "y": 504,
     "units": [
       "baktrian general"
     ]
@@ -3341,7 +3351,7 @@
     "location": "Darapsa",
     "faction": "bactria",
     "x": 901,
-    "y": 192,
+    "y": 507,
     "units": [
       "baktrian general"
     ]
@@ -3353,7 +3363,7 @@
     "location": "Kyropolis",
     "faction": "bactria",
     "x": 877,
-    "y": 153,
+    "y": 546,
     "units": [
       "baktrian general"
     ]
@@ -3365,7 +3375,7 @@
     "location": "Marouka",
     "faction": "bactria",
     "x": 891,
-    "y": 191,
+    "y": 508,
     "units": [
       "baktrian general"
     ]
@@ -3377,7 +3387,7 @@
     "location": "Nautaka",
     "faction": "bactria",
     "x": 863,
-    "y": 177,
+    "y": 522,
     "units": [
       "baktrian general"
     ]
@@ -3389,7 +3399,7 @@
     "location": "Marakanda",
     "faction": "bactria",
     "x": 859,
-    "y": 169,
+    "y": 530,
     "units": [
       "baktrian general"
     ]
@@ -3401,7 +3411,7 @@
     "location": "Aornos-Baktria",
     "faction": "bactria",
     "x": 889,
-    "y": 200,
+    "y": 499,
     "units": [
       "baktrian general"
     ]
@@ -3413,7 +3423,7 @@
     "location": "Indikomordana",
     "faction": "bactria",
     "x": 880,
-    "y": 182,
+    "y": 517,
     "units": [
       "baktrian general"
     ]
@@ -3425,7 +3435,7 @@
     "location": "Parnon Taphai",
     "faction": "parni",
     "x": 739,
-    "y": 233,
+    "y": 466,
     "units": [
       "parni noble cavalry"
     ]
@@ -3437,7 +3447,7 @@
     "location": "Nisaia",
     "faction": "parni",
     "x": 768,
-    "y": 181,
+    "y": 518,
     "units": [
       "parni noble cavalry",
       "parni horse archers",
@@ -3452,7 +3462,7 @@
     "location": "Nisaia",
     "faction": "parni",
     "x": 775,
-    "y": 184,
+    "y": 515,
     "units": [
       "parni noble cavalry",
       "parni horse archers",
@@ -3466,7 +3476,7 @@
     "location": "Sakon Taphai",
     "faction": "saka",
     "x": 921,
-    "y": 57,
+    "y": 642,
     "units": [
       "elite saka cataphracts"
     ]
@@ -3478,7 +3488,7 @@
     "location": "Sakaia",
     "faction": "saka",
     "x": 875,
-    "y": 95,
+    "y": 604,
     "units": [
       "elite saka cataphracts"
     ]
@@ -3490,7 +3500,7 @@
     "location": "Sakaraulon Taphai",
     "faction": "saka",
     "x": 917,
-    "y": 41,
+    "y": 658,
     "units": [
       "elite saka cataphracts"
     ]
@@ -3502,7 +3512,7 @@
     "location": "Sakaia",
     "faction": "saka",
     "x": 872,
-    "y": 99,
+    "y": 600,
     "units": [
       "elite saka cataphracts",
       "saka horse archers",
@@ -3518,7 +3528,7 @@
     "location": "Armavir",
     "faction": "armenia",
     "x": 627,
-    "y": 271,
+    "y": 428,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -3535,7 +3545,7 @@
     "location": "Gorniai",
     "faction": "armenia",
     "x": 634,
-    "y": 269,
+    "y": 430,
     "units": [
       "armenian royal bodyguards",
       "asian skirmishers",
@@ -3552,7 +3562,7 @@
     "location": "Thospia",
     "faction": "armenia",
     "x": 627,
-    "y": 295,
+    "y": 404,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -3564,7 +3574,7 @@
     "location": "Amaseia",
     "faction": "pontus",
     "x": 538,
-    "y": 287,
+    "y": 412,
     "units": [
       "asian royal bodyguards"
     ]
@@ -3576,7 +3586,7 @@
     "location": "Pimolisa",
     "faction": "pontus",
     "x": 525,
-    "y": 284,
+    "y": 415,
     "units": [
       "asian royal bodyguards",
       "asian light spearmen",
@@ -3598,7 +3608,7 @@
     "location": "Komana-Pontos",
     "faction": "pontus",
     "x": 547,
-    "y": 290,
+    "y": 409,
     "units": [
       "asian royal bodyguards"
     ]
@@ -3610,7 +3620,7 @@
     "location": "Kabeira",
     "faction": "pontus",
     "x": 551,
-    "y": 286,
+    "y": 413,
     "units": [
       "asian royal bodyguards"
     ]
@@ -3622,7 +3632,7 @@
     "location": "Zela",
     "faction": "pontus",
     "x": 540,
-    "y": 293,
+    "y": 406,
     "units": [
       "asian royal bodyguards"
     ]
@@ -3634,7 +3644,7 @@
     "location": "Kimiata",
     "faction": "pontus",
     "x": 514,
-    "y": 288,
+    "y": 411,
     "units": [
       "asian royal bodyguards"
     ]
@@ -3646,7 +3656,7 @@
     "location": "Oxthracae",
     "faction": "lusitani",
     "x": 65,
-    "y": 293,
+    "y": 406,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -3658,7 +3668,7 @@
     "location": "Oppidum Lusitanorum",
     "faction": "lusitani",
     "x": 70,
-    "y": 299,
+    "y": 400,
     "units": [
       "celtiberian noble bodyguards",
       "lusitanian spearmen",
@@ -3679,7 +3689,7 @@
     "location": "Lusitania",
     "faction": "lusitani",
     "x": 65,
-    "y": 293,
+    "y": 406,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -3691,7 +3701,7 @@
     "location": "Dourostoron",
     "faction": "getae",
     "x": 439,
-    "y": 256,
+    "y": 443,
     "units": [
       "getic royal bodyguards",
       "getic peltasts",
@@ -3712,7 +3722,7 @@
     "location": "Helis",
     "faction": "getae",
     "x": 435,
-    "y": 261,
+    "y": 438,
     "units": [
       "getic royal bodyguards"
     ]
@@ -3724,7 +3734,7 @@
     "location": "Outside Helis",
     "faction": "getae",
     "x": 433,
-    "y": 260,
+    "y": 439,
     "units": [
       "getic royal bodyguards"
     ]
@@ -3736,7 +3746,7 @@
     "location": "Akarnania (Field)",
     "faction": "acarnania",
     "x": 377,
-    "y": 337,
+    "y": 362,
     "units": [
       "greek general"
     ]
@@ -3748,7 +3758,7 @@
     "location": "Oiniadai",
     "faction": "acarnania",
     "x": 381,
-    "y": 343,
+    "y": 356,
     "units": [
       "greek general",
       "akarnanian hoplites",
@@ -3765,7 +3775,7 @@
     "location": "Stratos",
     "faction": "acarnania",
     "x": 383,
-    "y": 340,
+    "y": 359,
     "units": [
       "greek general"
     ]
@@ -3777,7 +3787,7 @@
     "location": "Leukas",
     "faction": "acarnania",
     "x": 375,
-    "y": 339,
+    "y": 360,
     "units": [
       "greek general",
       "akarnanian hoplites",
@@ -3791,7 +3801,7 @@
     "location": "Near Leukas",
     "faction": "acarnania",
     "x": 377,
-    "y": 339,
+    "y": 360,
     "units": [
       "naval biremes"
     ]
@@ -3803,7 +3813,7 @@
     "location": "Aigion",
     "faction": "achaea",
     "x": 392,
-    "y": 346,
+    "y": 353,
     "units": [
       "achaian general",
       "foreign thureophoroi",
@@ -3822,7 +3832,7 @@
     "location": "Pellene",
     "faction": "achaea",
     "x": 396,
-    "y": 347,
+    "y": 352,
     "units": [
       "achaian general"
     ]
@@ -3834,7 +3844,7 @@
     "location": "Dyme",
     "faction": "achaea",
     "x": 386,
-    "y": 347,
+    "y": 352,
     "units": [
       "achaian general"
     ]
@@ -3846,7 +3856,7 @@
     "location": "Port of Aigion",
     "faction": "achaea",
     "x": 393,
-    "y": 345,
+    "y": 354,
     "units": [
       "naval biremes"
     ]
@@ -3858,7 +3868,7 @@
     "location": "Akragas",
     "faction": "acragas",
     "x": 295,
-    "y": 362,
+    "y": 337,
     "units": [
       "greek general",
       "greek hoplites",
@@ -3877,7 +3887,7 @@
     "location": "",
     "faction": "acragas",
     "x": 298,
-    "y": 363,
+    "y": 336,
     "units": [
       "greek general"
     ]
@@ -3889,7 +3899,7 @@
     "location": "",
     "faction": "acragas",
     "x": 295,
-    "y": 365,
+    "y": 334,
     "units": [
       "naval biremes"
     ]
@@ -3901,7 +3911,7 @@
     "location": "Cabillonum",
     "faction": "aedui",
     "x": 210,
-    "y": 219,
+    "y": 480,
     "units": [
       "gallic royal bodyguards",
       "celtic spearmen",
@@ -3923,7 +3933,7 @@
     "location": "Bibracte",
     "faction": "aedui",
     "x": 202,
-    "y": 216,
+    "y": 483,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -3935,7 +3945,7 @@
     "location": "Alesia",
     "faction": "aedui",
     "x": 208,
-    "y": 208,
+    "y": 491,
     "units": [
       "arvernian champions"
     ]
@@ -3947,7 +3957,7 @@
     "location": "Decetia",
     "faction": "aedui",
     "x": 197,
-    "y": 216,
+    "y": 483,
     "units": [
       "celtic spearmen"
     ]
@@ -3959,7 +3969,7 @@
     "location": "Thermon",
     "faction": "aetolia",
     "x": 386,
-    "y": 341,
+    "y": 358,
     "units": [
       "aitolian general",
       "aitolian peltasts",
@@ -3980,7 +3990,7 @@
     "location": "Delphoi",
     "faction": "aetolia",
     "x": 396,
-    "y": 342,
+    "y": 357,
     "units": [
       "aitolian general"
     ]
@@ -3992,7 +4002,7 @@
     "location": "Naupaktos",
     "faction": "aetolia",
     "x": 389,
-    "y": 342,
+    "y": 357,
     "units": [
       "aitolian general"
     ]
@@ -4004,7 +4014,7 @@
     "location": "Outside Thermon",
     "faction": "aetolia",
     "x": 387,
-    "y": 340,
+    "y": 359,
     "units": [
       "aitolian general"
     ]
@@ -4016,7 +4026,7 @@
     "location": "Zakynthos",
     "faction": "aetolia",
     "x": 378,
-    "y": 352,
+    "y": 347,
     "units": [
       "aitolian general"
     ]
@@ -4028,7 +4038,7 @@
     "location": "Port of Thermon",
     "faction": "aetolia",
     "x": 387,
-    "y": 345,
+    "y": 354,
     "units": [
       "naval biremes"
     ]
@@ -4040,7 +4050,7 @@
     "location": "Chabala",
     "faction": "albanians",
     "x": 662,
-    "y": 245,
+    "y": 454,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -4062,7 +4072,7 @@
     "location": "Chadacha",
     "faction": "albanians",
     "x": 672,
-    "y": 247,
+    "y": 452,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -4074,7 +4084,7 @@
     "location": "Vienna",
     "faction": "allobroges",
     "x": 209,
-    "y": 237,
+    "y": 462,
     "units": [
       "gallic royal bodyguards",
       "gallic light cavalry",
@@ -4096,7 +4106,7 @@
     "location": "Vienna",
     "faction": "allobroges",
     "x": 209,
-    "y": 237,
+    "y": 462,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4108,7 +4118,7 @@
     "location": "Genava",
     "faction": "allobroges",
     "x": 223,
-    "y": 229,
+    "y": 470,
     "units": [
       "arvernian champions"
     ]
@@ -4120,7 +4130,7 @@
     "location": "Brioratis",
     "faction": "allobroges",
     "x": 214,
-    "y": 235,
+    "y": 464,
     "units": [
       "celtic spearmen"
     ]
@@ -4132,7 +4142,7 @@
     "location": "Cularo",
     "faction": "allobroges",
     "x": 216,
-    "y": 243,
+    "y": 456,
     "units": [
       "celtic spearmen"
     ]
@@ -4144,7 +4154,7 @@
     "location": "Carrodunum-Ambronia",
     "faction": "ambrones",
     "x": 380,
-    "y": 181,
+    "y": 518,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -4161,7 +4171,7 @@
     "location": "",
     "faction": "ambrones",
     "x": 377,
-    "y": 180,
+    "y": 519,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4173,7 +4183,7 @@
     "location": "Oppidum Anartorum",
     "faction": "anartes",
     "x": 378,
-    "y": 198,
+    "y": 501,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -4194,7 +4204,7 @@
     "location": "Anartium",
     "faction": "anartes",
     "x": 363,
-    "y": 183,
+    "y": 516,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4206,7 +4216,7 @@
     "location": "Hexapolis",
     "faction": "aorsi",
     "x": 575,
-    "y": 170,
+    "y": 529,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -4227,7 +4237,7 @@
     "location": "Aorson Taphai",
     "faction": "aorsi",
     "x": 610,
-    "y": 154,
+    "y": 545,
     "units": [
       "armoured sarmatian general"
     ]
@@ -4239,7 +4249,7 @@
     "location": "Rhizon",
     "faction": "ardiaei",
     "x": 351,
-    "y": 286,
+    "y": 413,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian peltasts",
@@ -4259,7 +4269,7 @@
     "location": "Epidauros",
     "faction": "ardiaei",
     "x": 346,
-    "y": 285,
+    "y": 414,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -4271,7 +4281,7 @@
     "location": "Nestos",
     "faction": "ardiaei",
     "x": 331,
-    "y": 273,
+    "y": 426,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -4283,7 +4293,7 @@
     "location": "Narenson_Teichos",
     "faction": "ardiaei",
     "x": 343,
-    "y": 269,
+    "y": 430,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -4295,7 +4305,7 @@
     "location": "Port of Rhizon",
     "faction": "ardiaei",
     "x": 349,
-    "y": 289,
+    "y": 410,
     "units": [
       "naval boats"
     ]
@@ -4307,7 +4317,7 @@
     "location": "Numantia",
     "faction": "arevaci",
     "x": 123,
-    "y": 279,
+    "y": 420,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -4319,7 +4329,7 @@
     "location": "Termes",
     "faction": "arevaci",
     "x": 115,
-    "y": 284,
+    "y": 415,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -4331,7 +4341,7 @@
     "location": "Uxama",
     "faction": "arevaci",
     "x": 117,
-    "y": 280,
+    "y": 419,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati",
@@ -4352,7 +4362,7 @@
     "location": "Apua",
     "faction": "apuani",
     "x": 258,
-    "y": 258,
+    "y": 441,
     "units": [
       "gallic royal bodyguards",
       "celtic spearmen",
@@ -4370,7 +4380,7 @@
     "location": "",
     "faction": "apuani",
     "x": 259,
-    "y": 260,
+    "y": 439,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4382,7 +4392,7 @@
     "location": "Arados",
     "faction": "arados",
     "x": 558,
-    "y": 369,
+    "y": 330,
     "units": [
       "asian royal bodyguards",
       "median spearmen",
@@ -4403,7 +4413,7 @@
     "location": "outside Arados",
     "faction": "arados",
     "x": 559,
-    "y": 368,
+    "y": 331,
     "units": [
       "asian royal bodyguards"
     ]
@@ -4415,7 +4425,7 @@
     "location": "Argos",
     "faction": "argos",
     "x": 399,
-    "y": 353,
+    "y": 346,
     "units": [
       "greek general",
       "argive epilektoi",
@@ -4431,7 +4441,7 @@
     "location": "near Argos",
     "faction": "argos",
     "x": 399,
-    "y": 354,
+    "y": 345,
     "units": [
       "greek general"
     ]
@@ -4443,7 +4453,7 @@
     "location": "Prasiai",
     "faction": "argos",
     "x": 402,
-    "y": 360,
+    "y": 339,
     "units": [
       "greek general"
     ]
@@ -4455,7 +4465,7 @@
     "location": "Kamakh",
     "faction": "armenia_minor",
     "x": 576,
-    "y": 294,
+    "y": 405,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -4477,7 +4487,7 @@
     "location": "Erez",
     "faction": "armenia_minor",
     "x": 580,
-    "y": 290,
+    "y": 409,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -4489,7 +4499,7 @@
     "location": "arse",
     "faction": "arse",
     "x": 142,
-    "y": 313,
+    "y": 386,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -4510,7 +4520,7 @@
     "location": "",
     "faction": "arse",
     "x": 140,
-    "y": 315,
+    "y": 384,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -4522,7 +4532,7 @@
     "location": "Arshi",
     "faction": "arshi",
     "x": 1005,
-    "y": 7,
+    "y": 692,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -4546,7 +4556,7 @@
     "location": "outside of Arshi",
     "faction": "arshi",
     "x": 1003,
-    "y": 7,
+    "y": 692,
     "units": [
       "armoured sarmatian general"
     ]
@@ -4558,7 +4568,7 @@
     "location": "arvernium",
     "faction": "arverni",
     "x": 191,
-    "y": 233,
+    "y": 466,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -4579,7 +4589,7 @@
     "location": "Eborolacum",
     "faction": "arverni",
     "x": 191,
-    "y": 227,
+    "y": 472,
     "units": [
       "arvernian champions"
     ]
@@ -4591,7 +4601,7 @@
     "location": "Oppidum Arvernorum",
     "faction": "arverni",
     "x": 196,
-    "y": 227,
+    "y": 472,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4603,7 +4613,7 @@
     "location": "Indiciacum",
     "faction": "arverni",
     "x": 189,
-    "y": 242,
+    "y": 457,
     "units": [
       "arvernian champions"
     ]
@@ -4615,7 +4625,7 @@
     "location": "asta",
     "faction": "asta",
     "x": 68,
-    "y": 341,
+    "y": 358,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -4636,7 +4646,7 @@
     "location": "",
     "faction": "asta",
     "x": 70,
-    "y": 341,
+    "y": 358,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -4648,7 +4658,7 @@
     "location": "Bizye",
     "faction": "asti",
     "x": 449,
-    "y": 291,
+    "y": 408,
     "units": [
       "thracian royal bodyguards",
       "thracian light lancers",
@@ -4666,7 +4676,7 @@
     "location": "Lancia",
     "faction": "astures",
     "x": 94,
-    "y": 262,
+    "y": 437,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -4687,7 +4697,7 @@
     "location": "Noega",
     "faction": "astures",
     "x": 95,
-    "y": 247,
+    "y": 452,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -4699,7 +4709,7 @@
     "location": "Athens",
     "faction": "athens",
     "x": 411,
-    "y": 349,
+    "y": 350,
     "units": [
       "athenian general"
     ]
@@ -4711,7 +4721,7 @@
     "location": "Athens",
     "faction": "athens",
     "x": 411,
-    "y": 346,
+    "y": 353,
     "units": [
       "athenian general",
       "psiloi",
@@ -4729,7 +4739,7 @@
     "location": "Myrina",
     "faction": "athens",
     "x": 423,
-    "y": 318,
+    "y": 381,
     "units": [
       "athenian general"
     ]
@@ -4741,7 +4751,7 @@
     "location": "Skyros",
     "faction": "athens",
     "x": 419,
-    "y": 333,
+    "y": 366,
     "units": [
       "athenian general"
     ]
@@ -4753,7 +4763,7 @@
     "location": "Port of Athens",
     "faction": "athens",
     "x": 411,
-    "y": 351,
+    "y": 348,
     "units": [
       "naval biremes"
     ]
@@ -4765,7 +4775,7 @@
     "location": "Gazaka",
     "faction": "atropatene",
     "x": 665,
-    "y": 305,
+    "y": 394,
     "units": [
       "asian royal bodyguards",
       "median spearmen",
@@ -4786,7 +4796,7 @@
     "location": "Ouera",
     "faction": "atropatene",
     "x": 672,
-    "y": 298,
+    "y": 401,
     "units": [
       "asian royal bodyguards"
     ]
@@ -4798,7 +4808,7 @@
     "location": "Kapouta",
     "faction": "atropatene",
     "x": 644,
-    "y": 289,
+    "y": 410,
     "units": [
       "asian royal bodyguards"
     ]
@@ -4810,7 +4820,7 @@
     "location": "Diablintium",
     "faction": "aulerci",
     "x": 160,
-    "y": 190,
+    "y": 509,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -4831,7 +4841,7 @@
     "location": "Vindinum",
     "faction": "aulerci",
     "x": 166,
-    "y": 195,
+    "y": 504,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4843,7 +4853,7 @@
     "location": "Auxoume",
     "faction": "axum",
     "x": 669,
-    "y": 659,
+    "y": 40,
     "units": [
       "kushite general",
       "kushite javelinmen",
@@ -4864,7 +4874,7 @@
     "location": "",
     "faction": "axum",
     "x": 668,
-    "y": 656,
+    "y": 43,
     "units": [
       "kushite general"
     ]
@@ -4876,7 +4886,7 @@
     "location": "Scurgum",
     "faction": "bastarnae",
     "x": 335,
-    "y": 123,
+    "y": 576,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -4895,7 +4905,7 @@
     "location": "",
     "faction": "bastarnae",
     "x": 332,
-    "y": 118,
+    "y": 581,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -4907,7 +4917,7 @@
     "location": "Basti",
     "faction": "basti",
     "x": 109,
-    "y": 339,
+    "y": 360,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -4924,7 +4934,7 @@
     "location": "",
     "faction": "basti",
     "x": 110,
-    "y": 337,
+    "y": 362,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -4936,7 +4946,7 @@
     "location": "Samarobriva",
     "faction": "belgae",
     "x": 191,
-    "y": 171,
+    "y": 528,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4948,7 +4958,7 @@
     "location": "Bellovacium",
     "faction": "belgae",
     "x": 193,
-    "y": 177,
+    "y": 522,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -4960,7 +4970,7 @@
     "location": "Viromanduium",
     "faction": "belgae",
     "x": 199,
-    "y": 172,
+    "y": 527,
     "units": [
       "arvernian champions",
       "celtic swordsmen",
@@ -4982,7 +4992,7 @@
     "location": "Atrebatium",
     "faction": "belgae",
     "x": 196,
-    "y": 165,
+    "y": 534,
     "units": [
       "arvernian champions"
     ]
@@ -4994,7 +5004,7 @@
     "location": "Segeda",
     "faction": "belli",
     "x": 132,
-    "y": 288,
+    "y": 411,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -5015,7 +5025,7 @@
     "location": "Contrebia Belaisca",
     "faction": "belli",
     "x": 138,
-    "y": 287,
+    "y": 412,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -5027,7 +5037,7 @@
     "location": "Keirpara",
     "faction": "bessi",
     "x": 408,
-    "y": 296,
+    "y": 403,
     "units": [
       "thracian royal bodyguards",
       "thracian light lancers",
@@ -5045,7 +5055,7 @@
     "location": "Near Keirpara",
     "faction": "bessi",
     "x": 409,
-    "y": 296,
+    "y": 403,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -5057,7 +5067,7 @@
     "location": "Near Keirpara",
     "faction": "bessi",
     "x": 407,
-    "y": 296,
+    "y": 403,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -5069,7 +5079,7 @@
     "location": "Nikomedia",
     "faction": "bithynia",
     "x": 474,
-    "y": 298,
+    "y": 401,
     "units": [
       "bithynian general"
     ]
@@ -5081,7 +5091,7 @@
     "location": "Nikaia",
     "faction": "bithynia",
     "x": 472,
-    "y": 303,
+    "y": 396,
     "units": [
       "bithynian general",
       "bithynian hoplites",
@@ -5102,7 +5112,7 @@
     "location": "Avaricum",
     "faction": "bituriges",
     "x": 186,
-    "y": 211,
+    "y": 488,
     "units": [
       "gallic royal bodyguards",
       "gallic light cavalry",
@@ -5120,7 +5130,7 @@
     "location": "Leprosum",
     "faction": "bituriges",
     "x": 178,
-    "y": 212,
+    "y": 487,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -5132,7 +5142,7 @@
     "location": "Orchomenos",
     "faction": "boeotia",
     "x": 401,
-    "y": 341,
+    "y": 358,
     "units": [
       "greek general",
       "boiotian neaniskoi",
@@ -5152,7 +5162,7 @@
     "location": "Tanagra",
     "faction": "boeotia",
     "x": 409,
-    "y": 343,
+    "y": 356,
     "units": [
       "greek general"
     ]
@@ -5164,7 +5174,7 @@
     "location": "Poimandris (Field)",
     "faction": "boeotia",
     "x": 408,
-    "y": 344,
+    "y": 355,
     "units": [
       "greek general"
     ]
@@ -5176,7 +5186,7 @@
     "location": "Thebes",
     "faction": "boeotia",
     "x": 406,
-    "y": 343,
+    "y": 356,
     "units": [
       "greek general"
     ]
@@ -5188,7 +5198,7 @@
     "location": "Eburodunum-Boihaemum",
     "faction": "boii",
     "x": 327,
-    "y": 189,
+    "y": 510,
     "units": [
       "arvernian champions",
       "celtic swordsmen",
@@ -5210,7 +5220,7 @@
     "location": "Singone",
     "faction": "boii",
     "x": 334,
-    "y": 199,
+    "y": 500,
     "units": [
       "arvernian champions"
     ]
@@ -5222,7 +5232,7 @@
     "location": "Pantikapaion",
     "faction": "bosporan",
     "x": 529,
-    "y": 220,
+    "y": 479,
     "units": [
       "bosporan epilektoi cavalry",
       "bosporan thureophoroi",
@@ -5244,7 +5254,7 @@
     "location": "Phanagoreia",
     "faction": "bosporan",
     "x": 534,
-    "y": 219,
+    "y": 480,
     "units": [
       "bosporan epilektoi cavalry"
     ]
@@ -5256,7 +5266,7 @@
     "location": "Gorgippia",
     "faction": "bosporan",
     "x": 539,
-    "y": 224,
+    "y": 475,
     "units": [
       "bosporan epilektoi cavalry"
     ]
@@ -5268,7 +5278,7 @@
     "location": "Theodosia",
     "faction": "bosporan",
     "x": 519,
-    "y": 227,
+    "y": 472,
     "units": [
       "bosporan epilektoi cavalry"
     ]
@@ -5280,7 +5290,7 @@
     "location": "Nymphaion",
     "faction": "bosporan",
     "x": 529,
-    "y": 223,
+    "y": 476,
     "units": [
       "bosporan epilektoi cavalry"
     ]
@@ -5292,7 +5302,7 @@
     "location": "Hermonassa",
     "faction": "bosporan",
     "x": 532,
-    "y": 222,
+    "y": 477,
     "units": [
       "bosporan epilektoi cavalry"
     ]
@@ -5304,7 +5314,7 @@
     "location": "Docks of Pantikapaion",
     "faction": "bosporan",
     "x": 531,
-    "y": 223,
+    "y": 476,
     "units": [
       "naval biremes"
     ]
@@ -5316,7 +5326,7 @@
     "location": "Brigantium",
     "faction": "brigantes",
     "x": 165,
-    "y": 97,
+    "y": 602,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -5337,7 +5347,7 @@
     "location": "Castrum Itunae",
     "faction": "brigantes",
     "x": 155,
-    "y": 93,
+    "y": 606,
     "units": [
       "brittonic bodyguards"
     ]
@@ -5349,13 +5359,13 @@
     "location": "Consentia",
     "faction": "bruttians",
     "x": 325,
-    "y": 333,
+    "y": 366,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "samnite hoplites",
-      "samnite hoplites",
-      "campanian cavalry"
+      "oscan general",
+      "oscan spearmen southern",
+      "oscan thureophoroi",
+      "oscan hoplites",
+      "oscan cavalry"
     ]
   },
   {
@@ -5365,9 +5375,9 @@
     "location": "Petelia",
     "faction": "bruttians",
     "x": 335,
-    "y": 333,
+    "y": 366,
     "units": [
-      "tribunus militum"
+      "oscan general"
     ]
   },
   {
@@ -5377,7 +5387,7 @@
     "location": "Buridava",
     "faction": "buri",
     "x": 406,
-    "y": 245,
+    "y": 454,
     "units": [
       "getic royal bodyguards",
       "getic noble cavalry",
@@ -5398,7 +5408,7 @@
     "location": "Arcinna",
     "faction": "buri",
     "x": 400,
-    "y": 251,
+    "y": 448,
     "units": [
       "getic royal bodyguards"
     ]
@@ -5410,7 +5420,7 @@
     "location": "Byllis-Amantia",
     "faction": "byllis",
     "x": 364,
-    "y": 314,
+    "y": 385,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian peltasts",
@@ -5426,7 +5436,7 @@
     "location": "",
     "faction": "byllis",
     "x": 362,
-    "y": 314,
+    "y": 385,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers",
@@ -5442,7 +5452,7 @@
     "location": "Byzantium",
     "faction": "byzantium",
     "x": 463,
-    "y": 296,
+    "y": 403,
     "units": [
       "greek general",
       "greek hoplites",
@@ -5458,7 +5468,7 @@
     "location": "Chalkedon",
     "faction": "byzantium",
     "x": 465,
-    "y": 297,
+    "y": 402,
     "units": [
       "greek general",
       "greek hoplites",
@@ -5473,7 +5483,7 @@
     "location": "Perinthos",
     "faction": "byzantium",
     "x": 452,
-    "y": 298,
+    "y": 401,
     "units": [
       "greek general"
     ]
@@ -5485,7 +5495,7 @@
     "location": "",
     "faction": "byzantium",
     "x": 463,
-    "y": 298,
+    "y": 401,
     "units": [
       "naval biremes"
     ]
@@ -5497,7 +5507,7 @@
     "location": "Kabyle",
     "faction": "cabyle",
     "x": 434,
-    "y": 279,
+    "y": 420,
     "units": [
       "thracian royal bodyguards",
       "xystophoroi",
@@ -5514,7 +5524,7 @@
     "location": "Outside Kabyle",
     "faction": "cabyle",
     "x": 432,
-    "y": 278,
+    "y": 421,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -5526,7 +5536,7 @@
     "location": "Outside Uxellodunum",
     "faction": "cadurci",
     "x": 172,
-    "y": 247,
+    "y": 452,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -5538,7 +5548,7 @@
     "location": "Uxellodunum",
     "faction": "cadurci",
     "x": 175,
-    "y": 241,
+    "y": 458,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -5556,7 +5566,7 @@
     "location": "Castrum Caledoniorum",
     "faction": "caledonii",
     "x": 153,
-    "y": 48,
+    "y": 651,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -5577,7 +5587,7 @@
     "location": "",
     "faction": "caledonii",
     "x": 151,
-    "y": 48,
+    "y": 651,
     "units": [
       "brittonic bodyguards"
     ]
@@ -5589,7 +5599,7 @@
     "location": "Aracillum",
     "faction": "cantabri",
     "x": 112,
-    "y": 256,
+    "y": 443,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -5607,7 +5617,7 @@
     "location": "Bergida",
     "faction": "cantabri",
     "x": 108,
-    "y": 261,
+    "y": 438,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -5619,7 +5629,7 @@
     "location": "Castrum_Cantiacorum",
     "faction": "cantiaci",
     "x": 175,
-    "y": 148,
+    "y": 551,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -5640,7 +5650,7 @@
     "location": "Oppidum Cantiacorum",
     "faction": "cantiaci",
     "x": 182,
-    "y": 149,
+    "y": 550,
     "units": [
       "brittonic bodyguards"
     ]
@@ -5652,7 +5662,7 @@
     "location": "Ouenasa",
     "faction": "cappadocia",
     "x": 533,
-    "y": 318,
+    "y": 381,
     "units": [
       "asian royal bodyguards"
     ]
@@ -5664,7 +5674,7 @@
     "location": "Mazaka",
     "faction": "cappadocia",
     "x": 540,
-    "y": 316,
+    "y": 383,
     "units": [
       "asian royal bodyguards",
       "cappadocian cavalry",
@@ -5686,7 +5696,7 @@
     "location": "Tyana",
     "faction": "cappadocia",
     "x": 533,
-    "y": 331,
+    "y": 368,
     "units": [
       "asian royal bodyguards"
     ]
@@ -5698,7 +5708,7 @@
     "location": "Kappadocia",
     "faction": "cappadocia",
     "x": 540,
-    "y": 316,
+    "y": 383,
     "units": [
       "asian royal bodyguards"
     ]
@@ -5710,7 +5720,7 @@
     "location": "Garsaoura",
     "faction": "cappadocia",
     "x": 525,
-    "y": 324,
+    "y": 375,
     "units": [
       "asian royal bodyguards"
     ]
@@ -5722,7 +5732,7 @@
     "location": "Anisa",
     "faction": "cappadocia",
     "x": 542,
-    "y": 313,
+    "y": 386,
     "units": [
       "asian royal bodyguards"
     ]
@@ -5734,12 +5744,12 @@
     "location": "Capua",
     "faction": "capua",
     "x": 303,
-    "y": 307,
+    "y": 392,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "samnite hoplites",
-      "samnite hoplites",
+      "campanian general",
+      "oscan spearmen",
+      "campanian hoplites",
+      "campanian thureophoroi",
       "campanian cavalry"
     ]
   },
@@ -5750,9 +5760,9 @@
     "location": "Outside Capua",
     "faction": "capua",
     "x": 302,
-    "y": 306,
+    "y": 393,
     "units": [
-      "tribunus militum"
+      "campanian general"
     ]
   },
   {
@@ -5762,7 +5772,7 @@
     "location": "Carmo",
     "faction": "carmo",
     "x": 77,
-    "y": 332,
+    "y": 367,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -5783,7 +5793,7 @@
     "location": "",
     "faction": "carmo",
     "x": 80,
-    "y": 332,
+    "y": 367,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -5795,7 +5805,7 @@
     "location": "Toletum",
     "faction": "carpetani",
     "x": 101,
-    "y": 303,
+    "y": 396,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -5816,7 +5826,7 @@
     "location": "Consabura",
     "faction": "carpetani",
     "x": 105,
-    "y": 310,
+    "y": 389,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -5828,7 +5838,7 @@
     "location": "Catuvellaunium",
     "faction": "catuvellauni",
     "x": 174,
-    "y": 138,
+    "y": 561,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -5849,7 +5859,7 @@
     "location": "Castrum Catuvellaunorum",
     "faction": "catuvellauni",
     "x": 165,
-    "y": 140,
+    "y": 559,
     "units": [
       "brittonic bodyguards"
     ]
@@ -5861,7 +5871,7 @@
     "location": "Ebora",
     "faction": "celtici",
     "x": 55,
-    "y": 311,
+    "y": 388,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -5879,7 +5889,7 @@
     "location": "Nertobriga-Celticia",
     "faction": "celtici",
     "x": 68,
-    "y": 320,
+    "y": 379,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -5891,7 +5901,7 @@
     "location": "Brixia",
     "faction": "cenomani",
     "x": 263,
-    "y": 241,
+    "y": 458,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -5910,7 +5920,7 @@
     "location": "Verona",
     "faction": "cenomani",
     "x": 270,
-    "y": 244,
+    "y": 455,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -5922,7 +5932,7 @@
     "location": "Alexandreia-Charax",
     "faction": "characene",
     "x": 711,
-    "y": 385,
+    "y": 314,
     "units": [
       "asian royal bodyguards",
       "median spearmen",
@@ -5943,7 +5953,7 @@
     "location": "Ikaros",
     "faction": "characene",
     "x": 726,
-    "y": 399,
+    "y": 300,
     "units": [
       "asian royal bodyguards"
     ]
@@ -5955,7 +5965,7 @@
     "location": "Teredon",
     "faction": "characene",
     "x": 718,
-    "y": 392,
+    "y": 307,
     "units": [
       "asian royal bodyguards"
     ]
@@ -5967,7 +5977,7 @@
     "location": "Canduum",
     "faction": "chatti",
     "x": 269,
-    "y": 159,
+    "y": 540,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -5988,7 +5998,7 @@
     "location": "Outside Canduum",
     "faction": "chatti",
     "x": 270,
-    "y": 158,
+    "y": 541,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -6000,7 +6010,7 @@
     "location": "Bicurgium",
     "faction": "chatti",
     "x": 275,
-    "y": 155,
+    "y": 544,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -6012,7 +6022,7 @@
     "location": "Fabiranum",
     "faction": "chauci",
     "x": 256,
-    "y": 121,
+    "y": 578,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -6029,7 +6039,7 @@
     "location": "Tecelia",
     "faction": "chauci",
     "x": 252,
-    "y": 129,
+    "y": 570,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -6041,7 +6051,7 @@
     "location": "Chersonesos",
     "faction": "chersonesus",
     "x": 502,
-    "y": 237,
+    "y": 462,
     "units": [
       "greek general",
       "chersonesian hoplites",
@@ -6058,7 +6068,7 @@
     "location": "Outside Chersonesos",
     "faction": "chersonesus",
     "x": 503,
-    "y": 237,
+    "y": 462,
     "units": [
       "greek general"
     ]
@@ -6070,7 +6080,7 @@
     "location": "Kerkinitis",
     "faction": "chersonesus",
     "x": 498,
-    "y": 229,
+    "y": 470,
     "units": [
       "greek general"
     ]
@@ -6082,7 +6092,7 @@
     "location": "Near Chersonesos (sea)",
     "faction": "chersonesus",
     "x": 498,
-    "y": 237,
+    "y": 462,
     "units": [
       "naval biremes"
     ]
@@ -6094,7 +6104,7 @@
     "location": "Ascalingium",
     "faction": "cherusci",
     "x": 261,
-    "y": 141,
+    "y": 558,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -6113,7 +6123,7 @@
     "location": "",
     "faction": "cherusci",
     "x": 266,
-    "y": 140,
+    "y": 559,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -6125,7 +6135,7 @@
     "location": "Chios",
     "faction": "chios",
     "x": 437,
-    "y": 339,
+    "y": 360,
     "units": [
       "greek general",
       "greek hoplites",
@@ -6141,7 +6151,7 @@
     "location": "Chios (outside)",
     "faction": "chios",
     "x": 436,
-    "y": 340,
+    "y": 359,
     "units": [
       "greek general"
     ]
@@ -6153,7 +6163,7 @@
     "location": "Chios (sea)",
     "faction": "chios",
     "x": 433,
-    "y": 339,
+    "y": 360,
     "units": [
       "naval biremes"
     ]
@@ -6165,7 +6175,7 @@
     "location": "Chorasmia",
     "faction": "chorasmia",
     "x": 786,
-    "y": 172,
+    "y": 527,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -6186,7 +6196,7 @@
     "location": "Alikodra",
     "faction": "chorasmia",
     "x": 766,
-    "y": 177,
+    "y": 522,
     "units": [
       "armoured sarmatian general"
     ]
@@ -6198,7 +6208,7 @@
     "location": "Cimbrium",
     "faction": "cimbri",
     "x": 266,
-    "y": 74,
+    "y": 625,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -6210,7 +6220,7 @@
     "location": "Fundusia",
     "faction": "cimbri",
     "x": 255,
-    "y": 79,
+    "y": 620,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -6222,7 +6232,7 @@
     "location": "Fundusia",
     "faction": "cimbri",
     "x": 264,
-    "y": 85,
+    "y": 614,
     "units": [
       "bodyguard frameae sword",
       "freemen",
@@ -6243,7 +6253,7 @@
     "location": "Bononia",
     "faction": "cisalpine_boii",
     "x": 274,
-    "y": 257,
+    "y": 442,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -6260,7 +6270,7 @@
     "location": "Mutina",
     "faction": "cisalpine_boii",
     "x": 269,
-    "y": 255,
+    "y": 444,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -6272,7 +6282,7 @@
     "location": "Kios",
     "faction": "cius",
     "x": 467,
-    "y": 305,
+    "y": 394,
     "units": [
       "greek general",
       "greek hoplites",
@@ -6290,7 +6300,7 @@
     "location": "Near Kios",
     "faction": "cius",
     "x": 467,
-    "y": 307,
+    "y": 392,
     "units": [
       "greek general"
     ]
@@ -6302,7 +6312,7 @@
     "location": "Kytaia",
     "faction": "colchians",
     "x": 605,
-    "y": 245,
+    "y": 454,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -6324,7 +6334,7 @@
     "location": "Sourion",
     "faction": "colchians",
     "x": 603,
-    "y": 249,
+    "y": 450,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -6336,7 +6346,7 @@
     "location": "Venicum",
     "faction": "corsi",
     "x": 249,
-    "y": 288,
+    "y": 411,
     "units": [
       "gallic royal bodyguards",
       "celtic spearmen"
@@ -6349,7 +6359,7 @@
     "location": "",
     "faction": "corsi",
     "x": 249,
-    "y": 286,
+    "y": 413,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -6361,7 +6371,7 @@
     "location": "Coisstobocum",
     "faction": "costoboci",
     "x": 421,
-    "y": 205,
+    "y": 494,
     "units": [
       "getic royal bodyguards",
       "getic noble cavalry",
@@ -6382,7 +6392,7 @@
     "location": "Patridava",
     "faction": "costoboci",
     "x": 424,
-    "y": 212,
+    "y": 487,
     "units": [
       "getic royal bodyguards"
     ]
@@ -6394,7 +6404,7 @@
     "location": "Kapidaua",
     "faction": "crobyzi",
     "x": 448,
-    "y": 248,
+    "y": 451,
     "units": [
       "getic royal bodyguards",
       "getic noble cavalry",
@@ -6415,7 +6425,7 @@
     "location": "Outside Kapidaua",
     "faction": "crobyzi",
     "x": 449,
-    "y": 251,
+    "y": 448,
     "units": [
       "getic royal bodyguards"
     ]
@@ -6427,7 +6437,7 @@
     "location": "Kyrene",
     "faction": "cyrene",
     "x": 396,
-    "y": 423,
+    "y": 276,
     "units": [
       "cyrene general"
     ]
@@ -6439,7 +6449,7 @@
     "location": "Paraitonion",
     "faction": "cyrene",
     "x": 463,
-    "y": 438,
+    "y": 261,
     "units": [
       "cyrene general",
       "kyrenaian hoplites",
@@ -6463,7 +6473,7 @@
     "location": "Tetrapyrgia",
     "faction": "cyrene",
     "x": 437,
-    "y": 437,
+    "y": 262,
     "units": [
       "cyrene general"
     ]
@@ -6475,7 +6485,7 @@
     "location": "Ptolemais-Kyrenaike",
     "faction": "cyrene",
     "x": 384,
-    "y": 426,
+    "y": 273,
     "units": [
       "cyrene general"
     ]
@@ -6487,7 +6497,7 @@
     "location": "Euesperides",
     "faction": "cyrene",
     "x": 374,
-    "y": 435,
+    "y": 264,
     "units": [
       "cyrene general"
     ]
@@ -6499,7 +6509,7 @@
     "location": "Automala",
     "faction": "cyrene",
     "x": 363,
-    "y": 463,
+    "y": 236,
     "units": [
       "cyrene general"
     ]
@@ -6511,7 +6521,7 @@
     "location": "Outside Kyrene",
     "faction": "cyrene",
     "x": 394,
-    "y": 424,
+    "y": 275,
     "units": [
       "cyrene general"
     ]
@@ -6523,7 +6533,7 @@
     "location": "Arsinoe-Kyrenaike",
     "faction": "cyrene",
     "x": 380,
-    "y": 429,
+    "y": 270,
     "units": [
       "cyrene general"
     ]
@@ -6535,7 +6545,7 @@
     "location": "Kyzikos",
     "faction": "cyzicus",
     "x": 453,
-    "y": 307,
+    "y": 392,
     "units": [
       "greek general",
       "kyzikan hoplites",
@@ -6553,7 +6563,7 @@
     "location": "Near Kyzikos",
     "faction": "cyzicus",
     "x": 453,
-    "y": 308,
+    "y": 391,
     "units": [
       "greek general"
     ]
@@ -6565,7 +6575,7 @@
     "location": "",
     "faction": "cyzicus",
     "x": 450,
-    "y": 307,
+    "y": 392,
     "units": [
       "naval biremes",
       "naval biremes"
@@ -6578,7 +6588,7 @@
     "location": "Arduba",
     "faction": "daesitiates",
     "x": 342,
-    "y": 260,
+    "y": 439,
     "units": [
       "northern illyrian general",
       "illyrian slingers",
@@ -6598,7 +6608,7 @@
     "location": "Outside Arduba",
     "faction": "daesitiates",
     "x": 341,
-    "y": 258,
+    "y": 441,
     "units": [
       "northern illyrian general"
     ]
@@ -6610,7 +6620,7 @@
     "location": "Outside Arduba",
     "faction": "daesitiates",
     "x": 343,
-    "y": 258,
+    "y": 441,
     "units": [
       "northern illyrian general"
     ]
@@ -6622,7 +6632,7 @@
     "location": "Outside Hedum",
     "faction": "daesitiates",
     "x": 344,
-    "y": 254,
+    "y": 445,
     "units": [
       "northern illyrian general"
     ]
@@ -6634,7 +6644,7 @@
     "location": "Dardanopolis",
     "faction": "dardania",
     "x": 377,
-    "y": 280,
+    "y": 419,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers",
@@ -6654,7 +6664,7 @@
     "location": "Outside Dardanopolis",
     "faction": "dardania",
     "x": 378,
-    "y": 280,
+    "y": 419,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -6666,7 +6676,7 @@
     "location": "Galabrion_Teichos",
     "faction": "dardania",
     "x": 372,
-    "y": 289,
+    "y": 410,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -6678,7 +6688,7 @@
     "location": "Dardanon_Teichos",
     "faction": "dardania",
     "x": 380,
-    "y": 283,
+    "y": 416,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -6690,7 +6700,7 @@
     "location": "Near Naissos",
     "faction": "dardania",
     "x": 385,
-    "y": 272,
+    "y": 427,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -6702,7 +6712,7 @@
     "location": "Delmium",
     "faction": "delmatae",
     "x": 335,
-    "y": 270,
+    "y": 429,
     "units": [
       "northern illyrian general",
       "illyrian slingers",
@@ -6722,7 +6732,7 @@
     "location": "outside Promona",
     "faction": "delmatae",
     "x": 323,
-    "y": 265,
+    "y": 434,
     "units": [
       "northern illyrian general"
     ]
@@ -6734,7 +6744,7 @@
     "location": "Promona",
     "faction": "delmatae",
     "x": 324,
-    "y": 265,
+    "y": 434,
     "units": [
       "northern illyrian general"
     ]
@@ -6746,7 +6756,7 @@
     "location": "Pautalia",
     "faction": "dentheletae",
     "x": 393,
-    "y": 287,
+    "y": 412,
     "units": [
       "thracian royal bodyguards",
       "thracian light lancers",
@@ -6763,7 +6773,7 @@
     "location": "Near Pautalia",
     "faction": "dentheletae",
     "x": 393,
-    "y": 286,
+    "y": 413,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -6775,7 +6785,7 @@
     "location": "Outside Edeta",
     "faction": "edeta",
     "x": 136,
-    "y": 311,
+    "y": 388,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -6787,7 +6797,7 @@
     "location": "Edeta",
     "faction": "edeta",
     "x": 138,
-    "y": 313,
+    "y": 386,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -6799,7 +6809,7 @@
     "location": "Outside Edeta",
     "faction": "edeta",
     "x": 138,
-    "y": 315,
+    "y": 384,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati swordsmen",
@@ -6820,7 +6830,7 @@
     "location": "Castrum Dumnoniorum",
     "faction": "dumnonii",
     "x": 141,
-    "y": 143,
+    "y": 556,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -6841,7 +6851,7 @@
     "location": "Dumnonium",
     "faction": "dumnonii",
     "x": 137,
-    "y": 152,
+    "y": 547,
     "units": [
       "brittonic bodyguards"
     ]
@@ -6853,7 +6863,7 @@
     "location": "Castrum_Durotrigum",
     "faction": "durotriges",
     "x": 149,
-    "y": 151,
+    "y": 548,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -6874,7 +6884,7 @@
     "location": "Durotrigium",
     "faction": "durotriges",
     "x": 146,
-    "y": 148,
+    "y": 551,
     "units": [
       "brittonic bodyguards"
     ]
@@ -6886,7 +6896,7 @@
     "location": "Eburonium",
     "faction": "eburones",
     "x": 223,
-    "y": 161,
+    "y": 538,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -6907,7 +6917,7 @@
     "location": "Oppidum Eburonum",
     "faction": "eburones",
     "x": 232,
-    "y": 157,
+    "y": 542,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -6919,7 +6929,7 @@
     "location": "Elis",
     "faction": "elis",
     "x": 384,
-    "y": 351,
+    "y": 348,
     "units": [
       "greek general",
       "elian hoplites",
@@ -6939,7 +6949,7 @@
     "location": "Olympia",
     "faction": "elis",
     "x": 387,
-    "y": 354,
+    "y": 345,
     "units": [
       "greek general"
     ]
@@ -6951,7 +6961,7 @@
     "location": "",
     "faction": "elis",
     "x": 383,
-    "y": 355,
+    "y": 344,
     "units": [
       "naval biremes"
     ]
@@ -6963,7 +6973,7 @@
     "location": "Emporion",
     "faction": "emporion",
     "x": 184,
-    "y": 284,
+    "y": 415,
     "units": [
       "greek general",
       "emporionite hoplites",
@@ -6980,7 +6990,7 @@
     "location": "Rhode",
     "faction": "emporion",
     "x": 184,
-    "y": 281,
+    "y": 418,
     "units": [
       "greek general",
       "emporionite hoplites",
@@ -6995,7 +7005,7 @@
     "location": "Near Emporion",
     "faction": "emporion",
     "x": 183,
-    "y": 288,
+    "y": 411,
     "units": [
       "greek general"
     ]
@@ -7007,7 +7017,7 @@
     "location": "Near Emporion (sea)",
     "faction": "emporion",
     "x": 187,
-    "y": 284,
+    "y": 415,
     "units": [
       "naval biremes"
     ]
@@ -7019,7 +7029,7 @@
     "location": "Ambrakia",
     "faction": "epirus",
     "x": 379,
-    "y": 333,
+    "y": 366,
     "units": [
       "epirote general",
       "ambrakiote phalangites",
@@ -7042,7 +7052,7 @@
     "location": "Phoinike",
     "faction": "epirus",
     "x": 367,
-    "y": 323,
+    "y": 376,
     "units": [
       "epirote general"
     ]
@@ -7054,7 +7064,7 @@
     "location": "Antigoneia-Chaonia",
     "faction": "epirus",
     "x": 369,
-    "y": 320,
+    "y": 379,
     "units": [
       "epirote general"
     ]
@@ -7066,7 +7076,7 @@
     "location": "Korkyra",
     "faction": "epirus",
     "x": 366,
-    "y": 327,
+    "y": 372,
     "units": [
       "epirote general"
     ]
@@ -7078,7 +7088,7 @@
     "location": "Passaron",
     "faction": "epirus",
     "x": 375,
-    "y": 324,
+    "y": 375,
     "units": [
       "epirote general"
     ]
@@ -7090,7 +7100,7 @@
     "location": "Dodona",
     "faction": "epirus",
     "x": 376,
-    "y": 327,
+    "y": 372,
     "units": [
       "epirote general"
     ]
@@ -7102,7 +7112,7 @@
     "location": "Orikon",
     "faction": "epirus",
     "x": 361,
-    "y": 317,
+    "y": 382,
     "units": [
       "epirote general"
     ]
@@ -7114,7 +7124,7 @@
     "location": "Atintanopolis",
     "faction": "epirus",
     "x": 374,
-    "y": 321,
+    "y": 378,
     "units": [
       "epirote general"
     ]
@@ -7126,7 +7136,7 @@
     "location": "Kichyros",
     "faction": "epirus",
     "x": 374,
-    "y": 332,
+    "y": 367,
     "units": [
       "epirote general"
     ]
@@ -7138,7 +7148,7 @@
     "location": "Port of Ambrakia",
     "faction": "epirus",
     "x": 379,
-    "y": 335,
+    "y": 364,
     "units": [
       "naval biremes"
     ]
@@ -7150,7 +7160,7 @@
     "location": "Aquincum",
     "faction": "eravisci",
     "x": 351,
-    "y": 212,
+    "y": 487,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -7171,7 +7181,7 @@
     "location": "Oppidum Eraviscorum",
     "faction": "eravisci",
     "x": 339,
-    "y": 222,
+    "y": 477,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -7183,7 +7193,7 @@
     "location": "Frisium",
     "faction": "frisii",
     "x": 242,
-    "y": 127,
+    "y": 572,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -7204,7 +7214,7 @@
     "location": "",
     "faction": "frisii",
     "x": 239,
-    "y": 127,
+    "y": 572,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -7216,7 +7226,7 @@
     "location": "Gades",
     "faction": "gades",
     "x": 66,
-    "y": 344,
+    "y": 355,
     "units": [
       "carthaginian general's bodyguard",
       "caetrati swordsmen",
@@ -7238,7 +7248,7 @@
     "location": "outside Gades",
     "faction": "gades",
     "x": 69,
-    "y": 347,
+    "y": 352,
     "units": [
       "carthaginian general's bodyguard"
     ]
@@ -7250,7 +7260,7 @@
     "location": "Ekkobriga",
     "faction": "galatians",
     "x": 518,
-    "y": 301,
+    "y": 398,
     "units": [
       "galatian general"
     ]
@@ -7262,7 +7272,7 @@
     "location": "Tektosagikon Phrourion",
     "faction": "galatians",
     "x": 502,
-    "y": 307,
+    "y": 392,
     "units": [
       "arvernian champions",
       "galatian warbands",
@@ -7284,7 +7294,7 @@
     "location": "Bithynion",
     "faction": "galatians",
     "x": 492,
-    "y": 296,
+    "y": 403,
     "units": [
       "galatian general"
     ]
@@ -7296,7 +7306,7 @@
     "location": "Peion",
     "faction": "galatians",
     "x": 499,
-    "y": 303,
+    "y": 396,
     "units": [
       "galatian general"
     ]
@@ -7308,7 +7318,7 @@
     "location": "Bloukion",
     "faction": "galatians",
     "x": 503,
-    "y": 302,
+    "y": 397,
     "units": [
       "galatian general"
     ]
@@ -7320,7 +7330,7 @@
     "location": "Ankyra",
     "faction": "galatians",
     "x": 508,
-    "y": 305,
+    "y": 394,
     "units": [
       "galatian general"
     ]
@@ -7332,7 +7342,7 @@
     "location": "Bracarium",
     "faction": "gallaeci",
     "x": 62,
-    "y": 269,
+    "y": 430,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -7350,7 +7360,7 @@
     "location": "Tude",
     "faction": "gallaeci",
     "x": 60,
-    "y": 260,
+    "y": 439,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -7362,7 +7372,7 @@
     "location": "Garama",
     "faction": "garamantes",
     "x": 286,
-    "y": 518,
+    "y": 181,
     "units": [
       "massylian royal bodyguards",
       "numidian cavalry",
@@ -7383,7 +7393,7 @@
     "location": "Bedirum",
     "faction": "garamantes",
     "x": 282,
-    "y": 517,
+    "y": 182,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -7395,7 +7405,7 @@
     "location": "Gutum",
     "faction": "gauts",
     "x": 289,
-    "y": 57,
+    "y": 642,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -7416,7 +7426,7 @@
     "location": "Castrum Gutarum",
     "faction": "gauts",
     "x": 317,
-    "y": 50,
+    "y": 649,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -7428,7 +7438,7 @@
     "location": "Gerrha",
     "faction": "gerrha",
     "x": 763,
-    "y": 447,
+    "y": 252,
     "units": [
       "sabaean general",
       "arab levy spearmen",
@@ -7449,7 +7459,7 @@
     "location": "Labai",
     "faction": "gerrha",
     "x": 761,
-    "y": 429,
+    "y": 270,
     "units": [
       "sabaean general"
     ]
@@ -7461,7 +7471,7 @@
     "location": "Gortyna",
     "faction": "gortyn",
     "x": 429,
-    "y": 387,
+    "y": 312,
     "units": [
       "gortynian general",
       "gortynian hoplites",
@@ -7479,376 +7489,9 @@
     "location": "Oaxos",
     "faction": "gortyn",
     "x": 427,
-    "y": 384,
+    "y": 315,
     "units": [
       "gortynian general"
-    ]
-  },
-  {
-    "name": "Marcus",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Greeks Settlement",
-    "faction": "greeks",
-    "x": 1010,
-    "y": 698,
-    "units": [
-      "greek general"
-    ]
-  },
-  {
-    "name": "Solon",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Hemeroskopeion",
-    "faction": "greeks",
-    "x": 144,
-    "y": 326,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "greek slingers",
-      "euzonoi",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Iottalambdios",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Ankon",
-    "faction": "greeks",
-    "x": 296,
-    "y": 271,
-    "units": [
-      "greek general",
-      "ankonitan hoplites",
-      "ankonitan archers",
-      "euzonoi",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Kallias",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Pharos",
-    "faction": "greeks",
-    "x": 328,
-    "y": 277,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "thureophoroi",
-      "greek slingers",
-      "psiloi",
-      "euzonoi",
-      "euzonoi",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Komon",
-    "charType": "admiral",
-    "armyClass": "navy",
-    "location": "Near Pharos (sea)",
-    "faction": "greeks",
-    "x": 325,
-    "y": 276,
-    "units": [
-      "naval biremes"
-    ]
-  },
-  {
-    "name": "Lykophron",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Apollonia-Epeiros",
-    "faction": "greeks",
-    "x": 360,
-    "y": 311,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "thureophoroi",
-      "cretan archers",
-      "cretan archers",
-      "greek peltasts",
-      "greek peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Preimion",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "Near Apollonia-Epeiros",
-    "faction": "greeks",
-    "x": 361,
-    "y": 312,
-    "units": [
-      "greek general"
-    ]
-  },
-  {
-    "name": "Theodoros",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Argithea",
-    "faction": "greeks",
-    "x": 385,
-    "y": 329,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "thureophoroi",
-      "athamanian peltasts",
-      "athamanian peltasts",
-      "athamanian peltasts",
-      "athamanian peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Archelaos",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Elateia",
-    "faction": "greeks",
-    "x": 398,
-    "y": 339,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "greek hoplites",
-      "thureophoroi",
-      "greek archers",
-      "greek slingers",
-      "greek peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Aristomelidas",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Orchomenos-Arkadia",
-    "faction": "greeks",
-    "x": 393,
-    "y": 352,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek slingers",
-      "greek peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Aristeidas",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Mantineia",
-    "faction": "greeks",
-    "x": 396,
-    "y": 354,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek slingers",
-      "greek peltasts",
-      "xystophoroi"
-    ]
-  },
-  {
-    "name": "Aleos",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Tegea",
-    "faction": "greeks",
-    "x": 396,
-    "y": 357,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "thureophoroi",
-      "greek slingers",
-      "greek peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Aristodemos",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Hierapytna",
-    "faction": "greeks",
-    "x": 438,
-    "y": 387,
-    "units": [
-      "greek general",
-      "kretan hoplites",
-      "kretan hoplites",
-      "kretan hoplites",
-      "cretan archers",
-      "cretan archers",
-      "cretan slingers",
-      "greek peltasts",
-      "greek peltasts",
-      "xystophoroi"
-    ]
-  },
-  {
-    "name": "Kadmos",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Thasos",
-    "faction": "greeks",
-    "x": 418,
-    "y": 306,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "thureophoroi",
-      "greek archers",
-      "greek peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Oiniades",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Tyras",
-    "faction": "greeks",
-    "x": 465,
-    "y": 221,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "greek archers",
-      "greek slingers",
-      "euzonoi",
-      "euzonoi",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Autokles",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "Near Tyras",
-    "faction": "greeks",
-    "x": 463,
-    "y": 222,
-    "units": [
-      "greek general"
-    ]
-  },
-  {
-    "name": "Dionysios",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Nikonion",
-    "faction": "greeks",
-    "x": 467,
-    "y": 219,
-    "units": [
-      "greek general"
-    ]
-  },
-  {
-    "name": "Telchios",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Dioskourias",
-    "faction": "greeks",
-    "x": 583,
-    "y": 241,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "thureophoroi",
-      "greek archers",
-      "euzonoi",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Autolykos",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Kerasous",
-    "faction": "greeks",
-    "x": 565,
-    "y": 277,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Anaximandros",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Kotyora",
-    "faction": "greeks",
-    "x": 558,
-    "y": 277,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "thureophoroi",
-      "greek archers",
-      "euzonoi",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Demetrios",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Amisos",
-    "faction": "greeks",
-    "x": 541,
-    "y": 278,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "thureophoroi",
-      "psiloi",
-      "greek slingers",
-      "greek peltasts",
-      "prodromoi"
-    ]
-  },
-  {
-    "name": "Eumenes",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Sesamos",
-    "faction": "greeks",
-    "x": 498,
-    "y": 281,
-    "units": [
-      "greek general",
-      "greek hoplites",
-      "greek hoplites",
-      "thureophoroi",
-      "greek slingers",
-      "greek peltasts",
-      "greek peltasts",
-      "prodromoi",
-      "xystophoroi"
     ]
   },
   {
@@ -7858,7 +7501,7 @@
     "location": "Sabbatha",
     "faction": "hadhramaut",
     "x": 803,
-    "y": 586,
+    "y": 113,
     "units": [
       "sabaean general",
       "arab levy spearmen",
@@ -7879,7 +7522,7 @@
     "location": "Thabba",
     "faction": "hadhramaut",
     "x": 800,
-    "y": 593,
+    "y": 106,
     "units": [
       "sabaean general"
     ]
@@ -7891,7 +7534,7 @@
     "location": "Helvetium",
     "faction": "helvetii",
     "x": 274,
-    "y": 180,
+    "y": 519,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -7909,7 +7552,7 @@
     "location": "Tarodunum",
     "faction": "helvetii",
     "x": 241,
-    "y": 204,
+    "y": 495,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -7921,7 +7564,7 @@
     "location": "Heniochon Kome",
     "faction": "heniochi",
     "x": 572,
-    "y": 236,
+    "y": 463,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -7943,7 +7586,7 @@
     "location": "",
     "faction": "heniochi",
     "x": 570,
-    "y": 236,
+    "y": 463,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -7955,7 +7598,7 @@
     "location": "Herakleia-Pontos",
     "faction": "heraclea_pontica",
     "x": 489,
-    "y": 289,
+    "y": 410,
     "units": [
       "greek general",
       "herakleiote hoplites",
@@ -7975,7 +7618,7 @@
     "location": "Kieros",
     "faction": "heraclea_pontica",
     "x": 487,
-    "y": 294,
+    "y": 405,
     "units": [
       "greek general"
     ]
@@ -7987,7 +7630,7 @@
     "location": "Tieion",
     "faction": "heraclea_pontica",
     "x": 496,
-    "y": 284,
+    "y": 415,
     "units": [
       "greek general"
     ]
@@ -7999,7 +7642,7 @@
     "location": "",
     "faction": "heraclea_pontica",
     "x": 486,
-    "y": 290,
+    "y": 409,
     "units": [
       "naval biremes"
     ]
@@ -8011,7 +7654,7 @@
     "location": "Mersovium",
     "faction": "hermunduri",
     "x": 283,
-    "y": 146,
+    "y": 553,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -8032,7 +7675,7 @@
     "location": "",
     "faction": "hermunduri",
     "x": 285,
-    "y": 143,
+    "y": 556,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -8044,7 +7687,7 @@
     "location": "Sapphar",
     "faction": "himyar",
     "x": 751,
-    "y": 633,
+    "y": 66,
     "units": [
       "sabaean general",
       "arab levy spearmen",
@@ -8065,7 +7708,7 @@
     "location": "Mesala",
     "faction": "himyar",
     "x": 772,
-    "y": 644,
+    "y": 55,
     "units": [
       "sabaean general"
     ]
@@ -8077,7 +7720,7 @@
     "location": "Nesactium",
     "faction": "histri",
     "x": 301,
-    "y": 252,
+    "y": 447,
     "units": [
       "northern illyrian general",
       "illyrian slingers",
@@ -8097,7 +7740,7 @@
     "location": "Tergeste",
     "faction": "histri",
     "x": 299,
-    "y": 241,
+    "y": 458,
     "units": [
       "northern illyrian general"
     ]
@@ -8109,7 +7752,7 @@
     "location": "Port of Nesactium",
     "faction": "histri",
     "x": 298,
-    "y": 252,
+    "y": 447,
     "units": [
       "naval boats"
     ]
@@ -8121,7 +7764,7 @@
     "location": "Istrie",
     "faction": "histria",
     "x": 453,
-    "y": 247,
+    "y": 452,
     "units": [
       "greek general",
       "greek hoplites",
@@ -8138,7 +7781,7 @@
     "location": "Orgame",
     "faction": "histria",
     "x": 455,
-    "y": 243,
+    "y": 456,
     "units": [
       "greek general"
     ]
@@ -8150,7 +7793,7 @@
     "location": "Field near Orgame",
     "faction": "histria",
     "x": 455,
-    "y": 242,
+    "y": 457,
     "units": [
       "greek general"
     ]
@@ -8162,7 +7805,7 @@
     "location": "",
     "faction": "histria",
     "x": 457,
-    "y": 247,
+    "y": 452,
     "units": [
       "naval biremes"
     ]
@@ -8174,7 +7817,7 @@
     "location": "Metulum",
     "faction": "iapodes",
     "x": 315,
-    "y": 247,
+    "y": 452,
     "units": [
       "northern illyrian general",
       "illyrian slingers",
@@ -8194,7 +7837,7 @@
     "location": "Argyruntum",
     "faction": "iapodes",
     "x": 317,
-    "y": 262,
+    "y": 437,
     "units": [
       "northern illyrian general"
     ]
@@ -8206,7 +7849,7 @@
     "location": "Raetinium",
     "faction": "iapodes",
     "x": 321,
-    "y": 254,
+    "y": 445,
     "units": [
       "northern illyrian general"
     ]
@@ -8218,7 +7861,7 @@
     "location": "Kremnoi",
     "faction": "iazyges",
     "x": 527,
-    "y": 199,
+    "y": 500,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -8236,7 +7879,7 @@
     "location": "outside Kremnoi",
     "faction": "iazyges",
     "x": 521,
-    "y": 201,
+    "y": 498,
     "units": [
       "armoured sarmatian general"
     ]
@@ -8248,7 +7891,7 @@
     "location": "Harmozike",
     "faction": "iberians",
     "x": 626,
-    "y": 246,
+    "y": 453,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -8270,7 +7913,7 @@
     "location": "Iberopolis",
     "faction": "iberians",
     "x": 620,
-    "y": 246,
+    "y": 453,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -8282,7 +7925,7 @@
     "location": "Atanagrus",
     "faction": "ilergetes",
     "x": 161,
-    "y": 287,
+    "y": 412,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -8299,7 +7942,7 @@
     "location": "Ilerda",
     "faction": "ilergetes",
     "x": 156,
-    "y": 287,
+    "y": 412,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -8311,7 +7954,7 @@
     "location": "Ilici",
     "faction": "ilici",
     "x": 134,
-    "y": 333,
+    "y": 366,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -8332,7 +7975,7 @@
     "location": "",
     "faction": "ilici",
     "x": 131,
-    "y": 333,
+    "y": 366,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -8344,7 +7987,7 @@
     "location": "Lissos",
     "faction": "illyrian_kingdom",
     "x": 363,
-    "y": 296,
+    "y": 403,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers",
@@ -8364,7 +8007,7 @@
     "location": "Sesarethos",
     "faction": "illyrian_kingdom",
     "x": 364,
-    "y": 303,
+    "y": 396,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -8376,7 +8019,7 @@
     "location": "Epidamnos",
     "faction": "illyrian_kingdom",
     "x": 360,
-    "y": 302,
+    "y": 397,
     "units": [
       "illyrian warlords bodyguard",
       "aor greek hoplites",
@@ -8393,7 +8036,7 @@
     "location": "Dimale",
     "faction": "illyrian_kingdom",
     "x": 365,
-    "y": 311,
+    "y": 388,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -8405,7 +8048,7 @@
     "location": "Kreonion",
     "faction": "illyrian_kingdom",
     "x": 371,
-    "y": 307,
+    "y": 392,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -8417,7 +8060,7 @@
     "location": "Port of Epidamnos",
     "faction": "illyrian_kingdom",
     "x": 357,
-    "y": 301,
+    "y": 398,
     "units": [
       "naval boats"
     ]
@@ -8426,10 +8069,10 @@
     "name": "Ashoka",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Alexandreia-Kaukasia",
+    "location": "Peukelaotis",
     "faction": "indians",
-    "x": 919,
-    "y": 209,
+    "x": 949,
+    "y": 495,
     "units": [
       "indian general",
       "indian peltasts",
@@ -8453,7 +8096,7 @@
     "location": "Ingaunum",
     "faction": "ingauni",
     "x": 241,
-    "y": 262,
+    "y": 437,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -8471,7 +8114,7 @@
     "location": "",
     "faction": "ingauni",
     "x": 241,
-    "y": 260,
+    "y": 439,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -8483,7 +8126,7 @@
     "location": "Mediolanum",
     "faction": "insubres",
     "x": 252,
-    "y": 242,
+    "y": 457,
     "units": [
       "gallic royal bodyguards",
       "celtic spearmen",
@@ -8504,7 +8147,7 @@
     "location": "Acerrae",
     "faction": "insubres",
     "x": 258,
-    "y": 246,
+    "y": 453,
     "units": [
       "arvernian champions"
     ]
@@ -8516,7 +8159,7 @@
     "location": "Acerrae",
     "faction": "insubres",
     "x": 258,
-    "y": 246,
+    "y": 453,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -8528,7 +8171,7 @@
     "location": "Issa",
     "faction": "issa",
     "x": 323,
-    "y": 279,
+    "y": 420,
     "units": [
       "greek general"
     ]
@@ -8540,7 +8183,7 @@
     "location": "Epetion-Salona",
     "faction": "issa",
     "x": 328,
-    "y": 272,
+    "y": 427,
     "units": [
       "greek general",
       "issaian hoplites",
@@ -8558,7 +8201,7 @@
     "location": "Outside Epetion-Salona",
     "faction": "issa",
     "x": 326,
-    "y": 270,
+    "y": 429,
     "units": [
       "greek general"
     ]
@@ -8570,7 +8213,7 @@
     "location": "Melaina Korkyra",
     "faction": "issa",
     "x": 333,
-    "y": 280,
+    "y": 419,
     "units": [
       "greek general"
     ]
@@ -8582,7 +8225,7 @@
     "location": "Tragourion",
     "faction": "issa",
     "x": 323,
-    "y": 270,
+    "y": 429,
     "units": [
       "greek general"
     ]
@@ -8594,7 +8237,7 @@
     "location": "",
     "faction": "issa",
     "x": 327,
-    "y": 280,
+    "y": 419,
     "units": [
       "naval biremes",
       "naval biremes",
@@ -8608,7 +8251,7 @@
     "location": "Ivernis",
     "faction": "iverni",
     "x": 100,
-    "y": 119,
+    "y": 580,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -8629,7 +8272,7 @@
     "location": "Outside Ivernis",
     "faction": "iverni",
     "x": 103,
-    "y": 117,
+    "y": 582,
     "units": [
       "brittonic bodyguards"
     ]
@@ -8641,7 +8284,7 @@
     "location": "Knosos",
     "faction": "knossos",
     "x": 431,
-    "y": 384,
+    "y": 315,
     "units": [
       "knossian general",
       "knossian hoplites",
@@ -8658,7 +8301,7 @@
     "location": "Outside Knosos",
     "faction": "knossos",
     "x": 432,
-    "y": 385,
+    "y": 314,
     "units": [
       "knossian general"
     ]
@@ -8670,7 +8313,7 @@
     "location": "Aptera",
     "faction": "knossos",
     "x": 420,
-    "y": 383,
+    "y": 316,
     "units": [
       "knossian general"
     ]
@@ -8682,7 +8325,7 @@
     "location": "Kushi",
     "faction": "kucha",
     "x": 981,
-    "y": 38,
+    "y": 661,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -8706,7 +8349,7 @@
     "location": "outside Kushi",
     "faction": "kucha",
     "x": 984,
-    "y": 38,
+    "y": 661,
     "units": [
       "armoured sarmatian general"
     ]
@@ -8718,7 +8361,7 @@
     "location": "Meroe",
     "faction": "kush",
     "x": 585,
-    "y": 633,
+    "y": 66,
     "units": [
       "kushite general",
       "kushite javelinmen",
@@ -8739,7 +8382,7 @@
     "location": "Napata",
     "faction": "kush",
     "x": 554,
-    "y": 614,
+    "y": 85,
     "units": [
       "kushite general"
     ]
@@ -8751,7 +8394,7 @@
     "location": "Sekande",
     "faction": "kush",
     "x": 587,
-    "y": 616,
+    "y": 83,
     "units": [
       "kushite general"
     ]
@@ -8763,7 +8406,7 @@
     "location": "Kandragori",
     "faction": "kush",
     "x": 582,
-    "y": 646,
+    "y": 53,
     "units": [
       "kushite general"
     ]
@@ -8775,7 +8418,7 @@
     "location": "Kydonia",
     "faction": "kydonia",
     "x": 417,
-    "y": 383,
+    "y": 316,
     "units": [
       "greek general",
       "kretan hoplites",
@@ -8792,7 +8435,7 @@
     "location": "Outside Kydonia",
     "faction": "kydonia",
     "x": 417,
-    "y": 383,
+    "y": 316,
     "units": [
       "greek general"
     ]
@@ -8804,7 +8447,7 @@
     "location": "Polyrrhenia",
     "faction": "kydonia",
     "x": 413,
-    "y": 383,
+    "y": 316,
     "units": [
       "greek general"
     ]
@@ -8816,7 +8459,7 @@
     "location": "Skodra",
     "faction": "labeatae",
     "x": 360,
-    "y": 292,
+    "y": 407,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers",
@@ -8836,7 +8479,7 @@
     "location": "Meteon",
     "faction": "labeatae",
     "x": 358,
-    "y": 286,
+    "y": 413,
     "units": [
       "illyrian warlords bodyguard"
     ]
@@ -8848,7 +8491,7 @@
     "location": "Port of Skodra",
     "faction": "labeatae",
     "x": 359,
-    "y": 296,
+    "y": 403,
     "units": [
       "naval boats"
     ]
@@ -8860,7 +8503,7 @@
     "location": "Iesso",
     "faction": "lacetani",
     "x": 164,
-    "y": 286,
+    "y": 413,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -8881,7 +8524,7 @@
     "location": "",
     "faction": "lacetani",
     "x": 166,
-    "y": 286,
+    "y": 413,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -8893,7 +8536,7 @@
     "location": "Marionis",
     "faction": "langobardi",
     "x": 272,
-    "y": 125,
+    "y": 574,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -8914,7 +8557,7 @@
     "location": "",
     "faction": "langobardi",
     "x": 274,
-    "y": 125,
+    "y": 574,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -8926,7 +8569,7 @@
     "location": "Idassa",
     "faction": "liburni",
     "x": 314,
-    "y": 263,
+    "y": 436,
     "units": [
       "northern illyrian general",
       "illyrian slingers",
@@ -8946,7 +8589,7 @@
     "location": "Tarsatica",
     "faction": "liburni",
     "x": 306,
-    "y": 246,
+    "y": 453,
     "units": [
       "northern illyrian general"
     ]
@@ -8958,7 +8601,7 @@
     "location": "Athyinites",
     "faction": "liburni",
     "x": 311,
-    "y": 251,
+    "y": 448,
     "units": [
       "northern illyrian general"
     ]
@@ -8970,7 +8613,7 @@
     "location": "Scardona",
     "faction": "liburni",
     "x": 321,
-    "y": 267,
+    "y": 432,
     "units": [
       "northern illyrian general"
     ]
@@ -8982,7 +8625,7 @@
     "location": "Port of Idassa",
     "faction": "liburni",
     "x": 311,
-    "y": 261,
+    "y": 438,
     "units": [
       "naval boats"
     ]
@@ -8994,7 +8637,7 @@
     "location": "Egra",
     "faction": "lihyan",
     "x": 611,
-    "y": 476,
+    "y": 223,
     "units": [
       "nabataean general",
       "arab levy spearmen",
@@ -9015,7 +8658,7 @@
     "location": "Ausara",
     "faction": "lihyan",
     "x": 610,
-    "y": 479,
+    "y": 220,
     "units": [
       "nabataean general"
     ]
@@ -9027,13 +8670,13 @@
     "location": "Grumentum",
     "faction": "lucanians",
     "x": 321,
-    "y": 319,
+    "y": 380,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "samnite hoplites",
-      "samnite hoplites",
-      "campanian cavalry"
+      "oscan general",
+      "oscan spearmen southern",
+      "lucanian light swordsmen",
+      "oscan thureophoroi",
+      "oscan cavalry"
     ]
   },
   {
@@ -9043,9 +8686,9 @@
     "location": "Potentia",
     "faction": "lucanians",
     "x": 320,
-    "y": 313,
+    "y": 386,
     "units": [
-      "tribunus militum"
+      "oscan general"
     ]
   },
   {
@@ -9055,7 +8698,7 @@
     "location": "Leucaristus",
     "faction": "lugii",
     "x": 340,
-    "y": 151,
+    "y": 548,
     "units": [
       "bodyguard frameae sword",
       "harian night fighters",
@@ -9077,7 +8720,7 @@
     "location": "Helveconium",
     "faction": "lugii",
     "x": 308,
-    "y": 138,
+    "y": 561,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -9089,7 +8732,7 @@
     "location": "Manimium",
     "faction": "lugii",
     "x": 368,
-    "y": 149,
+    "y": 550,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -9101,7 +8744,7 @@
     "location": "Synnada",
     "faction": "lysiad",
     "x": 487,
-    "y": 329,
+    "y": 370,
     "units": [
       "seleucid general"
     ]
@@ -9113,7 +8756,7 @@
     "location": "Outside Synnada",
     "faction": "lysiad",
     "x": 486,
-    "y": 329,
+    "y": 370,
     "units": [
       "seleucid general"
     ]
@@ -9125,7 +8768,7 @@
     "location": "Outside Synnada",
     "faction": "lysiad",
     "x": 488,
-    "y": 324,
+    "y": 375,
     "units": [
       "seleucid general"
     ]
@@ -9137,7 +8780,7 @@
     "location": "Outside Synnada",
     "faction": "lysiad",
     "x": 486,
-    "y": 324,
+    "y": 375,
     "units": [
       "seleucid general"
     ]
@@ -9149,7 +8792,7 @@
     "location": "Outside Synnada",
     "faction": "lysiad",
     "x": 489,
-    "y": 325,
+    "y": 374,
     "units": [
       "seleucid general"
     ]
@@ -9161,7 +8804,7 @@
     "location": "Lyktos",
     "faction": "lyttos",
     "x": 434,
-    "y": 385,
+    "y": 314,
     "units": [
       "lyttian general",
       "kretan hoplites",
@@ -9178,7 +8821,7 @@
     "location": "Outside Lyktos",
     "faction": "lyttos",
     "x": 433,
-    "y": 384,
+    "y": 315,
     "units": [
       "lyttian general"
     ]
@@ -9190,7 +8833,7 @@
     "location": "Lato",
     "faction": "lyttos",
     "x": 437,
-    "y": 384,
+    "y": 315,
     "units": [
       "lyttian general"
     ]
@@ -9202,7 +8845,7 @@
     "location": "",
     "faction": "lyttos",
     "x": 434,
-    "y": 382,
+    "y": 317,
     "units": [
       "naval biremes"
     ]
@@ -9214,7 +8857,7 @@
     "location": "Iamphorynna",
     "faction": "maedi",
     "x": 403,
-    "y": 297,
+    "y": 402,
     "units": [
       "thracian royal bodyguards",
       "thracian light lancers",
@@ -9232,7 +8875,7 @@
     "location": "Outside Iamphorynna",
     "faction": "maedi",
     "x": 400,
-    "y": 296,
+    "y": 403,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -9244,15 +8887,15 @@
     "location": "Messana",
     "faction": "mamertines",
     "x": 317,
-    "y": 349,
+    "y": 350,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "lucanian infantry",
-      "italic hastati",
+      "campanian general",
+      "oscan spearmen",
+      "oscan spearmen",
+      "oscan spearmen",
       "aor psiloi",
-      "italic velites",
-      "italic velites",
+      "campanian javelinmen",
+      "campanian javelinmen",
       "aor greek slingers",
       "aor prodromoi"
     ]
@@ -9264,9 +8907,9 @@
     "location": "",
     "faction": "mamertines",
     "x": 315,
-    "y": 350,
+    "y": 349,
     "units": [
-      "tribunus militum"
+      "campanian general"
     ]
   },
   {
@@ -9276,7 +8919,7 @@
     "location": "Galaegia",
     "faction": "marcomanni",
     "x": 302,
-    "y": 151,
+    "y": 548,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -9295,7 +8938,7 @@
     "location": "",
     "faction": "marcomanni",
     "x": 302,
-    "y": 156,
+    "y": 543,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -9307,7 +8950,7 @@
     "location": "Siga",
     "faction": "masaesyli",
     "x": 118,
-    "y": 374,
+    "y": 325,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -9319,7 +8962,7 @@
     "location": "Outside Siga",
     "faction": "masaesyli",
     "x": 117,
-    "y": 377,
+    "y": 322,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -9331,7 +8974,7 @@
     "location": "Auzea",
     "faction": "masaesyli",
     "x": 180,
-    "y": 370,
+    "y": 329,
     "units": [
       "massylian royal bodyguards",
       "numidian cavalry",
@@ -9352,7 +8995,7 @@
     "location": "Massalia",
     "faction": "massalia",
     "x": 210,
-    "y": 270,
+    "y": 429,
     "units": [
       "massaliote foot general",
       "massaliote hoplites",
@@ -9366,7 +9009,7 @@
     "location": "Agatha",
     "faction": "massalia",
     "x": 190,
-    "y": 267,
+    "y": 432,
     "units": [
       "massaliote foot general",
       "psiloi"
@@ -9379,7 +9022,7 @@
     "location": "Antipolis",
     "faction": "massalia",
     "x": 229,
-    "y": 267,
+    "y": 432,
     "units": [
       "massaliote foot general",
       "massaliote hoplites",
@@ -9393,7 +9036,7 @@
     "location": "Olbia-Ligystike",
     "faction": "massalia",
     "x": 217,
-    "y": 273,
+    "y": 426,
     "units": [
       "massaliote foot general",
       "psiloi"
@@ -9406,7 +9049,7 @@
     "location": "Port of Massalia",
     "faction": "massalia",
     "x": 209,
-    "y": 271,
+    "y": 428,
     "units": [
       "naval biremes"
     ]
@@ -9418,7 +9061,7 @@
     "location": "Thugga",
     "faction": "massylii",
     "x": 244,
-    "y": 372,
+    "y": 327,
     "units": [
       "massylian royal bodyguards",
       "numidian light infantry",
@@ -9434,7 +9077,7 @@
     "location": "Zama",
     "faction": "massylii",
     "x": 245,
-    "y": 377,
+    "y": 322,
     "units": [
       "massylian royal bodyguards",
       "numidian cavalry",
@@ -9456,7 +9099,7 @@
     "location": "Outside Thugga",
     "faction": "massylii",
     "x": 246,
-    "y": 374,
+    "y": 325,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -9468,7 +9111,7 @@
     "location": "Volubilis",
     "faction": "mauri",
     "x": 66,
-    "y": 380,
+    "y": 319,
     "units": [
       "massylian royal bodyguards",
       "numidian cavalry",
@@ -9489,7 +9132,7 @@
     "location": "Outside Volubilis",
     "faction": "mauri",
     "x": 63,
-    "y": 378,
+    "y": 321,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -9501,7 +9144,7 @@
     "location": "The Road to Palibothra",
     "faction": "mauryan",
     "x": 1018,
-    "y": 205,
+    "y": 494,
     "units": [
       "indian general",
       "indian peltasts",
@@ -9525,7 +9168,7 @@
     "location": "Megalopolis",
     "faction": "megalopolis",
     "x": 393,
-    "y": 357,
+    "y": 342,
     "units": [
       "greek general",
       "greek hoplites",
@@ -9542,15 +9185,15 @@
     "location": "Brundisium",
     "faction": "messapians",
     "x": 343,
-    "y": 313,
+    "y": 386,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "lucanian infantry",
-      "samnite hoplites",
-      "samnite hoplites",
-      "campanian cavalry",
-      "campanian cavalry"
+      "messapian general",
+      "messapian light spearmen",
+      "messapian light spearmen",
+      "messapian hoplite",
+      "messapian thureophoroi",
+      "messapian lancer cavalry",
+      "messapian lancer cavalry"
     ]
   },
   {
@@ -9560,9 +9203,9 @@
     "location": "Uria",
     "faction": "messapians",
     "x": 340,
-    "y": 315,
+    "y": 384,
     "units": [
-      "tribunus militum"
+      "messapian general"
     ]
   },
   {
@@ -9572,7 +9215,7 @@
     "location": "Messene",
     "faction": "messene",
     "x": 391,
-    "y": 361,
+    "y": 338,
     "units": [
       "greek general",
       "greek hoplites",
@@ -9590,7 +9233,7 @@
     "location": "",
     "faction": "messene",
     "x": 392,
-    "y": 361,
+    "y": 338,
     "units": [
       "greek general"
     ]
@@ -9602,7 +9245,7 @@
     "location": "",
     "faction": "messene",
     "x": 393,
-    "y": 364,
+    "y": 335,
     "units": [
       "naval biremes"
     ]
@@ -9614,7 +9257,7 @@
     "location": "Karna",
     "faction": "minaeans",
     "x": 748,
-    "y": 601,
+    "y": 98,
     "units": [
       "sabaean general",
       "arab levy spearmen",
@@ -9635,7 +9278,7 @@
     "location": "Nestos-Arabia",
     "faction": "minaeans",
     "x": 745,
-    "y": 602,
+    "y": 97,
     "units": [
       "sabaean general"
     ]
@@ -9647,7 +9290,7 @@
     "location": "Mossynoikon Metropolis",
     "faction": "mossynoeci",
     "x": 575,
-    "y": 285,
+    "y": 414,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -9669,7 +9312,7 @@
     "location": "",
     "faction": "mossynoeci",
     "x": 570,
-    "y": 284,
+    "y": 415,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -9681,7 +9324,7 @@
     "location": "Raqemo",
     "faction": "nabataea",
     "x": 573,
-    "y": 440,
+    "y": 259,
     "units": [
       "nabataean general",
       "arab levy spearmen",
@@ -9702,7 +9345,7 @@
     "location": "Petra",
     "faction": "nabataea",
     "x": 568,
-    "y": 434,
+    "y": 265,
     "units": [
       "nabataean general"
     ]
@@ -9714,7 +9357,7 @@
     "location": "Eboda",
     "faction": "nabataea",
     "x": 557,
-    "y": 429,
+    "y": 270,
     "units": [
       "nabataean general"
     ]
@@ -9726,7 +9369,7 @@
     "location": "Ailana",
     "faction": "nabataea",
     "x": 564,
-    "y": 446,
+    "y": 253,
     "units": [
       "nabataean general"
     ]
@@ -9738,7 +9381,7 @@
     "location": "Castrum Gaetulorum",
     "faction": "musulamii",
     "x": 172,
-    "y": 422,
+    "y": 277,
     "units": [
       "massylian royal bodyguards",
       "numidian cavalry",
@@ -9759,7 +9402,7 @@
     "location": "Miglis",
     "faction": "musulamii",
     "x": 199,
-    "y": 394,
+    "y": 305,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -9771,7 +9414,7 @@
     "location": "Augila",
     "faction": "nasamones",
     "x": 392,
-    "y": 477,
+    "y": 222,
     "units": [
       "massylian royal bodyguards",
       "numidian cavalry",
@@ -9792,7 +9435,7 @@
     "location": "Castrum Psyllorum",
     "faction": "nasamones",
     "x": 365,
-    "y": 477,
+    "y": 222,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -9804,7 +9447,7 @@
     "location": "Nervium",
     "faction": "nervii",
     "x": 202,
-    "y": 159,
+    "y": 540,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -9821,7 +9464,7 @@
     "location": "Outside Nervium",
     "faction": "nervii",
     "x": 203,
-    "y": 157,
+    "y": 542,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -9833,7 +9476,7 @@
     "location": "Noreia",
     "faction": "norici",
     "x": 305,
-    "y": 226,
+    "y": 473,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -9854,7 +9497,7 @@
     "location": "Gamavodurum",
     "faction": "norici",
     "x": 298,
-    "y": 213,
+    "y": 486,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -9866,7 +9509,7 @@
     "location": "Seuthopolis",
     "faction": "odrysians",
     "x": 421,
-    "y": 279,
+    "y": 420,
     "units": [
       "thracian royal bodyguards",
       "thracian infantry",
@@ -9888,7 +9531,7 @@
     "location": "Beroia-Thraike",
     "faction": "odrysians",
     "x": 425,
-    "y": 281,
+    "y": 418,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -9900,7 +9543,7 @@
     "location": "near Beroia-Thraike",
     "faction": "odrysians",
     "x": 426,
-    "y": 282,
+    "y": 417,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -9912,7 +9555,7 @@
     "location": "near Beroia-Thraike",
     "faction": "odrysians",
     "x": 424,
-    "y": 282,
+    "y": 417,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -9924,7 +9567,7 @@
     "location": "Seuthopolis",
     "faction": "odrysians",
     "x": 421,
-    "y": 279,
+    "y": 420,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -9936,7 +9579,7 @@
     "location": "near Seuthopolis",
     "faction": "odrysians",
     "x": 421,
-    "y": 280,
+    "y": 419,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -9948,7 +9591,7 @@
     "location": "Olbia",
     "faction": "olbia",
     "x": 479,
-    "y": 210,
+    "y": 489,
     "units": [
       "greek general",
       "olbiopolite hoplites",
@@ -9967,7 +9610,7 @@
     "location": "Near Olbia",
     "faction": "olbia",
     "x": 477,
-    "y": 211,
+    "y": 488,
     "units": [
       "greek general"
     ]
@@ -9979,7 +9622,7 @@
     "location": "Near Olbia (sea)",
     "faction": "olbia",
     "x": 476,
-    "y": 214,
+    "y": 485,
     "units": [
       "naval biremes"
     ]
@@ -9991,7 +9634,7 @@
     "location": "Castrum Ordovicum",
     "faction": "ordovices",
     "x": 137,
-    "y": 115,
+    "y": 584,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -10012,7 +9655,7 @@
     "location": "Oppidum Ordovicum",
     "faction": "ordovices",
     "x": 145,
-    "y": 123,
+    "y": 576,
     "units": [
       "brittonic bodyguards"
     ]
@@ -10024,7 +9667,7 @@
     "location": "Castulo",
     "faction": "oretani",
     "x": 101,
-    "y": 329,
+    "y": 370,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati swordsmen",
@@ -10042,7 +9685,7 @@
     "location": "Oretum",
     "faction": "oretani",
     "x": 102,
-    "y": 319,
+    "y": 380,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -10054,7 +9697,7 @@
     "location": "Osismium",
     "faction": "osismii",
     "x": 132,
-    "y": 185,
+    "y": 514,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -10072,7 +9715,7 @@
     "location": "Outside Osismium",
     "faction": "osismii",
     "x": 128,
-    "y": 185,
+    "y": 514,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -10084,7 +9727,7 @@
     "location": "Bylazora",
     "faction": "paeonia",
     "x": 386,
-    "y": 293,
+    "y": 406,
     "units": [
       "paionian general",
       "paionian cavalry",
@@ -10102,7 +9745,7 @@
     "location": "Stoboi",
     "faction": "paeonia",
     "x": 387,
-    "y": 298,
+    "y": 401,
     "units": [
       "paionian general"
     ]
@@ -10114,7 +9757,7 @@
     "location": "Palmyra",
     "faction": "palmyra",
     "x": 586,
-    "y": 367,
+    "y": 332,
     "units": [
       "nabataean general",
       "arab levy spearmen",
@@ -10135,7 +9778,7 @@
     "location": "outside Baklanaza",
     "faction": "palmyra",
     "x": 588,
-    "y": 367,
+    "y": 332,
     "units": [
       "nabataean general"
     ]
@@ -10147,7 +9790,7 @@
     "location": "Gangra",
     "faction": "paphlagonia",
     "x": 515,
-    "y": 294,
+    "y": 405,
     "units": [
       "asian royal bodyguards",
       "asian slingers",
@@ -10165,7 +9808,7 @@
     "location": "",
     "faction": "paphlagonia",
     "x": 517,
-    "y": 293,
+    "y": 406,
     "units": [
       "asian royal bodyguards"
     ]
@@ -10177,7 +9820,7 @@
     "location": "Kallatis",
     "faction": "pentapolis",
     "x": 453,
-    "y": 257,
+    "y": 442,
     "units": [
       "greek general",
       "greek hoplites",
@@ -10191,7 +9834,7 @@
     "location": "Apollonia-Pontos",
     "faction": "pentapolis",
     "x": 447,
-    "y": 279,
+    "y": 420,
     "units": [
       "greek general",
       "greek hoplites",
@@ -10205,7 +9848,7 @@
     "location": "Mesembria",
     "faction": "pentapolis",
     "x": 447,
-    "y": 274,
+    "y": 425,
     "units": [
       "greek general",
       "greek hoplites",
@@ -10219,7 +9862,7 @@
     "location": "Odessos",
     "faction": "pentapolis",
     "x": 447,
-    "y": 267,
+    "y": 432,
     "units": [
       "greek general",
       "greek hoplites",
@@ -10233,7 +9876,7 @@
     "location": "Tomis",
     "faction": "pentapolis",
     "x": 453,
-    "y": 252,
+    "y": 447,
     "units": [
       "greek general",
       "greek hoplites",
@@ -10247,7 +9890,7 @@
     "location": "Anchialos",
     "faction": "pentapolis",
     "x": 447,
-    "y": 274,
+    "y": 425,
     "units": [
       "greek general",
       "greek hoplites",
@@ -10261,7 +9904,7 @@
     "location": "Dionysopolis",
     "faction": "pentapolis",
     "x": 449,
-    "y": 263,
+    "y": 436,
     "units": [
       "greek general",
       "greek hoplites",
@@ -10275,7 +9918,7 @@
     "location": "Pergamon",
     "faction": "pergamon",
     "x": 447,
-    "y": 327,
+    "y": 372,
     "units": [
       "pergamene general's bodyguard",
       "pergamene hoplites",
@@ -10295,7 +9938,7 @@
     "location": "Kyme",
     "faction": "pergamon",
     "x": 446,
-    "y": 332,
+    "y": 367,
     "units": [
       "pergamene general's bodyguard"
     ]
@@ -10307,7 +9950,7 @@
     "location": "Pergamon (Field)",
     "faction": "pergamon",
     "x": 451,
-    "y": 331,
+    "y": 368,
     "units": [
       "pergamene general's bodyguard"
     ]
@@ -10319,7 +9962,7 @@
     "location": "Port of Pergamon",
     "faction": "pergamon",
     "x": 441,
-    "y": 323,
+    "y": 376,
     "units": [
       "naval biremes"
     ]
@@ -10331,7 +9974,7 @@
     "location": "Persepolis",
     "faction": "persis",
     "x": 777,
-    "y": 370,
+    "y": 329,
     "units": [
       "asian royal bodyguards",
       "median spearmen",
@@ -10352,7 +9995,7 @@
     "location": "Pasargadai",
     "faction": "persis",
     "x": 780,
-    "y": 366,
+    "y": 333,
     "units": [
       "asian royal bodyguards"
     ]
@@ -10364,13 +10007,13 @@
     "location": "Asculum",
     "faction": "picentes",
     "x": 296,
-    "y": 281,
+    "y": 418,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "samnite hoplites",
-      "samnite hoplites",
-      "campanian cavalry"
+      "picentine general",
+      "picentine light spearmen",
+      "picentine heavy spearmen",
+      "picentine swordsmen",
+      "picentine heavy cavalry"
     ]
   },
   {
@@ -10380,9 +10023,9 @@
     "location": "",
     "faction": "picentes",
     "x": 295,
-    "y": 278,
+    "y": 421,
     "units": [
-      "tribunus militum"
+      "picentine general"
     ]
   },
   {
@@ -10392,7 +10035,7 @@
     "location": "Priene",
     "faction": "priene",
     "x": 452,
-    "y": 347,
+    "y": 352,
     "units": [
       "prienian general",
       "prienian ephebes",
@@ -10410,7 +10053,7 @@
     "location": "Near Priene",
     "faction": "priene",
     "x": 453,
-    "y": 345,
+    "y": 354,
     "units": [
       "prienian general"
     ]
@@ -10422,7 +10065,7 @@
     "location": "Near Priene",
     "faction": "priene",
     "x": 453,
-    "y": 346,
+    "y": 353,
     "units": [
       "prienian general"
     ]
@@ -10434,7 +10077,7 @@
     "location": "Near Priene",
     "faction": "priene",
     "x": 449,
-    "y": 344,
+    "y": 355,
     "units": [
       "naval biremes"
     ]
@@ -10446,7 +10089,7 @@
     "location": "Tamna",
     "faction": "qataban",
     "x": 768,
-    "y": 615,
+    "y": 84,
     "units": [
       "sabaean general",
       "arab levy spearmen",
@@ -10467,7 +10110,7 @@
     "location": "Karipeta",
     "faction": "qataban",
     "x": 764,
-    "y": 617,
+    "y": 82,
     "units": [
       "sabaean general"
     ]
@@ -10479,7 +10122,7 @@
     "location": "Redintuinum",
     "faction": "quadi",
     "x": 314,
-    "y": 172,
+    "y": 527,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -10498,7 +10141,7 @@
     "location": "",
     "faction": "quadi",
     "x": 311,
-    "y": 170,
+    "y": 529,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -10510,7 +10153,7 @@
     "location": "Vennonium",
     "faction": "rhaetians",
     "x": 260,
-    "y": 218,
+    "y": 481,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -10528,7 +10171,7 @@
     "location": "Veldidena",
     "faction": "rhaetians",
     "x": 276,
-    "y": 217,
+    "y": 482,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -10540,7 +10183,7 @@
     "location": "Rhodes",
     "faction": "rhodes",
     "x": 465,
-    "y": 363,
+    "y": 336,
     "units": [
       "greek general",
       "rhodian hoplites",
@@ -10560,7 +10203,7 @@
     "location": "Lindos",
     "faction": "rhodes",
     "x": 463,
-    "y": 368,
+    "y": 331,
     "units": [
       "greek general"
     ]
@@ -10572,7 +10215,7 @@
     "location": "Rhodes",
     "faction": "rhodes",
     "x": 454,
-    "y": 378,
+    "y": 321,
     "units": [
       "greek general"
     ]
@@ -10584,7 +10227,7 @@
     "location": "Sea of Rhodes",
     "faction": "rhodes",
     "x": 464,
-    "y": 368,
+    "y": 331,
     "units": [
       "naval triremes"
     ]
@@ -10596,7 +10239,7 @@
     "location": "Hygreis",
     "faction": "rhoxolani",
     "x": 535,
-    "y": 192,
+    "y": 507,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -10617,7 +10260,7 @@
     "location": "outside Hygreis",
     "faction": "rhoxolani",
     "x": 533,
-    "y": 191,
+    "y": 508,
     "units": [
       "armoured sarmatian general"
     ]
@@ -10629,7 +10272,7 @@
     "location": "Basilon Saurmaton Taphai",
     "faction": "royal_sarmatians",
     "x": 588,
-    "y": 105,
+    "y": 594,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -10647,7 +10290,7 @@
     "location": "Sauromaton Taphai",
     "faction": "royal_sarmatians",
     "x": 594,
-    "y": 143,
+    "y": 556,
     "units": [
       "armoured sarmatian general"
     ]
@@ -10659,7 +10302,7 @@
     "location": "Skythopolis",
     "faction": "royal_scythians",
     "x": 513,
-    "y": 161,
+    "y": 538,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry",
@@ -10680,7 +10323,7 @@
     "location": "Basilikon Skython Taphai",
     "faction": "royal_scythians",
     "x": 504,
-    "y": 203,
+    "y": 496,
     "units": [
       "armoured sarmatian general"
     ]
@@ -10692,7 +10335,7 @@
     "location": "Marib",
     "faction": "saba",
     "x": 759,
-    "y": 611,
+    "y": 88,
     "units": [
       "sabaean general",
       "arab levy spearmen",
@@ -10713,7 +10356,7 @@
     "location": "Marasdou",
     "faction": "saba",
     "x": 755,
-    "y": 611,
+    "y": 88,
     "units": [
       "sabaean general"
     ]
@@ -10725,7 +10368,7 @@
     "location": "Athloula",
     "faction": "saba",
     "x": 749,
-    "y": 604,
+    "y": 95,
     "units": [
       "sabaean general"
     ]
@@ -10737,7 +10380,7 @@
     "location": "Salassium",
     "faction": "salassi",
     "x": 233,
-    "y": 237,
+    "y": 462,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -10758,7 +10401,7 @@
     "location": "Eporedia",
     "faction": "salassi",
     "x": 238,
-    "y": 241,
+    "y": 458,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -10770,7 +10413,7 @@
     "location": "Glanum",
     "faction": "salluvii",
     "x": 205,
-    "y": 262,
+    "y": 437,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -10791,7 +10434,7 @@
     "location": "Avaticium",
     "faction": "salluvii",
     "x": 207,
-    "y": 269,
+    "y": 430,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -10803,13 +10446,13 @@
     "location": "Bovianum",
     "faction": "samnites",
     "x": 306,
-    "y": 301,
+    "y": 398,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
+      "oscan general",
+      "oscan spearmen",
       "samnite hoplites",
-      "samnite hoplites",
-      "campanian cavalry"
+      "samnite thureophoroi",
+      "oscan cavalry"
     ]
   },
   {
@@ -10819,9 +10462,9 @@
     "location": "Compsa",
     "faction": "samnites",
     "x": 315,
-    "y": 311,
+    "y": 388,
     "units": [
-      "tribunus militum"
+      "oscan general"
     ]
   },
   {
@@ -10831,7 +10474,7 @@
     "location": "Cornus",
     "faction": "sardinians",
     "x": 240,
-    "y": 319,
+    "y": 380,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -10852,7 +10495,7 @@
     "location": "Uselis",
     "faction": "sardinians",
     "x": 243,
-    "y": 323,
+    "y": 376,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -10864,7 +10507,7 @@
     "location": "Singidounon",
     "faction": "scordisci",
     "x": 368,
-    "y": 252,
+    "y": 447,
     "units": [
       "galatian general",
       "galatian swordsmen",
@@ -10886,7 +10529,7 @@
     "location": "Akouminkon",
     "faction": "scordisci",
     "x": 365,
-    "y": 248,
+    "y": 451,
     "units": [
       "arvernian champions"
     ]
@@ -10898,7 +10541,7 @@
     "location": "Selge",
     "faction": "selge",
     "x": 497,
-    "y": 347,
+    "y": 352,
     "units": [
       "greek general",
       "prodromoi",
@@ -10916,7 +10559,7 @@
     "location": "Outside Selge",
     "faction": "selge",
     "x": 497,
-    "y": 347,
+    "y": 352,
     "units": [
       "greek general"
     ]
@@ -10928,7 +10571,7 @@
     "location": "Agedincum",
     "faction": "senones",
     "x": 198,
-    "y": 197,
+    "y": 502,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -10945,7 +10588,7 @@
     "location": "Senonium",
     "faction": "senones",
     "x": 198,
-    "y": 194,
+    "y": 505,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -10957,7 +10600,7 @@
     "location": "Vesontio",
     "faction": "sequani",
     "x": 222,
-    "y": 213,
+    "y": 486,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -10975,7 +10618,7 @@
     "location": "Brenodurum",
     "faction": "sequani",
     "x": 236,
-    "y": 219,
+    "y": 480,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -10987,7 +10630,7 @@
     "location": "Sidon",
     "faction": "sidon",
     "x": 556,
-    "y": 389,
+    "y": 310,
     "units": [
       "asian royal bodyguards",
       "median spearmen",
@@ -11008,7 +10651,7 @@
     "location": "outside Sidon",
     "faction": "sidon",
     "x": 557,
-    "y": 389,
+    "y": 310,
     "units": [
       "asian royal bodyguards"
     ]
@@ -11020,7 +10663,7 @@
     "location": "Ratostabius",
     "faction": "silures",
     "x": 144,
-    "y": 139,
+    "y": 560,
     "units": [
       "brittonic bodyguards",
       "brittonic skirmishers",
@@ -11041,7 +10684,7 @@
     "location": "Silurium",
     "faction": "silures",
     "x": 150,
-    "y": 128,
+    "y": 571,
     "units": [
       "brittonic bodyguards"
     ]
@@ -11053,7 +10696,7 @@
     "location": "Sinope",
     "faction": "sinope",
     "x": 526,
-    "y": 270,
+    "y": 429,
     "units": [
       "greek general",
       "sinopian epilektoi",
@@ -11069,7 +10712,7 @@
     "location": "Near Sinope",
     "faction": "sinope",
     "x": 527,
-    "y": 273,
+    "y": 426,
     "units": [
       "greek general"
     ]
@@ -11081,7 +10724,7 @@
     "location": "Near Sinope",
     "faction": "sinope",
     "x": 520,
-    "y": 273,
+    "y": 426,
     "units": [
       "greek general"
     ]
@@ -11093,7 +10736,7 @@
     "location": "Near Sinope (sea)",
     "faction": "sinope",
     "x": 524,
-    "y": 267,
+    "y": 432,
     "units": [
       "naval biremes"
     ]
@@ -11105,7 +10748,7 @@
     "location": "Seraka",
     "faction": "siraces",
     "x": 565,
-    "y": 214,
+    "y": 485,
     "units": [
       "armoured sarmatian general"
     ]
@@ -11117,7 +10760,7 @@
     "location": "Ouspe",
     "faction": "siraces",
     "x": 553,
-    "y": 218,
+    "y": 481,
     "units": [
       "armoured sarmatian general",
       "sarmatian horse archers",
@@ -11138,7 +10781,7 @@
     "location": "Ouspe",
     "faction": "siraces",
     "x": 553,
-    "y": 218,
+    "y": 481,
     "units": [
       "armoured sarmatian general"
     ]
@@ -11150,7 +10793,7 @@
     "location": "Karkathiokerta",
     "faction": "sophene",
     "x": 592,
-    "y": 310,
+    "y": 389,
     "units": [
       "armenian royal bodyguards",
       "asian light spearmen",
@@ -11172,7 +10815,7 @@
     "location": "Tomisa",
     "faction": "sophene",
     "x": 576,
-    "y": 311,
+    "y": 388,
     "units": [
       "armenian royal bodyguards"
     ]
@@ -11184,7 +10827,7 @@
     "location": "Sotium",
     "faction": "sotiates",
     "x": 157,
-    "y": 252,
+    "y": 447,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -11205,7 +10848,7 @@
     "location": "",
     "faction": "sotiates",
     "x": 159,
-    "y": 252,
+    "y": 447,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -11217,7 +10860,7 @@
     "location": "Sparta",
     "faction": "sparta",
     "x": 397,
-    "y": 361,
+    "y": 338,
     "units": [
       "spartan general"
     ]
@@ -11229,7 +10872,7 @@
     "location": "Gytheion",
     "faction": "sparta",
     "x": 399,
-    "y": 366,
+    "y": 333,
     "units": [
       "spartan general"
     ]
@@ -11241,7 +10884,7 @@
     "location": "Kythera",
     "faction": "sparta",
     "x": 404,
-    "y": 373,
+    "y": 326,
     "units": [
       "spartan general"
     ]
@@ -11253,7 +10896,7 @@
     "location": "Sparta",
     "faction": "sparta",
     "x": 397,
-    "y": 361,
+    "y": 338,
     "units": [
       "spartan general",
       "helot javelinmen",
@@ -11274,7 +10917,7 @@
     "location": "Port of Sparta",
     "faction": "sparta",
     "x": 405,
-    "y": 371,
+    "y": 328,
     "units": [
       "naval biremes"
     ]
@@ -11286,7 +10929,7 @@
     "location": "Semnonia near Elbe",
     "faction": "suebi",
     "x": 285,
-    "y": 139,
+    "y": 560,
     "units": [
       "suebian bodyguard"
     ]
@@ -11298,7 +10941,7 @@
     "location": "Semnonia north",
     "faction": "suebi",
     "x": 300,
-    "y": 131,
+    "y": 568,
     "units": [
       "suebian bodyguard"
     ]
@@ -11310,7 +10953,7 @@
     "location": "Susudata",
     "faction": "suebi",
     "x": 305,
-    "y": 142,
+    "y": 557,
     "units": [
       "suebian bodyguard",
       "freemen vanguard",
@@ -11332,7 +10975,7 @@
     "location": "Sugambrium",
     "faction": "sugambri",
     "x": 238,
-    "y": 159,
+    "y": 540,
     "units": [
       "bodyguard frameae sword",
       "freemen vanguard",
@@ -11350,7 +10993,7 @@
     "location": "",
     "faction": "sugambri",
     "x": 242,
-    "y": 161,
+    "y": 538,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -11362,7 +11005,7 @@
     "location": "Syracuse",
     "faction": "syracuse",
     "x": 314,
-    "y": 365,
+    "y": 334,
     "units": [
       "syracusan general",
       "syracusan hoplites",
@@ -11386,7 +11029,7 @@
     "location": "Kamarina",
     "faction": "syracuse",
     "x": 305,
-    "y": 368,
+    "y": 331,
     "units": [
       "syracusan general"
     ]
@@ -11398,7 +11041,7 @@
     "location": "Tyndaris",
     "faction": "syracuse",
     "x": 312,
-    "y": 350,
+    "y": 349,
     "units": [
       "syracusan general"
     ]
@@ -11410,7 +11053,7 @@
     "location": "Leontinoi",
     "faction": "syracuse",
     "x": 311,
-    "y": 362,
+    "y": 337,
     "units": [
       "syracusan general"
     ]
@@ -11422,7 +11065,7 @@
     "location": "Katane",
     "faction": "syracuse",
     "x": 311,
-    "y": 359,
+    "y": 340,
     "units": [
       "syracusan general"
     ]
@@ -11434,7 +11077,7 @@
     "location": "Tauromenion",
     "faction": "syracuse",
     "x": 314,
-    "y": 354,
+    "y": 345,
     "units": [
       "syracusan general"
     ]
@@ -11446,10 +11089,40 @@
     "location": "Port of Syracuse",
     "faction": "syracuse",
     "x": 309,
-    "y": 378,
+    "y": 321,
     "units": [
       "naval biremes",
       "naval biremes"
+    ]
+  },
+  {
+    "name": "Milon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tarentum",
+    "faction": "taras",
+    "x": 336,
+    "y": 384,
+    "units": [
+      "greek general",
+      "italiote hoplites",
+      "italiote hoplites",
+      "italiote epibatai",
+      "greek slingers",
+      "xystophoroi",
+      "prodromoi"
+    ]
+  },
+  {
+    "name": "Leophron",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Metapontum",
+    "faction": "taras",
+    "x": 331,
+    "y": 382,
+    "units": [
+      "greek general"
     ]
   },
   {
@@ -11459,7 +11132,7 @@
     "location": "Poetovio",
     "faction": "taurisci",
     "x": 319,
-    "y": 230,
+    "y": 469,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -11480,7 +11153,7 @@
     "location": "Acervo",
     "faction": "taurisci",
     "x": 309,
-    "y": 237,
+    "y": 462,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -11492,7 +11165,7 @@
     "location": "",
     "faction": "tencteri",
     "x": 250,
-    "y": 172,
+    "y": 527,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -11513,7 +11186,7 @@
     "location": "",
     "faction": "tencteri",
     "x": 247,
-    "y": 173,
+    "y": 526,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -11525,7 +11198,7 @@
     "location": "Teuriscium",
     "faction": "teurisci",
     "x": 403,
-    "y": 215,
+    "y": 484,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -11542,7 +11215,7 @@
     "location": "Oppidum Teuriscorum",
     "faction": "teurisci",
     "x": 372,
-    "y": 207,
+    "y": 492,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -11554,7 +11227,7 @@
     "location": "Baklanaza",
     "faction": "thamud",
     "x": 588,
-    "y": 458,
+    "y": 241,
     "units": [
       "nabataean general",
       "arab levy spearmen",
@@ -11575,7 +11248,7 @@
     "location": "outside Baklanaza",
     "faction": "thamud",
     "x": 591,
-    "y": 457,
+    "y": 242,
     "units": [
       "nabataean general"
     ]
@@ -11587,7 +11260,7 @@
     "location": "Nigira Metropolis",
     "faction": "timbuktu",
     "x": 47,
-    "y": 638,
+    "y": 61,
     "units": [
       "kushite general",
       "kushite javelinmen",
@@ -11608,7 +11281,7 @@
     "location": "Outside Nigira Metropolis",
     "faction": "timbuktu",
     "x": 42,
-    "y": 640,
+    "y": 59,
     "units": [
       "kushite general"
     ]
@@ -11620,7 +11293,7 @@
     "location": "Trapezous",
     "faction": "trapezus",
     "x": 578,
-    "y": 272,
+    "y": 427,
     "units": [
       "greek general",
       "greek hoplites",
@@ -11636,7 +11309,7 @@
     "location": "Near Trapezous",
     "faction": "trapezus",
     "x": 575,
-    "y": 272,
+    "y": 427,
     "units": [
       "greek general"
     ]
@@ -11648,7 +11321,7 @@
     "location": "",
     "faction": "trapezus",
     "x": 577,
-    "y": 270,
+    "y": 429,
     "units": [
       "naval biremes"
     ]
@@ -11660,7 +11333,7 @@
     "location": "Treverium",
     "faction": "treveri",
     "x": 224,
-    "y": 180,
+    "y": 519,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -11681,7 +11354,7 @@
     "location": "Oppidum Treverorum",
     "faction": "treveri",
     "x": 235,
-    "y": 180,
+    "y": 519,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -11693,7 +11366,7 @@
     "location": "Oiskos",
     "faction": "triballi",
     "x": 411,
-    "y": 265,
+    "y": 434,
     "units": [
       "thracian royal bodyguards",
       "thracian light lancers",
@@ -11710,7 +11383,7 @@
     "location": "Triballon_Teichos",
     "faction": "triballi",
     "x": 402,
-    "y": 272,
+    "y": 427,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -11722,7 +11395,7 @@
     "location": "near Oiskos",
     "faction": "triballi",
     "x": 410,
-    "y": 266,
+    "y": 433,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -11734,7 +11407,7 @@
     "location": "near Oiskos",
     "faction": "triballi",
     "x": 412,
-    "y": 266,
+    "y": 433,
     "units": [
       "thracian royal bodyguards"
     ]
@@ -11746,7 +11419,7 @@
     "location": "Castrum Trinobantium",
     "faction": "trinovantes",
     "x": 174,
-    "y": 143,
+    "y": 556,
     "units": [
       "brittonic bodyguards"
     ]
@@ -11758,7 +11431,7 @@
     "location": "Oppidum Trinobantium",
     "faction": "trinovantes",
     "x": 182,
-    "y": 143,
+    "y": 556,
     "units": [
       "brittonic bodyguards"
     ]
@@ -11770,7 +11443,7 @@
     "location": "Trinobantia",
     "faction": "trinovantes",
     "x": 185,
-    "y": 135,
+    "y": 564,
     "units": [
       "brittonic bodyguards",
       "brittonic spearmen",
@@ -11790,7 +11463,7 @@
     "location": "Tylis",
     "faction": "tylis",
     "x": 440,
-    "y": 270,
+    "y": 429,
     "units": [
       "galatian general",
       "galatian warbands",
@@ -11811,7 +11484,7 @@
     "location": "outside Tylis",
     "faction": "tylis",
     "x": 439,
-    "y": 269,
+    "y": 430,
     "units": [
       "galatian general"
     ]
@@ -11823,7 +11496,7 @@
     "location": "Outside Tylis",
     "faction": "tylis",
     "x": 439,
-    "y": 273,
+    "y": 426,
     "units": [
       "galatian general"
     ]
@@ -11835,7 +11508,7 @@
     "location": "Outside Tylis",
     "faction": "tylis",
     "x": 441,
-    "y": 270,
+    "y": 429,
     "units": [
       "arvernian champions",
       "galatian warbands"
@@ -11848,7 +11521,7 @@
     "location": "Debelton",
     "faction": "tylis",
     "x": 442,
-    "y": 280,
+    "y": 419,
     "units": [
       "galatian general"
     ]
@@ -11860,7 +11533,7 @@
     "location": "Tyragetaike_Kome",
     "faction": "tyragetae",
     "x": 463,
-    "y": 214,
+    "y": 485,
     "units": [
       "getic royal bodyguards",
       "getic noble cavalry",
@@ -11881,7 +11554,7 @@
     "location": "",
     "faction": "tyragetae",
     "x": 460,
-    "y": 212,
+    "y": 487,
     "units": [
       "getic royal bodyguards"
     ]
@@ -11893,7 +11566,7 @@
     "location": "Tyre",
     "faction": "tyre",
     "x": 555,
-    "y": 393,
+    "y": 306,
     "units": [
       "asian royal bodyguards",
       "median spearmen",
@@ -11914,7 +11587,7 @@
     "location": "outside Tyre",
     "faction": "tyre",
     "x": 557,
-    "y": 393,
+    "y": 306,
     "units": [
       "asian royal bodyguards"
     ]
@@ -11926,7 +11599,7 @@
     "location": "Arctaunum",
     "faction": "ubii",
     "x": 251,
-    "y": 165,
+    "y": 534,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -11944,7 +11617,7 @@
     "location": "",
     "faction": "ubii",
     "x": 255,
-    "y": 166,
+    "y": 533,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -11956,7 +11629,7 @@
     "location": "Melocabus",
     "faction": "usipetes",
     "x": 255,
-    "y": 171,
+    "y": 528,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -11977,7 +11650,7 @@
     "location": "",
     "faction": "usipetes",
     "x": 253,
-    "y": 171,
+    "y": 528,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -11989,7 +11662,7 @@
     "location": "Pallantia",
     "faction": "vaccaei",
     "x": 102,
-    "y": 271,
+    "y": 428,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -12010,7 +11683,7 @@
     "location": "Intercatia",
     "faction": "vaccaei",
     "x": 94,
-    "y": 270,
+    "y": 429,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -12022,7 +11695,7 @@
     "location": "Pompelo",
     "faction": "vascones",
     "x": 136,
-    "y": 266,
+    "y": 433,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -12039,7 +11712,7 @@
     "location": "Arsaos",
     "faction": "vascones",
     "x": 139,
-    "y": 269,
+    "y": 430,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -12051,7 +11724,7 @@
     "location": "Venedium",
     "faction": "venedae",
     "x": 393,
-    "y": 107,
+    "y": 592,
     "units": [
       "bodyguard frameae sword",
       "venedic woodsmen",
@@ -12068,7 +11741,7 @@
     "location": "",
     "faction": "venedae",
     "x": 393,
-    "y": 107,
+    "y": 592,
     "units": [
       "bodyguard frameae sword"
     ]
@@ -12080,7 +11753,7 @@
     "location": "Patavium",
     "faction": "veneti",
     "x": 280,
-    "y": 244,
+    "y": 455,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -12099,7 +11772,7 @@
     "location": "Altinum",
     "faction": "veneti",
     "x": 284,
-    "y": 242,
+    "y": 457,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -12111,7 +11784,7 @@
     "location": "Venetium",
     "faction": "veneti_gallia",
     "x": 138,
-    "y": 194,
+    "y": 505,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -12128,7 +11801,7 @@
     "location": "",
     "faction": "veneti_gallia",
     "x": 140,
-    "y": 196,
+    "y": 503,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -12140,7 +11813,7 @@
     "location": "Deobriga",
     "faction": "vettones",
     "x": 95,
-    "y": 291,
+    "y": 408,
     "units": [
       "celtiberian noble bodyguards",
       "caetrati cavalry",
@@ -12161,7 +11834,7 @@
     "location": "Mirobriga",
     "faction": "vettones",
     "x": 77,
-    "y": 287,
+    "y": 412,
     "units": [
       "celtiberian noble bodyguards"
     ]
@@ -12173,7 +11846,7 @@
     "location": "Rucinatium",
     "faction": "vindelici",
     "x": 277,
-    "y": 196,
+    "y": 503,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -12192,7 +11865,7 @@
     "location": "Sorviodurum",
     "faction": "vindelici",
     "x": 288,
-    "y": 194,
+    "y": 505,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -12204,7 +11877,7 @@
     "location": "Menosgada",
     "faction": "volcae",
     "x": 274,
-    "y": 176,
+    "y": 523,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -12226,7 +11899,7 @@
     "location": "Eburum",
     "faction": "volcae",
     "x": 337,
-    "y": 186,
+    "y": 513,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -12238,7 +11911,7 @@
     "location": "Coridorgis",
     "faction": "volcae",
     "x": 305,
-    "y": 178,
+    "y": 521,
     "units": [
       "arvernian champions"
     ]
@@ -12250,7 +11923,7 @@
     "location": "Strevinta",
     "faction": "volcae",
     "x": 302,
-    "y": 170,
+    "y": 529,
     "units": [
       "celtic spearmen"
     ]
@@ -12262,7 +11935,7 @@
     "location": "Nemausus",
     "faction": "volcae_gallia",
     "x": 200,
-    "y": 261,
+    "y": 438,
     "units": [
       "gallic royal bodyguards",
       "celtic swordsmen",
@@ -12280,7 +11953,7 @@
     "location": "Tolosa",
     "faction": "volcae_gallia",
     "x": 170,
-    "y": 261,
+    "y": 438,
     "units": [
       "gallic royal bodyguards"
     ]
@@ -12292,13 +11965,13 @@
     "location": "Volsinii",
     "faction": "volsinii",
     "x": 280,
-    "y": 284,
+    "y": 415,
     "units": [
-      "tribunus militum",
-      "lucanian infantry",
-      "samnite hoplites",
-      "samnite hoplites",
-      "campanian cavalry"
+      "etruscan general",
+      "etruscan spearmen",
+      "etruscan light swordsmen",
+      "etruscan thureophoroi",
+      "etruscan lancer cavalry"
     ]
   },
   {
@@ -12308,21 +11981,9 @@
     "location": "",
     "faction": "volsinii",
     "x": 278,
-    "y": 286,
+    "y": 413,
     "units": [
-      "tribunus militum"
-    ]
-  },
-  {
-    "name": "Marcus",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Hellenistic Rebels Settlement",
-    "faction": "hellenistic_rebels",
-    "x": 1006,
-    "y": 692,
-    "units": [
-      "greek general"
+      "etruscan general"
     ]
   },
   {
@@ -12332,7 +11993,7 @@
     "location": "Maroneia",
     "faction": "seleucid_rebels",
     "x": 426,
-    "y": 303,
+    "y": 396,
     "units": [
       "seleucid general",
       "aor persian sparabara",
@@ -12346,7 +12007,7 @@
     "location": "Kypsela",
     "faction": "seleucid_rebels",
     "x": 436,
-    "y": 302,
+    "y": 397,
     "units": [
       "seleucid general",
       "aor thracian peltasts"
@@ -12359,7 +12020,7 @@
     "location": "Apros",
     "faction": "seleucid_rebels",
     "x": 443,
-    "y": 301,
+    "y": 398,
     "units": [
       "seleucid general",
       "aor thracian infantry"
@@ -12372,7 +12033,7 @@
     "location": "Ouskoudama",
     "faction": "seleucid_rebels",
     "x": 436,
-    "y": 290,
+    "y": 409,
     "units": [
       "seleucid general",
       "aor thracian light lancers"
@@ -12385,7 +12046,7 @@
     "location": "Eddopolis",
     "faction": "dummies",
     "x": 1016,
-    "y": 695,
+    "y": 4,
     "units": [
       "greek general"
     ]
@@ -12397,7 +12058,7 @@
     "location": "Moscaflacopolis",
     "faction": "slave",
     "x": 1016,
-    "y": 698,
+    "y": 1,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -12409,7 +12070,7 @@
     "location": "Jorellafopolis",
     "faction": "slave",
     "x": 1018,
-    "y": 151,
+    "y": 548,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -12421,7 +12082,7 @@
     "location": "Mausolopolis",
     "faction": "slave",
     "x": 306,
-    "y": 639,
+    "y": 60,
     "units": [
       "massylian royal bodyguards"
     ]
@@ -12433,13 +12094,13 @@
     "location": "Rhegium",
     "faction": "slave",
     "x": 319,
-    "y": 351,
+    "y": 348,
     "units": [
-      "tribunus militum",
-      "campanian cavalry",
-      "samnite hoplites",
-      "samnite hoplites",
-      "lucanian infantry"
+      "campanian general",
+      "campanian heavy cavalry",
+      "campanian thureophoroi",
+      "campanian hoplites",
+      "oscan spearmen"
     ]
   },
   {
@@ -12449,7 +12110,7 @@
     "location": "Sopianae",
     "faction": "slave",
     "x": 344,
-    "y": 235,
+    "y": 464,
     "units": [
       "northern illyrian general",
       "illyrian slingers"
@@ -12462,7 +12123,7 @@
     "location": "Olkinion",
     "faction": "slave",
     "x": 357,
-    "y": 294,
+    "y": 405,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers"
@@ -12475,7 +12136,7 @@
     "location": "Splonum",
     "faction": "slave",
     "x": 329,
-    "y": 252,
+    "y": 447,
     "units": [
       "northern illyrian general",
       "illyrian slingers"
@@ -12488,7 +12149,7 @@
     "location": "Autariaton_Teichos",
     "faction": "slave",
     "x": 357,
-    "y": 274,
+    "y": 425,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers"
@@ -12501,7 +12162,7 @@
     "location": "Cibalae",
     "faction": "slave",
     "x": 351,
-    "y": 245,
+    "y": 454,
     "units": [
       "northern illyrian general",
       "illyrian slingers"
@@ -12514,7 +12175,7 @@
     "location": "Segestica",
     "faction": "slave",
     "x": 325,
-    "y": 243,
+    "y": 456,
     "units": [
       "northern illyrian general",
       "illyrian slingers"
@@ -12527,7 +12188,7 @@
     "location": "Naissos",
     "faction": "slave",
     "x": 384,
-    "y": 272,
+    "y": 427,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian warband"
@@ -12540,7 +12201,7 @@
     "location": "Hyskana",
     "faction": "slave",
     "x": 376,
-    "y": 299,
+    "y": 400,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers"
@@ -12553,7 +12214,7 @@
     "location": "Daorson",
     "faction": "slave",
     "x": 343,
-    "y": 278,
+    "y": 421,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian slingers"
@@ -12566,7 +12227,7 @@
     "location": "Dournion",
     "faction": "slave",
     "x": 364,
-    "y": 292,
+    "y": 407,
     "units": [
       "illyrian warlords bodyguard",
       "illyrian peltasts"
@@ -12579,7 +12240,7 @@
     "location": "Salmydessos",
     "faction": "slave",
     "x": 452,
-    "y": 289,
+    "y": 410,
     "units": [
       "thracian royal bodyguards",
       "thynoi clubmen"
@@ -12592,7 +12253,7 @@
     "location": "Philippopolis",
     "faction": "slave",
     "x": 416,
-    "y": 287,
+    "y": 412,
     "units": [
       "thracian royal bodyguards",
       "galato-thracian warband"
@@ -12605,7 +12266,7 @@
     "location": "Ratiaria",
     "faction": "slave",
     "x": 394,
-    "y": 265,
+    "y": 434,
     "units": [
       "thracian royal bodyguards",
       "galato-thracian warband"
@@ -12618,7 +12279,7 @@
     "location": "Korelon Teichos",
     "faction": "slave",
     "x": 435,
-    "y": 285,
+    "y": 414,
     "units": [
       "thracian royal bodyguards",
       "thracian infantry"
@@ -12631,7 +12292,7 @@
     "location": "Skoupi",
     "faction": "slave",
     "x": 380,
-    "y": 292,
+    "y": 407,
     "units": [
       "thracian royal bodyguards",
       "thracian peltasts"
@@ -12644,7 +12305,7 @@
     "location": "Serdike",
     "faction": "slave",
     "x": 400,
-    "y": 279,
+    "y": 420,
     "units": [
       "gallic royal bodyguards",
       "celtic skirmishers"
@@ -12657,7 +12318,7 @@
     "location": "Dion Teichos",
     "faction": "slave",
     "x": 424,
-    "y": 291,
+    "y": 408,
     "units": [
       "thracian royal bodyguards",
       "thracian peltasts"
@@ -12670,7 +12331,7 @@
     "location": "Nastos",
     "faction": "slave",
     "x": 417,
-    "y": 300,
+    "y": 399,
     "units": [
       "thracian royal bodyguards",
       "thracian peltasts"
@@ -12683,7 +12344,7 @@
     "location": "Ainos",
     "faction": "slave",
     "x": 434,
-    "y": 305,
+    "y": 394,
     "units": [
       "thracian royal bodyguards",
       "thracian peltasts"
@@ -12696,7 +12357,7 @@
     "location": "Artakon_Teichos",
     "faction": "slave",
     "x": 424,
-    "y": 272,
+    "y": 427,
     "units": [
       "thracian royal bodyguards",
       "thracian slingers"
@@ -12709,7 +12370,7 @@
     "location": "Koilaleton Teichos",
     "faction": "slave",
     "x": 414,
-    "y": 280,
+    "y": 419,
     "units": [
       "thracian royal bodyguards",
       "thracian peltasts"
@@ -12722,7 +12383,7 @@
     "location": "Skaidaoua",
     "faction": "slave",
     "x": 423,
-    "y": 264,
+    "y": 435,
     "units": [
       "getic royal bodyguards",
       "getic archers"
@@ -12735,7 +12396,7 @@
     "location": "Contestanium",
     "faction": "slave",
     "x": 137,
-    "y": 331,
+    "y": 368,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12748,7 +12409,240 @@
     "location": "Narona",
     "faction": "slave",
     "x": 339,
-    "y": 278,
+    "y": 421,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Solon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hemeroskopeion",
+    "faction": "slave",
+    "x": 144,
+    "y": 373,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Iottalambdios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ankon",
+    "faction": "slave",
+    "x": 296,
+    "y": 428,
+    "units": [
+      "greek general",
+      "ankonitan hoplites"
+    ]
+  },
+  {
+    "name": "Kallias",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pharos",
+    "faction": "slave",
+    "x": 328,
+    "y": 422,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Lykophron",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apollonia-Epeiros",
+    "faction": "slave",
+    "x": 360,
+    "y": 388,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Theodoros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Argithea",
+    "faction": "slave",
+    "x": 385,
+    "y": 370,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Archelaos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Elateia",
+    "faction": "slave",
+    "x": 398,
+    "y": 360,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Aristomelidas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Orchomenos-Arkadia",
+    "faction": "slave",
+    "x": 393,
+    "y": 347,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Aristeidas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Mantineia",
+    "faction": "slave",
+    "x": 396,
+    "y": 345,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Aleos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tegea",
+    "faction": "slave",
+    "x": 396,
+    "y": 342,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Aristodemos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hierapytna",
+    "faction": "slave",
+    "x": 438,
+    "y": 312,
+    "units": [
+      "greek general",
+      "kretan hoplites"
+    ]
+  },
+  {
+    "name": "Kadmos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thasos",
+    "faction": "slave",
+    "x": 418,
+    "y": 393,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Oiniades",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tyras",
+    "faction": "slave",
+    "x": 465,
+    "y": 478,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Dionysios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nikonion",
+    "faction": "slave",
+    "x": 467,
+    "y": 480,
+    "units": [
+      "greek general"
+    ]
+  },
+  {
+    "name": "Telchios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Dioskourias",
+    "faction": "slave",
+    "x": 583,
+    "y": 458,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Autolykos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kerasous",
+    "faction": "slave",
+    "x": 565,
+    "y": 422,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Anaximandros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kotyora",
+    "faction": "slave",
+    "x": 558,
+    "y": 422,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Demetrios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Amisos",
+    "faction": "slave",
+    "x": 541,
+    "y": 421,
+    "units": [
+      "greek general",
+      "greek hoplites"
+    ]
+  },
+  {
+    "name": "Eumenes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sesamos",
+    "faction": "slave",
+    "x": 498,
+    "y": 418,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12761,7 +12655,7 @@
     "location": "Lamia",
     "faction": "slave",
     "x": 395,
-    "y": 335,
+    "y": 364,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12774,7 +12668,7 @@
     "location": "Ktimene",
     "faction": "slave",
     "x": 390,
-    "y": 333,
+    "y": 366,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12787,7 +12681,7 @@
     "location": "Argos-Amphilochia",
     "faction": "slave",
     "x": 383,
-    "y": 336,
+    "y": 363,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12800,7 +12694,7 @@
     "location": "Oreos",
     "faction": "slave",
     "x": 403,
-    "y": 334,
+    "y": 365,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12813,7 +12707,7 @@
     "location": "Opous",
     "faction": "slave",
     "x": 402,
-    "y": 338,
+    "y": 361,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12826,7 +12720,7 @@
     "location": "Sikyon",
     "faction": "slave",
     "x": 399,
-    "y": 348,
+    "y": 351,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12839,7 +12733,7 @@
     "location": "Near Sikyon",
     "faction": "slave",
     "x": 398,
-    "y": 348,
+    "y": 351,
     "units": [
       "greek general"
     ]
@@ -12851,7 +12745,7 @@
     "location": "Lepreon",
     "faction": "slave",
     "x": 389,
-    "y": 357,
+    "y": 342,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12864,7 +12758,7 @@
     "location": "Same",
     "faction": "slave",
     "x": 376,
-    "y": 346,
+    "y": 353,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12877,7 +12771,7 @@
     "location": "Arsinoe",
     "faction": "slave",
     "x": 423,
-    "y": 384,
+    "y": 315,
     "units": [
       "greek general",
       "kretan hoplites"
@@ -12890,7 +12784,7 @@
     "location": "Abdera-Thraike",
     "faction": "slave",
     "x": 420,
-    "y": 303,
+    "y": 396,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12903,7 +12797,7 @@
     "location": "Selymbria",
     "faction": "slave",
     "x": 455,
-    "y": 296,
+    "y": 403,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12916,7 +12810,7 @@
     "location": "Karkine",
     "faction": "slave",
     "x": 494,
-    "y": 214,
+    "y": 485,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12929,7 +12823,7 @@
     "location": "Tanais",
     "faction": "slave",
     "x": 550,
-    "y": 185,
+    "y": 514,
     "units": [
       "armoured sarmatian general",
       "scythian medium cavalry"
@@ -12942,7 +12836,7 @@
     "location": "Pityous",
     "faction": "slave",
     "x": 576,
-    "y": 240,
+    "y": 459,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12955,7 +12849,7 @@
     "location": "Phasis",
     "faction": "slave",
     "x": 594,
-    "y": 250,
+    "y": 449,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12968,7 +12862,7 @@
     "location": "Themiskyra",
     "faction": "slave",
     "x": 548,
-    "y": 277,
+    "y": 422,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12981,7 +12875,7 @@
     "location": "Koloussa",
     "faction": "slave",
     "x": 518,
-    "y": 273,
+    "y": 426,
     "units": [
       "greek general",
       "greek hoplites"
@@ -12994,7 +12888,7 @@
     "location": "Taouion",
     "faction": "slave",
     "x": 526,
-    "y": 302,
+    "y": 397,
     "units": [
       "asian royal bodyguards",
       "asian skirmishers"
@@ -13007,7 +12901,7 @@
     "location": "Gadilon",
     "faction": "slave",
     "x": 536,
-    "y": 275,
+    "y": 424,
     "units": [
       "asian royal bodyguards",
       "asian slingers"
@@ -13020,7 +12914,7 @@
     "location": "Pontikos_Phourion",
     "faction": "slave",
     "x": 567,
-    "y": 286,
+    "y": 413,
     "units": [
       "asian royal bodyguards",
       "asian slingers"
@@ -13033,7 +12927,7 @@
     "location": "Kybistra",
     "faction": "slave",
     "x": 529,
-    "y": 335,
+    "y": 364,
     "units": [
       "asian royal bodyguards",
       "asian slingers"
@@ -13046,7 +12940,7 @@
     "location": "Isinda",
     "faction": "slave",
     "x": 486,
-    "y": 350,
+    "y": 349,
     "units": [
       "greek general",
       "greek slingers"
@@ -13059,7 +12953,7 @@
     "location": "Kibyra",
     "faction": "slave",
     "x": 478,
-    "y": 350,
+    "y": 349,
     "units": [
       "greek general",
       "greek slingers"
@@ -13072,7 +12966,7 @@
     "location": "Laranda",
     "faction": "slave",
     "x": 520,
-    "y": 343,
+    "y": 356,
     "units": [
       "greek general",
       "phrygian javelinmen"
@@ -13085,7 +12979,7 @@
     "location": "Isaura",
     "faction": "slave",
     "x": 509,
-    "y": 344,
+    "y": 355,
     "units": [
       "greek general",
       "phrygian javelinmen"
@@ -13098,7 +12992,7 @@
     "location": "Pednelissos",
     "faction": "slave",
     "x": 494,
-    "y": 347,
+    "y": 352,
     "units": [
       "greek general",
       "greek slingers"
@@ -13111,7 +13005,7 @@
     "location": "Perge",
     "faction": "slave",
     "x": 494,
-    "y": 351,
+    "y": 348,
     "units": [
       "greek general",
       "greek slingers"
@@ -13124,7 +13018,7 @@
     "location": "Olbe",
     "faction": "slave",
     "x": 530,
-    "y": 350,
+    "y": 349,
     "units": [
       "greek general",
       "greek slingers"
@@ -13137,7 +13031,7 @@
     "location": "Kamisa",
     "faction": "slave",
     "x": 558,
-    "y": 295,
+    "y": 404,
     "units": [
       "asian royal bodyguards",
       "asian slingers"

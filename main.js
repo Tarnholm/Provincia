@@ -89,6 +89,7 @@ let modDescrStratCharsByFirstName = null; // "firstName" → [{ x, y, lastName, 
 let modUnitOfficerCounts = null; // { unitName: officerCount } from EDU — added to in-save soldier counts to match in-game UI
 let modBuildingChains = null;
 let modChainMaxLevels = null; // { chainName: number_of_levels } from EDB
+let modChainCategories = null; // { chainName: "trade" | "government" | ... } from EDB `icon` field
 let modFactionDisplayMap = null; // { lowercase display name → internal faction id }
 let modFactionDisplayNames = null; // { internal faction id → display name } — used in UI
 let modFactionCultures = null; // { factionId: cultureFolderName } — "roman", "greek", "barbarian", etc.
@@ -173,6 +174,7 @@ function loadModCharacterData(modDataDir) {
   // uint32 values that happen to be small but are pointers/data).
   modBuildingChains = new Set();
   modChainMaxLevels = {};
+  modChainCategories = {};
   if (fs.existsSync(edbPath)) {
     const edbText = fs.readFileSync(edbPath, "utf8");
     const blocks = edbText.split(/^building\s+/m).slice(1);
@@ -185,6 +187,12 @@ function loadModCharacterData(modDataDir) {
         const lvlList = levelsLine[1].trim().split(/\s+/);
         modChainMaxLevels[name] = lvlList.length;
       }
+      // RTW EDB declares the build-menu category via `icon <category>`. The
+      // game uses `data/ui/building_icons/<category>.tga` as the visual
+      // fallback when no per-culture/per-level art exists. Capture it for
+      // the icon resolver's final pass.
+      const iconLine = b.match(/^\s+icon\s+(\w+)/m);
+      if (iconLine) modChainCategories[name] = iconLine[1].toLowerCase();
     }
   }
   // Load faction display-name ↔ internal-id mappings.
@@ -1185,6 +1193,110 @@ ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {
   return out;
 });
 
+// IPC: parse the full stat block for a single unit from
+// export_descr_unit.txt. Returns the most useful in-game numbers in a
+// flat object so InfoPopup can show them next to the unit-info art.
+// Cached per (modDataDir, unitName).
+const _unitStatsCache = new Map();
+ipcMain.handle("get-unit-stats", async (_event, modDataDir, unitName) => {
+  if (!unitName) return null;
+  const target = String(unitName).toLowerCase();
+  const cacheKey = (modDataDir || "") + "|" + target;
+  if (_unitStatsCache.has(cacheKey)) return _unitStatsCache.get(cacheKey);
+  const sources = [];
+  for (const root of getIconSearchRoots()) sources.push(path.join(root, "export_descr_unit.txt"));
+  for (const d of findRelatedModDirs(modDataDir, "export_descr_unit.txt").reverse()) {
+    sources.push(path.join(d, "export_descr_unit.txt"));
+  }
+  const stripComments = (line) => { const i = line.indexOf(";"); return i >= 0 ? line.slice(0, i) : line; };
+  // Mod-last-wins: keep parsing all sources; the last block found for the
+  // target unit name wins (mods override vanilla stats).
+  let stats = null;
+  for (const src of sources) {
+    if (!fs.existsSync(src)) continue;
+    try {
+      const buf = fs.readFileSync(src);
+      const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
+      const lines = text.split(/\r?\n/);
+      let curUnit = null;
+      let block = null;
+      for (const rawLine of lines) {
+        const s = stripComments(rawLine).trim();
+        if (!s) continue;
+        const tm = s.match(/^type\s+(.+)$/);
+        if (tm) {
+          if (curUnit === target && block) stats = block;
+          curUnit = tm[1].trim().toLowerCase();
+          block = (curUnit === target) ? { name: curUnit } : null;
+          continue;
+        }
+        if (!block) continue;
+        // Capture the rest of the line after the keyword for each stat.
+        const m = s.match(/^(\w+)\s+(.+)$/);
+        if (!m) continue;
+        const key = m[1].toLowerCase();
+        const val = m[2].trim();
+        if (key === "soldier") {
+          // soldier <type>, <count>, <officers?>, <mass>
+          const p = val.split(",").map(x => x.trim());
+          block.soldierCount = parseInt(p[1]) || 0;
+          block.soldierMass = parseFloat(p[3]) || 0;
+        } else if (key === "officer") {
+          block.officers = (block.officers || 0) + 1;
+        } else if (key === "category") block.category = val;
+        else if (key === "class") block.classType = val;
+        else if (key === "stat_health") {
+          const p = val.split(",").map(x => parseInt(x.trim()));
+          block.hp = p[0] || 1;
+          block.mountHp = p[1] || 0;
+        } else if (key === "stat_pri") {
+          const p = val.split(",").map(x => x.trim());
+          block.priAttack = parseInt(p[0]);
+          block.priCharge = parseInt(p[1]);
+          block.priWeapon = p[5] || "";
+        } else if (key === "stat_sec") {
+          const p = val.split(",").map(x => x.trim());
+          if (p[2] && p[2] !== "no") {
+            block.secAttack = parseInt(p[0]);
+            block.secCharge = parseInt(p[1]);
+            block.secWeapon = p[5] || "";
+          }
+        } else if (key === "stat_pri_armour") {
+          const p = val.split(",").map(x => x.trim());
+          block.armour = parseInt(p[0]);
+          block.defenseSkill = parseInt(p[1]);
+          block.shield = parseInt(p[2]);
+        } else if (key === "stat_mental") {
+          const p = val.split(",").map(x => x.trim());
+          block.morale = parseInt(p[0]);
+          block.discipline = p[1] || "";
+        } else if (key === "stat_charge_dist") block.chargeDist = parseInt(val);
+        else if (key === "stat_cost") {
+          const p = val.split(",").map(x => parseInt(x.trim()));
+          block.recruitTurns = p[0];
+          block.recruitCost = p[1];
+          block.upkeep = p[2];
+        } else if (key === "stat_food") {
+          const p = val.split(",").map(x => parseInt(x.trim()));
+          block.foodCost = p[0];
+        } else if (key === "stat_stl") {
+          // stat_stl <men>,<turns> — replenishment per turn
+          block.replenishMen = parseInt((val.split(",")[0] || "0").trim());
+        } else if (key === "attributes") block.attributes = val;
+        else if (key === "formation") block.formation = val;
+        else if (key === "armour_ug_levels") block.armourUpgrades = val;
+        else if (key === "weapon_lvl") block.weaponLvl = parseInt(val);
+        else if (key === "voice_type") block.voiceType = val;
+        else if (key === "category") block.category = val;
+        else if (key === "ownership") block.owners = val.split(",").map(x => x.trim());
+      }
+      if (curUnit === target && block) stats = block;
+    } catch (e) { console.warn("[unit-stats]", src, e.message); }
+  }
+  _unitStatsCache.set(cacheKey, stats);
+  return stats;
+});
+
 // IPC: parse recruit capabilities from EDB. Inside each level's block:
 //   <level> requires factions { … } {
 //     capability { recruit "unit name" <tier>  [requires factions { … }] }
@@ -1207,17 +1319,52 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
     const i = line.indexOf(";");
     return i >= 0 ? line.slice(0, i) : line;
   };
+  // Parse ALIAS definitions in EDB so the renderer can evaluate
+  // tier-style requirements (mic_tier_2, gov_tier_1, colony_tier_1, etc.)
+  // against the city's actually-built buildings instead of blanket-
+  // dropping recruits that mention them. Each alias maps to one or more
+  // [chain, minLevel] clauses ORed together.
+  const aliases = {};
   // LAST-WINS per (chain, level): each source overwrites any recruit list
-  // a prior source had for the same chain+level. Alex's `practice_field`
-  // must fully replace vanilla's, otherwise we inherit `greek peltast`
-  // and friends that Alex removed.
+  // a prior source had for the same chain+level. Crucially this also
+  // applies when the mod redefines a level with ZERO recruit lines (RIS
+  // strips peasants from governors_villa by leaving the recruit list out
+  // entirely) — without that, vanilla's recruits leaked through.
   for (const src of sources) {
     if (!fs.existsSync(src)) continue;
-    const local = {}; // chain → level → [recruits] just for this source
+    const local = {}; // chain → level → [recruits] (may be empty array)
+    const definedLevels = new Set(); // "chain|level" the source touched at all
     try {
       const buf = fs.readFileSync(src);
       const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
       const lines = text.split(/\r?\n/);
+      // First pass: capture aliases.
+      {
+        let curAlias = null, curReq = "";
+        for (const rawLine of lines) {
+          const r = stripComments(rawLine).trim();
+          if (!r) continue;
+          const am = r.match(/^alias\s+(\w+)/);
+          if (am) { curAlias = am[1]; curReq = ""; continue; }
+          if (curAlias) {
+            const rm = r.match(/^requires\s+(.+)$/);
+            if (rm) curReq = rm[1].trim();
+            if (r === "}") {
+              if (curReq) {
+                // Split on `or` — each branch is one OR clause.
+                const branches = curReq.split(/\s+or\s+/);
+                const out2 = [];
+                for (const b of branches) {
+                  const m2 = b.match(/building_present_min_level\s+(\S+)\s+(\S+)/);
+                  if (m2) out2.push({ chain: m2[1], level: m2[2] });
+                }
+                if (out2.length > 0) aliases[curAlias] = out2;
+              }
+              curAlias = null; curReq = "";
+            }
+          }
+        }
+      }
       let curChain = null, curLevel = null, inCapability = false, depth = 0;
       for (let i = 0; i < lines.length; i++) {
         const raw = stripComments(lines[i]).trim();
@@ -1228,6 +1375,9 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
         const lm = raw.match(/^([a-z_][a-z0-9_]*(?:\+\d+)?)\s+requires\b/);
         if (lm && !inCapability) {
           curLevel = lm[1];
+          definedLevels.add(curChain + "|" + curLevel);
+          if (!local[curChain]) local[curChain] = {};
+          if (!local[curChain][curLevel]) local[curChain][curLevel] = [];
           continue;
         }
         if (raw === "capability" && curLevel) { inCapability = true; continue; }
@@ -1238,23 +1388,29 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
           if (rm) {
             const fm = raw.match(/requires\s+factions\s*\{\s*([^}]*)\}/);
             const factions = fm ? fm[1].split(",").map((s) => s.trim().toLowerCase()).filter(Boolean) : null;
-            if (!local[curChain]) local[curChain] = {};
-            if (!local[curChain][curLevel]) local[curChain][curLevel] = [];
-            local[curChain][curLevel].push({ unit: rm[1], factions });
+            // Capture the FULL requires clause so the renderer can evaluate
+            // additional constraints (major_event, hidden_resource, mic_tier_X,
+            // etc.) and avoid showing recruits the player can't actually train.
+            const ridx = raw.indexOf("requires");
+            const requires = ridx >= 0 ? raw.slice(ridx + "requires".length).trim() : null;
+            local[curChain][curLevel].push({ unit: rm[1], factions, requires });
           }
         }
       }
     } catch (e) { console.warn("[building-recruits]", src, e.message); continue; }
-    // Merge this source into `out` with LAST-WINS semantics at the
-    // (chain, level) grain. If Alex redefines `missiles/practice_field`,
-    // its recruit list fully replaces vanilla's.
-    for (const [chain, levels] of Object.entries(local)) {
+    // Merge: every (chain, level) the source DEFINED replaces whatever was
+    // in `out` — including replacing-with-empty (RIS removes peasants from
+    // governors_villa by defining the level with no recruit lines).
+    for (const key of definedLevels) {
+      const [chain, lvl] = key.split("|");
       if (!out[chain]) out[chain] = {};
-      for (const [lvl, recs] of Object.entries(levels)) {
-        out[chain][lvl] = recs;
-      }
+      out[chain][lvl] = (local[chain] && local[chain][lvl]) || [];
     }
   }
+  // Stash aliases on the recruits object — the renderer pulls both via
+  // the same IPC. Using a non-conflicting key (chain names never start
+  // with `__`).
+  out.__aliases = aliases;
   _buildingRecruitsCache.set(cacheKey, out);
   return out;
 });
@@ -1350,28 +1506,90 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
   if (modDataDir && fs.existsSync(modDataDir)) {
     dirs.push(path.join(modDataDir, "ui", c, "buildings"));
     dirs.push(path.join(modDataDir, "ui", c, "buildings", "construction"));
+    // `plugins/` holds vanilla-era icons that RTW:R never merged into
+    // `buildings/` — treasury tiers, aqueducts, shrines, etc.
+    dirs.push(path.join(modDataDir, "ui", c, "plugins"));
+    // `construction/` (peer of `buildings/`, not the nested one) is where
+    // some per-culture icons live. E.g. greek market lives at
+    // ui/greek/construction/#greek_market.tga instead of
+    // ui/greek/buildings/. Still the same culture's own art — not a
+    // cross-culture fallback.
+    dirs.push(path.join(modDataDir, "ui", c, "construction"));
   }
   for (const root of getIconSearchRoots()) {
     dirs.push(path.join(root, "ui", c, "buildings"));
     dirs.push(path.join(root, "ui", c, "buildings", "construction"));
+    dirs.push(path.join(root, "ui", c, "plugins"));
+    dirs.push(path.join(root, "ui", c, "construction"));
   }
   const romanDirs = [];
   if (c !== "roman") {
     if (modDataDir && fs.existsSync(modDataDir)) {
       romanDirs.push(path.join(modDataDir, "ui", "roman", "buildings"));
       romanDirs.push(path.join(modDataDir, "ui", "roman", "buildings", "construction"));
+      romanDirs.push(path.join(modDataDir, "ui", "roman", "plugins"));
+      romanDirs.push(path.join(modDataDir, "ui", "roman", "construction"));
     }
     for (const root of getIconSearchRoots()) {
       romanDirs.push(path.join(root, "ui", "roman", "buildings"));
       romanDirs.push(path.join(root, "ui", "roman", "buildings", "construction"));
+      romanDirs.push(path.join(root, "ui", "roman", "plugins"));
+      romanDirs.push(path.join(root, "ui", "roman", "construction"));
     }
   }
-  const readTga = (dir, fn) => {
+  // Cross-culture fallback dirs — searched only as a last resort when neither
+  // per-culture nor roman has art for the level. Some chains exist as art
+  // only under specific cultures (e.g., RIS ships #greek_gov1.tga and
+  // #e_hellenistic_gov1.tga but no #roman_gov1.tga). Order: cultures most
+  // likely to have shared/canonical art first.
+  const FALLBACK_CULTURES = [
+    "greek", "e_hellenistic", "w_hellenistic", "barbarian", "carthaginian",
+    "eastern", "egyptian", "iberian", "celtiberian", "thracian", "dacian",
+    "scythian", "iranian", "anatolian", "germanic", "brittonic", "illyrian",
+    "arab", "indian", "ethiopian", "libyan", "ancient",
+  ];
+  const otherCultureDirs = [];
+  for (const oc of FALLBACK_CULTURES) {
+    if (oc === c || oc === "roman") continue;
+    if (modDataDir && fs.existsSync(modDataDir)) {
+      otherCultureDirs.push({ culture: oc, dir: path.join(modDataDir, "ui", oc, "buildings") });
+      otherCultureDirs.push({ culture: oc, dir: path.join(modDataDir, "ui", oc, "buildings", "construction") });
+      otherCultureDirs.push({ culture: oc, dir: path.join(modDataDir, "ui", oc, "plugins") });
+      otherCultureDirs.push({ culture: oc, dir: path.join(modDataDir, "ui", oc, "construction") });
+    }
+    for (const root of getIconSearchRoots()) {
+      otherCultureDirs.push({ culture: oc, dir: path.join(root, "ui", oc, "buildings") });
+      otherCultureDirs.push({ culture: oc, dir: path.join(root, "ui", oc, "buildings", "construction") });
+      otherCultureDirs.push({ culture: oc, dir: path.join(root, "ui", oc, "plugins") });
+      otherCultureDirs.push({ culture: oc, dir: path.join(root, "ui", oc, "construction") });
+    }
+  }
+  // Vanilla ships identical placeholder TGAs under `ui/<non-roman>/plugins/`
+  // for chains it doesn't have proper per-culture art for (paved_roads,
+  // mines, treasury, roads, etc — all 2567 bytes, same MD5). It also ships
+  // small ~78×62 "construction-queue thumbnail" variants under
+  // `ui/<non-roman>/construction/` (e.g., #greek_market.tga at 78×62) which
+  // look pixelated in a card-sized slot when a 156×124 alternative exists.
+  // The `strict` flag rejects both placeholders and undersized thumbnails;
+  // it's enabled for per-culture passes (so the roman pass can win with
+  // proper artwork) and disabled for roman/wide-banner passes (where the
+  // file we find is the only option, even if small).
+  const VANILLA_PLACEHOLDER_SIZE = 2567;
+  const MIN_CARD_DIMENSION = 100;
+  const readTga = (dir, fn, strict) => {
     if (!fs.existsSync(dir)) return null;
     const full = path.join(dir, fn);
     if (!fs.existsSync(full)) return null;
     try {
       const buf = fs.readFileSync(full);
+      if (strict) {
+        if (buf.byteLength === VANILLA_PLACEHOLDER_SIZE) return null;
+        if (buf.byteLength >= 18) {
+          const w = buf.readUInt16LE(12);
+          const h = buf.readUInt16LE(14);
+          if (w > 0 && h > 0 && w < MIN_CARD_DIMENSION && h < MIN_CARD_DIMENSION) return null;
+        }
+      }
       return {
         buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
         path: full,
@@ -1379,57 +1597,122 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
       };
     } catch { return null; }
   };
-  // Pass 1 — culture's square icons (no _constructed), full name then suffix.
-  for (const lc of levelCandidates) {
-    for (const fn of [`#${c}_${lc}.tga`, `#${c.toUpperCase()}_${lc}.tga`, `#${lc}.tga`, `${c}_${lc}.tga`]) {
-      for (const dir of dirs) { const r = readTga(dir, fn); if (r) return r; }
+  // Resolution order is built around two preferences:
+  //   1. Specific (per-level) beats generic (per-chain).
+  //   2. Square icon (`#<c>_<x>.tga`, ~156×124) beats wide `_constructed`
+  //      banner (~361×163). Banners squashed to a square card look stretched.
+  // Roman is checked alongside per-culture (not as a last-resort fallback)
+  // because mods like RIS often ship the per-level art ONLY under roman/
+  // (e.g. `#roman_temple_dorian_1.tga`, `#roman_governors_palace.tga`),
+  // and vanilla greek often only ships the wide `_constructed` banner.
+  let chainCandidates = [];
+  if (chainName) {
+    const ch = String(chainName).toLowerCase();
+    const chainTokens = ch.split("_");
+    for (let start = 0; start < chainTokens.length; start++) {
+      const suffix = chainTokens.slice(start).join("_");
+      if (suffix && !chainCandidates.includes(suffix)) chainCandidates.push(suffix);
     }
   }
-  // Pass 2 — roman's square icons. Roman ships ~119 icons covering every
-  // chain, so for cultures with sparse sets (greek, egyptian, carthaginian)
-  // this matches what the in-game UI falls back to.
-  for (const lc of levelCandidates) {
-    for (const fn of [`#roman_${lc}.tga`]) {
-      for (const dir of romanDirs) { const r = readTga(dir, fn); if (r) return r; }
-    }
-  }
-  // Pass 3 — culture's wide `_constructed` banners as a last-resort visual
-  // (better than a category icon if the culture's artwork is available).
-  for (const lc of levelCandidates) {
-    for (const fn of [`#${c}_${lc}_constructed.tga`]) {
-      for (const dir of dirs) { const r = readTga(dir, fn); if (r) return r; }
-    }
-  }
-  // Pass 4 — roman's `_constructed` banner, same rationale as Pass 3.
-  for (const lc of levelCandidates) {
-    for (const fn of [`#roman_${lc}_constructed.tga`]) {
-      for (const dir of romanDirs) { const r = readTga(dir, fn); if (r) return r; }
-    }
-  }
-  // Final fallback: shared chain-category icon in ui/building_icons/.
-  const category = pickGenericCategory(chainName, l);
-  if (category) {
-    const categoryDirs = [];
-    if (modDataDir && fs.existsSync(modDataDir)) {
-      categoryDirs.push(path.join(modDataDir, "ui", "building_icons"));
-    }
-    for (const root of getIconSearchRoots()) {
-      categoryDirs.push(path.join(root, "ui", "building_icons"));
-    }
-    for (const dir of categoryDirs) {
-      const full = path.join(dir, `${category}.tga`);
-      if (fs.existsSync(full)) {
-        try {
-          const buf = fs.readFileSync(full);
-          return {
-            buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
-            path: full,
-            mime: "image/x-tga",
-          };
-        } catch {}
+  const tryNames = (names, dirSet, strict) => {
+    for (const fn of names) {
+      for (const dir of dirSet) {
+        const r = readTga(dir, fn, strict);
+        if (r) return r;
       }
     }
+    return null;
+  };
+  // Pass 1 — per-culture square icon, strict (skip placeholders and
+  // 78×62 thumbnails so the roman pass can serve the proper 156×124 card).
+  for (const lc of levelCandidates) {
+    const r = tryNames([`#${c}_${lc}.tga`, `#${c.toUpperCase()}_${lc}.tga`, `#${lc}.tga`, `${c}_${lc}.tga`], dirs, true);
+    if (r) return r;
   }
+  // Pass 2 — roman per-level (non-strict; accept whatever's there since
+  // roman is the canonical asset path for missing per-culture art).
+  if (c !== "roman" && romanDirs.length) {
+    for (const lc of levelCandidates) {
+      const r = tryNames([`#roman_${lc}.tga`, `#ROMAN_${lc}.tga`, `roman_${lc}.tga`], romanDirs, false);
+      if (r) return r;
+    }
+  }
+  // Pass 3 — per-culture chain icon, strict.
+  for (const cc of chainCandidates) {
+    const r = tryNames([`#${c}_${cc}.tga`, `#${c.toUpperCase()}_${cc}.tga`, `#${cc}.tga`, `${c}_${cc}.tga`], dirs, true);
+    if (r) return r;
+  }
+  // Pass 4 — roman chain icon (non-strict).
+  if (c !== "roman" && romanDirs.length) {
+    for (const cc of chainCandidates) {
+      const r = tryNames([`#roman_${cc}.tga`, `#ROMAN_${cc}.tga`, `roman_${cc}.tga`], romanDirs, false);
+      if (r) return r;
+    }
+  }
+  // Pass 5 — per-culture small/thumbnail icon (non-strict). Accept the
+  // 78×62 thumbnail now if no proper card was found anywhere.
+  for (const lc of levelCandidates) {
+    const r = tryNames([`#${c}_${lc}.tga`, `#${c.toUpperCase()}_${lc}.tga`, `#${lc}.tga`, `${c}_${lc}.tga`], dirs, false);
+    if (r) return r;
+  }
+  for (const cc of chainCandidates) {
+    const r = tryNames([`#${c}_${cc}.tga`, `#${c.toUpperCase()}_${cc}.tga`, `#${cc}.tga`, `${c}_${cc}.tga`], dirs, false);
+    if (r) return r;
+  }
+  // Pass 6 — per-culture wide `_constructed` banner.
+  for (const lc of levelCandidates) {
+    const r = tryNames([`#${c}_${lc}_constructed.tga`], dirs, false);
+    if (r) return r;
+  }
+  // Pass 7 — roman wide `_constructed` banner.
+  if (c !== "roman" && romanDirs.length) {
+    for (const lc of levelCandidates) {
+      const r = tryNames([`#roman_${lc}_constructed.tga`], romanDirs, false);
+      if (r) return r;
+    }
+    for (const cc of chainCandidates) {
+      const r = tryNames([`#roman_${cc}_constructed.tga`], romanDirs, false);
+      if (r) return r;
+    }
+  }
+  // Per-culture chain `_constructed` as final visual.
+  for (const cc of chainCandidates) {
+    const r = tryNames([`#${c}_${cc}_constructed.tga`], dirs, false);
+    if (r) return r;
+  }
+  // Final pass — cross-culture lookup. Some chains/levels exist as art
+  // ONLY under specific cultures (e.g., #greek_gov1.tga but no roman or
+  // italic version). Searches a prioritised list of cultures for the level
+  // name, then chain name, then `_constructed` variants. Better than a
+  // blank card.
+  for (const lc of levelCandidates) {
+    for (const { culture: oc, dir } of otherCultureDirs) {
+      const r = readTga(dir, `#${oc}_${lc}.tga`, false); if (r) return r;
+    }
+  }
+  for (const cc of chainCandidates) {
+    for (const { culture: oc, dir } of otherCultureDirs) {
+      const r = readTga(dir, `#${oc}_${cc}.tga`, false); if (r) return r;
+    }
+  }
+  for (const lc of levelCandidates) {
+    for (const { culture: oc, dir } of otherCultureDirs) {
+      const r = readTga(dir, `#${oc}_${lc}_constructed.tga`, false); if (r) return r;
+    }
+  }
+  // Final fallback — RTW's own generic building card, shown by the game
+  // when no per-culture/per-level art exists. 78×62, same dimensions as
+  // the per-level card icons. This is what the in-game UI shows for
+  // chains like Weavery that ship no building art at all.
+  const genericRoots = [];
+  if (modDataDir && fs.existsSync(modDataDir)) genericRoots.push(path.join(modDataDir, "ui", "generic"));
+  for (const root of getIconSearchRoots()) genericRoots.push(path.join(root, "ui", "generic"));
+  for (const dir of genericRoots) {
+    const got = readTga(dir, "generic_building.tga", false);
+    if (got) return got;
+  }
+  // Genuinely missing — log via the renderer's MISSING ICON line so they
+  // can be added deliberately.
   return null;
 });
 
@@ -1491,6 +1774,16 @@ ipcMain.handle("resolve-building-banner", async (_event, modDataDir, culture, le
         if (r) return r;
       }
     }
+  }
+  // Final fallback — RTW's generic `_constructed` banner (360×160) for
+  // chains that ship no per-culture art. Matches what the in-game
+  // right-click detail panel shows for Weavery etc.
+  const genericDirs = [];
+  if (modDataDir && fs.existsSync(modDataDir)) genericDirs.push(path.join(modDataDir, "ui", "generic"));
+  for (const root of getIconSearchRoots()) genericDirs.push(path.join(root, "ui", "generic"));
+  for (const dir of genericDirs) {
+    const r = tryRead(dir, "generic_constructed_building.tga");
+    if (r) return r;
   }
   return null;
 });
@@ -2498,12 +2791,19 @@ ipcMain.handle("faction-display-map", async () => {
 
 // Self-contained — parses expanded_bi.txt files from mod + game installs
 // so users without a mod selected still get faction display names.
+// Also reads campaign_descriptions.txt for campaign-specific names like
+// "The House of Claudii" (RIS alternate_campaign) vs "Rome" (imperial).
+// Pass the campaign id (e.g., "classic" → "alternate_campaign") so the
+// matching campaign's titles override the generic expanded_bi entries.
 const _factionDisplayCache = new Map();
-ipcMain.handle("faction-display-names", async (_event, modDataDir) => {
-  const cacheKey = modDataDir || "";
+const CAMPAIGN_PREFIX = {
+  classic: ["ALTERNATE_CAMPAIGN", "RIS_CLASSIC", "RIS_CLASSIC_2"],
+  imperial: ["IMPERIAL_CAMPAIGN"],
+};
+ipcMain.handle("faction-display-names", async (_event, modDataDir, campaign) => {
+  const cacheKey = `${modDataDir || ""}|${campaign || ""}`;
   if (_factionDisplayCache.has(cacheKey)) return _factionDisplayCache.get(cacheKey);
   const map = {};
-  // Source order: game (base) → parent mod → submod (last = wins).
   const sources = [];
   for (const root of getIconSearchRoots()) {
     sources.push(path.join(root, "text", "expanded_bi.txt"));
@@ -2526,9 +2826,45 @@ ipcMain.handle("faction-display-names", async (_event, modDataDir) => {
         const factionId = key.toLowerCase();
         const display = m[2].trim();
         if (!display || display.length > 60) continue;
-        map[factionId] = display; // last-wins
+        map[factionId] = display;
       }
     } catch {}
+  }
+  // Layer campaign-specific titles on top so the active campaign's faction
+  // names (e.g., "The House of Claudii" in alternate_campaign) override
+  // generic ones (e.g., "The Roman Republic" from expanded_bi.txt).
+  const prefixes = CAMPAIGN_PREFIX[campaign] || [];
+  if (prefixes.length) {
+    const campSources = [];
+    for (const root of getIconSearchRoots()) {
+      campSources.push(path.join(root, "text", "campaign_descriptions.txt"));
+    }
+    for (const d of findRelatedModDirs(modDataDir, "text/campaign_descriptions.txt").reverse()) {
+      campSources.push(path.join(d, "text", "campaign_descriptions.txt"));
+    }
+    for (const src of campSources) {
+      if (!fs.existsSync(src)) continue;
+      try {
+        const buf = fs.readFileSync(src);
+        const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
+        for (const line of text.split(/\r?\n/)) {
+          const m = line.match(/^\{([A-Z0-9_]+)_TITLE\}(.+?)\s*$/);
+          if (!m) continue;
+          const key = m[1];
+          let factionId = null;
+          for (const p of prefixes) {
+            if (key.startsWith(p + "_")) {
+              factionId = key.slice(p.length + 1).toLowerCase();
+              break;
+            }
+          }
+          if (!factionId) continue;
+          const display = m[2].trim();
+          if (!display || display.length > 60) continue;
+          map[factionId] = display;
+        }
+      } catch {}
+    }
   }
   _factionDisplayCache.set(cacheKey, map);
   return map;

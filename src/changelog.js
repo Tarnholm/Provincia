@@ -8,6 +8,115 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.111",
+    date: "2026-04-24",
+    items: [
+      { type: "fix", text: "Sparta-owns-45-cities bug: faction legend was aggregating by `regions[].faction` (descr_regions line 3 = rebel-default), not descr_strat ownership. Now counts regions per `factionRegionsMap` and rolls unassigned regions into a single 'slave' rebels entry — matches the map coloring." },
+      { type: "fix", text: "Campaign-aware faction display names. RIS classic submod now shows 'The House of Claudii' for romans_julii (from ALTERNATE_CAMPAIGN_*_TITLE in campaign_descriptions.txt) instead of the generic expanded_bi.txt label. Mapping: classic → ALTERNATE_CAMPAIGN prefix; imperial → IMPERIAL_CAMPAIGN prefix." },
+      { type: "improvement", text: "Building icon resolver rewritten with proper pass order: per-culture per-level → roman per-level → per-culture chain → roman chain → wide `_constructed` banners → cross-culture level/chain → generic fallback. Reproduces the game's own lookup order so the right icon wins over stretched banners or pixelated thumbnails." },
+      { type: "fix", text: "Skip vanilla 2567-byte placeholder TGAs under ui/<non-roman>/plugins/ (identical MD5 for paved_roads/mines/treasury/roads/etc). These aren't real art — the game uses the roman equivalent. Now the resolver passes through to the proper 77KB #roman_paved_roads.tga and similar." },
+      { type: "fix", text: "Skip per-culture 78×62 in-progress-construction thumbnails in favor of proper 156×124 card icons from roman/. Fixes Local Market, Shipwright, Minor Stone Walls, Governor's Palace etc. showing tiny/stretched icons." },
+      { type: "improvement", text: "Cross-culture icon fallback. When neither per-culture nor roman ships art for a chain/level (e.g. Client Kingdom `gov1`), search greek/e_hellenistic/w_hellenistic/etc. for the art. Many chains exist as art only under specific cultures." },
+      { type: "fix", text: "Generic building fallback: chains with ZERO per-culture art anywhere (Weavery, Local Garrisons, Perfume Maker — textiles_production / garrison / perfumes_industry) now use `ui/generic/generic_building.tga` (78×62) for the card and `generic_constructed_building.tga` (360×160) for the right-click banner — matches what the game itself shows." },
+      { type: "improvement", text: "Building icon dirs extended per culture: ui/<c>/buildings, /buildings/construction, /plugins, /construction. Roman dirs similarly. Finds the real art wherever the mod/game ships it." },
+    ],
+  },
+  {
+    version: "0.9.100",
+    date: "2026-04-24",
+    items: [
+      { type: "fix", text: "Added ui/<culture>/construction/ (peer of buildings/, not the nested construction subdir) to the icon scan list. Some per-culture icons live there — e.g. #greek_market.tga. Still the same culture's own art, not a cross-culture fallback." },
+    ],
+  },
+  {
+    version: "0.9.99",
+    date: "2026-04-24",
+    items: [
+      { type: "change", text: "No icon fallbacks of any kind. Dropped the cross-culture 'roman' fallback and the generic chain-category fallback. Buildings without a culture-specific TGA render blank, and the log prints 'MISSING ICON: <culture> / <chain> / <level>' for each unresolved case so the real file can be located deliberately rather than masked by an incorrect default." },
+    ],
+  },
+  {
+    version: "0.9.98",
+    date: "2026-04-24",
+    items: [
+      { type: "fix", text: "Restore the chain-category icon fallback (0.9.97 over-removed it). Paved Roads, Mines, and every other building relying on the generic 'roads'/'mining'/'farming'/etc. category icon went blank. Category list unchanged — just the 0.9.96-era additions (treasury/waystation/garrison) stay out." },
+    ],
+  },
+  {
+    version: "0.9.97",
+    date: "2026-04-24",
+    items: [
+      { type: "change", text: "Removed the chain-category building-icon fallback. Buildings without a real culture-specific TGA now render blank instead of showing a generic placeholder — so genuinely-missing icons are visible and fixable rather than hidden behind a default." },
+      { type: "improvement", text: "Building icons are now displayed at 70×56 (matching RTW's 156×124 aspect ratio) instead of 52×52 square. Uses object-fit: contain so nothing is cropped. Card width unchanged — the extra space was already there inside the 82px card padding." },
+    ],
+  },
+  {
+    version: "0.9.96",
+    date: "2026-04-24",
+    items: [
+      { type: "improvement", text: "Building icon cards now use object-fit: cover instead of contain, so the icon fills the 52×52 frame instead of being letterboxed inside it. RTW icons are 156×124, so the card art is ~25% visually bigger with only a sliver of side-crop. Card size is unchanged." },
+      { type: "fix", text: "Treasury-tier buildings now resolve their icons. RTW stores some building icons in ui/<culture>/plugins/ (treasury, aqueducts, shrines, etc.) instead of ui/<culture>/buildings/. The resolver now scans plugins/ as a secondary directory before falling back to the generic category." },
+      { type: "fix", text: "Waystation and garrison buildings now fall back to the generic category icon (waystation→roads, garrison→defense). Treasury also now maps to the 'trade' category as a second-line fallback." },
+    ],
+  },
+  {
+    version: "0.9.95",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Tier requirements (mic_tier_N / gov_tier_N / colony_tier_N etc.) are now actually evaluated against the city's built buildings instead of blanket-dropping every recruit that mentions one. EDB parser now also captures `alias <name> { requires building_present_min_level <chain> <level> }` definitions; the recruit filter expands each tier token into its building requirement and checks the chain's current level meets it. Athenian General (mic_tier_2) shows again when the city has military_industrial_complex at mic_2 or higher; still hidden when it doesn't." },
+    ],
+  },
+  {
+    version: "0.9.94",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Recruitable list now drops units gated by conditions the app can't evaluate from a static save: major_event (player-triggered reforms — 'athenian tarentine cavalry' needs athens_reforms_2), hidden_resource (region-specific tags), and tier hidden-resources (mic_tier_N / gov_tier_N / colony_tier_N / culture_tier_N — RIS uses these to lock units behind specific other buildings). Also respects 'not factions { ... }' negative filters. Conservative: under-show rather than over-show to match the in-game recruit panel." },
+    ],
+  },
+  {
+    version: "0.9.93",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Recruitable list no longer leaks vanilla recruits through mod overrides. Mods like RIS strip peasants from governors_villa by redefining the level with no recruit lines — but my parser only ran last-wins when the mod source actually had recruit lines, so vanilla's 'greek peasant' etc. survived. Now any (chain, level) the mod source defines (even with zero recruits) replaces vanilla's entry. Athens-on-RIS won't show greek peasant anymore." },
+    ],
+  },
+  {
+    version: "0.9.92",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Recruitable units now include lower-tier units from the same chain. RTW chains are cumulative — owning army_barracks lets you recruit hastati/principes/triarii because the militia/city tiers are implicitly satisfied. The panel previously only listed recruits from the EXACT current level, so e.g. Athens with a city-tier barracks would show only the city-tier units, missing the militia recruits. Walks every level up to and including the current one in each built chain. Updates live as buildings upgrade in the save (already wired through getBuildings)." },
+    ],
+  },
+  {
+    version: "0.9.91",
+    date: "2026-04-23",
+    items: [
+      { type: "feature", text: "Right-click a unit card → the popup now shows the unit's actual stats from EDU below the card art: soldiers, HP, attack (primary/secondary with weapon type), charge bonus, defense breakdown (armour · skill · shield), morale + discipline, charge distance, recruitment cost / turns / upkeep, replenishment per turn, and category/class. Pulled from export_descr_unit.txt (mod last-wins so RIS overrides vanilla)." },
+      { type: "fix", text: "Bundled vanilla armies JSON (armies_classic.json / armies_large.json) is now bottom-up like every other coord source — bundler no longer pre-flips. Means non-imported users on Alexander/imperial campaigns won't see armies upside-down." },
+    ],
+  },
+  {
+    version: "0.9.90",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Render y-flip restored. 0.9.88 dropped it because the bundled JSON was pre-flipped; but once you dev-import, armiesData is replaced with raw bottom-up descr_strat data from parseDescrStratArmies, and so are the live-mode armies from the save parser. Flipping at render time is right for every fresh data path. RIS imperial armies should now sit on land." },
+    ],
+  },
+  {
+    version: "0.9.89",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "RIS descr_strat armies now parse. Mods like RIS use 'character,<tab>Name, role, age, x, y' with a comma after 'character'; the parser's regex required plain whitespace after the keyword and silently ignored every such line. Result: 0 armies parsed and the Region Info panel's Garrison / Field Army sections stayed empty on imperial imports. Accepting comma-or-whitespace separator fixes both — RIS's descr_strat now yields 906 starting armies through the import pipeline, which feed the settlement-bucketed starting_armies JSON." },
+    ],
+  },
+  {
+    version: "0.9.88",
+    date: "2026-04-23",
+    items: [
+      { type: "fix", text: "Armies were rendered upside-down on the RIS imperial map. The render was applying a y-flip meant for raw descr_strat coords, but all the data feeding into it (bundled JSON, dev-imported JSON, cityPixels) is actually already top-down. Dropped the render flip so armies sit at their data's y directly." },
+    ],
+  },
+  {
     version: "0.9.87",
     date: "2026-04-23",
     items: [

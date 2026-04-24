@@ -169,7 +169,10 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
       current = {
         name, charType: charType(rest), armyClass: ac, location: loc, faction,
         x: snapX,
-        y: mapHeight - 1 - snapY,
+        // descr_strat y is bottom-up (y=0 at bottom). Keep that convention
+        // so the bundled JSON matches the dev-import / live-save data —
+        // the renderer flips once for all of them.
+        y: snapY,
         units: [],
       };
       prevComment = "";

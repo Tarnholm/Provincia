@@ -42,6 +42,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("get-building-recruits", modDataDir),
   getUnitOwnership: (modDataDir) =>
     ipcRenderer.invoke("get-unit-ownership", modDataDir),
+  getUnitStats: (modDataDir, unitName) =>
+    ipcRenderer.invoke("get-unit-stats", modDataDir, unitName),
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   // Save file watcher
   saveWatchStart: (saveDir, pinnedSave) => ipcRenderer.invoke("save-watch-start", saveDir, pinnedSave || null),
@@ -53,7 +55,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Character/unit extraction — initialize once the mod data directory is known.
   charactersInit: (modDataDir) => ipcRenderer.invoke("characters-init", modDataDir),
   getFactionDisplayMap: () => ipcRenderer.invoke("faction-display-map"),
-  getFactionDisplayNames: (modDataDir) => ipcRenderer.invoke("faction-display-names", modDataDir),
+  getFactionDisplayNames: (modDataDir, campaign) => ipcRenderer.invoke("faction-display-names", modDataDir, campaign),
   getFactionCultures: (modDataDir) => ipcRenderer.invoke("faction-cultures", modDataDir),
   logMessage: (level, text) => ipcRenderer.invoke("log-message", level, text),
   getLogPath: () => ipcRenderer.invoke("get-log-path"),

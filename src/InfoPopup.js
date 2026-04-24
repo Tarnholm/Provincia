@@ -10,7 +10,7 @@
 
 "use strict";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import TGA from "./tga.js";
 
 function pixelsToBlobUrl({ width, height, pixels }) {
@@ -30,6 +30,20 @@ function pixelsToBlobUrl({ width, height, pixels }) {
 export default function InfoPopup({ payload, modDataDir, factionDisplayNames, onClose }) {
   const [imgUrl, setImgUrl] = useState(null);
   const [status, setStatus] = useState("loading");
+  const [unitStats, setUnitStats] = useState(null);
+
+  // Fetch unit stats from EDU when payload is a unit.
+  useEffect(() => {
+    setUnitStats(null);
+    if (!payload || payload.type !== "unit") return;
+    const api = window.electronAPI;
+    if (!api?.getUnitStats) return;
+    let cancelled = false;
+    api.getUnitStats(modDataDir || null, payload.name).then((s) => {
+      if (!cancelled) setUnitStats(s || null);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [payload, modDataDir]);
 
   useEffect(() => {
     if (!payload) return;
@@ -119,6 +133,58 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
             <img src={imgUrl} alt={title} style={{ maxWidth: "100%", maxHeight: "70vh", display: "block" }} />
           )}
         </div>
+        {payload.type === "unit" && unitStats && (() => {
+          const rows = [];
+          const push = (label, value) => { if (value != null && value !== "") rows.push([label, value]); };
+          push("Soldiers", unitStats.soldierCount);
+          push("HP", unitStats.hp);
+          if (unitStats.priAttack != null) {
+            push("Attack",
+              `${unitStats.priAttack}${unitStats.priWeapon ? ` (${unitStats.priWeapon})` : ""}` +
+              (unitStats.secAttack != null ? ` / ${unitStats.secAttack}${unitStats.secWeapon ? ` (${unitStats.secWeapon})` : ""}` : ""));
+          }
+          push("Charge",
+            unitStats.priCharge != null && unitStats.secCharge != null
+              ? `${unitStats.priCharge} / ${unitStats.secCharge}`
+              : (unitStats.priCharge ?? null));
+          if (unitStats.armour != null || unitStats.defenseSkill != null || unitStats.shield != null) {
+            push("Defense",
+              `${unitStats.armour ?? 0} armour · ${unitStats.defenseSkill ?? 0} skill · ${unitStats.shield ?? 0} shield`);
+          }
+          if (unitStats.morale != null) {
+            push("Morale", `${unitStats.morale}${unitStats.discipline ? ` (${unitStats.discipline})` : ""}`);
+          }
+          push("Charge dist", unitStats.chargeDist);
+          if (unitStats.recruitCost != null || unitStats.upkeep != null) {
+            push("Cost",
+              `${unitStats.recruitCost ?? "?"}${unitStats.recruitTurns ? ` (${unitStats.recruitTurns} turns)` : ""}` +
+              (unitStats.upkeep != null ? ` · upkeep ${unitStats.upkeep}` : ""));
+          }
+          push("Replenishment", unitStats.replenishMen ? `+${unitStats.replenishMen}/turn` : null);
+          push("Class", unitStats.classType ? `${unitStats.category || ""} ${unitStats.classType}`.trim() : unitStats.category);
+          if (rows.length === 0) return null;
+          return (
+            <div style={{
+              marginTop: 10,
+              padding: "8px 10px",
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: 6,
+              fontSize: "0.78rem",
+              display: "grid",
+              gridTemplateColumns: "auto 1fr",
+              columnGap: 12,
+              rowGap: 3,
+              color: "#ddd",
+            }}>
+              {rows.map(([label, value], i) => (
+                <Fragment key={i}>
+                  <span style={{ color: "#9ab" }}>{label}</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>{value}</span>
+                </Fragment>
+              ))}
+            </div>
+          );
+        })()}
         <div style={{ marginTop: 10, fontSize: "0.7rem", color: "#888" }}>
           Right-click or press Esc to close
         </div>

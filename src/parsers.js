@@ -218,10 +218,10 @@ function parseDescrStratArmies(text) {
   // `character ...` line. When an `army` keyword follows, collect the unit
   // list until a non-unit keyword breaks the block. descr_strat characters
   // look like:
-  //   character Adymos of_Lissus, general, age 41, , x 10, y 50
-  //   army
-  //   unit hoplites    exp 0 armour 0 weapon_lvl 0
-  //   unit javelin skirmishers    exp 0 armour 0 weapon_lvl 0
+  //   character Adymos of_Lissus, general, age 41, , x 10, y 50     (vanilla Alex)
+  //   character,	Quintus Ogulnius_Gallus, named, leader, age 60, , x 285, y 404   (RIS etc.)
+  // The separator after `character` is either whitespace (tab/space) OR a
+  // comma-then-whitespace; the parser accepts both.
   // Returns [{ faction, character, x, y, units: [{ name, exp }] }].
   const armies = [];
   const lines = text.split(/\r?\n/);
@@ -232,7 +232,7 @@ function parseDescrStratArmies(text) {
     if (!s || s.startsWith(";")) continue;
     const fm = s.match(/^faction\s+(\w+)/);
     if (fm) { curFaction = fm[1].toLowerCase(); curChar = null; continue; }
-    const cm = s.match(/^character(?:_sub)?\s+(.+)$/);
+    const cm = s.match(/^character(?:_sub)?[,\s]+(.+)$/);
     if (cm) {
       const parts = cm[1].split(",").map((p) => p.trim());
       const name = parts[0];
