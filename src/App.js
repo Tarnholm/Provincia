@@ -4898,17 +4898,16 @@ function App() {
       pointerEvents: "auto",
     };
     const btnStyle = (active) => ({
-      padding: "4px 10px",
-      borderRadius: 8,
+      padding: "3px 8px",
+      borderRadius: 7,
       border: active ? "1px solid rgba(220,166,74,0.6)" : "1px solid rgba(255,255,255,0.15)",
       background: active
         ? "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)"
         : "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)",
       color: active ? "#1a1400" : "#e8e8e8",
       fontWeight: 600,
-      fontSize: "0.82rem",
+      fontSize: "0.76rem",
       cursor: active ? "default" : "pointer",
-      minWidth: 64,
       textShadow: active ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
       boxShadow: active ? "0 2px 0 #b8842a, 0 1px 6px rgba(220,166,74,0.3)" : "0 1px 3px rgba(0,0,0,0.2)",
     });
@@ -4939,19 +4938,18 @@ function App() {
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
-        <div data-ui-highlight="map-modes" className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", maxWidth: canvasSize.width - Math.min(240, canvasSize.width * 0.3 + 30) }}>
-          <span style={{ opacity: 0.9, fontSize: "0.78rem" }}>Map:</span>
+        <div data-ui-highlight="map-modes" className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {colorModes.map((m) => (
             <button key={m.key} onClick={() => setColorMode(m.key)}
               className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
-              disabled={colorMode === m.key} style={{ ...btnStyle(colorMode === m.key), padding: "4px 8px", fontSize: "0.78rem" }}>{m.label}</button>
+              disabled={colorMode === m.key} style={btnStyle(colorMode === m.key)}>{m.label}</button>
           ))}
           {devMode && (<>
             <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
             {devColorModes.map((m) => (
               <button key={m.key} onClick={() => setColorMode(m.key)}
                 className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
-                disabled={colorMode === m.key} style={{ ...btnStyle(colorMode === m.key), padding: "4px 8px", fontSize: "0.78rem" }}>{m.label}</button>
+                disabled={colorMode === m.key} style={btnStyle(colorMode === m.key)}>{m.label}</button>
             ))}
           </>)}
         </div>
@@ -5687,12 +5685,15 @@ function App() {
     const PUBLIC = import.meta.env.BASE_URL || "./";
 
     return (
-      <div style={{
+      <div className="resource-panel-scroll" style={{
         position: "absolute", top: 8, right: 8, zIndex: 4,
         background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
-        borderRadius: 10, padding: "6px 8px", maxWidth: 260,
-        maxHeight: "calc(100vh - 32px)", overflowY: "auto",
+        borderRadius: 10, padding: "6px 8px",
+        width: 250, boxSizing: "border-box",
+        maxHeight: Math.max(100, canvasSize.height - 16),
+        overflowY: "auto",
         color: "#f6f6f6", fontSize: "0.75rem",
+        scrollbarWidth: "none",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: resourcePanelCollapsed ? 0 : 6, cursor: "pointer" }}
           onClick={() => setResourcePanelCollapsed(p => !p)}>
@@ -5723,7 +5724,7 @@ function App() {
             }}
           />
         )}
-        <div style={{ display: resourcePanelCollapsed ? "none" : "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 4px" }}>
+        <div style={{ display: resourcePanelCollapsed ? "none" : "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 3px" }}>
           {allTypes.filter(t => !resourceSearch || t.replace(/_/g, " ").includes(resourceSearch.toLowerCase())).map(t => {
             const on = isActive(t);
             return (

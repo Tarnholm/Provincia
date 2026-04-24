@@ -180,7 +180,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         width: "100%",
         minHeight: "100%",
         display: "grid",
-        gridTemplateColumns: "260px auto 300px minmax(320px, 1fr)", // info+tags | buildings | recruitable | garrison+field armies
+        // info+tags | buildings (fixed 10×82 + 9×4 gap = 856px) | recruitable | garrison+field armies
+        gridTemplateColumns: "240px 860px minmax(260px, 1fr) minmax(280px, 1fr)",
         gap: 6,
         paddingBottom: 4,
         color: "#f7f7f7",

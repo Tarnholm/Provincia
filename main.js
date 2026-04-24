@@ -1482,10 +1482,74 @@ function pickGenericCategory(chain, level) {
   return null;
 }
 
+// Parse `descr_ui_buildings.txt` — the authoritative file RTW uses for
+// icon lookup. Contains a single `lookup_variants { ... }` block with two
+// kinds of space-separated pairs inside:
+//   1. Culture fallback chain: `<culture_without_art> <fallback_culture>`
+//      e.g., `roman eastern` → when roman art missing, try eastern first.
+//      Multiple entries per culture define order of preference.
+//   2. Level-name alias: `<mod_level> <vanilla_level>`
+//      e.g., `temple_of_battle_shrine shrine` → use the `shrine` icon.
+// Returned shape: { cultureFallbacks: { roman: [eastern, greek, ...], ... },
+//                   levelAliases: { temple_of_battle_shrine: "shrine", ... } }
+const _uiBuildingsCache = new Map();
+function parseDescrUiBuildings(modDataDir) {
+  const cacheKey = modDataDir || "";
+  if (_uiBuildingsCache.has(cacheKey)) return _uiBuildingsCache.get(cacheKey);
+  const sources = [];
+  // Vanilla/Alexander first so mod entries override via last-wins.
+  for (const root of getIconSearchRoots()) sources.push(path.join(root, "descr_ui_buildings.txt"));
+  for (const d of findRelatedModDirs(modDataDir, "descr_ui_buildings.txt").reverse()) {
+    sources.push(path.join(d, "descr_ui_buildings.txt"));
+  }
+  const cultureFallbacks = {};
+  const levelAliases = {};
+  // Known RTW culture folder names — used to distinguish culture-fallback
+  // pairs from level-alias pairs. A pair is a culture fallback only when
+  // BOTH tokens are known cultures.
+  const CULTURES = new Set([
+    "roman", "greek", "eastern", "egyptian", "barbarian", "carthaginian",
+    "nomad", "parthian", "scythian", "german",
+    "e_hellenistic", "w_hellenistic",
+    "anatolian", "arab", "brittonic", "celtiberian", "dacian", "ethiopian",
+    "germanic", "iberian", "illyrian", "indian", "iranian", "libyan",
+    "thracian",
+  ]);
+  for (const src of sources) {
+    if (!fs.existsSync(src)) continue;
+    try {
+      const text = fs.readFileSync(src, "utf8");
+      let inBlock = false;
+      for (const rawLine of text.split(/\r?\n/)) {
+        const line = rawLine.replace(/;.*$/, "").trim();
+        if (!line) continue;
+        if (line === "lookup_variants") { inBlock = true; continue; }
+        if (line === "{") continue;
+        if (line === "}") { inBlock = false; continue; }
+        if (!inBlock) continue;
+        const parts = line.split(/\s+/);
+        if (parts.length < 2) continue;
+        const from = parts[0].toLowerCase();
+        const to = parts[1].toLowerCase();
+        if (CULTURES.has(from) && CULTURES.has(to)) {
+          if (!cultureFallbacks[from]) cultureFallbacks[from] = [];
+          if (!cultureFallbacks[from].includes(to)) cultureFallbacks[from].push(to);
+        } else {
+          levelAliases[from] = to;
+        }
+      }
+    } catch {}
+  }
+  const result = { cultureFallbacks, levelAliases };
+  _uiBuildingsCache.set(cacheKey, result);
+  return result;
+}
+
 ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, levelName, chainName) => {
   if (!culture || !levelName) return null;
   const c = String(culture).toLowerCase();
   const l = String(levelName).toLowerCase();
+  const { cultureFallbacks, levelAliases } = parseDescrUiBuildings(modDataDir);
   // RTW convention: for chains like `temple_of_zoroaster_shrine`, the game
   // uses a shared icon keyed by the chain suffix (`shrine`) — there is no
   // `#eastern_temple_of_zoroaster_shrine.tga`, only `#eastern_shrine.tga`.
@@ -1496,6 +1560,27 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
   for (let start = 0; start < levelTokens.length; start++) {
     const suffix = levelTokens.slice(start).join("_");
     if (suffix && !levelCandidates.includes(suffix)) levelCandidates.push(suffix);
+  }
+  // `descr_ui_buildings.txt` aliases mod level names to vanilla ones
+  // (e.g., temple_of_battle_shrine → shrine). Walk the alias chain so
+  // transitive aliases resolve.
+  if (levelAliases) {
+    let cur = l;
+    const seen = new Set([cur]);
+    for (let i = 0; i < 8; i++) {
+      const next = levelAliases[cur];
+      if (!next || seen.has(next)) break;
+      if (!levelCandidates.includes(next)) levelCandidates.push(next);
+      // Also add trimmed suffixes of the alias so `temple_of_battle_shrine`
+      // → `shrine` picks up `#<c>_shrine.tga` directly.
+      const aliasTokens = next.split("_");
+      for (let s = 1; s < aliasTokens.length; s++) {
+        const suf = aliasTokens.slice(s).join("_");
+        if (suf && !levelCandidates.includes(suf)) levelCandidates.push(suf);
+      }
+      seen.add(next);
+      cur = next;
+    }
   }
   // The game ships two TGA variants per building:
   //   - `#<c>_<l>.tga`                (~156×124) — small square icon for UI lists
@@ -1537,16 +1622,16 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
       romanDirs.push(path.join(root, "ui", "roman", "construction"));
     }
   }
-  // Cross-culture fallback dirs — searched only as a last resort when neither
-  // per-culture nor roman has art for the level. Some chains exist as art
-  // only under specific cultures (e.g., RIS ships #greek_gov1.tga and
-  // #e_hellenistic_gov1.tga but no #roman_gov1.tga). Order: cultures most
-  // likely to have shared/canonical art first.
-  const FALLBACK_CULTURES = [
+  // Cross-culture fallback — use the order declared in
+  // `descr_ui_buildings.txt` lookup_variants (e.g., `roman eastern / roman
+  // greek / roman egyptian`). This matches the game's own preference order
+  // per culture. Falls back to a sensible default if the file is missing.
+  const declaredOrder = (cultureFallbacks && cultureFallbacks[c]) || [];
+  const FALLBACK_CULTURES = declaredOrder.length ? declaredOrder : [
     "greek", "e_hellenistic", "w_hellenistic", "barbarian", "carthaginian",
     "eastern", "egyptian", "iberian", "celtiberian", "thracian", "dacian",
     "scythian", "iranian", "anatolian", "germanic", "brittonic", "illyrian",
-    "arab", "indian", "ethiopian", "libyan", "ancient",
+    "arab", "indian", "ethiopian", "libyan",
   ];
   const otherCultureDirs = [];
   for (const oc of FALLBACK_CULTURES) {
@@ -1728,11 +1813,29 @@ ipcMain.handle("resolve-building-banner", async (_event, modDataDir, culture, le
   // the complete building set, so the banner almost always exists there.
   const c = String(culture || "roman").toLowerCase();
   const l = String(levelName).toLowerCase();
+  const { cultureFallbacks, levelAliases } = parseDescrUiBuildings(modDataDir);
   const tokens = l.split("_");
   const suffixes = [];
   for (let start = 0; start < tokens.length; start++) {
     const s = tokens.slice(start).join("_");
     if (s && !suffixes.includes(s)) suffixes.push(s);
+  }
+  // Apply descr_ui_buildings.txt level aliases (temple_of_battle_shrine → shrine).
+  if (levelAliases) {
+    let cur = l;
+    const seen = new Set([cur]);
+    for (let i = 0; i < 8; i++) {
+      const next = levelAliases[cur];
+      if (!next || seen.has(next)) break;
+      if (!suffixes.includes(next)) suffixes.push(next);
+      const at = next.split("_");
+      for (let s = 1; s < at.length; s++) {
+        const suf = at.slice(s).join("_");
+        if (suf && !suffixes.includes(suf)) suffixes.push(suf);
+      }
+      seen.add(next);
+      cur = next;
+    }
   }
   const tryRead = (dir, fn) => {
     if (!fs.existsSync(dir)) return null;
@@ -1766,11 +1869,16 @@ ipcMain.handle("resolve-building-banner", async (_event, modDataDir, culture, le
       if (r) return r;
     }
   }
-  if (c !== "roman") {
-    const rDirs = collectDirs("roman");
+  // Culture fallback chain from descr_ui_buildings.txt (roman → eastern,
+  // greek, egyptian — or whatever the file declares). Fall back to roman
+  // if the file is missing.
+  const fallbackCultures = (cultureFallbacks && cultureFallbacks[c]) || (c !== "roman" ? ["roman"] : []);
+  for (const fc of fallbackCultures) {
+    if (fc === c) continue;
+    const rDirs = collectDirs(fc);
     for (const suf of suffixes) {
       for (const dir of rDirs) {
-        const r = tryRead(dir, `#roman_${suf}_constructed.tga`);
+        const r = tryRead(dir, `#${fc}_${suf}_constructed.tga`);
         if (r) return r;
       }
     }

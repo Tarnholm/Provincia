@@ -8,6 +8,23 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.116",
+    date: "2026-04-24",
+    items: [
+      { type: "fix", text: "Map-mode pill (top-left) no longer overlaps the Resources panel. Removed minWidth:64 per button, tightened padding to 3×8 and font to 0.76rem, dropped the 'Map:' label, widened the wrap budget. All 9 mode buttons fit on one row at 1920px." },
+      { type: "improvement", text: "Region-info bottom bar uses a fixed 2×10 (=20 slot) buildings column — the real max a settlement can hold — and flexes Recruitable + Garrison to fill the remaining width. Grid: 240px info | 860px buildings | 1fr recruitable | 1fr garrison." },
+      { type: "fix", text: "Resources panel width 250px, 2-column grid, max-height capped to map height, scrollbar hidden (scrollbar-width:none + ::-webkit-scrollbar display:none). Text no longer truncates for 'livestock', 'olive oil', 'wild animals', etc." },
+      { type: "fix", text: "Building icon resolver for chains with no shipped art now falls through to `ui/generic/generic_building.tga` (78×62 card) and `generic_constructed_building.tga` (360×160 banner) — matches what the in-game UI shows for Weavery, Local Garrisons, Perfume Maker." },
+    ],
+  },
+  {
+    version: "0.9.112",
+    date: "2026-04-24",
+    items: [
+      { type: "improvement", text: "Icon resolver now parses `data/descr_ui_buildings.txt` — the authoritative file RTW itself uses. Applies the mod-declared per-culture fallback order (e.g., roman → eastern → greek → egyptian) and level-name aliases (e.g., temple_of_battle_shrine → shrine, greek_polis → native_greek, recruitment_center1 → recruitment_center). 22 cultures, 177 aliases on RIS. Replaces my hardcoded fallback list; matches the game's own resolution exactly." },
+    ],
+  },
+  {
     version: "0.9.111",
     date: "2026-04-24",
     items: [
