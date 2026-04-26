@@ -82,6 +82,30 @@ const { resolveCurrentOwners } = require("./src/saveOwnershipParser.js");
 // Cache for mod data (names_lookup, traits, surnames). Populated lazily when
 // the renderer calls "characters-init" with the mod data directory.
 let modNameLookup = null;
+// Bounded LRU for parser caches keyed by `${modDataDir}|...`. Without a
+// bound the cache grows every time the user switches mods (each path is a
+// unique key, parsed result is held forever). 16 entries is plenty —
+// covers vanilla + Alexander + a handful of mod variants.
+function makeLRU(limit) {
+  const m = new Map();
+  return {
+    has: (k) => m.has(k),
+    get: (k) => {
+      if (!m.has(k)) return undefined;
+      const v = m.get(k);
+      m.delete(k); m.set(k, v); // touch
+      return v;
+    },
+    set: (k, v) => {
+      if (m.has(k)) m.delete(k);
+      m.set(k, v);
+      while (m.size > limit) {
+        const oldest = m.keys().next().value;
+        m.delete(oldest);
+      }
+    },
+  };
+}
 let modTraitNames = null;
 let modDescrStratSurnames = null;
 let modDescrStratCharByName = null; // "firstName|faction" → { x, y, lastName, faction } from descr_strat
@@ -210,10 +234,10 @@ function loadModCharacterData(modDataDir) {
   // BEGINS HERE" section with overrides (e.g. PARTHIA → "Persia") below the
   // generic BI defaults (PARTHIA → "Parthia"), so the Alexander overrides win.
   // Load order: game install (defaults) → parent mods → submod (wins via last-wins).
-  const expandedSources = [
-    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data/text/expanded_bi.txt",
-    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/alexander/data/text/expanded_bi.txt",
-  ];
+  const expandedSources = [];
+  for (const root of getIconSearchRoots()) {
+    expandedSources.push(path.join(root, "text", "expanded_bi.txt"));
+  }
   // Include submod + all parent mods (innermost last so it overrides).
   const relatedForExpanded = findRelatedModDirs
     ? findRelatedModDirs(modDataDir, "text/expanded_bi.txt").reverse()
@@ -272,10 +296,9 @@ function loadModCharacterData(modDataDir) {
   for (const d of (findRelatedModDirs ? findRelatedModDirs(modDataDir, "descr_sm_factions.txt") : [modDataDir])) {
     smFactionSources.push(path.join(d, "descr_sm_factions.txt"));
   }
-  smFactionSources.push(
-    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data/descr_sm_factions.txt",
-    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/alexander/data/descr_sm_factions.txt",
-  );
+  for (const root of getIconSearchRoots()) {
+    smFactionSources.push(path.join(root, "descr_sm_factions.txt"));
+  }
   for (const src of smFactionSources) {
     if (!fs.existsSync(src)) continue;
     try {
@@ -1040,19 +1063,55 @@ ipcMain.handle("read-faction-icon", async (_event, filePath) => {
 // a matching TGA. Falls back to the vanilla RTW:R install and the Alexander
 // install when the mod doesn't include the icon.
 // Returns { buffer: ArrayBuffer, path: string, mime: "image/x-tga" } or null.
+// Locate the RTW:R install root. Tries common Steam install paths first,
+// then falls back to the Steam library config to resolve non-default
+// library locations (users with Steam on a secondary drive).
+function findRtwInstallRoot() {
+  const candidates = [
+    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED",
+    "C:/Program Files/Steam/steamapps/common/Total War ROME REMASTERED",
+    "D:/Steam/steamapps/common/Total War ROME REMASTERED",
+    "D:/SteamLibrary/steamapps/common/Total War ROME REMASTERED",
+    "E:/SteamLibrary/steamapps/common/Total War ROME REMASTERED",
+    "/Applications/Total War ROME REMASTERED.app/Contents/Resources/Data", // Mac
+  ];
+  // Parse Steam's libraryfolders.vdf for additional library roots.
+  const vdfCandidates = [
+    "C:/Program Files (x86)/Steam/steamapps/libraryfolders.vdf",
+    "C:/Program Files/Steam/steamapps/libraryfolders.vdf",
+  ];
+  for (const vdfPath of vdfCandidates) {
+    if (!fs.existsSync(vdfPath)) continue;
+    try {
+      const text = fs.readFileSync(vdfPath, "utf8");
+      const re = /"path"\s+"([^"]+)"/g;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        const lib = m[1].replace(/\\\\/g, "/").replace(/\\/g, "/");
+        candidates.push(`${lib}/steamapps/common/Total War ROME REMASTERED`);
+      }
+    } catch {}
+  }
+  for (const c of candidates) {
+    try { if (fs.existsSync(c)) return c; } catch {}
+  }
+  return null;
+}
+
 const ICON_SEARCH_ROOTS = [];
 function getIconSearchRoots() {
   if (ICON_SEARCH_ROOTS.length) return ICON_SEARCH_ROOTS;
+  const root = findRtwInstallRoot();
+  if (!root) return ICON_SEARCH_ROOTS;
   // Always include the vanilla + BI + Alexander game installs if present.
   // Load order matters for last-wins text-file merges (expanded_bi.txt,
   // export_buildings.txt): Alex must come AFTER BI so its expansion-specific
   // overrides (GAULS→Dahae, GERMANS→Illyria, PARTHIA→Persia, etc.) win.
-  // BI also reuses vanilla faction IDs with its own names; BI's entries
-  // override vanilla generics, then Alex overrides BI where they conflict.
-  const tryAdd = (root) => { if (root && fs.existsSync(root)) ICON_SEARCH_ROOTS.push(root); };
-  tryAdd("C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");
-  tryAdd("C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/bi/data");
-  tryAdd("C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/alexander/data");
+  const base = `${root}/Contents/Resources/Data`;
+  const tryAdd = (p) => { try { if (p && fs.existsSync(p)) ICON_SEARCH_ROOTS.push(p); } catch {} };
+  tryAdd(`${base}/data`);
+  tryAdd(`${base}/bi/data`);
+  tryAdd(`${base}/alexander/data`);
   return ICON_SEARCH_ROOTS;
 }
 
@@ -1415,7 +1474,7 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
   return out;
 });
 
-const _buildingDisplayCache = new Map(); // modDataDir → parsed map
+const _buildingDisplayCache = makeLRU(16); // modDataDir → parsed map
 ipcMain.handle("get-building-display-names", async (_event, modDataDir) => {
   const cacheKey = modDataDir || "";
   if (_buildingDisplayCache.has(cacheKey)) return _buildingDisplayCache.get(cacheKey);
@@ -1457,31 +1516,6 @@ ipcMain.handle("get-building-display-names", async (_event, modDataDir) => {
   return map;
 });
 
-// Heuristic chain → generic-category icon mapping. Used as last-resort
-// fallback when neither mod nor game has a culture-specific tga for a
-// given (culture, level) pair. The game's `data/ui/building_icons/` dir
-// contains a shared set of category TGAs (farming, infantry, trade, etc.)
-// that render fine for any culture.
-function pickGenericCategory(chain, level) {
-  const s = `${chain || ""} ${level || ""}`.toLowerCase();
-  if (/cavalry|stable/.test(s)) return "cavalry";
-  if (/barrack|muster|militia|army|royal|city_barracks|practice|hall|infantry/.test(s)) return "infantry";
-  if (/archer|range|ranged/.test(s)) return "ranged";
-  if (/farm|crop|irrigation|herding|slope|land/.test(s)) return "farming";
-  if (/wall|tower|defen|pallisade|fortif/.test(s)) return "defense";
-  if (/road|paved|highway/.test(s)) return "roads";
-  if (/sewer|bath|cistern|health|aqueduct|hospital|sanit/.test(s)) return "sanitation";
-  if (/market|forum|agora|trade|port|dock|harbour|caravan|merchant/.test(s)) return "trade";
-  if (/navy|shipwright|admiral/.test(s)) return "navy";
-  if (/academ|school|philos|library|scribe|odeon|lyceum/.test(s)) return "school";
-  if (/temple|shrine|pantheon|religion|awesome_temple/.test(s)) return "religion";
-  if (/forge|smith|mine|iron|bronze|armoury/.test(s)) return "mining";
-  if (/govern|palace|villa|procon|imperial|regional|\bgov\d?\b/.test(s)) return "government";
-  if (/law|court|magistrat/.test(s)) return "law";
-  if (/tavern|brothel|circus|arena|amphi|hippodrom|colis/.test(s)) return "arena";
-  return null;
-}
-
 // Parse `descr_ui_buildings.txt` — the authoritative file RTW uses for
 // icon lookup. Contains a single `lookup_variants { ... }` block with two
 // kinds of space-separated pairs inside:
@@ -1492,7 +1526,7 @@ function pickGenericCategory(chain, level) {
 //      e.g., `temple_of_battle_shrine shrine` → use the `shrine` icon.
 // Returned shape: { cultureFallbacks: { roman: [eastern, greek, ...], ... },
 //                   levelAliases: { temple_of_battle_shrine: "shrine", ... } }
-const _uiBuildingsCache = new Map();
+const _uiBuildingsCache = makeLRU(16);
 function parseDescrUiBuildings(modDataDir) {
   const cacheKey = modDataDir || "";
   if (_uiBuildingsCache.has(cacheKey)) return _uiBuildingsCache.get(cacheKey);
@@ -2903,7 +2937,7 @@ ipcMain.handle("faction-display-map", async () => {
 // "The House of Claudii" (RIS alternate_campaign) vs "Rome" (imperial).
 // Pass the campaign id (e.g., "classic" → "alternate_campaign") so the
 // matching campaign's titles override the generic expanded_bi entries.
-const _factionDisplayCache = new Map();
+const _factionDisplayCache = makeLRU(16);
 const CAMPAIGN_PREFIX = {
   classic: ["ALTERNATE_CAMPAIGN", "RIS_CLASSIC", "RIS_CLASSIC_2"],
   imperial: ["IMPERIAL_CAMPAIGN"],
@@ -2981,7 +3015,7 @@ ipcMain.handle("faction-display-names", async (_event, modDataDir, campaign) => 
 // IPC: return faction → culture map, merged from mod + vanilla + Alexander.
 // Self-contained — doesn't depend on charactersInit having been called.
 // Users who haven't selected a mod path still get vanilla + Alexander data.
-const _factionCultureCache = new Map();
+const _factionCultureCache = makeLRU(16);
 ipcMain.handle("faction-cultures", async (_event, modDataDir) => {
   const cacheKey = modDataDir || "";
   if (_factionCultureCache.has(cacheKey)) return _factionCultureCache.get(cacheKey);

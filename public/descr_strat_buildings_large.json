@@ -7368,6 +7368,10 @@
             "level": "governors_villa"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "defenses",
             "level": "wooden_pallisade"
           },
@@ -7600,6 +7604,10 @@
             "level": "proconsuls_palace"
           },
           {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
             "type": "defenses",
             "level": "wooden_wall"
           },
@@ -7654,6 +7662,10 @@
           {
             "type": "defenses",
             "level": "wooden_pallisade"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
           },
           {
             "type": "governmentC",
@@ -7783,10 +7795,6 @@
         "population": 2700,
         "faction_creator": "selge",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -8356,6 +8364,10 @@
             "level": "governors_palace"
           },
           {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
             "type": "defenses",
             "level": "wooden_pallisade"
           },
@@ -8442,6 +8454,10 @@
           {
             "type": "core_building",
             "level": "governors_villa"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "defenses",
@@ -8537,7 +8553,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -8736,6 +8752,10 @@
             "level": "governors_house"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "governmentB",
             "level": "gov2"
           },
@@ -8751,10 +8771,6 @@
         "population": 2500,
         "faction_creator": "selge",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -8949,7 +8965,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -9244,10 +9260,6 @@
         "faction_creator": "cilicians",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_house"
           },
@@ -9256,8 +9268,8 @@
             "level": "wooden_pallisade"
           },
           {
-            "type": "governmentB",
-            "level": "gov2"
+            "type": "governmentD",
+            "level": "gov4"
           },
           {
             "type": "hinterland_region",
@@ -9305,7 +9317,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -9351,10 +9363,6 @@
         "population": 4000,
         "faction_creator": "armenia",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "proconsuls_palace"
@@ -9409,7 +9417,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -9533,7 +9541,7 @@
           },
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -9584,16 +9592,12 @@
         "faction_creator": "seleucid",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_villa"
           },
           {
-            "type": "governmentC",
-            "level": "gov3"
+            "type": "governmentD",
+            "level": "gov4"
           },
           {
             "type": "hinterland_region",
@@ -10280,6 +10284,10 @@
             "level": "governors_villa"
           },
           {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
             "type": "governmentC",
             "level": "gov3"
           },
@@ -10304,6 +10312,10 @@
             "level": "governors_house"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "governmentC",
             "level": "gov3"
           },
@@ -10324,6 +10336,10 @@
             "level": "governors_house"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "defenses",
             "level": "wooden_pallisade"
           },
@@ -10332,8 +10348,8 @@
             "level": "garrison"
           },
           {
-            "type": "governmentA",
-            "level": "gov1"
+            "type": "governmentB",
+            "level": "gov2"
           },
           {
             "type": "health",
@@ -10366,6 +10382,10 @@
           {
             "type": "core_building",
             "level": "governors_house"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
           },
           {
             "type": "defenses",
@@ -10526,6 +10546,10 @@
           {
             "type": "core_building",
             "level": "governors_house"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "governmentC",
@@ -10700,10 +10724,6 @@
         "faction_creator": "cilicians",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_villa"
           },
@@ -10808,6 +10828,10 @@
             "level": "governors_house"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "defenses",
             "level": "wooden_pallisade"
           },
@@ -10870,6 +10894,10 @@
           {
             "type": "core_building",
             "level": "governors_palace"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "defenses",
@@ -11012,6 +11040,10 @@
             "level": "governors_house"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "defenses",
             "level": "wooden_pallisade"
           },
@@ -11078,6 +11110,10 @@
           {
             "type": "core_building",
             "level": "governors_villa"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
           },
           {
             "type": "governmentC",
@@ -11165,7 +11201,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_1"
+            "level": "colony_2"
           },
           {
             "type": "core_building",
@@ -17193,6 +17229,10 @@
             "level": "governors_villa"
           },
           {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
             "type": "hinterland_region",
             "level": "region_base"
           },
@@ -20397,8 +20437,8 @@
             "level": "governors_house"
           },
           {
-            "type": "governmentC",
-            "level": "gov3"
+            "type": "governmentD",
+            "level": "gov4"
           },
           {
             "type": "hinterland_region",
@@ -25952,8 +25992,8 @@
             "level": "governors_house"
           },
           {
-            "type": "governmentC",
-            "level": "gov3"
+            "type": "governmentD",
+            "level": "gov4"
           },
           {
             "type": "health",
@@ -26499,16 +26539,12 @@
         "faction_creator": "saba",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_house"
           },
           {
-            "type": "governmentB",
-            "level": "gov2"
+            "type": "governmentC",
+            "level": "gov3"
           },
           {
             "type": "hinterland_region",
@@ -26543,16 +26579,12 @@
         "faction_creator": "saba",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_house"
           },
           {
-            "type": "governmentC",
-            "level": "gov3"
+            "type": "governmentB",
+            "level": "gov2"
           },
           {
             "type": "hinterland_region",
@@ -26719,7 +26751,7 @@
         "buildings": [
           {
             "type": "core_building",
-            "level": "governors_house"
+            "level": "governors_villa"
           },
           {
             "type": "governmentD",

@@ -34,6 +34,16 @@ TGA.prototype.parse = function (data) {
   const pixelSize = data[16];
   const flags = data[17];
 
+  // Sanity-check header before allocating buffers — corrupt or non-TGA
+  // files (typos, wrong format, 0-byte placeholders) shouldn't throw deep
+  // in the decode loop. The icon resolver expects null-on-failure, not
+  // exceptions. Width/height/pixelSize are uint16/uint8 so out-of-range
+  // is impossible, but image dims can still be 0×0 or absurd.
+  if (data.length < 18 || width === 0 || height === 0 || width > 8192 || height > 8192) {
+    this.width = 0; this.height = 0; this.pixels = null; this.flags = 0;
+    return;
+  }
+
   this.width = width;
   this.height = height;
   this.hasAlpha = pixelSize === 32;
@@ -93,7 +103,10 @@ TGA.prototype.parse = function (data) {
       }
     }
   } else {
-    throw new Error("Unsupported TGA type or pixel size");
+    // Unsupported TGA type or pixel size — return empty rather than throw
+    // so the icon resolver can fall through cleanly.
+    this.width = 0; this.height = 0; this.pixels = null; this.flags = 0;
+    return;
   }
 
   // Image origin (flip vertically if bottom-left)

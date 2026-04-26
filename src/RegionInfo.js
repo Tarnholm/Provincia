@@ -323,23 +323,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               <div key={b.key}
                 onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "building", name: b.level, chainName: b.type, culture: b.culture || null, label: b.label }); } }}
                 title={b.type ? `${b.type.replace(/_/g, " ")}: ${b.label}${b.queued ? " (in construction)" : ""}` : b.label} style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
                 background: "rgba(0,0,0,0.25)", borderRadius: 4,
-                padding: "6px 4px",
+                padding: "4px 3px",
                 minWidth: 0,
                 border: b.queued ? "2px solid #e89030" : "2px solid transparent",
               }}>
-                <div style={{ position: "relative", width: 70, height: 56, flexShrink: 0 }}>
+                <div style={{ position: "relative", width: 60, height: 48, flexShrink: 0 }}>
                   {b.icon && (
                     <img
                       src={b.icon}
                       alt={b.label}
-                      // Frame 70×56 matches RTW's 156×124 aspect (≈1.26:1)
-                      // so 'contain' fills the frame edge-to-edge with no
-                      // letterbox AND no cropping. Card width (82px) has
-                      // enough room for a 70-wide icon with room for the
-                      // label below.
-                      style={{ width: 70, height: 56, objectFit: "contain", display: "block" }}
+                      // Frame 60×48 keeps RTW's 156×124 aspect (≈1.26:1)
+                      // while leaving more vertical room in the 82px card
+                      // for a 4-line label (handles "Region Information",
+                      // "Governor's Palace", etc. without ellipsis).
+                      style={{ width: 60, height: 48, objectFit: "contain", display: "block" }}
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                   )}
@@ -353,7 +352,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     }} />
                   )}
                 </div>
-                <span style={{ color: "#f4f4f4", fontSize: "0.78rem", textAlign: "center", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
+                <span style={{ color: "#f4f4f4", fontSize: "0.7rem", textAlign: "center", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", wordBreak: "break-word", hyphens: "auto", width: "100%" }}>
                   {b.tierRoman && <span style={{ color: "#dca64a", fontWeight: 700, marginRight: 4 }}>{b.tierRoman}</span>}
                   {b.label}
                 </span>

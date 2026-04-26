@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.118",
+    date: "2026-04-27",
+    items: [
+      { type: "improvement", text: "Building card layout: icon frame 70×56 → 60×48, padding 6×4 → 4×3, label clamp 3 → 4 lines, font 0.72rem → 0.7rem. Frees vertical room so 'Region Information', 'Governor's Palace', 'Local Barracks' fit without ellipsis at the 82px card width." },
+      { type: "improvement", text: "Steam path is now auto-detected via libraryfolders.vdf (Steam library config) — works for users with Steam installed on a non-default drive (D:/SteamLibrary, E:/, etc.). Mac install path also recognized." },
+      { type: "improvement", text: "Faction-display, faction-culture, ui-buildings, and building-display caches are now bounded LRUs (16 entries each). Previous unbounded Map would grow forever as users switched mods." },
+      { type: "fix", text: "TGA decoder: malformed/0×0/oversized headers now return empty TGAs instead of throwing. Icon resolver expects null-on-failure; deep exceptions in decode were caught but logged noisily." },
+      { type: "change", text: "Removed dead code: pickGenericCategory in main.js was unused after the descr_ui_buildings.txt-based resolver replaced it." },
+    ],
+  },
+  {
     version: "0.9.116",
     date: "2026-04-24",
     items: [

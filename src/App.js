@@ -27,7 +27,9 @@ import {
 const MAP_PADDING = 6;
 const PANELS_GAP = 6;
 const PANEL_WIDTH = 220;
-const MAP_WIDTH_ADJUST = 0;
+// Shrinks the map canvas horizontally to free space for the right sidebar
+// (Resources panel, Factions tiles, search). Tuned for 1920px default.
+const MAP_WIDTH_ADJUST = 120;
 const REGIONINFO_HEIGHT = 320;
 const ICON_SIZE = 72;
 const ICON_GAP = 3;
