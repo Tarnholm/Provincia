@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.133",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "Light mode toned down. Panels are now a warm parchment off-white at 72% opacity (was almost-pure-white at 85%), text shifted to a warmer dark brown to match. Onboarding / What's New cards got the same parchment treatment. The marble background also stops getting a +10% white wash in light mode — that was pushing the bright marble texture into glare; it now gets a small darkening instead, like dark mode does." },
+    ],
+  },
+  {
     version: "0.9.132",
     date: "2026-05-01",
     items: [

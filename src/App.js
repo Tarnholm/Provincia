@@ -2459,7 +2459,9 @@ function App() {
           ctx.drawImage(src, tx, ty, sw, sh);
         }
       }
-      ctx.fillStyle = isDark ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.10)";
+      // Dark mode darkens the marble; light mode lightly darkens it too
+      // (the bare marble + a white wash pushes light mode into glare).
+      ctx.fillStyle = isDark ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0.12)";
       ctx.fillRect(0, 0, vw, vh);
     } else {
       ctx.fillStyle = isDark ? "#181a1b" : "#222";

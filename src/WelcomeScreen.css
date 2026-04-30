@@ -26,10 +26,10 @@
   box-shadow: 0 8px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-/* Light mode */
+/* Light mode — warm parchment, not pure white */
 .ws-card {
-  background: rgba(255, 255, 255, 0.92);
-  color: #1a1a1a;
+  background: rgba(244, 236, 218, 0.95);
+  color: #2a2520;
 }
 body.dark-mode .ws-card {
   background: rgba(28, 30, 32, 0.94);

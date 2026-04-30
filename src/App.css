@@ -19,12 +19,14 @@ button {
 }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Panels are translucent so the marble shows; dark mode is lightly darkened */
+/* Panels are translucent so the marble shows; dark mode is lightly darkened.
+   Light-mode background is a warm parchment off-white, not pure white — pure
+   #fff against the canvas / faction colours read as glaring. */
 .panel {
-  background: rgba(255,255,255,0.85);
-  color: #222;
+  background: rgba(238, 230, 210, 0.72);
+  color: #2a2520;
   border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
   padding: 12px;
   box-sizing: border-box;
   overflow-x: hidden;
