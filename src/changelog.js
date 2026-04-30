@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.128",
+    date: "2026-04-30",
+    items: [
+      { type: "feature", text: "Hidden-resource map mode is now editable. Right-click a region with a token picked in the legend → menu shows current state ('Currently has X' / 'Currently doesn't have X') and a single toggle ('Add X' / 'Remove X'). Adding appends the token to the region's tag list, removing strips it; legend counts and map coloring update live, and descr_regions.txt is marked dirty so the standard export carries the change." },
+    ],
+  },
+  {
     version: "0.9.127",
     date: "2026-04-30",
     items: [

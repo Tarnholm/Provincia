@@ -4309,6 +4309,15 @@ function App() {
         const opts = DEV_EDIT_OPTIONS[field];
         return { ...prev, [rgbKey]: { ...r, tags: replaceTag(r.tags, opts.tags, value) } };
       }
+      // Hidden resource toggle: add the token if missing, remove if present
+      if (field === "hidden_resource") {
+        const token = String(value || "").trim();
+        if (!token) return prev;
+        const arr = String(r.tags || "").split(/,\s*/).map(s => s.trim()).filter(Boolean);
+        const idx = arr.indexOf(token);
+        const next = idx >= 0 ? arr.filter((_, i) => i !== idx) : [...arr, token];
+        return { ...prev, [rgbKey]: { ...r, tags: next.join(", ") } };
+      }
       // Direct field edit (faction, culture, farm, religion)
       if (field === "faction") return { ...prev, [rgbKey]: { ...r, faction: value } };
       if (field === "culture") return { ...prev, [rgbKey]: { ...r, culture: value } };
@@ -7875,6 +7884,38 @@ function App() {
               }} onMouseEnter={(e) => rowHover(e)} onMouseLeave={(e) => rowLeave(e, isCurrent)}>
                 {rgb && <div style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0, background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`, outline: isCurrent ? "2px solid #dca64a" : "none" }} />}
                 {label}{isCurrent ? " (current)" : ""}
+              </div>
+            );
+          }
+        }
+        // Hidden resource mode — toggle the currently-picked token on this region
+        else if (colorMode === "hidden_resource") {
+          const token = selectedHiddenResource;
+          title = `${region.region} — Hidden Resource`;
+          items = [];
+          if (!token) {
+            items.push(
+              <div key="__no_token" style={{
+                padding: "8px 12px", fontStyle: "italic", color: "#aaa", cursor: "default",
+              }}>Pick a token in the legend first.</div>
+            );
+          } else {
+            const has = hasTag(region.tags, token);
+            items.push(
+              <div key="__current" style={{
+                padding: "5px 12px 4px 12px", fontSize: "0.7rem", color: "#888",
+                borderBottom: "1px solid #333",
+              }}>Currently {has ? "has" : "doesn't have"} <span style={{ color: "#dca64a", fontWeight: 600 }}>{token}</span></div>
+            );
+            items.push(
+              <div key="__toggle" onClick={() => applyDevEdit(rgbKey, "hidden_resource", token)} style={{
+                padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                background: "transparent", fontWeight: 600,
+              }} onMouseEnter={(e) => rowHover(e)} onMouseLeave={(e) => rowLeave(e, false)}>
+                <div style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                  background: has ? "rgb(80,65,60)" : "rgb(50,180,90)",
+                  border: "1px solid " + (has ? "#888" : "#dca64a") }} />
+                {has ? `Remove '${token}'` : `Add '${token}'`}
               </div>
             );
           }
