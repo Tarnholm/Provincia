@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.134",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "Light mode is now actually dimmer. Panels and welcome cards stay dark-glass in both modes — the app has 130+ inline white text colours inside panels that were unreadable on the previous parchment surface. Only the canvas / marble varies between modes (and the marble's light-mode darkening pushed from 12% → 25% so the texture itself stops feeling glaring). Net: white text stays readable, light mode no longer feels like a glare wall." },
+    ],
+  },
+  {
     version: "0.9.133",
     date: "2026-05-01",
     items: [

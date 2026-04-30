@@ -19,14 +19,16 @@ button {
 }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Panels are translucent so the marble shows; dark mode is lightly darkened.
-   Light-mode background is a warm parchment off-white, not pure white — pure
-   #fff against the canvas / faction colours read as glaring. */
+/* Panels are dark-glass in BOTH modes — the app has hundreds of inline white
+   text colours that were unreadable on a light panel, so we keep the panel
+   surface dark everywhere and let only the canvas / marble underneath change
+   between modes. Light mode just makes the dark glass slightly more opaque so
+   it still pops against the brighter marble. */
 .panel {
-  background: rgba(238, 230, 210, 0.72);
-  color: #2a2520;
+  background: rgba(26, 28, 32, 0.78);
+  color: #e6e6e6;
   border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
   padding: 12px;
   box-sizing: border-box;
   overflow-x: hidden;
@@ -112,7 +114,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 :root:not([data-feral-arrows="1"]) .panel::-webkit-scrollbar-button,
 :root:not([data-feral-arrows="1"]) .factions-panel::-webkit-scrollbar-button { height: 0; }
 
-/* Dark mode: panels only slightly darker so marble shows through */
+/* Dark mode: same dark-glass panel but more transparent — the dark canvas
+   already provides contrast, so the panel can dissolve into it. */
 body.dark-mode { background: #181a1b !important; color: #e6e6e6 !important; }
 body.dark-mode .panel {
   background: rgba(24,26,27,0.18) !important;
