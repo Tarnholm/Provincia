@@ -94,6 +94,98 @@ function readTga(buf) {
   return { w, h, getPixel };
 }
 
+// ── Per-region starting armies builder ──────────────────────────────────
+// Mirrors the dev-import classification at App.js's import flow: walks the
+// TGA pixel grid to find each region's settlement tile (a (0,0,0) pixel
+// adjacent to a region-coloured pixel), then buckets armies into
+// garrison/field per region. Synthetic garrisoned_army entries (no x/y) are
+// snapped to their settlement tile via the captured `region` field.
+function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
+  const idLen = tgaBuf[0];
+  const w = tgaBuf[12] | (tgaBuf[13] << 8);
+  const h = tgaBuf[14] | (tgaBuf[15] << 8);
+  const bpp = tgaBuf[16];
+  const stride = bpp / 8;
+  const dataOff = 18 + idLen;
+  const descriptor = tgaBuf[17];
+  const topDown = (descriptor & 0x20) !== 0;
+  const bufRow = (stratY) => topDown ? (h - 1 - stratY) : stratY;
+
+  const rgbToRegion = {};
+  for (const [rgb, r] of Object.entries(regionsMap)) {
+    if (r.region) rgbToRegion[rgb] = r.region;
+  }
+
+  // Find each region's settlement tile (black pixel with a region-coloured neighbour).
+  const settlementByRegion = {};
+  for (let by = 0; by < h; by++) {
+    for (let x = 0; x < w; x++) {
+      const i = dataOff + (by * w + x) * stride;
+      if (tgaBuf[i] !== 0 || tgaBuf[i + 1] !== 0 || tgaBuf[i + 2] !== 0) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = by + dy;
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        const j = dataOff + (ny * w + nx) * stride;
+        const key = tgaBuf[j + 2] + "," + tgaBuf[j + 1] + "," + tgaBuf[j];
+        const reg = rgbToRegion[key];
+        if (reg) {
+          const stratY = topDown ? (h - 1 - by) : by;
+          if (!settlementByRegion[reg]) settlementByRegion[reg] = { x, y: stratY };
+          break;
+        }
+      }
+    }
+  }
+
+  const tileKeyToRegion = {};
+  for (const [reg, p] of Object.entries(settlementByRegion)) {
+    tileKeyToRegion[`${p.x},${p.y}`] = reg;
+  }
+  const pixelRgb = (sx, sy) => {
+    const by = bufRow(sy);
+    if (sx < 0 || sx >= w || by < 0 || by >= h) return null;
+    const idx = dataOff + (by * w + sx) * stride;
+    return tgaBuf[idx + 2] + "," + tgaBuf[idx + 1] + "," + tgaBuf[idx];
+  };
+
+  const byRegion = {};
+  for (const [reg, p] of Object.entries(settlementByRegion)) {
+    byRegion[reg] = { garrison: [], field: [], settlement: p };
+  }
+
+  for (const a of armies) {
+    // Synthetic garrisoned_army: pin to its declared region's settlement tile.
+    if (a._garrisoned && a.region) {
+      const tile = settlementByRegion[a.region];
+      if (!byRegion[a.region]) byRegion[a.region] = { garrison: [], field: [], settlement: tile || null };
+      // Re-shape units to {name, exp} so the renderer's existing consumer works.
+      const units = a.units.map(u => ({ name: u, exp: 0 }));
+      byRegion[a.region].garrison.push({
+        character: a.name, faction: a.faction,
+        x: tile?.x ?? null, y: tile?.y ?? null,
+        units,
+      });
+      continue;
+    }
+    if (a.x == null || a.y == null) continue;
+    let region = tileKeyToRegion[`${a.x},${a.y}`];
+    let isGarrison = !!region;
+    if (!region) {
+      const rgb = pixelRgb(a.x, a.y);
+      region = rgb && rgbToRegion[rgb];
+    }
+    if (!region) continue;
+    if (!byRegion[region]) byRegion[region] = { garrison: [], field: [], settlement: settlementByRegion[region] || null };
+    const units = a.units.map(u => ({ name: u, exp: 0 }));
+    byRegion[region][isGarrison ? "garrison" : "field"].push({
+      character: a.name, faction: a.faction,
+      x: a.x, y: a.y,
+      units,
+    });
+  }
+  return byRegion;
+}
+
 // ── Armies parser (richer than parsers.js — needs TGA for garrison classification) ──
 // Ported from scripts/parse_armies.py
 const CHAR_RE = /^character,?\s+(.+)/;
@@ -145,16 +237,79 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
   const getPixel = tga ? tga.getPixel : () => null;
   const armies = [];
   let faction = null, current = null, inArmy = false, prevComment = "";
+  // Settlement state: when we're inside `settlement { ... }` we track its
+  // region name so a `garrisoned_army` block (which has no character/coord
+  // line of its own) can attach its units to that region's settlement tile.
+  let inSettlement = false, settlementRegion = null, settlementBraceDepth = 0;
+  let inGarrisonedArmy = false, currentGarrison = null;
   const lines = text.split(/\r?\n/);
   for (const rawLine of lines) {
     const s = rawLine.replace(/\s+$/, "");
+    const t = s.trim();
     const fm = /^faction\s+(\w+)/.exec(s);
     if (fm) {
       if (current && current.units.length) armies.push(current);
       faction = fm[1]; current = null; inArmy = false; prevComment = "";
+      inSettlement = false; settlementRegion = null; settlementBraceDepth = 0;
+      inGarrisonedArmy = false; currentGarrison = null;
       continue;
     }
-    if (s.trim().startsWith(";") && !/^character,/.test(s)) prevComment = s.trim();
+    if (t.startsWith(";") && !/^character,/.test(s)) prevComment = t;
+    // Track settlement blocks so we can attach garrisoned_army to the right region.
+    if (t === "settlement") { inSettlement = true; settlementRegion = null; settlementBraceDepth = 0; continue; }
+    if (inSettlement) {
+      // Track brace depth — a settlement block ends at depth 0 after closing `}`.
+      if (t === "{") { settlementBraceDepth++; continue; }
+      if (t === "}") {
+        settlementBraceDepth--;
+        if (settlementBraceDepth <= 0) {
+          // End of settlement block. Flush garrisoned_army if open.
+          if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
+          inSettlement = false; settlementRegion = null; settlementBraceDepth = 0;
+          inGarrisonedArmy = false; currentGarrison = null;
+        }
+        continue;
+      }
+      const rm = /^region\s+(\S+)/.exec(t);
+      if (rm) { settlementRegion = rm[1]; continue; }
+      // Start of a garrisoned_army block. RIS uses bare `unit` lines after
+      // this header (no separate `army` keyword, and no character block —
+      // just sub-faction-tagged loose units that the game places on the
+      // settlement tile).
+      if (t === "garrisoned_army") {
+        // Flush any previous garrison army still open (defensive).
+        if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
+        currentGarrison = {
+          name: settlementRegion ? `Garrison of ${settlementRegion}` : "Garrison",
+          charType: "garrison",
+          armyClass: "garrison",
+          location: settlementRegion || "",
+          faction,
+          // x/y resolved at consumption time from settlementByRegion lookup —
+          // garrisoned_army has no explicit coords. Leave null so the
+          // renderer's classifier knows to snap to the settlement tile.
+          x: null, y: null,
+          region: settlementRegion || null,
+          units: [],
+          _garrisoned: true, // synthetic source flag for downstream
+        };
+        inGarrisonedArmy = true;
+        continue;
+      }
+      if (inGarrisonedArmy) {
+        const um = UNIT_RE.exec(t);
+        if (um) { currentGarrison.units.push(um[1].trim()); continue; }
+        // Anything other than a `unit ...` line ends the garrisoned_army block.
+        if (t === "building" || t.startsWith("building") || t === "{" || t === "}" ||
+            /^[a-z_]+\s/.test(t)) {
+          if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
+          currentGarrison = null;
+          inGarrisonedArmy = false;
+          // Fall through so we don't lose the line — but we don't need to
+          // process it specifically here.
+        }
+      }
+    }
     const cm = CHAR_RE.exec(s);
     if (cm) {
       if (current && current.units.length) armies.push(current);
@@ -178,14 +333,15 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
       prevComment = "";
       continue;
     }
-    if (s.trim() === "army") { inArmy = true; continue; }
+    if (t === "army") { inArmy = true; continue; }
     if (inArmy && current) {
-      const um = UNIT_RE.exec(s.trim());
+      const um = UNIT_RE.exec(t);
       if (um) current.units.push(um[1].trim());
-      else if (s.trim() && !/^\s/.test(s) && s[0] !== "\t") inArmy = false;
+      else if (t && !/^\s/.test(s) && s[0] !== "\t") inArmy = false;
     }
   }
   if (current && current.units.length) armies.push(current);
+  if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
   return armies;
 }
 
@@ -264,6 +420,16 @@ function run() {
 
     const armies = parseArmiesClassified(stratText, tgaBuf, c.mapHeight);
     writeJson(`armies_${c.suffix}.json`, armies);
+
+    // Build starting_armies_<suffix>.json: { region: { settlement: {x,y},
+    // garrison: [armies], field: [armies] } }. Mirrors the per-region
+    // classification the dev-import flow produces. Without this, slave
+    // settlements (and any other settlement using `garrisoned_army` rather
+    // than character-based armies) show empty in the region info panel.
+    if (tgaBuf) {
+      const startingByRegion = buildStartingArmiesByRegion(armies, tgaBuf, regions);
+      writeJson(`starting_armies_${c.suffix}.json`, startingByRegion);
+    }
   }
 
   log("done.");

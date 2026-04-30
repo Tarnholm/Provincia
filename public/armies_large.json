@@ -1,5 +1,61 @@
 [
   {
+    "name": "Garrison of Marrucinia-Vestinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Marrucinia-Vestinia",
+    "faction": "romans_julii",
+    "x": null,
+    "y": null,
+    "region": "Marrucinia-Vestinia",
+    "units": [
+      "roman leves"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Etruria_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Etruria_Orientalis",
+    "faction": "romans_julii",
+    "x": null,
+    "y": null,
+    "region": "Etruria_Orientalis",
+    "units": [
+      "roman leves"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Camertia-Nahartia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Camertia-Nahartia",
+    "faction": "romans_julii",
+    "x": null,
+    "y": null,
+    "region": "Camertia-Nahartia",
+    "units": [
+      "roman leves"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Latium",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Latium",
+    "faction": "romans_julii",
+    "x": null,
+    "y": null,
+    "region": "Latium",
+    "units": [
+      "roman leves"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Quintus Ogulnius Gallus",
     "charType": "general",
     "armyClass": "garrison",
@@ -510,6 +566,426 @@
     ]
   },
   {
+    "name": "Garrison of Ziz",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ziz",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Ziz",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arik",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arik",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Arik",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Maleth",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Maleth",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Maleth",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Olbiana-Sardinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Olbiana-Sardinia",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Olbiana-Sardinia",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sulky",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sulky",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Sulky",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kyrnos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kyrnos",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Kyrnos",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ay-Khol",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ay-Khol",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Ay-Khol",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Xatiq",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Xatiq",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Xatiq",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bebaxal",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bebaxal",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Bebaxal",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aspis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aspis",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Aspis",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Woyxat",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Woyxat",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Woyxat",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Zabrutuxun",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Zabrutuxun",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Zabrutuxun",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Rush_Adir",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rush_Adir",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Rush_Adir",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Salda",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Salda",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Salda",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ay-Bushum",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ay-Bushum",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Ay-Bushum",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Elymia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Elymia",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Elymia",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bracheion",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bracheion",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Bracheion",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tunesia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tunesia",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Tunesia",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vagensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vagensia",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Vagensia",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Xupon_Zaxyir",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Xupon_Zaxyir",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Xupon_Zaxyir",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Epichos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Epichos",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Epichos",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Syrtis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Syrtis",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Syrtis",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Qart-Khadasht_Zaxyir",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Qart-Khadasht_Zaxyir",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Qart-Khadasht_Zaxyir",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ikosim",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ikosim",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Ikosim",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Thapsos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Thapsos",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Thapsos",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lepqi_Zaxyirt",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lepqi_Zaxyirt",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Lepqi_Zaxyirt",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Rushikade",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rushikade",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Rushikade",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Maqoma_Zaxyir",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Maqoma_Zaxyir",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Maqoma_Zaxyir",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Zekz",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Zekz",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Zekz",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bastetania_Maritima",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bastetania_Maritima",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Bastetania_Maritima",
+    "units": [
+      "caetrati swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Hanno",
     "charType": "general",
     "armyClass": "garrison",
@@ -699,6 +1175,20 @@
       "carthaginian general's bodyguard",
       "caetrati swordsmen"
     ]
+  },
+  {
+    "name": "Garrison of Agriania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Agriania",
+    "faction": "antigonid",
+    "x": null,
+    "y": null,
+    "region": "Agriania",
+    "units": [
+      "agrianian infantry"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "AntigonosB",
@@ -1157,6 +1647,300 @@
       "naval biremes",
       "naval biremes"
     ]
+  },
+  {
+    "name": "Garrison of Rabat_Xaman",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rabat_Xaman",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Rabat_Xaman",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Gadaris",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Gadaris",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Gadaris",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Shamerayin",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Shamerayin",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Shamerayin",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tanites-Sethroites_Nomoi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tanites-Sethroites_Nomoi",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Tanites-Sethroites_Nomoi",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lykopolites-Hypselites_Nomoi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lykopolites-Hypselites_Nomoi",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Lykopolites-Hypselites_Nomoi",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Prote_Oasis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Prote_Oasis",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Prote_Oasis",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Deutera_Oasis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Deutera_Oasis",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Deutera_Oasis",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aidaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aidaia",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Aidaia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Beruta",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Beruta",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Beruta",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arka",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arka",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Arka",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Idoumaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Idoumaia",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Idoumaia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ashdud",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ashdud",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Ashdud",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boreia_Palaistine",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boreia_Palaistine",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Boreia_Palaistine",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Abilene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Abilene",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Abilene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Heroopolites-Heliopolites_Nomoi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Heroopolites-Heliopolites_Nomoi",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Heroopolites-Heliopolites_Nomoi",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boubastites-Arabia_Nomoi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boubastites-Arabia_Nomoi",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Boubastites-Arabia_Nomoi",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Koptites-Tentyrites_Nomoi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Koptites-Tentyrites_Nomoi",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Koptites-Tentyrites_Nomoi",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Panopolites-Antaiopolites_Nomoi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Panopolites-Antaiopolites_Nomoi",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Panopolites-Antaiopolites_Nomoi",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Erythra_Thalassa",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Erythra_Thalassa",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Erythra_Thalassa",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Athribites-Leontopolites_Nomoi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Athribites-Leontopolites_Nomoi",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Athribites-Leontopolites_Nomoi",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notios_Dodekaschoinos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notios_Dodekaschoinos",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Notios_Dodekaschoinos",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Ptolemy",
@@ -2075,6 +2859,524 @@
       "ptolemaic cavalry of the court",
       "merc karian light infantry"
     ]
+  },
+  {
+    "name": "Garrison of Parthia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Parthia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Parthia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Paraitakene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Paraitakene",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Paraitakene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Orgasia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Orgasia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Orgasia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Megale_Phrygia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Megale_Phrygia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Megale_Phrygia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kyrrhestike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kyrrhestike",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Kyrrhestike",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Massyas_Pedion",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Massyas_Pedion",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Massyas_Pedion",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Leuke_Akte",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Leuke_Akte",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Leuke_Akte",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Khalab",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Khalab",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Khalab",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Dolicheia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dolicheia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Dolicheia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Gordyene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Gordyene",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Gordyene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kossaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kossaia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Kossaia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Babylonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Babylonia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Babylonia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arrhapachitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arrhapachitis",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Arrhapachitis",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Assyria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Assyria",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Assyria",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ankobaritis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ankobaritis",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Ankobaritis",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kadousia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kadousia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Kadousia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Syromedia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Syromedia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Syromedia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sigrianike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sigrianike",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Sigrianike",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Amardokaia-Anariakaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Amardokaia-Anariakaia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Amardokaia-Anariakaia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hyrkania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hyrkania",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Hyrkania",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Emesene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Emesene",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Emesene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kharranu",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kharranu",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Kharranu",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anatolike_Chalybonitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anatolike_Chalybonitis",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Anatolike_Chalybonitis",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anthemousia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anthemousia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Anthemousia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Dytike_Apolloniatis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dytike_Apolloniatis",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Dytike_Apolloniatis",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boreia_Sittakene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boreia_Sittakene",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Boreia_Sittakene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Eremikos_Euphrates",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Eremikos_Euphrates",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Eremikos_Euphrates",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anatolike_Osrhoene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anatolike_Osrhoene",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Anatolike_Osrhoene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Artakene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Artakene",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Artakene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chaldaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chaldaia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Chaldaia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Palaia_Zeugma",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Palaia_Zeugma",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Palaia_Zeugma",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Apauarktikene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Apauarktikene",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Apauarktikene",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sagartia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sagartia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Sagartia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Derbikia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Derbikia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Derbikia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tapyria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tapyria",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Tapyria",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ouxiana",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ouxiana",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Ouxiana",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kyrtia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kyrtia",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Kyrtia",
+    "units": [
+      "greek slingers"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Antiochos",
@@ -3522,6 +4824,34 @@
     ]
   },
   {
+    "name": "Garrison of Ano_Araxes",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ano_Araxes",
+    "faction": "armenia",
+    "x": null,
+    "y": null,
+    "region": "Ano_Araxes",
+    "units": [
+      "asian light spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Taronitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Taronitis",
+    "faction": "armenia",
+    "x": null,
+    "y": null,
+    "region": "Taronitis",
+    "units": [
+      "asian light spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Orontes",
     "charType": "general",
     "armyClass": "garrison",
@@ -4177,6 +5507,20 @@
     ]
   },
   {
+    "name": "Garrison of Anartia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anartia_Orientalis",
+    "faction": "anartes",
+    "x": null,
+    "y": null,
+    "region": "Anartia_Orientalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -4457,6 +5801,20 @@
     "units": [
       "greek general"
     ]
+  },
+  {
+    "name": "Garrison of Karanitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Karanitis",
+    "faction": "armenia_minor",
+    "x": null,
+    "y": null,
+    "region": "Karanitis",
+    "units": [
+      "asian light spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Orontes",
@@ -4814,6 +6172,20 @@
     ]
   },
   {
+    "name": "Garrison of Brannovicia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Brannovicia",
+    "faction": "aulerci",
+    "x": null,
+    "y": null,
+    "region": "Brannovicia",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -4938,6 +6310,20 @@
     "units": [
       "celtiberian noble bodyguards"
     ]
+  },
+  {
+    "name": "Garrison of Suessionia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Suessionia",
+    "faction": "belgae",
+    "x": null,
+    "y": null,
+    "region": "Suessionia",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Belgiorix",
@@ -5106,6 +6492,20 @@
     ]
   },
   {
+    "name": "Garrison of Biturigia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Biturigia_Meridionalis",
+    "faction": "bituriges",
+    "x": null,
+    "y": null,
+    "region": "Biturigia_Meridionalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -5192,6 +6592,34 @@
     ]
   },
   {
+    "name": "Garrison of Boihaemum_Meridionale",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boihaemum_Meridionale",
+    "faction": "boii",
+    "x": null,
+    "y": null,
+    "region": "Boihaemum_Meridionale",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boihaemum_Occidentale",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boihaemum_Occidentale",
+    "faction": "boii",
+    "x": null,
+    "y": null,
+    "region": "Boihaemum_Occidentale",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Britomaris",
     "charType": "general",
     "armyClass": "garrison",
@@ -5224,6 +6652,34 @@
     "units": [
       "arvernian champions"
     ]
+  },
+  {
+    "name": "Garrison of Aspourgiania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aspourgiania",
+    "faction": "bosporan",
+    "x": null,
+    "y": null,
+    "region": "Aspourgiania",
+    "units": [
+      "psiloi"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Maiotis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Maiotis",
+    "faction": "bosporan",
+    "x": null,
+    "y": null,
+    "region": "Maiotis",
+    "units": [
+      "psiloi"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Pairisades",
@@ -5318,6 +6774,34 @@
     "units": [
       "naval biremes"
     ]
+  },
+  {
+    "name": "Garrison of Brigantia_Centralis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Brigantia_Centralis",
+    "faction": "brigantes",
+    "x": null,
+    "y": null,
+    "region": "Brigantia_Centralis",
+    "units": [
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Brigantia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Brigantia_Orientalis",
+    "faction": "brigantes",
+    "x": null,
+    "y": null,
+    "region": "Brigantia_Orientalis",
+    "units": [
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bolgios",
@@ -5832,6 +7316,20 @@
     ]
   },
   {
+    "name": "Garrison of Catuvellaunia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Catuvellaunia_Orientalis",
+    "faction": "catuvellauni",
+    "x": null,
+    "y": null,
+    "region": "Catuvellaunia_Orientalis",
+    "units": [
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -5895,6 +7393,20 @@
     ]
   },
   {
+    "name": "Garrison of Cenomania_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cenomania_Meridionalis",
+    "faction": "cenomani",
+    "x": null,
+    "y": null,
+    "region": "Cenomania_Meridionalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -5924,6 +7436,20 @@
     "units": [
       "gallic royal bodyguards"
     ]
+  },
+  {
+    "name": "Garrison of Tylos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tylos",
+    "faction": "characene",
+    "x": null,
+    "y": null,
+    "region": "Tylos",
+    "units": [
+      "asian skirmishers"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bodas",
@@ -6167,6 +7693,34 @@
     "units": [
       "naval biremes"
     ]
+  },
+  {
+    "name": "Garrison of Anatolike_Chorasmene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anatolike_Chorasmene",
+    "faction": "chorasmia",
+    "x": null,
+    "y": null,
+    "region": "Anatolike_Chorasmene",
+    "units": [
+      "scythian axemen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hesperos_Chorasmene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hesperos_Chorasmene",
+    "faction": "chorasmia",
+    "x": null,
+    "y": null,
+    "region": "Hesperos_Chorasmene",
+    "units": [
+      "scythian axemen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Aripharnes",
@@ -6824,6 +8378,20 @@
     ]
   },
   {
+    "name": "Garrison of Dumnonia_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dumnonia_Occidentalis",
+    "faction": "dumnonii",
+    "x": null,
+    "y": null,
+    "region": "Dumnonia_Occidentalis",
+    "units": [
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -6855,6 +8423,34 @@
     "units": [
       "brittonic bodyguards"
     ]
+  },
+  {
+    "name": "Garrison of Durotrigia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Durotrigia_Orientalis",
+    "faction": "durotriges",
+    "x": null,
+    "y": null,
+    "region": "Durotrigia_Orientalis",
+    "units": [
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Durotrigia_Centralis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Durotrigia_Centralis",
+    "faction": "durotriges",
+    "x": null,
+    "y": null,
+    "region": "Durotrigia_Centralis",
+    "units": [
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bolgios",
@@ -7154,6 +8750,34 @@
     ]
   },
   {
+    "name": "Garrison of Eraviscia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Eraviscia_Orientalis",
+    "faction": "eravisci",
+    "x": null,
+    "y": null,
+    "region": "Eraviscia_Orientalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Eraviscia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Eraviscia_Septentrionalis",
+    "faction": "eravisci",
+    "x": null,
+    "y": null,
+    "region": "Eraviscia_Septentrionalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -7366,6 +8990,20 @@
     ]
   },
   {
+    "name": "Garrison of Garamantia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Garamantia_Orientalis",
+    "faction": "garamantes",
+    "x": null,
+    "y": null,
+    "region": "Garamantia_Orientalis",
+    "units": [
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Niptasan",
     "charType": "general",
     "armyClass": "garrison",
@@ -7399,6 +9037,20 @@
     ]
   },
   {
+    "name": "Garrison of Insula_Gutarum",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Insula_Gutarum",
+    "faction": "gauts",
+    "x": null,
+    "y": null,
+    "region": "Insula_Gutarum",
+    "units": [
+      "freemen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Inguo",
     "charType": "general",
     "armyClass": "garrison",
@@ -7430,6 +9082,20 @@
     "units": [
       "bodyguard frameae sword"
     ]
+  },
+  {
+    "name": "Garrison of Hesperos_Chattenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hesperos_Chattenia",
+    "faction": "gerrha",
+    "x": null,
+    "y": null,
+    "region": "Hesperos_Chattenia",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Zamir Ali Zarih II",
@@ -7493,6 +9159,34 @@
     "units": [
       "gortynian general"
     ]
+  },
+  {
+    "name": "Garrison of Adramitia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Adramitia",
+    "faction": "hadhramaut",
+    "x": null,
+    "y": null,
+    "region": "Adramitia",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anatolike_Chatramonitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anatolike_Chatramonitaia",
+    "faction": "hadhramaut",
+    "x": null,
+    "y": null,
+    "region": "Anatolike_Chatramonitaia",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Zamir Ali Zarih II",
@@ -7679,6 +9373,20 @@
     "units": [
       "bodyguard frameae sword"
     ]
+  },
+  {
+    "name": "Garrison of Eudaimon_Arabia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Eudaimon_Arabia",
+    "faction": "himyar",
+    "x": null,
+    "y": null,
+    "region": "Eudaimon_Arabia",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Zamir Ali Zarih II",
@@ -8066,6 +9774,202 @@
     ]
   },
   {
+    "name": "Garrison of Kapisene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kapisene",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Kapisene",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Paropamisadai",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Paropamisadai",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Paropamisadai",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hesperos_Assakenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hesperos_Assakenia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Hesperos_Assakenia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Gouraia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Gouraia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Gouraia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anatolike_Assakenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anatolike_Assakenia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Anatolike_Assakenia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Assakenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Assakenia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Assakenia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aspasia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aspasia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Aspasia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sydrakaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sydrakaia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Sydrakaia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Agalassia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Agalassia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Agalassia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sibia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sibia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Sibia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Pandoouia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Pandoouia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Pandoouia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hydaspes",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hydaspes",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Hydaspes",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sopeitheia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sopeitheia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Sopeitheia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Glausaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Glausaia",
+    "faction": "indians",
+    "x": null,
+    "y": null,
+    "region": "Glausaia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Ashoka",
     "charType": "general",
     "armyClass": "garrison",
@@ -8353,6 +10257,62 @@
     "units": [
       "armoured sarmatian general"
     ]
+  },
+  {
+    "name": "Garrison of Pedeme",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Pedeme",
+    "faction": "kush",
+    "x": null,
+    "y": null,
+    "region": "Pedeme",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Euonymitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Euonymitaia",
+    "faction": "kush",
+    "x": null,
+    "y": null,
+    "region": "Euonymitaia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notia_Euonymitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notia_Euonymitaia",
+    "faction": "kush",
+    "x": null,
+    "y": null,
+    "region": "Notia_Euonymitaia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aborepi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aborepi",
+    "faction": "kush",
+    "x": null,
+    "y": null,
+    "region": "Aborepi",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Arakamani",
@@ -9138,6 +11098,76 @@
     ]
   },
   {
+    "name": "Garrison of The_Road_to_Methora",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "The_Road_to_Methora",
+    "faction": "mauryan",
+    "x": null,
+    "y": null,
+    "region": "The_Road_to_Methora",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Audoumbaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Audoumbaria",
+    "faction": "mauryan",
+    "x": null,
+    "y": null,
+    "region": "Audoumbaria",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Adraistaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Adraistaia",
+    "faction": "mauryan",
+    "x": null,
+    "y": null,
+    "region": "Adraistaia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kathaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kathaia",
+    "faction": "mauryan",
+    "x": null,
+    "y": null,
+    "region": "Kathaia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kounindia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kounindia",
+    "faction": "mauryan",
+    "x": null,
+    "y": null,
+    "region": "Kounindia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Ashoka",
     "charType": "general",
     "armyClass": "garrison",
@@ -9249,6 +11279,48 @@
     "units": [
       "naval biremes"
     ]
+  },
+  {
+    "name": "Garrison of Nashaq",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nashaq",
+    "faction": "minaeans",
+    "x": null,
+    "y": null,
+    "region": "Nashaq",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nagran",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nagran",
+    "faction": "minaeans",
+    "x": null,
+    "y": null,
+    "region": "Nagran",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boreia_Minaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boreia_Minaia",
+    "faction": "minaeans",
+    "x": null,
+    "y": null,
+    "region": "Boreia_Minaia",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Zamir Ali Zarih II",
@@ -9468,6 +11540,20 @@
     "units": [
       "gallic royal bodyguards"
     ]
+  },
+  {
+    "name": "Garrison of Noricum_Septentrionale",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Noricum_Septentrionale",
+    "faction": "norici",
+    "x": null,
+    "y": null,
+    "region": "Noricum_Septentrionale",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bolgios",
@@ -10083,6 +12169,20 @@
     ]
   },
   {
+    "name": "Garrison of Marda",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Marda",
+    "faction": "qataban",
+    "x": null,
+    "y": null,
+    "region": "Marda",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Zamir Ali Zarih II",
     "charType": "general",
     "armyClass": "garrison",
@@ -10296,6 +12396,34 @@
     ]
   },
   {
+    "name": "Garrison of Nomadike_Skythia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nomadike_Skythia",
+    "faction": "royal_scythians",
+    "x": null,
+    "y": null,
+    "region": "Nomadike_Skythia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Megale_Chersonesos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Megale_Chersonesos",
+    "faction": "royal_scythians",
+    "x": null,
+    "y": null,
+    "region": "Megale_Chersonesos",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Aripharnes",
     "charType": "general",
     "armyClass": "garrison",
@@ -10327,6 +12455,48 @@
     "units": [
       "armoured sarmatian general"
     ]
+  },
+  {
+    "name": "Garrison of Manahiytim",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Manahiytim",
+    "faction": "saba",
+    "x": null,
+    "y": null,
+    "region": "Manahiytim",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Elisaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Elisaria",
+    "faction": "saba",
+    "x": null,
+    "y": null,
+    "region": "Elisaria",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sabaike_Aithiopia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sabaike_Aithiopia",
+    "faction": "saba",
+    "x": null,
+    "y": null,
+    "region": "Sabaike_Aithiopia",
+    "units": [
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Zamir Ali Zarih II",
@@ -10440,6 +12610,20 @@
     ]
   },
   {
+    "name": "Garrison of Carricinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Carricinia",
+    "faction": "samnites",
+    "x": null,
+    "y": null,
+    "region": "Carricinia",
+    "units": [
+      "oscan spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Titus",
     "charType": "general",
     "armyClass": "garrison",
@@ -10499,6 +12683,34 @@
     "units": [
       "celtiberian noble bodyguards"
     ]
+  },
+  {
+    "name": "Garrison of Hesperos_Skordiskia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hesperos_Skordiskia",
+    "faction": "scordisci",
+    "x": null,
+    "y": null,
+    "region": "Hesperos_Skordiskia",
+    "units": [
+      "galatian swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Amantinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Amantinia",
+    "faction": "scordisci",
+    "x": null,
+    "y": null,
+    "region": "Amantinia",
+    "units": [
+      "galatian swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bathanattos",
@@ -10565,6 +12777,20 @@
     ]
   },
   {
+    "name": "Garrison of Senonia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Senonia_Orientalis",
+    "faction": "senones",
+    "x": null,
+    "y": null,
+    "region": "Senonia_Orientalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -10592,6 +12818,20 @@
     "units": [
       "gallic royal bodyguards"
     ]
+  },
+  {
+    "name": "Garrison of Sequania_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sequania_Orientalis",
+    "faction": "sequani",
+    "x": null,
+    "y": null,
+    "region": "Sequania_Orientalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bolgios",
@@ -10785,6 +13025,34 @@
     "units": [
       "armoured sarmatian general"
     ]
+  },
+  {
+    "name": "Garrison of Kommagene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kommagene",
+    "faction": "sophene",
+    "x": null,
+    "y": null,
+    "region": "Kommagene",
+    "units": [
+      "asian light spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kato_Kommagene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kato_Kommagene",
+    "faction": "sophene",
+    "x": null,
+    "y": null,
+    "region": "Kato_Kommagene",
+    "units": [
+      "asian light spearmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Orontes",
@@ -11124,6 +13392,62 @@
     "units": [
       "greek general"
     ]
+  },
+  {
+    "name": "Garrison of Tauriscia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tauriscia_Meridionalis",
+    "faction": "taurisci",
+    "x": null,
+    "y": null,
+    "region": "Tauriscia_Meridionalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tauriscia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tauriscia_Orientalis",
+    "faction": "taurisci",
+    "x": null,
+    "y": null,
+    "region": "Tauriscia_Orientalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tauriscia_Centralis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tauriscia_Centralis",
+    "faction": "taurisci",
+    "x": null,
+    "y": null,
+    "region": "Tauriscia_Centralis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tauriscia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tauriscia_Septentrionalis",
+    "faction": "taurisci",
+    "x": null,
+    "y": null,
+    "region": "Tauriscia_Septentrionalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bolgios",
@@ -11747,6 +14071,20 @@
     ]
   },
   {
+    "name": "Garrison of Venetia_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Venetia_Occidentalis",
+    "faction": "veneti",
+    "x": null,
+    "y": null,
+    "region": "Venetia_Occidentalis",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -11838,6 +14176,34 @@
     "units": [
       "celtiberian noble bodyguards"
     ]
+  },
+  {
+    "name": "Garrison of Catenatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Catenatia",
+    "faction": "vindelici",
+    "x": null,
+    "y": null,
+    "region": "Catenatia",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Licatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Licatia",
+    "faction": "vindelici",
+    "x": null,
+    "y": null,
+    "region": "Licatia",
+    "units": [
+      "celtic swordsmen"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "Bolgios",
@@ -12050,6 +14416,6282 @@
     "units": [
       "greek general"
     ]
+  },
+  {
+    "name": "Garrison of Sassinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sassinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sassinia",
+    "units": [
+      "sabellian spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sikelia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sikelia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sikelia",
+    "units": [
+      "oscan spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sikania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sikania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sikania",
+    "units": [
+      "oscan spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Dytike_Sikania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dytike_Sikania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Dytike_Sikania",
+    "units": [
+      "oscan spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Corsicosardinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Corsicosardinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Corsicosardinia",
+    "units": [
+      "oscan spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Suburporia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Suburporia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Suburporia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Giria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Giria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Giria",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Phazania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Phazania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Phazania",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Musulamia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Musulamia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Musulamia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Maxya-Ausea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Maxya-Ausea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Maxya-Ausea",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Machlya",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Machlya",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Machlya",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Melanogaetulia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Melanogaetulia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Melanogaetulia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mauretania_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mauretania_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mauretania_Orientalis",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Liksho",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Liksho",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Liksho",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Shaxalat",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Shaxalat",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Shaxalat",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mauretania_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mauretania_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mauretania_Meridionalis",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Autololia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Autololia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Autololia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Pharusia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Pharusia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Pharusia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Perorsia-Dararitaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Perorsia-Dararitaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Perorsia-Dararitaea",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Daraea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Daraea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Daraea",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Baniuraea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Baniuraea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Baniuraea",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kirthan",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kirthan",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kirthan",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nicivia-Suburburia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nicivia-Suburburia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nicivia-Suburburia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Massylia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Massylia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Massylia_Septentrionalis",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Massylia_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Massylia_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Massylia_Occidentalis",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mactarxim",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mactarxim",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mactarxim",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Altiburosh",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Altiburosh",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Altiburosh",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Thipaxatan",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Thipaxatan",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Thipaxatan",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ubusia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ubusia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ubusia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Macaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Macaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Macaea",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mauretania_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mauretania_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mauretania_Septentrionalis",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Massylia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Massylia_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Massylia_Meridionalis",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Atarantia-Gindania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Atarantia-Gindania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Atarantia-Gindania",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Zygantia-Zauecia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Zygantia-Zauecia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Zygantia-Zauecia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nigiria_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nigiria_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nigiria_Occidentalis",
+    "units": [
+      "kushite javelinmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nigiria_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nigiria_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nigiria_Meridionalis",
+    "units": [
+      "kushite javelinmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nigiria_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nigiria_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nigiria_Orientalis",
+    "units": [
+      "kushite javelinmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mastienia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mastienia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mastienia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Suessetania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Suessetania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Suessetania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tagia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tagia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tagia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lusitania_Centralis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lusitania_Centralis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lusitania_Centralis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdetania_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdetania_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdetania_Occidentalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Conia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Conia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Conia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Helmantike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Helmantike",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Helmantike",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turmodigia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turmodigia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turmodigia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdulia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdulia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdulia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Edetania_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Edetania_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Edetania_Occidentalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Edetania_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Edetania_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Edetania_Meridionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ergavicia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ergavicia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ergavicia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdulorum_Oppida",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdulorum_Oppida",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdulorum_Oppida",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ilercavonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ilercavonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ilercavonia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turboletia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turboletia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turboletia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Oretania_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Oretania_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Oretania_Orientalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Contestania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Contestania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Contestania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Baliares_Maiores",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Baliares_Maiores",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Baliares_Maiores",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdetania_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdetania_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdetania_Septentrionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Conia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Conia_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Conia_Orientalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vaccaea_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vaccaea_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vaccaea_Meridionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sedetania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sedetania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sedetania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vettonia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vettonia_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vettonia_Meridionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Laietania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Laietania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Laietania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bergistania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bergistania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bergistania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdetania_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdetania_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdetania_Meridionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdetania_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdetania_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdetania_Orientalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ilditurgi",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ilditurgi",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ilditurgi",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Baliares_Cartaginenses",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Baliares_Cartaginenses",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Baliares_Cartaginenses",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Carpetania_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Carpetania_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Carpetania_Orientalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdulia_Veterum",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdulia_Veterum",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdulia_Veterum",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Autrigonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Autrigonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Autrigonia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bellia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bellia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bellia_Septentrionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bardyetia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bardyetia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bardyetia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lusonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lusonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lusonia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arevacia_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arevacia_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Arevacia_Occidentalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arevacia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arevacia_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Arevacia_Meridionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Pelendonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Pelendonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Pelendonia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lusonia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lusonia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lusonia_Septentrionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sordonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sordonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sordonia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Caristia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Caristia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Caristia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Beronia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Beronia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Beronia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bastetania_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bastetania_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bastetania_Occidentalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Contestania_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Contestania_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Contestania_Occidentalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Celticia_Maritima",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Celticia_Maritima",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Celticia_Maritima",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vaccaea_Durica",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vaccaea_Durica",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vaccaea_Durica",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turdulia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turdulia_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turdulia_Orientalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Olcadia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Olcadia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Olcadia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cerretania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cerretania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cerretania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cessetania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cessetania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cessetania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Iacetania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Iacetania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Iacetania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Onuba",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Onuba",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Onuba",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aestuarium_Baeticum",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aestuarium_Baeticum",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aestuarium_Baeticum",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vasconia_Maritima",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vasconia_Maritima",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vasconia_Maritima",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tittia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tittia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tittia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Conia_Maritima",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Conia_Maritima",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Conia_Maritima",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lusitania_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lusitania_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lusitania_Meridionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ausetania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ausetania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ausetania",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Zoelaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Zoelaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Zoelaea",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vettonia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vettonia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vettonia_Septentrionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Artabria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Artabria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Artabria",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lucensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lucensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lucensia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ilercavonia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ilercavonia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ilercavonia_Septentrionalis",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Elusatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Elusatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Elusatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Pictonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Pictonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Pictonia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Leucia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Leucia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Leucia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Elysicia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Elysicia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Elysicia",
+    "units": [
+      "caetrati swordsmen",
+      "iberian skirmishers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lemovicia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lemovicia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lemovicia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Carnutia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Carnutia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Carnutia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Remia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Remia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Remia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Segusiavia-Ambivaretia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Segusiavia-Ambivaretia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Segusiavia-Ambivaretia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anagnutia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anagnutia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Anagnutia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Caletia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Caletia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Caletia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Morinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Morinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Morinia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tulingia-Verbigenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tulingia-Verbigenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tulingia-Verbigenia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Santonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Santonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Santonia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ceutronia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ceutronia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ceutronia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nantuatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nantuatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nantuatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Veragria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Veragria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Veragria",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cavaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cavaria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cavaria",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Auscia-Gatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Auscia-Gatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Auscia-Gatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Andosinia-Aerenosia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Andosinia-Aerenosia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Andosinia-Aerenosia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cocosatia-Vocatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cocosatia-Vocatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cocosatia-Vocatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tarusatia-Sibusatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tarusatia-Sibusatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tarusatia-Sibusatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bigerrionia-Bargusia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bigerrionia-Bargusia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bigerrionia-Bargusia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Rauracia-Latobrigia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rauracia-Latobrigia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Rauracia-Latobrigia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Caeracatia-Triboccia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Caeracatia-Triboccia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Caeracatia-Triboccia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Teuriohaemum",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Teuriohaemum",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Teuriohaemum",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ceutronia-Levacia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ceutronia-Levacia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ceutronia-Levacia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Geidumnia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Geidumnia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Geidumnia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Pleumoxia-Grudia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Pleumoxia-Grudia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Pleumoxia-Grudia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Menapia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Menapia_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Menapia_Orientalis",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vocontia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vocontia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vocontia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Deciatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Deciatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Deciatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Oxybia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Oxybia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Oxybia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Venellia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Venellia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Venellia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lingonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lingonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lingonia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Menapia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Menapia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Menapia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mediomatricia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mediomatricia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mediomatricia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Caturigia-Bodionticia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Caturigia-Bodionticia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Caturigia-Bodionticia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nitiobrogia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nitiobrogia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nitiobrogia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tarbellia-Ptiania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tarbellia-Ptiania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tarbellia-Ptiania",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tricastinia-Helvia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tricastinia-Helvia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tricastinia-Helvia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Namnetia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Namnetia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Namnetia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Veliocassia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Veliocassia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Veliocassia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Redonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Redonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Redonia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Gabalia-Rutenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Gabalia-Rutenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Gabalia-Rutenia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Coriosolitia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Coriosolitia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Coriosolitia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Esuvia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Esuvia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Esuvia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lexovia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lexovia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lexovia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Turonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Turonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Turonia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Meldia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Meldia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Meldia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Parisia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Parisia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Parisia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sedunia-Uberia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sedunia-Uberia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sedunia-Uberia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Petrocoria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Petrocoria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Petrocoria",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ambilatria-Andecavia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ambilatria-Andecavia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ambilatria-Andecavia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Genuatia-Tigullia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Genuatia-Tigullia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Genuatia-Tigullia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Taurinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Taurinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Taurinia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Statiellia-Vagiennia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Statiellia-Vagiennia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Statiellia-Vagiennia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Intimilia-Epanteria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Intimilia-Epanteria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Intimilia-Epanteria",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ilvatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ilvatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ilvatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Friniatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Friniatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Friniatia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Segusinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Segusinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Segusinia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lepontia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lepontia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lepontia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Orobia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Orobia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Orobia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Maricia-Laevia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Maricia-Laevia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Maricia-Laevia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lingonia_Cisalpina",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lingonia_Cisalpina",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lingonia_Cisalpina",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Septem_Maria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Septem_Maria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Septem_Maria",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Isarcia-Brixenetia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Isarcia-Brixenetia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Isarcia-Brixenetia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Brigantia-Alpes",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Brigantia-Alpes",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Brigantia-Alpes",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Estionia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Estionia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Estionia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ambidravia-Ambilicia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ambidravia-Ambilicia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ambidravia-Ambilicia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cammunia-Venostia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cammunia-Venostia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cammunia-Venostia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Saevatia-Laiancia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Saevatia-Laiancia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Saevatia-Laiancia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Catalia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Catalia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Catalia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ambisontia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ambisontia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ambisontia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Carnia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Carnia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Carnia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Alaunia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Alaunia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Alaunia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Marsignia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Marsignia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Marsignia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Osia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Osia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Osia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Racataea-Racatriaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Racataea-Racatriaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Racataea-Racatriaea",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cotinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cotinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cotinia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Latobicia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Latobicia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Latobicia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anartophractia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anartophractia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Anartophractia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Britolagia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Britolagia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Britolagia",
+    "units": [
+      "celtic swordsmen",
+      "celtic spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ecenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ecenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ecenia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Demetaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Demetaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Demetaea",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Reginia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Reginia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Reginia_Septentrionalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Otadinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Otadinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Otadinia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cornovia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cornovia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cornovia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Dobunnia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dobunnia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Dobunnia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Corieltauvia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Corieltauvia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Corieltauvia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Deceanglia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Deceanglia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Deceanglia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Reginia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Reginia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Reginia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ivernia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ivernia_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ivernia_Orientalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ivernia_Occidentalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ivernia_Occidentalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ivernia_Occidentalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Otadinia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Otadinia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Otadinia_Septentrionalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Orcades",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Orcades",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Orcades",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Haemodae",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Haemodae",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Haemodae",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ivernia_Septentrionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ivernia_Septentrionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ivernia_Septentrionalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Novantaea-Selgovaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Novantaea-Selgovaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Novantaea-Selgovaea",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Epidia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Epidia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Epidia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Damnonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Damnonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Damnonia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Taexalia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Taexalia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Taexalia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cornavia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cornavia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cornavia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lugia-Decantaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lugia-Decantaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lugia-Decantaea",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Carnonacaea-Ceronia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Carnonacaea-Ceronia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Carnonacaea-Ceronia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Corieltauvia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Corieltauvia_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Corieltauvia_Orientalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cornovia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cornovia_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cornovia_Meridionalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hebudes",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hebudes",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Hebudes",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Dobunnia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dobunnia_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Dobunnia_Meridionalis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ivernia_Centralis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ivernia_Centralis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ivernia_Centralis",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Smertaea-Caerenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Smertaea-Caerenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Smertaea-Caerenia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mona",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mona",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mona",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Monaodea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Monaodea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Monaodea",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vacomagia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vacomagia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vacomagia",
+    "units": [
+      "brittonic slingers",
+      "brittonic swordsmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Fosia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Fosia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Fosia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Variscia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Variscia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Variscia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Marvingia_Vetus",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Marvingia_Vetus",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Marvingia_Vetus",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vangionia_Vetus",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vangionia_Vetus",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vangionia_Vetus",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nemetia_Vetus",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nemetia_Vetus",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nemetia_Vetus",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Avionia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Avionia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Avionia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anglia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anglia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Anglia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Eudosia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Eudosia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Eudosia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Suardonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Suardonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Suardonia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nuithonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nuithonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nuithonia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sitonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sitonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sitonia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Varinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Varinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Varinia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sidonia_Vetus",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sidonia_Vetus",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sidonia_Vetus",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sciria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sciria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sciria",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hirria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hirria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Hirria",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Buria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Buria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Buria",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Burgundia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Burgundia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Burgundia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Favonaea-Firaesia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Favonaea-Firaesia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Favonaea-Firaesia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Suionia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Suionia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Suionia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chaedinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chaedinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chaedinia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aestia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aestia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aestia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Galindia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Galindia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Galindia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sudenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sudenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sudenia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Veltaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Veltaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Veltaea",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Betasia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Betasia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Betasia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Caerosia-Paemania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Caerosia-Paemania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Caerosia-Paemania",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sturia-Marsacia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sturia-Marsacia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sturia-Marsacia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Condrusia-Segnia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Condrusia-Segnia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Condrusia-Segnia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sunicia-Texandria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sunicia-Texandria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sunicia-Texandria",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tubantia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tubantia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tubantia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bructeria_Maior",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bructeria_Maior",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bructeria_Maior",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chamavia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chamavia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chamavia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hillevionia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hillevionia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Hillevionia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Rugia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rugia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Rugia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ampsivaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ampsivaria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ampsivaria",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Angrivaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Angrivaria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Angrivaria",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Atmonia_Vetus",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Atmonia_Vetus",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Atmonia_Vetus",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bructeria_Minor",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bructeria_Minor",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bructeria_Minor",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Caulcia-Campsiania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Caulcia-Campsiania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Caulcia-Campsiania",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chasuaria-Dulgubnia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chasuaria-Dulgubnia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chasuaria-Dulgubnia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chattuaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chattuaria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chattuaria",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Marsia_Vetus",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Marsia_Vetus",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Marsia_Vetus",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Zumia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Zumia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Zumia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Teutonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Teutonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Teutonia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Finnia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Finnia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Finnia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Insula_Osiorum",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Insula_Osiorum",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Insula_Osiorum",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Carbonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Carbonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Carbonia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Stavania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Stavania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Stavania",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Igyllionia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Igyllionia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Igyllionia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Careotaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Careotaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Careotaea",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Salia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Salia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Salia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cugernia_Vetus",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cugernia_Vetus",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cugernia_Vetus",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mugilonia-Sibinia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mugilonia-Sibinia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mugilonia-Sibinia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Reudignia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Reudignia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Reudignia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Harudia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Harudia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Harudia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Daucionia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Daucionia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Daucionia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mattiaca",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mattiaca",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mattiaca",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Didunia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Didunia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Didunia",
+    "units": [
+      "freemen",
+      "outsider skirmisher rabble"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Borouskia-Pagyritaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Borouskia-Pagyritaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Borouskia-Pagyritaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Akibia-Sauaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Akibia-Sauaria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Akibia-Sauaria",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Naskia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Naskia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Naskia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Asaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Asaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Asaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Androphagia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Androphagia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Androphagia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Coisstobocia_Transmontana",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Coisstobocia_Transmontana",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Coisstobocia_Transmontana",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Biessia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Biessia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Biessia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Albocensia_Orientalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Albocensia_Orientalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Albocensia_Orientalis",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Dacia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dacia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Dacia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Albocensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Albocensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Albocensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Predavensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Predavensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Predavensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Apula",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Apula",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Apula",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Saldensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Saldensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Saldensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Napocaea",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Napocaea",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Napocaea",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cotensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cotensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cotensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Rhatacensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rhatacensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Rhatacensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Biephia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Biephia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Biephia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ansamenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ansamenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ansamenia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Potulatensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Potulatensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Potulatensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Piephigia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Piephigia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Piephigia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ceiagisia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ceiagisia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ceiagisia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Trogodytaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Trogodytaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Trogodytaia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arpia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arpia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Arpia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Carpiania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Carpiania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Carpiania",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Caucoensia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Caucoensia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Caucoensia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aigyssia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aigyssia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aigyssia",
+    "units": [
+      "getic light infantry",
+      "getic peltasts"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Borysthenes",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Borysthenes",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Borysthenes",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Iaxamataia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Iaxamataia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Iaxamataia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Taurike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Taurike",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Taurike",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hesperos_Georgike_Skythia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hesperos_Georgike_Skythia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Hesperos_Georgike_Skythia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kallippidia-Alazonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kallippidia-Alazonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kallippidia-Alazonia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hylaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hylaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Hylaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Gerrhoia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Gerrhoia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Gerrhoia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Melanchlainia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Melanchlainia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Melanchlainia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Neuria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Neuria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Neuria",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boudinia-Gelonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boudinia-Gelonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Boudinia-Gelonia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Agathyrsia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Agathyrsia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Agathyrsia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Perierbidia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Perierbidia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Perierbidia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Syspiritis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Syspiritis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Syspiritis",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Madabitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Madabitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Madabitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Trachonitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Trachonitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Trachonitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Zabadaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Zabadaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Zabadaia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ammonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ammonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ammonia",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Marmarike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Marmarike",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Marmarike",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notia_Libya",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notia_Libya",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Notia_Libya",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boreia_Libya",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boreia_Libya",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Boreia_Libya",
+    "units": [
+      "numidian cavalry",
+      "numidian light infantry"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Noubaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Noubaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Noubaia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Adouli",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Adouli",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Adouli",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Malaotis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Malaotis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Malaotis",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mosyllia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mosyllia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mosyllia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Oponis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Oponis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Oponis",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Megabaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Megabaria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Megabaria",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Azania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Azania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Azania",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Trogodytike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Trogodytike",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Trogodytike",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notia_Trogodytike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notia_Trogodytike",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Notia_Trogodytike",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aualitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aualitaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aualitaia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Yikha",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Yikha",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Yikha",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ano_Aithiopia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ano_Aithiopia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ano_Aithiopia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Blemmyia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Blemmyia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Blemmyia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Adaboulia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Adaboulia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Adaboulia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aromaton_Akroterion",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aromaton_Akroterion",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aromaton_Akroterion",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aithiopia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aithiopia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aithiopia",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tenessis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tenessis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tenessis",
+    "units": [
+      "kushite spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aouranitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aouranitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aouranitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Rhaabenia-Masania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rhaabenia-Masania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Rhaabenia-Masania",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Omanitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Omanitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Omanitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Banizomeneia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Banizomeneia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Banizomeneia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Entos_Smyrnophoros",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Entos_Smyrnophoros",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Entos_Smyrnophoros",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Yathrib",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Yathrib",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Yathrib",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sarakenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sarakenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sarakenia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mapharitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mapharitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mapharitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Skenitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Skenitaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Skenitaia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kassanitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kassanitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kassanitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Libanophoria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Libanophoria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Libanophoria",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Katharrheia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Katharrheia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Katharrheia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notia_Sarakenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notia_Sarakenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Notia_Sarakenia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Iobaritaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Iobaritaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Iobaritaia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sachalites_Kolpos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sachalites_Kolpos",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sachalites_Kolpos",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Omana_Kolpos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Omana_Kolpos",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Omana_Kolpos",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notia_Elisaria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notia_Elisaria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Notia_Elisaria",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Dioskoridou_Nesos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Dioskoridou_Nesos",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Dioskoridou_Nesos",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notia_Omanitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notia_Omanitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Notia_Omanitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anatolike_Omanitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anatolike_Omanitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Anatolike_Omanitis",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Martenia-Orchenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Martenia-Orchenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Martenia-Orchenia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Agraia-Agoubenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Agraia-Agoubenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Agraia-Agoubenia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aboukaia-Leanitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aboukaia-Leanitaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aboukaia-Leanitaia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kauchabenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kauchabenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kauchabenia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Aisitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Aisitaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Aisitaia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Rhambaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Rhambaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Rhambaia",
+    "units": [
+      "arab skirmishers",
+      "arab levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Egritike",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Egritike",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Egritike",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kaspiane-Ouitia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kaspiane-Ouitia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kaspiane-Ouitia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Skythenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Skythenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Skythenia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Legaia-Gelaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Legaia-Gelaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Legaia-Gelaia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sanaraia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sanaraia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sanaraia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Didouria-Touskia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Didouria-Touskia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Didouria-Touskia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chorzene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chorzene",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chorzene",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Boreia_Lychnitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Boreia_Lychnitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Boreia_Lychnitis",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sakasene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sakasene",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sakasene",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kambysene-Gogarene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kambysene-Gogarene",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kambysene-Gogarene",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Lazia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lazia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lazia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ano_Euphrates",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ano_Euphrates",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ano_Euphrates",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Zygia-Achaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Zygia-Achaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Zygia-Achaia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Moschia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Moschia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Moschia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Soanaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Soanaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Soanaia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Makronia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Makronia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Makronia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Drilaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Drilaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Drilaia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tibarenia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tibarenia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tibarenia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Taochia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Taochia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Taochia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chalybia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chalybia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chalybia",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chaldaia-Pontos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chaldaia-Pontos",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chaldaia-Pontos",
+    "units": [
+      "asian skirmishers",
+      "asian slingers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arsa",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arsa",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Arsa",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kaspeiraia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kaspeiraia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kaspeiraia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Sogdia-Indos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Sogdia-Indos",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Sogdia-Indos",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chatriaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chatriaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chatriaia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mousikania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mousikania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mousikania",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Portikania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Portikania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Portikania",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Syrastrene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Syrastrene",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Syrastrene",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arbia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arbia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Arbia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Oreitaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Oreitaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Oreitaia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Samboia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Samboia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Samboia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Patalene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Patalene",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Patalene",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mallia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mallia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mallia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Abastania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Abastania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Abastania",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Indos",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Indos",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Indos",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Gedrosia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Gedrosia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Gedrosia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Arachosia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Arachosia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Arachosia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Eoritia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Eoritia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Eoritia",
+    "units": [
+      "indian levy spearmen"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Xandia-Paria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Xandia-Paria",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Xandia-Paria",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Attasia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Attasia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Attasia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Apasiakaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Apasiakaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Apasiakaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Amyrgia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Amyrgia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Amyrgia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tsatsene",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tsatsene",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tsatsene",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Thyssagetaia-Iyrkaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Thyssagetaia-Iyrkaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Thyssagetaia-Iyrkaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Massagetaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Massagetaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Massagetaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Issedonia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Issedonia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Issedonia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Anatolike_Skythia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Anatolike_Skythia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Anatolike_Skythia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Argippaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Argippaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Argippaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Auxakitis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Auxakitis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Auxakitis",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kasiane",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kasiane",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kasiane",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Achasa",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Achasa",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Achasa",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Chaurania",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chaurania",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Chaurania",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Ottorochora",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Ottorochora",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Ottorochora",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Tsendzot",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Tsendzot",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Tsendzot",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Toornaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Toornaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Toornaia",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Qudsrilqak",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Qudsrilqak",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Qudsrilqak",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Snergaks",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Snergaks",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Snergaks",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Kamuk",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kamuk",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kamuk",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Mpraysnrarqak",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Mpraysnrarqak",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Mpraysnrarqak",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Nroysoqak",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Nroysoqak",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Nroysoqak",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Qudsdo",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Qudsdo",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Qudsdo",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Bariy",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Bariy",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Bariy",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Cilicians_Region",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Cilicians_Region",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Cilicians_Region",
+    "units": [
+      "sarmatian archers"
+    ],
+    "_garrisoned": true
   },
   {
     "name": "sub faction massylii",

@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.142",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Slave / rebel garrisons now show the actual descr_strat units, not a guessed pool. The bundle armies parser only captured `character` blocks (named-general armies); it ignored `garrisoned_army` blocks defined per-settlement (no character, no coords — just bare `unit` lines under the settlement). RIS uses garrisoned_army for almost every slave settlement (Friniatia: 1 celtic swordsman + 1 celtic spearman, Rhegion: full campanian stack, etc.), so 497 of 499 slave settlements were rendering empty. Parser now snaps these to the settlement tile via the surrounding region context, and a new starting_armies_*.json is produced at bundle time so the renderer no longer needs a dev-import to see them." },
+      { type: "fix", text: "Reverted 0.9.141's wrong rebel-pool fallback. descr_rebel_factions.txt's pool drives PROCEDURAL REVOLTS (peasant_revolt, brigands, gladiator_revolt, pirates), not turn-0 garrisons; the game doesn't spawn random units from it at game start." },
+      { type: "fix", text: "EDB alias parser now captures bare 'building_present <chain>' (no level) branches — previously the `or building_present garrison` half of mic_tier_1 was silently dropped, so 167 settlements that start with a garrison chain weren't getting credit toward mic_tier_1 satisfaction. Recruit-requires evaluator also handles direct 'building_present X' clauses (with optional 'not' and skipping the 'queued' modifier we have no data for)." },
+    ],
+  },
+  {
     version: "0.9.140",
     date: "2026-05-01",
     items: [

@@ -1380,6 +1380,14 @@ function App() {
               }
             }).catch(() => {});
           }
+          if (api.getRebelFactions) {
+            api.getRebelFactions(dir).then(map => {
+              if (map && Object.keys(map).length) {
+                setRebelFactions(map);
+                console.log("[rebel-factions] loaded, types:", Object.keys(map).length);
+              }
+            }).catch(() => {});
+          }
           // Fetch the faction display map too
           if (api.getFactionDisplayMap) {
             api.getFactionDisplayMap().then(map => {
@@ -1469,6 +1477,10 @@ function App() {
   const [buildingLevelsLookup, setBuildingLevelsLookup] = useState(null); // { chain: [level0Name, level1Name, ...] }
   const [buildingRecruits, setBuildingRecruits] = useState(null); // { chain: { level: [{unit, factions?}, ...] } }
   const [unitOwnership, setUnitOwnership] = useState(null); // { unitName: [faction, ...] } — from export_descr_unit.txt
+  // { rebelType: { units: [name, ...], category, chance, description } } from
+  // descr_rebel_factions.txt. Used to surface the procedural rebel garrison
+  // pool for slave-owned settlements that have no explicit descr_strat army.
+  const [rebelFactions, setRebelFactions] = useState(null);
   const [infoPopup, setInfoPopup] = useState(null); // { type, faction, name, chainName?, culture?, label? }
   const [buildingDisplayNames, setBuildingDisplayNames] = useState(null); // { levelName: "Display Name" }
   // Load building lookups on mount.
@@ -7725,6 +7737,10 @@ function App() {
                                 const hasMinLevel = (chain, level) => {
                                   const built = builtList.find(b => b.type === chain);
                                   if (!built) return false;
+                                  // Bare `building_present X` clauses (captured
+                                  // from aliases / direct requires with no
+                                  // level) — any built level satisfies.
+                                  if (level == null) return true;
                                   const order = (buildingLevelsLookup && buildingLevelsLookup[chain]) || null;
                                   if (!order) return built.level === level;
                                   const haveIdx = order.indexOf(built.level);
@@ -7757,6 +7773,22 @@ function App() {
                                   while ((m = re.exec(rec.requires)) !== null) {
                                     const negated = !!m[1];
                                     const sat = hasMinLevel(m[2], m[3]);
+                                    if (negated ? sat : !sat) { ok = false; break; }
+                                  }
+                                }
+                                if (!ok) continue;
+                                // 3) Bare `building_present <chain>` (no level) — chain at any
+                                //    built level satisfies. The `(?!_min_level)` negative
+                                //    lookahead avoids re-matching `building_present_min_level`.
+                                //    Skip the `queued` modifier (refers to build queue, not
+                                //    built buildings — we have no queue data).
+                                {
+                                  const re = /(\bnot\s+)?\bbuilding_present(?!_min_level)\s+(\S+)(?:\s+(\w+))?/g;
+                                  let m;
+                                  while ((m = re.exec(rec.requires)) !== null) {
+                                    if (m[3] === "queued") continue;
+                                    const negated = !!m[1];
+                                    const sat = hasMinLevel(m[2], null);
                                     if (negated ? sat : !sat) { ok = false; break; }
                                   }
                                 }

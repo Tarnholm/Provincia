@@ -1427,7 +1427,12 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
                 const out2 = [];
                 for (const b of branches) {
                   const m2 = b.match(/building_present_min_level\s+(\S+)\s+(\S+)/);
-                  if (m2) out2.push({ chain: m2[1], level: m2[2] });
+                  if (m2) { out2.push({ chain: m2[1], level: m2[2] }); continue; }
+                  // Bare `building_present X` (no level) — chain at ANY level
+                  // satisfies. Captured with level=null, evaluated as wildcard
+                  // in the renderer's hasMinLevel.
+                  const m3 = b.match(/^\s*building_present\s+(\S+)\s*$/);
+                  if (m3) out2.push({ chain: m3[1], level: null });
                 }
                 if (out2.length > 0) aliases[curAlias] = out2;
               }
@@ -3156,6 +3161,52 @@ ipcMain.handle("faction-cultures", async (_event, modDataDir) => {
 // the wrong faction's recruits.
 ipcMain.handle("get-initial-ownership", async () => {
   return modInitialOwnerByCity || {};
+});
+
+// Parse descr_rebel_factions.txt → { rebelType: { units: [name, ...], category,
+// chance, description } }. Slave-owned settlements without an explicit
+// descr_strat garrison spawn rebel garrisons procedurally at game start using
+// this file's rebel_type → unit pool mapping (keyed off the region's
+// `culture` field in descr_regions, e.g. "Romans" / "Coriosolites").
+const _rebelFactionsCache = new Map();
+ipcMain.handle("get-rebel-factions", async (_event, modDataDir) => {
+  const cacheKey = modDataDir || "";
+  if (_rebelFactionsCache.has(cacheKey)) return _rebelFactionsCache.get(cacheKey);
+  const out = {};
+  const sources = [];
+  if (modDataDir && fs.existsSync(modDataDir)) {
+    sources.push(path.join(modDataDir, "descr_rebel_factions.txt"));
+  }
+  for (const root of getIconSearchRoots()) {
+    sources.push(path.join(root, "descr_rebel_factions.txt"));
+  }
+  for (const src of sources) {
+    if (!fs.existsSync(src)) continue;
+    try {
+      const buf = fs.readFileSync(src);
+      const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
+      let cur = null;
+      for (const raw of text.split(/\r?\n/)) {
+        const line = raw.replace(/;.*/, "").trim();
+        if (!line) continue;
+        let m;
+        if ((m = line.match(/^rebel_type\s+(.+)$/))) {
+          cur = m[1].trim();
+          out[cur] = { units: [], category: null, chance: null, description: cur };
+          continue;
+        }
+        if (!cur) continue;
+        if ((m = line.match(/^category\s+(.+)$/))) out[cur].category = m[1].trim();
+        else if ((m = line.match(/^chance\s+(\d+)/))) out[cur].chance = parseInt(m[1], 10);
+        else if ((m = line.match(/^description\s+(.+)$/))) out[cur].description = m[1].trim();
+        else if ((m = line.match(/^unit\s+(.+)$/))) out[cur].units.push(m[1].trim());
+      }
+      console.log("[rebel-factions] parsed", Object.keys(out).length, "rebel types from", src);
+      break; // first source with content wins
+    } catch (e) { console.warn("[rebel-factions]", src, e.message); }
+  }
+  _rebelFactionsCache.set(cacheKey, out);
+  return out;
 });
 
 ipcMain.handle("characters-init", async (_event, modDataDir) => {
