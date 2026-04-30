@@ -4926,51 +4926,75 @@ function App() {
     document.body.removeChild(a);
   }
 
-  function renderHiddenResourcePicker(pillStyle, btnStyle) {
+  function renderHiddenResourcePicker() {
     const q = hiddenResourceSearch.trim().toLowerCase();
     const filtered = q
       ? hiddenResourcesList.filter(({ name }) => name.toLowerCase().includes(q))
       : hiddenResourcesList;
-    const shown = filtered.slice(0, 80);
     return (
-      <div style={{ ...pillStyle, alignItems: "stretch", flexDirection: "column", gap: 4, padding: "5px 6px", maxWidth: Math.max(260, canvasSize.width - 280) }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ padding: 0, margin: 0 }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 5, padding: "6px 8px 0 8px", gap: 8,
+        }}>
+          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "inherit", letterSpacing: "0.3px" }}>
+            Hidden Resources
+          </span>
+          <button
+            style={{
+              fontSize: "0.75rem", padding: "3px 10px", borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.2)",
+              color: "inherit", cursor: selectedHiddenResource ? "pointer" : "not-allowed",
+              opacity: selectedHiddenResource ? 1 : 0.5, fontWeight: 600,
+              transition: "opacity 0.15s",
+            }}
+            onClick={() => setSelectedHiddenResource(null)}
+            disabled={!selectedHiddenResource}
+          >
+            Deselect
+          </button>
+        </div>
+        <div style={{ padding: "0 8px 4px 8px" }}>
           <input
             type="text"
-            placeholder={`Search hidden resource (${hiddenResourcesList.length})...`}
+            placeholder={`Search ${hiddenResourcesList.length} tokens...`}
             value={hiddenResourceSearch}
             onChange={(e) => setHiddenResourceSearch(e.target.value)}
             style={{
-              flex: 1, minWidth: 140, boxSizing: "border-box", padding: "3px 8px",
+              width: "100%", boxSizing: "border-box", padding: "3px 8px",
               borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(0,0,0,0.3)", color: "#eee", fontSize: "0.78rem", outline: "none",
+              background: "rgba(0,0,0,0.3)", color: "inherit", fontSize: "0.8rem",
+              outline: "none",
             }}
           />
-          {selectedHiddenResource && (
-            <button onClick={() => setSelectedHiddenResource(null)} style={btnStyle(false)}>Clear</button>
-          )}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 3, maxHeight: 140, overflowY: "auto" }}>
-          {shown.map(({ name, count }) => {
+        <div style={{ display: "flex", flexDirection: "column", padding: "4px 6px 8px 6px", gap: 2 }}>
+          {filtered.map(({ name, count }) => {
             const active = selectedHiddenResource === name;
             return (
-              <button
+              <div
                 key={name}
                 onClick={() => setSelectedHiddenResource(active ? null : name)}
-                style={{ ...btnStyle(active), padding: "2px 7px", fontSize: "0.74rem" }}
-                title={`${count} region${count === 1 ? "" : "s"}`}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "3px 8px", borderRadius: 4, cursor: "pointer",
+                  background: active ? "rgba(220,166,74,0.25)" : "transparent",
+                  outline: active ? "1px solid #dca64a" : "1px solid transparent",
+                  fontSize: "0.78rem", color: "#eee",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
               >
-                {name}<span style={{ marginLeft: 4, opacity: 0.6 }}>({count})</span>
-              </button>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                <span style={{ color: "#aaa", fontSize: "0.72rem", marginLeft: 8 }}>{count}</span>
+              </div>
             );
           })}
-          {shown.length === 0 && (
-            <span style={{ color: "#aaa", fontSize: "0.75rem", padding: "2px 4px" }}>No matches.</span>
-          )}
-          {filtered.length > shown.length && (
-            <span style={{ color: "#aaa", fontSize: "0.7rem", padding: "2px 4px", alignSelf: "center" }}>
-              +{filtered.length - shown.length} more — refine search
-            </span>
+          {filtered.length === 0 && (
+            <div style={{ color: "#aaa", fontSize: "0.78rem", padding: "8px 4px", textAlign: "center" }}>
+              No matches.
+            </div>
           )}
         </div>
       </div>
@@ -5051,8 +5075,6 @@ function App() {
             ))}
           </>)}
         </div>
-        {/* Hidden-resource picker — appears under the map-mode pill when that dev mode is active */}
-        {devMode && colorMode === "hidden_resource" && renderHiddenResourcePicker(pillStyle, btnStyle)}
         {/* Bottom-right stack: mute at top, optional dev-controls in middle,
             Dev button always anchored at the bottom. Portalled to document.body
             so parent stacking contexts (topBarRef) can't clamp its z-index
@@ -7160,14 +7182,16 @@ function App() {
                   </div>
                 )}
 
-                {/* Selected provinces / faction summary */}
+                {/* Selected provinces / faction summary — replaced by hidden-resource picker in that dev mode */}
                 <CustomScrollArea
                   className="panel"
                   style={{ width: "100%", flex: 1, minHeight: 0 }}
                   skin={SCROLL_SKIN} railInset={{ top: 40, bottom: 40 }}
                   trackWidth={SCROLLBAR_GUTTER} railWidth={4} thumbWidth={16}
-                  thumbMin={THUMB_MIN_PX} ariaLabel="Selected provinces"
+                  thumbMin={THUMB_MIN_PX}
+                  ariaLabel={colorMode === "hidden_resource" ? "Hidden Resources" : "Selected provinces"}
                 >
+                  {colorMode === "hidden_resource" ? renderHiddenResourcePicker() : (<>
                   <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
                       {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}
@@ -7231,6 +7255,7 @@ function App() {
                       </button>}
                     </div>
                   )}
+                  </>)}
                 </CustomScrollArea>
               </div>
             </div>

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.123",
+    date: "2026-04-30",
+    items: [
+      { type: "improvement", text: "Hidden-resource picker moved from a top-left dropdown into the right sidebar — replaces the outliner panel (Selected Provinces / faction summary) while 'Hidden Res.' mode is active, and reverts on any other mode. Same scroll area, search box, and per-token region count, just with proper vertical room (no more 80-token clamp / 'refine search' message)." },
+    ],
+  },
+  {
     version: "0.9.122",
     date: "2026-04-30",
     items: [
