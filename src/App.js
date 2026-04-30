@@ -1046,6 +1046,7 @@ function App() {
   }, []);
   const [collapsedRelGroups, setCollapsedRelGroups] = useState(() => new Set(Object.keys(RELIGION_GROUPS)));
   const [collapsedCulGroups, setCollapsedCulGroups] = useState(new Set(["__all__"])); // sentinel: start all collapsed
+  const [collapsedHrGroups, setCollapsedHrGroups] = useState(new Set(["__all__"])); // hidden-resource groups, start all collapsed
   const [devFlatColors, setDevFlatColors] = useState(false);
   const [devGrid, setDevGrid] = useState(false);
   const [devCultureBorders, setDevCultureBorders] = useState(false);
@@ -1161,17 +1162,8 @@ function App() {
 
   // Dev "hidden_resource" map mode: which hidden resource to highlight (search box reuses legendSearch)
   const [selectedHiddenResource, setSelectedHiddenResource] = useState(null);
-  // [{ name, count }, ...] — every hidden-resource token in the active campaign,
-  // sorted by frequency desc then alphabetically. Recomputed when regions change.
-  const hiddenResourcesList = useMemo(() => {
-    const counts = {};
-    for (const r of Object.values(regions || {})) {
-      for (const tok of getHiddenResources(r.tags)) counts[tok] = (counts[tok] || 0) + 1;
-    }
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-  }, [regions]);
+  // hiddenResourcesList is defined further down — homelandsData is declared
+  // after this block and we need it inside that useMemo.
 
   // Victory conditions
   const [victoryConditions, setVictoryConditions] = useState({});
@@ -1556,6 +1548,41 @@ function App() {
     return result;
   }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn]);
   const [homelandsData, setHomelandsData] = useState({}); // faction → [hidden_resource, ...]
+  // [{ name, count, group }, ...] — every hidden-resource token in the active
+  // campaign, classified into a logical group. Group classification is
+  // data-driven: faction homelands → Faction, r.ethnicities tokens → Ethnic,
+  // r.region/r.city → Settlement, _aor suffix → AoR, contains "merc" →
+  // Mercenary, otherwise Other. Must live AFTER the homelandsData useState so
+  // we don't reference it inside its own TDZ during the first render pass.
+  const hiddenResourcesList = useMemo(() => {
+    const counts = {};
+    for (const r of Object.values(regions || {})) {
+      for (const tok of getHiddenResources(r.tags)) counts[tok] = (counts[tok] || 0) + 1;
+    }
+    const factionSet = new Set();
+    for (const list of Object.values(homelandsData || {})) {
+      for (const h of (list || [])) factionSet.add(String(h).toLowerCase());
+    }
+    const ethnicSet = new Set();
+    const settlementSet = new Set();
+    for (const r of Object.values(regions || {})) {
+      for (const e of parseEthnicities(r.ethnicities || "")) ethnicSet.add(e.name.toLowerCase());
+      if (r.region) settlementSet.add(String(r.region).toLowerCase());
+      if (r.city) settlementSet.add(String(r.city).toLowerCase());
+    }
+    const classify = (name) => {
+      const t = name.toLowerCase();
+      if (factionSet.has(t)) return "Faction";
+      if (ethnicSet.has(t)) return "Ethnic";
+      if (settlementSet.has(t)) return "Settlement";
+      if (t.endsWith("_aor")) return "Area of Recruitment";
+      if (t.includes("merc")) return "Mercenary";
+      return "Other";
+    };
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, group: classify(name) }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [regions, homelandsData]);
   const [showGarrisons, setShowGarrisons] = useState(true);
   const [showFieldArmies, setShowFieldArmies] = useState(true);
   const [showNavies, setShowNavies] = useState(true);
@@ -3276,6 +3303,13 @@ function App() {
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0xFF) - 128) * vm;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         };
+        // For hidden_resource, precompute per-region "has it?" once so the
+        // 15M-pixel canvas pass is just a WeakMap lookup instead of a string
+        // split per pixel — clicking a token redraws much faster.
+        const hrMatch = new WeakMap();
+        if (colorMode === "hidden_resource" && selectedHiddenResource) {
+          for (const r of Object.values(regions)) hrMatch.set(r, hasTag(r.tags, selectedHiddenResource));
+        }
         const getBase = (r) => {
           if (colorMode === "terrain") { const t = getTagValue(r.tags, TERRAIN_TAGS); return (t && TERRAIN_COLORS[t]) || [100,100,100]; }
           if (colorMode === "climate") { const c = getTagValue(r.tags, CLIMATE_TAGS); return (c && CLIMATE_COLORS[c]) || [100,100,100]; }
@@ -3290,7 +3324,7 @@ function App() {
           if (colorMode === "rivertrade") { return hasTag(r.tags, "rivertrade") ? [50,170,70] : [160,130,100]; }
           if (colorMode === "hidden_resource") {
             if (!selectedHiddenResource) return [110, 110, 110];
-            return hasTag(r.tags, selectedHiddenResource) ? [50, 180, 90] : [80, 65, 60];
+            return hrMatch.get(r) ? [50, 180, 90] : [80, 65, 60];
           }
           return [100,100,100];
         };
@@ -3941,6 +3975,12 @@ function App() {
       setDevBorderPath(null);
       return;
     }
+    // Skip border path for hidden_resource — borders around individual tokens
+    // aren't useful, and the 15M-pixel scan was the main lag on each click
+    if (colorMode === "hidden_resource") {
+      setDevBorderPath(null);
+      return;
+    }
     setDevBorderPath(null);
     const classifiers = {
       terrain:    (r) => getTagValue(r.tags, TERRAIN_TAGS) || "unknown",
@@ -3949,7 +3989,6 @@ function App() {
       irrigation: (r) => getTagValue(r.tags, IRRIGATION_TAGS) || "none",
       earthquakes:(r) => hasTag(r.tags, "earthquake") ? "yes" : "no",
       rivertrade: (r) => hasTag(r.tags, "rivertrade") ? "yes" : "no",
-      hidden_resource: (r) => selectedHiddenResource && hasTag(r.tags, selectedHiddenResource) ? "yes" : "no",
     };
     const classify = classifiers[colorMode];
     if (!classify) return;
@@ -3960,7 +3999,7 @@ function App() {
       if (currentOffscreen !== offscreen) return;
       setDevBorderPath(prerenderGroupBorderPath(regions, currentOffscreen, imgSize, classify));
     }, 0);
-  }, [colorMode, regions, offscreen, imgSize, selectedHiddenResource]);
+  }, [colorMode, regions, offscreen, imgSize]);
 
   // Layout sizing
   useEffect(() => {
@@ -6395,15 +6434,55 @@ function App() {
         { yes: "River Trade", no: "No River Trade" });
     }
     if (colorMode === "hidden_resource") {
-      // Full token list (one row per hidden_resource), in the same legend panel
-      // styling as the dev mode legends. Click a row to highlight; the search
-      // box is the shared `legendSearch` so it behaves like the other modes.
+      // Token list grouped by classification (Faction / Ethnic / Settlement /
+      // AoR / Mercenary / Other), styled like the cultures legend's grouped
+      // headers. Click a row to highlight on the map; click a group header to
+      // collapse/expand. Search box is the shared `legendSearch`.
       const lq = legendSearch.trim().toLowerCase();
       const filtered = lq
-        ? hiddenResourcesList.filter(({ name }) => name.toLowerCase().includes(lq))
+        ? hiddenResourcesList.filter(({ name }) => name.replace(/_/g, " ").toLowerCase().includes(lq))
         : hiddenResourcesList;
       const SWATCH_HIT = [50, 180, 90];
       const SWATCH_MISS = [110, 110, 110];
+      const HR_GROUP_ORDER = ["Faction", "Ethnic", "Settlement", "Area of Recruitment", "Mercenary", "Other"];
+      const grouped = {};
+      for (const e of filtered) {
+        if (!grouped[e.group]) grouped[e.group] = [];
+        grouped[e.group].push(e);
+      }
+      const groupNames = HR_GROUP_ORDER.filter(g => grouped[g]);
+
+      const renderEntry = ({ name, count }, indent) => {
+        const active = selectedHiddenResource === name;
+        const dimmed = selectedHiddenResource && !active;
+        const swatch = active ? SWATCH_HIT : SWATCH_MISS;
+        return (
+          <div
+            key={name}
+            onClick={() => setSelectedHiddenResource(active ? null : name)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: `2px 4px 2px ${indent}px`, borderRadius: 4, cursor: "pointer",
+              background: active ? "rgba(220,166,74,0.25)" : "transparent",
+              opacity: dimmed ? 0.55 : 1,
+              transition: "opacity 0.15s, background 0.15s",
+            }}
+          >
+            <div style={{
+              width: 10, height: 10, borderRadius: 2, flexShrink: 0,
+              background: `rgb(${swatch[0]},${swatch[1]},${swatch[2]})`,
+              outline: active ? "2px solid #dca64a" : "none",
+            }} />
+            <span style={{
+              textTransform: "capitalize", flex: 1, fontSize: "0.72rem",
+              fontWeight: active ? 700 : 400,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{name.replace(/_/g, " ")}</span>
+            <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({count})</span>
+          </div>
+        );
+      };
+
       return (
         <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #e8a030" }}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#e8a030", ...collapseToggle }} onClick={onCollapseClick}>
@@ -6426,41 +6505,37 @@ function App() {
             />
           )}
           <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
-            {filtered.map(({ name, count }) => {
-              const active = selectedHiddenResource === name;
-              const dimmed = selectedHiddenResource && !active;
-              const swatch = active ? SWATCH_HIT : SWATCH_MISS;
-              return (
-                <div
-                  key={name}
-                  onClick={() => setSelectedHiddenResource(active ? null : name)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "2px 4px", borderRadius: 4, cursor: "pointer",
-                    background: active ? "rgba(220,166,74,0.25)" : "transparent",
-                    opacity: dimmed ? 0.55 : 1,
-                    transition: "opacity 0.15s, background 0.15s",
-                  }}
-                >
-                  <div style={{
-                    width: 10, height: 10, borderRadius: 2, flexShrink: 0,
-                    background: `rgb(${swatch[0]},${swatch[1]},${swatch[2]})`,
-                    outline: active ? "2px solid #dca64a" : "none",
-                  }} />
-                  <span style={{
-                    textTransform: "capitalize", flex: 1, fontSize: "0.72rem",
-                    fontWeight: active ? 700 : 400,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>{name.replace(/_/g, " ")}</span>
-                  <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({count})</span>
-                </div>
-              );
-            })}
-            {filtered.length === 0 && (
+            {groupNames.length === 0 && (
               <div style={{ color: "#aaa", fontSize: "0.72rem", padding: "8px 4px", textAlign: "center" }}>
                 No matches.
               </div>
             )}
+            {groupNames.map(groupName => {
+              const items = grouped[groupName];
+              const collapsed = lq ? false : (collapsedHrGroups.has(groupName) || collapsedHrGroups.has("__all__"));
+              const groupHasSelected = !!(selectedHiddenResource && items.some(e => e.name === selectedHiddenResource));
+              const totalRegions = items.reduce((s, e) => s + e.count, 0);
+              return (
+                <div key={groupName}>
+                  <div onClick={() => {
+                    setCollapsedHrGroups(prev => {
+                      const s = new Set(prev); s.delete("__all__");
+                      if (s.has(groupName)) s.delete(groupName); else s.add(groupName);
+                      return s;
+                    });
+                  }} style={{
+                    padding: "3px 4px", cursor: "pointer", fontWeight: 700, fontSize: "0.72rem",
+                    color: groupHasSelected ? "#e8a030" : "#aaa", userSelect: "none",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)", marginTop: 2,
+                  }}>
+                    <span>{collapsed ? "▶" : "▼"} {groupName}</span>
+                    <span style={{ fontWeight: 400, fontSize: "0.65rem", color: "#666" }}>{items.length}, {totalRegions} reg</span>
+                  </div>
+                  {!collapsed && items.map(e => renderEntry(e, 14))}
+                </div>
+              );
+            })}
           </div>
         </div>
       );

@@ -8,6 +8,21 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.127",
+    date: "2026-04-30",
+    items: [
+      { type: "fix", text: "0.9.126 launched to a black window — the new hiddenResourcesList useMemo referenced homelandsData ~400 lines before its useState declaration, hitting a TDZ on first render ('Cannot access To before initialization'). Moved the useMemo down to live right after the homelandsData useState so the references resolve in order." },
+    ],
+  },
+  {
+    version: "0.9.126",
+    date: "2026-04-30",
+    items: [
+      { type: "improvement", text: "Hidden-resource list grouped into Faction / Ethnic / Settlement / Area of Recruitment / Mercenary / Other, with collapsible cultures-style group headers (count + region total per group). Classification is data-driven: Faction = homelands.json membership, Ethnic = region ethnicities, Settlement = matches a region.region or .city, AoR = _aor suffix, Mercenary = contains 'merc', else Other." },
+      { type: "fix", text: "Hidden-resource picker click is fast now. Precomputed a per-region WeakMap once per selection so the 15M-pixel canvas pass is a Map lookup instead of a string split per pixel. Also skipped the dev border path for hidden_resource — its 15M-pixel scan was the rest of the click lag, and binary borders aren't visually useful for arbitrary tokens." },
+    ],
+  },
+  {
     version: "0.9.125",
     date: "2026-04-30",
     items: [
