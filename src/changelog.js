@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.135",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "Light mode now keeps the warm parchment panels but force-overrides the inline pale text colours from the dark-mode-first styling. CSS attribute selectors catch the common pale values (#eee/#fff/#f6.../#e6.../#ddd/white/rgba whites, plus the grey range #888/#aaa/#bbb/#ccc/#999/#777) inside any .panel and remap them to dark equivalents — saturated accents like #dca64a / #e8a030 are deliberately left alone. Net: parchment panels back, text readable, accents intact." },
+    ],
+  },
+  {
     version: "0.9.134",
     date: "2026-05-01",
     items: [

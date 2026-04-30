@@ -2459,9 +2459,9 @@ function App() {
           ctx.drawImage(src, tx, ty, sw, sh);
         }
       }
-      // Both modes darken the marble; light mode less than dark, but still
-      // enough that the bare marble texture doesn't feel glaring.
-      ctx.fillStyle = isDark ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0.25)";
+      // Dark mode darkens the marble; light mode lightly darkens it too
+      // (the bare marble texture alone reads as glaring otherwise).
+      ctx.fillStyle = isDark ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0.12)";
       ctx.fillRect(0, 0, vw, vh);
     } else {
       ctx.fillStyle = isDark ? "#181a1b" : "#222";

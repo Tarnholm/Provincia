@@ -26,12 +26,10 @@
   box-shadow: 0 8px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-/* Same dark-glass treatment as .panel — the inline body / button colours
-   inside the card assume a dark surface, so we keep the card dark in both
-   modes. Light mode just gets a touch more opacity than dark. */
+/* Light mode — warm parchment, not pure white */
 .ws-card {
-  background: rgba(28, 30, 32, 0.94);
-  color: #e6e6e6;
+  background: rgba(244, 236, 218, 0.95);
+  color: #1a1a1a;
 }
 body.dark-mode .ws-card {
   background: rgba(28, 30, 32, 0.94);

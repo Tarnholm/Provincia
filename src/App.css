@@ -19,19 +19,56 @@ button {
 }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Panels are dark-glass in BOTH modes — the app has hundreds of inline white
-   text colours that were unreadable on a light panel, so we keep the panel
-   surface dark everywhere and let only the canvas / marble underneath change
-   between modes. Light mode just makes the dark glass slightly more opaque so
-   it still pops against the brighter marble. */
+/* Panels are translucent so the marble shows; dark mode is lightly darkened.
+   Light-mode background is a warm parchment off-white. Inline white text
+   colours from the dark-mode-first inline styling get force-overridden to
+   dark below, so contrast still works. */
 .panel {
-  background: rgba(26, 28, 32, 0.78);
-  color: #e6e6e6;
+  background: rgba(238, 230, 210, 0.72);
+  color: #221f1a;
   border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
   padding: 12px;
   box-sizing: border-box;
   overflow-x: hidden;
+}
+
+/* Light-mode text contrast fix: most inline `color:` values in App.js were
+   chosen for a dark surface (#eee, #fff, #aaa, etc.) and become illegible on
+   the light parchment. CSS attribute selectors match the DOM `style` string
+   verbatim (React preserves the raw value); these rules force every common
+   pale inline colour to a dark equivalent inside any .panel in light mode.
+   Saturated accents like #dca64a / #e8a030 are deliberately not touched. */
+body:not(.dark-mode) .panel [style*="color: #eee"],
+body:not(.dark-mode) .panel [style*="color:#eee"],
+body:not(.dark-mode) .panel [style*="color: #fff"],
+body:not(.dark-mode) .panel [style*="color:#fff"],
+body:not(.dark-mode) .panel [style*="color: #f6"],
+body:not(.dark-mode) .panel [style*="color:#f6"],
+body:not(.dark-mode) .panel [style*="color: #e6"],
+body:not(.dark-mode) .panel [style*="color:#e6"],
+body:not(.dark-mode) .panel [style*="color: #e8e"],
+body:not(.dark-mode) .panel [style*="color:#e8e"],
+body:not(.dark-mode) .panel [style*="color: #ddd"],
+body:not(.dark-mode) .panel [style*="color: white"],
+body:not(.dark-mode) .panel [style*="color: rgba(255,255,255"],
+body:not(.dark-mode) .panel [style*="color: rgb(255, 255, 255"],
+body:not(.dark-mode) .panel [style*="color: rgb(255,255,255"] {
+  color: #1a1a1a !important;
+}
+body:not(.dark-mode) .panel [style*="color: #aaa"],
+body:not(.dark-mode) .panel [style*="color:#aaa"],
+body:not(.dark-mode) .panel [style*="color: #888"],
+body:not(.dark-mode) .panel [style*="color:#888"],
+body:not(.dark-mode) .panel [style*="color: #bbb"],
+body:not(.dark-mode) .panel [style*="color: #ccc"],
+body:not(.dark-mode) .panel [style*="color: #999"],
+body:not(.dark-mode) .panel [style*="color: #777"] {
+  color: #444 !important;
+}
+body:not(.dark-mode) .panel [style*="color: #555"],
+body:not(.dark-mode) .panel [style*="color: #666"] {
+  color: #555 !important;
 }
 .panel-tight { padding: 2px 1px !important; }
 
