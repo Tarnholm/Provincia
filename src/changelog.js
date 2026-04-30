@@ -8,6 +8,20 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.125",
+    date: "2026-04-30",
+    items: [
+      { type: "fix", text: "Hidden-resource picker now lives in the bottom-left legend panel itself (which was the 'outliner' meant) — every token in the campaign listed inline with swatch + name + count, search box reuses the shared legendSearch like other modes. Removed the separate sidebar component; right-column outliner is back to Selected Provinces / faction summary." },
+    ],
+  },
+  {
+    version: "0.9.124",
+    date: "2026-04-30",
+    items: [
+      { type: "improvement", text: "Hidden-resource picker restyled to match the Culture/Religion legend: title with total token count, shared 'legend-search-input' search box, then a flat compact list where each row is a 10×10 swatch + capitalized name + (count). Active row gets the amber background and outline (cultures' selection treatment); other rows fade to 0.55 opacity when something is selected. Replaces the previous boxy button-list look." },
+    ],
+  },
+  {
     version: "0.9.123",
     date: "2026-04-30",
     items: [

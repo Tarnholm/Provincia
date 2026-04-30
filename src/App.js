@@ -1159,9 +1159,8 @@ function App() {
     () => localStorage.getItem("selectedFaction") ? new Set([localStorage.getItem("selectedFaction")]) : new Set()
   );
 
-  // Dev "hidden_resource" map mode: which hidden resource to highlight, plus picker search box
+  // Dev "hidden_resource" map mode: which hidden resource to highlight (search box reuses legendSearch)
   const [selectedHiddenResource, setSelectedHiddenResource] = useState(null);
-  const [hiddenResourceSearch, setHiddenResourceSearch] = useState("");
   // [{ name, count }, ...] — every hidden-resource token in the active campaign,
   // sorted by frequency desc then alphabetically. Recomputed when regions change.
   const hiddenResourcesList = useMemo(() => {
@@ -4926,81 +4925,6 @@ function App() {
     document.body.removeChild(a);
   }
 
-  function renderHiddenResourcePicker() {
-    const q = hiddenResourceSearch.trim().toLowerCase();
-    const filtered = q
-      ? hiddenResourcesList.filter(({ name }) => name.toLowerCase().includes(q))
-      : hiddenResourcesList;
-    return (
-      <div style={{ padding: 0, margin: 0 }}>
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          marginBottom: 5, padding: "6px 8px 0 8px", gap: 8,
-        }}>
-          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "inherit", letterSpacing: "0.3px" }}>
-            Hidden Resources
-          </span>
-          <button
-            style={{
-              fontSize: "0.75rem", padding: "3px 10px", borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.2)",
-              color: "inherit", cursor: selectedHiddenResource ? "pointer" : "not-allowed",
-              opacity: selectedHiddenResource ? 1 : 0.5, fontWeight: 600,
-              transition: "opacity 0.15s",
-            }}
-            onClick={() => setSelectedHiddenResource(null)}
-            disabled={!selectedHiddenResource}
-          >
-            Deselect
-          </button>
-        </div>
-        <div style={{ padding: "0 8px 4px 8px" }}>
-          <input
-            type="text"
-            placeholder={`Search ${hiddenResourcesList.length} tokens...`}
-            value={hiddenResourceSearch}
-            onChange={(e) => setHiddenResourceSearch(e.target.value)}
-            style={{
-              width: "100%", boxSizing: "border-box", padding: "3px 8px",
-              borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(0,0,0,0.3)", color: "inherit", fontSize: "0.8rem",
-              outline: "none",
-            }}
-          />
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", padding: "4px 6px 8px 6px", gap: 2 }}>
-          {filtered.map(({ name, count }) => {
-            const active = selectedHiddenResource === name;
-            return (
-              <div
-                key={name}
-                onClick={() => setSelectedHiddenResource(active ? null : name)}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "3px 8px", borderRadius: 4, cursor: "pointer",
-                  background: active ? "rgba(220,166,74,0.25)" : "transparent",
-                  outline: active ? "1px solid #dca64a" : "1px solid transparent",
-                  fontSize: "0.78rem", color: "#eee",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
-                onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
-              >
-                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
-                <span style={{ color: "#aaa", fontSize: "0.72rem", marginLeft: 8 }}>{count}</span>
-              </div>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div style={{ color: "#aaa", fontSize: "0.78rem", padding: "8px 4px", textAlign: "center" }}>
-              No matches.
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   function renderMapModeToggle() {
     const pillStyle = {
       display: "inline-flex",
@@ -6471,16 +6395,75 @@ function App() {
         { yes: "River Trade", no: "No River Trade" });
     }
     if (colorMode === "hidden_resource") {
-      if (!selectedHiddenResource) {
-        return renderDevLegend("Hidden Resource",
-          (_r) => "none",
-          { none: [110, 110, 110] },
-          { none: "Pick a hidden resource above" });
-      }
-      return renderDevLegend(`Hidden Resource: ${selectedHiddenResource}`,
-        (r) => hasTag(r.tags, selectedHiddenResource) ? "yes" : "no",
-        { yes: [50, 180, 90], no: [80, 65, 60] },
-        { yes: `Has '${selectedHiddenResource}'`, no: "Doesn't have" });
+      // Full token list (one row per hidden_resource), in the same legend panel
+      // styling as the dev mode legends. Click a row to highlight; the search
+      // box is the shared `legendSearch` so it behaves like the other modes.
+      const lq = legendSearch.trim().toLowerCase();
+      const filtered = lq
+        ? hiddenResourcesList.filter(({ name }) => name.toLowerCase().includes(lq))
+        : hiddenResourcesList;
+      const SWATCH_HIT = [50, 180, 90];
+      const SWATCH_MISS = [110, 110, 110];
+      return (
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #e8a030" }}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#e8a030", ...collapseToggle }} onClick={onCollapseClick}>
+            Hidden Resource <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#aaa" }}>({hiddenResourcesList.length})</span>
+            <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: 6 }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (
+            <input
+              type="text"
+              value={legendSearch}
+              onChange={(e) => setLegendSearch(e.target.value)}
+              className="legend-search-input"
+              placeholder="Search..."
+              style={{
+                width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
+                borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
+                color: "#eee", fontSize: "0.74rem", outline: "none",
+                transition: "border-color 0.15s, box-shadow 0.15s",
+              }}
+            />
+          )}
+          <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
+            {filtered.map(({ name, count }) => {
+              const active = selectedHiddenResource === name;
+              const dimmed = selectedHiddenResource && !active;
+              const swatch = active ? SWATCH_HIT : SWATCH_MISS;
+              return (
+                <div
+                  key={name}
+                  onClick={() => setSelectedHiddenResource(active ? null : name)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "2px 4px", borderRadius: 4, cursor: "pointer",
+                    background: active ? "rgba(220,166,74,0.25)" : "transparent",
+                    opacity: dimmed ? 0.55 : 1,
+                    transition: "opacity 0.15s, background 0.15s",
+                  }}
+                >
+                  <div style={{
+                    width: 10, height: 10, borderRadius: 2, flexShrink: 0,
+                    background: `rgb(${swatch[0]},${swatch[1]},${swatch[2]})`,
+                    outline: active ? "2px solid #dca64a" : "none",
+                  }} />
+                  <span style={{
+                    textTransform: "capitalize", flex: 1, fontSize: "0.72rem",
+                    fontWeight: active ? 700 : 400,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>{name.replace(/_/g, " ")}</span>
+                  <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({count})</span>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div style={{ color: "#aaa", fontSize: "0.72rem", padding: "8px 4px", textAlign: "center" }}>
+                No matches.
+              </div>
+            )}
+          </div>
+        </div>
+      );
     }
 
     // Faction legend
@@ -7182,16 +7165,14 @@ function App() {
                   </div>
                 )}
 
-                {/* Selected provinces / faction summary — replaced by hidden-resource picker in that dev mode */}
+                {/* Selected provinces / faction summary */}
                 <CustomScrollArea
                   className="panel"
                   style={{ width: "100%", flex: 1, minHeight: 0 }}
                   skin={SCROLL_SKIN} railInset={{ top: 40, bottom: 40 }}
                   trackWidth={SCROLLBAR_GUTTER} railWidth={4} thumbWidth={16}
-                  thumbMin={THUMB_MIN_PX}
-                  ariaLabel={colorMode === "hidden_resource" ? "Hidden Resources" : "Selected provinces"}
+                  thumbMin={THUMB_MIN_PX} ariaLabel="Selected provinces"
                 >
-                  {colorMode === "hidden_resource" ? renderHiddenResourcePicker() : (<>
                   <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
                       {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}
@@ -7255,7 +7236,6 @@ function App() {
                       </button>}
                     </div>
                   )}
-                  </>)}
                 </CustomScrollArea>
               </div>
             </div>
