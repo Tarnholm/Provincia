@@ -222,16 +222,84 @@ function parseDescrStratArmies(text) {
   //   character,	Quintus Ogulnius_Gallus, named, leader, age 60, , x 285, y 404   (RIS etc.)
   // The separator after `character` is either whitespace (tab/space) OR a
   // comma-then-whitespace; the parser accepts both.
+  //
+  // Also captures `garrisoned_army` blocks defined inside `settlement { ... }`.
+  // These have no character/coords — bare `unit` lines under the settlement
+  // block. Each emitted entry carries `region` so the dev-import classifier
+  // can pin it to the settlement tile. RIS uses garrisoned_army for nearly
+  // every slave settlement (Friniatia → 1 celtic swordsman + 1 celtic
+  // spearman, etc.) and dropping these is why imported saves rendered them
+  // as empty.
+  //
   // Returns [{ faction, character, x, y, units: [{ name, exp }] }].
   const armies = [];
   const lines = text.split(/\r?\n/);
   let curFaction = null;
   let curChar = null;   // { character, x, y }
+  // Settlement block tracking for garrisoned_army.
+  let inSettlement = false, settlementRegion = null, settlementBraceDepth = 0;
+  let inGarrisonedArmy = false, currentGarrison = null;
   for (let i = 0; i < lines.length; i++) {
     const s = lines[i].trim();
     if (!s || s.startsWith(";")) continue;
     const fm = s.match(/^faction\s+(\w+)/);
-    if (fm) { curFaction = fm[1].toLowerCase(); curChar = null; continue; }
+    if (fm) {
+      curFaction = fm[1].toLowerCase();
+      curChar = null;
+      inSettlement = false; settlementRegion = null; settlementBraceDepth = 0;
+      if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
+      currentGarrison = null; inGarrisonedArmy = false;
+      continue;
+    }
+    // ── Settlement block tracking (for garrisoned_army) ────────────────
+    if (s === "settlement") { inSettlement = true; settlementRegion = null; settlementBraceDepth = 0; continue; }
+    if (inSettlement) {
+      if (s === "{") { settlementBraceDepth++; continue; }
+      if (s === "}") {
+        settlementBraceDepth--;
+        if (settlementBraceDepth <= 0) {
+          if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
+          inSettlement = false; settlementRegion = null; settlementBraceDepth = 0;
+          inGarrisonedArmy = false; currentGarrison = null;
+        }
+        continue;
+      }
+      const rm = s.match(/^region\s+(\S+)/);
+      if (rm) { settlementRegion = rm[1]; continue; }
+      if (s === "garrisoned_army") {
+        if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
+        currentGarrison = {
+          faction: curFaction,
+          type: "garrisoned_army",
+          armyClass: "garrison",
+          character: settlementRegion ? `Garrison of ${settlementRegion}` : "Garrison",
+          role: null,
+          // x/y resolved by the consumer (App.js dev-import) via the captured
+          // `region` field — settlement tile coords come from the TGA pixel walk.
+          x: null, y: null,
+          region: settlementRegion || null,
+          units: [],
+          _garrisoned: true,
+        };
+        inGarrisonedArmy = true;
+        continue;
+      }
+      if (inGarrisonedArmy && currentGarrison) {
+        const um = s.match(/^unit\s+(.+?)(?:\s+exp\s|\s{2,}|$)/);
+        if (um) {
+          const uname = um[1].replace(/,$/, "").trim();
+          let exp = 0;
+          const ex = s.match(/exp\s+(\d+)/); if (ex) exp = parseInt(ex[1], 10);
+          currentGarrison.units.push({ name: uname, exp });
+          continue;
+        }
+        // Anything else ends the garrisoned_army block (but not the settlement).
+        if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
+        currentGarrison = null;
+        inGarrisonedArmy = false;
+        // Fall through so the line still gets normal processing.
+      }
+    }
     const cm = s.match(/^character(?:_sub)?[,\s]+(.+)$/);
     if (cm) {
       const parts = cm[1].split(",").map((p) => p.trim());
@@ -283,6 +351,7 @@ function parseDescrStratArmies(text) {
       curChar = null;
     }
   }
+  if (currentGarrison && currentGarrison.units.length) armies.push(currentGarrison);
   return armies;
 }
 

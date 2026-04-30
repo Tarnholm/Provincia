@@ -3895,10 +3895,6 @@
         "faction_creator": "greeks",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_palace"
           },
@@ -3947,10 +3943,6 @@
         "faction_creator": "armenia",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_palace"
           },
@@ -3994,10 +3986,6 @@
         "population": 2500,
         "faction_creator": "armenia",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "governors_palace"
@@ -4055,10 +4043,6 @@
         "faction_creator": "egypt",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_villa"
           },
@@ -4111,10 +4095,6 @@
         "faction_creator": "greeks",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_palace"
           },
@@ -4166,10 +4146,6 @@
         "population": 4100,
         "faction_creator": "chrysaoria",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
           {
             "type": "core_building",
             "level": "governors_palace"
@@ -4552,7 +4528,7 @@
           },
           {
             "type": "colony",
-            "level": "colony_1"
+            "level": "colony_2"
           },
           {
             "type": "core_building",
@@ -4655,10 +4631,6 @@
         "faction_creator": "greeks",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_palace"
           },
@@ -4707,16 +4679,16 @@
         "faction_creator": "ptolemaic",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_villa"
           },
           {
             "type": "governmentC",
             "level": "gov3"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
           },
           {
             "type": "hinterland_region",
@@ -4859,6 +4831,10 @@
             "level": "governors_villa"
           },
           {
+            "type": "colony",
+            "level": "colony_2"
+          },
+          {
             "type": "dates_cultivation",
             "level": "dates_1"
           },
@@ -4947,12 +4923,12 @@
         "faction_creator": "egypt",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_house"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
           },
           {
             "type": "defenses",
@@ -5064,7 +5040,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_1"
+            "level": "colony_2"
           },
           {
             "type": "core_building",
@@ -5211,10 +5187,6 @@
         "faction_creator": "egypt",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_villa"
           },
@@ -5258,10 +5230,6 @@
         "population": 2500,
         "faction_creator": "egypt",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -5359,6 +5327,14 @@
             "level": "governors_villa"
           },
           {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
             "type": "hinterland_region",
             "level": "region_base"
           }
@@ -5373,6 +5349,14 @@
           {
             "type": "core_building",
             "level": "governors_house"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
           },
           {
             "type": "hinterland_region",
@@ -5471,6 +5455,10 @@
             "level": "governors_house"
           },
           {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
             "type": "governmentC",
             "level": "gov3"
           },
@@ -5491,6 +5479,10 @@
             "level": "governors_house"
           },
           {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
             "type": "governmentC",
             "level": "gov3"
           },
@@ -5509,10 +5501,6 @@
           {
             "type": "academic",
             "level": "academy"
-          },
-          {
-            "type": "colony",
-            "level": "colony_2"
           },
           {
             "type": "core_building",
@@ -5567,6 +5555,10 @@
             "level": "governors_house"
           },
           {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
             "type": "governmentC",
             "level": "gov3"
           },
@@ -5582,10 +5574,6 @@
         "population": 2000,
         "faction_creator": "greeks",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -5687,10 +5675,6 @@
         "faction_creator": "greeks",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_villa"
           },
@@ -5765,10 +5749,6 @@
           {
             "type": "amphitheatres",
             "level": "stone_amphitheatre"
-          },
-          {
-            "type": "colony",
-            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -5866,10 +5846,6 @@
         "population": 4500,
         "faction_creator": "lycia",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -6014,10 +5990,6 @@
         "population": 3800,
         "faction_creator": "lycia",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -6199,6 +6171,10 @@
             "level": "gov2"
           },
           {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
             "type": "hinterland_region",
             "level": "region_base"
           }
@@ -6319,16 +6295,16 @@
         "faction_creator": "armenia",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_house"
           },
           {
             "type": "governmentB",
             "level": "gov2"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
           },
           {
             "type": "hinterland_region",
@@ -6383,10 +6359,6 @@
         "faction_creator": "ptolemaic",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_house"
           },
@@ -6397,6 +6369,10 @@
           {
             "type": "governmentB",
             "level": "gov2"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
           },
           {
             "type": "health",
@@ -6431,16 +6407,16 @@
         "faction_creator": "carthage",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_1"
-          },
-          {
             "type": "core_building",
             "level": "governors_house"
           },
           {
             "type": "governmentB",
             "level": "gov2"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
           },
           {
             "type": "hinterland_region",
@@ -6518,10 +6494,6 @@
         "population": 2100,
         "faction_creator": "egypt",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -6627,6 +6599,10 @@
             "level": "governors_villa"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "defenses",
             "level": "wooden_pallisade"
           },
@@ -6675,6 +6651,10 @@
             "level": "governors_house"
           },
           {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
             "type": "governmentC",
             "level": "gov3"
           },
@@ -6718,10 +6698,6 @@
         "population": 2200,
         "faction_creator": "egypt",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_1"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -6866,10 +6842,6 @@
         "population": 3500,
         "faction_creator": "greeks",
         "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
           {
             "type": "core_building",
             "level": "governors_villa"
@@ -7896,6 +7868,10 @@
             "level": "governors_palace"
           },
           {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
             "type": "defenses",
             "level": "wooden_wall"
           },
@@ -8052,10 +8028,6 @@
         "faction_creator": "parni",
         "buildings": [
           {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
             "type": "core_building",
             "level": "governors_villa"
           },
@@ -8125,7 +8097,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -8169,7 +8141,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -8217,7 +8189,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -8874,6 +8846,10 @@
           {
             "type": "core_building",
             "level": "governors_villa"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
           },
           {
             "type": "defenses",
@@ -10129,7 +10105,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_2"
+            "level": "colony_1"
           },
           {
             "type": "core_building",
@@ -11521,7 +11497,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_1"
+            "level": "colony_2"
           },
           {
             "type": "core_building",
@@ -11611,6 +11587,10 @@
           {
             "type": "core_building",
             "level": "governors_palace"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
           },
           {
             "type": "defenses",
@@ -11758,7 +11738,7 @@
         "buildings": [
           {
             "type": "colony",
-            "level": "colony_1"
+            "level": "colony_2"
           },
           {
             "type": "core_building",

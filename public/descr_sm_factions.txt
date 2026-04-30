@@ -3059,11 +3059,11 @@
 			"loading screen icon": "data/ui/faction_icons/astures.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       21,
+			"standard index":       196,
 			"rebel standard index": 21,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       21,
+			"logo index":       193,
 			"rebel logo index": 21,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
@@ -10686,7 +10686,7 @@
 			"rebel standard index": 145,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       143,
+			"logo index":       194,
 			"rebel logo index": 143,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied

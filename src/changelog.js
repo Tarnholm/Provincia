@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.143",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Dev-import path now also captures garrisoned_army blocks. The renderer-side parseDescrStratArmies in src/parsers.js was a separate code path from the bundle script; it only handled character-tied army/navy blocks, so when you re-imported your mod the freshly-parsed result REPLACED the bundled garrisoned_army entries from 0.9.142 with nothing — and slave settlements went empty again. Parser now tracks settlement-block context, captures the bare unit lines under garrisoned_army, and tags each entry with its region. The dev-import classifier in App.js then pins these to the settlement tile via the same TGA pixel walk used for character-tied armies." },
+      { type: "change", text: "Ship workflow: every release now re-runs `npm run bundle-data` first to pull the latest files for both Imperial and Classic campaigns, so team members who forget to re-import their mod data still get fresh JSONs in the shipped exe." },
+    ],
+  },
+  {
     version: "0.9.142",
     date: "2026-05-01",
     items: [

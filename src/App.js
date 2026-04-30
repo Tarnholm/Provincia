@@ -8626,6 +8626,18 @@ function App() {
                   byRegion[reg] = { garrison: [], field: [], settlement: p };
                 }
                 for (const a of armies) {
+                  // Synthetic garrisoned_army entries (no x/y, but carry a
+                  // `region` field) — pin to the settlement tile.
+                  if (a._garrisoned && a.region) {
+                    const tile = settlementByRegion[a.region];
+                    if (!byRegion[a.region]) byRegion[a.region] = { garrison: [], field: [], settlement: tile || null };
+                    byRegion[a.region].garrison.push({
+                      ...a,
+                      x: tile?.x ?? null,
+                      y: tile?.y ?? null,
+                    });
+                    continue;
+                  }
                   if (a.x == null || a.y == null) continue;
                   let region = tileKeyToRegion[`${a.x},${a.y}`];
                   let isGarrison = !!region;
