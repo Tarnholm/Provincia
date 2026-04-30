@@ -153,11 +153,11 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
     byRegion[reg] = { garrison: [], field: [], settlement: p };
   }
 
-  // Helper: normalise unit list into [{name, exp}]. garrisoned_army units
-  // arrive as {name, exp} objects (parser captures both); character-tied
-  // armies arrive as bare name strings (legacy parser shape) — wrap those.
+  // Helper: normalise unit list into [{name, exp, armour, weapon}].
   const normUnits = (units) => (units || []).map(u =>
-    typeof u === "string" ? { name: u, exp: 0 } : { name: u.name, exp: u.exp || 0 }
+    typeof u === "string"
+      ? { name: u, exp: 0, armour: 0, weapon: 0 }
+      : { name: u.name, exp: u.exp || 0, armour: u.armour || 0, weapon: u.weapon || 0 }
   );
   for (const a of armies) {
     // Synthetic garrisoned_army: pin to its declared region's settlement tile.
@@ -302,13 +302,11 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
       if (inGarrisonedArmy) {
         const um = UNIT_RE.exec(t);
         if (um) {
-          // Capture exp from the same line so the bundled JSON shows the
-          // chevron count from descr_strat (e.g. Friniatia ships exp 1 on
-          // both units). Without this the bundled path showed exp=0 while
-          // the dev-import path correctly showed +1, splitting reality.
-          const exMatch = t.match(/exp\s+(\d+)/);
-          const exp = exMatch ? parseInt(exMatch[1], 10) : 0;
-          currentGarrison.units.push({ name: um[1].trim(), exp });
+          // Capture exp / armour / weapon_lvl from the same line.
+          const exp = (t.match(/\bexp\s+(\d+)/) || [, "0"])[1] | 0;
+          const armour = (t.match(/\barmour\s+(\d+)/) || [, "0"])[1] | 0;
+          const weapon = (t.match(/\bweapon_lvl\s+(\d+)/) || [, "0"])[1] | 0;
+          currentGarrison.units.push({ name: um[1].trim(), exp, armour, weapon });
           continue;
         }
         // Anything other than a `unit ...` line ends the garrisoned_army block.
@@ -349,9 +347,10 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
     if (inArmy && current) {
       const um = UNIT_RE.exec(t);
       if (um) {
-        const exMatch = t.match(/exp\s+(\d+)/);
-        const exp = exMatch ? parseInt(exMatch[1], 10) : 0;
-        current.units.push({ name: um[1].trim(), exp });
+        const exp = (t.match(/\bexp\s+(\d+)/) || [, "0"])[1] | 0;
+        const armour = (t.match(/\barmour\s+(\d+)/) || [, "0"])[1] | 0;
+        const weapon = (t.match(/\bweapon_lvl\s+(\d+)/) || [, "0"])[1] | 0;
+        current.units.push({ name: um[1].trim(), exp, armour, weapon });
       }
       else if (t && !/^\s/.test(s) && s[0] !== "\t") inArmy = false;
     }

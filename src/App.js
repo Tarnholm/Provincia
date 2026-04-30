@@ -7591,7 +7591,12 @@ function App() {
                             normalised = [];
                             for (const a of garrisonArmies) {
                               for (const u of a.units || []) {
-                                normalised.push({ unit: u.name, xp: u.exp || 0 });
+                                normalised.push({
+                                  unit: u.name,
+                                  xp: u.exp || 0,
+                                  armour: u.armour || 0,
+                                  weapon: u.weapon || 0,
+                                });
                               }
                             }
                           }
@@ -7988,6 +7993,7 @@ function App() {
                             faction: fac,
                             units: (a.units || []).map((u) => ({
                               unit: u.name, xp: u.exp || 0,
+                              armour: u.armour || 0, weapon: u.weapon || 0,
                               faction: fac || null,
                               icon: fac ? getCachedUnitIcon(fac, u.name) : null,
                             })),

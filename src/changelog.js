@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.145",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Chevron threshold corrected: descr_strat exp 1 now displays as 0 chevrons (matches in-game — RTW's first chevron appears at exp 2). Visible count = exp - 1." },
+      { type: "improvement", text: "XP icon switched from ▲ triangle to a chevron-style ˇ glyph in monospace, stacked when count > 1." },
+      { type: "feature", text: "Armour and weapon-upgrade icons now show on each unit. Bundle and dev-import parsers extract `armour N` and `weapon_lvl N` from each descr_strat unit line; renderer shows ⛨ shield (blue) per armour level and ⚔ sword (orange) per weapon level on the top-left of the card. Tooltip lists exact values. Friniatia's celtic swordsmen / spearmen ship with armour 0 / weapon_lvl 0 so they stay clean; upgraded garrisons now read at a glance." },
+    ],
+  },
+  {
     version: "0.9.144",
     date: "2026-05-01",
     items: [

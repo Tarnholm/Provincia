@@ -250,7 +250,7 @@ unit naval bireme    exp 0 armour 0 weapon_lvl 0
     const result = parseDescrStratArmies(text);
     expect(result).toHaveLength(3);
     expect(result[0]).toMatchObject({ faction: "romans_julii", type: "army", character: "Gaius Junius", x: 100, y: 50 });
-    expect(result[0].units).toEqual([{ name: "roman hastati", exp: 0 }]);
+    expect(result[0].units).toEqual([{ name: "roman hastati", exp: 0, armour: 0, weapon: 0 }]);
     expect(result[1]).toMatchObject({ faction: "romans_julii", type: "army", character: "Marcus Tullius" });
     expect(result[2]).toMatchObject({ faction: "carthage", type: "navy", character: "Hannibal Barca", armyClass: "navy" });
   });

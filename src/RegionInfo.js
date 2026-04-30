@@ -438,7 +438,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           }}>
             {garrison.map((u, i) => {
               const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
-              const tooltip = `${u.unit.replace(/_/g, " ")}${u.soldiers != null ? ` — ${u.soldiers}${u.max != null ? `/${u.max}` : ""}` : ""}${u.xp ? ` — ${u.xp} chevrons` : ""}`;
+              // RTW chevron count = exp - 1 (descr_strat exp 1 → 0 chevrons,
+              // exp 2 → 1 bronze, etc.). The first visible chevron appears
+              // at exp 2 in-game.
+              const chevrons = Math.max(0, (u.xp || 0) - 1);
+              const armour = u.armour || 0;
+              const weapon = u.weapon || 0;
+              const tooltipParts = [u.unit.replace(/_/g, " ")];
+              if (u.soldiers != null) tooltipParts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
+              if (chevrons > 0) tooltipParts.push(`${chevrons} chevron${chevrons === 1 ? "" : "s"}`);
+              if (armour > 0) tooltipParts.push(`armour +${armour}`);
+              if (weapon > 0) tooltipParts.push(`weapon +${weapon}`);
+              const tooltip = tooltipParts.join(" — ");
               return (
                 <div key={i}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
@@ -471,9 +482,26 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       pointerEvents: "none",
                     }}>{u.soldiers}</div>
                   )}
-                  {u.xp > 0 && (
-                    <div style={{ position: "absolute", top: 0, right: 1, color: "#fc6", fontSize: "0.5rem", textShadow: "0 0 2px #000" }}>
-                      {"\u25B2".repeat(Math.min(u.xp, 3))}{u.xp > 3 ? "+" : ""}
+                  {chevrons > 0 && (
+                    <div style={{
+                      position: "absolute", top: 0, right: 1,
+                      color: "#fc6", fontSize: "0.55rem", lineHeight: 0.8,
+                      textShadow: "0 0 2px #000",
+                      fontFamily: "monospace", letterSpacing: -1,
+                    }}>
+                      {/* RTW chevron: angular V \u2014 stacked when count > 1 */}
+                      {"\u02C7".repeat(Math.min(chevrons, 3))}{chevrons > 3 ? "+" : ""}
+                    </div>
+                  )}
+                  {(armour > 0 || weapon > 0) && (
+                    <div style={{
+                      position: "absolute", top: 0, left: 1,
+                      display: "flex", flexDirection: "column", gap: 0,
+                      fontSize: "0.55rem", lineHeight: 0.9,
+                      textShadow: "0 0 2px #000",
+                    }}>
+                      {armour > 0 && <span style={{ color: "#9cf" }}>{"\u26E8".repeat(Math.min(armour, 3))}</span>}
+                      {weapon > 0 && <span style={{ color: "#f96" }}>{"\u2694".repeat(Math.min(weapon, 3))}</span>}
                     </div>
                   )}
                 </div>
@@ -501,7 +529,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   }}>
                     {a.units.map((u, ui) => {
                       const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
-                      const tooltip = `${u.unit.replace(/_/g, " ")}${u.soldiers != null ? ` — ${u.soldiers}${u.max != null ? `/${u.max}` : ""}` : ""}${u.xp ? ` — ${u.xp} chevrons` : ""}`;
+                      const chevrons = Math.max(0, (u.xp || 0) - 1);
+                      const armour = u.armour || 0;
+                      const weapon = u.weapon || 0;
+                      const tooltipParts = [u.unit.replace(/_/g, " ")];
+                      if (u.soldiers != null) tooltipParts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
+                      if (chevrons > 0) tooltipParts.push(`${chevrons} chevron${chevrons === 1 ? "" : "s"}`);
+                      if (armour > 0) tooltipParts.push(`armour +${armour}`);
+                      if (weapon > 0) tooltipParts.push(`weapon +${weapon}`);
+                      const tooltip = tooltipParts.join(" — ");
                       return (
                       <div key={ui}
                         onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
@@ -533,9 +569,25 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                             pointerEvents: "none",
                           }}>{u.soldiers}</div>
                         )}
-                        {u.xp > 0 && (
-                          <div style={{ position: "absolute", top: 0, right: 1, color: "#fc6", fontSize: "0.5rem", textShadow: "0 0 2px #000" }}>
-                            {"\u25B2".repeat(Math.min(u.xp, 3))}
+                        {chevrons > 0 && (
+                          <div style={{
+                            position: "absolute", top: 0, right: 1,
+                            color: "#fc6", fontSize: "0.55rem", lineHeight: 0.8,
+                            textShadow: "0 0 2px #000",
+                            fontFamily: "monospace", letterSpacing: -1,
+                          }}>
+                            {"\u02C7".repeat(Math.min(chevrons, 3))}{chevrons > 3 ? "+" : ""}
+                          </div>
+                        )}
+                        {(armour > 0 || weapon > 0) && (
+                          <div style={{
+                            position: "absolute", top: 0, left: 1,
+                            display: "flex", flexDirection: "column", gap: 0,
+                            fontSize: "0.55rem", lineHeight: 0.9,
+                            textShadow: "0 0 2px #000",
+                          }}>
+                            {armour > 0 && <span style={{ color: "#9cf" }}>{"\u26E8".repeat(Math.min(armour, 3))}</span>}
+                            {weapon > 0 && <span style={{ color: "#f96" }}>{"\u2694".repeat(Math.min(weapon, 3))}</span>}
                           </div>
                         )}
                       </div>

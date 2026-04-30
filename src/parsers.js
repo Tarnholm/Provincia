@@ -288,9 +288,10 @@ function parseDescrStratArmies(text) {
         const um = s.match(/^unit\s+(.+?)(?:\s+exp\s|\s{2,}|$)/);
         if (um) {
           const uname = um[1].replace(/,$/, "").trim();
-          let exp = 0;
-          const ex = s.match(/exp\s+(\d+)/); if (ex) exp = parseInt(ex[1], 10);
-          currentGarrison.units.push({ name: uname, exp });
+          const exp = (s.match(/\bexp\s+(\d+)/) || [, "0"])[1] | 0;
+          const armour = (s.match(/\barmour\s+(\d+)/) || [, "0"])[1] | 0;
+          const weapon = (s.match(/\bweapon_lvl\s+(\d+)/) || [, "0"])[1] | 0;
+          currentGarrison.units.push({ name: uname, exp, armour, weapon });
           continue;
         }
         // Anything else ends the garrisoned_army block (but not the settlement).
@@ -323,9 +324,10 @@ function parseDescrStratArmies(text) {
         const um = sl.match(/^unit\s+(.+?)(?:\s+exp\s|\s{2,}|$)/);
         if (um) {
           const uname = um[1].replace(/,$/, "").trim();
-          let exp = 0;
-          const ex = sl.match(/exp\s+(\d+)/); if (ex) exp = parseInt(ex[1], 10);
-          units.push({ name: uname, exp });
+          const exp = (sl.match(/\bexp\s+(\d+)/) || [, "0"])[1] | 0;
+          const armour = (sl.match(/\barmour\s+(\d+)/) || [, "0"])[1] | 0;
+          const weapon = (sl.match(/\bweapon_lvl\s+(\d+)/) || [, "0"])[1] | 0;
+          units.push({ name: uname, exp, armour, weapon });
           j++;
           continue;
         }
