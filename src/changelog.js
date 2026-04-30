@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.122",
+    date: "2026-04-30",
+    items: [
+      { type: "feature", text: "New dev map mode: 'Hidden Res.'. Picks one hidden_resource token from a searchable list of every token found in descr_regions tags (296 in the Large campaign), then highlights the regions that carry it — green for match, dim brown for not. Tokens are everything in the tag list that isn't terrain/climate/irrigation/port_level/Farm##/rel_*_##/rivertrade/earthquake. Region info bottom bar shows the selected token's yes/no, or the full hidden-resource list when no token is picked." },
+    ],
+  },
+  {
     version: "0.9.118",
     date: "2026-04-27",
     items: [

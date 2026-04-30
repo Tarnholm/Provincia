@@ -712,7 +712,31 @@ function hasTag(tags, tag) {
   return String(tags || "").split(/,\s*/).some(t => t.trim() === tag);
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade"]);
+// Extract hidden-resource tokens from a region's tag list. Hidden resources
+// in descr_regions.txt are bare tokens (e.g. "italic", "merc_center", "rome")
+// living in the comma-separated tag list alongside terrain/climate/port/etc.
+// We strip the known categories and what's left is the hidden-resource set.
+const _HR_KNOWN = new Set([
+  ...Object.keys(TERRAIN_COLORS),
+  ...Object.keys(CLIMATE_COLORS),
+  "irrigation_river", "irrigation_springs", "irrigation_lake", "irrigation_aquifer", "irrigation_oasis",
+  "rivertrade", "earthquake",
+]);
+function getHiddenResources(tags) {
+  const out = [];
+  for (const raw of String(tags || "").split(/,\s*/)) {
+    const t = raw.trim();
+    if (!t) continue;
+    if (_HR_KNOWN.has(t)) continue;
+    if (/^Farm\d+$/.test(t)) continue;
+    if (/^rel_.*_\d+$/.test(t)) continue;
+    if (/^base_port_level_\d+$/.test(t)) continue;
+    out.push(t);
+  }
+  return out;
+}
+
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource"]);
 
 // Parse "dorian 70 italic 30" → [{name:"dorian",pct:70},{name:"italic",pct:30}]
 function parseEthnicities(str) {
@@ -1134,6 +1158,21 @@ function App() {
   const [selectedFactions, setSelectedFactions] = useState(
     () => localStorage.getItem("selectedFaction") ? new Set([localStorage.getItem("selectedFaction")]) : new Set()
   );
+
+  // Dev "hidden_resource" map mode: which hidden resource to highlight, plus picker search box
+  const [selectedHiddenResource, setSelectedHiddenResource] = useState(null);
+  const [hiddenResourceSearch, setHiddenResourceSearch] = useState("");
+  // [{ name, count }, ...] — every hidden-resource token in the active campaign,
+  // sorted by frequency desc then alphabetically. Recomputed when regions change.
+  const hiddenResourcesList = useMemo(() => {
+    const counts = {};
+    for (const r of Object.values(regions || {})) {
+      for (const tok of getHiddenResources(r.tags)) counts[tok] = (counts[tok] || 0) + 1;
+    }
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [regions]);
 
   // Victory conditions
   const [victoryConditions, setVictoryConditions] = useState({});
@@ -3250,12 +3289,16 @@ function App() {
           if (colorMode === "irrigation") { const irr = getTagValue(r.tags, IRRIGATION_TAGS); return irr ? IRRIGATION_COLORS[irr] : IRRIGATION_COLORS.none; }
           if (colorMode === "earthquakes") { return hasTag(r.tags, "earthquake") ? [200,70,60] : [80,160,80]; }
           if (colorMode === "rivertrade") { return hasTag(r.tags, "rivertrade") ? [50,170,70] : [160,130,100]; }
+          if (colorMode === "hidden_resource") {
+            if (!selectedHiddenResource) return [110, 110, 110];
+            return hasTag(r.tags, selectedHiddenResource) ? [50, 180, 90] : [80, 65, 60];
+          }
           return [100,100,100];
         };
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => vary(getBase(r), pr, pg, pb)));
       }
     });
-  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap]);
+  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource]);
 
   // Cache the dimming overlay — active whenever provinces are selected in any mode
   useEffect(() => {
@@ -3907,6 +3950,7 @@ function App() {
       irrigation: (r) => getTagValue(r.tags, IRRIGATION_TAGS) || "none",
       earthquakes:(r) => hasTag(r.tags, "earthquake") ? "yes" : "no",
       rivertrade: (r) => hasTag(r.tags, "rivertrade") ? "yes" : "no",
+      hidden_resource: (r) => selectedHiddenResource && hasTag(r.tags, selectedHiddenResource) ? "yes" : "no",
     };
     const classify = classifiers[colorMode];
     if (!classify) return;
@@ -3917,7 +3961,7 @@ function App() {
       if (currentOffscreen !== offscreen) return;
       setDevBorderPath(prerenderGroupBorderPath(regions, currentOffscreen, imgSize, classify));
     }, 0);
-  }, [colorMode, regions, offscreen, imgSize]);
+  }, [colorMode, regions, offscreen, imgSize, selectedHiddenResource]);
 
   // Layout sizing
   useEffect(() => {
@@ -4882,6 +4926,57 @@ function App() {
     document.body.removeChild(a);
   }
 
+  function renderHiddenResourcePicker(pillStyle, btnStyle) {
+    const q = hiddenResourceSearch.trim().toLowerCase();
+    const filtered = q
+      ? hiddenResourcesList.filter(({ name }) => name.toLowerCase().includes(q))
+      : hiddenResourcesList;
+    const shown = filtered.slice(0, 80);
+    return (
+      <div style={{ ...pillStyle, alignItems: "stretch", flexDirection: "column", gap: 4, padding: "5px 6px", maxWidth: Math.max(260, canvasSize.width - 280) }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input
+            type="text"
+            placeholder={`Search hidden resource (${hiddenResourcesList.length})...`}
+            value={hiddenResourceSearch}
+            onChange={(e) => setHiddenResourceSearch(e.target.value)}
+            style={{
+              flex: 1, minWidth: 140, boxSizing: "border-box", padding: "3px 8px",
+              borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+              background: "rgba(0,0,0,0.3)", color: "#eee", fontSize: "0.78rem", outline: "none",
+            }}
+          />
+          {selectedHiddenResource && (
+            <button onClick={() => setSelectedHiddenResource(null)} style={btnStyle(false)}>Clear</button>
+          )}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 3, maxHeight: 140, overflowY: "auto" }}>
+          {shown.map(({ name, count }) => {
+            const active = selectedHiddenResource === name;
+            return (
+              <button
+                key={name}
+                onClick={() => setSelectedHiddenResource(active ? null : name)}
+                style={{ ...btnStyle(active), padding: "2px 7px", fontSize: "0.74rem" }}
+                title={`${count} region${count === 1 ? "" : "s"}`}
+              >
+                {name}<span style={{ marginLeft: 4, opacity: 0.6 }}>({count})</span>
+              </button>
+            );
+          })}
+          {shown.length === 0 && (
+            <span style={{ color: "#aaa", fontSize: "0.75rem", padding: "2px 4px" }}>No matches.</span>
+          )}
+          {filtered.length > shown.length && (
+            <span style={{ color: "#aaa", fontSize: "0.7rem", padding: "2px 4px", alignSelf: "center" }}>
+              +{filtered.length - shown.length} more — refine search
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   function renderMapModeToggle() {
     const pillStyle = {
       display: "inline-flex",
@@ -4935,6 +5030,7 @@ function App() {
       { key: "irrigation", label: "Irrigation" },
       { key: "earthquakes", label: "Earthquakes" },
       { key: "rivertrade", label: "River Trade" },
+      { key: "hidden_resource", label: "Hidden Res." },
     ];
 
     return (
@@ -4955,6 +5051,8 @@ function App() {
             ))}
           </>)}
         </div>
+        {/* Hidden-resource picker — appears under the map-mode pill when that dev mode is active */}
+        {devMode && colorMode === "hidden_resource" && renderHiddenResourcePicker(pillStyle, btnStyle)}
         {/* Bottom-right stack: mute at top, optional dev-controls in middle,
             Dev button always anchored at the bottom. Portalled to document.body
             so parent stacking contexts (topBarRef) can't clamp its z-index
@@ -5807,6 +5905,14 @@ function App() {
       const rt = hasTag(info.tags, "rivertrade");
       return { label: "River Trade", value: rt ? "Yes" : "No" };
     }
+    if (colorMode === "hidden_resource") {
+      const hrs = getHiddenResources(info.tags);
+      if (selectedHiddenResource) {
+        const has = hrs.includes(selectedHiddenResource);
+        return { label: `Has '${selectedHiddenResource}'`, value: has ? "Yes" : "No" };
+      }
+      return { label: "Hidden Resources", value: hrs.length ? hrs.join(", ") : "None" };
+    }
     return null;
   }
 
@@ -6341,6 +6447,18 @@ function App() {
         (r) => hasTag(r.tags, "rivertrade") ? "yes" : "no",
         { yes: [50, 170, 70], no: [160, 130, 100] },
         { yes: "River Trade", no: "No River Trade" });
+    }
+    if (colorMode === "hidden_resource") {
+      if (!selectedHiddenResource) {
+        return renderDevLegend("Hidden Resource",
+          (_r) => "none",
+          { none: [110, 110, 110] },
+          { none: "Pick a hidden resource above" });
+      }
+      return renderDevLegend(`Hidden Resource: ${selectedHiddenResource}`,
+        (r) => hasTag(r.tags, selectedHiddenResource) ? "yes" : "no",
+        { yes: [50, 180, 90], no: [80, 65, 60] },
+        { yes: `Has '${selectedHiddenResource}'`, no: "Doesn't have" });
     }
 
     // Faction legend
@@ -7158,7 +7276,11 @@ function App() {
                         // "Other faction armies:" layout.
                         const r = lockedRegionInfo || regionInfo;
                         if (!r || !liveLogActive) return null;
-                        const settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                        let settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                        if (!settlementTile && cityPixels && cityPixels.length) {
+                          const cp = cityPixels.find(p => regions[p.rgbKey]?.region === r.region);
+                          if (cp) settlementTile = { x: cp.x, y: cp.y };
+                        }
                         if (!settlementTile) return null;
                         for (const list of Object.values(saveCharactersByRegion || {})) {
                           for (const c of list) {
@@ -7190,7 +7312,17 @@ function App() {
                           // Coord-based garrison definition: units whose
                           // commander is at the settlement tile, plus units
                           // with no commander (generic garrison defenders).
-                          const settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                          // Prefer the pre-bundled `startingArmiesByRegion`
+                          // settlement coords. Fall back to cityPixels (the
+                          // black-pixel position derived from the map TGA),
+                          // which is always available — fixes regions like
+                          // Poseidonia whose bundled armies file uses the
+                          // older flat format with no per-region settlement.
+                          let settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                          if (!settlementTile && cityPixels && cityPixels.length) {
+                            const cp = cityPixels.find(p => regions[p.rgbKey]?.region === r.region);
+                            if (cp) settlementTile = { x: cp.x, y: cp.y };
+                          }
                           const charByUuid = new Map();
                           for (const list of Object.values(saveCharactersByRegion || {})) {
                             for (const c of list) { if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c); }
@@ -7298,6 +7430,13 @@ function App() {
                                 // trigger a reform — not knowable from the
                                 // save alone).
                                 if (/\bmajor_event\b/.test(rec.requires)) continue;
+                                // Drop AI-only recruit lines. Many chains
+                                // ship a `not is_player ... noisland` variant
+                                // that hands the AI free units regardless of
+                                // building progression. RIS Rorarii had 6+
+                                // such lines; without filtering they showed
+                                // up in every Roman city's recruit list.
+                                if (/\bnot\s+is_player\b/.test(rec.requires)) continue;
                                 // Negative faction filter.
                                 if (/\bnot\s+factions\b/.test(rec.requires)) {
                                   const nm = rec.requires.match(/not\s+factions\s*\{\s*([^}]*)\}/);
@@ -7307,11 +7446,43 @@ function App() {
                                     if (culture && excluded.includes(culture)) continue;
                                   }
                                 }
-                                // hidden_resource X — we don't know which
-                                // hidden_resources a region carries unless
-                                // we parse descr_regions for them. Conserv-
-                                // atively drop for now.
-                                if (/\bhidden_resource\b/.test(rec.requires)) continue;
+                                // hidden_resource <X> / not hidden_resource <Y>
+                                // — evaluate against the region's tag list
+                                // from descr_regions. Hidden resources are
+                                // stored as plain tokens in the comma-separated
+                                // tag list (e.g. "italic", "sicel", "merc_center").
+                                // Without this Roman recruits at Pisae were
+                                // dropped because every Roman recruit line has
+                                // `hidden_resource italic` AND that's a valid
+                                // requirement Pisae satisfies.
+                                {
+                                  const tagSet = new Set(
+                                    String(r.tags || "")
+                                      .split(",")
+                                      .map(s => s.trim().toLowerCase())
+                                      .filter(Boolean)
+                                  );
+                                  const reqs = rec.requires;
+                                  // First check NEGATIVE requirements so we
+                                  // reject before validating positives.
+                                  const negRe = /\bnot\s+hidden_resource\s+(\S+)/g;
+                                  let neg, hrOk = true;
+                                  while ((neg = negRe.exec(reqs)) !== null) {
+                                    if (tagSet.has(neg[1].toLowerCase())) { hrOk = false; break; }
+                                  }
+                                  if (!hrOk) continue;
+                                  // Positive requirements: every `hidden_resource X`
+                                  // (NOT preceded by `not`) must be in the tag set.
+                                  // Strip the negative clauses from the search
+                                  // so the regex doesn't match them.
+                                  const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+                                  const posRe = /\bhidden_resource\s+(\S+)/g;
+                                  let pos;
+                                  while ((pos = posRe.exec(positives)) !== null) {
+                                    if (!tagSet.has(pos[1].toLowerCase())) { hrOk = false; break; }
+                                  }
+                                  if (!hrOk) continue;
+                                }
                                 // Tier aliases (mic_tier_2 etc.) actually
                                 // expand to building_present_min_level
                                 // requirements. Evaluate against the city's
@@ -7380,7 +7551,11 @@ function App() {
                             || ""
                           ).toLowerCase();
                           const culture = factionCultures?.[ownerId] || null;
-                          const settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                          let settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
+                          if (!settlementTile && cityPixels && cityPixels.length) {
+                            const cp = cityPixels.find(p => regions[p.rgbKey]?.region === r.region);
+                            if (cp) settlementTile = { x: cp.x, y: cp.y };
+                          }
                           const byCmd = new Map();
                           for (const u of raw) {
                             // Group by inferredCmd (sequential-grouping pass
