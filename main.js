@@ -1987,6 +1987,33 @@ ipcMain.handle("resolve-unit-info", async (_event, modDataDir, faction, unitName
       } catch {}
     }
   }
+  // Fallback: scan every faction folder under ui/unit_info/* for any of our
+  // _info.tga candidates. Matches the same fallback in resolve-unit-card.
+  const fallbackRoots = [];
+  if (modDataDir && fs.existsSync(modDataDir)) fallbackRoots.push(modDataDir);
+  for (const root of getIconSearchRoots()) fallbackRoots.push(root);
+  const fnSet = new Set(uVariants.map(uv => `${uv}_info.tga`));
+  for (const root of fallbackRoots) {
+    const base = path.join(root, "ui", "unit_info");
+    let entries;
+    try { entries = fs.readdirSync(base); } catch { continue; }
+    for (const facDir of entries) {
+      const facPath = path.join(base, facDir);
+      try { if (!fs.statSync(facPath).isDirectory()) continue; } catch { continue; }
+      for (const fn of fnSet) {
+        const full = path.join(facPath, fn);
+        if (!fs.existsSync(full)) continue;
+        try {
+          const buf = fs.readFileSync(full);
+          return {
+            buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+            path: full,
+            mime: "image/x-tga",
+          };
+        } catch {}
+      }
+    }
+  }
   return null;
 });
 
@@ -2050,6 +2077,38 @@ ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName
           mime: "image/x-tga",
         };
       } catch {}
+    }
+  }
+  // Fallback: brute-force scan every faction folder under ui/units/* and
+  // ui/unit_info/* for any of our filename candidates. AOR units often have
+  // their icon under a "natural-owner" faction folder (e.g. "aor roman
+  // rorarii" → romans_julii/#roman_rorarii.tga) rather than mercs/ or the
+  // recruiting faction's folder. The audit script flagged ~700 such combos.
+  const fallbackRoots = [];
+  if (modDataDir && fs.existsSync(modDataDir)) fallbackRoots.push(modDataDir);
+  for (const root of getIconSearchRoots()) fallbackRoots.push(root);
+  const fnSet = new Set(filenames);
+  for (const root of fallbackRoots) {
+    for (const subdir of ["units", "unit_info"]) {
+      const base = path.join(root, "ui", subdir);
+      let entries;
+      try { entries = fs.readdirSync(base); } catch { continue; }
+      for (const facDir of entries) {
+        const facPath = path.join(base, facDir);
+        try { if (!fs.statSync(facPath).isDirectory()) continue; } catch { continue; }
+        for (const fn of fnSet) {
+          const full = path.join(facPath, fn);
+          if (!fs.existsSync(full)) continue;
+          try {
+            const buf = fs.readFileSync(full);
+            return {
+              buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+              path: full,
+              mime: "image/x-tga",
+            };
+          } catch {}
+        }
+      }
     }
   }
   return null;

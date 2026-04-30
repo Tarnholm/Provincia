@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.139",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Cross-faction unit-card fallback. AOR units like 'aor roman rorarii' (dictionary roman_rorarii) have their icon under romans_julii/, not the recruiting faction's folder or mercs/. The resolver only checked those two, so 696 / 11 633 faction×unit combos (6.0%) rendered blank. Now after the strict lookup fails, both resolve-unit-card and resolve-unit-info fall through to scanning every faction subdir under ui/units/* and ui/unit_info/* for the filename. Audit drops missing rate to 0.3%; the remaining 39 cases are units the RIS mod author hasn't shipped icon files for at all (messenian_hoplites, iberian_cataphracts, dravidian_warriors) — nothing the resolver can do without source files." },
+    ],
+  },
+  {
     version: "0.9.138",
     date: "2026-05-01",
     items: [
