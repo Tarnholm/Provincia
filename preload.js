@@ -71,6 +71,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Auto-updater
   updaterCheck: () => ipcRenderer.invoke("updater-check"),
   updaterQuitAndInstall: () => ipcRenderer.invoke("updater-quit-and-install"),
+  getUpdateStatus: () => ipcRenderer.invoke("get-update-status"),
   onUpdateStatus: (callback) => {
     ipcRenderer.on("update-status", (_event, data) => callback(data));
     return () => ipcRenderer.removeAllListeners("update-status");

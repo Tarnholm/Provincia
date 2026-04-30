@@ -3119,10 +3119,16 @@ autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.logger = { info: console.log, warn: console.warn, error: console.error, debug: () => {} };
 
+// Cache the most recent update status so the renderer can query it on mount and recover from
+// the race where the main process fires update events before the renderer subscribes.
+let lastUpdateStatus = null;
 function sendUpdateEvent(channel, payload) {
+  if (channel === "update-status") lastUpdateStatus = payload;
   const win = BrowserWindow.getAllWindows()[0];
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
 }
+
+ipcMain.handle("get-update-status", async () => lastUpdateStatus);
 
 autoUpdater.on("update-available", (info) => {
   console.log("[updater] update available:", info.version);

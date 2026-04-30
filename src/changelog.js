@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.132",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Seleucid (and other AOR-heavy factions) no longer show empty recruit lists. RIS uses 'factions { all, }' in EDB and 'ownership all' in EDU as a wildcard for AOR units (every faction passes; narrowing happens via hidden_resource and 'not factions { ... }'). Our recruitment filter didn't recognize 'all', so AOR recruits were dropped — most factions still had plenty of specific lines, but Seleucid leans on AOR (greek_aor / syrian / macedonian / judaean tags per province) and went mostly empty. Both filters now treat 'all' as a wildcard; the field-army owner classifier got the same treatment." },
+      { type: "fix", text: "Welcome / changelog cards no longer show on every launch. WelcomeScreen had a defensive 'stale-saved-version' check meant for an old test-build numbering migration: if lastSeenVersion was higher than the topmost changelog entry, it forced onboarding back. Once the app version outpaced the newest changelog entry (0.9.130 > 0.9.128 in changelog.js) the check fired forever. Dropped the check — persisted state is now authoritative, so onboarding shows once and changelog only shows on the first launch after a real new entry." },
+      { type: "change", text: "Removed the 'Checking for updates…' toast from the manual update check. The result toast (available / downloaded / on-latest / error) follows fast enough that two toasts is just noise." },
+    ],
+  },
+  {
     version: "0.9.128",
     date: "2026-04-30",
     items: [

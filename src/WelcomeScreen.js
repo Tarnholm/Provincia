@@ -84,20 +84,15 @@ function displayVersion(v) {
 const FORCE_TEST_MODE = false;
 
 export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboardingDone, forceOnboarding, onPhaseChange, onDone, onHighlight, mapCenterX }) {
-  // Defensive: if the saved lastSeenVersion is higher than every changelog
-  // entry, it's stale (leftover from an earlier test-build numbering scheme).
-  // In that case we fall back to the second-newest entry so "What's New"
-  // shows only the delta between that and the newest — not every historical
-  // entry back to the first release — and we also treat onboarding as not
-  // yet completed, so the tour reappears on this install.
-  const highestEntry = CHANGELOG[0]?.version;
+  // Persisted state is the source of truth. (We previously had a
+  // "stale-saved-version" check that fired whenever lastSeenVersion was
+  // higher than the topmost changelog entry — but the saved version is the
+  // app's own version when the user dismisses, and once the app version
+  // outpaces the latest changelog entry that check would re-fire onboarding
+  // every launch. Drop it.)
   const previousEntry = CHANGELOG[1]?.version;
-  const isStaleSavedVersion = lastSeenVersion && highestEntry
-    && compareVersions(lastSeenVersion, highestEntry) > 0;
-  const effectiveLastSeen = isStaleSavedVersion
-    ? (previousEntry || null)
-    : lastSeenVersion;
-  const effectiveOnboardingDone = isStaleSavedVersion ? false : onboardingDone;
+  const effectiveLastSeen = lastSeenVersion;
+  const effectiveOnboardingDone = onboardingDone;
 
   const shouldShowOnboarding = FORCE_TEST_MODE || forceOnboarding || !effectiveOnboardingDone;
   // In test builds the changelog is part of what we want to verify, so show

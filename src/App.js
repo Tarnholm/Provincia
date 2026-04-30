@@ -1092,20 +1092,54 @@ function App() {
   // Auto-update status listener: surfaces update-available / downloaded / error via toast.
   // Also exposes setUpdateReady so the UI can show a "Restart & install" button.
   const [updateReady, setUpdateReady] = useState(null); // { version } once download finishes
+  // Set when the user clicked the version label to manually check; cleared when the result toast fires.
+  // Used so we toast "You're on the latest" ONLY for manual checks (not the silent startup check).
+  const manualUpdateCheckRef = useRef(false);
   useEffect(() => {
     if (!window.electronAPI?.onUpdateStatus) return;
-    return window.electronAPI.onUpdateStatus((s) => {
+    const handle = (s) => {
       if (!s) return;
-      if (s.state === "available") pushToast(`Update ${s.version} available — downloading in background.`, "info");
-      else if (s.state === "downloaded") setUpdateReady({ version: s.version });
-      else if (s.state === "error") {
-        // While the publish feed is still pointed at a placeholder repo,
-        // every fetch is going to fail. Log to console but never toast —
-        // a "real" update error will be obvious from logs or by the
-        // available/downloaded events never firing.
-        console.warn("[updater] error (silenced):", s.message);
+      if (s.state === "available") {
+        pushToast(`Update ${s.version} available — downloading in background.`, "info");
+        manualUpdateCheckRef.current = false;
+      } else if (s.state === "downloaded") {
+        setUpdateReady({ version: s.version });
+        manualUpdateCheckRef.current = false;
+      } else if (s.state === "none") {
+        // Only surface "you're on the latest" for manual checks — silent startup checks shouldn't toast.
+        if (manualUpdateCheckRef.current) {
+          pushToast(`You're on the latest version${appVersion ? ` (v${appVersion})` : ""}.`, "info");
+          manualUpdateCheckRef.current = false;
+        }
+      } else if (s.state === "error") {
+        if (manualUpdateCheckRef.current) {
+          pushToast(`Update check failed: ${s.message || "(unknown)"}`, "error");
+          manualUpdateCheckRef.current = false;
+        } else {
+          // Auto-check errors are usually noise (placeholder publish feed, no network) — log only.
+          console.warn("[updater] error (silenced):", s.message);
+        }
       }
-    });
+    };
+    // Pull cached status — recovers from the race where the main process fired update events
+    // before this listener attached (the renderer mount happens after autoUpdater.checkForUpdates).
+    if (window.electronAPI.getUpdateStatus) {
+      window.electronAPI.getUpdateStatus().then((s) => { if (s) handle(s); });
+    }
+    return window.electronAPI.onUpdateStatus(handle);
+  }, [pushToast, appVersion]);
+
+  // Manual update-check trigger from the version label.
+  // No "Checking for updates..." toast — the result toast (available /
+  // downloaded / on-latest / error) follows immediately and that's enough.
+  const onCheckUpdates = useCallback(async () => {
+    if (!window.electronAPI?.updaterCheck) return;
+    manualUpdateCheckRef.current = true;
+    const r = await window.electronAPI.updaterCheck();
+    if (r && !r.ok) {
+      manualUpdateCheckRef.current = false;
+      pushToast(`Update check failed: ${r.reason || "(unknown)"}`, "error");
+    }
   }, [pushToast]);
   const markDirty = useCallback((...files) => {
     pushUndoRef.current();
@@ -4533,8 +4567,19 @@ function App() {
             gap: 8,
           }}
         >
-          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "inherit", letterSpacing: "0.3px" }}>
+          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "inherit", letterSpacing: "0.3px", display: "inline-flex", alignItems: "baseline", gap: 6 }}>
             {isVictoryMode ? "Victory: choose faction" : "Factions"}
+            {appVersion && appVersion !== "0.0.0" && (
+              <span
+                onClick={onCheckUpdates}
+                title="Click to check for updates"
+                style={{ fontSize: "0.65rem", fontWeight: 400, opacity: 0.55, fontFamily: "Consolas, monospace", letterSpacing: 0, cursor: "pointer", padding: "0 4px", borderRadius: 3, transition: "opacity 0.15s, background 0.12s" }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.95; e.currentTarget.style.background = "rgba(220,166,74,0.18)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.55; e.currentTarget.style.background = ""; }}
+              >
+                v{displayVersion}{isTestBuild ? "-test" : ""}
+              </span>
+            )}
           </span>
           <button
             style={{
@@ -7512,8 +7557,17 @@ function App() {
                             const recs = lvls[lvl];
                             if (!recs) continue;
                             for (const rec of recs) {
-                              // EDB recruit-level faction filter.
-                              if (rec.factions && rec.factions.length > 0 && ownerId && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
+                              // EDB recruit-level faction filter. RIS uses
+                              // `factions { all, }` as a wildcard (every
+                              // faction passes — narrowing happens via
+                              // hidden_resource / `not factions { ... }`).
+                              // Without the wildcard handling, AOR recruits
+                              // (which dominate Seleucid's recruit pool)
+                              // get rejected and many provinces show empty.
+                              if (rec.factions && rec.factions.length > 0 && ownerId
+                                  && !rec.factions.includes("all")
+                                  && !rec.factions.includes(ownerId)
+                                  && !rec.factions.includes(culture)) continue;
                               if (rec.requires) {
                                 // Drop event-gated recruits (player must
                                 // trigger a reform — not knowable from the
@@ -7600,11 +7654,16 @@ function App() {
                                 }
                                 if (!ok) continue;
                               }
-                              // EDU ownership is the ground truth.
+                              // EDU ownership is the ground truth. RIS uses
+                              // `ownership all` for AOR units — treat as
+                              // wildcard, same as the EDB factions filter.
                               if (unitOwnership) {
                                 const owners = unitOwnership[rec.unit];
                                 if (!owners) continue;
-                                if (ownerId && !owners.includes(ownerId) && !owners.includes(culture)) continue;
+                                if (ownerId
+                                    && !owners.includes("all")
+                                    && !owners.includes(ownerId)
+                                    && !owners.includes(culture)) continue;
                               }
                               if (seen.has(rec.unit)) continue;
                               seen.add(rec.unit);
@@ -7669,7 +7728,7 @@ function App() {
                             if (!unitOwnership) return null;
                             for (const u of units) {
                               const o = unitOwnership[u.name];
-                              if (o && ((ownerId && o.includes(ownerId)) || (culture && o.includes(culture)))) return "own";
+                              if (o && (o.includes("all") || (ownerId && o.includes(ownerId)) || (culture && o.includes(culture)))) return "own";
                             }
                             for (const u of units) {
                               const o = unitOwnership[u.name];
