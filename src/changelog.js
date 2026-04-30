@@ -8,6 +8,20 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.138",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "All panel text was rendering black in dark mode after 0.9.136. The light-mode contrast observer set inline colour to rgb(26,26,26); on dark-mode entry the luminance gate (>130) skipped those elements before reaching the restore branch, so they stayed black. Restored colours now restore unconditionally in dark mode, before the luminance check." },
+    ],
+  },
+  {
+    version: "0.9.137",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "Light-mode panels now show the marble texture through. Panel opacity dropped from 0.72 to 0.45 with a slightly warmer tint, plus a faint inset top-highlight (1px white at 25%) so panels still read as carved against the now-visible marble. Marble darkening unchanged. Text contrast handled by the JS observer from 0.9.136 — accents still pop, body text stays readable." },
+    ],
+  },
+  {
     version: "0.9.136",
     date: "2026-05-01",
     items: [

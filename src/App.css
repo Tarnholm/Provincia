@@ -19,15 +19,15 @@ button {
 }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Panels are translucent so the marble shows; dark mode is lightly darkened.
-   Light-mode background is a warm parchment off-white. Inline white text
-   colours from the dark-mode-first inline styling get force-overridden to
-   dark below, so contrast still works. */
+/* Panels are translucent so the marble shows. Light mode keeps a warm
+   parchment tint at low opacity (the JS contrast fix overrides dark-mode-
+   first inline white text to near-black, so contrast still works against
+   the marble showing through). Dark mode override below. */
 .panel {
-  background: rgba(238, 230, 210, 0.72);
+  background: rgba(232, 222, 198, 0.45);
   color: #221f1a;
   border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25);
   padding: 12px;
   box-sizing: border-box;
   overflow-x: hidden;

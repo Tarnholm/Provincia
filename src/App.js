@@ -134,37 +134,31 @@ function useLightModePanelContrast(isDark) {
       const dark = document.body.classList.contains("dark-mode");
       const panels = document.querySelectorAll(".panel, .panel *");
       for (const el of panels) {
-        const inline = el.style?.color;
-        if (!inline) {
-          if (el.dataset.savedColor && dark) {
-            // Element lost its style.color but we'd saved one — pop the saved
-            // value back so the cascade rules re-apply.
-            delete el.dataset.savedColor;
-          }
-          continue;
-        }
-        const m = inline.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        if (!m) continue;
-        const r = +m[1], g = +m[2], b = +m[3];
-        // Skip saturated (chromatic) colours — only catch greys / off-whites.
-        // Compute (max-min) of channels; small spread = grey-ish.
-        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
-        const spread = maxC - minC;
-        if (spread > 35) continue; // chromatic accent — leave alone
-        // Skip if already dark (luminance < 90) — nothing to fix.
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        if (lum < 130) continue;
+        // Dark-mode restore must run BEFORE the luminance gate. We set the
+        // override colour to rgb(26,26,26) in light mode; that's lum=26 which
+        // would fail the >130 check below and leave dark text frozen on
+        // dark-mode entry. So: in dark mode, if a saved colour exists, just
+        // pop it back unconditionally and skip further processing.
         if (dark) {
-          // Dark mode: restore original if we'd saved one.
           if (el.dataset.savedColor) {
             el.style.color = el.dataset.savedColor;
             delete el.dataset.savedColor;
           }
-        } else {
-          // Light mode: save original (if we haven't yet) and force dark text.
-          if (!el.dataset.savedColor) el.dataset.savedColor = inline;
-          if (el.style.color !== "rgb(26, 26, 26)") el.style.color = "#1a1a1a";
+          continue;
         }
+        const inline = el.style?.color;
+        if (!inline) continue;
+        const m = inline.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        if (!m) continue;
+        const r = +m[1], g = +m[2], b = +m[3];
+        // Skip saturated (chromatic) colours — only catch greys / off-whites.
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        if (maxC - minC > 35) continue; // chromatic accent — leave alone
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lum < 130) continue; // already dark — nothing to do
+        // Light mode: save original (if we haven't yet) and force near-black.
+        if (!el.dataset.savedColor) el.dataset.savedColor = inline;
+        if (el.style.color !== "rgb(26, 26, 26)") el.style.color = "#1a1a1a";
       }
     };
     fix();
