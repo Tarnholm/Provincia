@@ -21,10 +21,21 @@ export default function Toasts({ toasts, onDismiss }) {
             background: "rgba(30,20,20,0.95)", color: "#f2e6e6",
             fontSize: "0.85rem", cursor: "pointer",
             boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "flex-start", gap: 8,
           }}
         >
-          {t.message}
-          <div style={{ fontSize: "0.7rem", opacity: 0.6, marginTop: 4 }}>click to dismiss</div>
+          <div style={{ flex: 1 }}>
+            {t.message}
+            <div style={{ fontSize: "0.7rem", opacity: 0.6, marginTop: 4 }}>click to dismiss</div>
+          </div>
+          {t.count > 1 && (
+            <span style={{
+              flexShrink: 0, padding: "2px 8px", borderRadius: 999,
+              background: "rgba(220,166,74,0.25)", border: "1px solid rgba(220,166,74,0.55)",
+              color: "#dca64a", fontWeight: 700, fontSize: "0.75rem",
+              alignSelf: "center",
+            }} title={`Repeated ${t.count} times`}>×{t.count}</span>
+          )}
         </div>
       ))}
     </div>

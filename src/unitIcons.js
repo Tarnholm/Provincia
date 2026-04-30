@@ -26,7 +26,7 @@ function pixelsToBlobUrl({ width, height, pixels }) {
   });
 }
 
-export function loadUnitIcon(modDataDir, faction, unitName) {
+export function loadUnitIcon(modDataDir, faction, unitName, dictionary) {
   if (!faction || !unitName) return Promise.resolve(null);
   const key = `${faction}|${unitName}`;
   if (cache.has(key)) {
@@ -38,7 +38,7 @@ export function loadUnitIcon(modDataDir, faction, unitName) {
   if (!api?.resolveUnitCard) return Promise.resolve(null);
   const p = (async () => {
     try {
-      const res = await api.resolveUnitCard(modDataDir, faction, unitName);
+      const res = await api.resolveUnitCard(modDataDir, faction, unitName, dictionary);
       if (!res || !res.buffer) {
         cache.set(key, "none");
         return null;
@@ -68,10 +68,11 @@ export function getCachedUnitIcon(faction, unitName) {
 }
 
 export function prefetchUnitIcons(modDataDir, triples, onLoaded) {
-  for (const [faction, unitName] of triples) {
+  for (const triple of triples) {
+    const [faction, unitName, dictionary] = triple;
     if (!faction || !unitName) continue;
     const key = `${faction}|${unitName}`;
     if (cache.has(key) || inflight.has(key)) continue;
-    loadUnitIcon(modDataDir, faction, unitName).then(() => { if (onLoaded) onLoaded(); });
+    loadUnitIcon(modDataDir, faction, unitName, dictionary).then(() => { if (onLoaded) onLoaded(); });
   }
 }

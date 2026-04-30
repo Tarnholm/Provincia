@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.136",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "AOR / mercenary unit cards now display. EDU stores 'type aor X Y' with 'dictionary X_Y'; the icon files use the dictionary name (e.g. mercs/#X_Y.tga), not the type-derived 'aor_X_Y'. The unit-ownership IPC now also captures dictionary per type, and resolve-unit-card / resolve-unit-info try the dictionary form first (then plural-stripped, then aor_/merc_ prefix-stripped). Affects ~hundreds of AOR recruit lines that were rendering blank." },
+      { type: "fix", text: "Negated tier requirements ('gov_tier_1 and not gov_tier_3' etc.) were being treated as positive — i.e. a province with only gov_tier_1 was rejected because gov_tier_3 wasn't satisfied. Affected ~160 recruit lines, mostly mid-tier AOR variants. Now positives and negatives are evaluated separately." },
+      { type: "fix", text: "Direct 'building_present_min_level <chain> <level>' clauses in recruit requires (with optional 'not') are now evaluated against the city's built buildings. ~398 recruit lines used these directly (port-gated naval AOR units etc.); previously they showed up regardless of whether the player had the building." },
+      { type: "fix", text: "Light-mode text contrast actually works now. The previous CSS attribute selector approach didn't fire because Chromium normalises 'style=\"color: #eee\"' to 'color: rgb(238, 238, 238)' after React sets it. Replaced with a JS observer that walks .panel descendants on every mutation, detects greyish (low-saturation) inline colours above a luminance threshold, and overrides them to near-black in light mode while remembering the original so they restore on dark-mode switch. Saturated accents are gated out via a max-min channel-spread check." },
+      { type: "improvement", text: "Toasts deduplicate now. Mashing the version number to check for updates no longer stacks identical toasts — instead the existing one stays put with an '×N' counter, and its expiry timer refreshes on each repeat." },
+    ],
+  },
+  {
     version: "0.9.135",
     date: "2026-05-01",
     items: [

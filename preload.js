@@ -30,10 +30,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("resolve-building-icon", modDataDir, culture, levelName, chainName),
   resolveBuildingBanner: (modDataDir, culture, levelName, chainName) =>
     ipcRenderer.invoke("resolve-building-banner", modDataDir, culture, levelName, chainName),
-  resolveUnitCard: (modDataDir, faction, unitName) =>
-    ipcRenderer.invoke("resolve-unit-card", modDataDir, faction, unitName),
-  resolveUnitInfo: (modDataDir, faction, unitName) =>
-    ipcRenderer.invoke("resolve-unit-info", modDataDir, faction, unitName),
+  resolveUnitCard: (modDataDir, faction, unitName, dictionary) =>
+    ipcRenderer.invoke("resolve-unit-card", modDataDir, faction, unitName, dictionary),
+  resolveUnitInfo: (modDataDir, faction, unitName, dictionary) =>
+    ipcRenderer.invoke("resolve-unit-info", modDataDir, faction, unitName, dictionary),
   getBuildingDisplayNames: (modDataDir) =>
     ipcRenderer.invoke("get-building-display-names", modDataDir),
   getBuildingChainLevels: (modDataDir) =>

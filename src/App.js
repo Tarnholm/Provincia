@@ -120,6 +120,66 @@ function usePrefersDark() {
   return isDark;
 }
 
+// Light-mode contrast fix. The renderer is full of inline `style={{color: "#eee"}}`
+// values chosen for the dark theme; on the light parchment surface they read as
+// glare. CSS attribute selectors can't catch them because Chromium normalises
+// the `style` attribute to `rgb(...)` after React sets it. This hook walks every
+// .panel descendant whenever the DOM mutates inside a panel and overrides
+// bright inline colours to a near-black, while remembering the original so we
+// can restore on dark-mode switch. Saturated accents (gold, faction colours,
+// status reds/greens) are left alone — relative-luminance gate.
+function useLightModePanelContrast(isDark) {
+  useEffect(() => {
+    const fix = () => {
+      const dark = document.body.classList.contains("dark-mode");
+      const panels = document.querySelectorAll(".panel, .panel *");
+      for (const el of panels) {
+        const inline = el.style?.color;
+        if (!inline) {
+          if (el.dataset.savedColor && dark) {
+            // Element lost its style.color but we'd saved one — pop the saved
+            // value back so the cascade rules re-apply.
+            delete el.dataset.savedColor;
+          }
+          continue;
+        }
+        const m = inline.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        if (!m) continue;
+        const r = +m[1], g = +m[2], b = +m[3];
+        // Skip saturated (chromatic) colours — only catch greys / off-whites.
+        // Compute (max-min) of channels; small spread = grey-ish.
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        const spread = maxC - minC;
+        if (spread > 35) continue; // chromatic accent — leave alone
+        // Skip if already dark (luminance < 90) — nothing to fix.
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lum < 130) continue;
+        if (dark) {
+          // Dark mode: restore original if we'd saved one.
+          if (el.dataset.savedColor) {
+            el.style.color = el.dataset.savedColor;
+            delete el.dataset.savedColor;
+          }
+        } else {
+          // Light mode: save original (if we haven't yet) and force dark text.
+          if (!el.dataset.savedColor) el.dataset.savedColor = inline;
+          if (el.style.color !== "rgb(26, 26, 26)") el.style.color = "#1a1a1a";
+        }
+      }
+    };
+    fix();
+    // React re-renders panels often (selection, hover, garrison updates, etc.);
+    // a MutationObserver scoped to body subtree catches new nodes / inline
+    // style changes without us having to thread state into every component.
+    const obs = new MutationObserver(fix);
+    obs.observe(document.body, {
+      childList: true, subtree: true,
+      attributes: true, attributeFilter: ["style", "class"],
+    });
+    return () => obs.disconnect();
+  }, [isDark]);
+}
+
 // Lazy singleton TGA worker — spins up on first use, kept alive for campaign switches.
 // Falls back to main-thread TGA decoding if worker construction fails (old browsers,
 // CSP quirks, etc.). Returns { width, height, data: Uint8ClampedArray }.
@@ -954,6 +1014,7 @@ function buildColoredCanvas(pixelData, width, height, regions, getColor, upscale
 function App() {
   useSystemDarkMode();
   const isDark = usePrefersDark();
+  useLightModePanelContrast(isDark);
 
   const canvasRef = useRef(null);
   const pixelDataRef = useRef(null);
@@ -1007,11 +1068,30 @@ function App() {
   const welcomeShownOnceRef = useRef(false); // hideSplash is one-shot for welcome firing
   const [assetError, setAssetError] = useState(null);
   const [proceedAnyway, setProceedAnyway] = useState(false);
-  const [toasts, setToasts] = useState([]); // [{ id, message, kind: "error"|"info" }]
+  const [toasts, setToasts] = useState([]); // [{ id, message, kind, count }]
+  // Deduplicate identical toasts: if the same (message, kind) is already
+  // visible, bump its count and refresh its expiry instead of pushing a new
+  // row. Avoids stacking when the user mashes the version-check button.
   const pushToast = useCallback((message, kind = "error") => {
-    const id = Math.random().toString(36).slice(2);
-    setToasts(prev => [...prev, { id, message, kind }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 6000);
+    setToasts(prev => {
+      const existing = prev.find(t => t.message === message && t.kind === kind);
+      if (existing) {
+        // Refresh expiry on the existing entry; bump the visible counter.
+        clearTimeout(existing._dismissTimer);
+        existing._dismissTimer = setTimeout(
+          () => setToasts(p => p.filter(x => x.id !== existing.id)),
+          6000
+        );
+        return prev.map(t => t === existing ? { ...t, count: (t.count || 1) + 1 } : t);
+      }
+      const id = Math.random().toString(36).slice(2);
+      const entry = { id, message, kind, count: 1 };
+      entry._dismissTimer = setTimeout(
+        () => setToasts(p => p.filter(t => t.id !== id)),
+        6000
+      );
+      return [...prev, entry];
+    });
   }, []);
   const [regionCentroids, setRegionCentroids] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
@@ -7504,7 +7584,8 @@ function App() {
                           || (initialOwnerByCity && initialOwnerByCity[r.city])
                           || r.faction;
                         if (ownerId) {
-                          const triples = normalised.map((u) => [ownerId, u.unit]).filter(([, n]) => n);
+                          const dictMap = unitOwnership?.__dictionary || {};
+                          const triples = normalised.map((u) => [ownerId, u.unit, dictMap[u.unit]]).filter(([, n]) => n);
                           prefetchUnitIcons(modDataDir, triples, () => setIconCacheVersion((v) => v + 1));
                         }
                         return normalised.map((u) => ({
@@ -7628,31 +7709,50 @@ function App() {
                                   }
                                   if (!hrOk) continue;
                                 }
-                                // Tier aliases (mic_tier_2 etc.) actually
-                                // expand to building_present_min_level
-                                // requirements. Evaluate against the city's
-                                // built buildings using the alias map
-                                // captured by the EDB parser.
+                                // Building / tier requirements. Two flavours:
+                                //   - Tier aliases (mic_tier_2, gov_tier_3, colony_tier_1, culture_tier_2)
+                                //     expand to one or more building_present_min_level clauses (OR-joined).
+                                //   - Direct `building_present_min_level <chain> <level>` clauses.
+                                // Both can be negated with `not`. Negation flips the satisfied check.
                                 const aliasMap = buildingRecruits.__aliases || {};
-                                const tierTokens = rec.requires.match(/\b(mic_tier|gov_tier|colony_tier|culture_tier)_\d+\b/g) || [];
-                                let ok = true;
-                                for (const tok of tierTokens) {
+                                // hasMinLevel(chain, level): does builtList satisfy this clause?
+                                const hasMinLevel = (chain, level) => {
+                                  const built = builtList.find(b => b.type === chain);
+                                  if (!built) return false;
+                                  const order = (buildingLevelsLookup && buildingLevelsLookup[chain]) || null;
+                                  if (!order) return built.level === level;
+                                  const haveIdx = order.indexOf(built.level);
+                                  const needIdx = order.indexOf(level);
+                                  return haveIdx >= 0 && needIdx >= 0 && haveIdx >= needIdx;
+                                };
+                                const evalTierAlias = (tok) => {
                                   const branches = aliasMap[tok];
-                                  if (!branches) { ok = false; break; }
-                                  // Each branch = {chain, level}. Need at
-                                  // least one to be satisfied by builtList.
-                                  // building_present_min_level needs the
-                                  // chain at >= the named level.
-                                  const branchOk = branches.some(({ chain, level }) => {
-                                    const built = builtList.find(b => b.type === chain);
-                                    if (!built) return false;
-                                    const order = (buildingLevelsLookup && buildingLevelsLookup[chain]) || null;
-                                    if (!order) return built.level === level;
-                                    const haveIdx = order.indexOf(built.level);
-                                    const needIdx = order.indexOf(level);
-                                    return haveIdx >= 0 && needIdx >= 0 && haveIdx >= needIdx;
-                                  });
-                                  if (!branchOk) { ok = false; break; }
+                                  if (!branches) return false; // unknown alias — treat as unsatisfied
+                                  return branches.some(({ chain, level }) => hasMinLevel(chain, level));
+                                };
+                                let ok = true;
+                                // 1) Tier aliases. Walk the requires string and capture each token
+                                //    along with whether it's preceded by `not`.
+                                {
+                                  const re = /(\bnot\s+)?\b(mic_tier|gov_tier|colony_tier|culture_tier)_\d+\b/g;
+                                  let m;
+                                  while ((m = re.exec(rec.requires)) !== null) {
+                                    const negated = !!m[1];
+                                    const tok = m[0].replace(/^not\s+/, "");
+                                    const sat = evalTierAlias(tok);
+                                    if (negated ? sat : !sat) { ok = false; break; }
+                                  }
+                                }
+                                if (!ok) continue;
+                                // 2) Direct building_present_min_level clauses (with optional `not`).
+                                {
+                                  const re = /(\bnot\s+)?\bbuilding_present_min_level\s+(\S+)\s+(\S+)/g;
+                                  let m;
+                                  while ((m = re.exec(rec.requires)) !== null) {
+                                    const negated = !!m[1];
+                                    const sat = hasMinLevel(m[2], m[3]);
+                                    if (negated ? sat : !sat) { ok = false; break; }
+                                  }
                                 }
                                 if (!ok) continue;
                               }
@@ -7675,7 +7775,8 @@ function App() {
                         }
                         if (result.length === 0) return null;
                         if (ownerId) {
-                          prefetchUnitIcons(modDataDir, result.map((n) => [ownerId, n]), () => setIconCacheVersion((v) => v + 1));
+                          const dictMap = unitOwnership?.__dictionary || {};
+                          prefetchUnitIcons(modDataDir, result.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
                         }
                         return result.map((name) => ({
                           unit: name,
@@ -7798,8 +7899,9 @@ function App() {
                               _units: units,
                             });
                           }
+                          const dictMap = unitOwnership?.__dictionary || {};
                           const buildEntry = (e) => {
-                            prefetchUnitIcons(modDataDir, e._units.map((u) => [e.faction, u.name]), () => setIconCacheVersion((v) => v + 1));
+                            prefetchUnitIcons(modDataDir, e._units.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
                             return {
                               character: e.character,
                               faction: e.faction,
@@ -7833,9 +7935,10 @@ function App() {
                         // still has Macedonian units; their cards live under
                         // ui/units/macedon/, not ui/units/parthia/.
                         const triples = [];
+                        const dictMap = unitOwnership?.__dictionary || {};
                         for (const a of armies) {
                           const fac = (a.faction || "").toLowerCase();
-                          for (const u of a.units || []) if (fac) triples.push([fac, u.name]);
+                          for (const u of a.units || []) if (fac) triples.push([fac, u.name, dictMap[u.name]]);
                         }
                         if (triples.length) prefetchUnitIcons(modDataDir, triples, () => setIconCacheVersion((v) => v + 1));
                         const own = [];

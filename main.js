@@ -1213,11 +1213,17 @@ ipcMain.handle("get-building-chain-levels", async (_event, modDataDir) => {
 // IPC: parse export_descr_unit.txt for unit → list of factions that own it.
 // Alex's EDB allows units broadly per-building-level, but EDU's ownership
 // line is the ground truth for "can this faction actually recruit this unit".
+//
+// Returns { unitName: [faction, ...] } as before, but also injects a special
+// key `__dictionary` mapping unitName → dictionary (icon basename). AOR units
+// have type "aor X Y" but icons are keyed by dictionary "X_Y" — the renderer
+// uses this to resolve the right icon path.
 const _unitOwnershipCache = new Map();
 ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {
   const cacheKey = modDataDir || "";
   if (_unitOwnershipCache.has(cacheKey)) return _unitOwnershipCache.get(cacheKey);
   const out = {}; // { unitName: [faction, ...] }
+  const dictByType = {}; // { unitName: dictionary }
   const sources = [];
   for (const root of getIconSearchRoots()) {
     sources.push(path.join(root, "export_descr_unit.txt"));
@@ -1239,6 +1245,11 @@ ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {
         const tm = s.match(/^type\s+(.+)$/);
         if (tm) { curUnit = tm[1].trim(); continue; }
         if (!curUnit) continue;
+        const dm = s.match(/^dictionary\s+(.+)$/);
+        if (dm) {
+          dictByType[curUnit] = dm[1].trim();
+          continue;
+        }
         const om = s.match(/^ownership\s+(.+)$/);
         if (om) {
           const owners = om[1].split(",").map((p) => p.trim().toLowerCase()).filter(Boolean);
@@ -1248,6 +1259,7 @@ ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {
       }
     } catch (e) { console.warn("[unit-ownership]", src, e.message); }
   }
+  out.__dictionary = dictByType;
   _unitOwnershipCache.set(cacheKey, out);
   return out;
 });
@@ -1933,12 +1945,21 @@ ipcMain.handle("resolve-building-banner", async (_event, modDataDir, culture, le
 // IPC: resolve the LARGE unit info panel (for right-click popup). RTW
 // stores these at `data/ui/unit_info/<faction>/<unit>_info.tga` — much
 // bigger and more detailed than the small card.
-ipcMain.handle("resolve-unit-info", async (_event, modDataDir, faction, unitName) => {
+ipcMain.handle("resolve-unit-info", async (_event, modDataDir, faction, unitName, dictionary) => {
   if (!faction || !unitName) return null;
   const f = String(faction).toLowerCase().replace(/\s+/g, "_");
-  const uBase = String(unitName).toLowerCase().replace(/['"`]/g, "").replace(/\s+/g, "_");
-  const uVariants = [uBase];
-  if (/s$/.test(uBase) && !uVariants.includes(uBase.slice(0, -1))) uVariants.push(uBase.slice(0, -1));
+  const scrub = (s) => String(s).toLowerCase().replace(/['"`]/g, "").replace(/\s+/g, "_");
+  const uBase = scrub(unitName);
+  // Same priority as resolve-unit-card: dictionary > raw type > variants.
+  const uVariants = [];
+  const pushUnique = (v) => { if (v && !uVariants.includes(v)) uVariants.push(v); };
+  if (dictionary) pushUnique(scrub(dictionary));
+  pushUnique(uBase);
+  for (const v of [...uVariants]) {
+    if (/s$/.test(v)) pushUnique(v.slice(0, -1));
+    if (v.startsWith("aor_")) pushUnique(v.slice(4));
+    if (v.startsWith("merc_")) pushUnique(v.slice(5));
+  }
   const factions = [f, "mercs"];
   if (f === "greeks") factions.unshift("greek_cities");
   const dirs = [];
@@ -1974,17 +1995,29 @@ ipcMain.handle("resolve-unit-info", async (_event, modDataDir, faction, unitName
 // larger info panels at `data/ui/unit_info/<faction>/<unit_name>_info.tga`.
 // Caller passes the unit's faction (from settlement ownership) and name.
 // Returns { buffer, path, mime } or null.
-ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName) => {
+ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName, dictionary) => {
   if (!faction || !unitName) return null;
   const f = String(faction).toLowerCase().replace(/\s+/g, "_");
   // Strip apostrophes (e.g. "general's" → "generals"), keep word chars and
   // underscores only. RTW TGAs use the scrubbed form.
-  const uBase = String(unitName).toLowerCase().replace(/['"`]/g, "").replace(/\s+/g, "_");
-  // Game quirk: unit names are plural ("naval biremes") but TGAs are often
-  // singular ("#naval_bireme.tga"). Try the plural first then the
-  // singular-stripped form.
-  const uVariants = [uBase];
-  if (/s$/.test(uBase) && !uVariants.includes(uBase.slice(0, -1))) uVariants.push(uBase.slice(0, -1));
+  const scrub = (s) => String(s).toLowerCase().replace(/['"`]/g, "").replace(/\s+/g, "_");
+  const uBase = scrub(unitName);
+  // Build name candidates in priority order:
+  //   1. EDU dictionary (e.g. "aestian_clubmen") — canonical for icon files,
+  //      especially AOR / merc variants whose type starts with "aor "/"merc ".
+  //   2. The type-derived form (uBase).
+  //   3. Plural-stripped versions of both ("naval biremes" → "naval_bireme").
+  //   4. Type-derived with "aor_"/"merc_" prefix stripped, in case dictionary
+  //      isn't available but the icon file is keyed without the prefix.
+  const uVariants = [];
+  const pushUnique = (v) => { if (v && !uVariants.includes(v)) uVariants.push(v); };
+  if (dictionary) pushUnique(scrub(dictionary));
+  pushUnique(uBase);
+  for (const v of [...uVariants]) {
+    if (/s$/.test(v)) pushUnique(v.slice(0, -1));
+    if (v.startsWith("aor_")) pushUnique(v.slice(4));
+    if (v.startsWith("merc_")) pushUnique(v.slice(5));
+  }
   const factions = [f];
   // Remastered split some vanilla factions; try a couple of aliases.
   if (f === "greeks") factions.push("greek_cities");
