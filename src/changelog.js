@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.144",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Bundle script's army parser now captures `exp N` from each unit line (both garrisoned_army and character-tied army blocks). Previously it grabbed only the unit name and the JSON consumer hardcoded exp=0, so users on the bundled JSON saw no chevrons even though descr_strat carries `exp 1` (Friniatia's celtic swordsmen / spearmen, Rhegion's campanian stack, etc.). The dev-import path was already correct; this aligns the bundle path so users who don't re-import see the same chevrons as users who do." },
+    ],
+  },
+  {
     version: "0.9.143",
     date: "2026-05-01",
     items: [

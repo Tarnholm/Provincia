@@ -46,7 +46,7 @@
         "units": [
           {
             "name": "greek general",
-            "exp": 0
+            "exp": 9
           }
         ]
       }
@@ -60,7 +60,7 @@
         "units": [
           {
             "name": "greek general",
-            "exp": 0
+            "exp": 9
           }
         ]
       }
@@ -2337,7 +2337,7 @@
         "units": [
           {
             "name": "massylian royal bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -2351,27 +2351,27 @@
         "units": [
           {
             "name": "massylian royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "numidian javelinmen",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "numidian cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "numidian light infantry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "numidian royal cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "numidian archers",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -3369,27 +3369,27 @@
         "units": [
           {
             "name": "greek general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "arcadian peltast",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "prodromoi",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -3632,7 +3632,7 @@
         "units": [
           {
             "name": "carthaginian general's bodyguard",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
@@ -3825,15 +3825,15 @@
         "units": [
           {
             "name": "antigonid general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek peltasts",
@@ -3841,7 +3841,7 @@
           },
           {
             "name": "merc tarentine cavalry",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -4363,15 +4363,15 @@
         "units": [
           {
             "name": "aitolian general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "aitolian peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "aitolian peltasts",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -4385,27 +4385,27 @@
         "units": [
           {
             "name": "aitolian general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "aitolian slingers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "aitolian prodromoi",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "aitolian prodromoi",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "aitolian hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "aitolian hoplites",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -4529,7 +4529,7 @@
         "units": [
           {
             "name": "antigonid general",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -4620,7 +4620,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
@@ -4638,7 +4638,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati cavalry",
@@ -5044,15 +5044,15 @@
         "units": [
           {
             "name": "antigonid general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek peltasts",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -5131,27 +5131,27 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "iberian heavy swordsmen",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc sardinian archers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc sardinian archers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc sardinian archers",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -5367,19 +5367,19 @@
         "units": [
           {
             "name": "antigonid general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc tarentine cavalry",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -5499,7 +5499,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "iberian slingers",
@@ -5517,7 +5517,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
@@ -5677,19 +5677,19 @@
         "units": [
           {
             "name": "antigonid general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc thessalian lancers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek peltasts",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -5768,47 +5768,47 @@
         "units": [
           {
             "name": "antigonid general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "hetairoi",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "agema of the peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc phalangites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc phalangites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc phalangites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc tarentine cavalry",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -5850,19 +5850,19 @@
         "units": [
           {
             "name": "antigonid general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc greek peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "merc tarentine cavalry",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -5912,7 +5912,7 @@
         "units": [
           {
             "name": "asian royal bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -5926,31 +5926,31 @@
         "units": [
           {
             "name": "asian royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "median spearmen",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "asian skirmishers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "asian skirmishers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "sogdian armoured spearmen archers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "sogdian mounted javelineers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "persian foot archers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "asian light spearmen",
@@ -5974,7 +5974,7 @@
         "units": [
           {
             "name": "asian royal bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -6267,11 +6267,11 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -6285,23 +6285,23 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "lusitanian spearmen",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "iberian skirmishers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -6559,11 +6559,11 @@
         "units": [
           {
             "name": "greek general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "prodromoi",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -6577,35 +6577,35 @@
         "units": [
           {
             "name": "greek general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "greek hoplites",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "byzantine epibatai",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "byzantine epibatai",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "greek peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "greek peltasts",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "xystophoroi",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -7392,7 +7392,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
@@ -7408,7 +7408,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati cavalry",
@@ -7585,7 +7585,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -7599,7 +7599,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati",
@@ -8352,11 +8352,11 @@
         "units": [
           {
             "name": "massaliote foot general",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "psiloi",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -8807,7 +8807,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic swordsmen",
@@ -8852,7 +8852,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic skirmishers",
@@ -9062,7 +9062,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -9076,7 +9076,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
@@ -9170,7 +9170,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -9184,7 +9184,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic spearmen",
@@ -9430,7 +9430,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -9444,7 +9444,7 @@
         "units": [
           {
             "name": "celtiberian noble bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "caetrati swordsmen",
@@ -9926,7 +9926,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "arvernian champions",
@@ -10112,7 +10112,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -10126,11 +10126,11 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "arvernian elite skirmishers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic spearmen",
@@ -10154,15 +10154,15 @@
         "units": [
           {
             "name": "arvernian champions",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic swordsmen",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "arvernian elite skirmishers",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "gallic light cavalry",
@@ -10232,7 +10232,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "helvetian infantry",
@@ -10484,7 +10484,7 @@
         "units": [
           {
             "name": "bosporan epilektoi cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "scytho-bosporan infantry",
@@ -10502,7 +10502,7 @@
         "units": [
           {
             "name": "bosporan epilektoi cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "bosporan hoplites",
@@ -10571,7 +10571,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -10585,7 +10585,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic spearmen",
@@ -10613,7 +10613,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic swordsmen",
@@ -10641,7 +10641,7 @@
         "units": [
           {
             "name": "bosporan epilektoi cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "psiloi",
@@ -11096,7 +11096,7 @@
         "units": [
           {
             "name": "bosporan epilektoi cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "bosporan thureophoroi",
@@ -11114,7 +11114,7 @@
         "units": [
           {
             "name": "bosporan epilektoi cavalry",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "bosporan hoplites",
@@ -11728,7 +11728,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic skirmishers",
@@ -11746,7 +11746,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic swordsmen",
@@ -12030,7 +12030,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           }
         ]
       }
@@ -12044,7 +12044,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "belgic infantry",
@@ -12064,7 +12064,7 @@
         "units": [
           {
             "name": "gallic royal bodyguards",
-            "exp": 0
+            "exp": 1
           },
           {
             "name": "celtic swordsmen",
@@ -13124,7 +13124,7 @@
         "units": [
           {
             "name": "bodyguard frameae sword",
-            "exp": 0
+            "exp": 1
           }
         ]
       }

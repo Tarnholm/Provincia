@@ -153,17 +153,21 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
     byRegion[reg] = { garrison: [], field: [], settlement: p };
   }
 
+  // Helper: normalise unit list into [{name, exp}]. garrisoned_army units
+  // arrive as {name, exp} objects (parser captures both); character-tied
+  // armies arrive as bare name strings (legacy parser shape) — wrap those.
+  const normUnits = (units) => (units || []).map(u =>
+    typeof u === "string" ? { name: u, exp: 0 } : { name: u.name, exp: u.exp || 0 }
+  );
   for (const a of armies) {
     // Synthetic garrisoned_army: pin to its declared region's settlement tile.
     if (a._garrisoned && a.region) {
       const tile = settlementByRegion[a.region];
       if (!byRegion[a.region]) byRegion[a.region] = { garrison: [], field: [], settlement: tile || null };
-      // Re-shape units to {name, exp} so the renderer's existing consumer works.
-      const units = a.units.map(u => ({ name: u, exp: 0 }));
       byRegion[a.region].garrison.push({
         character: a.name, faction: a.faction,
         x: tile?.x ?? null, y: tile?.y ?? null,
-        units,
+        units: normUnits(a.units),
       });
       continue;
     }
@@ -176,11 +180,10 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
     }
     if (!region) continue;
     if (!byRegion[region]) byRegion[region] = { garrison: [], field: [], settlement: settlementByRegion[region] || null };
-    const units = a.units.map(u => ({ name: u, exp: 0 }));
     byRegion[region][isGarrison ? "garrison" : "field"].push({
       character: a.name, faction: a.faction,
       x: a.x, y: a.y,
-      units,
+      units: normUnits(a.units),
     });
   }
   return byRegion;
@@ -298,7 +301,16 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
       }
       if (inGarrisonedArmy) {
         const um = UNIT_RE.exec(t);
-        if (um) { currentGarrison.units.push(um[1].trim()); continue; }
+        if (um) {
+          // Capture exp from the same line so the bundled JSON shows the
+          // chevron count from descr_strat (e.g. Friniatia ships exp 1 on
+          // both units). Without this the bundled path showed exp=0 while
+          // the dev-import path correctly showed +1, splitting reality.
+          const exMatch = t.match(/exp\s+(\d+)/);
+          const exp = exMatch ? parseInt(exMatch[1], 10) : 0;
+          currentGarrison.units.push({ name: um[1].trim(), exp });
+          continue;
+        }
         // Anything other than a `unit ...` line ends the garrisoned_army block.
         if (t === "building" || t.startsWith("building") || t === "{" || t === "}" ||
             /^[a-z_]+\s/.test(t)) {
@@ -336,7 +348,11 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
     if (t === "army") { inArmy = true; continue; }
     if (inArmy && current) {
       const um = UNIT_RE.exec(t);
-      if (um) current.units.push(um[1].trim());
+      if (um) {
+        const exMatch = t.match(/exp\s+(\d+)/);
+        const exp = exMatch ? parseInt(exMatch[1], 10) : 0;
+        current.units.push({ name: um[1].trim(), exp });
+      }
       else if (t && !/^\s/.test(s) && s[0] !== "\t") inArmy = false;
     }
   }
