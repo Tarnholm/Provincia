@@ -3147,6 +3147,17 @@ ipcMain.handle("faction-cultures", async (_event, modDataDir) => {
   return map;
 });
 
+// Expose the turn-0 settlement ownership map (settlementName → factionId)
+// to the renderer without needing a save loaded. Without this, the recruit
+// evaluator falls back to descr_regions.txt's rebel-default faction, which
+// for some regions points to a faction that doesn't actually own the
+// settlement at game start (Corsica is rebel-default romans_julii but the
+// actual descr_strat owner is corsi). That misresolves ownerId and shows
+// the wrong faction's recruits.
+ipcMain.handle("get-initial-ownership", async () => {
+  return modInitialOwnerByCity || {};
+});
+
 ipcMain.handle("characters-init", async (_event, modDataDir) => {
   try {
     const info = loadModCharacterData(modDataDir);

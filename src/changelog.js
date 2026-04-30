@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.140",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Settlements where descr_regions' rebel-default faction disagrees with descr_strat's actual owner now show the correct faction's recruits without needing a save loaded. Previously initialOwnerByCity (descr_strat-derived) only flowed to the renderer via the save-watch path; without a save, recruit evaluation fell back to r.faction (the rebel default in regions_large.json), which for Corsica points to romans_julii while the actual starting owner is corsi — so the user saw Roman-only recruits instead of corsi/AOR units. Added a get-initial-ownership IPC the renderer pulls right after charactersInit so the ownership map is available from boot." },
+    ],
+  },
+  {
     version: "0.9.139",
     date: "2026-05-01",
     items: [

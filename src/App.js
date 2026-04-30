@@ -1368,6 +1368,18 @@ function App() {
       api.charactersInit(dir).then(result => {
         if (result?.ok) {
           console.log("[characters] initialized: " + result.names + " names, " + result.traits + " traits, " + result.surnames + " surnames, " + result.chains + " chains, " + result.factionDisplay + " faction display names");
+          // Pull the descr_strat-derived turn-0 settlement ownership map so
+          // recruit evaluation has a real owner per city (without needing a
+          // save loaded). Otherwise we fall back to descr_regions' rebel-
+          // default faction, which doesn't necessarily match the strat owner.
+          if (api.getInitialOwnership) {
+            api.getInitialOwnership().then(map => {
+              if (map && Object.keys(map).length) {
+                setInitialOwnerByCity(map);
+                console.log("[ownership] loaded initial owner map, entries:", Object.keys(map).length);
+              }
+            }).catch(() => {});
+          }
           // Fetch the faction display map too
           if (api.getFactionDisplayMap) {
             api.getFactionDisplayMap().then(map => {

@@ -54,6 +54,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   saveCheckNow: () => ipcRenderer.invoke("save-check-now"),
   // Character/unit extraction — initialize once the mod data directory is known.
   charactersInit: (modDataDir) => ipcRenderer.invoke("characters-init", modDataDir),
+  getInitialOwnership: () => ipcRenderer.invoke("get-initial-ownership"),
   getFactionDisplayMap: () => ipcRenderer.invoke("faction-display-map"),
   getFactionDisplayNames: (modDataDir, campaign) => ipcRenderer.invoke("faction-display-names", modDataDir, campaign),
   getFactionCultures: (modDataDir) => ipcRenderer.invoke("faction-cultures", modDataDir),
