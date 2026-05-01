@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.153",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "ChevronStack SVG dropped from 9×(count×4+1)px to 6×(count×3+1)px so it sits more discreetly in the corner." },
+    ],
+  },
+  {
     version: "0.9.152",
     date: "2026-05-01",
     items: [

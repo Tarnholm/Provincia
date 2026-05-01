@@ -71,7 +71,7 @@ const SwordIcon = ({ color, size = 8 }) => (
 // `color` (the tier colour). Text-glyph chevrons (ˇ, ^) were illegible at the
 // 7-8px sizes the unit cards demand.
 const ChevronStack = ({ color, count }) => (
-  <svg width="9" height={Math.max(4, count * 4 + 1)} viewBox={`0 0 16 ${count * 7 + 2}`} style={{ display: "block" }}>
+  <svg width="6" height={Math.max(3, count * 3 + 1)} viewBox={`0 0 16 ${count * 7 + 2}`} style={{ display: "block" }}>
     {Array.from({ length: count }).map((_, i) => (
       <path
         key={i}
