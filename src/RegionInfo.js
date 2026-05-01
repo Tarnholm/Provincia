@@ -27,6 +27,30 @@ const ETHNICITY_COLORS = {
   lycaonian:[115,155,80], pamphylian:[95,165,175],
   cilician:[120,100,155], isaurian:[145,110,90],
 };
+// RTW chevron tiering. exp 1 → 0 chevrons (no display). exp 2-4 → 1-3
+// bronze. exp 5-7 → 1-3 silver. exp 8-10 → 1-3 gold.
+// Colours roughly match the in-game palette: bronze is a pale warm tan (NOT
+// orange-brown), silver is cool grey, gold is bright yellow.
+const TIER_BRONZE = "#d8b96b";
+const TIER_SILVER = "#d6d8db";
+const TIER_GOLD = "#f5cd3a";
+function chevronTier(level /* 1..9 */) {
+  if (level >= 7) return TIER_GOLD;
+  if (level >= 4) return TIER_SILVER;
+  return TIER_BRONZE;
+}
+function chevronCount(level /* 1..9 */) {
+  // Each tier has 3 stages (1, 2, 3 chevrons), then upgrades to next tier.
+  return ((level - 1) % 3) + 1;
+}
+// Armour / weapon upgrades only have 3 stages (1=bronze, 2=silver, 3=gold).
+// One icon, colour-only progression — no stacking.
+function upgradeTier(lvl /* 1..3 */) {
+  if (lvl >= 3) return TIER_GOLD;
+  if (lvl >= 2) return TIER_SILVER;
+  return TIER_BRONZE;
+}
+
 function getEthColor(name) {
   if (ETHNICITY_COLORS[name]) return ETHNICITY_COLORS[name];
   for (const [key, col] of Object.entries(ETHNICITY_COLORS)) {
@@ -446,9 +470,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const weapon = u.weapon || 0;
               const tooltipParts = [u.unit.replace(/_/g, " ")];
               if (u.soldiers != null) tooltipParts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
-              if (chevrons > 0) tooltipParts.push(`${chevrons} chevron${chevrons === 1 ? "" : "s"}`);
-              if (armour > 0) tooltipParts.push(`armour +${armour}`);
-              if (weapon > 0) tooltipParts.push(`weapon +${weapon}`);
+              if (chevrons > 0) {
+                const tier = chevrons >= 7 ? "gold" : chevrons >= 4 ? "silver" : "bronze";
+                tooltipParts.push(`${chevronCount(chevrons)} ${tier} chevron${chevronCount(chevrons) === 1 ? "" : "s"}`);
+              }
+              if (armour > 0) {
+                const tier = armour >= 3 ? "gold" : armour >= 2 ? "silver" : "bronze";
+                tooltipParts.push(`armour +${armour} (${tier})`);
+              }
+              if (weapon > 0) {
+                const tier = weapon >= 3 ? "gold" : weapon >= 2 ? "silver" : "bronze";
+                tooltipParts.push(`weapon +${weapon} (${tier})`);
+              }
               const tooltip = tooltipParts.join(" — ");
               return (
                 <div key={i}
@@ -485,23 +518,26 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   {chevrons > 0 && (
                     <div style={{
                       position: "absolute", top: 0, right: 1,
-                      color: "#fc6", fontSize: "0.55rem", lineHeight: 0.8,
-                      textShadow: "0 0 2px #000",
+                      color: chevronTier(chevrons),
+                      fontSize: "0.55rem", lineHeight: 0.8,
+                      textShadow: "0 0 2px #000, 0 0 1px #000",
                       fontFamily: "monospace", letterSpacing: -1,
+                      fontWeight: 700,
                     }}>
-                      {/* RTW chevron: angular V \u2014 stacked when count > 1 */}
-                      {"\u02C7".repeat(Math.min(chevrons, 3))}{chevrons > 3 ? "+" : ""}
+                      {"\u02C7".repeat(chevronCount(chevrons))}
                     </div>
                   )}
                   {(armour > 0 || weapon > 0) && (
                     <div style={{
-                      position: "absolute", top: 0, left: 1,
-                      display: "flex", flexDirection: "column", gap: 0,
-                      fontSize: "0.55rem", lineHeight: 0.9,
-                      textShadow: "0 0 2px #000",
+                      position: "absolute", top: 0, left: 0, right: 0,
+                      display: "flex", justifyContent: "center", gap: 2,
+                      fontSize: "0.65rem", lineHeight: 0.9,
+                      textShadow: "0 0 2px #000, 0 0 1px #000",
+                      fontWeight: 700,
+                      pointerEvents: "none",
                     }}>
-                      {armour > 0 && <span style={{ color: "#9cf" }}>{"\u26E8".repeat(Math.min(armour, 3))}</span>}
-                      {weapon > 0 && <span style={{ color: "#f96" }}>{"\u2694".repeat(Math.min(weapon, 3))}</span>}
+                      {armour > 0 && <span style={{ color: upgradeTier(armour) }}>\u26E8</span>}
+                      {weapon > 0 && <span style={{ color: upgradeTier(weapon) }}>\u2694</span>}
                     </div>
                   )}
                 </div>
@@ -572,22 +608,25 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         {chevrons > 0 && (
                           <div style={{
                             position: "absolute", top: 0, right: 1,
-                            color: "#fc6", fontSize: "0.55rem", lineHeight: 0.8,
-                            textShadow: "0 0 2px #000",
+                            color: chevronTier(chevrons),
+                            fontSize: "0.55rem", lineHeight: 0.8,
+                            textShadow: "0 0 2px #000, 0 0 1px #000",
                             fontFamily: "monospace", letterSpacing: -1,
+                            fontWeight: 700,
                           }}>
-                            {"\u02C7".repeat(Math.min(chevrons, 3))}{chevrons > 3 ? "+" : ""}
+                            {"\u02C7".repeat(chevronCount(chevrons))}
                           </div>
                         )}
                         {(armour > 0 || weapon > 0) && (
                           <div style={{
                             position: "absolute", top: 0, left: 1,
                             display: "flex", flexDirection: "column", gap: 0,
-                            fontSize: "0.55rem", lineHeight: 0.9,
-                            textShadow: "0 0 2px #000",
+                            fontSize: "0.6rem", lineHeight: 0.9,
+                            textShadow: "0 0 2px #000, 0 0 1px #000",
+                            fontWeight: 700,
                           }}>
-                            {armour > 0 && <span style={{ color: "#9cf" }}>{"\u26E8".repeat(Math.min(armour, 3))}</span>}
-                            {weapon > 0 && <span style={{ color: "#f96" }}>{"\u2694".repeat(Math.min(weapon, 3))}</span>}
+                            {armour > 0 && <span style={{ color: upgradeTier(armour) }}>\u26E8</span>}
+                            {weapon > 0 && <span style={{ color: upgradeTier(weapon) }}>\u2694</span>}
                           </div>
                         )}
                       </div>

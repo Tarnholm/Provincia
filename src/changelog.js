@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.146",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "Chevron / armour / weapon icons now use proper RTW tier colours (bronze / silver / gold). Chevrons stack 1-3 per tier (exp 2-4 → 1-3 bronze, 5-7 → 1-3 silver, 8-10 → 1-3 gold). Armour and weapon are colour-only progression with one icon (no stacking) — bronze at lvl 1, silver at 2, gold at 3. Upgrade icons moved to top-center of each unit card (matches RTW's in-game layout). Tooltip surfaces the tier name." },
+    ],
+  },
+  {
     version: "0.9.145",
     date: "2026-05-01",
     items: [
