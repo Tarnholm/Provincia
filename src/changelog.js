@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.152",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Chevron rendering switched from text glyph 'ˇ' to inline SVG. At the 7-8px sizes the unit cards demand, the text glyph rendered as a barely-visible dot in the corner — Rome's units showed nothing despite descr_strat exp 3. The new ChevronStack component draws stroke-based angular Vs (RTW-style) sized to the tier colour, with a black drop-shadow halo for legibility against bright unit portraits. 1-3 chevrons stack vertically in the top-left corner." },
+    ],
+  },
+  {
     version: "0.9.151",
     date: "2026-05-01",
     items: [

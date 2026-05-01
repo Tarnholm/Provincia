@@ -67,6 +67,24 @@ const SwordIcon = ({ color, size = 8 }) => (
     <path d="M2 12 L4 14 M5 11 L7 13" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
+// SVG chevron — RTW-style angular V. Stack vertically with `count` copies in
+// `color` (the tier colour). Text-glyph chevrons (ˇ, ^) were illegible at the
+// 7-8px sizes the unit cards demand.
+const ChevronStack = ({ color, count }) => (
+  <svg width="9" height={Math.max(4, count * 4 + 1)} viewBox={`0 0 16 ${count * 7 + 2}`} style={{ display: "block" }}>
+    {Array.from({ length: count }).map((_, i) => (
+      <path
+        key={i}
+        d={`M2 ${i * 7 + 5} L8 ${i * 7 + 1} L14 ${i * 7 + 5}`}
+        fill="none"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ))}
+  </svg>
+);
 
 function getEthColor(name) {
   if (ETHNICITY_COLORS[name]) return ETHNICITY_COLORS[name];
@@ -537,14 +555,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   )}
                   {chevrons > 0 && (
                     <div style={{
-                      position: "absolute", top: 0, left: 1,
-                      color: chevronTier(chevrons),
-                      fontSize: "0.45rem", lineHeight: 0.7,
-                      textShadow: "0 0 2px #000, 0 0 1px #000",
-                      fontFamily: "monospace", letterSpacing: -1,
-                      fontWeight: 700,
+                      position: "absolute", top: 1, left: 1,
+                      pointerEvents: "none",
+                      filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                     }}>
-                      {"\u02C7".repeat(chevronCount(chevrons))}
+                      <ChevronStack color={chevronTier(chevrons)} count={chevronCount(chevrons)} />
                     </div>
                   )}
                   {(armour > 0 || weapon > 0) && (
@@ -627,14 +642,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         )}
                         {chevrons > 0 && (
                           <div style={{
-                            position: "absolute", top: 0, left: 1,
-                            color: chevronTier(chevrons),
-                            fontSize: "0.45rem", lineHeight: 0.7,
-                            textShadow: "0 0 2px #000, 0 0 1px #000",
-                            fontFamily: "monospace", letterSpacing: -1,
-                            fontWeight: 700,
+                            position: "absolute", top: 1, left: 1,
+                            pointerEvents: "none",
+                            filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                           }}>
-                            {"\u02C7".repeat(chevronCount(chevrons))}
+                            <ChevronStack color={chevronTier(chevrons)} count={chevronCount(chevrons)} />
                           </div>
                         )}
                         {(armour > 0 || weapon > 0) && (
