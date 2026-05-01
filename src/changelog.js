@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.147",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Shield (⛨ U+26E8) and sword (⚔ U+2694) Unicode glyphs aren't in the default Windows fonts the renderer uses, so they showed as literal '\\u26E8' / '\\u2694' escape strings on user machines. Replaced with inline SVG shield + sword icons that always render regardless of font coverage. Tier colours apply via SVG `fill`. Drop shadow on the glyph for legibility against bright unit cards." },
+    ],
+  },
+  {
     version: "0.9.146",
     date: "2026-05-01",
     items: [

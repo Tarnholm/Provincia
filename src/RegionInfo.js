@@ -51,6 +51,25 @@ function upgradeTier(lvl /* 1..3 */) {
   return TIER_BRONZE;
 }
 
+// Inline SVG icons. The ⛨ / ⚔ unicode glyphs aren't in the default Windows
+// fonts and rendered as literal "⛨" escape strings on user machines.
+// SVGs always render regardless of font coverage.
+const ShieldIcon = ({ color, size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block", filter: "drop-shadow(0 0 1px rgba(0,0,0,0.9))" }}>
+    <path d="M8 1 L14 3 L14 8 Q14 13 8 15 Q2 13 2 8 L2 3 Z"
+      fill={color} stroke="rgba(0,0,0,0.7)" strokeWidth="0.6" strokeLinejoin="round" />
+  </svg>
+);
+const SwordIcon = ({ color, size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block", filter: "drop-shadow(0 0 1px rgba(0,0,0,0.9))" }}>
+    {/* Blade pointing up-right + crossguard + pommel */}
+    <path d="M3 13 L11 5 L13 5 L13 3 L11 3 L3 11 Z"
+      fill={color} stroke="rgba(0,0,0,0.7)" strokeWidth="0.6" strokeLinejoin="round" />
+    <path d="M2 12 L4 14 M5 11 L7 13"
+      stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
 function getEthColor(name) {
   if (ETHNICITY_COLORS[name]) return ETHNICITY_COLORS[name];
   for (const [key, col] of Object.entries(ETHNICITY_COLORS)) {
@@ -529,15 +548,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   )}
                   {(armour > 0 || weapon > 0) && (
                     <div style={{
-                      position: "absolute", top: 0, left: 0, right: 0,
+                      position: "absolute", top: 1, left: 0, right: 0,
                       display: "flex", justifyContent: "center", gap: 2,
-                      fontSize: "0.65rem", lineHeight: 0.9,
-                      textShadow: "0 0 2px #000, 0 0 1px #000",
-                      fontWeight: 700,
                       pointerEvents: "none",
                     }}>
-                      {armour > 0 && <span style={{ color: upgradeTier(armour) }}>\u26E8</span>}
-                      {weapon > 0 && <span style={{ color: upgradeTier(weapon) }}>\u2694</span>}
+                      {armour > 0 && <ShieldIcon color={upgradeTier(armour)} />}
+                      {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
                     </div>
                   )}
                 </div>
@@ -619,14 +635,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         )}
                         {(armour > 0 || weapon > 0) && (
                           <div style={{
-                            position: "absolute", top: 0, left: 1,
-                            display: "flex", flexDirection: "column", gap: 0,
-                            fontSize: "0.6rem", lineHeight: 0.9,
-                            textShadow: "0 0 2px #000, 0 0 1px #000",
-                            fontWeight: 700,
+                            position: "absolute", top: 1, left: 0, right: 0,
+                            display: "flex", justifyContent: "center", gap: 2,
+                            pointerEvents: "none",
                           }}>
-                            {armour > 0 && <span style={{ color: upgradeTier(armour) }}>\u26E8</span>}
-                            {weapon > 0 && <span style={{ color: upgradeTier(weapon) }}>\u2694</span>}
+                            {armour > 0 && <ShieldIcon color={upgradeTier(armour)} />}
+                            {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
                           </div>
                         )}
                       </div>
