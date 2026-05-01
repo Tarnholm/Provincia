@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.154",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Live-mode garrison: chevrons / armour / weapon icons now also seed when the live-save data comes via the legacy `saveArmiesData` path (not just the new `saveUnitsByRegion` parser). Restructured so the seed-merge from starting_armies_*.json runs after normalisation, regardless of which save path produced it. Mid-campaign recruits without a matching turn-0 seed still default to 0; full binary extraction of exp/armour/weapon from the save format would be needed for those, requires diffing two known saves to identify offsets." },
+    ],
+  },
+  {
     version: "0.9.153",
     date: "2026-05-01",
     items: [

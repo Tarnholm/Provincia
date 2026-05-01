@@ -7562,17 +7562,37 @@ function App() {
                             for (const c of list) { if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c); }
                           }
                           if (rawFresh) {
-                            // Garrison = units with no commander at all,
-                            // OR units whose commander is a governor — a
-                            // named character positioned EXACTLY on the
-                            // settlement tile (those stacks are the city's
-                            // garrison, not a field army).
-                            // Build a name-keyed FIFO of starting values so
-                            // each save unit gets the descr_strat exp/armour/
-                            // weapon that match the same unit type. The save
-                            // binary format doesn't carry these, so falling
-                            // back to the turn-0 starting values keeps chevrons
-                            // and upgrade icons visible in live mode.
+                            // Garrison = units with no commander at all, OR
+                            // units whose commander is a governor positioned
+                            // EXACTLY on the settlement tile.
+                            normalised = rawFresh.filter((u) => {
+                              const cmd = u.inferredCmd || u.commanderUuid;
+                              if (!cmd) return true;
+                              const commander = charByUuid.get(cmd);
+                              if (!commander) return false;
+                              if (settlementTile && commander.x != null && commander.y != null) {
+                                return commander.x === settlementTile.x && commander.y === settlementTile.y;
+                              }
+                              return false;
+                            }).map((u) => ({
+                              unit: u.name,
+                              soldiers: u.soldiers,
+                              max: u.maxSoldiers,
+                            }));
+                          } else if (legacy) {
+                            normalised = legacy.map((u) => ({
+                              unit: typeof u === "string" ? u : (u.unit || u.name),
+                              soldiers: u.soldiers ?? null,
+                              max: u.max ?? u.maxSoldiers ?? null,
+                            }));
+                          }
+                          // Seed exp/armour/weapon from the bundled
+                          // starting_armies_<suffix>.json by unit name (FIFO
+                          // match within region). The save binary format
+                          // doesn't carry these, so the turn-0 descr_strat
+                          // values are the best fallback. Mid-campaign
+                          // recruits with no matching seed default to 0.
+                          if (normalised && normalised.length > 0) {
                             const startingByName = new Map();
                             const startingArms = startingArmiesByRegion?.[r.region]?.garrison || [];
                             for (const a of startingArms) {
@@ -7581,29 +7601,16 @@ function App() {
                                 startingByName.get(u.name).push(u);
                               }
                             }
-                            normalised = rawFresh.filter((u) => {
-                              const cmd = u.inferredCmd || u.commanderUuid;
-                              if (!cmd) return true;
-                              const commander = charByUuid.get(cmd);
-                              if (!commander) return false; // unknown cmd = field army we couldn't identify
-                              if (settlementTile && commander.x != null && commander.y != null) {
-                                return commander.x === settlementTile.x && commander.y === settlementTile.y;
-                              }
-                              return false;
-                            }).map((u) => {
-                              const queue = startingByName.get(u.name);
+                            normalised = normalised.map((u) => {
+                              const queue = startingByName.get(u.unit);
                               const seed = queue && queue.length ? queue.shift() : null;
                               return {
-                                unit: u.name,
-                                soldiers: u.soldiers,
-                                max: u.maxSoldiers,
+                                ...u,
                                 xp: seed?.exp || 0,
                                 armour: seed?.armour || 0,
                                 weapon: seed?.weapon || 0,
                               };
                             });
-                          } else {
-                            normalised = legacy;
                           }
                         } else {
                           // startingArmiesByRegion is now { region: {
