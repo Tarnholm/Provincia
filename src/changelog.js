@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.148",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "Unit-card badges retuned. Shield + sword icons moved to bottom-left so they don't sit on top of the chevron position (chevrons stay top-right). Icons shrunk from 11px to 8px. Chevron font dropped from 0.55rem to 0.45rem. Bronze tier colour darkened from #d8b96b (read as gold/yellow on bright cards) to #b6843a — clearly distinct from gold #f5cd3a now. Sword icons render fine; you'll see them only on units with weapon_lvl ≥ 1 in descr_strat (e.g. Friniatia ships weapon_lvl 0 so its garrison shows just shields)." },
+    ],
+  },
+  {
     version: "0.9.147",
     date: "2026-05-01",
     items: [
