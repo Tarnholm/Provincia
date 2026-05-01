@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.149",
+    date: "2026-05-01",
+    items: [
+      { type: "improvement", text: "Chevrons moved from top-right to top-LEFT corner of each unit card. Bronze tier shifted to a clear reddish-brown #8a4f1f (was a tan #b6843a that read as gold/yellow at small sizes against bright unit cards). Removed the stroke + drop-shadow on shield/sword SVGs — at 8px the black blur dominated the fill and washed the colour. Solid fills now read true." },
+    ],
+  },
+  {
     version: "0.9.148",
     date: "2026-05-01",
     items: [

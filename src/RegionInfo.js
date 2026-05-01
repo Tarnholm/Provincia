@@ -29,9 +29,10 @@ const ETHNICITY_COLORS = {
 };
 // RTW chevron tiering. exp 1 → 0 chevrons (no display). exp 2-4 → 1-3
 // bronze. exp 5-7 → 1-3 silver. exp 8-10 → 1-3 gold.
-// Bronze leans warm-brown (not yellow), silver cool grey, gold bright yellow.
-const TIER_BRONZE = "#b6843a";
-const TIER_SILVER = "#cfd2d5";
+// Bronze is a clear reddish-brown — at small sizes the previous tan-bronze
+// blended with the drop-shadow and read as gold/yellow against bright cards.
+const TIER_BRONZE = "#8a4f1f";
+const TIER_SILVER = "#bcbfc2";
 const TIER_GOLD = "#f5cd3a";
 function chevronTier(level /* 1..9 */) {
   if (level >= 7) return TIER_GOLD;
@@ -53,18 +54,17 @@ function upgradeTier(lvl /* 1..3 */) {
 // Inline SVG icons. The ⛨ / ⚔ unicode glyphs aren't in the default Windows
 // fonts and rendered as literal "⛨" escape strings on user machines.
 // SVGs always render regardless of font coverage.
+// Solid SVG icons — no stroke or drop-shadow. At 8px the stroke + black blur
+// dominated the fill and made bronze look gold; clean fills read truer.
 const ShieldIcon = ({ color, size = 8 }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block", filter: "drop-shadow(0 0 1px rgba(0,0,0,0.9))" }}>
-    <path d="M8 1 L14 3 L14 8 Q14 13 8 15 Q2 13 2 8 L2 3 Z"
-      fill={color} stroke="rgba(0,0,0,0.7)" strokeWidth="0.6" strokeLinejoin="round" />
+  <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block" }}>
+    <path d="M8 1 L14 3 L14 8 Q14 13 8 15 Q2 13 2 8 L2 3 Z" fill={color} />
   </svg>
 );
 const SwordIcon = ({ color, size = 8 }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block", filter: "drop-shadow(0 0 1px rgba(0,0,0,0.9))" }}>
-    <path d="M3 13 L11 5 L13 5 L13 3 L11 3 L3 11 Z"
-      fill={color} stroke="rgba(0,0,0,0.7)" strokeWidth="0.6" strokeLinejoin="round" />
-    <path d="M2 12 L4 14 M5 11 L7 13"
-      stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+  <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block" }}>
+    <path d="M3 13 L11 5 L13 5 L13 3 L11 3 L3 11 Z" fill={color} />
+    <path d="M2 12 L4 14 M5 11 L7 13" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
@@ -534,7 +534,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   )}
                   {chevrons > 0 && (
                     <div style={{
-                      position: "absolute", top: 0, right: 1,
+                      position: "absolute", top: 0, left: 1,
                       color: chevronTier(chevrons),
                       fontSize: "0.45rem", lineHeight: 0.7,
                       textShadow: "0 0 2px #000, 0 0 1px #000",
@@ -621,7 +621,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         )}
                         {chevrons > 0 && (
                           <div style={{
-                            position: "absolute", top: 0, right: 1,
+                            position: "absolute", top: 0, left: 1,
                             color: chevronTier(chevrons),
                             fontSize: "0.45rem", lineHeight: 0.7,
                             textShadow: "0 0 2px #000, 0 0 1px #000",
