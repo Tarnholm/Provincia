@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.151",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Chevron count corrected — exp value IS the chevron level directly, no -1 offset. exp 0 → no chevron, exp 1 → 1 bronze, exp 2 → 2 bronze, exp 3 → 3 bronze (Rome's garrison), exp 4 → 1 silver … exp 9 → 3 gold. The earlier -1 offset was based on a misreading of the Friniatia feedback." },
+    ],
+  },
+  {
     version: "0.9.150",
     date: "2026-05-01",
     items: [

@@ -482,7 +482,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               // RTW chevron count = exp - 1 (descr_strat exp 1 → 0 chevrons,
               // exp 2 → 1 bronze, etc.). The first visible chevron appears
               // at exp 2 in-game.
-              const chevrons = Math.max(0, (u.xp || 0) - 1);
+              // Chevron level = exp value directly. exp 0 → no chevron,
+              // exp 1 → 1 bronze, exp 2 → 2 bronze, exp 3 → 3 bronze,
+              // exp 4 → 1 silver … exp 9 → 3 gold.
+              const chevrons = u.xp || 0;
               const armour = u.armour || 0;
               const weapon = u.weapon || 0;
               const tooltipParts = [u.unit.replace(/_/g, " ")];
@@ -579,7 +582,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   }}>
                     {a.units.map((u, ui) => {
                       const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
-                      const chevrons = Math.max(0, (u.xp || 0) - 1);
+                      // Chevron level = exp value directly. exp 0 → no chevron,
+              // exp 1 → 1 bronze, exp 2 → 2 bronze, exp 3 → 3 bronze,
+              // exp 4 → 1 silver … exp 9 → 3 gold.
+              const chevrons = u.xp || 0;
                       const armour = u.armour || 0;
                       const weapon = u.weapon || 0;
                       const tooltipParts = [u.unit.replace(/_/g, " ")];
