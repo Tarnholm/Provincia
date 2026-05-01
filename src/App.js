@@ -7567,6 +7567,20 @@ function App() {
                             // named character positioned EXACTLY on the
                             // settlement tile (those stacks are the city's
                             // garrison, not a field army).
+                            // Build a name-keyed FIFO of starting values so
+                            // each save unit gets the descr_strat exp/armour/
+                            // weapon that match the same unit type. The save
+                            // binary format doesn't carry these, so falling
+                            // back to the turn-0 starting values keeps chevrons
+                            // and upgrade icons visible in live mode.
+                            const startingByName = new Map();
+                            const startingArms = startingArmiesByRegion?.[r.region]?.garrison || [];
+                            for (const a of startingArms) {
+                              for (const u of a.units || []) {
+                                if (!startingByName.has(u.name)) startingByName.set(u.name, []);
+                                startingByName.get(u.name).push(u);
+                              }
+                            }
                             normalised = rawFresh.filter((u) => {
                               const cmd = u.inferredCmd || u.commanderUuid;
                               if (!cmd) return true;
@@ -7576,7 +7590,18 @@ function App() {
                                 return commander.x === settlementTile.x && commander.y === settlementTile.y;
                               }
                               return false;
-                            }).map((u) => ({ unit: u.name, soldiers: u.soldiers, max: u.maxSoldiers }));
+                            }).map((u) => {
+                              const queue = startingByName.get(u.name);
+                              const seed = queue && queue.length ? queue.shift() : null;
+                              return {
+                                unit: u.name,
+                                soldiers: u.soldiers,
+                                max: u.maxSoldiers,
+                                xp: seed?.exp || 0,
+                                armour: seed?.armour || 0,
+                                weapon: seed?.weapon || 0,
+                              };
+                            });
                           } else {
                             normalised = legacy;
                           }
@@ -7943,18 +7968,36 @@ function App() {
                             });
                           }
                           const dictMap = unitOwnership?.__dictionary || {};
+                          // Same starting-values fallback as the garrison path
+                          // — save format doesn't carry exp/armour/weapon, so
+                          // we seed from descr_strat's turn-0 values matched
+                          // by unit name within the region.
+                          const fieldStartingByName = new Map();
+                          for (const a of (startingArmiesByRegion?.[r.region]?.field || [])) {
+                            for (const u of a.units || []) {
+                              if (!fieldStartingByName.has(u.name)) fieldStartingByName.set(u.name, []);
+                              fieldStartingByName.get(u.name).push(u);
+                            }
+                          }
                           const buildEntry = (e) => {
                             prefetchUnitIcons(modDataDir, e._units.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
                             return {
                               character: e.character,
                               faction: e.faction,
-                              units: e._units.map((u) => ({
-                                unit: u.name, xp: 0,
-                                soldiers: typeof u.soldiers === "number" ? u.soldiers : null,
-                                max: typeof u.maxSoldiers === "number" ? u.maxSoldiers : null,
-                                faction: e.faction,
-                                icon: e.faction ? getCachedUnitIcon(e.faction, u.name) : null,
-                              })),
+                              units: e._units.map((u) => {
+                                const queue = fieldStartingByName.get(u.name);
+                                const seed = queue && queue.length ? queue.shift() : null;
+                                return {
+                                  unit: u.name,
+                                  xp: seed?.exp || 0,
+                                  armour: seed?.armour || 0,
+                                  weapon: seed?.weapon || 0,
+                                  soldiers: typeof u.soldiers === "number" ? u.soldiers : null,
+                                  max: typeof u.maxSoldiers === "number" ? u.maxSoldiers : null,
+                                  faction: e.faction,
+                                  icon: e.faction ? getCachedUnitIcon(e.faction, u.name) : null,
+                                };
+                              }),
                             };
                           };
                           const own = mergedOwn.map(buildEntry);

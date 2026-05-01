@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.150",
+    date: "2026-05-01",
+    items: [
+      { type: "fix", text: "Chevrons / shields / swords now show in live-save mode too. Rome's garrison ships exp 3 armour 1 in descr_strat (so 14 of 15 units should display 2 bronze chevrons + 1 bronze shield), but with a save loaded the live-save code path normalised units to {unit, soldiers, max} — the binary save format doesn't carry exp/armour/weapon, so those fields were dropped. Both garrison and field-army paths now seed from the bundled starting_armies_*.json by unit name (FIFO match within the region), preserving turn-0 chevrons/upgrades on save-loaded views." },
+    ],
+  },
+  {
     version: "0.9.149",
     date: "2026-05-01",
     items: [
