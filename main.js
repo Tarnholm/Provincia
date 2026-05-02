@@ -1270,18 +1270,41 @@ ipcMain.handle("find-edu-type", async (_event, modDataDir, unitType) => {
   return _findInFile(src, new RegExp(`^\\s*type\\s+${unitType.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\s*$`))
     || (src ? { path: src, line: 1 } : null);
 });
-// Open a source file at a line. Tries VS Code's vscode://file/<path>:<line>
-// URL scheme first (most common modder editor); falls back to the OS default.
+// Open a source file at a line. Prefers Notepad++ when installed (has line-
+// jump via -n<line>), falls back to plain Notepad (no line jump). Both are
+// spawned detached so closing them doesn't take Provincia with them.
+const _NPP_PATHS = [
+  "C:\\Program Files\\Notepad++\\notepad++.exe",
+  "C:\\Program Files (x86)\\Notepad++\\notepad++.exe",
+];
+function _findNotepadPP() {
+  for (const p of _NPP_PATHS) {
+    try { if (fs.existsSync(p)) return p; } catch {}
+  }
+  return null;
+}
 ipcMain.handle("open-source-file", async (_event, filePath, line) => {
   if (!filePath || !fs.existsSync(filePath)) return { ok: false, reason: "missing" };
+  const { spawn } = require("child_process");
+  const npp = _findNotepadPP();
   try {
-    if (line && Number.isFinite(line)) {
-      const url = `vscode://file/${filePath.replace(/\\/g, "/")}:${line}`;
-      try { await shell.openExternal(url); return { ok: true, via: "vscode" }; } catch {}
+    if (npp) {
+      const args = [];
+      if (line && Number.isFinite(line)) args.push(`-n${line}`);
+      args.push(filePath);
+      const child = spawn(npp, args, { detached: true, stdio: "ignore" });
+      child.unref();
+      return { ok: true, via: "notepad++" };
     }
-    await shell.openPath(filePath);
-    return { ok: true, via: "default" };
-  } catch (e) { return { ok: false, reason: e.message }; }
+    // Notepad has no line-jump flag; just open the file.
+    const child = spawn("notepad.exe", [filePath], { detached: true, stdio: "ignore" });
+    child.unref();
+    return { ok: true, via: "notepad" };
+  } catch (e) {
+    // Last-ditch: hand off to the OS default.
+    try { await shell.openPath(filePath); return { ok: true, via: "default" }; }
+    catch (e2) { return { ok: false, reason: e.message + " / " + e2.message }; }
+  }
 });
 
 ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {

@@ -225,7 +225,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
                 </button>
               )}
               <span style={{ fontSize: "0.65rem", color: "#888", alignSelf: "center" }}>
-                opens in VS Code if installed; otherwise the default editor
+                opens in Notepad++ (with line jump) if installed; otherwise Notepad
               </span>
             </div>
           );

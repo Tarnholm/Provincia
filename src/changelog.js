@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.185",
+    date: "2026-05-03",
+    items: [
+      { type: "change", text: "Show in EDB / EDU now opens Notepad++ (with line jump via -n<line>) when installed, falls back to plain Notepad. Was opening VS Code via vscode://file/ URL — switched per request. Notepad++ paths checked: 'C:\\\\Program Files\\\\Notepad++\\\\notepad++.exe' and the (x86) variant. Spawned detached so the child editor outlives Provincia." },
+    ],
+  },
+  {
     version: "0.9.184",
     date: "2026-05-03",
     items: [
