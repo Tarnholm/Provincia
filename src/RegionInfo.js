@@ -388,6 +388,39 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           return farm_level !== undefined && farm_level !== null ? row("Farm Level:", farm_level) : null;
         })()}
         {population_level !== undefined && population_level !== null && row("Pop Level:", population_level)}
+        {Array.isArray(resources) && resources.length > 0 && (() => {
+          // Sum amounts per resource type so duplicates collapse into one
+          // chip with a count.
+          const summed = {};
+          for (const r of resources) {
+            const k = String(r.type || "").toLowerCase();
+            if (!k) continue;
+            summed[k] = (summed[k] || 0) + (r.amount || 1);
+          }
+          const list = Object.entries(summed).sort((a, b) => b[1] - a[1]);
+          return (
+            <div style={{ marginTop: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Resources:</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px" }}>
+                {list.map(([type, amount]) => (
+                  <span key={type} style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "1px 5px", borderRadius: 4,
+                    background: "rgba(220,166,74,0.16)",
+                    fontSize: "0.7rem", whiteSpace: "nowrap",
+                  }}>
+                    {resourceImages && resourceImages[type] && (
+                      <img src={resourceImages[type].src} alt={type}
+                        style={{ width: 12, height: 12, objectFit: "contain" }} />
+                    )}
+                    {type.replace(/_/g, " ")}
+                    {amount > 1 ? <span style={{ color: "#aaa" }}>×{amount}</span> : null}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {(() => {
           const ethData = parseEth(typeof ethnicities === 'string' ? ethnicities : (Array.isArray(ethnicities) ? ethnicities.join(' ') : ''));
           if (ethData.length === 0) return null;
@@ -423,40 +456,6 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <strong>{modeExtra.label}:</strong> {modeExtra.value}
           </div>
         )}
-        {Array.isArray(resources) && resources.length > 0 && (() => {
-          // Sum amounts per resource type so duplicates collapse into one
-          // chip with a count. The bundled resourcesData has multiple entries
-          // for the same type when several pins exist in a region.
-          const summed = {};
-          for (const r of resources) {
-            const k = String(r.type || "").toLowerCase();
-            if (!k) continue;
-            summed[k] = (summed[k] || 0) + (r.amount || 1);
-          }
-          const list = Object.entries(summed).sort((a, b) => b[1] - a[1]);
-          return (
-            <div style={{ marginTop: 6 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Resources:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px" }}>
-                {list.map(([type, amount]) => (
-                  <span key={type} style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "1px 5px", borderRadius: 4,
-                    background: "rgba(220,166,74,0.16)",
-                    fontSize: "0.7rem", whiteSpace: "nowrap",
-                  }}>
-                    {resourceImages && resourceImages[type] && (
-                      <img src={resourceImages[type].src} alt={type}
-                        style={{ width: 12, height: 12, objectFit: "contain" }} />
-                    )}
-                    {type.replace(/_/g, " ")}
-                    {amount > 1 ? <span style={{ color: "#aaa" }}>×{amount}</span> : null}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
         {tagsList.length > 0 && (() => {
           // Group tags by category so they read as labelled chips instead
           // of a flat blob. Each group gets a tinted chip background
@@ -617,7 +616,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         {recruitable && recruitable.length > 0 ? (
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, minmax(0, 52px))",
+            gridTemplateColumns: "repeat(6, minmax(0, 52px))",
             gridAutoRows: "min-content",
             gap: 3,
             justifyContent: "start",

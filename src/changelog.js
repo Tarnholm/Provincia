@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.171",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Resources block in the region info bar moved up — now sits right after the Pop Level row, above the ethnicities bar / modeExtra / tag chips. More prominent in the visual hierarchy." },
+      { type: "improvement", text: "Recruitable grid widened from 5 columns to 6, giving more breathing room when a city has a long unit list." },
+    ],
+  },
+  {
     version: "0.9.170",
     date: "2026-05-02",
     items: [
