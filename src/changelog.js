@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.174",
+    date: "2026-05-02",
+    items: [
+      { type: "change", text: "Religion row dropped from the Tags chip block — the ethnicities chart already conveys the religious split per region, so surfacing rel_*_N as chips too was redundant noise. Tags now show: Terrain, Climate, Irrigation, Port, Fertility, Other, Hidden Resource." },
+    ],
+  },
+  {
     version: "0.9.173",
     date: "2026-05-02",
     items: [

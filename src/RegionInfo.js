@@ -151,7 +151,10 @@ const CATEGORY_COLOURS = {
   Other:             "rgba(200, 100, 100, 0.18)",
   "Hidden Resource": "rgba(200, 200, 200, 0.10)",
 };
-const CATEGORY_ORDER = ["Terrain", "Climate", "Irrigation", "Port", "Religion", "Fertility", "Other", "Hidden Resource"];
+// Religion deliberately excluded — the ethnicities chart already conveys
+// the religious split per region; surfacing rel_*_N as chips too is
+// redundant noise.
+const CATEGORY_ORDER = ["Terrain", "Climate", "Irrigation", "Port", "Fertility", "Other", "Hidden Resource"];
 
 // Normalize arrays; split comma-delimited strings into individual tags
 function listOrEmpty(val) {
