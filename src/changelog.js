@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.162",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Keyboard shortcuts: Ctrl+F focuses the search box; Ctrl+1..9 switches map mode (Faction / Victory / Culture / Religion / Population / Fertility / Resources / Homeland / Government); Esc cascade closes overlays in order (info popup → dev context menu → legend filter → search → selection → lock); ',' / '.' steps through the recent-regions backstack." },
+      { type: "feature", text: "Live save mode: turn / year badge in the right-column header (T123 · 247 BC), pulled straight from the loaded save's header so you always know what point in the campaign you're inspecting." },
+      { type: "feature", text: "Double-click the region or city name in the bottom info bar to copy it to the clipboard. Cursor changes to a copy cursor on hover; tooltip explains the gesture." },
+      { type: "improvement", text: "Search input placeholder now mentions the Ctrl+F shortcut." },
+    ],
+  },
+  {
     version: "0.9.161",
     date: "2026-05-02",
     items: [

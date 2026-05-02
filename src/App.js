@@ -1101,6 +1101,7 @@ function App() {
   const [regionCentroids, setRegionCentroids] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const searchInputRef = useRef(null);
   const [showFactionSummary, setShowFactionSummary] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [devRecoveryPrompt, setDevRecoveryPrompt] = useState(false); // show recovery banner on dev mode enter
@@ -3109,20 +3110,71 @@ function App() {
 
   // Keyboard shortcuts
   useEffect(() => {
+    // Order must mirror the colorModes array in renderMapModeToggle so
+    // Ctrl+1..9 → Faction/Victory/Culture/Religion/Population/Fertility/
+    // Resources/Homeland/Government.
+    const numericModes = [
+      "faction", "victory", "culture", "religion",
+      "population", "farm", "resource", "homeland", "government",
+    ];
     const handler = (e) => {
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      const inField = e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA";
+      // Ctrl+F → focus the search input regardless of where focus currently is.
+      if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.key === "f" || e.key === "F")) {
+        e.preventDefault();
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+          searchInputRef.current.select();
+        }
+        return;
+      }
+      // Ctrl+1..9 → switch map mode (only when not typing in a field).
+      if (!inField && e.ctrlKey && !e.shiftKey && !e.altKey && e.key >= "1" && e.key <= "9") {
+        const idx = parseInt(e.key, 10) - 1;
+        const mode = numericModes[idx];
+        if (mode) { e.preventDefault(); setColorMode(mode); }
+        return;
+      }
+      if (inField) {
+        // Esc inside an input clears the field's value (search etc.).
+        if (e.key === "Escape" && e.target.tagName === "INPUT") {
+          e.target.blur();
+        }
+        return;
+      }
       if (e.key === "Escape") {
+        // Esc cascade — close whatever overlay is open, then clear selection.
+        setInfoPopup((cur) => { if (cur) return null; return cur; });
+        setDevContextMenu((cur) => { if (cur) return null; return cur; });
+        setLegendFilter((cur) => { if (cur) return null; return cur; });
+        setSearchQuery("");
         setSelectedProvinces([]);
         setSelectedFaction(null);
         setLockedRegionInfo(null);
-      } else if (e.key === "ArrowLeft")  { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x + 60 / Math.max(1, zoom), y: p.y })); }
-        else if (e.key === "ArrowRight") { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x - 60 / Math.max(1, zoom), y: p.y })); }
-        else if (e.key === "ArrowUp")    { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x, y: p.y + 60 / Math.max(1, zoom) })); }
-        else if (e.key === "ArrowDown")  { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x, y: p.y - 60 / Math.max(1, zoom) })); }
+      }
+      else if (e.key === "ArrowLeft")  { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x + 60 / Math.max(1, zoom), y: p.y })); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x - 60 / Math.max(1, zoom), y: p.y })); }
+      else if (e.key === "ArrowUp")    { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x, y: p.y + 60 / Math.max(1, zoom) })); }
+      else if (e.key === "ArrowDown")  { e.preventDefault(); setOffset((p) => clampOffset({ x: p.x, y: p.y - 60 / Math.max(1, zoom) })); }
+      // , and . step through the recent-regions backstack (most recent first).
+      else if (e.key === "," || e.key === ".") {
+        if (recentRegions.length === 0) return;
+        const cur = lockedRegionInfo?.rgb;
+        const idx = cur ? recentRegions.indexOf(cur) : -1;
+        const next = e.key === "," ? idx + 1 : idx - 1;
+        if (next >= 0 && next < recentRegions.length) {
+          const key = recentRegions[next];
+          const r = regions[key];
+          if (r) {
+            setLockedRegionInfo({ ...r, rgb: key });
+            setSelectedProvinces([key]);
+          }
+        }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [clampOffset, zoom]);
+  }, [clampOffset, zoom, recentRegions, lockedRegionInfo, regions]);
 
   // Dev mode toggle: Ctrl+Shift+D
   useEffect(() => {
@@ -4834,6 +4886,22 @@ function App() {
         >
           <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "inherit", letterSpacing: "0.3px", display: "inline-flex", alignItems: "baseline", gap: 6 }}>
             {isVictoryMode ? "Victory: choose faction" : "Factions"}
+            {liveLogActive && (saveCurrentTurn != null || saveCurrentYear != null) && (
+              <span
+                title="Current turn / year from the loaded save"
+                style={{
+                  fontSize: "0.65rem", fontWeight: 600,
+                  color: "#dca64a",
+                  background: "rgba(220,166,74,0.12)",
+                  padding: "1px 6px", borderRadius: 4,
+                  fontFamily: "Consolas, monospace",
+                }}
+              >
+                {saveCurrentTurn != null ? `T${saveCurrentTurn}` : ""}
+                {saveCurrentTurn != null && saveCurrentYear != null ? " · " : ""}
+                {saveCurrentYear != null ? `${Math.abs(saveCurrentYear)} ${saveCurrentYear < 0 ? "BC" : "AD"}` : ""}
+              </span>
+            )}
             {appVersion && appVersion !== "0.0.0" && (
               <span
                 onClick={onCheckUpdates}
@@ -5106,10 +5174,11 @@ function App() {
       <div style={{ position: "relative" }}>
         <input
           type="text"
+          ref={searchInputRef}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="legend-search-input"
-          placeholder="Search province or city..."
+          placeholder="Search province or city... (Ctrl+F)"
           style={{
             width: "100%", boxSizing: "border-box", padding: "6px 12px",
             borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
