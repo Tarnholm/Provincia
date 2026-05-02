@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.180",
+    date: "2026-05-02",
+    items: [
+      { type: "fix", text: "Search dropdown was clipped by the right-column container's overflow:hidden — appearing behind the Recent panel and inducing a system scrollbar as the column tried to grow. The dropdown now portals onto document.body with fixed positioning derived from the input's bounding rect, so it floats above every panel. Drop-shadow added for depth." },
+    ],
+  },
+  {
     version: "0.9.179",
     date: "2026-05-02",
     items: [

@@ -5183,6 +5183,48 @@ function App() {
         : <span key={i}>{p.text}</span>);
     };
 
+    // The right-column container has overflow:hidden, which was clipping
+    // the dropdown when it overflowed downward — making it appear "behind"
+    // the Recent panel and showing a system scrollbar as the column tried
+    // to grow. Portal the dropdown onto document.body with fixed positioning
+    // computed from the input rect so it floats above everything.
+    const inputEl = searchInputRef.current;
+    const rect = inputEl ? inputEl.getBoundingClientRect() : null;
+    const dropdown = (results.length > 0 && rect) ? (
+      <div className="popover-pop-in" style={{
+        position: "fixed",
+        top: rect.bottom + 2,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+        background: "rgba(30,30,30,0.97)",
+        borderRadius: 7,
+        border: "1px solid #666",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+        overflow: "hidden",
+      }}>
+        {results.map((r) => (
+          <div key={r.key}
+            onClick={() => handleSearchSelect(r)}
+            style={{ padding: "6px 10px", cursor: "pointer", fontSize: "0.88rem", color: "#eee",
+              borderBottom: "1px solid #3335" }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+          >
+            {highlight(r.label)}
+          </div>
+        ))}
+        {overflow > 0 && (
+          <div style={{
+            padding: "5px 10px", fontSize: "0.78rem",
+            color: "#aaa", fontStyle: "italic",
+            background: "rgba(0,0,0,0.25)",
+          }}>
+            +{overflow} more — refine search
+          </div>
+        )}
+      </div>
+    ) : null;
     return (
       <div style={{ position: "relative" }}>
         <input
@@ -5199,34 +5241,7 @@ function App() {
             transition: "border-color 0.15s, box-shadow 0.15s",
           }}
         />
-        {results.length > 0 && (
-          <div className="popover-pop-in" style={{
-            position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
-            background: "rgba(30,30,30,0.97)", borderRadius: 7, border: "1px solid #666",
-            marginTop: 2, overflow: "hidden",
-          }}>
-            {results.map((r) => (
-              <div key={r.key}
-                onClick={() => handleSearchSelect(r)}
-                style={{ padding: "6px 10px", cursor: "pointer", fontSize: "0.88rem", color: "#eee",
-                  borderBottom: "1px solid #3335" }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-              >
-                {highlight(r.label)}
-              </div>
-            ))}
-            {overflow > 0 && (
-              <div style={{
-                padding: "5px 10px", fontSize: "0.78rem",
-                color: "#aaa", fontStyle: "italic",
-                background: "rgba(0,0,0,0.25)",
-              }}>
-                +{overflow} more — refine search
-              </div>
-            )}
-          </div>
-        )}
+        {dropdown && createPortal(dropdown, document.body)}
       </div>
     );
   }
