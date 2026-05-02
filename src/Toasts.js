@@ -14,6 +14,7 @@ export default function Toasts({ toasts, onDismiss }) {
       {toasts.map(t => (
         <div
           key={t.id}
+          className="toast-item"
           onClick={() => onDismiss(t.id)}
           style={{
             padding: "10px 14px", borderRadius: 6,

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.178",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Mac-style animation system. Apple's typical spring easing curves (cubic-bezier(0.32, 0.72, 0, 1) and cubic-bezier(0.34, 1.56, 0.64, 1)) applied across the UI. Faction tiles cascade in with a staggered scale-up spring on first mount; map-mode buttons get smoother hover/transitions; the active map-mode button gets a slow amber glow pulse; toasts slide in from the right with a settle; search dropdown + dev right-click menu pop in from their anchor; the auto-update progress bar gets diagonal-stripe shimmer. All animations honour `prefers-reduced-motion: reduce`." },
+    ],
+  },
+  {
     version: "0.9.177",
     date: "2026-05-02",
     items: [

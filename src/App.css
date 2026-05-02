@@ -193,3 +193,124 @@ body.dark-mode .zoom-controls .zoom-btn {
   transform: scale(1.06) !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
+
+/* ────────────────────────────────────────────────────────────────────
+   Mac-style animation system. Apple's typical curves are subtle spring
+   ease-outs: cubic-bezier(0.32, 0.72, 0, 1) is the iOS default for most
+   appear/disappear motion. Durations stay short (180-280ms) so the UI
+   stays snappy. Animations combine scale + opacity (never opacity alone)
+   so elements feel like they "settle into place" rather than fading in.
+   ──────────────────────────────────────────────────────────────────── */
+:root {
+  --ease-mac: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-mac-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-mac-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Generic fade-in-and-rise — used for toasts, dropdowns, popovers. */
+@keyframes mac-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes mac-pop-out {
+  from { opacity: 1; transform: translateY(0)    scale(1); }
+  to   { opacity: 0; transform: translateY(-4px) scale(0.96); }
+}
+
+/* Subtle scale-up spring for first-render of grid items (faction tiles). */
+@keyframes mac-tile-in {
+  0%   { opacity: 0; transform: scale(0.85); }
+  60%  { opacity: 1; transform: scale(1.04); }
+  100% {              transform: scale(1); }
+}
+
+/* Slide in from the right for top-of-screen toasts. */
+@keyframes mac-slide-in-right {
+  from { opacity: 0; transform: translateX(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0)    scale(1); }
+}
+
+/* Pulse / glow for the active selection — used on the locked region's
+   amber outline / faction tile selection. Subtle and slow. */
+@keyframes mac-active-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px #dca64a, 0 0 8px rgba(220,166,74,0.35); }
+  50%      { box-shadow: 0 0 0 2px #dca64a, 0 0 14px rgba(220,166,74,0.7); }
+}
+
+/* Diagonal-stripes shimmer for the in-flight update progress bar. */
+@keyframes mac-progress-shimmer {
+  0%   { background-position:   0 0; }
+  100% { background-position: 24px 0; }
+}
+
+/* Apply to existing components ─────────────────────────────────────── */
+
+/* Faction tile cascade-in on first mount. The :nth-child stagger lets
+   them flutter in one after another instead of all at once. */
+.faction-tile {
+  animation: mac-tile-in 380ms var(--ease-mac-spring) backwards;
+  transition: transform 180ms var(--ease-mac-out),
+              box-shadow 180ms var(--ease-mac-out) !important;
+}
+.faction-tile:nth-child(1)  { animation-delay: 0ms; }
+.faction-tile:nth-child(2)  { animation-delay: 12ms; }
+.faction-tile:nth-child(3)  { animation-delay: 24ms; }
+.faction-tile:nth-child(4)  { animation-delay: 36ms; }
+.faction-tile:nth-child(5)  { animation-delay: 48ms; }
+.faction-tile:nth-child(6)  { animation-delay: 60ms; }
+.faction-tile:nth-child(7)  { animation-delay: 72ms; }
+.faction-tile:nth-child(8)  { animation-delay: 84ms; }
+.faction-tile:nth-child(9)  { animation-delay: 96ms; }
+.faction-tile:nth-child(10) { animation-delay: 108ms; }
+.faction-tile:nth-child(n+11) { animation-delay: 120ms; }
+
+/* Map-mode buttons — add the same easing to the existing transition. */
+.map-mode-btn {
+  transition: transform 180ms var(--ease-mac-out),
+              filter 150ms var(--ease-mac-out),
+              box-shadow 200ms var(--ease-mac-out),
+              background 150ms var(--ease-mac-out) !important;
+}
+
+/* Active map-mode button gets a slow amber pulse so the selection state
+   reads as "alive". */
+.map-mode-btn--active {
+  animation: mac-active-pulse 2.4s var(--ease-mac-out) infinite;
+}
+
+/* Toast: stack rises from the top-right with a slide + scale settle. */
+.toast-item {
+  animation: mac-slide-in-right 240ms var(--ease-mac-spring) both;
+  transition: opacity 200ms var(--ease-mac-out);
+}
+
+/* Dropdowns / popovers / context menus all use the pop-in. Gives a
+   consistent "appears from anchor" feel. */
+.popover-pop-in {
+  animation: mac-pop-in 180ms var(--ease-mac-out) both;
+  transform-origin: top center;
+}
+
+/* Update download progress — stripey shimmer on the amber bar. */
+.update-progress-strip {
+  background-image: linear-gradient(
+    45deg,
+    #dca64a 25%, transparent 25%,
+    transparent 50%, #dca64a 50%,
+    #dca64a 75%, transparent 75%
+  );
+  background-size: 12px 12px;
+  animation: mac-progress-shimmer 600ms linear infinite;
+}
+
+/* Respect users who've asked the OS to reduce motion. */
+@media (prefers-reduced-motion: reduce) {
+  .faction-tile,
+  .map-mode-btn,
+  .map-mode-btn--active,
+  .toast-item,
+  .popover-pop-in,
+  .update-progress-strip {
+    animation: none !important;
+  }
+}

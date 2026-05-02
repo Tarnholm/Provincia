@@ -4932,10 +4932,9 @@ function App() {
                 {/* Progress strip — bottom underline that fills as the
                     update downloads. Goes away on completion. */}
                 {updateDownloadPct != null && (
-                  <span style={{
+                  <span className="update-progress-strip" style={{
                     position: "absolute", left: 0, bottom: 0,
                     height: 2, width: `${updateDownloadPct}%`,
-                    background: "#dca64a",
                     transition: "width 0.2s linear",
                     pointerEvents: "none",
                   }} />
@@ -5201,7 +5200,7 @@ function App() {
           }}
         />
         {results.length > 0 && (
-          <div style={{
+          <div className="popover-pop-in" style={{
             position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
             background: "rgba(30,30,30,0.97)", borderRadius: 7, border: "1px solid #666",
             marginTop: 2, overflow: "hidden",
@@ -9006,7 +9005,7 @@ function App() {
           <>
             <div style={{ position: "fixed", inset: 0, zIndex: 9998 }}
               onClick={() => setDevContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setDevContextMenu(null); }} />
-            <div style={menuStyle}>
+            <div className="popover-pop-in" style={menuStyle}>
               <div style={{ padding: "4px 12px 6px", color: "#e8a030", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid #333" }}>
                 {title}
               </div>
