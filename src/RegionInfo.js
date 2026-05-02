@@ -138,23 +138,23 @@ function categoriseTag(t) {
   if (/^base_port_level_\d+$/.test(k)) return "Port";
   if (/^rel_[a-z_]+_\d+$/.test(k)) return "Religion";
   if (/^Farm\d+$/.test(t)) return "Fertility";
-  if (k === "earthquake" || k === "rivertrade") return "Other";
+  if (k === "earthquake" || k === "rivertrade") return "Hazards & Trade";
   return "Hidden Resource";
 }
 const CATEGORY_COLOURS = {
-  Terrain:           "rgba(110, 180, 100, 0.18)",
-  Climate:           "rgba(100, 160, 220, 0.18)",
-  Irrigation:        "rgba(60, 200, 220, 0.18)",
-  Port:              "rgba(220, 200, 80, 0.18)",
-  Religion:          "rgba(190, 110, 200, 0.18)",
-  Fertility:         "rgba(220, 160, 60, 0.18)",
-  Other:             "rgba(200, 100, 100, 0.18)",
-  "Hidden Resource": "rgba(200, 200, 200, 0.10)",
+  Terrain:            "rgba(110, 180, 100, 0.18)",
+  Climate:            "rgba(100, 160, 220, 0.18)",
+  Irrigation:         "rgba(60, 200, 220, 0.18)",
+  Port:               "rgba(220, 200, 80, 0.18)",
+  Religion:           "rgba(190, 110, 200, 0.18)",
+  Fertility:          "rgba(220, 160, 60, 0.18)",
+  "Hazards & Trade":  "rgba(200, 100, 100, 0.18)",
+  "Hidden Resource":  "rgba(200, 200, 200, 0.10)",
 };
 // Religion deliberately excluded — the ethnicities chart already conveys
 // the religious split per region; surfacing rel_*_N as chips too is
 // redundant noise.
-const CATEGORY_ORDER = ["Terrain", "Climate", "Irrigation", "Port", "Fertility", "Other", "Hidden Resource"];
+const CATEGORY_ORDER = ["Terrain", "Climate", "Irrigation", "Port", "Fertility", "Hazards & Trade", "Hidden Resource"];
 
 // Normalize arrays; split comma-delimited strings into individual tags
 function listOrEmpty(val) {
@@ -337,13 +337,27 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             style={{ marginBottom: 2, cursor: "copy", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <strong>Settlement:</strong> {city}
-            {settlementTier && (
-              <span style={{
-                fontSize: "0.65rem", padding: "0 5px", borderRadius: 8,
-                background: "rgba(220,166,74,0.22)", color: "#f4cd8a",
-                textTransform: "capitalize", lineHeight: 1.4,
-              }} title="Settlement level (descr_strat)">{String(settlementTier).replace(/_/g, " ")}</span>
-            )}
+            {settlementTier && (() => {
+              // Colour-grade by tier so a glance at the badge tells you
+              // size: grey village → bronze town → silver city → gold huge.
+              const TIER_STYLE = {
+                village:     { bg: "rgba(140,140,140,0.22)", fg: "#cfcfcf" },
+                town:        { bg: "rgba(170,140,90,0.22)",  fg: "#d6b07a" },
+                large_town:  { bg: "rgba(190,150,80,0.22)",  fg: "#e2bf6e" },
+                city:        { bg: "rgba(200,200,210,0.22)", fg: "#e0e3e9" },
+                large_city:  { bg: "rgba(230,190,80,0.25)",  fg: "#f5cd57" },
+                huge_city:   { bg: "rgba(255,210,70,0.30)",  fg: "#ffe080" },
+              };
+              const t = String(settlementTier).toLowerCase();
+              const s = TIER_STYLE[t] || TIER_STYLE.town;
+              return (
+                <span style={{
+                  fontSize: "0.65rem", padding: "0 5px", borderRadius: 8,
+                  background: s.bg, color: s.fg,
+                  textTransform: "capitalize", lineHeight: 1.4,
+                }} title="Settlement level (descr_strat)">{String(settlementTier).replace(/_/g, " ")}</span>
+              );
+            })()}
           </div>
         ) : row("Settlement:", city)}
         {(() => {
@@ -404,7 +418,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           }
           return farm_level !== undefined && farm_level !== null ? row("Farm Level:", farm_level) : null;
         })()}
-        {population_level !== undefined && population_level !== null && row("Pop Level:", population_level)}
+        {population_level !== undefined && population_level !== null && (() => {
+          // pop_level is the descr_regions 1-15 cap scale; ~1500 people per
+          // level is the empirical map → game ratio. Surface both so the
+          // user doesn't have to do mental math.
+          const lvl = parseInt(population_level, 10);
+          const approx = Number.isFinite(lvl) && lvl > 0 ? lvl * 1500 : null;
+          return (
+            <div style={{ marginBottom: 2 }}>
+              <strong>Pop Cap:</strong> level {population_level}
+              {approx != null && <span style={{ color: "#aaa", fontSize: "0.72rem" }}> · ~{approx.toLocaleString()}</span>}
+            </div>
+          );
+        })()}
         {(() => {
           // Ethnicities chart sits right under Pop Level (its original spot).
           // Trimmed marginTop / removed minHeight so the Resources + Tags
@@ -412,26 +438,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           const ethData = parseEth(typeof ethnicities === 'string' ? ethnicities : (Array.isArray(ethnicities) ? ethnicities.join(' ') : ''));
           if (ethData.length === 0) return null;
           return (
-            <div style={{ marginTop: 2 }}>
-              <div style={{ display: "flex", height: 8, borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.15)" }}>
+            <div style={{ marginTop: 2 }} title={ethData.map(e => `${e.name.replace(/_/g, " ")} ${e.pct}%`).join("  ·  ")}>
+              <div style={{ display: "flex", height: 10, borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.15)" }}>
                 {ethData.map((e, i) => {
                   const col = getEthColor(e.name);
                   return (
-                    <div key={i} title={`${e.name} ${e.pct}%`} style={{
+                    <div key={i} title={`${e.name.replace(/_/g, " ")} ${e.pct}%`} style={{
                       width: `${e.pct}%`, background: `rgb(${col[0]},${col[1]},${col[2]})`,
                       minWidth: e.pct > 0 ? 2 : 0,
                     }} />
-                  );
-                })}
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "1px 6px", marginTop: 2, fontSize: "0.65rem" }}>
-                {ethData.map((e, i) => {
-                  const col = getEthColor(e.name);
-                  return (
-                    <span key={i} style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: 2, background: `rgb(${col[0]},${col[1]},${col[2]})` }} />
-                      {e.name.replace(/_/g, " ")} {e.pct}%
-                    </span>
                   );
                 })}
               </div>

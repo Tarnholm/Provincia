@@ -4474,9 +4474,15 @@ function App() {
           g = data[i + 1],
           b = data[i + 2];
         const rgbKey = `${r},${g},${b}`;
-        if (regions[rgbKey]) setRegionInfo({ ...regions[rgbKey], rgb: rgbKey });
-        else setRegionInfo(null);
-      } else setRegionInfo(null);
+        // Throttle: only re-set state when the cursor crossed into a
+        // different region. Mouse-move fires every pixel; without this gate
+        // setRegionInfo(...) creates a fresh object per pixel and re-renders
+        // RegionInfo + downstream consumers many times per second.
+        if (regions[rgbKey]) {
+          setRegionInfo(prev => prev?.rgb === rgbKey ? prev : { ...regions[rgbKey], rgb: rgbKey });
+        }
+        else setRegionInfo(prev => prev === null ? prev : null);
+      } else setRegionInfo(prev => prev === null ? prev : null);
 
       // Resource icon hover detection
       if (colorMode === "resource") {
@@ -5144,12 +5150,14 @@ function App() {
 
   function renderSearch() {
     const q = searchQuery.trim().toLowerCase();
-    const results = q.length > 0
+    const allMatches = q.length > 0
       ? Object.entries(regions)
           .filter(([, v]) => v.region?.toLowerCase().includes(q) || v.city?.toLowerCase().includes(q))
-          .slice(0, 8)
-          .map(([key, v]) => ({ key, label: v.region && v.city ? `${v.region} (${v.city})` : v.region || v.city || key }))
       : [];
+    const results = allMatches
+      .slice(0, 8)
+      .map(([key, v]) => ({ key, label: v.region && v.city ? `${v.region} (${v.city})` : v.region || v.city || key }));
+    const overflow = Math.max(0, allMatches.length - results.length);
 
     // Highlight the matched substring inside a result label. Splits on the
     // case-insensitive query and wraps the hits in <mark> with an amber tint.
@@ -5206,6 +5214,15 @@ function App() {
                 {highlight(r.label)}
               </div>
             ))}
+            {overflow > 0 && (
+              <div style={{
+                padding: "5px 10px", fontSize: "0.78rem",
+                color: "#aaa", fontStyle: "italic",
+                background: "rgba(0,0,0,0.25)",
+              }}>
+                +{overflow} more — refine search
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -7781,8 +7798,21 @@ function App() {
                 {/* Recently-viewed regions backstack */}
                 {recentRegions.length > 0 && (
                   <div className="panel" style={{ padding: "6px 10px", flexShrink: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: "0.78rem", marginBottom: 4, color: "#dca64a" }}>↶ Recent</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    <div style={{
+                      fontWeight: 700, fontSize: "0.78rem", marginBottom: 4, color: "#dca64a",
+                      display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                    }}>
+                      <span>↶ Recent</span>
+                      <span
+                        onClick={() => setRecentRegions([])}
+                        title="Clear recent regions"
+                        style={{ fontSize: "0.7rem", fontWeight: 400, opacity: 0.7, cursor: "pointer" }}
+                      >clear</span>
+                    </div>
+                    <div style={{
+                      display: "flex", flexWrap: "nowrap", gap: 4,
+                      overflowX: "auto", overflowY: "hidden", paddingBottom: 2,
+                    }}>
                       {recentRegions.map(key => {
                         const r = regions[key];
                         if (!r) return null;
@@ -8973,6 +9003,53 @@ function App() {
                 {title}
               </div>
               {items}
+              {/* Universal modder utility — present regardless of dev colour
+                  mode. Builds a `settlement { ... }` block in descr_strat
+                  format from current state and copies to clipboard, so a
+                  modder can paste it into another mod or test branch. */}
+              <div
+                onClick={() => {
+                  try {
+                    const owner = (currentOwnerByCity && currentOwnerByCity[region.city])
+                      || (initialOwnerByCity && initialOwnerByCity[region.city])
+                      || region.faction || "slave";
+                    const tier = settlementTierMap[rgbKey] || "town";
+                    let built = [];
+                    for (const fd of buildingsData) {
+                      const sett = (fd.settlements || []).find(s => s.region?.toLowerCase() === region.region?.toLowerCase());
+                      if (sett) { built = sett.buildings || []; break; }
+                    }
+                    const popData = populationData[region.region] || populationData[region.city] || 0;
+                    const lines = [];
+                    lines.push("settlement");
+                    lines.push("{");
+                    lines.push(`\tlevel ${tier}`);
+                    lines.push(`\tregion ${region.region}`);
+                    lines.push(`\tyear_founded 0`);
+                    if (popData) lines.push(`\tpopulation ${popData}`);
+                    lines.push(`\tplan_set default_set`);
+                    lines.push(`\tfaction_creator ${owner}`);
+                    for (const b of built) {
+                      lines.push("\tbuilding");
+                      lines.push("\t{");
+                      lines.push(`\t\ttype ${b.type} ${b.level}`);
+                      lines.push("\t}");
+                    }
+                    lines.push("}");
+                    navigator.clipboard?.writeText(lines.join("\n"));
+                    pushToast(`Copied descr_strat block for ${region.region}`, "info");
+                  } catch (e) {
+                    pushToast(`Copy failed: ${e.message}`, "error");
+                  }
+                  setDevContextMenu(null);
+                }}
+                style={{
+                  padding: "6px 12px", cursor: "pointer",
+                  borderTop: "1px solid #333", marginTop: 4,
+                  fontSize: "0.78rem", color: "#dca64a",
+                }}
+                onMouseEnter={(e) => rowHover(e)} onMouseLeave={(e) => rowLeave(e, false)}
+              >📋 Copy descr_strat block</div>
             </div>
           </>
         );

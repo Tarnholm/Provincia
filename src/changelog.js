@@ -8,6 +8,20 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.175",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Pop Cap row reformatted: 'Pop Cap: level 11 · ~16,500' (was just 'Pop Level: 11') so the descr_regions 1-15 scale is paired with a count estimate." },
+      { type: "improvement", text: "Settlement-tier badge colour-grades by tier — grey village, tan town, bronze large town, silver city, gold large city, bright gold huge city. Scan-by-colour for settlement size." },
+      { type: "improvement", text: "Ethnicities row dropped the redundant coloured-dot legend below the bar; the bar's segment titles already convey ethnicity / percent on hover. Bar height bumped from 8px to 10px to compensate. Whole row also has a single hover title summarising all groups." },
+      { type: "change", text: "Tag chip category 'Other' renamed to 'Hazards & Trade' (only fires for earthquake / rivertrade)." },
+      { type: "feature", text: "Search dropdown shows '+N more — refine search' when matches exceed the visible 8." },
+      { type: "improvement", text: "Recent regions strip is now single-line with horizontal scroll; new 'clear' link in the strip header. Doesn't push the search down on small screens any more." },
+      { type: "feature", text: "Dev right-click menu has a new universal '📋 Copy descr_strat block' item — generates the settlement { … } block in descr_strat format (level, region, population, faction_creator, building list) and copies to clipboard. Useful for porting between mods or test branches." },
+      { type: "improvement", text: "Hover throttling: setRegionInfo now skips re-renders when the cursor stays within the same region (uses an updater function that returns the previous reference unchanged). Mouse-move was firing per pixel and creating new objects 60+ times per second on continuous hover." },
+    ],
+  },
+  {
     version: "0.9.174",
     date: "2026-05-02",
     items: [
