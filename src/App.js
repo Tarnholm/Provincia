@@ -5178,7 +5178,7 @@ function App() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="legend-search-input"
-          placeholder="Search province or city... (Ctrl+F)"
+          placeholder="Search province or settlement... (Ctrl+F)"
           style={{
             width: "100%", boxSizing: "border-box", padding: "6px 12px",
             borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",

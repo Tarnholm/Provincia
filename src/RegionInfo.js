@@ -286,18 +286,26 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         )}
         {city ? (
           <div
-            title="Double-click to copy city name"
+            title="Double-click to copy settlement name"
             onDoubleClick={() => {
               try { navigator.clipboard?.writeText(city); } catch {}
             }}
             style={{ marginBottom: 2, cursor: "copy" }}
           >
-            <strong>City:</strong> {city}
+            <strong>Settlement:</strong> {city}
           </div>
-        ) : row("City:", city)}
-        {row("Faction:", liveOwner || faction)}
+        ) : row("Settlement:", city)}
+        {row("Faction:", liveOwner || factionLabel(faction))}
         {row("Culture:", culture)}
-        {devMode && row("RGB:", rgb)}
+        {devMode && rgb && (() => {
+          // Show both decimal RGB and hex — easier to grab when picking
+          // colours in an image editor / colour picker.
+          const parts = String(rgb).split(",").map(s => parseInt(s.trim(), 10));
+          const hex = parts.length === 3
+            ? "#" + parts.map(n => Math.max(0, Math.min(255, n || 0)).toString(16).padStart(2, "0")).join("").toUpperCase()
+            : "";
+          return row("RGB:", hex ? `${rgb}  ${hex}` : rgb);
+        })()}
         {farm_level !== undefined && farm_level !== null && row("Farm Level:", farm_level)}
         {population_level !== undefined && population_level !== null && row("Population Level:", population_level)}
         {(() => {

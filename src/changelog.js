@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.167",
+    date: "2026-05-02",
+    items: [
+      { type: "change", text: "'City:' label renamed to 'Settlement:' in the region info bar — 'city' clashes with the descr_strat settlement-level value (village / town / large_town / city / large_city / huge_city). Search input placeholder and the double-click-copy tooltip updated to match." },
+      { type: "improvement", text: "Faction row now runs raw faction ids through factionLabel(), so a region with no live save still shows the friendly display name (e.g. 'Romans Julii' instead of 'romans_julii') when descr_sm_factions provides one." },
+      { type: "improvement", text: "Dev-mode RGB row now shows both decimal and hex (e.g. '200,14,15  #C80E0F') so colours are pickable in any image editor without conversion." },
+    ],
+  },
+  {
     version: "0.9.166",
     date: "2026-05-02",
     items: [
