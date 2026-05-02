@@ -5397,11 +5397,8 @@ function App() {
       { key: "religion", label: "Religion" },
       { key: "rel_diversity", label: "Religion Mix" },
       { key: "population", label: "Population" },
-      { key: "pop_growth", label: "Pop Headroom" },
       { key: "farm", label: "Fertility" },
       { key: "resource", label: "Resources" },
-      { key: "wealth", label: "Wealth" },
-      { key: "recruitment", label: "Recruitment" },
       { key: "homeland", label: "Homeland" },
       { key: "government", label: "Government" },
     ];
@@ -5413,6 +5410,9 @@ function App() {
       { key: "earthquakes", label: "Earthquakes" },
       { key: "rivertrade", label: "River Trade" },
       { key: "hidden_resource", label: "Hidden Res." },
+      { key: "pop_growth", label: "Pop Headroom" },
+      { key: "wealth", label: "Wealth" },
+      { key: "recruitment", label: "Recruitment" },
     ];
 
     return (

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.160",
+    date: "2026-05-02",
+    items: [
+      { type: "change", text: "Wealth, Pop Headroom, and Recruitment map modes moved from the main map-mode pill into the dev section. Religion Mix stays in the main pill." },
+    ],
+  },
+  {
     version: "0.9.159",
     date: "2026-05-02",
     items: [
