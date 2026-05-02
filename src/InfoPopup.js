@@ -27,7 +27,7 @@ function pixelsToBlobUrl({ width, height, pixels }) {
   });
 }
 
-export default function InfoPopup({ payload, modDataDir, factionDisplayNames, onClose }) {
+export default function InfoPopup({ payload, modDataDir, factionDisplayNames, onClose, devMode }) {
   const [imgUrl, setImgUrl] = useState(null);
   const [status, setStatus] = useState("loading");
   const [unitStats, setUnitStats] = useState(null);
@@ -182,6 +182,51 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
                   <span style={{ fontVariantNumeric: "tabular-nums" }}>{value}</span>
                 </Fragment>
               ))}
+            </div>
+          );
+        })()}
+        {devMode && (() => {
+          // Show-in-source buttons — open the right line in EDB/EDU.
+          // Tries VS Code's vscode://file/<path>:<line> URL first; falls back
+          // to the OS default editor. The right-click already passes the
+          // chain name (for buildings) and unit type (for units).
+          const api = window.electronAPI;
+          if (!api) return null;
+          const isUnit = payload.type === "unit";
+          const isBuilding = payload.type === "building";
+          if (!isUnit && !isBuilding) return null;
+          const openIn = async (kind) => {
+            try {
+              let loc;
+              if (kind === "edu") loc = await api.findEduType(modDataDir || null, payload.name);
+              else loc = await api.findEdbChain(modDataDir || null, payload.chainName || payload.name);
+              if (!loc) return;
+              await api.openSourceFile(loc.path, loc.line);
+            } catch {}
+          };
+          const btnStyle = {
+            padding: "4px 10px", fontSize: "0.74rem",
+            borderRadius: 6, border: "1px solid #555",
+            background: "rgba(255,255,255,0.06)", color: "#dca64a",
+            cursor: "pointer", fontWeight: 600,
+          };
+          return (
+            <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {isUnit && api.findEduType && (
+                <button style={btnStyle} onClick={() => openIn("edu")}
+                  title="Open export_descr_unit.txt at this unit's `type` line">
+                  📄 Show in EDU
+                </button>
+              )}
+              {isBuilding && api.findEdbChain && (
+                <button style={btnStyle} onClick={() => openIn("edb")}
+                  title="Open export_descr_buildings.txt at this chain's `building` line">
+                  📄 Show in EDB
+                </button>
+              )}
+              <span style={{ fontSize: "0.65rem", color: "#888", alignSelf: "center" }}>
+                opens in VS Code if installed; otherwise the default editor
+              </span>
             </div>
           );
         })()}

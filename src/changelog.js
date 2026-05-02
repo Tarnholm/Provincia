@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.183",
+    date: "2026-05-03",
+    items: [
+      { type: "feature", text: "Faction Wealth panel — new 'Wealth' button in View options opens a sortable list of every faction with their starting treasury (from descr_strat) and region count, ordered richest→poorest. Click a row to zoom-fit that faction's territory and select it. Treasury colour-grades by amount. New parseDescrStratFactionWealth in parsers.js + bundle outputs faction_wealth_<suffix>.json so the panel reads bundled data with no runtime cost." },
+      { type: "feature", text: "Show in EDB / EDU buttons in the InfoPopup (dev mode). Right-clicking a building or unit card opens the popup; new buttons there call find-edb-chain / find-edu-type IPCs to locate the line, then open-source-file launches VS Code via vscode://file/<path>:<line> if installed (or the OS default editor as fallback). Lets modders jump from the visual to the source instantly." },
+    ],
+  },
+  {
     version: "0.9.182",
     date: "2026-05-03",
     items: [

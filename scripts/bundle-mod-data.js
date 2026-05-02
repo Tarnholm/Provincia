@@ -18,13 +18,14 @@ const path = require("path");
 // parsers.js is ESM (consumed by src/App.js via Vite). Load it via dynamic
 // import from this CJS script. The load is async, so the whole pipeline runs
 // inside an async main() at the bottom of this file.
-let parseDescrRegions, parseDescrStratFactions, parseDescrStratBuildings, parseDescrStratResources;
+let parseDescrRegions, parseDescrStratFactions, parseDescrStratBuildings, parseDescrStratResources, parseDescrStratFactionWealth;
 async function loadParsers() {
   const mod = await import("../src/parsers.js");
   parseDescrRegions = mod.parseDescrRegions;
   parseDescrStratFactions = mod.parseDescrStratFactions;
   parseDescrStratBuildings = mod.parseDescrStratBuildings;
   parseDescrStratResources = mod.parseDescrStratResources;
+  parseDescrStratFactionWealth = mod.parseDescrStratFactionWealth;
 }
 
 const MOD_ROOT = process.env.RIS_MOD_ROOT || "C:\\RIS\\RIS";
@@ -420,6 +421,9 @@ function run() {
     const stratText = fs.readFileSync(stratPath, "utf8");
     const factions = parseDescrStratFactions(stratText);
     writeJson(`factions_with_regions_${c.suffix}.json`, factions);
+
+    const wealth = parseDescrStratFactionWealth(stratText);
+    writeJson(`faction_wealth_${c.suffix}.json`, wealth);
 
     const stratBuildings = parseDescrStratBuildings(stratText);
     writeJson(`descr_strat_buildings_${c.suffix}.json`, stratBuildings);

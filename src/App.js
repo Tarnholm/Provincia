@@ -4279,6 +4279,19 @@ function App() {
     })();
   }, [loadCampaignData, mapCampaign]);
 
+  // Faction starting treasury (descr_strat field 2 per faction).
+  const [factionWealth, setFactionWealth] = useState({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const fname = mapCampaign === "imperial" ? "faction_wealth_large.json" : "faction_wealth_classic.json";
+        const r = await loadCampaignData(fname);
+        setFactionWealth(JSON.parse(r.text) || {});
+      } catch { setFactionWealth({}); }
+    })();
+  }, [loadCampaignData, mapCampaign]);
+  const [showWealthPanel, setShowWealthPanel] = useState(false);
+
   // Preload effect body lives here; the iconsPreloaded state is declared
   // earlier in the component so the splash auto-hide effect can depend on it.
   // Preload BOTH bundled and mod-folder TGAs so the first render of the
@@ -6023,6 +6036,9 @@ function App() {
               ? "Pin Faction is ON — non-selected regions are heavily greyed when a faction is selected"
               : "Pin Faction: heavily grey out everything except the selected faction's territory (sticky preference)"}
             style={{ ...btnStyle(pinFaction), minWidth: 0 }}>Pin</button>
+          <button className="map-mode-btn" onClick={() => setShowWealthPanel(prev => !prev)}
+            title="Open the Faction Wealth panel — sortable list with treasury and region count, click a row to jump to that faction's territory"
+            style={{ ...btnStyle(showWealthPanel), minWidth: 0 }}>Wealth</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
@@ -9685,9 +9701,120 @@ function App() {
           payload={infoPopup}
           modDataDir={modDataDir}
           factionDisplayNames={factionDisplayNames}
+          devMode={devMode}
           onClose={() => setInfoPopup(null)}
         />
       )}
+      {showWealthPanel && (() => {
+        // Faction Wealth panel — sortable list of factions with starting
+        // treasury (from descr_strat) and region count (from
+        // factionRegionsMap). Click a row to zoom-fit that faction's
+        // territory. Esc / outside click / X-button close it.
+        const rows = factions.map(f => ({
+          faction: f,
+          wealth: factionWealth[f] ?? 0,
+          regions: (factionRegionsMap[f] || []).length,
+          name: (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " "),
+        })).filter(r => r.regions > 0 || r.wealth !== 0);
+        rows.sort((a, b) => b.wealth - a.wealth);
+        const jumpToFaction = (f) => {
+          const keys = regionNamesToKeys(regionsForFaction(f));
+          const pts = keys.map(k => regionCentroids[k]).filter(Boolean);
+          if (pts.length === 0) return;
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (const p of pts) {
+            minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+          }
+          const pad = 20;
+          const bw = (maxX - minX) + pad * 2;
+          const bh = (maxY - minY) + pad * 2;
+          const baseScale = Math.max(canvasSize.width / imgSize.width, canvasSize.height / imgSize.height);
+          const fitZoom = Math.max(1, Math.min(maxZoom, Math.min(
+            canvasSize.width / (bw * baseScale),
+            canvasSize.height / (bh * baseScale),
+          )));
+          const ts = baseScale * fitZoom;
+          const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+          const imgW = imgSize.width * ts, imgH = imgSize.height * ts;
+          const bxOff = (canvasSize.width - imgW) / 2;
+          const byOff = (canvasSize.height - imgH) / 2;
+          let ox = canvasSize.width / 2 - cx * ts - bxOff;
+          let oy = canvasSize.height / 2 - cy * ts - byOff;
+          if (imgW > canvasSize.width) ox = Math.max(canvasSize.width - imgW - bxOff, Math.min(-bxOff, ox)); else ox = 0;
+          if (imgH > canvasSize.height) oy = Math.max(canvasSize.height - imgH - byOff, Math.min(-byOff, oy)); else oy = 0;
+          setZoom(fitZoom);
+          setOffset({ x: ox, y: oy });
+          setFactionSelection(f, false);
+        };
+        return createPortal(
+          <div onClick={() => setShowWealthPanel(false)} style={{
+            position: "fixed", inset: 0, zIndex: 9990,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <div onClick={(e) => e.stopPropagation()} className="popover-pop-in" style={{
+              background: "rgba(28,24,18,0.97)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: 10,
+              padding: "12px 0",
+              width: "min(540px, 90vw)",
+              maxHeight: "80vh",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+              color: "#f4f4f4",
+              display: "flex", flexDirection: "column",
+            }}>
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                padding: "0 16px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)",
+              }}>
+                <span style={{ fontWeight: 700, fontSize: "1rem", color: "#dca64a" }}>
+                  💰 Faction Wealth
+                </span>
+                <button onClick={() => setShowWealthPanel(false)}
+                  style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1.1rem", cursor: "pointer", padding: 0 }}
+                  title="Close (Esc)">×</button>
+              </div>
+              <div style={{ overflowY: "auto", padding: "4px 8px" }}>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "28px 1fr 100px 80px",
+                  fontSize: "0.7rem", color: "#999", padding: "4px 8px",
+                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                }}>
+                  <span></span><span>Faction</span>
+                  <span style={{ textAlign: "right" }}>Treasury</span>
+                  <span style={{ textAlign: "right" }}>Regions</span>
+                </div>
+                {rows.map((r, i) => (
+                  <div key={r.faction}
+                    onClick={() => jumpToFaction(r.faction)}
+                    style={{
+                      display: "grid", gridTemplateColumns: "28px 1fr 100px 80px",
+                      alignItems: "center", padding: "4px 8px", borderRadius: 6,
+                      cursor: "pointer", fontSize: "0.85rem",
+                      background: selectedFaction === r.faction ? "rgba(220,166,74,0.18)" : "transparent",
+                      transition: "background 120ms var(--ease-mac-out)",
+                    }}
+                    onMouseEnter={(e) => { if (selectedFaction !== r.faction) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                    onMouseLeave={(e) => { if (selectedFaction !== r.faction) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <span style={{ color: "#888", textAlign: "right", paddingRight: 4, fontSize: "0.75rem" }}>{i + 1}</span>
+                    <span style={{ textTransform: "capitalize" }}>{r.name}</span>
+                    <span style={{ textAlign: "right", color: r.wealth >= 5000 ? "#9ec78a" : r.wealth >= 1000 ? "#f4cd57" : "#e89030", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                      {r.wealth.toLocaleString()}
+                    </span>
+                    <span style={{ textAlign: "right", color: "#bbb", fontVariantNumeric: "tabular-nums" }}>{r.regions}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: "8px 16px 0", fontSize: "0.7rem", color: "#888", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                Treasury = starting denari from descr_strat. Click a row to zoom to that faction's territory.
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
     </>
   );
 }

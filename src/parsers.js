@@ -112,6 +112,28 @@ function parseDescrStratFactions(text) {
   return Object.fromEntries(Object.entries(factionRegions).filter(([, v]) => v.length > 0));
 }
 
+// Parse the per-faction `denari N` line from descr_strat. Returns
+// { factionId: denari } using the first denari encountered after each
+// `faction X, ai_X` block — descr_strat sometimes carries multiple denari
+// lines (one per save snapshot etc.) but the first under each faction is
+// the starting treasury we want to surface.
+function parseDescrStratFactionWealth(text) {
+  const lines = text.split(/\r?\n/);
+  const out = {};
+  let curFaction = null;
+  let captured = false;
+  for (const raw of lines) {
+    const s = raw.trim();
+    if (!s || s.startsWith(";")) continue;
+    const fm = s.match(/^faction\s+(\w+)/);
+    if (fm) { curFaction = fm[1].toLowerCase(); captured = false; continue; }
+    if (!curFaction || captured) continue;
+    const dm = s.match(/^denari\s+(-?\d+)/);
+    if (dm) { out[curFaction] = parseInt(dm[1], 10); captured = true; }
+  }
+  return out;
+}
+
 function parseDescrStratBuildings(text) {
   const lines = text.split(/\r?\n/);
   let startIdx = 0;
@@ -364,4 +386,5 @@ export {
   parseDescrStratBuildings,
   parseDescrStratResources,
   parseDescrStratArmies,
+  parseDescrStratFactionWealth,
 };

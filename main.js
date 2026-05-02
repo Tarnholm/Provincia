@@ -1227,6 +1227,63 @@ ipcMain.handle("get-building-chain-levels", async (_event, modDataDir) => {
 // have type "aor X Y" but icons are keyed by dictionary "X_Y" — the renderer
 // uses this to resolve the right icon path.
 const _unitOwnershipCache = new Map();
+// Locate a building chain in export_descr_buildings.txt and a unit type in
+// export_descr_unit.txt. Returns the absolute path + 1-based line number.
+// Used by the dev right-click "Show in EDB / EDU" menu items.
+function _findInFile(srcPath, regex) {
+  if (!srcPath || !fs.existsSync(srcPath)) return null;
+  try {
+    const buf = fs.readFileSync(srcPath);
+    const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
+    const lines = text.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      if (regex.test(lines[i])) return { path: srcPath, line: i + 1 };
+    }
+  } catch {}
+  return null;
+}
+function _firstExisting(modDataDir, fileName) {
+  if (modDataDir) {
+    const p = path.join(modDataDir, fileName);
+    if (fs.existsSync(p)) return p;
+  }
+  for (const d of (findRelatedModDirs ? findRelatedModDirs(modDataDir, fileName) : [])) {
+    const p = path.join(d, fileName);
+    if (fs.existsSync(p)) return p;
+  }
+  for (const root of getIconSearchRoots()) {
+    const p = path.join(root, fileName);
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+ipcMain.handle("find-edb-chain", async (_event, modDataDir, chainName) => {
+  if (!chainName) return null;
+  const src = _firstExisting(modDataDir, "export_descr_buildings.txt");
+  return _findInFile(src, new RegExp(`^\\s*building\\s+${chainName.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\b`, "m"))
+    || (src ? { path: src, line: 1 } : null);
+});
+ipcMain.handle("find-edu-type", async (_event, modDataDir, unitType) => {
+  if (!unitType) return null;
+  const src = _firstExisting(modDataDir, "export_descr_unit.txt");
+  // EDU `type` lines aren't quoted; match exactly.
+  return _findInFile(src, new RegExp(`^\\s*type\\s+${unitType.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\s*$`))
+    || (src ? { path: src, line: 1 } : null);
+});
+// Open a source file at a line. Tries VS Code's vscode://file/<path>:<line>
+// URL scheme first (most common modder editor); falls back to the OS default.
+ipcMain.handle("open-source-file", async (_event, filePath, line) => {
+  if (!filePath || !fs.existsSync(filePath)) return { ok: false, reason: "missing" };
+  try {
+    if (line && Number.isFinite(line)) {
+      const url = `vscode://file/${filePath.replace(/\\/g, "/")}:${line}`;
+      try { await shell.openExternal(url); return { ok: true, via: "vscode" }; } catch {}
+    }
+    await shell.openPath(filePath);
+    return { ok: true, via: "default" };
+  } catch (e) { return { ok: false, reason: e.message }; }
+});
+
 ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {
   const cacheKey = modDataDir || "";
   if (_unitOwnershipCache.has(cacheKey)) return _unitOwnershipCache.get(cacheKey);
