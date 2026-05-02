@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.176",
+    date: "2026-05-02",
+    items: [
+      { type: "fix", text: "Rome (and any other Roman city) was showing only AOR-flavoured recruits — never the actual Roman early units (roman hastati early, leves, principes, etc.). The recruit filter dropped any line containing `major_event` regardless of polarity. RIS gates pre-Marian Roman troops with `not major_event \"marian_reforms\"` (i.e. available BEFORE reforms); we were treating that as a positive trigger and rejecting them. The check now uses a negative-lookbehind to drop only positive `major_event \"X\"` clauses; the `not major_event \"X\"` form passes through. Same fix applied to both the bottom-panel recruit evaluator and the recruitment-density map mode." },
+    ],
+  },
+  {
     version: "0.9.175",
     date: "2026-05-02",
     items: [

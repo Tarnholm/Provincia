@@ -3532,7 +3532,10 @@ function App() {
                 if (rec.factions && rec.factions.length > 0 && ownerId
                     && !rec.factions.includes("all") && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
                 if (rec.requires) {
-                  if (/\bmajor_event\b/.test(rec.requires) || /\bnot\s+is_player\b/.test(rec.requires)) continue;
+                  // Drop only positive `major_event "X"` — the negative form
+                  // (`not major_event`) gates pre-reform recruits and should
+                  // pass. Same reasoning in the bottom-panel evaluator.
+                  if (/(?<!\bnot\s)\bmajor_event\b/.test(rec.requires) || /\bnot\s+is_player\b/.test(rec.requires)) continue;
                   const negFm = rec.requires.match(/not\s+factions\s*\{\s*([^}]*)\}/);
                   if (negFm) {
                     const ex = negFm[1].split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
@@ -8208,10 +8211,14 @@ function App() {
                                   && !rec.factions.includes(ownerId)
                                   && !rec.factions.includes(culture)) continue;
                               if (rec.requires) {
-                                // Drop event-gated recruits (player must
-                                // trigger a reform — not knowable from the
-                                // save alone).
-                                if (/\bmajor_event\b/.test(rec.requires)) continue;
+                                // Drop event-gated recruits where the player
+                                // needs to TRIGGER a reform — but only the
+                                // positive form (`major_event "X"`). The
+                                // negative form (`not major_event "X"`) means
+                                // "available BEFORE reform" — that's what
+                                // gates pre-Marian Roman troops, dropping
+                                // them was leaving Rome with only AOR units.
+                                if (/(?<!\bnot\s)\bmajor_event\b/.test(rec.requires)) continue;
                                 // Drop AI-only recruit lines. Many chains
                                 // ship a `not is_player ... noisland` variant
                                 // that hands the AI free units regardless of
