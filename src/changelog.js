@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.181",
+    date: "2026-05-03",
+    items: [
+      { type: "fix", text: "Building cards no longer reflow as you hover between regions. Long labels (e.g. 'nomad communal herding (husbandry)') wrap to 4 lines while short labels are 1 line — the grid was sizing rows to whichever was tallest in that specific region, so cards jumped vertically when the cursor moved. Each card now has minHeight: 118px (icon 48 + 4-line label cap + padding) and the grid uses gridAutoRows: 118px, so every row across every region is the same height." },
+    ],
+  },
+  {
     version: "0.9.180",
     date: "2026-05-02",
     items: [

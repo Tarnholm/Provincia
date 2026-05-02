@@ -588,7 +588,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(10, 82px)",
-              gridAutoRows: "min-content",
+              // Match each card's minHeight (118px) so partial rows still
+              // reserve the same space — keeps the grid height consistent
+              // regardless of how many cards fit in the last row.
+              gridAutoRows: "118px",
               gap: 4,
               justifyContent: "start",
             }}
@@ -615,6 +618,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 background: "rgba(0,0,0,0.25)", borderRadius: 4,
                 padding: "4px 3px",
                 minWidth: 0,
+                // Fixed minHeight = icon (48) + 4-line label (≈4 × 0.7rem ×
+                // 1.15 line-height ≈ 52) + padding/gap (~14). Prevents the
+                // grid row from resizing as the cursor hovers between regions
+                // — long-label cards (e.g. "nomad communal herding
+                // (husbandry)") were making other regions' cards jump
+                // vertically. All cards now reserve the worst-case height.
+                minHeight: 118,
+                boxSizing: "border-box",
                 border: b.queued ? "2px solid #e89030" : "2px solid transparent",
               }}>
                 <div style={{ position: "relative", width: 60, height: 48, flexShrink: 0 }}>
