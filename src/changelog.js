@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.169",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Region info bar now shows the region's resources — chips with the icon, name, and ×N count for duplicates. Pulled from the bundled resourcesData by region or settlement name. Icons appear when the resource map mode has been visited (resourceImages is loaded then); otherwise text-only chips render." },
+      { type: "fix", text: "'Farm Level: 5' was the same on every region — descr_regions field 7 is a constant placeholder in RIS, the real fertility lives in the Farm## tag (Farm1..Farm14). The row now parses that tag and shows e.g. 'Fertility: 11 / 14'. Falls back to the raw field-7 value if no Farm## tag is present (other mods)." },
+    ],
+  },
+  {
     version: "0.9.168",
     date: "2026-05-02",
     items: [

@@ -211,7 +211,7 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -377,7 +377,16 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             : "";
           return row("RGB:", hex ? `${rgb}  ${hex}` : rgb);
         })()}
-        {farm_level !== undefined && farm_level !== null && row("Farm Level:", farm_level)}
+        {(() => {
+          // Real fertility is encoded in the Farm## tag (Farm1..Farm14), not
+          // descr_regions field 7 — which RIS leaves at a constant 5 for every
+          // region as a placeholder. Parse the tag list so we surface the
+          // actual value instead of always showing "Farm Level: 5".
+          const tagBlob = typeof tags === "string" ? tags : (Array.isArray(tags) ? tags.join(",") : "");
+          const m = tagBlob.match(/\bFarm(\d+)\b/);
+          if (m) return row("Fertility:", `${m[1]} / 14`);
+          return farm_level !== undefined && farm_level !== null ? row("Farm Level:", farm_level) : null;
+        })()}
         {population_level !== undefined && population_level !== null && row("Pop Level:", population_level)}
         {(() => {
           const ethData = parseEth(typeof ethnicities === 'string' ? ethnicities : (Array.isArray(ethnicities) ? ethnicities.join(' ') : ''));
@@ -414,6 +423,40 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <strong>{modeExtra.label}:</strong> {modeExtra.value}
           </div>
         )}
+        {Array.isArray(resources) && resources.length > 0 && (() => {
+          // Sum amounts per resource type so duplicates collapse into one
+          // chip with a count. The bundled resourcesData has multiple entries
+          // for the same type when several pins exist in a region.
+          const summed = {};
+          for (const r of resources) {
+            const k = String(r.type || "").toLowerCase();
+            if (!k) continue;
+            summed[k] = (summed[k] || 0) + (r.amount || 1);
+          }
+          const list = Object.entries(summed).sort((a, b) => b[1] - a[1]);
+          return (
+            <div style={{ marginTop: 6 }}>
+              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Resources:</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px" }}>
+                {list.map(([type, amount]) => (
+                  <span key={type} style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "1px 5px", borderRadius: 4,
+                    background: "rgba(220,166,74,0.16)",
+                    fontSize: "0.7rem", whiteSpace: "nowrap",
+                  }}>
+                    {resourceImages && resourceImages[type] && (
+                      <img src={resourceImages[type].src} alt={type}
+                        style={{ width: 12, height: 12, objectFit: "contain" }} />
+                    )}
+                    {type.replace(/_/g, " ")}
+                    {amount > 1 ? <span style={{ color: "#aaa" }}>×{amount}</span> : null}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {tagsList.length > 0 && (() => {
           // Group tags by category so they read as labelled chips instead
           // of a flat blob. Each group gets a tinted chip background

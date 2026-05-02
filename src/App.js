@@ -8097,6 +8097,12 @@ function App() {
                         if (!r || !r.rgb) return null;
                         return settlementTierMap[r.rgb] || null;
                       })()}
+                      resources={(() => {
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
+                        return resourcesData[r.region] || resourcesData[r.city] || null;
+                      })()}
+                      resourceImages={resourceImages}
                       startingGarrison={(() => {
                         // Pass the descr_strat turn-0 garrison (units only) so
                         // RegionInfo can diff the live save's roster against
