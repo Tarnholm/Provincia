@@ -7812,9 +7812,10 @@ function App() {
                         style={{ fontSize: "0.7rem", fontWeight: 400, opacity: 0.7, cursor: "pointer" }}
                       >clear</span>
                     </div>
-                    <div style={{
+                    <div className="resource-panel-scroll" style={{
                       display: "flex", flexWrap: "nowrap", gap: 4,
                       overflowX: "auto", overflowY: "hidden", paddingBottom: 2,
+                      scrollbarWidth: "none",
                     }}>
                       {recentRegions.map(key => {
                         const r = regions[key];

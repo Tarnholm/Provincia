@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.177",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Recent settlements strip's horizontal scrollbar is now hidden, matching the rest of the panels. Used the existing .resource-panel-scroll class plus inline scrollbar-width:none for Firefox." },
+    ],
+  },
+  {
     version: "0.9.176",
     date: "2026-05-02",
     items: [
