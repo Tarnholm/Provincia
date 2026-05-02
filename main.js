@@ -1,5 +1,5 @@
 // main.js
-const { app, BrowserWindow, session, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, Menu, session, dialog, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { autoUpdater } = require("electron-updater");
@@ -902,11 +902,18 @@ function applyContentSecurityPolicy() {
 }
 
 function createWindow() {
+  // Drop Electron's default File/Edit/View/Window menu — the app's UI is
+  // self-contained and doesn't need it. Done at app level (vs per-window) so
+  // child windows (e.g. devtools detach) inherit. Useful shortcuts that
+  // the menu provided (devtools, reload, fullscreen) still work via the
+  // default accelerators in dev; release builds intentionally lose them.
+  Menu.setApplicationMenu(null);
   const win = new BrowserWindow({
     width: 1920,
     height: 1080,
     minWidth: 1280,
     minHeight: 720,
+    autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -914,6 +921,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
     },
   });
+  win.setMenuBarVisibility(false);
 
   if (useDevServer) {
     // For CRA/Vite HMR (may need eval) — suppress security warning in dev only

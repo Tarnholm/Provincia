@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.164",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Hidden the Electron menu chrome (File / Edit / View / Window). Menu.setApplicationMenu(null) at app level + autoHideMenuBar:true on the window. Cleaner full-screen feel; menu is gone entirely (not Alt-toggleable)." },
+      { type: "change", text: "Reverted the marble toggle from 0.9.163. Marble texture is back to always-on per the original design." },
+    ],
+  },
+  {
     version: "0.9.163",
     date: "2026-05-02",
     items: [
