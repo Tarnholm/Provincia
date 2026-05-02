@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.157",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Pre-export validation extended with two more checks: (1) regions owned by non-rebel factions that have ZERO recruitable units (almost always means a missing entry in EDU `ownership` lines), and (2) hidden_resources that EDB recruit lines reference but no region in descr_regions actually carries. Both fire only when buildingRecruits / unitOwnership are loaded so the validation is accurate." },
+    ],
+  },
+  {
     version: "0.9.156",
     date: "2026-05-02",
     items: [

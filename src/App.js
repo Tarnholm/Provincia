@@ -5466,6 +5466,69 @@ function App() {
                   const regionNames = new Set(Object.values(regions).flatMap(r => [r.region, r.city].filter(Boolean)));
                   const orphanedRes = Object.keys(resourcesData).filter(k => !regionNames.has(k));
                   if (orphanedRes.length > 0) warnings.push(`${orphanedRes.length} resource entries reference unknown regions`);
+                  // Regions with no recruit options at all (likely unintentional —
+                  // every starting settlement should at least be able to train
+                  // peasants or local levies). We use the same recruitment
+                  // filter as the bottom panel; flag any region that has 0
+                  // recruitable units AND owns at least 1 building.
+                  if (buildingRecruits && unitOwnership) {
+                    let zeroRecruit = 0;
+                    for (const r of Object.values(regions)) {
+                      const ownerId = r.faction;
+                      if (!ownerId || ownerId === "slave") continue;
+                      let built = null;
+                      for (const fd of buildingsData) {
+                        const sett = (fd.settlements || []).find(s => s.region?.toLowerCase() === r.region?.toLowerCase());
+                        if (sett) { built = sett.buildings || []; break; }
+                      }
+                      if (!built || built.length === 0) continue;
+                      const culture = factionCultures?.[ownerId] || null;
+                      const tagSet = new Set(String(r.tags || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
+                      let hasAny = false;
+                      for (const b of built) {
+                        const lvls = buildingRecruits[b.type];
+                        if (!lvls) continue;
+                        for (const lvl of Object.keys(lvls)) {
+                          for (const rec of lvls[lvl]) {
+                            if (rec.factions && rec.factions.length > 0 && ownerId
+                                && !rec.factions.includes("all") && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
+                            const owners = unitOwnership[rec.unit];
+                            if (!owners) continue;
+                            if (ownerId && !owners.includes("all") && !owners.includes(ownerId) && !owners.includes(culture)) continue;
+                            hasAny = true;
+                            break;
+                          }
+                          if (hasAny) break;
+                        }
+                        if (hasAny) break;
+                      }
+                      if (!hasAny) zeroRecruit++;
+                    }
+                    if (zeroRecruit > 0) warnings.push(`${zeroRecruit} owned region(s) have ZERO recruitable units — likely missing faction/culture in EDU ownership lines`);
+                  }
+                  // Hidden_resources referenced in EDB but never present on any region
+                  // (and vice versa). The first half is the more useful warning —
+                  // it usually means a typo or removed-but-not-cleaned-up tag.
+                  if (buildingRecruits) {
+                    const usedHRs = new Set();
+                    for (const lvls of Object.values(buildingRecruits)) {
+                      if (!lvls || typeof lvls !== "object") continue;
+                      for (const recList of Object.values(lvls)) {
+                        for (const rec of (recList || [])) {
+                          if (!rec.requires) continue;
+                          for (const m of rec.requires.matchAll(/\bhidden_resource\s+(\S+)/g)) usedHRs.add(m[1].toLowerCase());
+                        }
+                      }
+                    }
+                    const presentHRs = new Set();
+                    for (const r of Object.values(regions)) {
+                      for (const t of String(r.tags || "").split(/,\s*/)) presentHRs.add(t.trim().toLowerCase());
+                    }
+                    const missingFromMap = [...usedHRs].filter(hr => hr && !presentHRs.has(hr));
+                    if (missingFromMap.length > 0) {
+                      warnings.push(`${missingFromMap.length} hidden_resource(s) referenced in EDB but never present on any region (e.g. ${missingFromMap.slice(0, 3).join(", ")})`);
+                    }
+                  }
 
                   if (warnings.length > 0) {
                     const proceed = window.confirm(
