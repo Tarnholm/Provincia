@@ -3378,6 +3378,169 @@ function App() {
             Math.max(0, Math.min(255, base[2] + v)),
           ];
         }));
+      } else if (colorMode === "rel_diversity") {
+        // Religion diversity: 1 - (dominant level / total levels). Green when
+        // the dominant religion fully owns the region (low conversion need),
+        // red when many minorities compete (high unrest risk).
+        const score = (r) => {
+          let dom = 0, total = 0;
+          for (const m of String(r.tags || "").matchAll(/\brel_[a-z_]+_(\d+)\b/g)) {
+            const lvl = parseInt(m[1], 10);
+            total += lvl;
+            if (lvl > dom) dom = lvl;
+          }
+          if (total === 0) return 0;
+          return 1 - (dom / total);
+        };
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const t = Math.min(1, score(r) * 1.5); // amplify to use full range
+          // Green (homogeneous) → red (diverse)
+          const red   = Math.round(60 + t * 180);
+          const green = Math.round(170 - t * 130);
+          const blue  = 50;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          return [
+            Math.max(0, Math.min(255, red + v)),
+            Math.max(0, Math.min(255, green + v)),
+            Math.max(0, Math.min(255, blue + v)),
+          ];
+        }));
+      } else if (colorMode === "pop_growth") {
+        // Headroom = pop_level (cap from descr_strat) − current population
+        // bracket. Green = lots of room to grow, red = capped.
+        const getPop = (r) => populationData[r.region] || populationData[r.region?.split("-")[0]] || populationData[r.city] || 0;
+        // Derive cap from r.pop_level (the descr_regions value), which is
+        // a 1-15 scale roughly mapping to maximum settlement size.
+        const ratio = (r) => {
+          const cap = parseInt(r.pop_level || "0", 10) || 0;
+          if (cap <= 0) return 0;
+          // Pop is a raw count; divide by an empirical 1500/level scale so
+          // 100% = at-cap. Clamp so visualisation stays in 0..1.
+          const pop = getPop(r);
+          return Math.min(1.5, pop / (cap * 1500));
+        };
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const t = Math.min(1, ratio(r));
+          // Green (room) → orange (filling) → red (capped)
+          const red   = t < 0.5 ? Math.round(70 + t * 2 * 180) : 250;
+          const green = t < 0.5 ? Math.round(200 - t * 2 * 60)  : Math.round(140 - (t - 0.5) * 2 * 130);
+          const blue  = 40;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          return [
+            Math.max(0, Math.min(255, red + v)),
+            Math.max(0, Math.min(255, green + v)),
+            Math.max(0, Math.min(255, blue + v)),
+          ];
+        }));
+      } else if (colorMode === "wealth") {
+        // Approximate per-region income from on-tile resources + farm level
+        // + port level. Resources contribute their `amount`; farms contribute
+        // (farm_level * 2); ports contribute (port_level * 4). It's a crude
+        // proxy, not the exact game-side formula, but enough to surface
+        // wealthy vs poor at a glance.
+        const score = (r) => {
+          let s = 0;
+          const resList = resourcesData[r.region] || resourcesData[r.city] || [];
+          for (const x of resList) s += (x.amount || 1);
+          const farm = parseInt(r.farm_level || "0", 10) || 0;
+          s += farm * 2;
+          const portM = String(r.tags || "").match(/\bbase_port_level_(\d+)\b/);
+          if (portM) s += parseInt(portM[1], 10) * 4;
+          return s;
+        };
+        const max = Math.max(1, ...Object.values(regions).map(score));
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const t = Math.min(1, score(r) / max);
+          // Dark grey (poor) → bright gold (wealthy)
+          const red   = Math.round(60 + t * 200);
+          const green = Math.round(60 + t * 160);
+          const blue  = Math.round(60 + t * 30);
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          return [
+            Math.max(0, Math.min(255, red + v)),
+            Math.max(0, Math.min(255, green + v)),
+            Math.max(0, Math.min(255, blue + v)),
+          ];
+        }));
+      } else if (colorMode === "recruitment") {
+        // Per-region count of unique recruitable units. Reuses the same
+        // filter logic as RegionInfo's `recruitable` prop, but only the
+        // count — to keep the per-pixel pass cheap, we precompute the
+        // count for each region once.
+        const getCount = (r) => {
+          if (!buildingRecruits || !unitOwnership) return 0;
+          const ownerId = (
+            (currentOwnerByCity && currentOwnerByCity[r.city])
+            || (initialOwnerByCity && initialOwnerByCity[r.city])
+            || r.faction || ""
+          ).toLowerCase();
+          const culture = factionCultures?.[ownerId] || null;
+          // Find the region's buildings via buildingsData (descr_strat).
+          let built = null;
+          for (const fd of buildingsData) {
+            const sett = (fd.settlements || []).find(s => s.region?.toLowerCase() === r.region?.toLowerCase());
+            if (sett) { built = sett.buildings || []; break; }
+          }
+          if (!built || built.length === 0) return 0;
+          const tagSet = new Set(String(r.tags || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
+          const seen = new Set();
+          for (const b of built) {
+            const lvls = buildingRecruits[b.type];
+            if (!lvls) continue;
+            const allLevels = (buildingLevelsLookup && buildingLevelsLookup[b.type]) || null;
+            const levels = allLevels ? allLevels.slice(0, allLevels.indexOf(b.level) + 1) : [b.level];
+            for (const lvl of levels) {
+              const recs = lvls[lvl];
+              if (!recs) continue;
+              for (const rec of recs) {
+                if (rec.factions && rec.factions.length > 0 && ownerId
+                    && !rec.factions.includes("all") && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
+                if (rec.requires) {
+                  if (/\bmajor_event\b/.test(rec.requires) || /\bnot\s+is_player\b/.test(rec.requires)) continue;
+                  const negFm = rec.requires.match(/not\s+factions\s*\{\s*([^}]*)\}/);
+                  if (negFm) {
+                    const ex = negFm[1].split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+                    if (ex.includes(ownerId) || ex.includes(culture)) continue;
+                  }
+                  let hrOk = true;
+                  for (const m of rec.requires.matchAll(/\bnot\s+hidden_resource\s+(\S+)/g))
+                    if (tagSet.has(m[1].toLowerCase())) { hrOk = false; break; }
+                  if (!hrOk) continue;
+                  const positives = rec.requires.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+                  for (const m of positives.matchAll(/\bhidden_resource\s+(\S+)/g))
+                    if (!tagSet.has(m[1].toLowerCase())) { hrOk = false; break; }
+                  if (!hrOk) continue;
+                }
+                if (unitOwnership) {
+                  const owners = unitOwnership[rec.unit];
+                  if (!owners) continue;
+                  if (ownerId && !owners.includes("all") && !owners.includes(ownerId) && !owners.includes(culture)) continue;
+                }
+                seen.add(rec.unit);
+              }
+            }
+          }
+          return seen.size;
+        };
+        // Cache per-region count to keep the per-pixel pass cheap.
+        const counts = new Map();
+        for (const [k, r] of Object.entries(regions)) counts.set(k, getCount(r));
+        const max = Math.max(1, ...counts.values());
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const k = `${pr},${pg},${pb}`;
+          const c = counts.get(k) || 0;
+          const t = Math.min(1, c / max);
+          // Black (none) → purple → orange (lots)
+          const red   = Math.round(t * 240);
+          const green = Math.round(t * 140);
+          const blue  = Math.round(40 + (1 - t) * 80);
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          return [
+            Math.max(0, Math.min(255, red + v)),
+            Math.max(0, Math.min(255, green + v)),
+            Math.max(0, Math.min(255, blue + v)),
+          ];
+        }));
       } else if (colorMode === "homeland") {
         // Get the selected faction's homeland hidden resources
         const factionKey = (selectedFaction || "").toLowerCase();
@@ -3476,7 +3639,7 @@ function App() {
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => vary(getBase(r), pr, pg, pb)));
       }
     });
-  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource]);
+  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData]);
 
   // Cache the dimming overlay — active whenever provinces are selected in any mode
   useEffect(() => {
@@ -5195,9 +5358,13 @@ function App() {
       { key: "victory", label: "Victory" },
       { key: "culture", label: "Culture" },
       { key: "religion", label: "Religion" },
+      { key: "rel_diversity", label: "Religion Mix" },
       { key: "population", label: "Population" },
+      { key: "pop_growth", label: "Pop Headroom" },
       { key: "farm", label: "Fertility" },
       { key: "resource", label: "Resources" },
+      { key: "wealth", label: "Wealth" },
+      { key: "recruitment", label: "Recruitment" },
       { key: "homeland", label: "Homeland" },
       { key: "government", label: "Government" },
     ];
@@ -6054,6 +6221,40 @@ function App() {
       }
       return best ? { label: "Religion", value: best.replace(/_/g, " ") } : null;
     }
+    if (colorMode === "rel_diversity") {
+      let dom = 0, total = 0, nReligions = 0;
+      for (const hit of String(info.tags || "").matchAll(/\brel_[a-z_]+_(\d+)\b/g)) {
+        const lvl = parseInt(hit[1], 10);
+        total += lvl; nReligions++;
+        if (lvl > dom) dom = lvl;
+      }
+      if (total === 0) return { label: "Religion Mix", value: "Unknown" };
+      const pct = Math.round((dom / total) * 100);
+      return { label: "Religion Mix", value: `${pct}% dominant (${nReligions} religion${nReligions === 1 ? "" : "s"})` };
+    }
+    if (colorMode === "pop_growth") {
+      const pop = populationData[info.region] || populationData[info.region?.split("-")[0]] || populationData[info.city] || 0;
+      const cap = parseInt(info.pop_level || "0", 10) || 0;
+      if (cap <= 0) return { label: "Pop Headroom", value: "Unknown" };
+      const ratio = Math.min(1.5, pop / (cap * 1500));
+      const pct = Math.round(ratio * 100);
+      return { label: "Pop Headroom", value: `${pop.toLocaleString()} / ~${(cap * 1500).toLocaleString()} (${pct}%)` };
+    }
+    if (colorMode === "wealth") {
+      const resList = resourcesData[info.region] || resourcesData[info.city] || [];
+      let resSum = 0;
+      for (const x of resList) resSum += (x.amount || 1);
+      const farm = parseInt(info.farm_level || "0", 10) || 0;
+      const portM = String(info.tags || "").match(/\bbase_port_level_(\d+)\b/);
+      const port = portM ? parseInt(portM[1], 10) : 0;
+      const total = resSum + farm * 2 + port * 4;
+      return { label: "Wealth (est.)", value: `${total} (resources ${resSum}, farm ×${farm}, port ×${port})` };
+    }
+    if (colorMode === "recruitment") {
+      // No on-the-fly count — too expensive per hover. Just point to the
+      // recruitable list shown in the bottom region-info panel.
+      return { label: "Recruitment", value: "See bottom panel for details" };
+    }
     // Dev modes
     if (colorMode === "terrain") {
       const t = getTagValue(info.tags, TERRAIN_TAGS);
@@ -6136,6 +6337,60 @@ function App() {
               <span>Fertility 7</span>
               <span>Fertility 14</span>
             </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "pop_growth") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Pop Headroom <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(70,200,40), rgb(250,140,40), rgb(250,10,40))" }} />
+            <div style={labelRow}>
+              <span>Empty</span><span>Half</span><span>Capped</span>
+            </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "wealth") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Wealth (est.) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(60,60,60), rgb(160,140,80), rgb(255,220,90))" }} />
+            <div style={labelRow}>
+              <span>Poor</span><span>Mid</span><span>Wealthy</span>
+            </div>
+            <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Resources + farm + port. Approximate, not exact game formula.</div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "rel_diversity") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Religion Mix <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(60,170,50), rgb(150,150,50), rgb(240,40,50))" }} />
+            <div style={labelRow}>
+              <span>Homogeneous</span><span></span><span>Diverse</span>
+            </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "recruitment") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Recruitment <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(40,40,120), rgb(140,80,120), rgb(240,140,40))" }} />
+            <div style={labelRow}>
+              <span>None</span><span>Few</span><span>Many</span>
+            </div>
+            <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Unique unit count per region (turn-0 buildings).</div>
           </>}
         </div>
       );

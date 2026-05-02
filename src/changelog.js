@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.156",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Four new map modes: Religion Mix (homogeneous→diverse, surfaces unrest risk), Pop Headroom (empty→capped, surfaces growth potential), Wealth (poor→wealthy, sums resources + farm × 2 + port × 4 as a crude income proxy), Recruitment (count of unique units each region can train, runs the same EDB filter the bottom panel uses). Each mode has its own gradient legend and bottom-panel readout." },
+    ],
+  },
+  {
     version: "0.9.155",
     date: "2026-05-02",
     items: [
