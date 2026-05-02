@@ -381,10 +381,24 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           // Real fertility is encoded in the Farm## tag (Farm1..Farm14), not
           // descr_regions field 7 — which RIS leaves at a constant 5 for every
           // region as a placeholder. Parse the tag list so we surface the
-          // actual value instead of always showing "Farm Level: 5".
+          // actual value, and colour-tint the number using the same red →
+          // yellow → green gradient as the Fertility map mode.
           const tagBlob = typeof tags === "string" ? tags : (Array.isArray(tags) ? tags.join(",") : "");
           const m = tagBlob.match(/\bFarm(\d+)\b/);
-          if (m) return row("Fertility:", `${m[1]} / 14`);
+          if (m) {
+            const val = parseInt(m[1], 10);
+            const t = Math.max(0, Math.min(1, val / 14));
+            const red   = t < 0.5 ? 210 : Math.round(210 - (t - 0.5) * 2 * 160);
+            const green = t < 0.5 ? Math.round(t * 2 * 200) : 200;
+            const blue  = 30;
+            return (
+              <div style={{ marginBottom: 2 }}>
+                <strong>Fertility:</strong>{" "}
+                <span style={{ color: `rgb(${red},${green},${blue})`, fontWeight: 700 }}>{val}</span>
+                <span style={{ color: "#aaa" }}> / 14</span>
+              </div>
+            );
+          }
           return farm_level !== undefined && farm_level !== null ? row("Farm Level:", farm_level) : null;
         })()}
         {population_level !== undefined && population_level !== null && row("Pop Level:", population_level)}
@@ -416,6 +430,37 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     {type.replace(/_/g, " ")}
                     {amount > 1 ? <span style={{ color: "#aaa" }}>×{amount}</span> : null}
                   </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+        {tagsList.length > 0 && (() => {
+          // Group tags by category so they read as labelled chips instead
+          // of a flat blob. Each group gets a tinted chip background
+          // matching the category colour.
+          const groups = {};
+          for (const t of tagsList) {
+            const cat = categoriseTag(t);
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(t);
+          }
+          const orderedCats = CATEGORY_ORDER.filter((c) => groups[c]);
+          return (
+            <div style={{ marginTop: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {orderedCats.map((cat) => (
+                  <div key={cat} style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.62rem", color: "#a8a094", marginRight: 2, minWidth: 56 }}>{cat}</span>
+                    {groups[cat].map((t, i) => (
+                      <span key={`${t}-${i}`} style={{
+                        padding: "1px 5px", borderRadius: 4,
+                        background: CATEGORY_COLOURS[cat] || "rgba(255,255,255,0.08)",
+                        fontSize: "0.7rem", whiteSpace: "nowrap",
+                      }}>{t}</span>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
@@ -456,37 +501,6 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <strong>{modeExtra.label}:</strong> {modeExtra.value}
           </div>
         )}
-        {tagsList.length > 0 && (() => {
-          // Group tags by category so they read as labelled chips instead
-          // of a flat blob. Each group gets a tinted chip background
-          // matching the category colour.
-          const groups = {};
-          for (const t of tagsList) {
-            const cat = categoriseTag(t);
-            if (!groups[cat]) groups[cat] = [];
-            groups[cat].push(t);
-          }
-          const orderedCats = CATEGORY_ORDER.filter((c) => groups[c]);
-          return (
-            <div style={{ marginTop: 6 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                {orderedCats.map((cat) => (
-                  <div key={cat} style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.62rem", color: "#a8a094", marginRight: 2, minWidth: 56 }}>{cat}</span>
-                    {groups[cat].map((t, i) => (
-                      <span key={`${t}-${i}`} style={{
-                        padding: "1px 5px", borderRadius: 4,
-                        background: CATEGORY_COLOURS[cat] || "rgba(255,255,255,0.08)",
-                        fontSize: "0.7rem", whiteSpace: "nowrap",
-                      }}>{t}</span>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
       </div>
 
       {/* Right: buildings + garrison */}

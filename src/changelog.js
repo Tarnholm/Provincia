@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.172",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Tags moved up in the region info column — now sit right after Resources, above the ethnicities chart and modeExtra. Closes the gap between the Culture / Fertility / Pop info and the tag chips." },
+      { type: "improvement", text: "Fertility number is now colour-tinted with the same red → yellow → green gradient as the Fertility map mode (val/14). 14 reads as super green, 1 as red, 7 as yellow." },
+    ],
+  },
+  {
     version: "0.9.171",
     date: "2026-05-02",
     items: [
