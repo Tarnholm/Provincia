@@ -8263,6 +8263,10 @@ function App() {
                         const result = [];
                         // unit name → Set of chain types that expose it.
                         const gatedByMap = {};
+                        // Units added during the first (building-gated) pass —
+                        // these are CURRENTLY recruitable. Second pass adds
+                        // upgrade-only candidates without touching this set.
+                        const availableSet = new Set();
                         for (const b of builtList) {
                           const lvls = buildingRecruits[b.type];
                           if (!lvls) continue;
@@ -8446,8 +8450,67 @@ function App() {
                                 seen.add(rec.unit);
                                 result.push(rec.unit);
                               }
+                              availableSet.add(rec.unit);
                               if (!gatedByMap[rec.unit]) gatedByMap[rec.unit] = new Set();
                               gatedByMap[rec.unit].add(b.type);
+                            }
+                          }
+                        }
+                        // Second pass: every unit the region COULD recruit
+                        // if all building chains were upgraded to max — i.e.
+                        // skip the building-present and tier-alias filters,
+                        // but keep faction / hidden_resource / EDU ownership
+                        // / negative-faction / not-is-player / major_event
+                        // checks (these are not building-related). Used to
+                        // render "future" recruits faded after the
+                        // currently-available ones.
+                        const tagSetForPotential = new Set(
+                          String(r.tags || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+                        );
+                        for (const chain of Object.keys(buildingRecruits)) {
+                          if (chain === "__aliases") continue;
+                          const lvls = buildingRecruits[chain];
+                          if (!lvls || typeof lvls !== "object") continue;
+                          for (const lvl of Object.keys(lvls)) {
+                            const recs = lvls[lvl];
+                            if (!recs) continue;
+                            for (const rec of recs) {
+                              if (rec.factions && rec.factions.length > 0 && ownerId
+                                  && !rec.factions.includes("all")
+                                  && !rec.factions.includes(ownerId)
+                                  && !rec.factions.includes(culture)) continue;
+                              if (rec.requires) {
+                                if (/(?<!\bnot\s)\bmajor_event\b/.test(rec.requires) || /\bnot\s+is_player\b/.test(rec.requires)) continue;
+                                const negFm = rec.requires.match(/not\s+factions\s*\{\s*([^}]*)\}/);
+                                if (negFm) {
+                                  const ex = negFm[1].split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+                                  if (ex.includes(ownerId) || ex.includes(culture)) continue;
+                                }
+                                let hrOk = true;
+                                for (const m of rec.requires.matchAll(/\bnot\s+hidden_resource\s+(\S+)/g)) {
+                                  if (tagSetForPotential.has(m[1].toLowerCase())) { hrOk = false; break; }
+                                }
+                                if (!hrOk) continue;
+                                const positives = rec.requires.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+                                for (const m of positives.matchAll(/\bhidden_resource\s+(\S+)/g)) {
+                                  if (!tagSetForPotential.has(m[1].toLowerCase())) { hrOk = false; break; }
+                                }
+                                if (!hrOk) continue;
+                              }
+                              if (unitOwnership) {
+                                const owners = unitOwnership[rec.unit];
+                                if (!owners) continue;
+                                if (ownerId
+                                    && !owners.includes("all")
+                                    && !owners.includes(ownerId)
+                                    && !owners.includes(culture)) continue;
+                              }
+                              if (!seen.has(rec.unit)) {
+                                seen.add(rec.unit);
+                                result.push(rec.unit);
+                              }
+                              if (!gatedByMap[rec.unit]) gatedByMap[rec.unit] = new Set();
+                              gatedByMap[rec.unit].add(chain);
                             }
                           }
                         }
@@ -8456,11 +8519,18 @@ function App() {
                           const dictMap = unitOwnership?.__dictionary || {};
                           prefetchUnitIcons(modDataDir, result.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
                         }
+                        // Sort: currently-available first, then upgrade-only.
+                        result.sort((a, b) => {
+                          const aAvail = availableSet.has(a) ? 0 : 1;
+                          const bAvail = availableSet.has(b) ? 0 : 1;
+                          return aAvail - bAvail;
+                        });
                         return result.map((name) => ({
                           unit: name,
                           faction: ownerId,
                           icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
                           gatedBy: gatedByMap[name] ? [...gatedByMap[name]] : [],
+                          available: availableSet.has(name),
                         }));
                       })()}
                       fieldArmies={(() => {

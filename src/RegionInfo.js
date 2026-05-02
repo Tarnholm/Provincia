@@ -705,19 +705,25 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const gatedSet = u.gatedBy || (recruitGatedBy?.[u.unit] ?? []);
               const linkedFromBuilding = hoveredChain && gatedSet.includes(hoveredChain);
               const isHoveredHere = hoveredRecruit === u.unit;
+              // Upgrade-only units (`available === false`) are tinted pale —
+              // a 0.45 opacity grayscale-ish overlay so they read as "future
+              // potential" without dominating the currently-buildable ones.
+              const upgradeOnly = u.available === false;
               return (
                 <div key={i}
                   onMouseEnter={() => setHoveredRecruit(u.unit)}
                   onMouseLeave={() => setHoveredRecruit((cur) => cur === u.unit ? null : cur)}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
-                  title={u.unit.replace(/_/g, " ")} style={{
+                  title={u.unit.replace(/_/g, " ") + (upgradeOnly ? " — needs building upgrade" : "")} style={{
                   padding: 2,
                   background: linkedFromBuilding ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.35)",
                   borderRadius: 3,
                   minWidth: 0,
-                  outline: (linkedFromBuilding || isHoveredHere) ? "2px solid #dca64a" : "none",
+                  outline: (linkedFromBuilding || isHoveredHere) ? "2px solid #dca64a" : (upgradeOnly ? "1px dashed rgba(255,255,255,0.18)" : "none"),
                   outlineOffset: -1,
-                  transition: "background 150ms var(--ease-mac-out), outline-color 150ms var(--ease-mac-out)",
+                  opacity: upgradeOnly ? 0.45 : 1,
+                  filter: upgradeOnly ? "grayscale(0.4)" : "none",
+                  transition: "background 150ms var(--ease-mac-out), opacity 150ms var(--ease-mac-out), filter 150ms var(--ease-mac-out)",
                 }}>
                   {u.icon ? (
                     <img src={u.icon} alt={u.unit}

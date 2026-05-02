@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.184",
+    date: "2026-05-03",
+    items: [
+      { type: "feature", text: "Recruitable list now shows units that COULD be recruitable if buildings were upgraded — not just the currently-buildable ones. Two-pass evaluator: first pass walks the city's actual built chains (currently available); second pass walks every chain × level in EDB but skips the building-present / tier-alias filters (keeps faction / hidden_resource / EDU ownership / not_is_player / major_event). Currently-buildable units render at full opacity; upgrade-only units render at 0.45 opacity with a slight grayscale + dashed outline. Hover tooltip says 'needs building upgrade' for the faded ones. Sorted with available units first." },
+    ],
+  },
+  {
     version: "0.9.183",
     date: "2026-05-03",
     items: [
