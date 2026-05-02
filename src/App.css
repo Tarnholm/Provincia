@@ -243,6 +243,19 @@ body.dark-mode .zoom-controls .zoom-btn {
   100% { background-position: 24px 0; }
 }
 
+/* Brief flash for the live-save turn/year badge whenever the save reloads
+   (turn or year changed). Goes bright gold for ~600ms then eases back to
+   the resting amber pill colour. */
+@keyframes mac-save-flash {
+  0%   { background: rgba(245, 220, 100, 0.55); color: #fff8d8;
+         box-shadow: 0 0 0 2px rgba(245, 220, 100, 0.25); }
+  100% { background: rgba(220, 166, 74, 0.12); color: #dca64a;
+         box-shadow: 0 0 0 0  rgba(245, 220, 100, 0); }
+}
+.save-badge-flash {
+  animation: mac-save-flash 700ms var(--ease-mac-out) both;
+}
+
 /* Apply to existing components ─────────────────────────────────────── */
 
 /* Faction tile cascade-in on first mount. The :nth-child stagger lets

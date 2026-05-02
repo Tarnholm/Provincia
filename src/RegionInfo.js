@@ -214,7 +214,7 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -227,6 +227,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // tooltip (name, soldiers, chevrons, upgrades) but inline next to the
   // panel header, so it's easier to read than the OS tooltip floater.
   const [hoveredUnit, setHoveredUnit] = useState(null);
+  // Cross-link hover: hovering a building card highlights units gated by
+  // that chain (and vice-versa). hoveredChain = { type } when hovering a
+  // building, hoveredRecruit = unit name when hovering a recruit card.
+  const [hoveredChain, setHoveredChain] = useState(null);
+  const [hoveredRecruit, setHoveredRecruit] = useState(null);
   const hoverReadout = (u) => {
     if (!u) return null;
     const chevrons = u.xp || 0;
@@ -334,9 +339,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             onDoubleClick={() => {
               try { navigator.clipboard?.writeText(city); } catch {}
             }}
-            style={{ marginBottom: 2, cursor: "copy", display: "inline-flex", alignItems: "center", gap: 6 }}
+            style={{ marginBottom: 2, cursor: "copy", display: "flex", alignItems: "baseline", gap: 6, flexWrap: "nowrap", maxWidth: "100%" }}
           >
-            <strong>Settlement:</strong> {city}
+            <strong style={{ flexShrink: 0 }}>Settlement:</strong>
+            <span style={{ flexShrink: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{city}</span>
             {settlementTier && (() => {
               // Colour-grade by tier so a glance at the badge tells you
               // size: grey village → bronze town → silver city → gold huge.
@@ -355,6 +361,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   fontSize: "0.65rem", padding: "0 5px", borderRadius: 8,
                   background: s.bg, color: s.fg,
                   textTransform: "capitalize", lineHeight: 1.4,
+                  flexShrink: 0, whiteSpace: "nowrap", alignSelf: "center",
                 }} title="Settlement level (descr_strat)">{String(settlementTier).replace(/_/g, " ")}</span>
               );
             })()}
@@ -610,23 +617,29 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 overlayColor = "rgba(220,60,60,0.55)";
                 overlayFraction = (100 - b.health) / 100;
               }
+              // Cross-link highlighting: this building card lights up if
+              // the user is hovering a recruit unit that this chain gates.
+              const linkedFromRecruit = hoveredRecruit && (recruitGatedBy?.[hoveredRecruit] || []).includes(b.type);
+              const isHoveredChain = hoveredChain === b.type;
               return (
               <div key={b.key}
+                onMouseEnter={() => setHoveredChain(b.type)}
+                onMouseLeave={() => setHoveredChain((cur) => cur === b.type ? null : cur)}
                 onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "building", name: b.level, chainName: b.type, culture: b.culture || null, label: b.label }); } }}
                 title={b.type ? `${b.type.replace(/_/g, " ")}: ${b.label}${b.queued ? " (in construction)" : ""}` : b.label} style={{
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                background: "rgba(0,0,0,0.25)", borderRadius: 4,
+                background: linkedFromRecruit ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.25)",
+                borderRadius: 4,
                 padding: "4px 3px",
                 minWidth: 0,
-                // Fixed minHeight = icon (48) + 4-line label (≈4 × 0.7rem ×
-                // 1.15 line-height ≈ 52) + padding/gap (~14). Prevents the
-                // grid row from resizing as the cursor hovers between regions
-                // — long-label cards (e.g. "nomad communal herding
-                // (husbandry)") were making other regions' cards jump
-                // vertically. All cards now reserve the worst-case height.
                 minHeight: 118,
                 boxSizing: "border-box",
-                border: b.queued ? "2px solid #e89030" : "2px solid transparent",
+                transition: "background 150ms var(--ease-mac-out), border-color 150ms var(--ease-mac-out)",
+                border: b.queued
+                  ? "2px solid #e89030"
+                  : (linkedFromRecruit || isHoveredChain)
+                    ? "2px solid #dca64a"
+                    : "2px solid transparent",
               }}>
                 <div style={{ position: "relative", width: 60, height: 48, flexShrink: 0 }}>
                   {b.icon && (
@@ -686,22 +699,36 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             gap: 3,
             justifyContent: "start",
           }}>
-            {recruitable.map((u, i) => (
-              <div key={i}
-                onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
-                title={u.unit.replace(/_/g, " ")} style={{
-                padding: 2, background: "rgba(0,0,0,0.35)", borderRadius: 3,
-                minWidth: 0,
-              }}>
-                {u.icon ? (
-                  <img src={u.icon} alt={u.unit}
-                    style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 2 }}
-                    onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                ) : (
-                  <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 2 }} />
-                )}
-              </div>
-            ))}
+            {recruitable.map((u, i) => {
+              // Cross-link: this recruit lights up when user hovers a
+              // building card whose chain gates it.
+              const gatedSet = u.gatedBy || (recruitGatedBy?.[u.unit] ?? []);
+              const linkedFromBuilding = hoveredChain && gatedSet.includes(hoveredChain);
+              const isHoveredHere = hoveredRecruit === u.unit;
+              return (
+                <div key={i}
+                  onMouseEnter={() => setHoveredRecruit(u.unit)}
+                  onMouseLeave={() => setHoveredRecruit((cur) => cur === u.unit ? null : cur)}
+                  onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
+                  title={u.unit.replace(/_/g, " ")} style={{
+                  padding: 2,
+                  background: linkedFromBuilding ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.35)",
+                  borderRadius: 3,
+                  minWidth: 0,
+                  outline: (linkedFromBuilding || isHoveredHere) ? "2px solid #dca64a" : "none",
+                  outlineOffset: -1,
+                  transition: "background 150ms var(--ease-mac-out), outline-color 150ms var(--ease-mac-out)",
+                }}>
+                  {u.icon ? (
+                    <img src={u.icon} alt={u.unit}
+                      style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 2 }}
+                      onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  ) : (
+                    <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 2 }} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>Nothing recruitable</span>

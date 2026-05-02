@@ -1287,6 +1287,16 @@ function App() {
   const [selectedFactions, setSelectedFactions] = useState(
     () => localStorage.getItem("selectedFaction") ? new Set([localStorage.getItem("selectedFaction")]) : new Set()
   );
+  // "Pin faction" mode — when on AND a faction is selected, regions
+  // outside that faction's territory get heavily greyed rather than just
+  // dimmed, so the selected faction's empire reads cleanly. Persists
+  // across sessions.
+  const [pinFaction, setPinFaction] = useState(() => {
+    try { return localStorage.getItem("pinFaction") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("pinFaction", pinFaction ? "1" : "0"); } catch {}
+  }, [pinFaction]);
 
   // Dev "hidden_resource" map mode: which hidden resource to highlight (search box reuses legendSearch)
   const [selectedHiddenResource, setSelectedHiddenResource] = useState(null);
@@ -1327,6 +1337,13 @@ function App() {
   const [saveScriptedByFaction, setSaveScriptedByFaction] = useState(null); // { faction: [char with x,y, traits, ...] } from v2 parser
   const [saveCurrentYear, setSaveCurrentYear] = useState(null); // current in-game year from save header
   const [saveCurrentTurn, setSaveCurrentTurn] = useState(null); // current turn number from save header
+  const [saveLoadedAt, setSaveLoadedAt] = useState(null); // wall-clock ms when the last save snapshot landed
+  const [, setNowTick] = useState(0); // force re-render every 30s so the "ago" label updates without a save event
+  useEffect(() => {
+    if (!saveLoadedAt) return;
+    const id = setInterval(() => setNowTick((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, [saveLoadedAt]);
   const [saveUnitsByRegion, setSaveUnitsByRegion] = useState(null); // { region: [unit, ...] } — from new unit parser
   const [builtBuildingsByCity, setBuiltBuildingsByCity] = useState(null); // { city: [chainName, ...] } — real built buildings from the save
   const [queuedBuildingsByCity, setQueuedBuildingsByCity] = useState(null); // { city: [chainName, ...] } — currently-queued chains, EDB-filtered
@@ -2304,6 +2321,9 @@ function App() {
     };
 
     const unsubSnapshot = api.onSaveSnapshot(({ file, data }) => {
+      // Wall-clock stamp of the latest snapshot — drives the "loaded Xm ago"
+      // label, lets the user notice if the watcher's gone quiet.
+      setSaveLoadedAt(Date.now());
       if (data && data.buildings) setSaveBuildingsData(data.buildings);
       if (data && data.armies) setSaveArmiesData(data.armies);
       if (data && data.queues) setSaveQueues(data.queues);
@@ -3680,7 +3700,10 @@ function App() {
     });
   }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData]);
 
-  // Cache the dimming overlay — active whenever provinces are selected in any mode
+  // Cache the dimming overlay — active whenever provinces are selected.
+  // When `pinFaction` is on AND a faction is selected, the dim is much
+  // stronger (alpha 200 vs the default 90), so the selected faction's
+  // territory reads as the foreground and everything else fades.
   useEffect(() => {
     if (selectedProvinces.length === 0 || !pixelDataRef.current) {
       setDimOverlay(null);
@@ -3693,15 +3716,16 @@ function App() {
     const dimCtx = dimCanvas.getContext("2d");
     const dimImg = dimCtx.createImageData(imgSize.width, imgSize.height);
     const dd = dimImg.data;
+    const dimAlpha = pinFaction && selectedFaction ? 200 : 90;
     for (let i = 0; i < pxData.length; i += 4) {
       const key = `${pxData[i]},${pxData[i+1]},${pxData[i+2]}`;
       if (regions[key] && !selectedSet.has(key)) {
-        dd[i] = 0; dd[i+1] = 0; dd[i+2] = 0; dd[i+3] = 90;
+        dd[i] = 0; dd[i+1] = 0; dd[i+2] = 0; dd[i+3] = dimAlpha;
       }
     }
     dimCtx.putImageData(dimImg, 0, 0);
     setDimOverlay(dimCanvas);
-  }, [selectedProvinces, regions, imgSize]);
+  }, [selectedProvinces, regions, imgSize, pinFaction, selectedFaction]);
 
   // Draw minimap
   const MINIMAP_W = 160;
@@ -4900,6 +4924,8 @@ function App() {
             {isVictoryMode ? "Victory: choose faction" : "Factions"}
             {liveLogActive && (saveCurrentTurn != null || saveCurrentYear != null) && (
               <span
+                key={`save-badge-${saveCurrentTurn}-${saveCurrentYear}`}
+                className="save-badge-flash"
                 title="Current turn / year from the loaded save"
                 style={{
                   fontSize: "0.65rem", fontWeight: 600,
@@ -4914,6 +4940,29 @@ function App() {
                 {saveCurrentYear != null ? `${Math.abs(saveCurrentYear)} ${saveCurrentYear < 0 ? "BC" : "AD"}` : ""}
               </span>
             )}
+            {liveLogActive && saveLoadedAt && (() => {
+              // "loaded Xm ago" — refreshes every 30s via setNowTick. Lets
+              // users on long campaigns notice if the watcher's gone stale.
+              const diff = Math.max(0, Date.now() - saveLoadedAt);
+              const sec = Math.round(diff / 1000);
+              let label;
+              if (sec < 30) label = "just now";
+              else if (sec < 90) label = "1m ago";
+              else if (sec < 3600) label = `${Math.round(sec / 60)}m ago`;
+              else if (sec < 7200) label = "1h ago";
+              else label = `${Math.round(sec / 3600)}h ago`;
+              const stale = sec > 600; // > 10 min — colour to amber-warn
+              return (
+                <span
+                  title={`Last save snapshot: ${new Date(saveLoadedAt).toLocaleTimeString()}${stale ? " — watcher may be stale" : ""}`}
+                  style={{
+                    fontSize: "0.62rem", fontWeight: 400,
+                    color: stale ? "#e89030" : "#888",
+                    fontStyle: "italic",
+                  }}
+                >loaded {label}</span>
+              );
+            })()}
             {appVersion && appVersion !== "0.0.0" && (
               <span
                 onClick={onCheckUpdates}
@@ -5969,6 +6018,11 @@ function App() {
             style={{ ...btnStyle(devGrid), minWidth: 0 }}>Grid</button>
           <button className="map-mode-btn" onClick={() => setDevCultureBorders(prev => !prev)}
             style={{ ...btnStyle(devCultureBorders), minWidth: 0 }}>Borders</button>
+          <button className="map-mode-btn" onClick={() => setPinFaction(prev => !prev)}
+            title={pinFaction
+              ? "Pin Faction is ON — non-selected regions are heavily greyed when a faction is selected"
+              : "Pin Faction: heavily grey out everything except the selected faction's territory (sticky preference)"}
+            style={{ ...btnStyle(pinFaction), minWidth: 0 }}>Pin</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
@@ -8191,6 +8245,8 @@ function App() {
                         const culture = factionCultures?.[ownerId] || null;
                         const seen = new Set();
                         const result = [];
+                        // unit name → Set of chain types that expose it.
+                        const gatedByMap = {};
                         for (const b of builtList) {
                           const lvls = buildingRecruits[b.type];
                           if (!lvls) continue;
@@ -8365,9 +8421,17 @@ function App() {
                                     && !owners.includes(ownerId)
                                     && !owners.includes(culture)) continue;
                               }
-                              if (seen.has(rec.unit)) continue;
-                              seen.add(rec.unit);
-                              result.push(rec.unit);
+                              // Track which building chain gated this unit so
+                              // RegionInfo can cross-highlight on hover. A
+                              // unit can be reached via multiple chains (tier
+                              // aliases or duplicate recruit lines); merge
+                              // them into a Set per unit.
+                              if (!seen.has(rec.unit)) {
+                                seen.add(rec.unit);
+                                result.push(rec.unit);
+                              }
+                              if (!gatedByMap[rec.unit]) gatedByMap[rec.unit] = new Set();
+                              gatedByMap[rec.unit].add(b.type);
                             }
                           }
                         }
@@ -8380,6 +8444,7 @@ function App() {
                           unit: name,
                           faction: ownerId,
                           icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
+                          gatedBy: gatedByMap[name] ? [...gatedByMap[name]] : [],
                         }));
                       })()}
                       fieldArmies={(() => {

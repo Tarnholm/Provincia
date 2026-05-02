@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.182",
+    date: "2026-05-03",
+    items: [
+      { type: "fix", text: "Settlement-tier badge no longer wraps below the settlement name when the name is long. Switched the row to flex with baseline align, name flex-shrinks with ellipsis, badge stays put with whiteSpace: nowrap." },
+      { type: "feature", text: "Live-save turn/year badge flashes bright gold for ~700ms whenever a new save is loaded (turn or year changed). Catches your eye when the watcher pulls in a new snapshot." },
+      { type: "feature", text: "Live-save 'loaded Xm ago' label sits next to the turn/year badge — refreshes every 30s. Goes amber and warns 'watcher may be stale' once it crosses 10 minutes, useful on long campaigns." },
+      { type: "feature", text: "Pin Faction toggle in the View options pill. When on AND a faction is selected, regions outside that faction's territory get a heavy black overlay (alpha 200 vs 90) so the empire reads as the foreground. Sticky preference; lives in localStorage." },
+      { type: "feature", text: "Recruit ↔ building cross-link on hover. Hovering a building card lights up the recruit units it gates (amber background + outline). Hovering a recruit card lights up the building chain that gates it. Driven by a per-unit gatedBy set produced by the recruit evaluator (handles tier aliases / multiple gating chains)." },
+    ],
+  },
+  {
     version: "0.9.181",
     date: "2026-05-03",
     items: [
