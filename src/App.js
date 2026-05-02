@@ -3386,33 +3386,6 @@ function App() {
             Math.max(0, Math.min(255, base[2] + v)),
           ];
         }));
-      } else if (colorMode === "rel_diversity") {
-        // Religion diversity: 1 - (dominant level / total levels). Green when
-        // the dominant religion fully owns the region (low conversion need),
-        // red when many minorities compete (high unrest risk).
-        const score = (r) => {
-          let dom = 0, total = 0;
-          for (const m of String(r.tags || "").matchAll(/\brel_[a-z_]+_(\d+)\b/g)) {
-            const lvl = parseInt(m[1], 10);
-            total += lvl;
-            if (lvl > dom) dom = lvl;
-          }
-          if (total === 0) return 0;
-          return 1 - (dom / total);
-        };
-        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          const t = Math.min(1, score(r) * 1.5); // amplify to use full range
-          // Green (homogeneous) → red (diverse)
-          const red   = Math.round(60 + t * 180);
-          const green = Math.round(170 - t * 130);
-          const blue  = 50;
-          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
-          return [
-            Math.max(0, Math.min(255, red + v)),
-            Math.max(0, Math.min(255, green + v)),
-            Math.max(0, Math.min(255, blue + v)),
-          ];
-        }));
       } else if (colorMode === "pop_growth") {
         // Headroom = pop_level (cap from descr_strat) − current population
         // bracket. Green = lots of room to grow, red = capped.
@@ -5395,7 +5368,6 @@ function App() {
       { key: "victory", label: "Victory" },
       { key: "culture", label: "Culture" },
       { key: "religion", label: "Religion" },
-      { key: "rel_diversity", label: "Religion Mix" },
       { key: "population", label: "Population" },
       { key: "farm", label: "Fertility" },
       { key: "resource", label: "Resources" },
@@ -6321,17 +6293,6 @@ function App() {
       }
       return best ? { label: "Religion", value: best.replace(/_/g, " ") } : null;
     }
-    if (colorMode === "rel_diversity") {
-      let dom = 0, total = 0, nReligions = 0;
-      for (const hit of String(info.tags || "").matchAll(/\brel_[a-z_]+_(\d+)\b/g)) {
-        const lvl = parseInt(hit[1], 10);
-        total += lvl; nReligions++;
-        if (lvl > dom) dom = lvl;
-      }
-      if (total === 0) return { label: "Religion Mix", value: "Unknown" };
-      const pct = Math.round((dom / total) * 100);
-      return { label: "Religion Mix", value: `${pct}% dominant (${nReligions} religion${nReligions === 1 ? "" : "s"})` };
-    }
     if (colorMode === "pop_growth") {
       const pop = populationData[info.region] || populationData[info.region?.split("-")[0]] || populationData[info.city] || 0;
       const cap = parseInt(info.pop_level || "0", 10) || 0;
@@ -6464,19 +6425,6 @@ function App() {
               <span>Poor</span><span>Mid</span><span>Wealthy</span>
             </div>
             <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Resources + farm + port. Approximate, not exact game formula.</div>
-          </>}
-        </div>
-      );
-    }
-    if (colorMode === "rel_diversity") {
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Religion Mix <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(60,170,50), rgb(150,150,50), rgb(240,40,50))" }} />
-            <div style={labelRow}>
-              <span>Homogeneous</span><span></span><span>Diverse</span>
-            </div>
           </>}
         </div>
       );

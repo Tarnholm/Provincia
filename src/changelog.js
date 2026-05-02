@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.161",
+    date: "2026-05-02",
+    items: [
+      { type: "change", text: "Removed Religion Mix map mode. Coloring branch, legend, and getModeExtra entry all dropped." },
+    ],
+  },
+  {
     version: "0.9.160",
     date: "2026-05-02",
     items: [
