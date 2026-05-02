@@ -16,6 +16,25 @@ export function preloadIcon(iconPath) {
     .catch(() => {});
 }
 
+// Preload a single faction icon from the active mod folder, mirroring the
+// FactionIcon component's lookup path. Mod icons live at
+// <modIconsDir>/<factionName>.tga; we read via electronAPI.readFactionIcon
+// (or readFileBinary as fallback) and cache the decoded data URL by the
+// SAME cacheKey FactionIcon uses on mount, so the first render hits the
+// cache and shows instantly. Falls back silently if the file is absent.
+export function preloadModIcon(modIconsDir, factionName) {
+  if (!modIconsDir || !factionName) return Promise.resolve();
+  const dir = String(modIconsDir).replace(/\\/g, "/");
+  const tgaPath = dir + "/" + factionName + ".tga";
+  if (tgaCache[tgaPath]) return Promise.resolve();
+  const api = typeof window !== "undefined" ? window.electronAPI : null;
+  const reader = api?.readFactionIcon || api?.readFileBinary;
+  if (!reader) return Promise.resolve();
+  return reader(tgaPath)
+    .then(buf => { if (buf) decodeTgaToDataUrl(buf, tgaPath); })
+    .catch(() => {});
+}
+
 // Decode a TGA ArrayBuffer to a PNG data URL using canvas. Cached by key.
 function decodeTgaToDataUrl(buf, cacheKey) {
   try {

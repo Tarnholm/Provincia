@@ -4,7 +4,7 @@ import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
-import FactionIcon, { preloadIcon } from "./FactionIcon";
+import FactionIcon, { preloadIcon, preloadModIcon } from "./FactionIcon";
 import Tooltip from "./Tooltip";
 import "./App.css";
 import CustomScrollArea from "./CustomScrollArea";
@@ -4226,6 +4226,10 @@ function App() {
 
   // Preload effect body lives here; the iconsPreloaded state is declared
   // earlier in the component so the splash auto-hide effect can depend on it.
+  // Preload BOTH bundled and mod-folder TGAs so the first render of the
+  // faction grid hits the cache instantly — without the mod-side preload,
+  // each FactionIcon mount kicked off a fresh IPC + TGA decode AFTER the
+  // splash dismissed, producing a visible pop-in.
   useEffect(() => {
     if (!factions || factions.length === 0) return;
     setIconsPreloaded(false);
@@ -4233,12 +4237,14 @@ function App() {
     const jobs = [preloadIcon("faction_icons/slave.tga")];
     for (const f of factions) {
       jobs.push(preloadIcon(`faction_icons/${f}.tga`));
+      if (modIconsDir) jobs.push(preloadModIcon(modIconsDir, f));
     }
+    if (modIconsDir) jobs.push(preloadModIcon(modIconsDir, "slave"));
     Promise.allSettled(jobs).then(() => {
       if (!cancelled) setIconsPreloaded(true);
     });
     return () => { cancelled = true; };
-  }, [factions]);
+  }, [factions, modIconsDir]);
 
   // Precompute borders
   useEffect(() => {

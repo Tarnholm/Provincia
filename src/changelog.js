@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.159",
+    date: "2026-05-02",
+    items: [
+      { type: "fix", text: "Splash now waits for mod-folder faction icons too. The previous preload only fetched bundled TGAs; with a mod folder configured (RIS), each FactionIcon component lazy-loaded its mod-side icon AFTER splash dismissed — producing a visible pop-in as faction tiles streamed in. Added preloadModIcon() that fetches every active faction's mod-folder TGA up front and populates the same cache key FactionIcon uses on mount, so the first render hits cache. Splash gating dependency includes modIconsDir so the wait fires whenever the mod is active." },
+    ],
+  },
+  {
     version: "0.9.158",
     date: "2026-05-02",
     items: [
