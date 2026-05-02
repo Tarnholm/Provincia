@@ -402,9 +402,40 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           return farm_level !== undefined && farm_level !== null ? row("Farm Level:", farm_level) : null;
         })()}
         {population_level !== undefined && population_level !== null && row("Pop Level:", population_level)}
+        {(() => {
+          // Ethnicities chart sits right under Pop Level (its original spot).
+          // Trimmed marginTop / removed minHeight so the Resources + Tags
+          // blocks below sit close to it instead of floating in dead space.
+          const ethData = parseEth(typeof ethnicities === 'string' ? ethnicities : (Array.isArray(ethnicities) ? ethnicities.join(' ') : ''));
+          if (ethData.length === 0) return null;
+          return (
+            <div style={{ marginTop: 2 }}>
+              <div style={{ display: "flex", height: 8, borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.15)" }}>
+                {ethData.map((e, i) => {
+                  const col = getEthColor(e.name);
+                  return (
+                    <div key={i} title={`${e.name} ${e.pct}%`} style={{
+                      width: `${e.pct}%`, background: `rgb(${col[0]},${col[1]},${col[2]})`,
+                      minWidth: e.pct > 0 ? 2 : 0,
+                    }} />
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "1px 6px", marginTop: 2, fontSize: "0.65rem" }}>
+                {ethData.map((e, i) => {
+                  const col = getEthColor(e.name);
+                  return (
+                    <span key={i} style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: 2, background: `rgb(${col[0]},${col[1]},${col[2]})` }} />
+                      {e.name.replace(/_/g, " ")} {e.pct}%
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
         {Array.isArray(resources) && resources.length > 0 && (() => {
-          // Sum amounts per resource type so duplicates collapse into one
-          // chip with a count.
           const summed = {};
           for (const r of resources) {
             const k = String(r.type || "").toLowerCase();
@@ -436,9 +467,6 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           );
         })()}
         {tagsList.length > 0 && (() => {
-          // Group tags by category so they read as labelled chips instead
-          // of a flat blob. Each group gets a tinted chip background
-          // matching the category colour.
           const groups = {};
           for (const t of tagsList) {
             const cat = categoriseTag(t);
@@ -462,36 +490,6 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     ))}
                   </div>
                 ))}
-              </div>
-            </div>
-          );
-        })()}
-        {(() => {
-          const ethData = parseEth(typeof ethnicities === 'string' ? ethnicities : (Array.isArray(ethnicities) ? ethnicities.join(' ') : ''));
-          if (ethData.length === 0) return null;
-          return (
-            <div style={{ marginTop: 2, minHeight: 58 }}>
-              <div style={{ display: "flex", height: 8, borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.15)" }}>
-                {ethData.map((e, i) => {
-                  const col = getEthColor(e.name);
-                  return (
-                    <div key={i} title={`${e.name} ${e.pct}%`} style={{
-                      width: `${e.pct}%`, background: `rgb(${col[0]},${col[1]},${col[2]})`,
-                      minWidth: e.pct > 0 ? 2 : 0,
-                    }} />
-                  );
-                })}
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "1px 6px", marginTop: 2, fontSize: "0.65rem" }}>
-                {ethData.map((e, i) => {
-                  const col = getEthColor(e.name);
-                  return (
-                    <span key={i} style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: 2, background: `rgb(${col[0]},${col[1]},${col[2]})` }} />
-                      {e.name.replace(/_/g, " ")} {e.pct}%
-                    </span>
-                  );
-                })}
               </div>
             </div>
           );

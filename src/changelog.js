@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.173",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Region info column re-ordered: Settlement / Faction / Culture / RGB / Fertility / Pop Level → Ethnicities chart (back to its original spot) → Resources → Tags → modeExtra. Dropped the ethnicities `minHeight: 58` reservation so when the chart is short the Resources/Tags sit close underneath instead of floating with empty space." },
+    ],
+  },
+  {
     version: "0.9.172",
     date: "2026-05-02",
     items: [
