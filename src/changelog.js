@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.170",
+    date: "2026-05-02",
+    items: [
+      { type: "fix", text: "Resource icons now load eagerly. The preload effect was gated on `colorMode === 'resource'`, so the region info bar's resource chips appeared as text-only until the user had visited resource map mode at least once. Removed the gate — resourceImages populates whenever resourcesData is loaded, so chips always show their icons." },
+    ],
+  },
+  {
     version: "0.9.169",
     date: "2026-05-02",
     items: [

@@ -2749,9 +2749,12 @@ function App() {
       .catch(() => setStartingArmiesByRegion({}));
   }, [loadCampaignData, mapCampaign]);
 
-  // Pre-load resource icon images when in resource mode
+  // Pre-load resource icon images whenever resourcesData is available — used
+  // by the resource map mode AND by the region info bar's resource chips.
+  // Previously gated on `colorMode === "resource"`, which meant chip icons
+  // only appeared after the user had visited resource mode at least once.
   useEffect(() => {
-    if (colorMode !== "resource" || Object.keys(resourcesData).length === 0) {
+    if (Object.keys(resourcesData).length === 0) {
       setResourceImages({});
       return;
     }
@@ -2790,7 +2793,7 @@ function App() {
       };
       img.onerror = finish;
     });
-  }, [colorMode, resourcesData, PUBLIC_URL]);
+  }, [resourcesData, PUBLIC_URL]);
 
   // Hook up building getter — static data as base, save data merged on top for live updates.
   // Defined inline (NOT inside useEffect) so each render sees the latest state.
