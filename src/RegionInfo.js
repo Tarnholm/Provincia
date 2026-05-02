@@ -288,14 +288,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           <div
             title="Double-click to copy city name"
             onDoubleClick={() => {
-              try {
-                navigator.clipboard?.writeText(city);
-              } catch {}
+              try { navigator.clipboard?.writeText(city); } catch {}
             }}
-            style={{ display: "flex", justifyContent: "space-between", marginBottom: 0, cursor: "copy" }}
+            style={{ marginBottom: 2, cursor: "copy" }}
           >
-            <span style={{ color: "#9ca0a8" }}>City:</span>
-            <span style={{ color: "#fff" }}>{city}</span>
+            <strong>City:</strong> {city}
           </div>
         ) : row("City:", city)}
         {row("Faction:", liveOwner || faction)}

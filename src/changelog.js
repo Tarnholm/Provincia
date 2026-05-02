@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.166",
+    date: "2026-05-02",
+    items: [
+      { type: "fix", text: "City row in the region info bar now matches the styling of Faction / Culture / Farm Level / etc. — bold label inline with the value, no `space-between` push to the far right. The 0.9.162 double-click-to-copy hook had switched the row to a flex layout with custom colours, which made it look out of place. Kept the double-click-copy gesture and tooltip; only the styling was reverted to the shared `row()` look." },
+    ],
+  },
+  {
     version: "0.9.165",
     date: "2026-05-02",
     items: [
