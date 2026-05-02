@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.158",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Auto-update download progress is now visible. The version label in the right-column header shows an amber underline that fills 0→100% while electron-updater downloads the new installer in the background, plus an inline percentage. The main process was already broadcasting `state: 'downloading', percent: N` events (since 0.9.x) but the renderer was ignoring that branch — added a state slot and a thin progress strip on the version chip. Tooltip also reflects the live percentage on hover." },
+    ],
+  },
+  {
     version: "0.9.157",
     date: "2026-05-02",
     items: [

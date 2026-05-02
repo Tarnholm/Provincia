@@ -1177,6 +1177,10 @@ function App() {
   // Auto-update status listener: surfaces update-available / downloaded / error via toast.
   // Also exposes setUpdateReady so the UI can show a "Restart & install" button.
   const [updateReady, setUpdateReady] = useState(null); // { version } once download finishes
+  // 0..100 while electron-updater is downloading the installer in the
+  // background; null when no download is in flight. Drives the progress
+  // strip next to the version label.
+  const [updateDownloadPct, setUpdateDownloadPct] = useState(null);
   // Set when the user clicked the version label to manually check; cleared when the result toast fires.
   // Used so we toast "You're on the latest" ONLY for manual checks (not the silent startup check).
   const manualUpdateCheckRef = useRef(false);
@@ -1186,9 +1190,13 @@ function App() {
       if (!s) return;
       if (s.state === "available") {
         pushToast(`Update ${s.version} available — downloading in background.`, "info");
+        setUpdateDownloadPct(0);
         manualUpdateCheckRef.current = false;
+      } else if (s.state === "downloading") {
+        setUpdateDownloadPct(typeof s.percent === "number" ? s.percent : 0);
       } else if (s.state === "downloaded") {
         setUpdateReady({ version: s.version });
+        setUpdateDownloadPct(null);
         manualUpdateCheckRef.current = false;
       } else if (s.state === "none") {
         // Only surface "you're on the latest" for manual checks — silent startup checks shouldn't toast.
@@ -4850,12 +4858,35 @@ function App() {
             {appVersion && appVersion !== "0.0.0" && (
               <span
                 onClick={onCheckUpdates}
-                title="Click to check for updates"
-                style={{ fontSize: "0.65rem", fontWeight: 400, opacity: 0.55, fontFamily: "Consolas, monospace", letterSpacing: 0, cursor: "pointer", padding: "0 4px", borderRadius: 3, transition: "opacity 0.15s, background 0.12s" }}
+                title={updateDownloadPct != null ? `Downloading update… ${updateDownloadPct}%` : "Click to check for updates"}
+                style={{
+                  position: "relative",
+                  fontSize: "0.65rem", fontWeight: 400, opacity: 0.55,
+                  fontFamily: "Consolas, monospace", letterSpacing: 0,
+                  cursor: "pointer", padding: "0 4px", borderRadius: 3,
+                  transition: "opacity 0.15s, background 0.12s",
+                  overflow: "hidden",
+                }}
                 onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.95; e.currentTarget.style.background = "rgba(220,166,74,0.18)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.55; e.currentTarget.style.background = ""; }}
               >
+                {/* Progress strip — bottom underline that fills as the
+                    update downloads. Goes away on completion. */}
+                {updateDownloadPct != null && (
+                  <span style={{
+                    position: "absolute", left: 0, bottom: 0,
+                    height: 2, width: `${updateDownloadPct}%`,
+                    background: "#dca64a",
+                    transition: "width 0.2s linear",
+                    pointerEvents: "none",
+                  }} />
+                )}
                 v{displayVersion}{isTestBuild ? "-test" : ""}
+                {updateDownloadPct != null && (
+                  <span style={{ marginLeft: 4, color: "#dca64a", fontWeight: 600 }}>
+                    {updateDownloadPct}%
+                  </span>
+                )}
               </span>
             )}
           </span>
