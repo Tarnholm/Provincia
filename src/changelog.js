@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.155",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Search results now highlight the matched substring in amber so the eye locks onto it instantly." },
+      { type: "feature", text: "Recently-viewed regions backstack: a small ↶ Recent strip in the right column with the last 5 cities you locked, so you can flip between two settlements without re-finding them on the map. Active region gets the amber outline." },
+      { type: "feature", text: "Hover-state readout in the garrison panel header. Mousing over a unit card surfaces 'name · soldiers · chevrons · armour · weapon' inline next to 'Garrison:' (and the field-army header), making it readable without squinting at the OS tooltip floater." },
+      { type: "feature", text: "Roster diff badge: when a save is loaded, the garrison header shows '+N / −M since turn 0' comparing the current unit-name multiset against the descr_strat starting garrison. Lets you see at a glance whether a city's been reinforced or stripped." },
+    ],
+  },
+  {
     version: "0.9.154",
     date: "2026-05-01",
     items: [

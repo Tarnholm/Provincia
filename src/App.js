@@ -1023,6 +1023,17 @@ function App() {
   const [regions, setRegions] = useState({});
   const [regionInfo, setRegionInfo] = useState(null);
   const [lockedRegionInfo, setLockedRegionInfo] = useState(null);
+  // Last few region rgb keys the user has locked (most-recent-first, max 5).
+  // Powers the "↶ recent" backstack so you can flip between two cities
+  // without re-finding them on the map.
+  const [recentRegions, setRecentRegions] = useState([]);
+  const pushRecentRegion = useCallback((rgbKey) => {
+    if (!rgbKey) return;
+    setRecentRegions((prev) => {
+      const next = [rgbKey, ...prev.filter((k) => k !== rgbKey)];
+      return next.slice(0, 5);
+    });
+  }, []);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [imgSize, setImgSize] = useState({ width: 800, height: 600 });
   const [rightColWidth, setRightColWidth] = useState(610);
@@ -4405,7 +4416,11 @@ function App() {
       const rgbKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
       if (regions[rgbKey]) {
         // Lock info panel to clicked region (click same region again to unlock)
-        setLockedRegionInfo((prev) => prev?.rgb === rgbKey ? null : { ...regions[rgbKey], rgb: rgbKey });
+        setLockedRegionInfo((prev) => {
+          if (prev?.rgb === rgbKey) return null;
+          pushRecentRegion(rgbKey);
+          return { ...regions[rgbKey], rgb: rgbKey };
+        });
         // Shift = add/remove from selection; plain click = select only this one
         if (e.shiftKey) {
           setSelectedProvinces((prev) => prev.includes(rgbKey) ? prev.filter((k) => k !== rgbKey) : [...prev, rgbKey]);
@@ -4892,6 +4907,28 @@ function App() {
           .map(([key, v]) => ({ key, label: v.region && v.city ? `${v.region} (${v.city})` : v.region || v.city || key }))
       : [];
 
+    // Highlight the matched substring inside a result label. Splits on the
+    // case-insensitive query and wraps the hits in <mark> with an amber tint.
+    const highlight = (label) => {
+      if (!q) return label;
+      const lower = label.toLowerCase();
+      const parts = [];
+      let last = 0;
+      for (let i = 0; i < label.length; ) {
+        const found = lower.indexOf(q, i);
+        if (found === -1) break;
+        if (found > last) parts.push({ text: label.slice(last, found), hit: false });
+        parts.push({ text: label.slice(found, found + q.length), hit: true });
+        last = found + q.length;
+        i = last;
+      }
+      if (last < label.length) parts.push({ text: label.slice(last), hit: false });
+      if (parts.length === 0) return label;
+      return parts.map((p, i) => p.hit
+        ? <mark key={i} style={{ background: "rgba(220,166,74,0.4)", color: "#fff", padding: 0, borderRadius: 2 }}>{p.text}</mark>
+        : <span key={i}>{p.text}</span>);
+    };
+
     return (
       <div style={{ position: "relative" }}>
         <input
@@ -4921,7 +4958,7 @@ function App() {
                 onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
                 onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
-                {r.label}
+                {highlight(r.label)}
               </div>
             ))}
           </div>
@@ -7366,6 +7403,37 @@ function App() {
                   {renderSearch()}
                 </div>
 
+                {/* Recently-viewed regions backstack */}
+                {recentRegions.length > 0 && (
+                  <div className="panel" style={{ padding: "6px 10px", flexShrink: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.78rem", marginBottom: 4, color: "#dca64a" }}>↶ Recent</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {recentRegions.map(key => {
+                        const r = regions[key];
+                        if (!r) return null;
+                        const label = r.city || r.region || key;
+                        const isLocked = lockedRegionInfo?.rgb === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => jumpToPin({ key, label })}
+                            title={r.region && r.city ? `${r.region} (${r.city})` : label}
+                            style={{
+                              padding: "2px 8px", borderRadius: 5,
+                              border: isLocked ? "1px solid #dca64a" : "1px solid #555",
+                              background: isLocked ? "rgba(220,166,74,0.18)" : "rgba(255,255,255,0.06)",
+                              color: isLocked ? "#dca64a" : "#ddd",
+                              cursor: "pointer", fontSize: "0.74rem",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Pinned regions */}
                 {pinnedRegions.length > 0 && (
                   <div className="panel" style={{ padding: "8px 10px", flexShrink: 0 }}>
@@ -7648,6 +7716,20 @@ function App() {
                           faction: ownerId,
                           icon: ownerId ? getCachedUnitIcon(ownerId, u.unit) : null,
                         }));
+                      })()}
+                      startingGarrison={(() => {
+                        // Pass the descr_strat turn-0 garrison (units only) so
+                        // RegionInfo can diff the live save's roster against
+                        // it. Only meaningful when liveLogActive — without a
+                        // save loaded, garrison IS startingGarrison so the diff
+                        // is empty by definition.
+                        if (!liveLogActive) return null;
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
+                        const arms = startingArmiesByRegion?.[r.region]?.garrison || [];
+                        const out = [];
+                        for (const a of arms) for (const u of a.units || []) out.push(u);
+                        return out;
                       })()}
                       recruitable={(() => {
                         // Compute the union of recruit entries the city can

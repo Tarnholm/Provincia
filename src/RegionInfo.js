@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
 const PUBLIC_URL = import.meta.env.BASE_URL || "./";
 
@@ -170,7 +170,7 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -179,6 +179,25 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     return dn || String(fid).replace(/_/g, " ");
   };
   const buildings = useMemo(() => buildingsProp || buildingsGetter(info) || [], [info, buildingsProp]);
+  // Hover-state readout for unit cards. Shows the same info as the native
+  // tooltip (name, soldiers, chevrons, upgrades) but inline next to the
+  // panel header, so it's easier to read than the OS tooltip floater.
+  const [hoveredUnit, setHoveredUnit] = useState(null);
+  const hoverReadout = (u) => {
+    if (!u) return null;
+    const chevrons = u.xp || 0;
+    const armour = u.armour || 0;
+    const weapon = u.weapon || 0;
+    const parts = [u.unit.replace(/_/g, " ")];
+    if (u.soldiers != null) parts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
+    if (chevrons > 0) {
+      const tier = chevrons >= 7 ? "gold" : chevrons >= 4 ? "silver" : "bronze";
+      parts.push(`${chevronCount(chevrons)} ${tier} chev`);
+    }
+    if (armour > 0) parts.push(`armour +${armour}`);
+    if (weapon > 0) parts.push(`weapon +${weapon}`);
+    return parts.join(" · ");
+  };
 
   if (!info) {
     return (
@@ -479,9 +498,48 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           overflowY: "auto",
         }}
       >
-        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf" }}>
-          Garrison:
-        </div>
+        {(() => {
+          // Roster diff vs turn 0. Only show in live mode (when garrison
+          // came from a save) — otherwise we'd be diffing the descr_strat
+          // value against itself. Compares unit-name multisets and reports
+          // net +N / -N.
+          let diffBadge = null;
+          if (startingGarrison && garrison) {
+            const count = (arr, get) => {
+              const m = new Map();
+              for (const x of arr || []) {
+                const n = get(x); if (!n) continue;
+                m.set(n, (m.get(n) || 0) + 1);
+              }
+              return m;
+            };
+            const cur = count(garrison, u => u.unit);
+            const start = count(startingGarrison, u => u.unit || u.name);
+            let added = 0, removed = 0;
+            const allKeys = new Set([...cur.keys(), ...start.keys()]);
+            for (const k of allKeys) {
+              const d = (cur.get(k) || 0) - (start.get(k) || 0);
+              if (d > 0) added += d;
+              else if (d < 0) removed += -d;
+            }
+            if (added > 0 || removed > 0) {
+              diffBadge = (
+                <span style={{ fontSize: "0.65rem", fontWeight: 600 }}>
+                  {added > 0 && <span style={{ color: "#7c7", marginRight: 4 }}>+{added}</span>}
+                  {removed > 0 && <span style={{ color: "#e77" }}>−{removed}</span>}
+                  <span style={{ color: "#888", fontWeight: 400 }}> since turn 0</span>
+                </span>
+              );
+            }
+          }
+          return (
+            <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
+              display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+              <span>Garrison: {diffBadge}</span>
+              {hoveredUnit && <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a" }}>{hoverReadout(hoveredUnit)}</span>}
+            </div>
+          );
+        })()}
         {garrisonCommander && (
           <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
             {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}
@@ -523,6 +581,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const tooltip = tooltipParts.join(" — ");
               return (
                 <div key={i}
+                  onMouseEnter={() => setHoveredUnit(u)}
+                  onMouseLeave={() => setHoveredUnit((cur) => cur === u ? null : cur)}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
                   title={tooltip} style={{
                   position: "relative", padding: 1,
@@ -611,6 +671,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       const tooltip = tooltipParts.join(" — ");
                       return (
                       <div key={ui}
+                        onMouseEnter={() => setHoveredUnit(u)}
+                        onMouseLeave={() => setHoveredUnit((cur) => cur === u ? null : cur)}
                         onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
                         title={tooltip} style={{
                         position: "relative", padding: 1,
