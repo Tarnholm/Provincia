@@ -1136,6 +1136,14 @@ function App() {
   const [devFlatColors, setDevFlatColors] = useState(false);
   const [devGrid, setDevGrid] = useState(false);
   const [devCultureBorders, setDevCultureBorders] = useState(false);
+  // Marble texture toggle — on by default. Streamers / screenshotters can
+  // turn it off for a flat backdrop. Persisted across sessions.
+  const [showMarble, setShowMarble] = useState(() => {
+    try { return localStorage.getItem("showMarble") !== "0"; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showMarble", showMarble ? "1" : "0"); } catch {}
+  }, [showMarble]);
   const [showSettlementTier, setShowSettlementTier] = useState(false);
   const [showArmies, setShowArmies] = useState(false);
   const [showLabels, setShowLabels] = useState("off"); // "off" | "city" | "region"
@@ -2568,7 +2576,7 @@ function App() {
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, vw, vh);
-    if (src) {
+    if (src && showMarble) {
       const sw = src.width, sh = src.height;
       ctx.imageSmoothingEnabled = true;
       // Tile the marble texture at native size
@@ -2582,10 +2590,12 @@ function App() {
       ctx.fillStyle = isDark ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0.12)";
       ctx.fillRect(0, 0, vw, vh);
     } else {
-      ctx.fillStyle = isDark ? "#181a1b" : "#222";
+      // Solid background — used when no marble image loaded OR when the
+      // user has explicitly hidden it for screenshots / streaming.
+      ctx.fillStyle = isDark ? "#181a1b" : "#3a342a";
       ctx.fillRect(0, 0, vw, vh);
     }
-  }, [isDark]);
+  }, [isDark, showMarble]);
 
   const regionsForFaction = useCallback(
     (faction) => {
@@ -5932,6 +5942,9 @@ function App() {
             style={{ ...btnStyle(devGrid), minWidth: 0 }}>Grid</button>
           <button className="map-mode-btn" onClick={() => setDevCultureBorders(prev => !prev)}
             style={{ ...btnStyle(devCultureBorders), minWidth: 0 }}>Borders</button>
+          <button className="map-mode-btn" onClick={() => setShowMarble(prev => !prev)}
+            title="Toggle the marble texture backdrop (off → flat colour, cleaner for screenshots / streaming)"
+            style={{ ...btnStyle(showMarble), minWidth: 0 }}>Marble</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}

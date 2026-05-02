@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.163",
+    date: "2026-05-02",
+    items: [
+      { type: "feature", text: "Marble toggle in the View options pill — turn off the parchment marble backdrop for a flat colour, cleaner for screenshots and streaming. Persisted across sessions in localStorage." },
+    ],
+  },
+  {
     version: "0.9.162",
     date: "2026-05-02",
     items: [
