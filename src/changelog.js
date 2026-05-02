@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.168",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Region info polish batch — (1) Settlement-tier badge: a small amber pill next to the Settlement name shows the descr_strat level (town / large town / large city / etc.). (2) 'Population Level' renamed to 'Pop Level' so it doesn't read like a population count. (3) Tags grouped into labelled, colour-tinted chip rows (Terrain / Climate / Irrigation / Port / Religion / Fertility / Other / Hidden Resource) instead of one flat blob. (4) Faction row now surfaces 'rebels → X' as an italic hint when the descr_strat owner differs from descr_regions' rebel-default — makes Corsica's corsi → romans_julii rebellion path visible at a glance." },
+    ],
+  },
+  {
     version: "0.9.167",
     date: "2026-05-02",
     items: [

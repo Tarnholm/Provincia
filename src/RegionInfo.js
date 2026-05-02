@@ -112,6 +112,47 @@ export function setBuildingsGetter(fn) {
 }
 export function getBuildingsGetterVersion() { return buildingsGetterVersion; }
 
+// Categorise a single descr_regions tag token into a logical group so the
+// region-info panel can render tags as labelled chip groups instead of one
+// flat blob. The categories mirror the dev map modes: terrain / climate /
+// irrigation / port / religion / fertility / earthquake-rivertrade. Anything
+// left over is treated as a hidden_resource (modder gating token).
+const TERRAIN_TAG_SET = new Set([
+  "river_valley","floodplains_delta","grassland","mountain_valley","forest",
+  "steppe","hills","wetlands","small_islands_and_rocky_coast","plateau",
+  "karst_terrain","mountains","desert",
+]);
+const CLIMATE_TAG_SET = new Set([
+  "mediterranean","humid_sub_tropical","monsoon","temperate","oceanic",
+  "continental","dry_sub_tropical","cold_semi_arid","alpine","sub_artic",
+  "tropical","hot_semi_arid","arid",
+]);
+const IRRIGATION_TAG_SET = new Set([
+  "irrigation_river","irrigation_springs","irrigation_lake","irrigation_aquifer","irrigation_oasis",
+]);
+function categoriseTag(t) {
+  const k = String(t).toLowerCase();
+  if (TERRAIN_TAG_SET.has(k)) return "Terrain";
+  if (CLIMATE_TAG_SET.has(k)) return "Climate";
+  if (IRRIGATION_TAG_SET.has(k)) return "Irrigation";
+  if (/^base_port_level_\d+$/.test(k)) return "Port";
+  if (/^rel_[a-z_]+_\d+$/.test(k)) return "Religion";
+  if (/^Farm\d+$/.test(t)) return "Fertility";
+  if (k === "earthquake" || k === "rivertrade") return "Other";
+  return "Hidden Resource";
+}
+const CATEGORY_COLOURS = {
+  Terrain:           "rgba(110, 180, 100, 0.18)",
+  Climate:           "rgba(100, 160, 220, 0.18)",
+  Irrigation:        "rgba(60, 200, 220, 0.18)",
+  Port:              "rgba(220, 200, 80, 0.18)",
+  Religion:          "rgba(190, 110, 200, 0.18)",
+  Fertility:         "rgba(220, 160, 60, 0.18)",
+  Other:             "rgba(200, 100, 100, 0.18)",
+  "Hidden Resource": "rgba(200, 200, 200, 0.10)",
+};
+const CATEGORY_ORDER = ["Terrain", "Climate", "Irrigation", "Port", "Religion", "Fertility", "Other", "Hidden Resource"];
+
 // Normalize arrays; split comma-delimited strings into individual tags
 function listOrEmpty(val) {
   if (!val) return [];
@@ -170,7 +211,7 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -290,12 +331,42 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             onDoubleClick={() => {
               try { navigator.clipboard?.writeText(city); } catch {}
             }}
-            style={{ marginBottom: 2, cursor: "copy" }}
+            style={{ marginBottom: 2, cursor: "copy", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <strong>Settlement:</strong> {city}
+            {settlementTier && (
+              <span style={{
+                fontSize: "0.65rem", padding: "0 5px", borderRadius: 8,
+                background: "rgba(220,166,74,0.22)", color: "#f4cd8a",
+                textTransform: "capitalize", lineHeight: 1.4,
+              }} title="Settlement level (descr_strat)">{String(settlementTier).replace(/_/g, " ")}</span>
+            )}
           </div>
         ) : row("Settlement:", city)}
-        {row("Faction:", liveOwner || factionLabel(faction))}
+        {(() => {
+          // `faction` = descr_regions field 3 = rebel-default (who takes
+          // the settlement on a rebellion). `liveOwner` = current owner from
+          // descr_strat (or the live save). When they differ, surface the
+          // rebel-default as a small italic note so the distinction is
+          // visible — otherwise users see e.g. Corsica owned by `corsi`
+          // and don't realise it'd flip to `romans_julii` if it rebelled.
+          const ownerLabel = liveOwner || factionLabel(faction);
+          if (!ownerLabel) return null;
+          const rebelLabel = factionLabel(faction);
+          const showRebelHint = liveOwner && rebelLabel
+            && String(liveOwner).toLowerCase() !== String(rebelLabel).toLowerCase();
+          return (
+            <div style={{ marginBottom: 2 }}>
+              <strong>Faction:</strong> {ownerLabel}
+              {showRebelHint && (
+                <span title="When this region rebels, it joins the rebel-default faction (descr_regions field 3)"
+                  style={{ marginLeft: 6, fontSize: "0.7rem", color: "#bbb", fontStyle: "italic" }}>
+                  rebels → {rebelLabel}
+                </span>
+              )}
+            </div>
+          );
+        })()}
         {row("Culture:", culture)}
         {devMode && rgb && (() => {
           // Show both decimal RGB and hex — easier to grab when picking
@@ -307,7 +378,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           return row("RGB:", hex ? `${rgb}  ${hex}` : rgb);
         })()}
         {farm_level !== undefined && farm_level !== null && row("Farm Level:", farm_level)}
-        {population_level !== undefined && population_level !== null && row("Population Level:", population_level)}
+        {population_level !== undefined && population_level !== null && row("Pop Level:", population_level)}
         {(() => {
           const ethData = parseEth(typeof ethnicities === 'string' ? ethnicities : (Array.isArray(ethnicities) ? ethnicities.join(' ') : ''));
           if (ethData.length === 0) return null;
@@ -343,20 +414,37 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <strong>{modeExtra.label}:</strong> {modeExtra.value}
           </div>
         )}
-        {tagsList.length > 0 && (
-          <div style={{ marginTop: 6 }}>
-            <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignContent: "flex-start" }}>
-              {tagsList.map((t, i) => (
-                <span key={`${t}-${i}`} style={{
-                  padding: "1px 5px", borderRadius: 4,
-                  background: "rgba(255,255,255,0.08)",
-                  fontSize: "0.7rem", whiteSpace: "nowrap",
-                }}>{t}</span>
-              ))}
+        {tagsList.length > 0 && (() => {
+          // Group tags by category so they read as labelled chips instead
+          // of a flat blob. Each group gets a tinted chip background
+          // matching the category colour.
+          const groups = {};
+          for (const t of tagsList) {
+            const cat = categoriseTag(t);
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(t);
+          }
+          const orderedCats = CATEGORY_ORDER.filter((c) => groups[c]);
+          return (
+            <div style={{ marginTop: 6 }}>
+              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {orderedCats.map((cat) => (
+                  <div key={cat} style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.62rem", color: "#a8a094", marginRight: 2, minWidth: 56 }}>{cat}</span>
+                    {groups[cat].map((t, i) => (
+                      <span key={`${t}-${i}`} style={{
+                        padding: "1px 5px", borderRadius: 4,
+                        background: CATEGORY_COLOURS[cat] || "rgba(255,255,255,0.08)",
+                        fontSize: "0.7rem", whiteSpace: "nowrap",
+                      }}>{t}</span>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Right: buildings + garrison */}

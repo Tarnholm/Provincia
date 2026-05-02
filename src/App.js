@@ -8089,6 +8089,14 @@ function App() {
                           icon: ownerId ? getCachedUnitIcon(ownerId, u.unit) : null,
                         }));
                       })()}
+                      settlementTier={(() => {
+                        // descr_strat settlement-level value (village/town/
+                        // large_town/city/large_city/huge_city). Pulled from
+                        // the precomputed settlementTierMap by rgb key.
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !r.rgb) return null;
+                        return settlementTierMap[r.rgb] || null;
+                      })()}
                       startingGarrison={(() => {
                         // Pass the descr_strat turn-0 garrison (units only) so
                         // RegionInfo can diff the live save's roster against
