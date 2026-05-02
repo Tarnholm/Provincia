@@ -386,13 +386,37 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         })()}
         {row("Culture:", culture)}
         {devMode && rgb && (() => {
-          // Show both decimal RGB and hex — easier to grab when picking
-          // colours in an image editor / colour picker.
+          // Show both decimal RGB and hex, plus a swatch + colour-tinted
+          // hex so the row reads as the colour it represents — easier
+          // when grabbing values for an image editor.
           const parts = String(rgb).split(",").map(s => parseInt(s.trim(), 10));
-          const hex = parts.length === 3
-            ? "#" + parts.map(n => Math.max(0, Math.min(255, n || 0)).toString(16).padStart(2, "0")).join("").toUpperCase()
-            : "";
-          return row("RGB:", hex ? `${rgb}  ${hex}` : rgb);
+          const valid = parts.length === 3 && parts.every(n => Number.isFinite(n));
+          if (!valid) return row("RGB:", rgb);
+          const [r, g, b] = parts.map(n => Math.max(0, Math.min(255, n || 0)));
+          const hex = "#" + [r, g, b].map(n => n.toString(16).padStart(2, "0")).join("").toUpperCase();
+          // Brighten dim swatches so the hex stays legible against the
+          // panel; keep hue, lift toward white when luminance is low.
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          const lift = lum < 80 ? 0.6 : lum < 140 ? 0.3 : 0;
+          const tr = Math.round(r + (255 - r) * lift);
+          const tg = Math.round(g + (255 - g) * lift);
+          const tb = Math.round(b + (255 - b) * lift);
+          const textColor = `rgb(${tr},${tg},${tb})`;
+          return (
+            <div style={{ marginBottom: 2, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <strong>RGB:</strong>
+              <span title={`rgb(${r}, ${g}, ${b})`} style={{
+                display: "inline-block",
+                width: 12, height: 12, borderRadius: 3,
+                background: `rgb(${r},${g},${b})`,
+                border: "1px solid rgba(255,255,255,0.25)",
+                boxShadow: "0 0 0 1px rgba(0,0,0,0.4)",
+                flexShrink: 0,
+              }} />
+              <span style={{ fontFamily: "Consolas, monospace" }}>{rgb}</span>
+              <span style={{ fontFamily: "Consolas, monospace", color: textColor, fontWeight: 700 }}>{hex}</span>
+            </div>
+          );
         })()}
         {(() => {
           // Real fertility is encoded in the Farm## tag (Farm1..Farm14), not

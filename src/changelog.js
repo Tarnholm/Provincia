@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.179",
+    date: "2026-05-02",
+    items: [
+      { type: "improvement", text: "Dev RGB row now visualises the colour: a 12px swatch plus the hex value tinted in the actual region colour. Dim colours get lifted toward white so the hex stays legible against the panel; bright colours render as-is." },
+    ],
+  },
+  {
     version: "0.9.178",
     date: "2026-05-02",
     items: [
