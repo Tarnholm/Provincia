@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.165",
+    date: "2026-05-02",
+    items: [
+      { type: "fix", text: "Region info Faction line now shows the descr_strat owner, not descr_regions' rebel default. Corsica was displaying 'romans_julii' (rebel default) instead of 'corsi' (actual starting owner). The liveOwner prop's resolution chain (currentOwnerByCity → initialOwnerByCity → null) was gated on liveLogActive — but initialOwnerByCity is populated from the get-initial-ownership IPC at boot regardless of save state. Drop the gate so the strat owner overrides the rebel default whenever it's available. Same root cause as the recruitment fix in 0.9.140; this rounds out the display side." },
+    ],
+  },
+  {
     version: "0.9.164",
     date: "2026-05-02",
     items: [

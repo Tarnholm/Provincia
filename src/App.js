@@ -8523,12 +8523,17 @@ function App() {
                         return saveUnitsByRegion[r.region] || null;
                       })()}
                       liveOwner={(() => {
-                        if (!liveLogActive) return null;
                         const r = lockedRegionInfo || regionInfo;
                         if (!r || !r.city) return null;
-                        // Prefer the current owner decoded from the save (handles
-                        // mid-campaign conquests). Fall back to descr_strat starting
-                        // owner for settlements without resolved current owner.
+                        // Owner-resolution chain. Save-current > strat-initial >
+                        // descr_regions rebel default. Used for the displayed
+                        // Faction line in RegionInfo. The fallback is no longer
+                        // gated on liveLogActive — initialOwnerByCity is filled
+                        // from a get-initial-ownership IPC at boot, so even
+                        // without a save loaded we can override the rebel-
+                        // default (descr_regions' r.faction) when descr_strat
+                        // assigns a real owner. Fixes Corsica showing
+                        // "romans_julii" when descr_strat says "corsi".
                         const id = (currentOwnerByCity && currentOwnerByCity[r.city])
                           || (initialOwnerByCity && initialOwnerByCity[r.city])
                           || null;
