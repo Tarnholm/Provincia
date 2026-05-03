@@ -1278,6 +1278,48 @@ ipcMain.handle("get-unit-description", async (_event, modDataDir, unitName) => {
   return out;
 });
 
+// IPC: clear all parse caches (EDB / EDU / display names / cultures /
+// stats / descriptions). Used by the "Reload mod data" button so a
+// modder can re-edit text files and see the changes without restarting.
+ipcMain.handle("clear-mod-caches", async () => {
+  try { _buildingRecruitsCache.clear(); } catch {}
+  try { _unitOwnershipCache.clear(); } catch {}
+  try { _chainLevelsCache.clear(); } catch {}
+  try { _unitStatsCache.clear(); } catch {}
+  try { _buildingStatsCache.clear(); } catch {}
+  try { _textDictCache.clear(); } catch {}
+  try { _factionCultureCache.clear(); } catch {}
+  return true;
+});
+
+// IPC: return mtimes for the mod data files we care about. Renderer
+// polls this periodically; if any mtime is newer than what it last
+// saw, a "reload mod data" badge flashes so the modder knows their
+// edit is unseen by Provincia until they reload.
+ipcMain.handle("get-mod-file-mtimes", async (_event, modDataDir) => {
+  const files = [
+    "export_descr_buildings.txt",
+    "export_descr_unit.txt",
+    "text/export_units.txt",
+    "text/export_buildings.txt",
+    "descr_sm_factions.txt",
+    "world/maps/base/descr_regions.txt",
+  ];
+  const out = {};
+  const tryFile = (full) => {
+    try { return fs.statSync(full).mtimeMs; } catch { return null; }
+  };
+  for (const rel of files) {
+    let mtime = null;
+    if (modDataDir) {
+      const t = tryFile(path.join(modDataDir, rel));
+      if (t != null) mtime = t;
+    }
+    out[rel] = mtime;
+  }
+  return out;
+});
+
 // IPC: return per-level building stats from export_descr_buildings.txt.
 // Parses the block for `building <chainName> { ... <levelName> requires ...
 // { ... } }` and pulls out:
@@ -1308,6 +1350,15 @@ ipcMain.handle("get-building-stats", async (_event, modDataDir, levelName, chain
     const chainRe = new RegExp(`^\\s*building\\s+${chainName}\\b`);
     while (i < lines.length && !chainRe.test(lines[i])) i++;
     if (i >= lines.length) continue;
+    // Capture the chain's `levels` list — the canonical tier ladder.
+    let chainLadder = null;
+    for (let j = i + 1; j < Math.min(i + 80, lines.length); j++) {
+      const t = stripComments(lines[j]).trim();
+      if (!t || t === "{" || t === "}") continue;
+      const lm = t.match(/^levels\s+(.+)$/);
+      if (lm) { chainLadder = lm[1].trim().split(/\s+/).filter(Boolean); break; }
+      if (/^building\b/.test(t)) break;
+    }
     // Find the level header inside the chain block.
     const levelRe = new RegExp(`^\\s*${levelName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+requires\\b`);
     while (i < lines.length && !levelRe.test(lines[i])) i++;
@@ -1332,6 +1383,7 @@ ipcMain.handle("get-building-stats", async (_event, modDataDir, levelName, chain
     // Parse the body.
     let cost = null, construction = null, settlementMin = null;
     const capabilities = [];
+    const recruits = []; // { unit, requires } — what THIS level adds
     let inCap = false, capDepth = 0;
     for (const raw of body) {
       const s = stripComments(raw).trim();
@@ -1350,11 +1402,20 @@ ipcMain.handle("get-building-stats", async (_event, modDataDir, levelName, chain
           else if (ch === "}") { capDepth--; if (capDepth <= 0) { inCap = false; capDepth = 0; } }
         }
         if (s === "{" || s === "}") continue;
-        if (/^recruit\b/.test(s)) continue; // recruits surfaced separately
+        const rm = s.match(/^recruit\s+"([^"]+)"\s*(?:\d+)?(?:\s+requires\s+(.+))?$/);
+        if (rm) { recruits.push({ unit: rm[1], requires: rm[2] || null }); continue; }
         capabilities.push(s);
       }
     }
-    const result = { cost, construction, settlementMin, capabilities };
+    const tierIndex = chainLadder ? chainLadder.indexOf(levelName) : -1;
+    const result = {
+      cost, construction, settlementMin,
+      capabilities,
+      recruits,
+      chainLadder,
+      tierIndex,
+      tierMax: chainLadder ? chainLadder.length : null,
+    };
     _buildingStatsCache.set(cacheKey, result);
     return result;
   }

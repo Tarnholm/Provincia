@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.193",
+    date: "2026-05-03",
+    items: [
+      { type: "feature", text: "Building popup: tier ladder (current level highlighted), 'Adds at this level' recruit chips, and humanized capability lines (happiness_bonus bonus 2 → '+2 happiness', wall_level 1 → 'Wall level: 1', etc.). get-building-stats now also returns chainLadder/tierIndex/tierMax/recruits[]." },
+      { type: "feature", text: "Reload mod data button. New IPC clear-mod-caches drops every parse cache (EDB, EDU, text dictionaries, building stats, faction cultures); the App.js useEffect that fetches mod data is now keyed on a modReloadTick state so the click triggers a re-parse. Lets modders iterate without restarting Provincia." },
+      { type: "feature", text: "EDB/EDU mtime watcher. New IPC get-mod-file-mtimes polls export_descr_buildings.txt / export_descr_unit.txt / text/export_units.txt / text/export_buildings.txt / descr_sm_factions.txt / descr_regions.txt every 4s. When any mtime exceeds the last-seen, the Reload button switches to active state with the mac-active-pulse animation, signalling 'your edit is unseen, click me'." },
+      { type: "feature", text: "Hidden-resource cross-link. Hover a hidden_resource chip in the Tags row → every recruit gated on that HR lights up. Recruitable items now carry hrGates: [hrName, ...] populated from positive `hidden_resource X` clauses across both passes (currently-buildable and upgrade-only)." },
+      { type: "feature", text: "Region info: 'Religion' text row showing the dominant rel_<X>_<level> tag (highest level wins) and up to three secondary religions. Complements the ethnicities chart, which conveys ancestry not creed." },
+    ],
+  },
+  {
     version: "0.9.192",
     date: "2026-05-03",
     items: [

@@ -1351,6 +1351,14 @@ function App() {
   const [currentOwnerByCity, setCurrentOwnerByCity] = useState(null); // { city: factionId } — current ownership decoded from save
   const [factionDisplayNames, setFactionDisplayNames] = useState(null); // { factionId: displayName } from mod text/expanded_bi.txt
   const [factionCultures, setFactionCultures] = useState(null); // { factionId: cultureFolderName } from descr_sm_factions.txt
+  // Bumping this counter invalidates every mod-derived useEffect that
+  // includes it as a dependency, so the "Reload mod data" button can
+  // re-fetch every parsed file without a full page reload.
+  const [modReloadTick, setModReloadTick] = useState(0);
+  // Last-seen mtime per file, populated by the mtime poller. When the
+  // current mtime exceeds the last-seen, modDataStale becomes true and
+  // a small "Reload" pill flashes near the View options.
+  const [modDataStale, setModDataStale] = useState(false);
   const [activeSieges, setActiveSieges] = useState({}); // { settlementName: { general, x, y } }
   const [modIconsDir, setModIconsDir] = useState(() => {
     try { return localStorage.getItem("modIconsDir") || null; } catch { return null; }
@@ -1509,7 +1517,40 @@ function App() {
         if (map && Object.keys(map).length > 0) setFactionDisplayNames(map);
       }).catch(() => {});
     }
-  }, [modDataDir, mapCampaign]);
+    // Re-fetching means we just consumed the latest disk state — clear
+    // the stale flag so the badge stops nagging until the next disk edit.
+    setModDataStale(false);
+  }, [modDataDir, mapCampaign, modReloadTick]);
+
+  // Poll mod-file mtimes every 4 seconds. If any tracked file's mtime
+  // exceeds what we last saw, surface the "Reload mod data" badge so
+  // the modder knows their disk edit is unseen by Provincia. Cleared
+  // after a manual reload (above) or on initial first-poll baseline.
+  useEffect(() => {
+    if (!modDataDir) return;
+    const api = window.electronAPI;
+    if (!api?.getModFileMtimes) return;
+    let cancelled = false;
+    let lastSeen = null; // { rel: mtime }
+    const tick = async () => {
+      try {
+        const cur = await api.getModFileMtimes(modDataDir);
+        if (cancelled || !cur) return;
+        if (lastSeen) {
+          for (const k of Object.keys(cur)) {
+            if (cur[k] != null && lastSeen[k] != null && cur[k] > lastSeen[k]) {
+              setModDataStale(true);
+              break;
+            }
+          }
+        }
+        lastSeen = cur;
+      } catch {}
+    };
+    tick();
+    const id = setInterval(tick, 4000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [modDataDir, modReloadTick]);
 
   const [buildingLevelsLookup, setBuildingLevelsLookup] = useState(null); // { chain: [level0Name, level1Name, ...] }
   const [buildingRecruits, setBuildingRecruits] = useState(null); // { chain: { level: [{unit, factions?}, ...] } }
@@ -6045,6 +6086,21 @@ function App() {
             style={{ ...btnStyle(showArmies), minWidth: 0 }}>Armies</button>
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
             style={{ ...btnStyle(showLabels !== "off"), minWidth: 0 }}>{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
+          {modDataDir && (
+            <button className="map-mode-btn" onClick={async () => {
+              const api = window.electronAPI;
+              try { await api?.clearModCaches?.(); } catch {}
+              setModReloadTick((t) => t + 1);
+            }}
+              title={modDataStale
+                ? "EDB / EDU / text files were edited on disk since Provincia loaded them — click to re-parse and refresh recruits, descriptions, etc."
+                : "Re-parse the mod's EDB / EDU / text files. Useful while iterating on a mod without restarting Provincia."}
+              style={{
+                ...btnStyle(modDataStale),
+                minWidth: 0,
+                animation: modDataStale ? "mac-active-pulse 1.6s ease-in-out infinite" : "none",
+              }}>{modDataStale ? "Reload!" : "Reload"}</button>
+          )}
           <button className="map-mode-btn" onClick={async () => {
             if (liveLogActive) {
               // Deactivate — restore to latest state
@@ -8263,6 +8319,11 @@ function App() {
                         const result = [];
                         // unit name → Set of chain types that expose it.
                         const gatedByMap = {};
+                        // unit name → Set of hidden_resource names that gate it.
+                        // Captured from positive `hidden_resource X` clauses in
+                        // recruit rules. Lets RegionInfo light up recruits when
+                        // the user hovers an HR chip in the tags row.
+                        const hrGatesMap = {};
                         // upgrade-only unit name → [{chain, level}, ...]
                         const upgradeRequiresMap = {};
                         // Units added during the first (building-gated) pass —
@@ -8455,6 +8516,13 @@ function App() {
                               availableSet.add(rec.unit);
                               if (!gatedByMap[rec.unit]) gatedByMap[rec.unit] = new Set();
                               gatedByMap[rec.unit].add(b.type);
+                              if (rec.requires) {
+                                if (!hrGatesMap[rec.unit]) hrGatesMap[rec.unit] = new Set();
+                                const positives = rec.requires.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+                                for (const pm of positives.matchAll(/\bhidden_resource\s+(\S+)/g)) {
+                                  hrGatesMap[rec.unit].add(pm[1].toLowerCase());
+                                }
+                              }
                             }
                           }
                         }
@@ -8513,6 +8581,13 @@ function App() {
                               }
                               if (!gatedByMap[rec.unit]) gatedByMap[rec.unit] = new Set();
                               gatedByMap[rec.unit].add(chain);
+                              if (rec.requires) {
+                                if (!hrGatesMap[rec.unit]) hrGatesMap[rec.unit] = new Set();
+                                const positives = rec.requires.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+                                for (const pm of positives.matchAll(/\bhidden_resource\s+(\S+)/g)) {
+                                  hrGatesMap[rec.unit].add(pm[1].toLowerCase());
+                                }
+                              }
                               // For upgrade-only units, capture every (chain,
                               // level) that would unlock them so we can show
                               // the cheapest upgrade path in the tooltip.
@@ -8568,6 +8643,7 @@ function App() {
                           faction: ownerId,
                           icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
                           gatedBy: gatedByMap[name] ? [...gatedByMap[name]] : [],
+                          hrGates: hrGatesMap[name] ? [...hrGatesMap[name]] : [],
                           available: availableSet.has(name),
                           upgradeHint: !availableSet.has(name) ? computeUpgradeHint(name) : null,
                         }));

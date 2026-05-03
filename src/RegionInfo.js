@@ -232,6 +232,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // building, hoveredRecruit = unit name when hovering a recruit card.
   const [hoveredChain, setHoveredChain] = useState(null);
   const [hoveredRecruit, setHoveredRecruit] = useState(null);
+  // Hidden-resource hover: chip in the tags row → highlight every
+  // recruit gated on that HR. Builds on the existing recruit/building
+  // cross-link.
+  const [hoveredHr, setHoveredHr] = useState(null);
   const hoverReadout = (u) => {
     if (!u) return null;
     const chevrons = u.xp || 0;
@@ -470,6 +474,39 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           );
         })()}
         {(() => {
+          // Religion: derive majority from `rel_<X>_<level>` tags. The number
+          // is the strength (1..4 in vanilla / RIS); the highest-level tag is
+          // the dominant religion. A small text row complements the
+          // ethnicities chart immediately above it (chart shows ancestry, not
+          // creed). Falls back silently when no rel_* tags are present.
+          if (!tagsList || tagsList.length === 0) return null;
+          const rels = tagsList
+            .map((t) => {
+              const m = String(t).toLowerCase().match(/^rel_([a-z_]+)_(\d+)$/);
+              return m ? { name: m[1], level: parseInt(m[2], 10) } : null;
+            })
+            .filter(Boolean);
+          if (rels.length === 0) return null;
+          rels.sort((a, b) => b.level - a.level);
+          const top = rels[0];
+          const others = rels.slice(1, 4);
+          return (
+            <div style={{ marginBottom: 2 }}>
+              <strong>Religion:</strong>{" "}
+              <span style={{ textTransform: "capitalize" }}>{top.name.replace(/_/g, " ")}</span>{" "}
+              <span style={{ color: "#aaa", fontSize: "0.72rem" }}>(strength {top.level})</span>
+              {others.length > 0 && (
+                <span style={{ color: "#aaa", fontSize: "0.7rem" }}>
+                  {" · also "}
+                  {others.map((r, i) => (
+                    <span key={i}>{i > 0 ? ", " : ""}<span style={{ textTransform: "capitalize" }}>{r.name.replace(/_/g, " ")}</span> {r.level}</span>
+                  ))}
+                </span>
+              )}
+            </div>
+          );
+        })()}
+        {(() => {
           // Ethnicities chart sits right under Pop Level (its original spot).
           // Trimmed marginTop / removed minHeight so the Resources + Tags
           // blocks below sit close to it instead of floating in dead space.
@@ -537,13 +574,27 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 {orderedCats.map((cat) => (
                   <div key={cat} style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignItems: "center" }}>
                     <span style={{ fontSize: "0.62rem", color: "#a8a094", marginRight: 2, minWidth: 56 }}>{cat}</span>
-                    {groups[cat].map((t, i) => (
-                      <span key={`${t}-${i}`} style={{
-                        padding: "1px 5px", borderRadius: 4,
-                        background: CATEGORY_COLOURS[cat] || "rgba(255,255,255,0.08)",
-                        fontSize: "0.7rem", whiteSpace: "nowrap",
-                      }}>{t}</span>
-                    ))}
+                    {groups[cat].map((t, i) => {
+                      const isHr = cat === "Hidden Resource";
+                      const isActive = isHr && hoveredHr === t.toLowerCase();
+                      return (
+                        <span key={`${t}-${i}`}
+                          onMouseEnter={isHr ? () => setHoveredHr(t.toLowerCase()) : undefined}
+                          onMouseLeave={isHr ? () => setHoveredHr((cur) => cur === t.toLowerCase() ? null : cur) : undefined}
+                          title={isHr ? `Hover: highlight recruits gated on hidden_resource ${t}` : undefined}
+                          style={{
+                            padding: "1px 5px", borderRadius: 4,
+                            background: isActive
+                              ? "rgba(220,166,74,0.35)"
+                              : (CATEGORY_COLOURS[cat] || "rgba(255,255,255,0.08)"),
+                            outline: isActive ? "1px solid #dca64a" : "none",
+                            outlineOffset: -1,
+                            fontSize: "0.7rem", whiteSpace: "nowrap",
+                            cursor: isHr ? "default" : "default",
+                            transition: "background 120ms var(--ease-mac-out)",
+                          }}>{t}</span>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
@@ -711,6 +762,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               // building card whose chain gates it.
               const gatedSet = u.gatedBy || (recruitGatedBy?.[u.unit] ?? []);
               const linkedFromBuilding = hoveredChain && gatedSet.includes(hoveredChain);
+              const linkedFromHr = hoveredHr && (u.hrGates || []).includes(hoveredHr);
               const isHoveredHere = hoveredRecruit === u.unit;
               // Upgrade-only units (`available === false`) are tinted pale —
               // a 0.45 opacity grayscale-ish overlay so they read as "future
@@ -728,10 +780,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       : "")
                   } style={{
                   padding: 2,
-                  background: linkedFromBuilding ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.35)",
+                  background: (linkedFromBuilding || linkedFromHr) ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.35)",
                   borderRadius: 3,
                   minWidth: 0,
-                  outline: (linkedFromBuilding || isHoveredHere) ? "2px solid #dca64a" : (upgradeOnly ? "1px dashed rgba(255,255,255,0.18)" : "none"),
+                  outline: (linkedFromBuilding || linkedFromHr || isHoveredHere) ? "2px solid #dca64a" : (upgradeOnly ? "1px dashed rgba(255,255,255,0.18)" : "none"),
                   outlineOffset: -1,
                   opacity: upgradeOnly ? 0.45 : 1,
                   filter: upgradeOnly ? "grayscale(0.4)" : "none",

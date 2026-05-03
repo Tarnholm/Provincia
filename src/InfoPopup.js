@@ -13,6 +13,66 @@
 import { Fragment, useEffect, useState } from "react";
 import TGA from "./tga.js";
 
+// Trim and prettify a `requires` clause for display in capability rows.
+// We strip `is_player`, `not is_player`, and the noisy `factions { ... }`
+// lists down to a short faction summary so the line stays readable.
+function shortRequires(req) {
+  if (!req) return null;
+  let r = String(req)
+    .replace(/\bis_player\b/g, "")
+    .replace(/\band\s+and\b/g, "and")
+    .replace(/^\s*and\s+/i, "")
+    .replace(/\s+and\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  // Fold `factions { x, y, } -> [x, y]
+  r = r.replace(/factions\s*\{\s*([^}]*)\}/g, (_, list) => {
+    const xs = list.split(",").map((s) => s.trim()).filter(Boolean);
+    return `[${xs.join(", ")}]`;
+  });
+  return r || null;
+}
+
+// Humanize a single capability line from EDB into something a player /
+// modder can scan at a glance. Falls back to the raw line (lowercase
+// underscores → spaces, capitalized) when no rule matches.
+function humanizeCapability(raw) {
+  if (!raw) return "";
+  const line = String(raw).trim();
+  // <stat>_bonus bonus N [requires ...]
+  let m = line.match(/^([a-z_]+_bonus)\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?$/);
+  if (m) {
+    const stat = m[1].replace(/_bonus$/, "").replace(/_/g, " ");
+    const n = parseInt(m[2], 10);
+    const sign = n >= 0 ? "+" : "";
+    const req = shortRequires(m[3]);
+    return `${sign}${n} ${stat}${req ? ` (${req})` : ""}`;
+  }
+  // population_growth_bonus 2 (no `bonus` keyword)
+  m = line.match(/^([a-z_]+)\s+(-?\d+)$/);
+  if (m) {
+    const known = ["wall_level", "tower_level", "gate_strength", "gate_defences",
+      "farming_level", "road_level", "port_level", "construction_modifier"];
+    if (known.includes(m[1])) {
+      const stat = m[1].replace(/_/g, " ");
+      const n = parseInt(m[2], 10);
+      const cap = stat.charAt(0).toUpperCase() + stat.slice(1);
+      return `${cap}: ${n}`;
+    }
+  }
+  // recruits_morale_bonus N
+  m = line.match(/^recruits?_(morale|exp|experience)_bonus\s+(?:bonus\s+)?(-?\d+)/);
+  if (m) {
+    const tag = m[1].startsWith("morale") ? "morale" : "experience";
+    return `+${m[2]} recruit ${tag}`;
+  }
+  // mine_resource <res> <multi>
+  m = line.match(/^mine_resource\s+(\S+)\s+(\S+)/);
+  if (m) return `Mines ${m[1]} (×${m[2]})`;
+  // hidden_resource ... or other rare lines — keep but tidy.
+  return line.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
 function pixelsToBlobUrl({ width, height, pixels }) {
   const rowMajor = new Uint8ClampedArray(pixels);
   const canvas = document.createElement("canvas");
@@ -192,8 +252,13 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
           if (buildingStats.cost != null) rows.push(["Cost", `${buildingStats.cost} denarii`]);
           if (buildingStats.construction != null) rows.push(["Construction", `${buildingStats.construction} turn${buildingStats.construction === 1 ? "" : "s"}`]);
           if (buildingStats.settlementMin) rows.push(["Settlement min", buildingStats.settlementMin.replace(/_/g, " ")]);
+          if (buildingStats.tierIndex != null && buildingStats.tierIndex >= 0 && buildingStats.tierMax) {
+            rows.push(["Tier", `${buildingStats.tierIndex + 1} / ${buildingStats.tierMax}`]);
+          }
           const hasCaps = buildingStats.capabilities && buildingStats.capabilities.length > 0;
-          if (rows.length === 0 && !hasCaps) return null;
+          const hasRecruits = buildingStats.recruits && buildingStats.recruits.length > 0;
+          const hasLadder = buildingStats.chainLadder && buildingStats.chainLadder.length > 1;
+          if (rows.length === 0 && !hasCaps && !hasRecruits && !hasLadder) return null;
           return (
             <div style={{
               marginTop: 10,
@@ -204,7 +269,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
               color: "#ddd",
             }}>
               {rows.length > 0 && (
-                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 3, marginBottom: hasCaps ? 8 : 0 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 3, marginBottom: 8 }}>
                   {rows.map(([label, value], i) => (
                     <Fragment key={i}>
                       <span style={{ color: "#9ab" }}>{label}</span>
@@ -213,11 +278,50 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
                   ))}
                 </div>
               )}
+              {hasLadder && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ color: "#9ab", marginBottom: 4 }}>Chain ladder</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center", fontSize: "0.72rem" }}>
+                    {buildingStats.chainLadder.map((lvl, i) => (
+                      <Fragment key={lvl}>
+                        <span style={{
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          background: i === buildingStats.tierIndex ? "rgba(220,166,74,0.35)" : "rgba(255,255,255,0.06)",
+                          color: i === buildingStats.tierIndex ? "#ffd98a" : "#bbb",
+                          fontWeight: i === buildingStats.tierIndex ? 700 : 400,
+                          textTransform: "capitalize",
+                        }}>{lvl.replace(/_/g, " ")}</span>
+                        {i < buildingStats.chainLadder.length - 1 && (
+                          <span style={{ color: "#666" }}>›</span>
+                        )}
+                      </Fragment>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {hasRecruits && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ color: "#9ab", marginBottom: 4 }}>Adds at this level</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, fontSize: "0.72rem" }}>
+                    {buildingStats.recruits.map((r, i) => (
+                      <span key={i} style={{
+                        padding: "2px 6px",
+                        background: "rgba(255,255,255,0.06)",
+                        borderRadius: 4,
+                        textTransform: "capitalize",
+                      }}>{r.unit.replace(/_/g, " ")}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {hasCaps && (
                 <>
                   <div style={{ color: "#9ab", marginBottom: 4 }}>Effects</div>
-                  <div style={{ fontFamily: "ui-monospace, Consolas, monospace", fontSize: "0.72rem", lineHeight: 1.45, color: "#cfd6dd", whiteSpace: "pre-wrap", maxHeight: "28vh", overflowY: "auto" }}>
-                    {buildingStats.capabilities.join("\n")}
+                  <div style={{ fontSize: "0.74rem", lineHeight: 1.5, color: "#cfd6dd", maxHeight: "28vh", overflowY: "auto" }}>
+                    {buildingStats.capabilities.map((c, i) => (
+                      <div key={i} style={{ marginBottom: 1 }}>{humanizeCapability(c)}</div>
+                    ))}
                   </div>
                 </>
               )}
