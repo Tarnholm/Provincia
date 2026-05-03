@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.195",
+    date: "2026-05-03",
+    items: [
+      { type: "feature", text: "'Homeland of:' row in region info — surfaces RIS's homeland-unhappiness mechanic. Computed by intersecting the region's tag tokens with each faction's homelands.json HR list. Non-native owners catch a happiness penalty in those regions, this row now makes that visible upfront." },
+      { type: "feature", text: "Validate Mod Data button (dev mode only). Cross-checks every recruit unit referenced in EDB against the EDU ownership map, flags chains with zero recruits as info, dumps everything to a console.group at console-log severity. Toast summarises errors+info counts so the modder doesn't have to keep DevTools open just to see the headline." },
+      { type: "skip", text: "Skipped (would have been overscoped for one ship): trade-route map mode (needs a save-file trade-route parser we don't have); compare two saves diff (needs save-loading machinery); per-army strength heatmap (needs new render-pipeline mode); predict-next-reform panel (needs descr_events / campaign_script trigger parser); settlement income breakdown (needs save-file income parser). Open to scoping any of these as their own ship." },
+    ],
+  },
+  {
     version: "0.9.194",
     date: "2026-05-03",
     items: [

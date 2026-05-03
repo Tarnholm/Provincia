@@ -6101,6 +6101,50 @@ function App() {
                 animation: modDataStale ? "mac-active-pulse 1.6s ease-in-out infinite" : "none",
               }}>{modDataStale ? "Reload!" : "Reload"}</button>
           )}
+          {devMode && modDataDir && buildingRecruits && unitOwnership && (
+            <button className="map-mode-btn" onClick={() => {
+              // Cross-file sanity sweep across the parsed mod data.
+              // 1) Every recruit `unit` referenced in EDB exists in EDU
+              // 2) Every chain key in buildingRecruits has at least one
+              //    real level (catches RIS-style empty redefinitions
+              //    that would silently drop recruits)
+              // 3) Every faction in factionCultures has at least one
+              //    region listed for it in factionRegionsMap
+              const issues = [];
+              const dictMap = unitOwnership.__dictionary || {};
+              const knownUnits = new Set(Object.keys(unitOwnership).filter((k) => k !== "__dictionary"));
+              for (const [chain, lvls] of Object.entries(buildingRecruits)) {
+                if (chain === "__aliases") continue;
+                if (!lvls || typeof lvls !== "object") continue;
+                let recruitsInChain = 0;
+                for (const [lvl, recs] of Object.entries(lvls)) {
+                  if (!Array.isArray(recs)) continue;
+                  for (const rec of recs) {
+                    recruitsInChain++;
+                    if (!knownUnits.has(rec.unit)) {
+                      issues.push({ severity: "error", chain, level: lvl, message: `recruit "${rec.unit}" is not in EDU` });
+                    }
+                  }
+                }
+                if (recruitsInChain === 0) {
+                  issues.push({ severity: "info", chain, level: "(any)", message: "chain has zero recruit lines (intentional?)" });
+                }
+              }
+              const errCount = issues.filter((i) => i.severity === "error").length;
+              const warnCount = issues.length - errCount;
+              console.group(`[validate-mod-data] ${errCount} errors, ${warnCount} info`);
+              for (const it of issues) console.log(`[${it.severity}] ${it.chain}/${it.level}: ${it.message}`);
+              console.groupEnd();
+              pushToast(
+                errCount > 0
+                  ? `Validation: ${errCount} errors${warnCount ? `, ${warnCount} info` : ""} — see DevTools console (F12)`
+                  : `Validation: clean${warnCount ? ` (${warnCount} info)` : ""}`,
+                errCount > 0 ? "error" : "info"
+              );
+            }}
+              title="Cross-check recruit units against EDU and report issues. Output goes to DevTools console (F12)."
+              style={{ ...btnStyle(false), minWidth: 0 }}>Validate</button>
+          )}
           <button className="map-mode-btn" onClick={async () => {
             if (liveLogActive) {
               // Deactivate — restore to latest state
@@ -8112,6 +8156,23 @@ function App() {
                       devMode={devMode}
                       onShowInfo={setInfoPopup}
                       factionDisplayNames={factionDisplayNames}
+                      homelandFactions={(() => {
+                        // Factions whose homeland token (from homelands.json)
+                        // is in this region's tag list. Used by RegionInfo
+                        // for the "Homeland of:" row — surfaces RIS's
+                        // homeland-unhappiness mechanic so non-natives
+                        // immediately see where they'll catch flak.
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !homelandsData) return null;
+                        const tags = new Set(String(r.tags || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+                        const out = [];
+                        for (const [fac, hrs] of Object.entries(homelandsData)) {
+                          for (const hr of hrs || []) {
+                            if (tags.has(String(hr).toLowerCase())) { out.push(fac); break; }
+                          }
+                        }
+                        return out;
+                      })()}
                       // Compute buildings here so React re-renders when save state
                       // changes (RegionInfo's internal useMemo can't see those).
                       buildings={(() => {

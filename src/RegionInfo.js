@@ -214,7 +214,7 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -473,6 +473,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             </div>
           );
         })()}
+        {Array.isArray(homelandFactions) && homelandFactions.length > 0 && (
+          <div style={{ marginBottom: 2 }}>
+            <strong>Homeland of:</strong>{" "}
+            {homelandFactions.map((f, i) => (
+              <span key={f}>
+                {i > 0 ? ", " : ""}
+                <span style={{ textTransform: "capitalize" }}>
+                  {factionDisplayNames?.[f] || f.replace(/_/g, " ")}
+                </span>
+              </span>
+            ))}
+            <span style={{ color: "#aaa", fontSize: "0.7rem", marginLeft: 4 }}>
+              (non-native owners suffer happiness penalty)
+            </span>
+          </div>
+        )}
         {(() => {
           // Religion: derive majority from `rel_<X>_<level>` tags. The number
           // is the strength (1..4 in vanilla / RIS); the highest-level tag is
