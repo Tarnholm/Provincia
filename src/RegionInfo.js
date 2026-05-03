@@ -282,6 +282,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       label,
       icon,
       type: b?.type || "",
+      // Level NAME (e.g. "city_barracks") and culture are needed for the
+      // right-click info popup — without them resolveBuildingBanner gets
+      // called with levelName=undefined and bails immediately, and the
+      // description IPC misses culture-specific keys like
+      // `{governors_house_barbarian_desc}`.
+      level: b?.level || "",
+      culture: b?.culture || null,
       health: b?.health,
       tier: b?.tier,
       tierRoman: toRoman(b?.tier),

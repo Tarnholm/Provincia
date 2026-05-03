@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.189",
+    date: "2026-05-03",
+    items: [
+      { type: "fix", text: "Building right-click popup now actually shows the wide _constructed banner AND its description. Two bugs were stacked: (1) RegionInfo's buildingItems mapping was dropping b.level and b.culture, so the right-click payload arrived with name=undefined/culture=null — resolveBuildingBanner bails immediately on missing levelName, and the description IPC missed culture-specific keys. Fix: include level + culture in buildingItems. (2) The description IPC was using unit-style suffixes (_descr / _descr_short), but text/export_buildings.txt uses _desc / _desc_short and most entries are culture-specific (e.g. {governors_house_barbarian_desc}). Fix: try <level>_<culture> → <level> → <chain>_<culture> → <chain>, with the right suffixes." },
+    ],
+  },
+  {
     version: "0.9.188",
     date: "2026-05-03",
     items: [

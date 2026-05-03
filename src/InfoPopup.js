@@ -61,7 +61,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
         if (!cancelled) setDescription(d || null);
       }).catch(() => {});
     } else if (payload.type === "building" && api.getBuildingDescription) {
-      api.getBuildingDescription(modDataDir || null, payload.name, payload.chainName || null).then((d) => {
+      api.getBuildingDescription(modDataDir || null, payload.name, payload.chainName || null, payload.culture || null).then((d) => {
         if (!cancelled) setDescription(d || null);
       }).catch(() => {});
     }

@@ -1279,15 +1279,24 @@ ipcMain.handle("get-unit-description", async (_event, modDataDir, unitName) => {
 });
 
 // IPC: return long-form building description from text/export_buildings.txt.
-// RTW keys these by level NAME (e.g. {city_barracks}, {city_barracks_descr_short},
-// {city_barracks_descr}) — try level first, then chain as a fallback.
-ipcMain.handle("get-building-description", async (_event, modDataDir, levelName, chainName) => {
+// RTW keys these by level NAME with `_desc` / `_desc_short` suffixes (note:
+// units use `_descr` / `_descr_short` — buildings drop the second `r`).
+// Culture variants are common: `{governors_house_barbarian_desc}` etc., so
+// we try `<level>_<culture>` → `<level>` → `<chain>_<culture>` → `<chain>`
+// for the displayName, and the `_desc`/`_desc_short` siblings of whichever
+// key resolves first. This matches the in-game lookup order.
+ipcMain.handle("get-building-description", async (_event, modDataDir, levelName, chainName, culture) => {
   if (!levelName && !chainName) return null;
   const dict = getMergedTextDictionary(modDataDir, "text/export_buildings.txt");
-  for (const key of [levelName, chainName].filter(Boolean)) {
+  const candidates = [];
+  for (const base of [levelName, chainName].filter(Boolean)) {
+    if (culture) candidates.push(base + "_" + culture);
+    candidates.push(base);
+  }
+  for (const key of candidates) {
     const displayName = dict[key];
-    const short = dict[key + "_descr_short"];
-    const long = dict[key + "_descr"];
+    const short = dict[key + "_desc_short"];
+    const long = dict[key + "_desc"];
     if (displayName || short || long) {
       return { displayName: displayName || null, short: short || null, long: long || null };
     }
