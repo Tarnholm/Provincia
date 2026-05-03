@@ -1385,6 +1385,12 @@ ipcMain.handle("get-building-stats", async (_event, modDataDir, levelName, chain
     const capabilities = [];
     const recruits = []; // { unit, requires } — what THIS level adds
     let inCap = false, capDepth = 0;
+    // RIS (and most modern RTW mods) use the `dummy <key> bonus N
+    // [requires ...]` capability syntax. The engine ignores `dummy`
+    // at runtime, but the building browser displays the human string
+    // keyed by `<key>` in text/expanded_bi.txt. Resolve those keys
+    // server-side so the popup shows what the in-game UI would show.
+    const expandedDict = getMergedTextDictionary(modDataDir, "text/expanded_bi.txt");
     for (const raw of body) {
       const s = stripComments(raw).trim();
       if (!s) continue;
@@ -1404,7 +1410,20 @@ ipcMain.handle("get-building-stats", async (_event, modDataDir, levelName, chain
         if (s === "{" || s === "}") continue;
         const rm = s.match(/^recruit\s+"([^"]+)"\s*(?:\d+)?(?:\s+requires\s+(.+))?$/);
         if (rm) { recruits.push({ unit: rm[1], requires: rm[2] || null }); continue; }
-        capabilities.push(s);
+        // Try to resolve a dummy-capability key against expanded_bi.txt.
+        // Format: `dummy <key> bonus <N> [requires ...]`. Some mods also
+        // omit `bonus` for boolean-flag style keys.
+        const dm = s.match(/^dummy\s+(\S+)(?:\s+bonus\s+(-?\d+))?(?:\s+requires\s+(.+))?$/);
+        let resolved = null;
+        if (dm) {
+          const key = dm[1];
+          const bonus = dm[2] != null ? parseInt(dm[2], 10) : null;
+          const text = expandedDict[key];
+          if (text) {
+            resolved = bonus != null ? `${text} (×${bonus})` : text;
+          }
+        }
+        capabilities.push({ raw: s, resolved });
       }
     }
     const tierIndex = chainLadder ? chainLadder.indexOf(levelName) : -1;

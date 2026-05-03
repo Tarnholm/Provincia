@@ -319,9 +319,22 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
                 <>
                   <div style={{ color: "#9ab", marginBottom: 4 }}>Effects</div>
                   <div style={{ fontSize: "0.74rem", lineHeight: 1.5, color: "#cfd6dd", maxHeight: "28vh", overflowY: "auto" }}>
-                    {buildingStats.capabilities.map((c, i) => (
-                      <div key={i} style={{ marginBottom: 1 }}>{humanizeCapability(c)}</div>
-                    ))}
+                    {buildingStats.capabilities.map((c, i) => {
+                      // Capabilities are { raw, resolved } objects after
+                      // 0.9.194 — `resolved` is the human string from
+                      // text/expanded_bi.txt for dummy-capability keys; the
+                      // humanizer is the fallback for fixed engine
+                      // capabilities (happiness_bonus, wall_level, etc.).
+                      const raw = typeof c === "string" ? c : c.raw;
+                      const resolved = typeof c === "string" ? null : c.resolved;
+                      return (
+                        <div key={i}
+                          title={resolved ? raw : undefined}
+                          style={{ marginBottom: 2, color: resolved ? "#d8e0e8" : "#cfd6dd" }}>
+                          {resolved || humanizeCapability(raw)}
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               )}

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.194",
+    date: "2026-05-03",
+    items: [
+      { type: "improvement", text: "Building popup capability lines now resolve through text/expanded_bi.txt. RIS uses the `dummy <key> bonus N requires ...` syntax — the engine ignores `dummy`, but the in-game building browser shows the human-readable string keyed by `<key>` in expanded_bi.txt. get-building-stats now parses each capability line, looks up dummy keys in expanded_bi, and returns { raw, resolved } per capability. Popup renders the resolved text when available (with the raw EDB line as the hover-title for verification); the humanizer is the fallback for fixed engine capabilities (happiness_bonus, wall_level, etc.)." },
+    ],
+  },
+  {
     version: "0.9.193",
     date: "2026-05-03",
     items: [
