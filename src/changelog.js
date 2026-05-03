@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.190",
+    date: "2026-05-03",
+    items: [
+      { type: "improvement", text: "'Restart and install' now installs silently — no NSIS wizard click-through. autoUpdater.quitAndInstall(true, true): isSilent=true makes electron-updater pass /S to the installer so the wizard never appears; isForceRunAfter=true relaunches Provincia automatically when the install finishes. First-time installs (downloaded by hand) still go through the wizard — only the auto-update path is silent." },
+    ],
+  },
+  {
     version: "0.9.189",
     date: "2026-05-03",
     items: [

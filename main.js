@@ -3520,7 +3520,11 @@ ipcMain.handle("updater-check", async () => {
 });
 
 ipcMain.handle("updater-quit-and-install", () => {
-  autoUpdater.quitAndInstall();
+  // (isSilent, isForceRunAfter). Silent skips the NSIS wizard entirely
+  // (electron-updater passes /S to the installer); force-run-after
+  // relaunches Provincia automatically once the install finishes. The
+  // first-time installer is unaffected — only the update flow goes silent.
+  autoUpdater.quitAndInstall(true, true);
   return true;
 });
 
