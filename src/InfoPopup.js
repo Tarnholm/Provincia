@@ -31,6 +31,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
   const [imgUrl, setImgUrl] = useState(null);
   const [status, setStatus] = useState("loading");
   const [unitStats, setUnitStats] = useState(null);
+  const [buildingStats, setBuildingStats] = useState(null); // { cost, construction, settlementMin, capabilities[] }
   const [description, setDescription] = useState(null); // { displayName, short, long }
 
   // Fetch unit stats from EDU when payload is a unit.
@@ -42,6 +43,20 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
     let cancelled = false;
     api.getUnitStats(modDataDir || null, payload.name).then((s) => {
       if (!cancelled) setUnitStats(s || null);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [payload, modDataDir]);
+
+  // Fetch building stats (cost, construction turns, capability lines)
+  // when the payload is a building.
+  useEffect(() => {
+    setBuildingStats(null);
+    if (!payload || payload.type !== "building") return;
+    const api = window.electronAPI;
+    if (!api?.getBuildingStats) return;
+    let cancelled = false;
+    api.getBuildingStats(modDataDir || null, payload.name, payload.chainName || null).then((s) => {
+      if (!cancelled) setBuildingStats(s || null);
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [payload, modDataDir]);
@@ -172,6 +187,43 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
             {description.long || description.short}
           </div>
         )}
+        {payload.type === "building" && buildingStats && (() => {
+          const rows = [];
+          if (buildingStats.cost != null) rows.push(["Cost", `${buildingStats.cost} denarii`]);
+          if (buildingStats.construction != null) rows.push(["Construction", `${buildingStats.construction} turn${buildingStats.construction === 1 ? "" : "s"}`]);
+          if (buildingStats.settlementMin) rows.push(["Settlement min", buildingStats.settlementMin.replace(/_/g, " ")]);
+          const hasCaps = buildingStats.capabilities && buildingStats.capabilities.length > 0;
+          if (rows.length === 0 && !hasCaps) return null;
+          return (
+            <div style={{
+              marginTop: 10,
+              padding: "8px 10px",
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: 6,
+              fontSize: "0.78rem",
+              color: "#ddd",
+            }}>
+              {rows.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 3, marginBottom: hasCaps ? 8 : 0 }}>
+                  {rows.map(([label, value], i) => (
+                    <Fragment key={i}>
+                      <span style={{ color: "#9ab" }}>{label}</span>
+                      <span style={{ fontVariantNumeric: "tabular-nums", textTransform: "capitalize" }}>{value}</span>
+                    </Fragment>
+                  ))}
+                </div>
+              )}
+              {hasCaps && (
+                <>
+                  <div style={{ color: "#9ab", marginBottom: 4 }}>Effects</div>
+                  <div style={{ fontFamily: "ui-monospace, Consolas, monospace", fontSize: "0.72rem", lineHeight: 1.45, color: "#cfd6dd", whiteSpace: "pre-wrap", maxHeight: "28vh", overflowY: "auto" }}>
+                    {buildingStats.capabilities.join("\n")}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })()}
         {payload.type === "unit" && unitStats && (() => {
           const rows = [];
           const push = (label, value) => { if (value != null && value !== "") rows.push([label, value]); };

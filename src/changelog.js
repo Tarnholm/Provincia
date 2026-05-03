@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.191",
+    date: "2026-05-03",
+    items: [
+      { type: "feature", text: "Building right-click popup now shows stats. New IPC get-building-stats walks the chain block in EDB to the matching `<level> requires` header, then extracts the level body via brace-balance: cost (denarii), construction (turns), settlement_min, and every capability line except recruits (those go to the recruitable column already). Capabilities render in a monospace block — happiness_bonus, gdp_bonus, farming_level, archer_bonus, wall_level / tower_level / gate_strength, etc. — same wording as in EDB." },
+    ],
+  },
+  {
     version: "0.9.190",
     date: "2026-05-03",
     items: [

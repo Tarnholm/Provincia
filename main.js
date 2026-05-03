@@ -1278,6 +1278,90 @@ ipcMain.handle("get-unit-description", async (_event, modDataDir, unitName) => {
   return out;
 });
 
+// IPC: return per-level building stats from export_descr_buildings.txt.
+// Parses the block for `building <chainName> { ... <levelName> requires ...
+// { ... } }` and pulls out:
+//   - cost                — gold to construct
+//   - construction        — turns to construct
+//   - settlement_min      — min settlement tier
+//   - capabilities        — every non-recruit capability line (happiness,
+//                           gdp, farming_level, archer_bonus, walls, etc.)
+// Recruits live in their own IPC (get-building-recruits) and are excluded
+// here so the popup doesn't double-show them.
+const _buildingStatsCache = new Map();
+ipcMain.handle("get-building-stats", async (_event, modDataDir, levelName, chainName) => {
+  if (!levelName || !chainName) return null;
+  const cacheKey = (modDataDir || "") + "|" + chainName + "|" + levelName;
+  if (_buildingStatsCache.has(cacheKey)) return _buildingStatsCache.get(cacheKey);
+  const sources = getEdbSourceFiles(modDataDir, "export_descr_buildings.txt");
+  // Mod-first: reverse so the override wins on first match.
+  for (const src of sources.slice().reverse()) {
+    if (!fs.existsSync(src)) continue;
+    let text;
+    try {
+      const buf = fs.readFileSync(src);
+      text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le", 2) : buf.toString("utf8");
+    } catch { continue; }
+    const lines = text.split(/\r?\n/);
+    const stripComments = (s) => { const idx = s.indexOf(";"); return idx >= 0 ? s.slice(0, idx) : s; };
+    let i = 0;
+    const chainRe = new RegExp(`^\\s*building\\s+${chainName}\\b`);
+    while (i < lines.length && !chainRe.test(lines[i])) i++;
+    if (i >= lines.length) continue;
+    // Find the level header inside the chain block.
+    const levelRe = new RegExp(`^\\s*${levelName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+requires\\b`);
+    while (i < lines.length && !levelRe.test(lines[i])) i++;
+    if (i >= lines.length) continue;
+    i++;
+    // Walk to the level body's opening brace.
+    while (i < lines.length && stripComments(lines[i]).trim() !== "{") i++;
+    if (i >= lines.length) continue;
+    i++;
+    // Extract everything inside the level body using brace balance.
+    let depth = 1;
+    const body = [];
+    while (i < lines.length && depth > 0) {
+      const raw = lines[i];
+      for (const ch of raw) {
+        if (ch === "{") depth++;
+        else if (ch === "}") depth--;
+      }
+      if (depth > 0) body.push(raw);
+      i++;
+    }
+    // Parse the body.
+    let cost = null, construction = null, settlementMin = null;
+    const capabilities = [];
+    let inCap = false, capDepth = 0;
+    for (const raw of body) {
+      const s = stripComments(raw).trim();
+      if (!s) continue;
+      if (!inCap) {
+        if (/^capability\b/.test(s)) { inCap = true; capDepth = 0; continue; }
+        const cm = s.match(/^cost\s+(\d+)/);
+        if (cm) { cost = parseInt(cm[1], 10); continue; }
+        const tm = s.match(/^construction\s+(\d+)/);
+        if (tm) { construction = parseInt(tm[1], 10); continue; }
+        const sm = s.match(/^settlement_min\s+(\S+)/);
+        if (sm) { settlementMin = sm[1]; continue; }
+      } else {
+        for (const ch of s) {
+          if (ch === "{") capDepth++;
+          else if (ch === "}") { capDepth--; if (capDepth <= 0) { inCap = false; capDepth = 0; } }
+        }
+        if (s === "{" || s === "}") continue;
+        if (/^recruit\b/.test(s)) continue; // recruits surfaced separately
+        capabilities.push(s);
+      }
+    }
+    const result = { cost, construction, settlementMin, capabilities };
+    _buildingStatsCache.set(cacheKey, result);
+    return result;
+  }
+  _buildingStatsCache.set(cacheKey, null);
+  return null;
+});
+
 // IPC: return long-form building description from text/export_buildings.txt.
 // RTW keys these by level NAME with `_desc` / `_desc_short` suffixes (note:
 // units use `_descr` / `_descr_short` — buildings drop the second `r`).

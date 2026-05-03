@@ -48,6 +48,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("get-unit-description", modDataDir, unitName),
   getBuildingDescription: (modDataDir, levelName, chainName, culture) =>
     ipcRenderer.invoke("get-building-description", modDataDir, levelName, chainName, culture),
+  getBuildingStats: (modDataDir, levelName, chainName) =>
+    ipcRenderer.invoke("get-building-stats", modDataDir, levelName, chainName),
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   // Save file watcher
   saveWatchStart: (saveDir, pinnedSave) => ipcRenderer.invoke("save-watch-start", saveDir, pinnedSave || null),
