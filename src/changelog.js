@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.192",
+    date: "2026-05-03",
+    items: [
+      { type: "change", text: "All scrollbars hidden across the entire app per request. Global !important rule overrides the previously-skinned .panel / .factions-panel rails AND the runtime-injected scrollbarSkin.js styling AND the new InfoPopup description / capability scrollers. Scroll behaviour itself is preserved (mouse-wheel still works); only the rail and thumb are visually hidden." },
+    ],
+  },
+  {
     version: "0.9.191",
     date: "2026-05-03",
     items: [

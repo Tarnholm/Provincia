@@ -73,6 +73,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .zoom-controls .zoom-btn:hover:not(:disabled) { filter: brightness(0.95); }
 
+/* Hide every scrollbar in the app while keeping scroll behaviour. The user
+   doesn't want any visible scroll rails — even the previously-skinned
+   `.panel` / `.factions-panel` ones. !important overrides the per-panel
+   width/track/thumb declarations below as well as the runtime-injected
+   skin from scrollbarSkin.js. */
+*::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none !important; }
+* { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+
 /* Unified scrollbar styling fallbacks.
    The injected style from scrollbarSkin.js will override these with images. */
 .panel, .factions-panel {
