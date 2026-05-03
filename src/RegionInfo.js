@@ -714,7 +714,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   onMouseEnter={() => setHoveredRecruit(u.unit)}
                   onMouseLeave={() => setHoveredRecruit((cur) => cur === u.unit ? null : cur)}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
-                  title={u.unit.replace(/_/g, " ") + (upgradeOnly ? " — needs building upgrade" : "")} style={{
+                  title={
+                    u.unit.replace(/_/g, " ")
+                    + (upgradeOnly
+                      ? "\n" + (u.upgradeHint || "Needs building upgrade")
+                      : "")
+                  } style={{
                   padding: 2,
                   background: linkedFromBuilding ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.35)",
                   borderRadius: 3,

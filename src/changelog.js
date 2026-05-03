@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.187",
+    date: "2026-05-03",
+    items: [
+      { type: "feature", text: "Upgrade-only recruit cards now show a tooltip with the cheapest path to make the unit recruitable. Format: 'Upgrade <chain> → <levelName>' if the chain is already built but at a lower level, or 'Build <levelName> (<chain>)' if the chain doesn't exist yet. Computed by scoring every (chain, level) recruit option by gap from the current build state and picking the smallest." },
+      { type: "feature", text: "Right-click info popup now shows the in-game long-form description for both units and buildings. New IPCs get-unit-description / get-building-description read text/export_units.txt and text/export_buildings.txt (UTF-16 LE BOM aware), parse the {key}content multi-line dictionary format, and merge mod + game sources (mod wins). For units the EDU `dictionary` key is resolved automatically; for buildings the level name is tried first, chain name as fallback." },
+    ],
+  },
+  {
     version: "0.9.186",
     date: "2026-05-03",
     items: [

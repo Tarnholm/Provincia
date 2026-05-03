@@ -31,6 +31,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
   const [imgUrl, setImgUrl] = useState(null);
   const [status, setStatus] = useState("loading");
   const [unitStats, setUnitStats] = useState(null);
+  const [description, setDescription] = useState(null); // { displayName, short, long }
 
   // Fetch unit stats from EDU when payload is a unit.
   useEffect(() => {
@@ -42,6 +43,28 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
     api.getUnitStats(modDataDir || null, payload.name).then((s) => {
       if (!cancelled) setUnitStats(s || null);
     }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [payload, modDataDir]);
+
+  // Fetch the long-form description (text/export_units.txt or
+  // text/export_buildings.txt). For units we need the EDU `dictionary`
+  // key — the IPC resolves that internally. For buildings we pass the
+  // level name (preferred) and chain name (fallback).
+  useEffect(() => {
+    setDescription(null);
+    if (!payload) return;
+    const api = window.electronAPI;
+    if (!api) return;
+    let cancelled = false;
+    if (payload.type === "unit" && api.getUnitDescription) {
+      api.getUnitDescription(modDataDir || null, payload.name).then((d) => {
+        if (!cancelled) setDescription(d || null);
+      }).catch(() => {});
+    } else if (payload.type === "building" && api.getBuildingDescription) {
+      api.getBuildingDescription(modDataDir || null, payload.name, payload.chainName || null).then((d) => {
+        if (!cancelled) setDescription(d || null);
+      }).catch(() => {});
+    }
     return () => { cancelled = true; };
   }, [payload, modDataDir]);
 
@@ -133,6 +156,22 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
             <img src={imgUrl} alt={title} style={{ maxWidth: "100%", maxHeight: "70vh", display: "block" }} />
           )}
         </div>
+        {description && (description.short || description.long) && (
+          <div style={{
+            marginTop: 10,
+            padding: "8px 10px",
+            background: "rgba(0,0,0,0.3)",
+            borderRadius: 6,
+            fontSize: "0.78rem",
+            color: "#ddd",
+            lineHeight: 1.4,
+            maxHeight: "32vh",
+            overflowY: "auto",
+            whiteSpace: "pre-wrap",
+          }}>
+            {description.long || description.short}
+          </div>
+        )}
         {payload.type === "unit" && unitStats && (() => {
           const rows = [];
           const push = (label, value) => { if (value != null && value !== "") rows.push([label, value]); };

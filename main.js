@@ -1174,6 +1174,116 @@ function getEdbSourceFiles(modDataDir, relPath) {
   return getIconSearchRoots().map((r) => path.join(r, relPath));
 }
 
+// Parse an RTW localized text file (text/export_units.txt /
+// export_buildings.txt). Format: each entry starts with `{key}content`,
+// content can span multiple lines until the next `{...}` line. UTF-16LE
+// with BOM is the common encoding; falls back to UTF-8.
+const _textDictCache = new Map(); // filePath -> { key: text }
+function readTextDictionary(filePath) {
+  if (_textDictCache.has(filePath)) return _textDictCache.get(filePath);
+  if (!filePath || !fs.existsSync(filePath)) {
+    _textDictCache.set(filePath, {});
+    return {};
+  }
+  try {
+    const buf = fs.readFileSync(filePath);
+    let text;
+    if (buf[0] === 0xff && buf[1] === 0xfe) text = buf.toString("utf16le", 2);
+    else if (buf[0] === 0xfe && buf[1] === 0xff) text = buf.swap16().toString("utf16le", 2);
+    else text = buf.toString("utf8");
+    const entries = {};
+    let curKey = null, curBuf = "";
+    const flush = () => {
+      if (curKey != null) {
+        entries[curKey] = curBuf.replace(/\\n/g, "\n").trim();
+      }
+      curKey = null; curBuf = "";
+    };
+    for (const line of text.split(/\r?\n/)) {
+      const m = line.match(/^\s*\{([^}]+)\}(.*)$/);
+      if (m) {
+        flush();
+        curKey = m[1].trim();
+        curBuf = m[2];
+      } else if (curKey != null) {
+        curBuf += "\n" + line;
+      }
+    }
+    flush();
+    _textDictCache.set(filePath, entries);
+    return entries;
+  } catch (e) {
+    console.warn("[textDict]", filePath, e.message);
+    _textDictCache.set(filePath, {});
+    return {};
+  }
+}
+
+// Merge text dictionaries from mod + game text files. Mod entries win.
+function getMergedTextDictionary(modDataDir, relPath) {
+  const sources = getEdbSourceFiles(modDataDir, relPath);
+  const merged = {};
+  for (const src of sources) {
+    const dict = readTextDictionary(src);
+    Object.assign(merged, dict);
+  }
+  return merged;
+}
+
+// IPC: return long-form unit description from text/export_units.txt.
+// Looks up the EDU `dictionary` key for the given unitName, then fetches
+// the matching `{<dict>}`, `{<dict>_descr_short}`, `{<dict>_descr}`
+// entries. Returns { displayName, short, long } or null.
+ipcMain.handle("get-unit-description", async (_event, modDataDir, unitName) => {
+  if (!unitName) return null;
+  // 1) Find the dictionary key. Reuse the unit-ownership cache where
+  //    possible — it already records the dict per type.
+  let dictKey = null;
+  const cached = _unitOwnershipCache.get(modDataDir || "");
+  if (cached && cached.__dictionary && cached.__dictionary[unitName]) {
+    dictKey = cached.__dictionary[unitName];
+  } else {
+    const sources = getEdbSourceFiles(modDataDir, "export_descr_unit.txt");
+    for (const src of sources.slice().reverse()) {
+      if (!fs.existsSync(src)) continue;
+      try {
+        const buf = fs.readFileSync(src);
+        const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le", 2) : buf.toString("utf8");
+        const escaped = unitName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(`^type\\s+${escaped}\\s*$\\s*dictionary\\s+(\\S+)`, "m");
+        const m = text.match(re);
+        if (m) { dictKey = m[1]; break; }
+      } catch {}
+    }
+  }
+  if (!dictKey) return null;
+  const dict = getMergedTextDictionary(modDataDir, "text/export_units.txt");
+  const out = {
+    displayName: dict[dictKey] || null,
+    short: dict[dictKey + "_descr_short"] || null,
+    long: dict[dictKey + "_descr"] || null,
+  };
+  if (!out.displayName && !out.short && !out.long) return null;
+  return out;
+});
+
+// IPC: return long-form building description from text/export_buildings.txt.
+// RTW keys these by level NAME (e.g. {city_barracks}, {city_barracks_descr_short},
+// {city_barracks_descr}) — try level first, then chain as a fallback.
+ipcMain.handle("get-building-description", async (_event, modDataDir, levelName, chainName) => {
+  if (!levelName && !chainName) return null;
+  const dict = getMergedTextDictionary(modDataDir, "text/export_buildings.txt");
+  for (const key of [levelName, chainName].filter(Boolean)) {
+    const displayName = dict[key];
+    const short = dict[key + "_descr_short"];
+    const long = dict[key + "_descr"];
+    if (displayName || short || long) {
+      return { displayName: displayName || null, short: short || null, long: long || null };
+    }
+  }
+  return null;
+});
+
 // IPC: return the merged building display-name map from the mod + game
 // export_buildings.txt files. Format: { "<levelname>": "Display Name",
 // "<levelname>_<culture>": "Culture-Specific Name" }.

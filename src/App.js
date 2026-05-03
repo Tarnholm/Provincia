@@ -8263,6 +8263,8 @@ function App() {
                         const result = [];
                         // unit name → Set of chain types that expose it.
                         const gatedByMap = {};
+                        // upgrade-only unit name → [{chain, level}, ...]
+                        const upgradeRequiresMap = {};
                         // Units added during the first (building-gated) pass —
                         // these are CURRENTLY recruitable. Second pass adds
                         // upgrade-only candidates without touching this set.
@@ -8511,6 +8513,13 @@ function App() {
                               }
                               if (!gatedByMap[rec.unit]) gatedByMap[rec.unit] = new Set();
                               gatedByMap[rec.unit].add(chain);
+                              // For upgrade-only units, capture every (chain,
+                              // level) that would unlock them so we can show
+                              // the cheapest upgrade path in the tooltip.
+                              if (!availableSet.has(rec.unit)) {
+                                if (!upgradeRequiresMap[rec.unit]) upgradeRequiresMap[rec.unit] = [];
+                                upgradeRequiresMap[rec.unit].push({ chain, level: lvl });
+                              }
                             }
                           }
                         }
@@ -8525,12 +8534,42 @@ function App() {
                           const bAvail = availableSet.has(b) ? 0 : 1;
                           return aAvail - bAvail;
                         });
+                        // Index of the built level within each chain's ladder
+                        // — used to compute the cheapest upgrade option.
+                        const builtChainIdx = {};
+                        for (const b of builtList) {
+                          const order = (buildingLevelsLookup && buildingLevelsLookup[b.type]) || null;
+                          builtChainIdx[b.type] = order ? order.indexOf(b.level) : 0;
+                        }
+                        const computeUpgradeHint = (unit) => {
+                          const opts = upgradeRequiresMap[unit];
+                          if (!opts || opts.length === 0) return null;
+                          // Score each (chain, level) by how many upgrades away
+                          // it is from the current build state. Lower = closer
+                          // to recruitable. If a chain isn't built at all the
+                          // cost is needIdx + 1 (one extra step to construct
+                          // the chain from scratch).
+                          const scored = opts.map(({ chain, level }) => {
+                            const order = (buildingLevelsLookup && buildingLevelsLookup[chain]) || null;
+                            const needIdx = order ? order.indexOf(level) : 0;
+                            const haveIdx = chain in builtChainIdx ? builtChainIdx[chain] : -1;
+                            const gap = haveIdx >= 0 ? (needIdx - haveIdx) : (needIdx + 1);
+                            return { chain, level, gap, alreadyBuilt: haveIdx >= 0 };
+                          }).sort((a, b) => a.gap - b.gap);
+                          const best = scored[0];
+                          const chainLabel = best.chain.replace(/_/g, " ");
+                          const levelLabel = best.level.replace(/_/g, " ");
+                          return best.alreadyBuilt
+                            ? `Upgrade ${chainLabel} → ${levelLabel}`
+                            : `Build ${levelLabel} (${chainLabel})`;
+                        };
                         return result.map((name) => ({
                           unit: name,
                           faction: ownerId,
                           icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
                           gatedBy: gatedByMap[name] ? [...gatedByMap[name]] : [],
                           available: availableSet.has(name),
+                          upgradeHint: !availableSet.has(name) ? computeUpgradeHint(name) : null,
                         }));
                       })()}
                       fieldArmies={(() => {
