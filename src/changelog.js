@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.188",
+    date: "2026-05-03",
+    items: [
+      { type: "fix", text: "Taskbar / Start-Menu pins should now survive updates. Provincia never called app.setAppUserModelId(), so the running Electron process registered under a default AppUserModelID while NSIS set the installed shortcut's AUMID from package.json's appId. Windows tracks pins by AUMID — mismatch meant the pin's anchor went stale every reinstall and the icon disappeared. Now we explicitly call app.setAppUserModelId('com.example.interactive-map') on Windows at startup so the running app and the installed shortcut share one identity. Note: this fix only takes effect from the NEXT update onwards (the current pin is already orphaned)." },
+    ],
+  },
+  {
     version: "0.9.187",
     date: "2026-05-03",
     items: [

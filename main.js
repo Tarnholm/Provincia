@@ -4,6 +4,17 @@ const path = require("path");
 const fs = require("fs");
 const { autoUpdater } = require("electron-updater");
 
+// Pin the AppUserModelID so taskbar / Start-Menu pins survive updates.
+// NSIS sets the installed shortcut's AppUserModelID from package.json's
+// `appId`. Without an explicit call here, the running Electron process
+// would register under a default AppUserModelID, mismatched with the
+// shortcut — which is what Windows tracks pins against. Setting it to
+// the same value on every launch keeps the pin anchored to the new exe
+// after an electron-updater reinstall.
+if (process.platform === "win32") {
+  try { app.setAppUserModelId("com.example.interactive-map"); } catch {}
+}
+
 // ── Logging ──────────────────────────────────────────────────────────
 // Writes all console output + errors to a log file the user can send.
 // Location: <userData>/provincia.log. Reset each app launch (keep last one
