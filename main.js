@@ -1160,6 +1160,20 @@ function findRelatedModDirs(modDataDir, relPath) {
   return result;
 }
 
+// Total conversions like RIS replace vanilla wholesale; merging vanilla
+// EDB/EDU into the source list with last-wins-per-(chain, level) leaks
+// vanilla recruits ("hoplite") whenever the mod doesn't redefine the
+// exact same chain+level pair. When a mod data dir is provided AND
+// contains the requested file, return ONLY the mod sources (mod dir +
+// any related submods/parents). Otherwise fall back to vanilla.
+function getEdbSourceFiles(modDataDir, relPath) {
+  const modDirs = findRelatedModDirs(modDataDir, relPath);
+  if (modDirs.length > 0) {
+    return modDirs.slice().reverse().map((d) => path.join(d, relPath));
+  }
+  return getIconSearchRoots().map((r) => path.join(r, relPath));
+}
+
 // IPC: return the merged building display-name map from the mod + game
 // export_buildings.txt files. Format: { "<levelname>": "Display Name",
 // "<levelname>_<culture>": "Culture-Specific Name" }.
@@ -1175,13 +1189,7 @@ ipcMain.handle("get-building-chain-levels", async (_event, modDataDir) => {
   const cacheKey = modDataDir || "";
   if (_chainLevelsCache.has(cacheKey)) return _chainLevelsCache.get(cacheKey);
   const map = {};
-  const sources = [];
-  for (const root of getIconSearchRoots()) {
-    sources.push(path.join(root, "export_descr_buildings.txt"));
-  }
-  for (const d of findRelatedModDirs(modDataDir, "export_descr_buildings.txt").reverse()) {
-    sources.push(path.join(d, "export_descr_buildings.txt"));
-  }
+  const sources = getEdbSourceFiles(modDataDir, "export_descr_buildings.txt");
   const stripComments = (line) => {
     // Strip `;...` (comment to EOL) but leave quoted content alone — EDB uses
     // `;` for comments; no multi-line comments to worry about.
@@ -1312,13 +1320,7 @@ ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {
   if (_unitOwnershipCache.has(cacheKey)) return _unitOwnershipCache.get(cacheKey);
   const out = {}; // { unitName: [faction, ...] }
   const dictByType = {}; // { unitName: dictionary }
-  const sources = [];
-  for (const root of getIconSearchRoots()) {
-    sources.push(path.join(root, "export_descr_unit.txt"));
-  }
-  for (const d of findRelatedModDirs(modDataDir, "export_descr_unit.txt").reverse()) {
-    sources.push(path.join(d, "export_descr_unit.txt"));
-  }
+  const sources = getEdbSourceFiles(modDataDir, "export_descr_unit.txt");
   const stripComments = (line) => { const i = line.indexOf(";"); return i >= 0 ? line.slice(0, i) : line; };
   for (const src of sources) {
     if (!fs.existsSync(src)) continue;
@@ -1362,11 +1364,7 @@ ipcMain.handle("get-unit-stats", async (_event, modDataDir, unitName) => {
   const target = String(unitName).toLowerCase();
   const cacheKey = (modDataDir || "") + "|" + target;
   if (_unitStatsCache.has(cacheKey)) return _unitStatsCache.get(cacheKey);
-  const sources = [];
-  for (const root of getIconSearchRoots()) sources.push(path.join(root, "export_descr_unit.txt"));
-  for (const d of findRelatedModDirs(modDataDir, "export_descr_unit.txt").reverse()) {
-    sources.push(path.join(d, "export_descr_unit.txt"));
-  }
+  const sources = getEdbSourceFiles(modDataDir, "export_descr_unit.txt");
   const stripComments = (line) => { const i = line.indexOf(";"); return i >= 0 ? line.slice(0, i) : line; };
   // Mod-last-wins: keep parsing all sources; the last block found for the
   // target unit name wins (mods override vanilla stats).
@@ -1467,13 +1465,7 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
   const cacheKey = modDataDir || "";
   if (_buildingRecruitsCache.has(cacheKey)) return _buildingRecruitsCache.get(cacheKey);
   const out = {};
-  const sources = [];
-  for (const root of getIconSearchRoots()) {
-    sources.push(path.join(root, "export_descr_buildings.txt"));
-  }
-  for (const d of findRelatedModDirs(modDataDir, "export_descr_buildings.txt").reverse()) {
-    sources.push(path.join(d, "export_descr_buildings.txt"));
-  }
+  const sources = getEdbSourceFiles(modDataDir, "export_descr_buildings.txt");
   const stripComments = (line) => {
     const i = line.indexOf(";");
     return i >= 0 ? line.slice(0, i) : line;

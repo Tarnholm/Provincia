@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.186",
+    date: "2026-05-03",
+    items: [
+      { type: "fix", text: "Vanilla recruits no longer leak into mod data. get-building-recruits / get-unit-ownership / get-building-chain-levels / get-unit-stats were merging vanilla EDB+EDU FIRST, then mod files, with last-wins per (chain, level). RIS doesn't redefine every vanilla (chain, level) pair (vanilla 'barracks' levels are named differently), so vanilla `recruit \"hoplite\"` lines stayed visible — Syracuse and other Greek-faction cities showed the vanilla 'Hoplite' unit, which doesn't exist in RIS at all. New helper getEdbSourceFiles(modDataDir, relPath) returns mod-only sources when a mod data dir is provided AND contains the requested file; falls back to vanilla install roots otherwise." },
+    ],
+  },
+  {
     version: "0.9.185",
     date: "2026-05-03",
     items: [
