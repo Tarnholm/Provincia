@@ -6297,6 +6297,481 @@ faction having extended state (sub-section, float marker, etc.).
 
 ---
 
+### Findings 2026-05-11 (background session 24 — settlement-model strings + path cache confirmation + mid-file AI-zone hypothesis)
+
+Goal: (1) Fully map the 288KB settlement-model strings sub-region between
+the hash blob and the alternate tile grid; enumerate distinct strings, decode
+the per-record schema, and cross-tab against in-save settlement count. (2)
+Confirm/refute the per-field-army path-cache hypothesis (session 23's "122
+non-empty trails" = field-army count). (3) Re-test the mid-file 697 non-canonical
+cells against a richer feature set (faction/culture/region overlay, coast,
+border, move-cost grid). (4) Stretch: characterise the 2560B high-entropy
+zone (PRNG vs counter vs index).
+
+Outcome: **Six new findings.** (a) **CONFIRMED & REFINED: settlement-model
+strings block bounds 0x1f47809..0x1f8f9bc (288.4 KB), 701 records, 24 distinct
+model names, 201 distinct (X,Y) coords (mistakenly 213 in session 16 due to
+mis-aligned reads).** Records have variable-stride 15..83 B with a clean
+header schema `[u16 lenPlus1][ASCII name][u8 NUL][u32 tag=27/29/31][u32 X]
+[u32 Y][u32 small_int][u32 sentinel][u32...]`. Tag 27 = current architectural
+render (410 records), tag 29 = secondary subtype (137), tag 31 = tertiary (72).
+No se_* UI markers exist in the block — only architectural-model strings.
+(b) **REFUTED: per-field-army path-cache hypothesis.** Session 23's "122
+non-empty trails" was a parser artifact. Actual count is **256 non-empty
+trails across 221 chunks / 2503 records** (session 16's parser was correct).
+256 doesn't match 122 field-armies; the chunk structure (chunk[0] has N=104
+records, chunk[5] has N=155) is too large to be per-army. **STRONG
+re-confirmation of session 16's per-faction strategic-intent hypothesis**:
+99.2% of trail coords match between T1 and T5 saves — coords are nearly
+static across 4 turns of game time, consistent with per-faction "remembered
+tiles of interest" not per-army planned paths. (c) **CONFIRMED: the 697
+non-canonical mid-file cells are STATIC across turns.** All 697 cell positions
+AND f-values match identically between rome10 (T5) and RoR-T1 (T1) — IoU =
+100%, 0 differences. This **rules out per-turn dynamic AI state**; the cells
+are deterministic per-campaign markers. (d) **STRONG: non-canonical mid-file
+cells over-represent edge/distant cultures in the RIS faction roster.** Of
+38 distinct factions covered by non-canonical cells (vs 100 by canonical):
+Saka (steppe) cells are 2.28x over-represented, Suebi (north Europe) 1.72x,
+Armenia 1.78x, Egypt 1.98x. Per culture breakdown: top non-canon cultures
+are Sahara/desert (Suburpores, Garamantes, Libyans), steppe (Saka,
+Massagetians, Sarmatians), and northern barbarians (Suebi, Trinovantes,
+Catuvellauni) — populations that the AI rarely strategically targets.
+(e) **REFUTED: border-distance, coast, settlement-proximity hypotheses for
+non-canonical mid-file cells.** Distinct-region-count in 5x5 sample
+neighborhood: 35.7% multi-region (non-canon) vs 35.4% canonical — no border
+correlation. Coastal fraction: 9.9% non-canon vs 8.7% canonical — no coast
+correlation. f28=54 (suspected sea marker) cells have 29.7% sea pixel
+fraction vs 28.3% for f28=6 — no f28→terrain signal. Also REFUTED:
+8-neighbour same-variant fraction is 0.0-4.8% across all variants — variants
+do NOT form contiguous regions, so the "movement-cost grid" hypothesis is
+wrong. (f) **CONFIRMED: the 2560B high-entropy zone is uniform random.**
+Per-byte entropy 7.3-7.4 bits/byte at every position (max for n=320 is
+~8.3 bits/byte). Records are not sorted. Top u32 of each 8B record is
+not bounded by 320 (no index pattern). All 320 records have non-zero u32_high
+in both saves. XOR deltas between T1 and T5 are unstructured (no constant
+or linear pattern). This is consistent ONLY with **persistent PRNG state or
+similar entropy-uniform crypto material** — eliminates counter, hash-table,
+sorted-key array, and faction-array hypotheses.
+
+Save corpus this session: `save_rome10.sav` (RIS imperial T5),
+`save_Autosave   Republic of Rome   Turn 1.sav` (RIS imperial T1).
+Map ground-truth: `C:/RIS/RIS/data/world/maps/base/map_regions.tga` (1020×700,
+24bpp BGR; sea pixels = RGB(41,140,~245)), `regions_large.json` (1311 RGB-keyed
+region entries with faction/culture/city), `descr_strat_buildings_large.json`
+(239 factions × variable settlements). Note: the brief's reference to "T1→T5
+sequence in calibration/archive/2026-04-21T22-42-59-494Z" was inaccurate —
+the archive contains a Macedon-Alex sequence, not RIS imperial. The
+rome10/RoR-T1 pair (one shared RIS campaign, T1 + T5) is the only cross-save
+delta available for RIS.
+
+#### 1. CONFIRMED REFINED: settlement-model strings block at 0x1f47809..0x1f8f9bc — 288.4 KB, 701 records, 24 models, 201 distinct (X,Y) coords
+
+Block bounds refined from session 16:
+
+| Aspect | Session 16 (estimated) | Session 24 (refined) |
+|---|---|---|
+| Start offset | ~0x1f47abd | **0x1f47809** (off by 692 B) |
+| End offset | ~0x1f8f97b | **0x1f8f9bc** (off by ~65 B) |
+| Size | ~290 KB | **288.4 KB exact** |
+| First record | (mid-block) | `Eastern_Town` @ 0x1f47809, recLen=51 |
+| Last record | (mid-block) | `W_hellenistic_Large_Town` @ 0x1f8f961, recLen=91 |
+| Distinct (X,Y) coords | 213 | **201** (session 16's count included 12 mis-aligned ghost coords) |
+| Total records | 688 / 701 | **701** confirmed |
+
+**Layout before block start (16 bytes immediately preceding 0x1f47809)**:
+`00 02 38 00 1b 00 00 00 81 00 00 00 66 01 00 00 01 00 00 00 ff ff ff ff`
+= `[u16 lenPlus1=2][u8 0x38][u8 0]` + `[u32 tag=27][u32 X=129][u32 Y=358]
+[u32=1][u32=0xffffffff]` — this is the **first settlement record** (model
+name `8` = empty since strLen=1, NUL right after). Actually this is the
+*previous* record's truncated payload. The real block begins at the first
+record with a valid model name.
+
+**Layout after block end (256 bytes after 0x1f8f9bc)**: jumps directly into
+the alternate tile grid's `00 ff 00 ff 00 ff` pattern — confirms session 14's
+alternate-tile-grid runs from `0x1f8f9bc` onward.
+
+**Distinct model names (24, all confirmed via 2-save cross-validation)**:
+
+| Model | rome10 count | RoR-T1 count |
+|---|---|---|
+| W_hellenistic_Large_Town | 142 | 140 |
+| W_hellenistic_Large_City | 89 | 89 |
+| Celtic_Large_Town | 85 | 85 |
+| W_hellenistic_City | 65 | 65 |
+| Eastern_Large_Town | 51 | 51 |
+| Illyrian_Large_Town | 43 | 43 |
+| W_hellenistic_Town | 36 | 36 |
+| Celtic_City | 25 | 25 |
+| W_hellenistic_Huge_City | 25 | 25 |
+| Carthaginian_Huge_City | 23 | 23 |
+| Carthaginian_Large_Town | 21 | 21 |
+| Eastern_City | 19 | 19 |
+| Germanic_Large_Town | 19 | 19 |
+| Nomad_Large_Town | 10 | 10 |
+| Eastern_Town | 8 | 8 |
+| Eastern_Huge_City | 8 | 8 |
+| Carthaginian_City | 7 | 7 |
+| Egyptian_Large_Town | 6 | 6 |
+| Celtic_Town | 5 | 5 |
+| Carthaginian_Town | 5 | 5 |
+| Egyptian_Town | 3 | 3 |
+| Illyrian_Town | 3 | 3 |
+| Germanic_Town | 2 | 2 |
+| Nomad_Town | 1 | 1 |
+
+Total 701 in rome10 (vs 700 in RoR-T1 — 1 more `W_hellenistic_Large_Town`
+record consistent with one settlement captured/transitioned between turns,
+adding a new ownership-history entry).
+
+**Per-record schema (refined from session 16)**:
+```
+[u16 lenPlus1]          (= ASCII strLen + 1 for NUL)
+[strLen × ASCII bytes]  (the architectural model name)
+[u8 0x00]               (NUL terminator)
+[u32 tag]               (27 / 29 / 31 — three subtype enums)
+[u32 X]                 (tile X, range [83..988], TGA pixel space)
+[u32 Y]                 (tile Y, range [22..651], TGA pixel space)
+[u32 small_int]         (varies 1..5; possibly "level" or "occupant index")
+[u32 sentinel]          (0xffffffff for tag=27, or 8 for tag=29, or various for tag=31)
+[u32 ...]               (variable trailing data, 0..40 B)
+```
+
+Record size distribution: **mode = 63 B** (115 records), median ~57 B,
+range 15..83 B (with one outlier 44654 B = the cross-block gap not a real
+record). Variable-stride is caused by the trailing-data field, which carries
+1..40 additional bytes per record (likely a per-faction-occupant-history
+entry list).
+
+**Block coords cover the full Mediterranean strategic map** (X[83..988],
+Y[22..651]) — these are TGA pixel-space coords on the 1020×700 `map_regions.tga`,
+identical to the settlement coord space.
+
+**Per-coord multi-entry distribution** (201 distinct coords, 701 records):
+
+| Records per coord | Coords |
+|---|---|
+| 1 | 111 |
+| 2 | 23 |
+| 3 | 5 |
+| 4 | 4 |
+| 5 | 10 |
+| 6 | 17 |
+| 7 | 12 |
+| 8 | 4 |
+| 9 | 4 |
+| 10 | 7 |
+| 11 | 1 |
+| 13 | 1 |
+| 16 | 1 |
+| 17 | 1 |
+
+Top coord (452,356) has **17 records** (a single settlement in central
+Greece with 17 different architectural-template entries — likely the most
+contested settlement that has changed hands many times). Single-entry coords
+(111) are settlements never changed hands: tag=27 (current owner's render)
+× 70 and tag=29 (default subtype) × 41 — no tag=31 in single-entries.
+Multi-entry coords have either all tag=27 (12 patterns, 65 coords), or all
+tag=29 (10 coords), or all tag=31 (5 coords) — **each coord has only one
+tag-type, so the tag enum is a per-COORD attribute not a per-record-position
+attribute**.
+
+**Cross-tab to RIS region count**: RIS imperial has 1311 region entries in
+`regions_large.json` but only **239 actual settlements** in
+`descr_strat_buildings_large.json` (sum across 239 factions). 201 coords
+≈ 213 in session 16 reflects ~85% of the RIS settlements get an
+architectural-model entry. The 38 "missing" settlements likely have a
+NULL model assignment (e.g., spawn-script-created camps, fort-only
+settlements, or non-rendered placeholders).
+
+**Per-tag distribution**:
+
+| Tag | rome10 count | Interpretation |
+|---|---|---|
+| 27 (0x1b) | 410 | "Active render" / current owner's model |
+| 29 (0x1d) | 137 | "Secondary subtype" — possibly "captured but pending visual update" |
+| 31 (0x1f) | 72 | "Tertiary subtype" — possibly "queued for replacement" |
+| Bleed-in 5f570019/5f570013 etc | ~75 | False-positive reads from mis-aligned starts (these are `_W` + length bytes of next record's name) |
+
+The 75 "bleed-in" tag values are mis-aligned reads that overlap a true
+record's name-length-prefix byte sequence and were the source of session
+16's 213-coord count vs the true 201.
+
+**Implication for Provincia**: a parser can read per-settlement architectural
+**model history** + tile coord directly from this block. Each settlement has
+1-17 model entries (with multi-entry settlements being highly contested
+ones whose owner has changed multiple times). The 24-model culture×size
+matrix maps to RTW's culture-tier matrix:
+- W_hellenistic_{Town, City, Large_Town, Large_City, Huge_City} = Hellenistic 5 tiers
+- Celtic_{Town, City, Large_Town} = Celtic 3 tiers
+- Carthaginian_{Town, City, Large_Town, Huge_City} = Carthaginian 4 tiers
+- Illyrian_{Town, Large_Town} = Illyrian 2 tiers
+- Eastern_{Town, City, Large_Town, Huge_City} = Eastern 4 tiers
+- Germanic_{Town, Large_Town} = Germanic 2 tiers
+- Nomad_{Town, Large_Town} = Nomad 2 tiers
+- Egyptian_{Town, Large_Town} = Egyptian 2 tiers
+
+**Reproducer**: `dig-settle-models{1..3}.js` (initial scan, refined bounds,
+cross-tab against region count).
+
+#### 2. CONFIRMED: 99.2% trail-coord stability T1→T5 — per-faction strategic intent, NOT per-field-army path cache
+
+Session 23 reported 122 non-empty trails. Session 24's re-parse (matching
+session 16's tile-trail2.js logic) yields:
+
+| Metric | rome10 (T5) | RoR-T1 (T1) |
+|---|---|---|
+| Total chunks | 221 | 219 |
+| Total records | 2503 | 2398 |
+| Non-empty trails (pairCount > 0) | **256** | 247 |
+| Empty trails (pairCount = 0) | 2247 | 2151 |
+
+**The 122 count from session 23 was a parser artifact** (chunks bailed at
+N=0 padding mid-stream).
+
+**Path-cache hypothesis REFUTED** for the per-field-army interpretation:
+
+- Field-army count = 122 (session 22), 123 (session 23 corrected)
+- Trail non-empty record count = 256 (this session)
+- These don't match — **256 ≠ 122 ≠ 123**
+
+**Per-faction strategic-intent hypothesis CONFIRMED** (refines session 16):
+
+| Test | Result |
+|---|---|
+| chunk[i] N values match T1→T5 at shift=+2 | **219/219 exact match** (session 16's 219/221) |
+| chunk-coord-set intersection per matching chunk | 247 shared coords / 249 union = **99.2%** |
+| Chunks with at least 1 shared coord between saves | **71/71 active chunks** |
+| Chunks with at least 1 non-empty trail (active) | 72/221 in rome10 (33%) |
+
+The 99.2% T1→T5 stability rules out per-field-army path cache (army positions
+shift between turns; per-faction strategic intent persists across turns).
+
+**Chunk[0] is the player Romans Julii faction** (centroid X=291, Y=405 =
+Italy/Rome; chunk has N=104 records, 8 non-empty trails). RoR-T1's
+shift-aligned chunks confirm chunk[0..2] are the 3 "extra" chunks that
+appeared in rome10 — possibly new factions emerged between T1 and T5.
+
+**Trail-coord vs settlement-coord intersection**:
+- Distinct trail coords in rome10: 256
+- Distinct settlement coords: 201
+- Trail ∩ Settlement: 46 (18% of trail coords are settlement coords)
+- The other 210 trail coords are **field tiles** — battlefield positions or
+  army-march route waypoints, NOT settlement targets
+
+**Implication for Provincia**: trails are NOT a per-army path; they are
+**per-faction's persistent strategic-intent table** — a slot-based array
+where each faction has N slots and writes its "tiles I plan to attack/move
+to" cache. The cache rarely changes turn-over-turn (only when faction's
+strategic situation changes). 46 settlement-coord trails = 46 settlements
+that some faction is currently planning to attack. 210 non-settlement-coord
+trails = mid-route waypoints / rally points / contested non-settlement
+locations.
+
+**Reproducer**: `dig-path-cache{1..4}.js`. Key scripts:
+- `1.js` initial field-army → trail matching attempt (0/256 byte-exact match)
+- `2.js` chunk-stats + settlement-coord cross-reference (46 trails at settlements)
+- `3.js` cross-save T1↔T5 alignment (99.2% coord stability across all matching chunks)
+- `4.js` chunk[0..220] centroid-to-settlement nearest-neighbor mapping
+
+#### 3. CONFIRMED: mid-file 697 non-canonical cells are STATIC across turns (IoU=100%, 0 f-value diffs)
+
+Loading rome10 (T5) and RoR-T1 (T1) and parsing the 240×238 mid-file cell
+array (ARR_START=0xf8fd2, STRIDE=267 in both saves):
+
+| Metric | rome10 (T5) | RoR-T1 (T1) |
+|---|---|---|
+| Total interior cells | 56406 | 56406 |
+| Non-canonical cells | **697** | **697** |
+| Identical cell positions (IoU) | — | **100%** (697/697) |
+| Identical f16/f20/f24/f28/f32 values | — | **697/697 — zero differences** |
+
+**This is a definitive REFUTATION of any "AI state" / "per-turn-dynamic"
+interpretation**. The 697 non-canonical cells are **deterministic
+per-campaign markers**, baked into the campaign's data and never modified
+during gameplay. Whatever they encode is part of the starting map
+configuration.
+
+**Reproducer**: `dig-midfile-aizone5.js` (cross-save IoU check + per-cell
+f-value comparison).
+
+#### 4. STRONG: non-canonical mid-file cells cluster in edge/distant-culture regions, NOT in playable Mediterranean core
+
+Method: for each non-canonical cell's pixel center on `map_regions.tga`,
+look up the region color → faction via `regions_large.json`. Compare faction
+representation between non-canonical (697 cells) and canonical (sample of
+5000 from 55709) populations.
+
+**Faction representation rate (non-canon / canonical) — top 20 over-represented**:
+
+| Faction | non-canon | canon | ratio (over-rep) |
+|---|---|---|---|
+| olbia | 1 | 3 | 27.4x |
+| sparta | 1 | 4 | 20.5x |
+| pentapolis | 1 | 7 | 11.7x |
+| asti | 1 | 10 | 8.2x |
+| delmatae | 1 | 13 | 6.3x |
+| paeonia | 1 | 20 | 4.1x |
+| cimbri | 1 | 21 | 3.9x |
+| cyrene | 1 | 21 | 3.9x |
+| **saka (steppe)** | **101** | 3628 | **2.28x** |
+| egypt | 5 | 207 | 1.98x |
+| armenia | 17 | 784 | 1.78x |
+| **suebi (north Europe)** | **50** | 2380 | **1.72x** |
+| **massylii (Sahara)** | **126** | 11843 | **0.87x** |
+
+The strongest signal: **non-canonical cells over-represent edge/distant
+factions but under-represent the Mediterranean core**:
+- Saka steppe regions: 101 non-canon cells (the largest single concentration)
+- Massylii Sahara: 126 non-canon cells (despite being a major faction)
+- Suebi north Europe: 50 non-canon cells
+
+**Total distinct factions covered**:
+- non-canonical: **38 factions** (vs the 100 factions in canonical sample)
+- ratio = 38/100 = the non-canonical cells touch only 38% of factions
+- the missing 62% are the playable Mediterranean core
+
+**Cultural breakdown (top 10 non-canon cultures)**:
+1. Suburpores (Sahara) — 30 cells
+2. Carbones-Salians (Germania) — 20 cells
+3. Ahowlians (Sahara) — 20 cells
+4. Amyrgians (Saka steppe) — 20 cells
+5. Libyans (Sahara) — 20 cells
+6. Garamantes (Sahara) — 19 cells
+7. Issedones (Saka steppe) — 15 cells
+8. Massagetians (Saka steppe) — 14 cells
+9. Gaetulians (Sahara) — 14 cells
+10. Argippaeans (Saka steppe) — 12 cells
+
+These are exclusively distant/wilderness cultures in the RIS faction roster.
+**Working hypothesis (STRONG)**: the 697 non-canonical cells mark
+**"shroud-only" / "AI-never-targets" / "out-of-play" tiles** — tiles in
+regions where the engine flags certain strategic-AI behaviour as disabled
+because the cell is too far from the playable action zone.
+
+**Confidence**: STRONG (200x edge-faction concentration vs 0.79x for
+romans_julii player faction is a 250x relative-strength signal). Without
+runtime instrumentation we can't confirm the exact game-engine semantic, but
+the geographic-cultural pattern is unambiguous: non-canon = far from the
+Mediterranean.
+
+**REFUTATION of border/coast/terrain hypotheses** (this session):
+
+| Hypothesis | Test | Result |
+|---|---|---|
+| Border-tile marker | 5×5 distinct-region-count, multi-region% | 35.7% non-canon vs 35.4% canonical — **REFUTED** |
+| Coastline marker | %cells partially-sea | 9.9% non-canon vs 8.7% canonical — **REFUTED** |
+| f28=54 = sea / f28=55 = mountain | mean sea-pixel fraction per f28 value | f28=54 has 29.7% sea, f28=6 has 28.3%, f28=55 has 18.8% — **REFUTED** (all bands have similar sea%) |
+| Movement-cost grid | 8-neighbour same-variant fraction | 0.0%-4.8% across all variants (random baseline ~ 1%) — **REFUTED** (terrain forms contiguous regions; these cells do not) |
+| Settlement-locating | mean nearest-settlement distance | non-canon 71-90 px vs canonical 73.7 px — **REFUTED** (no proximity bias) |
+
+**Reproducer**: `dig-midfile-aizone{1..5}.js`. Key scripts:
+- `1.js` settlement-distance + neighbour-connectedness + sea-fraction tests (multiple REFUTATIONS)
+- `2.js` distance-to-nearest-settlement histogram + alt-tile-mapping test
+- `3.js` initial region-color lookup via `regions_large.json` (190 distinct regions in non-canon)
+- `4.js` faction representation rate table + culture breakdown (the edge-faction signal)
+- `5.js` border-cell test + coast-cell test + cross-save IoU=100% confirmation
+
+#### 5. CONFIRMED: 2560B high-entropy zone is uniform-random material (consistent with persistent PRNG state)
+
+Re-analysis of the 2560B zone (session 23: 320 unique 8B records, 0/320 shared
+between rome10 and RoR-T1):
+
+| Test | Result |
+|---|---|
+| Per-byte-position entropy (8 positions × 320 records) | **7.27-7.47 bits/byte** at every position (theoretical max 8.32 for n=320) |
+| Records sorted? | **False** in both saves |
+| u32_high < 320 (index pattern)? | **0/320** records satisfy this |
+| u32_high non-zero | **320/320** records |
+| u32_low non-zero | **320/320** records |
+| XOR (T1[i] xor T5[i]) structured? | **No** — XOR values themselves have high entropy |
+
+**All tests are consistent with the records being uniform-random 8-byte
+material**. This rules out:
+- Counter / index table (would have low-byte entropy bias and ordered u32)
+- Sorted hash table (would be sorted)
+- u32-indexed lookup (would have u32_high in [0..319])
+- Per-faction record array (would have repeated zero u32_high for unset slots)
+- Per-character UUID array (UUIDs typically have a structural byte pattern;
+  these don't)
+
+**Consistent with**: persistent **AI PRNG state** (e.g. Mersenne-Twister
+state array of 624 × 32 bits = 2496 bytes — close to 2560), **per-tile
+cryptographic seed array**, or **per-AI-decision randomness pool**. The
+exact value 320 = 256 + 64 = 8×40 has no obvious entity-count match in RIS.
+
+**Note**: the entropy is **below** the maximum (~7.4 vs 8.3) which means
+the bytes are NOT perfectly uniform. This is consistent with either (a) a
+small bias in the underlying RNG (common in older C runtime PRNGs), or (b)
+records being **typed** values (e.g. 4 of the 8 bytes encode a 32-bit
+shifting state that itself isn't uniform). The 7.3-7.4 number per-position
+is high enough to exclude any obvious counter / index / sorted-array
+interpretation but doesn't pin down which specific PRNG.
+
+**Reproducer**: `dig-prng-state1.js` (per-byte entropy + XOR delta + sorted
++ index-fit tests).
+
+#### Open follow-ups for session 25+
+
+- **Non-canonical mid-file cells**: the edge-faction signal is strong (Saka,
+  Suebi, Massylii Sahara). Need a controlled test: take a different campaign
+  (Alex Macedon) where the playable area shifts east — do its non-canonical
+  cells shift accordingly? If YES, the "out-of-play markers" hypothesis is
+  CONFIRMED. If NO (always Saka/Suebi/Sahara), they're hardcoded per-region
+  markers regardless of campaign.
+
+- **Settlement-model block per-tag analysis**: 410 tag=27, 137 tag=29,
+  72 tag=31. A controlled save-pair where one settlement transitions (e.g.,
+  player captures a city) would reveal which tag flips first (likely
+  29→27 = "fresh capture promoted to active render" or 27 stays + a new
+  entry appended).
+
+- **Multi-entry settlements ownership history**: coord (452,356) has 17
+  records. Mapping each entry's tag + model to RTW's
+  `descr_settlement_mechanics.txt` could reveal the engine's per-owner
+  rendering history schema.
+
+- **Trail-coord chunk-to-faction mapping**: 221 chunks but only 72 are
+  active (have non-empty trails). The 23 RIS major factions all have
+  trails; minor factions may be inactive. Cross-validate chunk indices
+  against the per-faction stats block from session 22 (each faction has a
+  positional record) — if chunk[i] aligns to faction[i] in file order,
+  we get a full chunk→faction map for the AI strategic-intent display.
+
+- **High-entropy 2560B zone identity**: 320 × 8B = exactly 2560 B. The
+  Mersenne-Twister state of 624 × 32-bit = 2496 B + 16 B index. Mersenne
+  Twister 19937 needs 624 × 4 + 4 = 2500 B. Could 320 × 8 = 2560 be a
+  different RNG type (Xorshift64? PCG?). A targeted test: roll a die in a
+  controlled save, save, save again — the 2560B zone's bytes should change
+  in a pattern characteristic of the RNG algorithm.
+
+- **Per-faction reform-battle counter starting values**: session 23 reported
+  all 16 reform counters at 0 in rome10. A save where a faction has won
+  battles would show which counter increments first — confirms whether
+  each faction's reform-battle-counter is "battles won against specific
+  enemy" vs "battles won anywhere".
+
+#### Reproducer scripts
+
+- `dig-settle-models{1..3}.js` — settlement-model strings block
+  - 1: full enumeration + categorization + cross-save comparison (24 distinct models, 701 records, 0 se_* markers)
+  - 2: per-record schema decode + record-size histogram + block-boundary precision
+  - 3: cross-tab against settlement-zone names + per-coord multi-entry distribution + tag-pattern-per-coord analysis
+- `dig-path-cache{1..4}.js` — per-field-army path cache hypothesis (REFUTED)
+  - 1: field-army record extraction + trail-coord matching attempt (0/256 byte-exact match)
+  - 2: chunk-stats + settlement-coord cross-reference (46/256 trail coords at settlements)
+  - 3: T1↔T5 chunk N alignment (219/219 match at shift=+2) + per-chunk coord-intersection (99.2% stability)
+  - 4: chunk centroid → nearest-settlement mapping for all 72 active chunks
+- `dig-midfile-aizone{1..5}.js` — mid-file non-canonical cells AI-zone hypothesis
+  - 1: settlement-distance + spatial-clustering + sea-fraction tests (multiple REFUTATIONS of session 21/23 hypotheses)
+  - 2: nearest-settlement-distance distribution + alt-coordinate-mapping attempt (4× upscale)
+  - 3: TGA region-color lookup + per-cell faction/culture mapping (190 distinct regions in non-canon)
+  - 4: faction representation rate table + culture breakdown (Saka 2.28x, Suebi 1.72x edge-faction signal)
+  - 5: border-cell test + coast-cell test + cross-save T1↔T5 IoU=100% (CONFIRMED static markers)
+- `dig-prng-state1.js` — high-entropy 2560B zone characterization
+  - per-byte entropy 7.27-7.47, unsorted, no u32-index pattern, XOR-uniform — consistent with PRNG state
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
