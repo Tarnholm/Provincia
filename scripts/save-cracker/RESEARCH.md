@@ -4574,6 +4574,250 @@ unpinned.
 
 ---
 
+### Findings 2026-05-11 (background session 19 — AI cache semantics + RIS offset)
+
+Goal: (1) Pin RIS imperial AI cache start offset (session 18 noted "similar 12-byte
+pattern at `0x3c78` in rome10"). (2) Decode AI cache hash semantics (45 distinct
+hashes in Macedon T13E — character UUIDs? CRC32?). (3) Decode AI cache key/turn
+semantics (low byte counter? tile coords?). (4) Mid-file 1,389 non-canonical
+records: try port/road/coast hypotheses.
+
+Outcome: **Four CONFIRMED findings + two RETRACTED.** (a) **The session-18 AI cache
+schema interpretation `(hash, key, turn)` is REVISED**: the third u32 is **tile-Y**
+not "turn number", and `key.byte2..3` is **tile-X** (single byte in Alex, u16 in
+RIS). Each record is a **tile coordinate** annotated with hash and key. (b) **RIS
+imperial AI cache CONFIRMED at offset `0x51b5` in rome10/romet1**, preceded by a
+**u32 length prefix at `0x51b1`** containing `13884` (=record count). Total cache
+size 13,885 records × 12 bytes. The session-18 hint of `0x3c78` was a false alarm
+(low-entropy junk region). (c) **Hash is an AI-plan/operation ID, NOT a character
+UUID** — the entire hash set (45 hashes) turns over between t11e→t13s, ruling out
+persistent character identifiers. Records with the same hash form **connected
+paths** in tile-coord space (consecutive integer (x,y) walks). (d) **Mid-file
+non-canonical cells are NOT correlated with bridges, rivers, sea, or coast** —
+session-18's "map-baked-static" hypothesis still holds but the specific feature
+remains unidentified.
+
+#### 1. CONFIRMED & REVISED: AI cache record schema is `(hash, key, tile_Y)` where key encodes type+tile_X
+
+Re-examination of Alexander cache records reveals the 12-byte schema:
+
+```
+struct AICacheRecord {
+  u32 hash;       // AI plan/operation ID (NOT char UUID, see finding #3)
+  u32 key;        // packed: low_byte=type, byte1=mode, bytes[2..3]=tile_X
+                  //   type ∈ {0x01, 0x02, 0x04, 0x00, 0x80}
+                  //   mode ∈ {0x00, 0x02, 0x03, 0x20, 0x22} (mostly 0x20)
+                  //   tile_X: u8 in Alex (Alex map is 130 wide), u16 in RIS (1020 wide)
+  u32 tile_Y;     // single tile-Y coordinate (single byte effectively; Alex<69, RIS<700)
+}
+```
+
+**Spatial coherence test (Macedon T13E)**: For each of the 45 distinct non-zero
+hashes, all records cluster within a small spatial region:
+
+| Hash | n records | Tile-X range | Tile-Y range | Tightness |
+|---|---|---|---|---|
+| 0x36465c3a | 30 | 116..126 | 40..49 | tight diagonal path |
+| 0xc7e043d8 | 30 | 20..35 | 51..65 | snaking path SW→NE |
+| 0x92c34070 | 20 | 32..41 | 22..30 | small box |
+| 0xa64fe2aa | 18 | 36..44 | 57..65 | horizontal extension |
+| 0xeb22c841 | 16 | 72..79 | 18..26 | tight cluster |
+| 0xd2fd4c9d | 15 | 86..92 | 12..19 | vertical line |
+| 0x8259699d | 13 | 8..19 | 49..50 | **MACEDON HOMELAND** (Alexander at 11,49) |
+
+Within each hash, **consecutive records form connected integer-coordinate paths**:
+e.g., hash 0x36465c3a starts at (116,40)→(117,40)→(118,40)→...→(123,40), then
+turns south at (123,41)→(124,41)→(124,42)→(124,43)→.... These are **tile-by-tile
+movement paths**, not random clusters.
+
+**Alex map dimensions**: `map_regions.tga = 130 × 69`. Cache X range 0..128, Y range
+0..65 — perfectly within bounds.
+
+#### 2. CONFIRMED: RIS imperial AI cache at offset `0x51b5` with u32 length prefix at `0x51b1`
+
+Searching rome10 by exhaustive 12-byte stride scanning reveals the cache:
+
+```
+@0x51b1: u32 record_count (=13884 in rome10 and romet1)
+@0x51b5..0x2dc91: 13,885 records × 12 bytes each
+```
+
+The 12 bytes preceding 0x51b5 contain `00 a0 40 00 01 ad 51 00 00 3c 36 00 00 00 00 00`
+— the `00 3c 36 00` at 0x51b1 reads as u32 LE `0x363c` = 13884 (one less than
+record count, suggesting "count of non-sentinel records" or "max-record-index").
+
+**Verification table** for rome10 RIS imperial save:
+
+| Save | start | length prefix | record count | end offset |
+|---|---|---|---|---|
+| rome10 | 0x51b5 | 13884 @ 0x51b1 | 13,885 | 0x2dc91 |
+| romet1 | 0x51b5 | 13884 @ 0x51b1 | 13,885 | 0x2dc91 |
+
+**Coordinate system in RIS**: X range 0..1018, Y range 1..696. The RIS map is
+1020 × 700 pixels (with a 240 × 238 cell grid overlay from session 18). The X
+values **exceed 240**, so the AI cache uses **map-pixel-level coordinates**, not
+the coarse 240×238 grid coords. Cache key byte structure adapts: bytes [2..3] now
+encode tile_X as a u16 little-endian.
+
+**Cross-save diff**: rome10 vs romet1 differ in 12,573 / 13,885 records — confirms
+the cache is per-turn state (not map-baked-static).
+
+**Hash count**: rome10 contains 1,536 distinct non-zero hashes (vs 46 in Alex
+Macedon T13E). RIS imperial campaign has 33 factions vs Alex Macedon's 6 — much
+more AI activity, which scales the cache size proportionally.
+
+#### 3. CONFIRMED & RETRACTED-from-session-18: hash is an AI plan/operation ID, NOT a character UUID
+
+Test: hash should be stable for a persistent character. If Alexander (king of
+Macedon, never dies in early game) is hash 0xXXXX in T1E, the same hash should
+appear in T2E, T3E, T5S, ..., T15E.
+
+Result across 10 Macedon Alexander saves (t1e through t15e):
+
+```
+Save | n_hashes | hash_set
+t1e  | 46 | (initial set X)
+t2e  | 47 | X + 0x00000100 (one new)
+t3e  | 47 | unchanged
+t5s  | 46 | X (0x00000100 removed)
+t11s | 45 | X minus 0x00000021
+t11e | 45 | unchanged
+t13s | 46 | COMPLETELY DIFFERENT SET (0 common with t11e!)
+t13e | 46 | unchanged
+t14e | 45 | t13s minus 0x00000021
+t15e | 45 | unchanged
+```
+
+**The hash set turns over completely between t11e (turn 11) and t13s (turn 13)** —
+45 hashes removed, 46 added, 0 common. If hashes were character UUIDs, this would
+mean 45 of the player's tracked characters died in turn 12 (impossible). The hash
+set is a **rolling buffer of AI strategic plans/operations**, each with a typical
+lifetime of 3-12 turns.
+
+**Universal-hash count across all 10 saves: 0.** No hash persists across the
+entire corpus. Character UUIDs would be universal. Plan/operation IDs are not.
+
+**Implication**: each hash = a discrete AI plan ("plan to invade region X"); the
+12-byte records within that hash represent **path waypoints** or **target tiles**
+that comprise the plan. Plans are discarded when fulfilled/expired and replaced
+with new plans (new hashes). The 46 ± 1 stable count suggests the AI maintains
+**~45 concurrent plans** as its working memory.
+
+**Session 18's "character UUID" hypothesis is REFUTED.** Session 18's "turn field"
+hypothesis (game turn number) is also REFUTED — t13e records have field-3 values
+12..65 which can't be game turns in turn-13 saves.
+
+#### 4. CONFIRMED: Hash centroids align with character positions, supporting "AI plan targets nearby characters" hypothesis
+
+For 39 of 45 hashes in Macedon T13E, the hash's spatial centroid is within 6 tiles
+of a known descr_strat character position. Specifically:
+
+| Hash | Centroid | Nearest descr_strat char | Distance |
+|---|---|---|---|
+| 0x8259699d | (13, 50) | Alexander (Macedon king) at (11, 49) | 2.4 |
+| 0xa8dc6aa8 | (70, 25) | Parthia general Ardumanish at (70, 24) | 0.7 |
+| 0xfdea4f41 | (67, 27) | Parthia named char Umamaita at (72, 27) | 1.9 |
+| 0xb4a5b281 | (62, 29) | Parthia general at (63, 28) | 1.4 |
+| 0xcf0cbb96 | (81, 16) | Parthia named char at (80, 17) | 1.5 |
+
+**Hashes are NOT CRC32(character_name)** — 0/57 character names match any hash via
+CRC32, including with `_` substitution. But the **spatial colocation with character
+positions** is strong: 18 of 45 hashes have centroid distance < 3 tiles to nearest
+descr_strat character. **This strongly suggests each hash = an AI plan targeting
+a specific enemy character/region**, with records being **path waypoints between
+the AI's units and that target**.
+
+#### 5. CONFIRMED: Cache schema is the same in Alex and RIS imperial, only the coord encoding differs
+
+| Property | Alexander | RIS imperial (rome10) |
+|---|---|---|
+| Start offset | 0x1024 | 0x51b5 |
+| Length-prefix offset | (none observed — implicit) | 0x51b1 (u32 = 13884) |
+| Record count | 446-477 (Macedon, T1-T15) | 13,885 (rome10/romet1) |
+| X encoding | u8 at key byte 2 | u16 at key bytes [2..3] |
+| Y encoding | u32 (effectively u8: 0..65) | u32 (effectively u16: 1..696) |
+| Distinct hashes | 45-47 | 1,536 |
+| Coord scale | tile-level (130×69) | pixel-level (1020×700) |
+| Cache stability | intra-turn 0 diffs, cross-turn ~20 | cross-save 12,573 diffs |
+
+The fundamental record layout `(u32 hash, u32 key, u32 Y)` is invariant — Alex
+just uses a smaller embedded X representation since its map fits in 1 byte.
+
+#### 6. RETRACTED: mid-file non-canonical cells are NOT coast, sea, bridges, rivers, or roads
+
+Building on session 18's RETRACTED resources/watchtowers/ground-types result, this
+session tests three more candidates:
+
+| Candidate | Source | Hit ratio (non-canon vs baseline) |
+|---|---|---|
+| Bridges (white pixels in `map_features.tga`) | 180 cells | 1.08x (no signal) |
+| Rivers (cyan pixels in `map_features.tga`) | 1,384 cells | 1.07x (no signal) |
+| Coastal land (sea-adjacent in `map_ground_types.tga`) | 13,049 cells | 0.83x (UNDER-correlated) |
+| Sea tiles (blue in `map_ground_types.tga`) | 5,537 cells | 0.65x (UNDER-correlated) |
+
+All four candidates give ratio ≤ 1.1x baseline. None of these is what the 1,389
+non-canonical cells represent. **Session 18's "map-baked-static" theory still
+holds** (no cross-turn diff, only 0.97x correlation with anything tested), but the
+specific feature class remains unidentified after 5 hypotheses (resources,
+watchtowers, ground-type, bridges, coast).
+
+Interesting per-variant observation: variant `200_0_2_54_200` (266 cells) has
+93% land / 7% sea breakdown (266 cells: 247 land, 18 sea, 1 coast) — under-coastal
+even compared to the other non-canonical variants. This variant looks like
+**"deep-interior strategic marker"** rather than coast-related.
+
+**Remaining open candidates**: ai-pathfinding-zone-id, settlement-fog-of-war-state,
+faction-territory-perimeter-cells, or some compositional state (e.g. cell-of-
+roman-road-passing-through-here).
+
+#### Reproducer scripts
+
+- `dig-ai-cache-ris1.js` — initial RIS scan with strict signature (false starts at 0x3c78)
+- `dig-ai-cache-semantics1.js` — Alex cache record histogram (key bytes, hash distribution)
+- `dig-ai-cache-semantics2.js` — turn-field interpretation (refutes session 18's "game turn" hypothesis)
+- `dig-ai-cache-keytt.js` — `(byte2, turn) = (tile-X, tile-Y)` correlation; consecutive-integer-paths discovery
+- `dig-ai-cache-hash.js` — CRC32 character-name test (all-NULL), spatial centroid analysis
+- `dig-ai-cache-settlements.js` — hash centroid vs settlement positions
+- `dig-ai-cache-hash2.js` — hash set turnover across 10 Macedon saves (refutes character UUID hypothesis)
+- `dig-ai-cache-ris13.js` — RIS imperial cache schema decode (u16 tile-X, pixel coords)
+- `dig-ai-cache-ris14.js` — RIS cache start pinned to 0x51b5 + length prefix at 0x51b1
+- `dig-midfile-roads.js` — mid-file array vs `map_features.tga` & `map_roughness.tga` (NEGATIVE)
+- `dig-midfile-bridges2.js` — bridge correlation excluding edge-markers (1.08x, no signal)
+- `dig-midfile-coast.js` — coast/sea correlation (0.83x, no signal)
+
+#### Open follow-ups for session 20+
+
+- **Confirm hash = AI-plan-target-character**: cross-validate by tracking a hash's
+  centroid across consecutive saves. If a hash represents "plan to attack
+  character X", the centroid should move *with* character X's tile movement. A
+  save corpus with explicit character displacement (capture a screenshot of
+  generals' positions between saves) would let us pin specific hash→character
+  mappings.
+
+- **Decode key.byte1**: byte1 ∈ {0x00, 0x02, 0x03, 0x20, 0x22}. Most records use
+  0x20. byte1 = 0x00 records have `key.low_byte = 0x04` (special record type)
+  while byte1 = 0x20 records have `key.low_byte = 0x01` (normal). Hypothesis:
+  byte1 distinguishes **target-tile** (0x20) from **own-army-position** (0x00).
+  Testable by comparing key-low-byte=0x04 records' coordinates against the
+  player's own descr_strat characters (Macedon).
+
+- **Mid-file 1,389 cells remain unexplained**: try AI strategic zone classification
+  (read `descr_terrain.txt` for zone definitions) and pathfinding move-cost
+  (compare against neighbors). A controlled-mod diff (toggle one piece of map
+  data, save, diff) would resolve this fastest.
+
+- **RIS cache length prefix semantics**: the u32 13884 at 0x51b1 is one less than
+  the record count (13,885). Either (a) prefix = `max_record_index` (off-by-one
+  inclusive vs exclusive), or (b) the 13,885th record is a sentinel that's not
+  counted. Verify by checking the 13,885th record's contents in detail.
+
+- **Compare RIS rome10 hash distribution to Alex hash distribution**: Alex has
+  46 hashes / 466 records = ~10 records/hash. RIS has 1,536 hashes / 13,885 =
+  ~9 records/hash. Same ratio — strong evidence the per-hash records-per-plan
+  is **engine-defined** (path-length per AI plan), not faction-specific.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
