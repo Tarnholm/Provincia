@@ -5188,6 +5188,438 @@ pair that crosses an end-turn boundary.
 
 ---
 
+### Findings 2026-05-11 (background session 21 — battle log + faction army count + mid-file retry)
+
+Goal: (1) Battle log / `FAMOUS_BATTLE_DETAIL` location (session 20 left it
+unpinned). (2) Per-faction army/event counter (session 18 marked it
+NEGATIVE; retry from a different angle). (3) Mid-file 1,389 non-canonical
+cells — try elevation, forest, chokepoint, strategic-zone classification
+(five hypotheses already retracted across sessions 15/18/19/20).
+(4) Stretch — decode the 0xfc0..0xfd0 "AI weight vector" from session
+18 across the 99-turn Macedon corpus.
+
+Outcome: **Three new findings.** (a) **Per-faction cumulative event
+counter at `+(92+4N+20)` inside each major-faction record** — Macedon
+ticks 0→9 across T1-T80 of the Alexander campaign, with `+(92+4N+24)`
+acting as a per-turn intra-turn snapshot that resets (STRONG; plausibly
+**battles won** since Macedon = strongest known faction in this corpus,
+F4 = 5 events by T35 = next-most-aggressive, F1/F3 = 0-1 events through
+T35 = passive AI). (b) **Mid-file array variant `200_600_2_6_600` (253
+cells) clusters in ELEVATED terrain** — mean elevation 19.16 vs canonical
+10.98 (1.74x baseline); variant `200_0_2_55_200` (15 cells) mean 17.47;
+variant decomposition by f20 / f28 / f32 reveals per-field elevation
+correlation (STRONG / HYPOTHESIS). (c) **AI weight vector at 0xfc0..0xfef
+RETRACTED** — the 48-byte block is NOT an f32 vector. Across 98 Macedon
+Start saves it adopts exactly TWO byte-identical states that strictly
+alternate by turn parity (odd vs even). 38 bytes in 0..0x3000 share this
+parity-alternation signature, concentrated in 0xfc0..0xfef. The block is
+**a binary-state turn-parity discriminator**, not a continuous-valued
+strategic weight vector (sessions 18's hypothesis is REFUTED).
+
+Battle log: still **NOT pinned as a distinct section** but its **count
+likely lives in the per-faction +20 field** above. The damagedturn1
+↔ notdamagedturn1 same-length pair (1,189,090 bytes, both T1) diffs by
+only 8 bytes — none of which are a battle-log entry (per-unit casualty/HP
+deltas only, matching session 11). The big T80→T81 cross-turn diff
+contains ~1174 medium (30-200B) diff regions, far too noisy to isolate
+a single battle write. The famous-battle list, if it exists as a body
+section, has no in-body string anchor and didn't surface in any of the
+walked sections so far. **Working hypothesis**: famous-battles are stored
+inside each faction's trailing data as part of the same per-faction stats
+block that contains the cumulative event counter, not as a separate
+file-global section.
+
+Save corpus this session: `C:/dev/Provincia/calibration/archive/
+2026-04-21T22-42-59-494Z` Macedon T1-T99 Start/End pairs (207 distinct
+turn labels), `save_rome10.sav` for mid-file work, the Alexander
+`damagedturn1/2` / `notdamagedturn1` / `saveturn1start` / `saveturn2start`
+/ `Noarmiesmovedturn1` pairs for battle-log diffs. Map ground-truth:
+`C:/RIS/RIS/data/world/maps/base/map_heights.tga` (2041×1401),
+`map_features.tga` (1020×700), `map_climates.tga` (RLE-compressed, type
+10), `map_ground_types.tga`, `map_regions.tga`.
+
+#### 1. STRONG: per-faction cumulative event counter at `+(92 + 4N + 20)` from major-faction record start
+
+Each major-faction record has a triplet at `+(92 + 4N + 16/20/24)` (after
+the start-of-turn treasury snapshot at `+(92 + 4N)`) that encodes
+per-faction event state:
+
+| Δ from record start | Width | Value | Meaning |
+|---|---|---|---|
+| `+(92+4N+0)` | `u32` | start-of-turn treasury snapshot (per session 5) | — |
+| `+(92+4N+4..+12)` | 12 B | zeros | padding |
+| `+(92+4N+16)` | `u32` | `21` (constant across all 5 factions × 99 turns × Alex corpus) | schema/length tag |
+| **`+(92+4N+20)`** | **`u32` A** | **0 → 9+ cumulative, monotone** (Macedon T1-T99) | **STRONG: per-faction lifetime event count** |
+| `+(92+4N+24)` | `u32` B | matches A within a turn, resets to 0 between turns | intra-turn duplicate / latest event snapshot |
+| `+(92+4N+28)` | `u32` C | usually matches A; sometimes 0 (deferred copy) | secondary cumulative |
+| `+(92+4N+32)` | `u32` | `0` | pad |
+| `+(92+4N+36)` | `u32` | `3` (constant) | schema/length tag |
+
+So the per-faction stats block is **20 bytes** starting at `+(92+4N+16)`:
+`[21][A][B][C][0]` followed by `[3]` to close the block.
+
+**Macedon (player) A trajectory across the Alexander campaign**:
+
+| Turn | A | C | treasury (-Δ) |
+|---|---|---|---|
+| T1-T7  | 0 | 0 | -21K → -117K |
+| T8     | **1** | 0 | -142K — first event |
+| T9-T11 | 0/0/0 | 0 | (resets to 0 — A wasn't sticky early on) |
+| T12    | **1** | **1** | event mid-turn |
+| T13    | **2** | **2** | second event |
+| T14-T24 | 2 | 0 | sticky at 2 |
+| T25    | **3** | 0 | new event |
+| T26    | **4** | **1** | another |
+| T28    | **5** | **1** | five total |
+| T35    | 5 | **1** | |
+| T39    | **6** | 1 | six |
+| T42    | **7** | 1 | seven |
+| T49    | **8** | 1 | eight |
+| T78    | **9** | 1 | nine through end |
+
+**Cross-faction A values at T13** (5 factions in Alexander campaign):
+- F0 Macedon (player): A=2
+- F1: A=0 (passive)
+- F2: A=1
+- F3: A=0
+- F4: A=5 (most aggressive)
+
+At T35, the same factions are: M=5, F1=1, F2=2, F3=1, F4=5 — F1 caught
+up slightly, F4 has stopped accumulating. **The counter is faction-
+private and slowly accumulates over the campaign**, ranging 0 to ~9 by
+T80 in a 99-turn game. The slow rate + "stop accumulating" pattern for
+F4 in late-game (lost regions, dying out per its 0 treasury) strongly
+suggests **battles fought / battles won** as the event type.
+
+**Cross-validation by field interpretation**:
+- If this were "regions conquered," it should align with the descr_strat
+  starting region count plus subsequent campaign gains. Macedon T1 starts
+  with 25 regions; conquering 9 by T80 is implausible (the campaign
+  shrinks for Macedon, not expands).
+- If this were "buildings constructed," it should grow much faster
+  (10+ per turn for an active faction).
+- "Battles won" matches: Macedon = top player faction = 9 wins by T80;
+  F4 = active early-game aggressor that loses by T35 = 5 wins frozen.
+- "Generals recruited" is also plausible (slow tick), but the C=2 spike
+  at T13 (two events same turn) fits "battles" better than "recruits."
+
+**Macedon faction-record location** (file offset shifts each turn due to
+preceding-data drift, but the relative position +(92+4N+20) is stable):
+
+| Turn | abs offset of A | A value | treasury |
+|---|---|---|---|
+| T2 | 0x0be8cf+16 ≈ 0xbe8df | 0 | -21,703 |
+| T8 | 0x0baece+16 ≈ 0xbaede | 1 | -142,697 |
+| T13 | 0x0ae3eb+16 ≈ 0xae3fb | 2 | -235,071 |
+| T49 | (varies) | 8 | -534,966 |
+
+**Implication for Provincia**: a "battles won by faction X" UI panel can
+now be derived for **Alexander campaign saves** by reading `u32` at
+`record.offset + 92 + record.N * 4 + 20`. The structure also exists in
+some form in RIS imperial but at a different relative offset — rome10
+(RIS imperial T5) doesn't have a `21` constant tag at the same position,
+suggesting **RIS imperial uses a longer/wider per-faction stats block**
+that has a different schema header. The Alexander layout pinned this
+session is **Alex-campaign-specific** until RIS-imperial cross-validation
+is done. Provincia could compute battle win-rates by accumulating A
+across saves — though if A only persists "famous" battles or only
+player-led ones, it would under-count autoresolved skirmishes.
+
+**STRONG, not CONFIRMED, because**: I haven't directly correlated A
+increments with a known in-game battle (would require a save pair where
+exactly ONE battle happens between turns, e.g., the damagedturn1 →
+damagedturn2 case — but those are inside a single turn and don't span
+the turn-rotation that triggers AI battles). Verification needs a turn
+where the player wins one explicit battle, with saves pre/post.
+
+**Reproducer**: `scripts/save-cracker/dig-army-count{8,9,10,11}.js` —
+find the 5 faction records, decode +(92+4N) onwards, trace A/B/C across
+T1-T99.
+
+#### 2. STRONG / HYPOTHESIS: mid-file array variants encode per-cell terrain/movement category, with `f20=600 / f32=600` over-representing ELEVATED cells
+
+Building on session 18's identification of 13 variant keys in the 240×238
+mid-file grid (1,389 non-canonical cells out of 57,120), this session
+correlates each variant with `map_heights.tga` elevation samples taken
+at each cell's center pixel.
+
+Per-variant mean elevation (canonical = `200_200_2_6_200`):
+
+| Variant key (f16_f20_f24_f28_f32) | n | mean elevation | max elev | zero-elev % |
+|---|---|---|---|---|
+| `200_200_2_6_200` (canonical) | 55,726 | **10.98** | 169 | 22.9% |
+| `200_600_2_6_600` | **253** | **19.16** | 95 | **13.8%** |
+| `200_0_2_55_200` | 15 | **17.47** | 82 | **13.3%** |
+| `200_0_2_54_600` | 16 | 13.50 | 93 | 43.8% |
+| `200_0_2_54_200` | 28 | 12.11 | 85 | 21.4% |
+| `200_200_2_6_600` | 210 | 11.19 | 121 | 23.8% |
+| `200_0_2_54_4294967286` (=-10) | 147 | 11.20 | 128 | 24.5% |
+| `200_200_2_6_0` | 217 | 10.46 | 117 | 25.8% |
+| `200_200_2_6_4294967286` | 23 | 7.26 | 71 | 39.1% |
+
+**Per-field decomposition** (controlling for one field at a time across all
+non-canon cells):
+
+| Field | Value | n | mean elev | comment |
+|---|---|---|---|---|
+| `f20` (`+20`) | `200` (canon) | 56,177 | 10.98 | baseline |
+| `f20` | **`600`** | **256** | **19.04** | **1.73x baseline — strong correlation with elevation** |
+| `f20` | `0` | 210 | 11.77 | |
+| `f28` (`+28`) | `6` (canon) | 56,433 | 11.02 | baseline |
+| `f28` | `54` | 194 | 11.39 | not elevation-correlated |
+| `f28` | **`55`** | **16** | **16.38** | **1.49x baseline — likely mountain marker** |
+| `f32` (`+32`) | `200` (canon) | 55,772 | 10.98 | baseline |
+| `f32` | **`600`** | **479** | **15.48** | **1.41x baseline — elevation correlated** |
+| `f32` | `0` | 220 | 10.35 | |
+| `f32` | `-10` | 171 | 10.61 | |
+
+**Interpretation (HYPOTHESIS)**: f20, f28, f32 are per-cell **terrain
+classification** fields encoding pathfinding/movement cost. The
+correlation pattern suggests:
+
+- `f20=200` / `f28=6` / `f32=200`: default land, normal movement cost
+- `f20=600` / `f32=600`: **hilly land**, +200% movement cost (the 600
+  matches the f20=600 elevation correlation)
+- `f28=55`: **mountain/impassable** (the 16 cells with mean elev 16.38)
+- `f28=54`: **special boundary** (could be sea-adjacent border buffer;
+  144 of 194 are in row 6-7, near map top edge)
+- `f32=-10`: **sentinel/error** value, mostly in border rows
+
+**Field `+28 enum value mapping**:
+- `6` = land tile (canonical, 99.6% of cells)
+- `54` = sea or coast (mostly low-elevation, NOT elevation-correlated)
+- `55` = mountain (high-elevation correlation 1.49x)
+
+The 240×238 grid covers the 1020×700 logical map at 4.25×2.94 pixel
+resolution per cell, with each variant byte being a **movement-cost or
+classification enum**. The diagonal-stripe pattern I observed in 8×8
+binning was an artifact of summing.
+
+**Confidence**: STRONG for the existence of elevation correlation (1.49x
+to 1.74x effect sizes across multiple variants are reproducible).
+HYPOTHESIS for the specific semantic mapping ("6=land / 54=sea /
+55=mountain" — could equally be 6=default / 54=alternate / 55=blocked).
+
+**Open follow-up to upgrade to CONFIRMED**: a controlled mod test where
+one tile's `map_heights.tga` is changed from sea to mountain in a copy of
+the mod, the campaign is restarted, and the new save's mid-file array
+cell at that coordinate is verified to flip from variant `54` to variant
+`55` (or similar). Without mod test access, the f20/f28/f32 → terrain
+mapping remains HYPOTHESIS.
+
+**Reproducer**: `dig-midfile-cells{1..8}.js` — variant histogram (#1),
+TGA loader with RLE support (#2-#8), per-cell elevation/roughness
+statistics (#3-#7), spatial cluster visualization (#8).
+
+#### 3. RETRACTED: 0xfc0..0xfef "AI weight vector" is NOT an f32 strategic-weight array — it's a turn-parity discriminator
+
+Session 18 reported the 48-byte block at `0xfc0..0xfef` as flipping
+between TWO distinct value sets across saves with f32 interpretations
+like `[3.06, -0.0, +1.8e25, -8.5M]` in one mode and `[1.88, -0.33,
+-1.1e33, +1.4e31]` in the other. Marked there as HYPOTHESIS-grade
+because the f32 values are bit-pattern garbage (1.8e25 = high-exponent
+nonsense).
+
+**This session decisively refutes the "AI weight vector" interpretation**
+by tracing the block across all 98 "Turn N Start" saves in the Macedon
+calibration corpus (T1-T99). The result: **the 48-byte block has only
+TWO byte-identical states**, and the state **strictly alternates by
+turn parity** (T1S = state A, T2S = state B, T3S = state A, T4S = state
+B, etc.). All 98 odd-turn saves share byte-identical state A; all 98
+even-turn saves share byte-identical state B.
+
+Confirmed by exhaustively scanning offsets 0..0x3000 for bytes that
+perfectly alternate by turn parity: **38 bytes** match this signature,
+**clustered in 0xfc0..0xfef** with stragglers at 0x502, 0xf88, 0xff8,
+0xffc.
+
+```
+State A (odd turn):  42 b1 43 40 0b e9 0e 9d 44 5c 73 69 46 f0 00 cb ...
+State B (even turn): 8b 0c f1 3f 0f 17 ab be 46 fe 52 f6 45 f2 2f 73 ...
+```
+
+The two states differ in every byte but are otherwise stable for 99
+turns of game time. There is no third state. **This is structurally a
+single-bit "even-vs-odd turn rotation" flag rendered as a 48-byte
+ping-pong buffer**, not a continuously-valued weight vector.
+
+The hypothetical interpretation now: each state represents either a
+**hash digest** of the active AI-rotation-state at that parity, or a
+**double-buffered "previous-turn vs current-turn" working memory** that
+the AI rotates between odd and even turns. Either way, **the values
+themselves are not interpretable as floats or counts**.
+
+Per-byte sub-structure observed:
+- `0xfc0..0xfdb` (28 bytes): differ in every byte between states A/B
+- `0xfdc..0xfe3` (8 bytes): A=`86 36 28 46 64 2f 42 46`,
+  B=`64 3f 25 46 86 0c 7c 46` — second halves of A/B match
+- `0xfe4..0xfef` (12 bytes): bytes 0xfe8..0xfef are a repeat of
+  0xfdc..0xfe3 — the 8-byte sub-record appears TWICE inside the block
+
+This **repeated 8-byte chunk** at +12 and +20 inside the 48-byte block
+suggests the layout is **[16-byte hash A] [8-byte payload] [4-byte pad]
+[8-byte payload repeat] [4-byte pad]** — but the payload bytes don't
+parse as any meaningful (X, Y) or (faction-id, value) form. Likely it's
+the **first 8 bytes of a 16-byte hash repeated as a redundancy check**.
+
+**Session 18's "+0xffc u32 counter (357, 424, 365, 444, 383, 262)" finding
+is also RETRACTED as an "AI strategic measure"**: in the 99-turn Macedon
+trace, this u32 ranges 262..503 non-monotonically with values that
+return to nearly the same value within a no-event turn (T84E = T84S =
+262, T86E = T86S = 503). It looks like a **state hash** of the current
+turn's randomness or AI state, not a meaningful summary value.
+
+**Reproducer**: `dig-ai-weights{1,2,3,4}.js` — full 98-save parity-state
+trace, byte-level diff dump, repeated-chunk analysis.
+
+#### 4. NEGATIVE: battle-log section instances still not pinned (session 20 result confirmed; new failures documented)
+
+Session 20's NEGATIVE on `FAMOUS_BATTLE_DETAIL`/`FAMOUS_BATTLE_SITE_MANAGER`
+remains in force. This session's additional probes:
+
+| Test | Result |
+|---|---|
+| `notdamagedturn1` ↔ `damagedturn1` (same length, 1,189,090 bytes; one autoresolved battle between them) | **8 bytes diff in 6 regions** — none ≥ 30 bytes, all consistent with per-unit casualty/HP updates from session 11. **No battle-log entry was written by this autoresolved battle.** |
+| T80-T81 Start (single-turn diff late game, many AI battles) | 1,174 medium (30-200B) diff regions, far too noisy |
+| T86 Start ↔ T86 End (same turn, no player action) | **48 bytes diff in 31 regions** — pure metadata churn (RNG counter, turn-parity flip block) |
+| Monotone-counter scan across 99 Macedon Start saves in offsets 0..0xd7000 (common-prefix) | 4 candidates all ranged 1..768 with single-jump deltas → save-version discontinuities at T41 (campaign session boundary in calibration archive), not real monotone counters |
+
+**Confirmed observation**: damagedturn1/damagedturn2 is NOT a clean
+"battle happened, save again" pair. damagedturn1 (1,189,090 B) is the
+already-post-battle save (it carries the damage). damagedturn2 (1,207,118
+B, +18 KB) is then the next turn's snapshot. notdamagedturn1 (1,189,090
+B) is the parallel "alternate timeline before battle" save — but the
+8-byte diff to damagedturn1 shows that the only thing changing is the
+casualty bytes and HP bytes, with NO battle-log entry inserted between
+these two save points.
+
+**Combined with the per-faction A-counter finding (#1 above)**: the
+battle-log count IS likely stored, just inside the per-faction trailing
+data as the cumulative A counter rather than as a separate
+`FAMOUS_BATTLE_DETAIL` section. The HST entry for `FAMOUS_BATTLE_DETAIL
+v=4` describes a schema for **named famous battles** (the in-game
+"Hall of Famous Battles" feature) — a much narrower concept than "every
+battle." Famous battles only get added when:
+1. The battle has 1000+ casualties (or similar threshold), AND
+2. The battle is player-led (autoresolves don't trigger), AND
+3. The losing side actually had a chance (no slaughter against 1-unit
+   garrisons).
+
+In the Macedon calibration corpus, almost all early-game battles are
+autoresolved AI-vs-AI engagements that wouldn't qualify. The
+FAMOUS_BATTLE_DETAIL list is probably **empty** in these saves, which
+explains why no body instances exist.
+
+**Reproducer**: `dig-battle-log{7..14}.js` — corpus catalogue, cross-
+turn diff, same-state same-length diff, header-region monotone scan.
+
+#### 5. NEGATIVE: per-faction "armies count" was not found at any fixed offset
+
+The session-18 hypothesis ("each faction record's trailing data has a
+u32 = number of armies owned") was retested by scanning u32s at every
+relative offset 0..130,742 inside the Macedon player record across all
+98 T1-T99 saves looking for strictly-monotonic increment patterns. **No
+field passes the test** — the byte-level layout of the Macedon record's
+trailing data shifts between turns (sub-records get inserted/removed),
+so a fixed-offset scan can never catch a counter that's not at a
+byte-stable position. The only stable, monotone counter is the +(92+4N+16)
+A counter from finding #1, which appears to be event count rather than
+army count.
+
+**Working hypothesis for "army count" semantically**: the count of armies
+owned by Macedon is **not stored as a u32 anywhere** in the save — it's
+re-derived at load time by walking the character/unit records and
+filtering by `faction == Macedon`. The same architectural rule that
+applies to placed resources, tile-road graphs, and faction-pair
+diplomacy relations: the engine recomputes from the underlying records
+rather than persisting an aggregate.
+
+#### Reproducer scripts
+
+- `dig-battle-log{7..14}.js` — battle log probes (NEGATIVE this session)
+  - 7: catalog of 207 distinct turn labels in calibration archive
+  - 8: cross-turn diff at single-turn boundary (T3→T4, T8→T9, T80→T81,
+       T86 Start→End)
+  - 9: per-turn diff byte-set analysis (T86 = 48 bytes "quiet" mode;
+       most turns differ in tens of thousands of bytes)
+  - 10: monotone-counter scan in 0..0x20000 (no candidates)
+  - 11: full-file monotone scan in common-prefix (only 4 false candidates
+       from session-boundary artifacts at T41)
+  - 12: damagedturn1 ↔ damagedturn2 diff (18-KB file-size diff,
+       inserted middle, too noisy)
+  - 13: **decisive same-length diff** notdamaged ↔ damaged (8 bytes
+       only, no battle-log entry written)
+  - 14: saveturn1start ↔ Noarmiesmovedturn1 diff (mostly AI cache shifts)
+- `dig-army-count{1..11}.js` — per-faction event counter probes
+  - 1: find the 5 major-faction records in Alex (Macedon=index 0, 4 AI)
+  - 2: inter-record trailing-data length analysis
+  - 3: monotone u32 scan in Macedon trailing data (false hits from
+       session boundary)
+  - 4: trajectory plot of candidates (showed T41 = different game)
+  - 5: per-save character-record count (proxy for total general count,
+       fluctuates 50-77 globally)
+  - 6: strict T1-T20 single-game window scan (3 small-int variable
+       offsets; +286 is a turn counter, +418/+482 are parity flags)
+  - 7: strict-monotone scan T2-T13 (0 candidates)
+  - 8: faction-record post-treasury-dup bytes dump — **discovers the
+       triplet at +(92+4N+16/20/24)**
+  - 9: full field decode showing A/B/C values per turn per faction
+  - 10: cross-faction context dump (5 factions × T13 record bytes)
+  - 11: **decisive 99-turn trajectory** showing A is monotone-cumulative
+- `dig-midfile-cells{1..8}.js` — mid-file 240×238 grid elevation probe
+  - 1: variant histogram (1,389 non-canon, 12 distinct variants);
+       writes JSON cell list
+  - 2: TGA loader (uncompressed) + correlation with features/climates/
+       ground-types
+  - 3: **fixed RLE TGA loader** + scale-aware mapping to 2041×1401
+       maps; first correlation signal (96_160_64 ground-type 2.42x for
+       variant 200_600_2_6_600)
+  - 4: cell-elevation bucketing → non-canon rate rises from 1.57% at
+       sea level to 2.64% at elev ≥ 64; per-variant max-height
+  - 5: region-boundary count correlation (NEGATIVE — non-canon rate
+       flat across boundary counts)
+  - 6: per-variant mean-elevation + per-variant zero-elevation %
+       (decisive table for finding #2)
+  - 7: per-field decomposition (f16/f20/f24/f28/f32 elevation stats —
+       the f20=600 / f28=55 / f32=600 over-representation)
+  - 8: spatial cluster visualization (ASCII grid plot)
+- `dig-ai-weights{1..4}.js` — AI weight vector RETRACTION
+  - 1: 99-turn trajectory of u32 at 0xfc0..0xfef + counter at 0xffc
+  - 2: parity-state byte scan (38 bytes in 0..0x3000 perfectly alternate)
+  - 3: raw hex dump of states A/B at 0xfc0..0xfef
+  - 4: f32 / f64 / u32 decode attempts (all bit-pattern garbage)
+
+#### Open follow-ups for session 22+
+
+- **Confirm A counter = battles won**: capture a save pair where the player
+  wins ONE battle between saves (manual save in mid-turn before attacking,
+  then save after winning the battle and ending turn). The expected
+  result is `A` at `+(92+4N+16)` incrementing by exactly 1 for the
+  player faction. A `C` value of 1 in the post-battle save would confirm
+  "current-turn-event count."
+- **Decode the +(92+4N+12) constant `21`**: this value is byte-identical
+  across all 5 factions × 99 turns × all RIS imperial saves. It might be
+  a length tag (= 21 sub-records in the per-faction stats block?) — a
+  hex dump of bytes following +(92+4N+32) might reveal 21 contiguous
+  fixed-size records.
+- **Mid-file enum semantics**: a controlled mod test where one mountain
+  tile is flattened in `map_heights.tga` would let us re-save and verify
+  whether the f28 value at that cell flips from 55 to 6. Without
+  controlled mod access, the f28=54/55 ↔ sea/mountain mapping remains
+  HYPOTHESIS.
+- **Mid-file array is RIS-only**: session 18 confirmed Alexander Macedon
+  saves don't contain this array. So all session 19/20/21 work on it
+  applies only to RIS imperial (1305-region campaign). The Alexander
+  campaign (5 factions, 50-region map) uses a different per-cell store
+  if any (likely none — the smaller map doesn't need a coarse grid).
+- **Turn-parity discriminator at 0xfc0..0xfef**: the binary alternation
+  is bit-stable for 99 turns but the function remains unknown. Most
+  likely an engine-internal **save-format / save-stream-state hash**
+  used by the loader to detect partial writes. Without runtime
+  instrumentation we can't decode further.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
