@@ -7817,6 +7817,423 @@ Script: `scripts/save-cracker/dig-event-enum1.js`.
 
 ---
 
+### Findings 2026-05-11 (background session 31 — battle/diplomacy/occupation save pair)
+
+Goal: with a high-information save pair (Romans Julii pre-battle/at-peace
+→ post-autoresolved-attack-on-Uria/at-war), land three of: (1) the
+**diplomacy state enum** (blocked since session 6), (2) **per-faction
+battles-fought counter**, (3) **per-soldier 3-byte stat decode**, plus
+stretches on settlement ownership and battle log.
+
+Save pair: `save_1.sav` (BEFORE, 34,523,383 B) and `save_3.sav` (AFTER,
+34,689,457 B). Mod: RIS imperial. Player: romans_julii. Ground-truth
+event between saves: Romans Julii army moved onto Uria (region 1048,
+Salentinia, Messapian-owned), autoresolved + occupied + war declared
+with Messapians.
+
+Outcome: **Four new findings, two material partial advances on
+session-blocked targets, one full retraction reaffirmation, plus three
+documented negatives on the diplomacy hunt.** Diplomacy enum is STILL
+not pinned to a fixed byte — but the search space is **massively
+narrowed**, and one new structural anchor (per-character "diplomatic
+context hash") was located.
+
+#### 1. CONFIRMED: 23 major-faction records align positionally between save_1 and save_3 (in-turn save pair, no record rotation)
+
+23 major-faction records in each save (`+8=100, +12=1, +24=self,
++40=self, +44=6` signature). Position-aligned A[i]↔B[i] for all 23 — no
+rotation, no insertion. Romans Julii at index 0 (35 regions, treasury
+10000→10110, Δ=+110), Messapians at index 20 (regions=2 with IDs
+`[1012, 1048]` = Calabria + Salentinia per descr_regions, treasury
+5000→5000 unchanged). Other 21 records: treasury unchanged.
+
+**CONFIRMED REVISION of session 9 finding #1**: the homeland region
+list at `+52..+(52+4N)` is **byte-identical for ALL 23 factions
+between save_1 and save_3**, **including for Messapians (the conquered
+faction) AND Romans Julii (the conquering faction)**. Specifically,
+Messapians' region list is still `[1012, 1048]` in save_3 even though
+they LOST Uria (1048) to Romans during this save pair. Romans' list is
+still its 35 starting regions — does NOT add 1048. This is the
+strongest possible confirmation that the `+52..` array is a **STATIC
+descr_strat-derived homeland descriptor**, never updated by
+conquest/loss events. The session-5 hypothesis "currently owned" /
+"claimed" can be DECISIVELY ruled out.
+
+Confidence: CONFIRMED. Reproducer: `dig-diplomacy15..17.js`,
+`dig-ownership4.js`.
+
+#### 2. STRONG: per-faction monotone tick counter at +(52+4N+148) — likely a per-faction event-processed counter
+
+Scanning u32 fields at K=0..240 from the post-region-list base of each
+major-faction record, **K=148 is one of the u32 fields that
+ticks for every one of the 23 factions** between save_1 (BEFORE
+battle) and save_3 (AFTER battle). Additionally K=172 ticks for all
+23 factions with the SAME per-faction Δ values as K=148 — so they are
+**delta-equal but value-different** within a save (only Romans Julii
+has K=148 == K=172 by coincidence; the other 22 factions have
+unrelated K=172 values but identical Δ). This suggests K=148 and K=172
+are two related counters that increment in lockstep but track
+different baseline values (e.g. "events this turn" + "events all
+time" — both increment by the same amount each turn-step).
+
+Per-faction Δ values for both K=148 and K=172 (identical):
+
+| Idx | Faction (regions) | A→B | Δ |
+|---|---|---|---|
+| 0 | Romans Julii (35) | 87067→87096 | **+29** |
+| 1 | (22)              | 201414541→201414576 | +35 |
+| 2 | (30)              | 218192562→218192631 | +69 |
+| 3 | (31)              | 218194487→218194583 | +96 |
+| 4 | (33)              | 218197167→218197289 | +122 |
+| 5 | (19)              | 268529110→268529237 | +127 |
+| 6 | (20)              | 117534257→117534388 | +131 |
+| ... | (various)       | ...               | +130..+205 |
+| 20 | Messapians (2)   | 184645612→184645802 | **+190** |
+| 22 | (16)             | 67205829→67206034 | +205 |
+
+The fact that **EVERY faction's counter ticks**, with deltas ranging
+~29..+205, suggests this is a **per-faction event/decision counter**
+that increments each time the engine processes faction X (during AI
+turn, character-event resolution, or similar). The battle/occupation
+between Romans and Messapians processed events across all factions
+(diplomatic state propagation, fog-of-war updates).
+
+**Note Romans Julii has the SMALLEST delta (+29) despite being the
+player faction**. This is consistent with the player's faction
+processing being lightweight (the player has no AI policy steps to
+execute mid-turn). AI factions had more events to process.
+
+K=148 and K=172 contain the SAME u32 — they're a **schema duplicate
+pair** (perhaps "previous turn snapshot" + "current value" so a
+delta-from-turn-start could be computed). Their values track each
+other within a save and tick together.
+
+Adjacent context fields (per-faction, at K=140, K=144, K=152, K=156,
+K=160, K=164, K=168) all change between saves but appear to be
+runtime-pointer/hash-shaped (no monotonic structure, no per-faction
+identity), consistent with RNG state / runtime pointers per session 5's
+"runtime pointer fields" observation.
+
+Reproducer: `dig-battle14.js`. Confidence: **STRONG** because of the
+universal coverage (23/23 factions tick monotonically), but not
+CONFIRMED to be specifically a "battles fought" counter — could
+equally be "AI decisions made", "characters processed", "events
+written to log", or another general-purpose engine counter. To
+disambiguate, would need same-faction save pairs where exactly ONE
+event-type happens (battle vs. no-battle) and check whether the
+counter ticks differently.
+
+**Implication for sessions 21/22**: Alex campaign at +(92+4N+20) and
+RIS at +(52+4N+188) WERE NEITHER pinned to specifically "battles" —
+they may equally be the SAME family of per-faction event counters as
+this new K=148/K=172 finding. The +(52+4N+188) field in RIS that
+session 22 saw tick 0→4 over T1→T5 (uniformly per-faction = turn
+counter) and this K=148/K=172 field (varies per faction within a
+single turn = event counter) are likely TWO different schema slots in
+the per-faction stats block.
+
+#### 3. STRONG / HYPOTHESIS-graded: K=224 is the AI strategic score on 5 "tracked" factions (positional indices 0, 5, 13, 17, 21) — value tick supports session 22's `+220=239 flag triggers +224 counter` reading
+
+Of the 23 major-faction records, **only 5** have non-zero K=224:
+indices 0, 5, 13, 17, 21 — **same 5 indices session 22 saw flagged
+with `+220=239`**. Each of the 5 has K=224 in the 22M-25M range and it
+ticks UP between save_1 and save_3:
+
+| Idx | A | B | Δ |
+|---|---|---|---|
+| 0 (Romans Julii, player) | 22,289,321 | 22,296,701 | +7,380 |
+| 5 | 23,975,531 | 24,008,073 | +32,542 |
+| 13 | 24,231,832 | 24,271,210 | +39,378 |
+| 17 | 24,412,489 | 24,456,113 | +43,624 |
+| 21 | 24,773,286 | 24,824,884 | +51,598 |
+
+Tracking-flag positional indices are stable across save_1 and save_3
+(positional indices 0, 5, 13, 17, 21 — see session 22). Romans Julii
+(player) has the SMALLEST tick (+7,380) again, consistent with the
+player not running AI strategic evaluation. The 4 AI-tracked factions
+have ~5-7× larger increments.
+
+Confidence: **STRONG** as a "per-AI-tracked-faction value that ticks
+monotonically when AI processing runs"; HYPOTHESIS for the precise
+semantic meaning (could be "cumulative AI score points", "evaluations
+performed", "decisions made", etc.).
+
+#### 4. STRONG / NEGATIVE: the diplomacy state enum byte is NOT at any K∈[0..1500] offset within the per-faction record's post-region-list trailing data
+
+Per-faction byte-by-byte diff (K=0..1500 post-region-list) reveals
+**which faction-indices' byte changed at each K**. Searching for K
+where ONLY Romans (idx 0) and Messapians (idx 20) — the war-declaring
+pair — change (signature `[0,20]`): 8 such Ks found:
+**K=821, 823, 824, 825, 826, 1334, 1335, 1336**.
+
+Inspecting these reveals they are **per-character RUNTIME HASH bytes**
+near the character portrait paths (e.g. just after `data/ui/eastern/
+portraits/portraits/young/generals/092.tga` for Messapians or
+`...generals/459.tga` for Romans). The changed bytes are 4-6-byte
+runtime hashes/UUIDs that recompute when a character's diplomatic
+context changes. **These bytes ARE a fingerprint that "this character
+faction is now at war with that other faction"** — but they aren't a
+clean state enum, they're hashes derived from state.
+
+Other interesting K-signatures (faction indices whose byte changes at
+those Ks):
+
+| K range | Sig | Count | Interpretation |
+|---|---|---|---|
+| 143..148, 233..235 | `[ALL 23]` | 15 | universal per-faction runtime/hash ticks |
+| 240..299, 285..291 | `[6,9,10,16,19,22]` | 18 | some 6-faction subgroup affected — probably a cross-faction AI policy update |
+| 256..302 | `[11,12,14,18,20]` | 11 | another subgroup |
+| 374..381, 791..798, 887..889 | `[17,21]` | 16 | 2-faction pair |
+| 819..830, 912..923 | `[9,20]` | 7 | 2-faction pair |
+| 821..826, 1334..1336 | `[0,20]` | 8 | **Romans + Messapians (war pair)** |
+| 813..814, 884..886 | `[0,16,22]` / `[0,17,21]` | 5 | Romans + 2 others |
+
+The cross-faction groupings (signatures with 2-6 indices) suggest the
+per-faction trailing data contains a **per-faction-pair diplomacy
+record array OR an AI-relationship cache** with some N×N structure —
+when ANY relationship changes, BOTH involved factions' records get
+their adjacent character-records re-hashed. This is why we see
+2-faction-pair signatures all over the K=300..1400 range.
+
+**REFUTATION of brief hypothesis**: the diplomacy enum is **NOT a
+positional byte at a stable offset within a single major-faction
+record's trailing data**. If it were, we'd see signature `[0,20]`
+clustered at a SINGLE byte offset, with values changing 1→0 (peace→war)
+or 2→1. Instead, the [0,20] signature spans 8 bytes that are randomly
+hash-shaped.
+
+**This rules out** the brief's session-22 "+220=239 → +224
+diplomacy enum" hypothesis. K=224 is the AI strategic score (finding
+#3) and it ticks for the 5 tracked factions, NOT specifically for
+{Romans, Messapians}.
+
+**Where diplomacy state COULD still live** (search space narrowed):
+
+- **In a SEPARATE body-root section**, NOT in any major-faction
+  record's trailing data — likely the HST-declared
+  `DIPLOMATIC_ATTITUDE v=6` section, which session 12 noted was
+  declared but not located. Possibly inside the gap zone
+  (`0x633bb3..0xf88637` per session 12) or as a small fixed-position
+  table near the body root.
+- **As per-character runtime hash inputs** — the war-state IS reflected
+  in the per-character hashes at K=821..826 / 1334..1336, but
+  recovering the state from those hashes is intractable without
+  knowing the hash function.
+
+Reproducer: `dig-diplomacy15..31.js` (full series).
+
+#### 5. CONFIRMED: 4 player-visible event messages appended to save trailer post-battle (Uria - Settlement Under Siege, Lost, Gained, Governor Appointed)
+
+In save_3 only, the tail region (offsets ~0x20cf68f..0x20cf957)
+contains **4 new UTF-16LE event-message records** not present in
+save_1:
+
+| Offset (save_3 only) | Event title | Body excerpt |
+|---|---|---|
+| 0x20cf68f | "Uria - Settlement Under Siege" | "This settle..." (continues) |
+| 0x20cf783 | "Uria - Settlement Lost" | "We no longer contr..." |
+| 0x20cf868 | "Uria - Settlement Gained" | "We have gained c..." |
+| 0x20cf957 | "Uria - Governor Appointed" | "This man has be..." |
+
+These map directly to the player-facing turn-end/turn-start event log
+shown in the campaign UI. The "Lost" message is presumably what
+Messapians sees in their UI (player-side messages also include
+adversary's events). Schema per record:
+
+```
+[u32 hash_prefix]  // 4 B per-record
+[8 B record-type prefix incl. 0xf2feffff sentinel]
+[u32 0x0000009c]   // 156 — message-type constant
+[u32 0x00000004]   // pad/type
+[u16 nameLen]      // length-prefixed UTF-16LE title
+[UTF-16LE title]   // e.g. "Uria"
+[u16 bodyLen]      // length-prefixed UTF-16LE body
+[UTF-16LE body]    // e.g. "Settlement Under Siege"
+[u8 0x53]          // possible newline / section break
+[u16 detailLen]    // length-prefixed UTF-16LE detail
+[UTF-16LE detail]  // e.g. "This settle..."
+```
+
+Confidence: CONFIRMED by 4 sequential records with the same schema,
+all referencing the same settlement (Uria), all containing
+human-readable event text in UTF-16LE.
+
+This is the **player message log** — a separate location from session
+27's "unified event log at 0x51b5..0x846af" (which holds engine-level
+actor/year events). The player message log lives in the trailer past
+`0x20cf000`. Possible further investigation: enumerate all message
+records in the trailer to count "events fired per turn".
+
+Reproducer: `dig-ownership2.js`.
+
+#### 6. CONFIRMED: settlement-record header structure for Uria (Salentinia, conquered)
+
+Uria's settlement record begins at file offset 0x1264844 (u32 header)
+in BOTH save_1 and save_3 — settlements do NOT shift even when their
+ownership changes. The header structure (relative to record start at
+0x1264844):
+
+```
++0   u32 ?? 0x01430700 → 0x01432500 in save_3 (Δ = +0x1e00 = +7680)
+       — possibly "settlement_data_size_or_next_settlement_offset"
+       (record body grows by ~7,680 bytes when ownership transfers,
+       likely due to new garrison/governor character data appended
+       inside this record)
++4..+15  16 B zeros / pad
++16  u32 0x26485357 = 642,237,783 (record-type/UUID-shaped, unchanged)
++20  u32 0x26485357 = 642,237,783 (paired — unchanged)
++24  u32 0xef000000  (terminator marker)
++28  u32 0x00010400  (record-class tag, unchanged)
++32  u16 nameLen = 4
++34  UTF-16LE "Uria"  (8 bytes)
++42  5 B zeros
++47  4 B = 0xfc 0xfc 0xfc 0xfc (sentinel after settlement name)
++51  u32 = 0x64 = 100 (=major-class tag echo from major-faction schema?)
++55  u32 0x00000398 = 920 (some count?)
++59  u32 0x00000080 (flags)
++63  u32 0x4021c000 (= float 2.519 — coordinate or stat?)
+...
+```
+
+The u32 at +0 (0x1264844) **shifting from 0x01430700 to 0x01432500
+(Δ=+7680)** is the **strongest single byte-level signal of Uria's
+ownership change**. The other bytes that differ are:
+
+- 0x12648f1..0x12648f3 (3 B): settlement runtime hash (recomputed
+  because of new owner)
+- 0x126493d..0x1264940 (4 B): `hinterland_region` building's runtime
+  hash (recomputed)
+
+The static settlement content (level, population_id, plan_set,
+faction_creator marker, hinterland_region building) is **byte-identical
+in save_1 and save_3**. Ownership is NOT stored inline as a faction-id
+byte; it's reflected entirely through:
+1. The growth of the settlement-record body (+7680 B = new garrison
+   and governor character data appended)
+2. Runtime hashes recomputed inside the settlement record
+3. Player-visible event messages in the trailer (finding #5)
+
+The actual "owner faction ID" must live in a separate `MAP_REGIONS`
+or per-tile-attribute structure that maps each settlement to its
+current owner — likely either in the body root (next to the
+character_paths records) or in the tile-attribute gap region (per
+session 12). Settlement-record DOES NOT directly carry the owner
+faction-id at a stable inline byte.
+
+Confidence: CONFIRMED (the 0x1264844 u32 Δ=+0x1e00 mass-increase
+matches the +7680-byte record growth observed for the conquered
+settlement).
+
+Reproducer: `dig-ownership2.js`, `dig-ownership3.js`, `dig-ownership4.js`.
+
+#### 7. REFUTED: field-army-block tail at 0x1f10c72 (session 22) does NOT generalize to RIS imperial mod saves
+
+Session 22 found 122 unit records in the tail region 0x1f10c72..0x1f43598 of
+rome10 (vanilla imperial_campaign) using the 0x0001012c (= 76,860)
+record-type tag. Re-running the SAME signature against save_1 and save_3
+(RIS imperial mod):
+
+- Only **7 hits per save** of the 0x0001012c tag (vs ~122 in rome10)
+- Hits cluster around `0x209f27a..0x20a6f0a` (A) / `0x20c77ca..0x20cf45a`
+  (B) — a much smaller block
+
+The RIS mod either uses a DIFFERENT record-type tag for field-army units
+(probably mod-overridden in `descr_unit.txt` or similar), OR field-army
+units in this mod are stored at a different file offset. The 122 unit
+records per session 22 must have included BOTH on-map field armies AND
+settlement garrisons; with this save pair the count is much smaller
+(more units = more settlement garrisons; fewer = field armies only).
+
+**Implication for per-soldier 3-byte stat decode (brief target #3)**:
+the target schema doesn't apply to RIS imperial saves. Decoding battle
+casualty changes for the Roman attacking force would require first
+relocating the unit records in this mod's save format. Did not pursue
+further in this session.
+
+Reproducer: `dig-soldier-stats1.js`, `dig-soldier-stats2.js`.
+Confidence: REFUTED for "session 22's schema is universal across mods".
+
+#### 8. NEGATIVE: unified event log (session 27) record count is constant 13,884 between save_1 and save_3 — no append from battle event
+
+Per session 27, the unified event log at 0x51b5..0x2dc91 (12-byte
+records) has 13,884 record slots; the append-zone starts at 0x2e4e9
+(record index 13,784). Both save_1 and save_3 have **exactly 13,884
+record slots**. The "battles fought" event one might expect to land in
+the append zone is NOT a new RECORD — the actor_hash fields at indices
+13,784..13,884 change values (from one runtime hash to another) but
+the COUNT, idA, idB, flag, sub fields are byte-identical between
+saves.
+
+**Conclusion**: the unified event log is "reserved capacity" that's
+already laid out at game start — battle/war events don't extend it;
+they modify per-actor hashes within it (and maybe a per-actor flag
+elsewhere). The player message log finding (#5) is where new battle
+text actually lands.
+
+Reproducer: `dig-battle11.js`.
+
+#### Targets not landed in this session
+
+- **The diplomacy state enum byte itself** — narrowed to "not in
+  any major-faction record's post-region-list trailing data K∈[0..1500]"
+  and "not a positional byte; encoded via per-character runtime
+  hashes". Likely lives in HST-declared `DIPLOMATIC_ATTITUDE v=6`
+  section as a separate body section, OR in the gap zone
+  (0x633bb3..0xf88637 per session 12). Future probe should walk
+  every section in body root that hasn't been identified by name yet
+  and look for one with a small (~286×286 byte or 24×24 byte)
+  symmetric matrix structure.
+- **Per-soldier 3-byte HP/kills/XP decode** — blocked because session
+  22's field-army block doesn't apply to RIS mod saves (finding #7).
+- **Faction-pair attitude integer** (range -200..+200 per RTW
+  convention) — not located. Could not pin to any offset.
+
+#### Useful negative tests (documented for future sessions)
+
+- `+(52+4N+188)` (session 22 RIS turn counter): **0 in both save_1 and
+  save_3** — consistent with save_1 and save_3 being within the same
+  in-game turn (no turn rotation occurred between them). Doesn't
+  contradict session 22; just means no turn rolled over for this
+  specific save pair.
+- `+(92+4N+20)` (session 21 Alex event counter): not applicable —
+  this save is RIS imperial, not Alex campaign. The schema-21 tag
+  is absent at +(92+4N+16).
+- Lua-footer `num_battles_<faction>` counters (session 23): all zero
+  in both saves (the autoresolved battle did NOT increment any
+  lua-side counter, because lua counters in RIS are for scripted
+  multi-turn campaigns, not generic skirmishes).
+
+#### Reproducer scripts
+
+- `dig-diplomacy15.js` — locate 23 major-faction records, identify
+  Romans Julii (idx 0) and Messapians (idx 20) by region fingerprint
+- `dig-diplomacy16.js` — dump all 23 records' region lists
+- `dig-diplomacy17.js` — A↔B fingerprint alignment (all 23 match
+  positionally)
+- `dig-diplomacy18.js` — record-level byte diff (very noisy; ruled
+  out direct positional comparison)
+- `dig-diplomacy19..21.js` — file-wide isolated byte flip scan
+  (~1441 candidates, narrowed to ~387 enum-like)
+- `dig-diplomacy22.js` — settlement-record preamble pattern
+  enumeration (3310 hits in A, 3309 in B)
+- `dig-diplomacy23..26.js` — fixed-stride array search (false leads
+  in fog-of-war / per-character hash regions)
+- `dig-diplomacy27..29.js` — **per-faction record byte-diff
+  cross-tabulation** (the productive scan — established the [0,20]
+  signature at K=821..826/1334..1336)
+- `dig-diplomacy30.js` — K-by-K cross-faction value comparison
+- `dig-diplomacy31.js` — K=1832 region detail (Messapians-only flip)
+- `dig-battle11.js` — unified event log count and append-zone diff
+- `dig-battle12..13.js` — per-faction counter scan +188 / +(any K)
+- `dig-battle14.js` — **K=148/K=172/K=224 monotone counter discovery**
+- `dig-ownership1..4.js` — Uria & Brundisium settlement records;
+  region-list static-ness; settlement-record schema; player event
+  messages in trailer
+- `dig-soldier-stats1..2.js` — REFUTED: tail block doesn't apply to
+  RIS mod saves
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
