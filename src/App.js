@@ -5017,6 +5017,7 @@ function App() {
     })();
   }, [loadCampaignData, mapCampaign]);
   const [showWealthPanel, setShowWealthPanel] = useState(false);
+  const [showStatsPanel, setShowStatsPanel] = useState(false);
 
   // Preload effect body lives here; the iconsPreloaded state is declared
   // earlier in the component so the splash auto-hide effect can depend on it.
@@ -6910,6 +6911,10 @@ function App() {
           <button className="map-mode-btn" onClick={() => setShowWealthPanel(prev => !prev)}
             title="Open the Faction Wealth panel — sortable list with treasury and region count, click a row to jump to that faction's territory"
             style={{ ...btnStyle(showWealthPanel), minWidth: 0 }}>Wealth</button>
+          <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
+            title="Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
+            disabled={!saveLuaCounters || !saveLuaCounters.count}
+            style={{ ...btnStyle(showStatsPanel), minWidth: 0, opacity: (saveLuaCounters && saveLuaCounters.count) ? 1 : 0.4 }}>Stats</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
@@ -11488,6 +11493,121 @@ function App() {
               </div>
               <div style={{ padding: "8px 16px 0", fontSize: "0.7rem", color: "#888", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                 Treasury = starting denari from descr_strat. Click a row to zoom to that faction's territory.
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
+      {showStatsPanel && saveLuaCounters && saveLuaCounters.count > 0 && (() => {
+        // Campaign Stats panel — surfaces the lua persistent-counter table
+        // decoded by save-cracker session 23 (rtw-sav-parser). 115 counters
+        // in RIS imperial: faction-ID hashes (filtered out — lookup
+        // constants), military counters (num_battles_*, num_mercs_*),
+        // per-faction reform-battle progress (Marian-style unlocks),
+        // rebellion script state, misc setup flags.
+        const all = saveLuaCounters.byName || {};
+        const entries = Object.entries(all);
+        const groups = {
+          campaign: [],   // turn_number, setup, game_reloaded, first_time
+          military: [],   // num_battles_*, num_mercs_recruited_*
+          reform: [],     // *_reform_battle_counter, *_reform_settlement, *_reform_ready, *Reform*
+          rebellion: [],  // *Rebellion_*
+          capital: [],    // *capital*
+          misc: [],
+        };
+        for (const [name, value] of entries) {
+          if (/^id_/.test(name)) continue;
+          if (/^turn_number$|setup|game_reloaded|first_time/.test(name)) groups.campaign.push([name, value]);
+          else if (/^num_battles_|^num_mercs_recruited_/.test(name)) groups.military.push([name, value]);
+          else if (/_reform_battle_counter$|_reform_settlement|_reform_ready|Reform/.test(name)) groups.reform.push([name, value]);
+          else if (/[Rr]ebellion_/.test(name)) groups.rebellion.push([name, value]);
+          else if (/capital/.test(name)) groups.capital.push([name, value]);
+          else groups.misc.push([name, value]);
+        }
+        const sortByValueDesc = (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]);
+        const sortByName = (a, b) => a[0].localeCompare(b[0]);
+        groups.military.sort(sortByValueDesc);
+        groups.reform.sort(sortByValueDesc);
+        groups.rebellion.sort(sortByValueDesc);
+        groups.capital.sort(sortByName);
+        groups.misc.sort(sortByValueDesc);
+        groups.campaign.sort(sortByName);
+        const totalShown = Object.values(groups).reduce((s, g) => s + g.length, 0);
+        const idHashCount = entries.filter(([k]) => /^id_/.test(k)).length;
+        const Section = ({ title, hint, rows }) => {
+          if (rows.length === 0) return null;
+          return (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{
+                fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.04em",
+                color: "#dca64a", padding: "6px 12px 4px",
+                textTransform: "uppercase",
+              }}>
+                {title}
+                <span style={{ marginLeft: 8, fontWeight: 400, color: "#888", textTransform: "none", letterSpacing: 0 }}>
+                  {rows.length} {hint ? `· ${hint}` : ""}
+                </span>
+              </div>
+              {rows.map(([name, value]) => (
+                <div key={name} style={{
+                  display: "grid", gridTemplateColumns: "1fr 90px",
+                  alignItems: "center", padding: "2px 12px",
+                  fontSize: "0.8rem", fontFamily: "Consolas, monospace",
+                }}>
+                  <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {name}
+                  </span>
+                  <span style={{
+                    textAlign: "right", fontVariantNumeric: "tabular-nums",
+                    color: value === 0 ? "#666" : value < 0 ? "#e85050" : "#9ec78a",
+                    fontWeight: 600,
+                  }}>
+                    {value.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          );
+        };
+        return createPortal(
+          <div onClick={() => setShowStatsPanel(false)} style={{
+            position: "fixed", inset: 0, zIndex: 9990,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <div onClick={(e) => e.stopPropagation()} className="popover-pop-in" style={{
+              background: "rgba(28,24,18,0.97)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: 10,
+              padding: "12px 0",
+              width: "min(540px, 90vw)",
+              maxHeight: "80vh",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+              color: "#f4f4f4",
+              display: "flex", flexDirection: "column",
+            }}>
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                padding: "0 16px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)",
+              }}>
+                <span style={{ fontWeight: 700, fontSize: "1rem", color: "#dca64a" }}>
+                  📜 Campaign Stats
+                </span>
+                <button onClick={() => setShowStatsPanel(false)}
+                  style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1.1rem", cursor: "pointer", padding: 0 }}
+                  title="Close (Esc)">×</button>
+              </div>
+              <div style={{ overflowY: "auto", padding: "4px 0" }}>
+                <Section title="Campaign" rows={groups.campaign} hint="turn + setup" />
+                <Section title="Military" rows={groups.military} hint="battles + mercenary recruitment" />
+                <Section title="Reform progress" rows={groups.reform} hint="per-faction Marian-style unlocks" />
+                <Section title="Rebellion state" rows={groups.rebellion} hint="script-driven regional revolt counters" />
+                <Section title="Capital" rows={groups.capital} />
+                <Section title="Misc" rows={groups.misc} />
+              </div>
+              <div style={{ padding: "8px 16px 0", fontSize: "0.7rem", color: "#888", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                {totalShown} counters shown · {idHashCount} faction-ID hashes hidden · decoded by save-cracker session 23
               </div>
             </div>
           </div>,

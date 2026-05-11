@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.286",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "New 'Stats' button next to Wealth — opens a Campaign Stats panel that surfaces the save's lua persistent-counter table (decoded by save-cracker session 23, rtw-sav-parser format `[u32 nameLen][UTF-16LE name][u32 value]` ~5300 bytes near EOF). RIS imperial has 115 counters; the panel groups them into Military (num_battles_*, num_mercs_recruited_*), Reform progress (per-faction Marian-style unlock counters), Rebellion state (script-driven regional revolt counters), Capital, Misc, and Campaign (turn_number + setup flags). 60 `id_<faction>` lookup-constant hashes are hidden by default — they're identity tags, not stats. Button is disabled until a save is loaded." },
+    ],
+  },
+  {
     version: "0.9.285",
     date: "2026-05-11",
     items: [
