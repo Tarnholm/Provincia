@@ -7772,6 +7772,33 @@ Script: `scripts/save-cracker/dig-preamble-strings1.js`.
 
 ---
 
+### Findings 2026-05-11 (background session 29 — settlement-model name -> culture mapping)
+
+Scanned block `0x1f47809..0x1f8f9bc` (295347 bytes). Strings are u16(len incl NUL) + ASCII + NUL; first record is `0d 00 "Eastern_Town\0"` then a 24-byte record tail before the next length prefix. Found exactly **24 distinct model names** (matches the session-24 count).
+
+| culture_family | village | town | large_town | city | large_city | huge_city |
+|---|---|---|---|---|---|---|
+| greek (W_hellenistic) | - | W_hellenistic_Town | W_hellenistic_Large_Town | W_hellenistic_City | W_hellenistic_Large_City | W_hellenistic_Huge_City |
+| eastern | - | Eastern_Town | Eastern_Large_Town | Eastern_City | - | Eastern_Huge_City |
+| carthaginian | - | Carthaginian_Town | Carthaginian_Large_Town | Carthaginian_City | - | Carthaginian_Huge_City |
+| barbarian (Celtic) | - | Celtic_Town | Celtic_Large_Town | Celtic_City | - | - |
+| barbarian (Germanic) | - | Germanic_Town | Germanic_Large_Town | - | - | - |
+| barbarian (Illyrian) | - | Illyrian_Town | Illyrian_Large_Town | - | - | - |
+| egyptian | - | Egyptian_Town | Egyptian_Large_Town | - | - | - |
+| nomad (Scythian) | - | Nomad_Town | Nomad_Large_Town | - | - | - |
+
+Anomalies / notes:
+- **No `Roman_*` strings.** Roman and Greek factions both render with the `W_hellenistic` (Western hellenistic) shared classical model set, which is the only family that exercises every level including the unique `Large_City` tier.
+- **No `Village` strings** in the block - the smallest model name is `*_Town`. Villages may share Town models or be rendered procedurally.
+- **No walls-only variants.** All names follow `<Culture>_<Level>`; no `_Walls`/`_Wall` suffix variants exist in this block (unlike `descr_cultures.txt` mod files which can list separate wall models).
+- **Barbarian sub-flavours** split into Celtic (Western Europe), Germanic, and Illyrian - all roll up to the session-25 `barbarian` family but use three distinct asset sets at the Town/Large_Town tier. Celtic is the only barbarian flavour that reaches `City`.
+- Session-25's six culture_families confirmed by name pattern: roman+greek share **W_hellenistic** (5 levels), **Eastern** (4 levels), **Carthaginian** (4 levels), **Celtic/Germanic/Illyrian** (barbarian; 3 levels max), **Egyptian** (2 levels), **Nomad** (2 levels).
+- Top hit counts: `W_hellenistic_Large_Town`=142, `W_hellenistic_Large_City`=89, `Celtic_Large_Town`=85 - consistent with Greek/Roman dominance and Celtic prevalence on the rome10 map.
+
+Script: `scripts/save-cracker/dig-model-names1.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
