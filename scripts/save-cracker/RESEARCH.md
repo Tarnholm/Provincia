@@ -3493,6 +3493,269 @@ between them.
 
 ---
 
+### Findings 2026-05-11 (background session 15 — tile-attribute map + AI policy)
+
+Goal: (1) Map each rare byte value in the 9.78MB "gap" region to its game
+meaning (per session 12's tile-attribute hypothesis). (2) Locate the per-faction
+AI strategic-policy cache (16-byte-stride array). (3) Stretch: per-faction army
+manifest.
+
+Outcome: The session 12 "tile-attribute map" hypothesis is **RETRACTED**. The
+9.78MB region is **not a per-tile byte table** with rare-byte semantics
+encoding terrain class / fog-of-war. It is **CONFIRMED to be an array of
+36,582 fixed-stride 267-byte records** with a near-constant 10-u32-field
+template; the rare-byte-count near-equality session 12 observed is a direct
+artifact of each record containing exactly one occurrence of each constant.
+AI policy cache: **NOT pinned** — three negative results documented (16-byte
+stride scan, 5-faction array scan in Alexander Macedon, small-int dense
+cluster diff). Army manifest stretch: not attempted (time spent on
+tile-attribute decode + AI policy attempts).
+
+Save corpus this session: `save_rome10.sav` (vanilla Republic of Rome, T5),
+`save_Autosave Republic of Rome Turn 1.sav` (same campaign, T1), Alexander
+`save_Autosave Macedon Turn 97.sav` / `Turn 98 End.sav` / `Turn 99 Start.sav`.
+
+#### 1. CONFIRMED: the 9.78MB "gap" is a 36,582-record fixed-stride array, NOT a tile-attribute byte table
+
+The region between body-root-end (`0x633bb3`) and the start of the
+settlement zone wrapper (`0xf8463X`, slightly earlier than session 12's
+`0xf88637` boundary which actually points inside the settlement zone) is
+**not raw per-tile bytes**. It is an array of `36,582 records of 267-byte
+stride`, plus a 157-byte zero-prefix header and a small trailing pad before
+the next section.
+
+Layout:
+
+```
+0x633bb3..0x633c50    157 bytes  prefix (all zeros)
+0x633c50..0xf84632    9,767,394  36,582 records × 267-byte stride
+0xf84632..0xf88637    16,389     post-array; actually contains start of
+                                 settlement zone (`default_set`,
+                                 `hinterland_region` ASCIIZ blobs)
+                                 — the session-12 gap-end boundary 0xf88637
+                                 was off by 16KB
+```
+
+Per-record structure (record 0 of rome10, all canonical records identical
+across both T1 and T5 saves; 35,699 of 36,582 = 97.6% are byte-identical to
+this template):
+
+| Δ | Type | Value (canonical) | Variations observed |
+|---|---|---|---|
+| +0 | u32le | 5 | constant (36582/36582) |
+| +4..+11 | 8 B zero | 0 | constant |
+| +12 | u32le | 10 | constant |
+| +16 | u32le | 200 | constant |
+| +20 | u32le | 200 | 600 (385×), 0 (261×) |
+| +24 | u32le | 2 | constant |
+| +28 | u32le | 6 | 54 (250×), 55 (11×) |
+| +32 | u32le | 200 | 600 (516×), 0 (100×), 4294967286=−10 (93×), 400 (1×) |
+| +36..+67 | 32 B zero | 0 | constant |
+| +68 | u32le | 3 | constant |
+| +72..+83 | 12 B zero | 0 | constant |
+| +84 | u32le | 576 | constant (= 0x240) |
+| +88..+95 | 8 B zero | 0 | constant |
+| +96 | u8 = 0xa6 | 166 | constant (last byte of each record's data) |
+| +97..+266 | 170 B zero | 0 | constant padding to stride |
+
+**Total distinct variant patterns over (u32+16, +20, +24, +28, +32): 13**.
+The 5 most common:
+- `200_200_2_6_200`: 35,699 records (canonical, 97.6%)
+- `200_600_2_6_600`: 382 records (1.0%)
+- `200_0_2_54_200`: 160 records (0.4%)
+- `200_200_2_6_600`: 127 records
+- `200_200_2_6_0`: 98 records
+- 8 minor variants <100 records each
+
+Total non-canonical: **883 records** (2.4% of 36,582).
+
+#### 2. CONFIRMED: the array is STATIC across turns (0 byte diffs T1 → T5 across 5 turns of gameplay)
+
+Cross-save diff: `save_rome10.sav` (T5) vs `save_Autosave Republic of Rome
+Turn 1.sav` (T1, same campaign). All 36,582 × 97 = 3,548,454 informative
+bytes match **byte-for-byte** across the 5-turn gap. This rules out:
+- Fog-of-war / tile-discovery state (varies per turn as players explore)
+- AI policy / diplomacy cache (recomputed per turn per session 7 findings)
+- Per-character / per-unit data (units die, new ones spawn)
+- Per-faction treasury / state (varies per turn)
+
+Static-across-turns rules in static **map-baked metadata**: terrain class,
+ground type, climate, height, roughness, the descr_strat starting-state
+data, or watchtower placements that don't change.
+
+This finding **REFUTES** session 12's hypothesis that the gap holds a
+tile-attribute map with byte values encoding terrain/visibility/ownership.
+The 8 rare-byte counts near-equal at ~36,500 reported by session 12 are
+exactly explained by: each record contains exactly ONE occurrence each of
+0x05, 0x0a, 0x02, 0x06, 0x03, 0x40, 0xa6 plus three 0xc8 (=200) bytes per
+record × 36,582 = ~109,746 occurrences of 0xc8 (session 12 reported
+108,394, off only by the 883 variants where one or more 0xc8 flipped to
+0x58, 0xf6, or 0x90). The histogram-equality session 12 observed was the
+SIGNATURE OF A REPEATING RECORD, not the signature of a tile attribute map.
+
+#### 3. STRONG: the record array is laid out as a W=240 grid; 153 rows + partial last row
+
+For variant `200_0_2_54_200` (160 records, the second-most-common
+non-canonical variant), record indices: 101, 341, 581, 821, 1061, 1301,
+1541, 1781, 2021, 2261, 2501, 2741, ..., 36381. Delta between consecutive
+records = **240 in 147 of 159 deltas** (92%).
+
+Column analysis at W=240: this variant occurs at **column 101 in row 0, 1,
+2, ..., 152 (153 rows)**. That is, a perfect vertical line in the (col,
+row) grid. At least one record at column 101 is non-canonical in every row
+of the array.
+
+The +28=54 variant similarly forms a vertical stripe (column 101) across
+153 rows; `200_600_2_6_600` and `200_200_2_6_600` form independent vertical
+stripes at columns 12, 37, 43, 59, 87, 115, 151 (8 columns each appearing
+in many rows).
+
+Total records 36,582 = 240×152 + 102. So the array is **240 columns × 153
+rows with a partial last row (only first 102 cols filled)**. Cf. vanilla
+campaign map dimensions per `descr_terrain.txt`: width 255, height 156 —
+slightly larger than 240×153 by 15 cols and 3 rows. Plausible explanation:
+the array covers the campaign map's playable rectangle excluding margins.
+However a spatial overlay against `map_regions.tga` does NOT show the
+variants clustering on land vs sea — variants are scattered through both
+land and sea pixel positions (visualized in `dig-tilemap14.js`). The
+240-grid hypothesis is structurally sound at the record-array level but
+the (col, row) → (campaign_map_x, campaign_map_y) mapping is NOT a simple
+identity.
+
+#### 4. HYPOTHESIS (untested): the records describe placed entities (resources, ports, watchtowers, settlements)
+
+The variant counts and static-across-turns invariance are consistent with
+the data being **descr_strat-derived map placements that get baked at
+campaign start and never rewritten**. Vanilla imperial_campaign descr_strat
+has 688 `resource` entries, 96 `settlement` entries, 177 `character`
+entries (= 961 placed entities total). The 883 non-canonical record count
+is in the same order of magnitude but not exactly matching. Possible
+interpretations (none cross-validated):
+
+- **Placed-resource cache**: each record's +28 enum (canonical 6,
+  variants 54/55) is the resource-type-id; canonical "6" = no
+  resource on this tile, "54"/"55" = specific trade-good types. 250+11=261
+  records have +28=54 or +28=55, close to a typical resource subset.
+- **Per-tile region-ownership cache**: +20/+32 flips 200↔600↔0 could
+  encode ownership transitions baked at start. But 883 transition tiles
+  is too few to cover region borders.
+- **Per-tile streaming game-tile (HST: `WORLD_MAP_STREAMING_GAME_TILE
+  v=1`)**: streaming chunks for the campaign-map renderer; +84=576
+  could be a chunk-size or LOD parameter.
+
+Test required: build a custom descr_strat with ONE extra resource placed at
+a known tile coord, save the campaign turn 1, find the new non-canonical
+record. Out of scope for autonomous session — needs user-side game-launch.
+
+#### 5. NEGATIVE: AI policy cache not pinned via 16-byte-stride scan
+
+Three independent search strategies attempted, all negative:
+
+- **5-element 16-byte-stride array in Macedon player record trailing**
+  (idx 0, +44=6, regions=25, 176KB trailing in T97). Scanned offsets
+  0..5000 of trailing for any 5-record array where col-0 is a u32 in
+  {0..30} (faction-id-like) AND all 5 IDs are distinct. **Zero matches.**
+  Repeated at strides 4, 8, 12, 16, 20, 24, 28, 32, 40, 48. Zero matches.
+- **23-element 16-byte stride in rome10 Romans Julii trailing** (227KB).
+  Same scan, zero matches.
+- **Small-int dense diff cluster**: T97 vs T98 End diff in Macedon's
+  trailing has 21,420 diff regions totaling 16K+ bytes. The biggest 145-byte
+  cluster at trail+173956 is f32-shaped character coordinate data (high
+  bytes 0x43/0x44/0x47/0x48 indicate float values in 800..50000), not a
+  policy enum array. A 109-byte cluster at trail+3901 contains UTF-8 ASCII
+  strings (`data/ui/barbarian/portraits/cards/old/generals/054.tga`) —
+  evidence that a character DIED between T97 and T98 (general 054 became
+  the "dead" portrait). NOT policy data.
+
+The session-7 retraction stands: **the per-faction AI policy state is NOT
+at a fixed positional offset within the major-faction record's trailing
+data**. The trailing data is dominated by per-character/per-unit/per-army
+records (visible at ~450-byte-stride between `ffffffff ffffffff` sentinels;
+sentinels found at +258, +717, +1200, +1703, +2198, +2643, ... in Macedon
+trailing — that's the army roster, NOT a policy cache).
+
+The diplomacy decode requires a save-pair where ONE diplomatic action
+happens cleanly between saves; the available corpora do NOT contain such
+a pair (Macedon T97/98/99 has 1 faction at endgame; rome10/T1 has
+character churn across 5 turns; sparta corpus has war-declaration but
+session 7's negative result already documented that the visible 9-byte
+array there is the bodyguard's per-turn AI cache, not the per-pair state
+matrix).
+
+#### 6. CONFIRMED: Alexander campaign has 0 minor-faction records (+44=8) — Macedon corpus geometry distinct from RIS
+
+Scanning `save_Autosave Macedon Turn 97.sav` for the minor-faction
+signature (`+8=100, +12=1, +24=self, +40=self, +44=8`) finds **0 records**.
+Compare RIS imperial campaign (216 minors) and vanilla Republic of Rome
+(43-54 minors per save). The Alexander campaign has only 5 major-faction
+records (T97 saves, idx 0 = Macedon player) and NO minor-class records at
+all. Either the Alexander campaign is small enough that the engine
+classifies all factions as major, or the `+44=8` minor-class is
+descr_strat-version dependent. Sessions 5-9's "two-tier major/minor"
+architecture from RIS imperial does NOT generalize to Alexander.
+
+Implication: parser-side faction enumeration must handle BOTH classes by
+union and not assume the minor class exists.
+
+#### Reproducer scripts
+
+- `dig-tilemap1.js` — first probe: dump gap prefix as bytes + u32s
+- `dig-tilemap2.js` — first stride-discovery attempt (failed pattern)
+- `dig-tilemap3.js` — cluster enumeration, found 36,596 nonzero clusters w/
+  stride=267 dominating
+- `dig-tilemap4.js` — per-offset value histogram, identified canonical
+  pattern + 13 variants
+- `dig-tilemap5.js` — multi-save cross-validation (rome10 + RoR-T1 both
+  have same array)
+- `dig-tilemap6.js` — u32-field interpretation across all records
+- `dig-tilemap7.js` — outlier record (rec 36582 = start of settlement zone)
+- `dig-tilemap8.js` — T1 vs T5 cross-save byte diff (0 diffs CONFIRMED
+  static)
+- `dig-tilemap9.js` — variant classification (13 distinct keys)
+- `dig-tilemap10.js` — grid-width search (W=240 column-101 alignment)
+- `dig-tilemap11.js` — vanilla map_regions.tga color analysis
+- `dig-tilemap12.js` — u32/u16/i32/f32 record interpretation
+- `dig-tilemap13.js` — record-index → (x,y) hypothesis test
+- `dig-tilemap14.js` — visual 2D grid overlay vs map_regions.tga
+- `dig-ai-policy1.js` — major-faction record enumeration + trailing diff
+- `dig-ai-policy2.js` — 16-byte-stride array scan in rome10 player trail
+- `dig-ai-policy3.js` — Macedon T97 vs T98 End trailing diff
+- `dig-ai-policy4.js` — Macedon AI-policy probe (+1800..+3200 small-int
+  region)
+- `dig-ai-policy5.js` — Macedon trail diff cluster inspection (f32 + ASCII
+  string content)
+- `dig-ai-policy6.js` — multi-stride array scan (zero matches at any stride)
+- `dig-ai-policy7.js` — character-record sentinels in Macedon trailing
+- `dig-ai-policy8.js` — diplomatic 21×21 matrix search by value statistics
+
+#### Open follow-ups for session 16+
+
+- **36,582-record interpretation**: needs descr_strat counting plus a
+  custom-mod test where ONE resource/setting is added or removed pre-game
+  to identify which records the new entity occupies. Without the mod test,
+  the array's exact semantic remains HYPOTHESIS-grade. Highest-value test:
+  remove one specific resource from descr_strat, save → diff against
+  unmodified-save → identify which record(s) lose their variant.
+- **AI policy cache location**: the trailing data of major-faction
+  records is NOT byte-aligned; sessions 5/7/9/12 + this session 15 all
+  failed at this target. **Recommended pivot**: search for an explicit
+  HST-anchored section in the body root's direct children rather than
+  embedded in faction records. Session 12 found 287 CHARACTER_PATHS as
+  body-root children but did not enumerate other section types; one of
+  those 287 might be the AI policy cache. Re-walk body root and look for
+  children whose payload is NOT character-paths-shaped — those are
+  candidates.
+- **Diplomacy enum** (still blocked on corpus): unchanged from sessions
+  6/7/12 status. Requires user-side controlled save pair where a single
+  isolated diplomatic action happens between T1-start and T1-end.
+- **Per-faction army manifest** (stretch, not attempted): the
+  ~450-byte-stride sentinel-separated records in Macedon's trailing data
+  (~390 of them per major faction record) are the per-character/army
+  records. A future session could decode their structure as a follow-up
+  to session 4's character record findings.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
