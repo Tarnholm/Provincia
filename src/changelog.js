@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.315",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "Conqueror's army now resolves to the conquered settlement's region, not the surrounding territory. Diagnosed from the user's save_Turn 2 Start: Aulus is at (342,386), 1 tile WEST of Brundisium's city pixel (343,386). The pixel at (342,386) is Taras-region territory (since Brundisium sits at the eastern edge of the Salentine peninsula), so tileToRegion's direct sample said 'Taras' — even though Aulus had just captured Brundisium. Reordered tileToRegion to check 1-tile city neighbours BEFORE the direct pixel sample: if you're standing next to a city pixel, you're at THAT city's region. Same applies to any 'just captured / just arrived at city' scenario." },
+    ],
+  },
+  {
     version: "0.9.314",
     date: "2026-05-12",
     items: [

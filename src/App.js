@@ -2138,6 +2138,20 @@ function App() {
       // 1) Settlement-tile fast path.
       const cityRgb = cityByXy.get(`${x},${y}`);
       if (cityRgb) return regions[cityRgb]?.region || null;
+      // 1b) City-pixel ADJACENT (1-tile) — checked BEFORE the direct
+      // pixel sample. After capturing a settlement, the conqueror's
+      // bodyguard often lands 1 tile off the city pixel (engine drops
+      // them on the besieging tile). Without this check we'd resolve
+      // their RGB to the surrounding region instead — e.g. Aulus at
+      // (342,386) next to Brundisium at (343,386) was reading as
+      // "Taras" because the pixel west of Brundisium is in Taras
+      // territory. Settlement-adjacent should be treated as IN that
+      // settlement's region.
+      for (const dy of [-1, 0, 1]) for (const dx of [-1, 0, 1]) {
+        if (dx === 0 && dy === 0) continue;
+        const nbCity = cityByXy.get(`${x+dx},${y+dy}`);
+        if (nbCity) return regions[nbCity]?.region || null;
+      }
       // 2) Direct pixel sample.
       const direct = sampleAt(x, y);
       if (direct) return direct;
