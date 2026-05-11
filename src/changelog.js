@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.304",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Region owner now reflects the loaded mod's descr_strat, not the dev-bundled `regions_large.json`. User report: Uria showed `romans_julii` in the app even though the current RIS descr_strat puts it under messapians (Salentinia is a settlement they OWN, not a homeland claim). The bundled JSON was generated against an older mod state and never updated when the mod changed. Now: the renderer overlays `initialOwnerByCity` (parsed at runtime from the LOADED mod's descr_strat) onto each region's `faction` field. Any future descr_strat edit picks up automatically as soon as you reload the mod. First step toward the broader `nothing hardcoded` direction — the regions, factions, and ownership data are still bundled but the bundled JSON is now an override-able fallback, not the source of truth." },
+    ],
+  },
+  {
     version: "0.9.303",
     date: "2026-05-11",
     items: [

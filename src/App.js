@@ -4682,6 +4682,31 @@ function App() {
     })();
   }, [loadCampaignData, mapCampaign]);
 
+  // Overlay runtime-parsed descr_strat ownership onto the bundled regions
+  // map. The bundled `regions_large.json` was generated against whatever
+  // mod state was current when the dev ran `npm run bundle-data` — for
+  // any other user, or after a descr_strat edit, the bundled `faction`
+  // value is stale (e.g. Uria's owner shown as romans_julii when current
+  // descr_strat puts it under messapians). `initialOwnerByCity` is the
+  // authoritative turn-0 owner per the loaded mod's descr_strat —
+  // overlay it onto each region whose city is in the map.
+  useEffect(() => {
+    if (!initialOwnerByCity || Object.keys(initialOwnerByCity).length === 0) return;
+    setRegions((prev) => {
+      let touched = false;
+      const next = { ...prev };
+      for (const [rgb, r] of Object.entries(prev)) {
+        if (!r || !r.city) continue;
+        const realOwner = initialOwnerByCity[r.city];
+        if (realOwner && realOwner !== r.faction) {
+          next[rgb] = { ...r, faction: realOwner };
+          touched = true;
+        }
+      }
+      return touched ? next : prev;
+    });
+  }, [initialOwnerByCity]);
+
   // Keep selection on map mode change; only reset on region data changes
   useEffect(() => {
     setZoom(1);
