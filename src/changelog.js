@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.291",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "Live log tracking is now SAVE-RELATIVE: every time a save snapshot lands, the log watcher re-anchors to the current end of message_log.txt and drops all live tracking state (passenger lists, unit-flow, char positions). Save state is authoritative for everything that's already happened; the log is only useful for events that happen AFTER this save. The previous backfill-from-EOF + accumulate forever pattern was reading old game-session entries when you loaded a save mid-Provincia-session and applying them on top of the new save's reality — which was wrong. User asked for this directly: 'it should only need logs for the states between saves; the rest should be parsed from the saves'. Spot-on architectural call." },
+      { type: "feature", text: "New 'Reset' button next to Stats (only visible when Live is on) — manual override that re-anchors the log watcher to current EOF without needing to save in-game. Use after loading a save mid-session if for some reason auto-reset didn't fire (and tell me — that's a bug)." },
+      { type: "feature", text: "Live unit-flow re-bucketing is BACK after being reverted in 0.9.272. When you merge Marcus's stack onto Aulus, the foot units should now visibly transfer to Aulus in the region panel without waiting for a save. Safer reattempt: main.js tracks the donor's full name on each transfer event (via the message_log's `transferring general(X)` line), and the renderer bridges runtime char uuids → save secondaryUuids ONLY via strict (firstName, lastName, faction) triple match. If either side can't bridge unambiguously, the flow is skipped — no first-name-only fallback that caused the Uria flood. Donor's foot pool is also region-guarded: only foot units in the donor's bodyguard region donate." },
+    ],
+  },
+  {
     version: "0.9.290",
     date: "2026-05-11",
     items: [

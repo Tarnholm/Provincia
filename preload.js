@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   selectLogFolder: () => ipcRenderer.invoke("select-log-folder"),
   logWatchStart: (logDir) => ipcRenderer.invoke("log-watch-start", logDir),
   logWatchStop: () => ipcRenderer.invoke("log-watch-stop"),
+  logWatchReset: () => ipcRenderer.invoke("log-watch-reset"),
   logReadFull: (logDir) => ipcRenderer.invoke("log-read-full", logDir),
   onLogLines: (callback) => {
     ipcRenderer.on("log-lines", (_event, data) => callback(data));

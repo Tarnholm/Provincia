@@ -2158,36 +2158,136 @@ function App() {
       return deadUuids.has(cmd.toString(16).padStart(8, "0"));
     };
     const wiped = liveAssaultWipedSettlements.current;
-    // 0.9.271's unit-flow override is REVERTED here pending investigation —
-    // it caused a regression where many units (from different factions)
-    // flooded into Uria's panel. Suspected cause: the runtime→save char
-    // mapping was matching by first name with a weak last-name discriminator,
-    // donating foot from the wrong save char to the wrong recipient via
-    // Pass 2 phantom file-order attribution (a single "greek general" record
-    // with cmd=266b0168 has 763 foot units attached to it via Pass 2, which
-    // is a Pass 2 design trade-off unrelated to flow, but the override sat
-    // on top of it and amplified misattributions). Main.js's flow tracking
-    // (unitFlowFromTo + recordUnitTransfer) is left in place so we have the
-    // data plumbing ready for a more conservative reattempt later — but the
-    // renderer no longer applies it. To reintroduce safely we'd need: (a)
-    // faction tagging on save char records so the runtime→save match is
-    // unique within a faction, (b) Pass 2 region-aware attribution so the
-    // donor pool doesn't include cross-region foot units, (c) probably
-    // tracking the source army's leader at every transfer event in main.js
-    // and only flowing within named-character pairs.
+    // 0.9.290+ re-enables the unit-flow override that 0.9.272 reverted.
+    // Safer reattempt: main.js now records the donor's full name on each
+    // transfer event (charNameByRuntimeUuid), and the renderer bridges
+    // runtime char uuids → save secondaryUuids ONLY via strict
+    // (firstName, lastName, faction) triple match. If either donor or
+    // recipient can't bridge unambiguously, the flow is skipped — no
+    // first-name-only fallback that caused the Uria flood.
+    //
+    // Donor-side guard: only foot units in the SAME region as the donor's
+    // bodyguard are eligible to donate, so a stale region tag elsewhere
+    // can't bleed cross-region. Recipient receives by relabeling
+    // inferredCmd → recipient.secondaryUuid; the unit's `region` field
+    // is left alone (the bodyguard's live position drives bucketing via
+    // cmdToLiveRegion above).
+    //
+    // Build runtime char uuid → save secondaryUuid bridge.
+    const flow = liveUnitFlow.current || [];
+    const runtimeToSaveSecondary = new Map();
+    if (flow.length > 0 && saveCharactersByRegion) {
+      // Flatten save chars + index by (firstName, lastName, faction).
+      // Multiple chars with identical triple → ambiguous → bridge skipped.
+      const tripleMatches = new Map();
+      for (const list of Object.values(saveCharactersByRegion)) {
+        for (const c of list) {
+          if (!c.secondaryUuid || !c.firstName) continue;
+          const key = (c.firstName || "").toLowerCase() + "|" + ((c.lastName || "").replace(/_/g, " ").toLowerCase()) + "|" + ((c.faction || "").toLowerCase());
+          if (!tripleMatches.has(key)) tripleMatches.set(key, []);
+          tripleMatches.get(key).push(c.secondaryUuid);
+        }
+      }
+      const parseRuntimeName = (fullName) => {
+        if (!fullName) return null;
+        const clean = String(fullName).toLowerCase().replace(/^(captain|admiral|general)\s+/, "").replace(/\s+the\s+\S+$/i, "");
+        const parts = clean.split(/\s+/);
+        return { first: parts[0] || "", last: parts.slice(1).join(" ") };
+      };
+      // For each flow entry, try to bridge. Runtime char's faction isn't
+      // emitted on the transfer line directly, so cross-check against
+      // liveCharPositions where MOVING_NORMAL captured faction.
+      const factionByRuntimeUuid = new Map();
+      for (const v of liveCharPositions.current.values()) {
+        if (v.charUuid && v.faction) factionByRuntimeUuid.set(v.charUuid, v.faction.toLowerCase());
+      }
+      const bridgeOne = (runtimeUuid, runtimeName) => {
+        if (!runtimeUuid || !runtimeName) return null;
+        const p = parseRuntimeName(runtimeName);
+        if (!p) return null;
+        const fac = factionByRuntimeUuid.get(runtimeUuid);
+        if (!fac) return null;
+        const key = p.first + "|" + p.last + "|" + fac;
+        const matches = tripleMatches.get(key);
+        if (!matches || matches.length !== 1) return null;
+        return matches[0];
+      };
+      for (const f of flow) {
+        const donorSecondary = bridgeOne(f.from, f.fromName);
+        const recipientSecondary = bridgeOne(f.to, f.toName);
+        if (donorSecondary && recipientSecondary) {
+          runtimeToSaveSecondary.set(f.from, donorSecondary);
+          runtimeToSaveSecondary.set(f.to, recipientSecondary);
+        }
+      }
+    }
+    // Build the per-flow donation plan: { donorSecondary → { recipientSecondary → count } }.
+    const donationPlan = new Map();
+    for (const f of flow) {
+      const donor = runtimeToSaveSecondary.get(f.from);
+      const recipient = runtimeToSaveSecondary.get(f.to);
+      if (!donor || !recipient || donor === recipient) continue;
+      if (!donationPlan.has(donor)) donationPlan.set(donor, new Map());
+      const inner = donationPlan.get(donor);
+      inner.set(recipient, (inner.get(recipient) || 0) + (f.count || 0));
+    }
+    // Locate each donor's bodyguard region for the region-aware donor guard.
+    // Only foot units in that same region are eligible to donate.
+    const donorRegion = new Map();
+    if (donationPlan.size > 0) {
+      for (const [region, units] of Object.entries(saveUnitsByRegion)) {
+        for (const u of units) {
+          if (u.commanderUuid && donationPlan.has(u.commanderUuid) && !donorRegion.has(u.commanderUuid)) {
+            donorRegion.set(u.commanderUuid, region);
+          }
+        }
+      }
+    }
     const out = {};
+    // Per-donor cursor: how many foot units have we already donated from this donor
+    // (across all recipients). Stops double-donating when multiple flows target
+    // different recipients from the same source.
+    const donatedCount = new Map();
+    // Apply donations during the bucketing pass. For each foot unit whose
+    // inferredCmd === a planned donor AND is in the donor's bodyguard region,
+    // pop from the donation plan and rebind inferredCmd to the recipient.
+    const advanceDonation = (donorSec) => {
+      const plan = donationPlan.get(donorSec);
+      if (!plan) return null;
+      const consumed = donatedCount.get(donorSec) || 0;
+      let running = 0;
+      for (const [recipient, count] of plan) {
+        running += count;
+        if (consumed < running) {
+          donatedCount.set(donorSec, consumed + 1);
+          return recipient;
+        }
+      }
+      return null;
+    };
     for (const [region, units] of Object.entries(saveUnitsByRegion)) {
       for (const u of units) {
         if (wiped.size > 0 && u.region && wiped.has(u.region.toLowerCase())) continue;
-        const cmd = u.commanderUuid || u.inferredCmd || 0;
+        let cmd = u.commanderUuid || u.inferredCmd || 0;
         if (isCmdDead(cmd)) continue;
+        // Foot unit (no commanderUuid) whose inferred general is a donor:
+        // possibly redirect to a recipient. Only when in the donor's region.
+        let unitOut = u;
+        if (!u.commanderUuid && u.inferredCmd && donationPlan.has(u.inferredCmd)
+            && donorRegion.get(u.inferredCmd) === region) {
+          const newCmd = advanceDonation(u.inferredCmd);
+          if (newCmd) {
+            unitOut = { ...u, inferredCmd: newCmd };
+            cmd = newCmd;
+          }
+        }
         const effective = (cmd && cmdToLiveRegion.get(cmd)) || region;
         if (!out[effective]) out[effective] = [];
-        out[effective].push(u);
+        out[effective].push(unitOut);
       }
     }
     return out;
-  }, [saveUnitsByRegion, armiesToRender, liveCharPositionsVersion]);
+  }, [saveUnitsByRegion, armiesToRender, liveCharPositionsVersion, saveCharactersByRegion]);
   const [homelandsData, setHomelandsData] = useState({}); // faction → [hidden_resource, ...]
   // [{ name, count, group }, ...] — every hidden-resource token in the active
   // campaign, classified into a logical group. Group classification is
@@ -7131,6 +7231,27 @@ function App() {
                 ? "Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
                 : "Campaign Stats — waiting on save data"}
               style={{ ...btnStyle(showStatsPanel), minWidth: 0 }}>Stats</button>
+          )}
+          {liveLogActive && (
+            <button
+              className="map-mode-btn"
+              onClick={async () => {
+                try {
+                  const res = await window.electronAPI?.logWatchReset?.();
+                  if (res?.ok) {
+                    pushToast("Live tracking reset — log re-anchored to now", "info");
+                  } else {
+                    pushToast("Reset failed: " + (res?.reason || res?.error || "unknown"), "warning");
+                  }
+                } catch (e) {
+                  pushToast("Reset failed: " + e.message, "warning");
+                }
+              }}
+              title="Re-anchor the live log watcher to the current end of message_log.txt and drop all live tracking state (passenger lists, unit-flow, char positions). Use after loading a save mid-session — Provincia will then only react to events from this moment forward."
+              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px" }}
+            >
+              Reset
+            </button>
           )}
           {liveLogActive && (
             <button

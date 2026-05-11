@@ -3220,6 +3220,18 @@ const unitFlowFromTo = new Map();
 // "from army(A) to named general(Y):army(B)" — Y is explicit, but the
 // donor is whoever leads A.
 const armyLeaderByArmyUuid = new Map();
+// Runtime char uuid → { name } as seen in log events. Lets us attach
+// names to flow snapshots so the renderer can match against save chars
+// by (firstName, lastName, faction) instead of via the unstable runtime
+// uuid → save secondaryUuid bridge. 0.9.271 used a weak first-name-only
+// fallback which caused the Uria misattribution flood; tracking the
+// full name from the log event itself avoids that class of bug.
+const charNameByRuntimeUuid = new Map();
+function recordCharName(uuid, name) {
+  if (uuid && name && !charNameByRuntimeUuid.has(uuid)) {
+    charNameByRuntimeUuid.set(uuid, name);
+  }
+}
 function unitFlowAdd(from, to) {
   if (!from || !to || from === to) return;
   if (!unitFlowFromTo.has(from)) unitFlowFromTo.set(from, new Map());
@@ -3230,7 +3242,11 @@ function unitFlowSnapshot() {
   const out = [];
   for (const [from, inner] of unitFlowFromTo) {
     for (const [to, count] of inner) {
-      out.push({ from, to, count });
+      out.push({
+        from, to, count,
+        fromName: charNameByRuntimeUuid.get(from) || null,
+        toName: charNameByRuntimeUuid.get(to) || null,
+      });
     }
   }
   return out;
@@ -3278,6 +3294,7 @@ function clearPassengers() {
   armyUuidByCharUuid.clear();
   unitFlowFromTo.clear();
   armyLeaderByArmyUuid.clear();
+  charNameByRuntimeUuid.clear();
 }
 // Called on every character_move BEFORE fanout. If the moving character's
 // army_uuid doesn't match the last seen value AND they have passengers,
@@ -3326,6 +3343,40 @@ function recordUnitTransfer(fromArmyUuid, toArmyUuid, recipientCharUuid, movingG
   }
 }
 
+// Reset live-log tracking without restarting the watcher: re-anchor to
+// current EOF, drop passenger / flow / position state, tell the renderer
+// to clear its live caches. User-triggered "fresh start" — for when
+// they've just loaded a save mid-session and want to ignore log entries
+// written by the previous game state.
+ipcMain.handle("log-watch-reset", async () => {
+  if (!logPollInterval) return { ok: false, reason: "log-watch not running" };
+  const msgPath = _logPath ? path.dirname(_logPath) : null;
+  // We rely on the existing poll's msgPath; that's captured inside the
+  // closure of the interval callback (line ~3450). Easier: re-stat the
+  // file using the path the watcher most recently saw.
+  try {
+    // Approximation: bump offset to the current size of message_log.txt.
+    // Find the log dir from the running interval: we tracked it via the
+    // outer closure variable. Read directly from disk using the env we
+    // set at watch-start (stored in module-scope `_lastWatchedLogDir`).
+    if (_lastWatchedLogDir) {
+      const p = path.join(_lastWatchedLogDir, "message_log.txt");
+      logOffset = fs.existsSync(p) ? fs.statSync(p).size : logOffset;
+      const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
+      logOffsetAI = fs.existsSync(ap) ? fs.statSync(ap).size : logOffsetAI;
+    }
+    clearPassengers();
+    logPollTurnIdx = 1;
+    const winR = BrowserWindow.getAllWindows()[0];
+    if (winR) winR.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+let _lastWatchedLogDir = null;
+
 ipcMain.handle("log-watch-start", async (_event, logDir) => {
   // Stop any existing watcher
   if (logPollInterval) { clearInterval(logPollInterval); logPollInterval = null; }
@@ -3334,6 +3385,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
   const aiPath = path.join(logDir, "campaign_ai_log.txt");
 
   if (!fs.existsSync(msgPath)) return { error: "message_log.txt not found in " + logDir };
+  _lastWatchedLogDir = logDir;
 
   // Start from current end of file (only watch new lines)
   try { logOffset = fs.statSync(msgPath).size; } catch { logOffset = 0; }
@@ -3412,8 +3464,11 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           if (ev.movedCharUuid && ev.toArmyUuid) {
             armyUuidByCharUuid.set(ev.movedCharUuid, ev.toArmyUuid);
           }
+          recordCharName(ev.movedCharUuid, ev.movedCharName);
+          recordCharName(ev.toCommanderUuid, ev.toCommanderName);
           recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, ev.movedCharUuid);
         } else if (ev.type === "unit_transfer") {
+          recordCharName(ev.toCommanderUuid, ev.toCommanderName);
           recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
         } else if (ev.type === "fleeing") {
           moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn: backfillTurn });
@@ -4445,6 +4500,23 @@ async function reparseLatestSave() {
     }
     emitSaveProgress("Done", 100);
     win.webContents.send("save-snapshot", { file: latestFile, data: newData });
+    // Re-anchor live-log tracking to the moment of this save. Save state
+    // is authoritative; the log is only useful for events that happened
+    // AFTER this save was written. Anything older is either reflected in
+    // the save itself (so reading it again is redundant) or belongs to a
+    // previous game session (so reading it is wrong). Tell the renderer
+    // to drop its live state too. Manual Reset button still available
+    // for cases where the user wants to drop state without saving.
+    if (logPollInterval && _lastWatchedLogDir) {
+      try {
+        const lp = path.join(_lastWatchedLogDir, "message_log.txt");
+        if (fs.existsSync(lp)) logOffset = fs.statSync(lp).size;
+        const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
+        if (fs.existsSync(ap)) logOffsetAI = fs.statSync(ap).size;
+        clearPassengers();
+        win.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
+      } catch {}
+    }
     lastSaveData = newData;
     lastSaveFile = latestFile;
     console.log("[save-watch] reparsed:", latestFile,
