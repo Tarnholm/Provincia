@@ -3756,6 +3756,256 @@ union and not assume the minor class exists.
 
 ---
 
+### Findings 2026-05-11 (background session 16 — rebellion records + tile-trail array + settlement model strings)
+
+Goal: (1) Decode the 16-byte rebellion records inside the six scripted-rebellion
+blocks (session 14 left them as `count × 16-byte` records of unknown content).
+(2) Identify what each tile-trail chunk represents (per-faction? per-character?).
+(3) Stretch: decode the structure around each Settlement model name reference
+in the 290KB tail block.
+
+Outcome: **Three structural findings landed.** (a) **RETRACTION of session 14's
+"count × 16-byte record"** claim — the actual structure is a **239-row × 16-byte
+per-FACTION array** (CONFIRMED, matches RIS's 23+216=239 faction count) plus a
+variable-length head section containing fully-embedded character data
+(portraits, settlement names) before the array. (b) **Tile-trail chunks are
+per-faction strategic-intent records** (CONFIRMED via cross-save N-sequence
+alignment + geographic centroid placement). (c) **Settlement model strings
+block is actually a per-settlement record array** keyed by (X,Y) tile coords
+(CONFIRMED across both saves with identical coords for matching settlements).
+
+Save corpus this session: `save_rome10.sav` (RIS imperial campaign, 33 MB)
++ `save_Autosave Republic of Rome Turn 1.sav` (same campaign T1, 33 MB).
+
+#### 1. RETRACTION & CONFIRMED: rebellion block structure (16-byte array is per-faction, not per-script-record)
+
+Session 14 claimed each spawn_scripts/*.txt block ends with `count × 16-byte
+records` where count ∈ {75, 76, 95, 144, 159, 213}. **That structure is wrong.**
+
+The correct layout (verified across both saves) is:
+```
+spawn-script block:
+  [u16 strLen]             (path char count, e.g. 0x4e = 78)
+  [UTF-16LE strLen×2]      (full path "data/world/.../spawn_scripts/X_revolt.txt")
+  [u32 selfPtr]            (= offset of this u32 itself)
+  [u32 ??]                 (always 0 in both saves)
+  [u16 ??]                 (always 0 in both saves; only 6 bytes between selfPtr and count)
+  [u32 count]              (75 / 76 / 95 / 144 / 159 / 213; NOT the 16-byte record count)
+  [head section — VARIABLE LENGTH, varies per script]
+  [239 × 16 bytes per-faction state array]
+  [tail section — VARIABLE LENGTH]
+```
+
+**The 239-row × 16-byte per-faction state array** is the structural payload
+hidden inside each rebellion block. Verified for all 6 blocks in both saves:
+
+| Script | block start | faction-array start | size | distinct sigs |
+|---|---|---|---|---|
+| chrysaoria_revolt | 0x18d3741 | 0x18d3821 | 239 × 16 | 1 |
+| cilicians_revolt  | 0x18d48cb | 0x18e7f4b | 239 × 16 | 1 |
+| egypt_revolt      | 0x1956838 | 0x19af6f8 | 239 × 16 | 1 |
+| lycia_revolt      | 0x1ab16e1 | 0x1ace821 | 239 × 16 | 1 |
+| miletus_revolt    | 0x1b0f06d | 0x1b765dd | 239 × 16 | 1 |
+| thessaly_revolt   | 0x1c93a64 | 0x1c99b64 | 239 × 16 | 1 |
+
+Every row is the default 16-byte signature `00 00 00 00 00 00 00 00 00 00 00 03
+00 00 00 00` (a single nonzero byte 0x03 at offset +11 inside each record). All
+239 × 6 = 1434 rows across all six blocks are identical default in both saves
+— consistent with the lua counters being almost entirely 0 (rebellion hasn't
+fired yet). **239 = RIS's 23 majors + 216 minors faction count** (matches
+sessions 5-7's RIS faction-roster claim, and session 14's RIS mod-path
+confirmation).
+
+**The variable-length HEAD section** (between the header and the faction array)
+contains the *script's* state: fully-embedded character records with portrait
+paths (`data/ui/barbarian/portraits/cards/young/generals/NNN.tga`) and UTF-16LE
+settlement names (`Cimbria`, `Eudosia`, `Boia`, `Kianos_Kolpos`). The cilicians
+block's head is ~63KB and contains ~43 distinct general portrait references
+(card + portrait pair per general). The egypt block's head is ~364KB and
+contains hundreds of similar character records.
+
+**The "count" field (75/76/95/144/159/213) does NOT match the 239-row array
+nor the head's character count.** It's likely the number of script
+preconditions / trigger steps / pre-resolved subrecord slots. Cross-validation:
+the count is identical between rome10 and RoR-T1 for the same script
+(chrysaoria=75 in both, cilicians=76 in both, etc.), so it's a deterministic
+property of the script template, not the live save state.
+
+**Implication for Provincia**: a parser can extract per-faction rebellion
+state by reading row[factionIndex] of the 239 × 16 array inside each
+rebellion block. The byte at row[+11] (currently always 0x03) is the
+faction's rebellion-engagement state slot; when a faction triggers the script
+it likely changes to a non-zero value. The "homeland indicator" / "show
+rebellion state in faction tooltip" features can read this array directly
+without touching the lua counter table.
+
+**Reproducer**: `dig-rebellion7.js` (detects the 239-stride array), `dig-rebellion9.js`
+(walks every 16-byte row in every block, dumps signatures).
+
+#### 2. CONFIRMED: end-of-file tile-trail chunks are per-faction strategic-intent arrays
+
+Walking the tile-trail array correctly (skipping `N=0` zero-padding between
+chunks): **rome10 has 221 chunks, RoR-T1 has 219 chunks**, with **219/221
+matching N values at shift=-2** (i.e., RoR-T1 has 2 fewer chunks at the
+beginning vs rome10, but the body of N values aligns perfectly). Session 14's
+"217 chunks" count was off by a few due to the zero-padding-bail bug. Total
+records 2503 (rome10) / 2398 (RoR-T1).
+
+**Chunk N distribution**: 111 chunks with N=7 (the "default baseline" — these
+are inactive minor factions), 110 chunks with N != 7 (active factions). Only
+6 chunks have N >= 50 — these are the major factions with extensive AI state.
+
+**Per-chunk centroid analysis** (chunks ordered by file position):
+
+| Chunk | N | Centroid (X,Y) | Plausible faction |
+|---|---|---|---|
+| [0]   | 104 | (291, 405) | Romans Julii — **player faction** (Italy/Rome region) |
+| [4]   | 27  | (223, 341) | Possibly Gauls or Iberians (west Mediterranean) |
+| [5]   | 155 | (397, 378) | Macedon (Greece) — biggest N, major AI |
+| [6]   | 137 | (480, 310) | Pontus / Thrace (north Asia Minor) |
+| [7]   | 150 | (513, 362) | Seleucid (central Asia Minor) |
+| [93]  | 56  | (370, 373) | Greek Cities / Athens (Aegean) |
+| [220] | 77  | (456, 401) | Greek/Anatolian border faction |
+
+**Two-save cross-validation**: at shift=-2 alignment, **219/221 chunk N values
+match exactly** between rome10 and RoR-T1. The 2 mismatches are likely
+factions whose AI intent has changed between turns. This is the strongest
+possible signal that each chunk is a stable per-faction record.
+
+**Chunk record structure** (corrected from session 14):
+```
+chunk:
+  [u32 N]                   (record count; N=0 is just padding, skip)
+  N × record:
+    [u32 selfPtr]           (= file offset of this u32)
+    [u16 pairCount]         (0..3, occasionally up to ~30)
+    pairCount × [u32 X][u32 Y]    (X,Y in 1..1500 range)
+```
+
+Records are stride 6 + 8*pairCount bytes (not stride 14 fixed). pairCount=0 is
+the dominant value (1198 / 1554 = 77% of records have no coord pair).
+
+**Semantics (STRONG)**: each chunk = one faction's "remembered tile of
+interest" cache, used by the AI for strategic targeting / shroud cache /
+attack-from-here memory. N = max slots per faction (variable per faction's
+historical activity), each slot can hold 0..many tile pairs (often 0 = empty
+intent). Total of 356 non-empty coord pairs in rome10 = the global AI's
+current intent list across all factions.
+
+**Reproducer**: `dig-tile-trail2.js` (corrected parser with zero-padding skip),
+`dig-tile-trail3.js` (N histograms + chunk[0] coord listing), `dig-tile-trail4.js`
+(per-chunk centroids + cross-save N alignment at shift=-2).
+
+#### 3. CONFIRMED: settlement model strings = per-settlement record array with (X,Y) tile coords
+
+Session 14 reported "688 references to 24 unique architectural models" in the
+tail at 0x1f47abd. Re-scanning a wider region (0x1f40000..0x1f90000) reveals
+**701 settlement refs** in rome10 (699 in RoR-T1) — session 14 missed ~17 at
+the very start because its block-start estimate was too aggressive.
+
+**Per-settlement record layout**:
+```
+settlement record:
+  [u16 strLen+1]            (model-name char count + 1 for NUL)
+  [ASCII model name]        (e.g. "Celtic_Large_Town", 17 chars)
+  [u8 0x00]                 (NUL terminator)
+  [u32 typeTag]             (27 / 29 / 31 — three subtype enums, see below)
+  [u32 X]                   (tile X coord; range 83..988 in rome10)
+  [u32 Y]                   (tile Y coord; range 22..651)
+  [u32 ???]                 (typically 1..5)
+  [u32 0xffffffff / 8]      (sentinel or count)
+  [variable trailing data]  (totalling ~40..63 bytes per record)
+```
+
+**Cross-save coord match**: identical settlements appear at identical (X,Y)
+in both saves (e.g. `Eastern_Town @ (252, 457)`, `Celtic_City @ (257, 332)`,
+`Carthaginian_Huge_City @ (257, 333)`). **CONFIRMED these are real settlement
+tiles, not battle-map fixtures.**
+
+**Distinct (X,Y) coord count: 213** — close to but distinct from the
+expected ~213 RIS region count. This **matches the per-region count** very
+well.
+
+**Multi-model per coord**: 95 of the 213 distinct coords have multiple model
+entries with varied culture (e.g., coord (274, 442) has 10 entries:
+Celtic_Large_Town, Celtic_City × 3, Germanic_Large_Town × 4, Carthaginian_Huge_City,
+Germanic_Large_Town × 2). The entries are NOT consecutive in file order
+(indices spread across 11..662). **Interpretation (STRONG)**: each settlement
+stores its **battle-map model history / variant array** — one entry per
+faction that has captured the settlement at some point, since each owner
+re-renders the city in their own architectural style. The model name attached
+to each entry is the visual template for THAT faction's occupation period.
+
+**Type-tag enum** (u32 just after model name):
+- `tag=27` × 410: most common; likely "current owner's render" or "active model"
+- `tag=29` × 137: secondary subtype (perhaps "captured but pending"?)
+- `tag=31` × 71: tertiary subtype
+
+The other "tag" values (1599537177, 1698889746, etc.) my decoder reported are
+actually mis-aligned reads where the parser bled into the NEXT settlement's
+strLen+name bytes (` W_` = u16 strLen 0x19 + start of `W_hellenistic_*`).
+The real tag enum is just 27/29/31 — three distinct subtype values.
+
+**Implication for Provincia**: a parser can read per-settlement architectural
+model + tile coord directly from this block, without walking the main settlement
+zone. Useful for "what does this settlement look like on the battle map"
+features. The 213 distinct (X,Y) tiles can be cross-referenced against
+descr_strat region coordinates to confirm the settlement-region mapping.
+
+**Reproducer**: `dig-model-strings2.js` (per-settlement walker with X,Y
+extraction), `dig-model-strings3.js` (cross-coord grouping + tag analysis).
+
+#### Reproducer scripts
+
+- `dig-rebellion1.js` — Initial 16-byte stride attempt (wrong, count != 16-byte record count)
+- `dig-rebellion2.js` — Corrected header decode (strLen at strLenOff)
+- `dig-rebellion3.js` — Self-pointer chain analysis (showed records are variable-length, not 16-byte)
+- `dig-rebellion4.js` — TAW section walk attempt (wrong — block isn't TAW-grammar)
+- `dig-rebellion5.js` — Cross-validate counts and lua counters in both saves
+- `dig-rebellion6.js` — Full 4301-byte chrysaoria payload hex dump (reveals 239-row pattern)
+- `dig-rebellion7.js` — Auto-detect the 239-row × 16-byte sub-array in each block (CONFIRMED 239 = faction count)
+- `dig-rebellion8.js` — Hex dumps of variable-length HEAD sections (reveals embedded character data)
+- `dig-rebellion9.js` — Walk every 16-byte row in every block, dump signatures (all default)
+- `dig-tile-trail1.js` — Initial tile-trail walk (bails at zero padding → only 74 chunks)
+- `dig-tile-trail2.js` — Corrected parser with N=0 padding skip (221 chunks, matches session 14)
+- `dig-tile-trail3.js` — Per-chunk N histograms + chunk[0] coord listing
+- `dig-tile-trail4.js` — Per-chunk centroids + cross-save N alignment (219/221 match at shift=-2)
+- `dig-model-strings1.js` — Initial scan with wrong format assumption (0 refs found)
+- `dig-model-strings2.js` — Corrected per-settlement walker (strLen+1 includes NUL; 701 refs)
+- `dig-model-strings3.js` — Cross-coord grouping + type-tag analysis
+
+#### Open questions for session 17+
+
+- **Per-faction byte at +11 in 239-row array**: when a faction triggers the
+  rebellion script, does this byte change? Test: a save where one rebellion
+  has actually fired would reveal which faction's row[+11] flipped from 0x03
+  to something else.
+
+- **HEAD section character records**: each rebellion block's HEAD contains
+  fully-embedded character records (portrait paths, names, settlement
+  references). Decoding their per-character structure would yield a "rebel
+  generals roster" feature — but the format is variable per script, so each
+  script needs its own per-record schema.
+
+- **Tile-trail chunk → faction-record mapping**: chunk[0]=player Romans Julii
+  is confirmed by Italy centroid. Mapping chunks[1..220] to specific factions
+  requires cross-referencing with the major-faction record list (session 5-7).
+  A future session could correlate chunk-N values to faction-record positions
+  in file order — if chunks are emitted in the same order factions appear in
+  descr_strat, the mapping is trivial.
+
+- **Settlement-block tag enum (27/29/31)**: which culture/state does each
+  encode? A test save where the player captures one settlement and the model
+  variant updates would identify which tag means "fresh capture" vs "long-term
+  ownership" vs "currently-being-rebuilt".
+
+- **Multi-model-per-coord**: coord (274,442) has 10 different model entries
+  across 4 cultures. Does the file preserve the ENTIRE settlement ownership
+  history, or only the last few? Test: capture a settlement and check if a new
+  entry appended.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

@@ -15,21 +15,41 @@ function locateBlocks(buf) {
   for (let p = 0; p + 8 < buf.length; p++) {
     if (buf[p] === 0x2e && buf[p + 1] === 0 && buf[p + 2] === 0x74 && buf[p + 3] === 0 &&
         buf[p + 4] === 0x78 && buf[p + 5] === 0 && buf[p + 6] === 0x74 && buf[p + 7] === 0) {
-      // Walk back to find string start
+      // Walk back to find string start; STOP when the prior u16 (s-2) is a plausible strLen
       let s = p;
-      while (s - 2 >= 0 && buf[s - 1] === 0 && buf[s - 2] >= 0x20 && buf[s - 2] <= 0x7e) s -= 2;
+      while (s - 2 >= 0 && buf[s - 1] === 0 && buf[s - 2] >= 0x20 && buf[s - 2] <= 0x7e) {
+        // Check if walking further back would match a u16 strLen here (i.e., s-2 is the u16 strLen)
+        if (s - 4 >= 0) {
+          const possibleLen = buf.readUInt16LE(s - 2);
+          const possibleChars = (p + 8 - s) / 2 + 1; // including one more char if we go back
+          // If s-2 reads as a length that equals (p+8 - s)/2 BEFORE going back, stop
+        }
+        s -= 2;
+      }
       const path = buf.slice(s, p + 8).toString("utf16le");
       if (!path.includes("spawn_scripts")) continue;
-      // s is the first byte of UTF-16; strLen u16 lives at s-2
-      const charCount = buf.readUInt16LE(s - 2);
-      if (charCount !== (p + 8 - s) / 2) continue;
+      // s is the first byte of UTF-16; the u16 strLen is at s but we walked too far.
+      // Reconstruct: find the u16 strLen by scanning back from s until we find a value V such that V*2 = (p+8) - s_candidate (where s_candidate = s + 2*(some))
+      // Simpler: try each candidate.
+      let charCount = -1, strLenOff = -1, strStart = -1;
+      for (let test = s; test < p; test += 2) {
+        const len = buf.readUInt16LE(test);
+        if (len === (p + 8 - test - 2) / 2 && len > 4 && len < 200) {
+          strLenOff = test;
+          strStart = test + 2;
+          charCount = len;
+          break;
+        }
+      }
+      if (charCount < 0) continue;
       const strEnd = p + 8;
       // Header: u32 selfPtr (=strEnd), then 6 zero bytes (or u32+u16 zero), then u32 count
       const selfPtr = buf.readUInt32LE(strEnd);
       if (selfPtr !== strEnd) continue;
       const count = buf.readUInt32LE(strEnd + 10);
       const recStart = strEnd + 14;
-      blocks.push({ strLenOff: s - 2, path, charCount, strEnd, count, recStart });
+      const realPath = buf.slice(strStart, strEnd).toString("utf16le");
+      blocks.push({ strLenOff, path: realPath, charCount, strEnd, count, recStart });
     }
   }
   return blocks;
