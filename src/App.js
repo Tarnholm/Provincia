@@ -7473,14 +7473,10 @@ function App() {
 
     return (
       <div className="resource-panel-scroll" style={{
-        position: "absolute", top: 8, right: 8, zIndex: 4,
         background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
         borderRadius: 10, padding: "6px 8px",
-        width: 250, boxSizing: "border-box",
-        maxHeight: Math.max(100, canvasSize.height - 16),
-        overflowY: "auto",
+        width: "100%", boxSizing: "border-box",
         color: "#f6f6f6", fontSize: "0.75rem",
-        scrollbarWidth: "none",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: resourcePanelCollapsed ? 0 : 6, cursor: "pointer" }}
           onClick={() => setResourcePanelCollapsed(p => !p)}>
@@ -8787,7 +8783,7 @@ function App() {
                   position: "absolute", top: 8, right: 8, zIndex: 3,
                   display: "flex", flexDirection: "column", gap: 6,
                   maxHeight: canvasSize.height - 16, overflowY: "auto",
-                  width: 220, boxSizing: "border-box",
+                  width: 240, boxSizing: "border-box",
                 }}>
                   {renderLegend()}
                   {renderSettlementLegend()}
@@ -8863,8 +8859,8 @@ function App() {
                       )}
                     </div>
                   )}
+                  {renderResourceFilter()}
                 </div>
-                {renderResourceFilter()}
                 <canvas
                   ref={canvasRef}
                   onClick={handleClick}

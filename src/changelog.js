@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.294",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Resource map mode panel now joins the sidebar stack instead of overlapping the Factions legend. 0.9.292 missed the Resources panel because it lived in its own `renderResourceFilter()` function with its own absolute positioning, separate from the wrapper that already held Factions/Homeland/Army Types. Now it renders inside the same flex-column wrapper. Wrapper width bumped from 220px → 240px to match Resources panel's content needs." },
+    ],
+  },
+  {
     version: "0.9.293",
     date: "2026-05-11",
     items: [
