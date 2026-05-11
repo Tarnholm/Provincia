@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.302",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Characters list is now bidirectional with live moves: chars who left appear nowhere (already done in 0.9.297), AND chars who arrived show up in the destination region. After Marcus merges into Aulus's stack in Taras, Marcus's name should now appear in Taras's Characters row (with traits / ancillaries pulled from the save char record) — not stuck in Metapontion and not missing entirely. Applies to both the live path (saveCharactersByRegion) and the descr_strat starting fallback." },
+    ],
+  },
+  {
     version: "0.9.301",
     date: "2026-05-11",
     items: [

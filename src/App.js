@@ -10573,7 +10573,7 @@ function App() {
                               runtimeByKey.set(key, c);
                             }
                           }
-                          return real.map((g) => {
+                          const mapToChar = (g) => {
                             const parts = (g.character || "").split(/\s+/);
                             const firstName = parts[0] || g.character || "";
                             const lastName = parts.slice(1).join("_");
@@ -10601,7 +10601,32 @@ function App() {
                               ancillaries: ancRaw.map((a) => (typeof a === "string" ? { name: a } : a)),
                               _source: "starting",
                             };
-                          });
+                          };
+                          const localMapped = real.map(mapToChar);
+                          // Inverse: pull in chars from OTHER bundled
+                          // regions whose live position resolved here
+                          // (same as the live path's incoming pass).
+                          const alreadyInLocal = new Set();
+                          for (const c of localMapped) {
+                            const k = (c.firstName + " " + (c.lastName || "").replace(/_/g, " ")).toLowerCase().trim();
+                            alreadyInLocal.add(k);
+                          }
+                          const incomingStart = [];
+                          for (const [region, regData] of Object.entries(startingArmiesByRegion || {})) {
+                            if (region === r.region) continue;
+                            const all = [...(regData.garrison || []), ...(regData.field || [])];
+                            for (const g of all) {
+                              const nm = (g.character || "").toLowerCase();
+                              if (!nm || nm.startsWith("garrison of") || nm === "biggus dickus") continue;
+                              const parts = (g.character || "").split(/\s+/);
+                              const fullName = (parts[0] + " " + parts.slice(1).join(" ")).toLowerCase().trim();
+                              if (alreadyInLocal.has(fullName)) continue;
+                              if (liveRegionByCharName.get(fullName) !== r.region) continue;
+                              incomingStart.push(mapToChar(g));
+                              alreadyInLocal.add(fullName);
+                            }
+                          }
+                          return [...localMapped, ...incomingStart];
                         }
                         // Referencing liveCharPositionsVersion forces this
                         // IIFE to re-evaluate after death events / assault
@@ -10660,7 +10685,49 @@ function App() {
                           if (isMovedAway(c.firstName, c.lastName)) return false;
                           return true;
                         });
-                        return filtered.length > 0 ? filtered : null;
+                        // Inverse: ADD chars from OTHER regions whose live
+                        // position resolved to r.region. After a merge,
+                        // Marcus moves from Metapontion to Aulus's tile in
+                        // Taras — the live filter drops him from
+                        // Metapontion, but saveCharactersByRegion["Taras"]
+                        // still doesn't list him (the save hasn't caught
+                        // up). Pull him in here via liveRegionByCharName.
+                        const alreadyIn = new Set();
+                        for (const c of filtered) {
+                          if (c.firstName) {
+                            const k = (c.firstName + " " + (c.lastName || "").replace(/_/g, " ")).toLowerCase().trim();
+                            alreadyIn.add(k);
+                          }
+                        }
+                        const incoming = [];
+                        for (const [region, arr] of Object.entries(saveCharactersByRegion)) {
+                          if (region === r.region) continue;
+                          for (const c of arr) {
+                            if (!c.firstName) continue;
+                            const fullName = (c.firstName + " " + (c.lastName || "").replace(/_/g, " ")).toLowerCase().trim();
+                            if (alreadyIn.has(fullName)) continue;
+                            if (liveRegionByCharName.get(fullName) !== r.region) continue;
+                            // Dead/wiped filter — same as above.
+                            if (c.secondaryUuid && deadUuids.has(c.secondaryUuid.toString(16).padStart(8, "0"))) continue;
+                            // Enrich with children resolution (same shape).
+                            let enrichedChar = c;
+                            if (Array.isArray(c.childUuids) && c.childUuids.length > 0) {
+                              const childNames = [];
+                              for (const u of c.childUuids) {
+                                const ch = byPrimary.get(u);
+                                if (ch) {
+                                  const nm = ch.lastName ? `${ch.firstName} ${ch.lastName.replace(/_/g, " ")}` : ch.firstName;
+                                  childNames.push(nm);
+                                }
+                              }
+                              if (childNames.length > 0) enrichedChar = { ...c, _resolvedChildren: childNames };
+                            }
+                            incoming.push(enrichedChar);
+                            alreadyIn.add(fullName);
+                          }
+                        }
+                        const combined = [...filtered, ...incoming];
+                        return combined.length > 0 ? combined : null;
                       })()}
                       liveUnits={(() => {
                         if (!saveUnitsByRegion || !liveLogActive) return null;
