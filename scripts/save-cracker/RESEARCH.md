@@ -7747,6 +7747,31 @@ primitives + save-specific overlay** (#5), not a geographic data layer.
 
 ---
 
+### Findings 2026-05-11 (background session 28 — body root preamble strings)
+
+Scanned the 5.6 KB body-root preamble [0x3b99..0x51b5] in save_rome10.sav for UTF-16LE strings >=3 chars (alternating-zero-byte pattern). Result: **only 3 distinct strings in the whole block**.
+
+| Offset  | Length (chars) | Bytes (UTF-16LE) | String |
+|---------|----------------|-------------------|--------|
+| 0x3b9f  | 26             | 52 B + len prefix | `"campaign/imperial_campaign"` |
+| 0x3bd5  | 17             | 34 B + len prefix | `"imperial_campaign"` |
+| 0x43fc  | 113            | 226 B + len prefix | `"pQ:\Feral\Users\Default\AppData\Local\Mods\My Mods\RIS/data/world/maps/campaign/imperial_campaign/descr_strat.txt"` |
+
+(The leading `pQ` on the third string is the run-scanner picking up two stray ASCII bytes immediately before the real path; the actual path starts at `"Q:\..."` — `pQ` is the length-prefix tail / one preamble byte caught by the printable-run heuristic.)
+
+**Classification**: zero faction names, zero lua module names, zero script-flag tokens, zero campaign event identifiers. The preamble is **not** a string table.
+
+**Implication**: the bulk of [0x3b99..0x51b5] is non-string binary — fixed-width records, counters, or flag bitfields. The three strings are:
+1. campaign directory path (`campaign/imperial_campaign`)
+2. campaign short name (`imperial_campaign`) — same as 0x003a header field
+3. absolute filesystem path to `descr_strat.txt` (mod root, captured at save time)
+
+Strings 1 and 2 are 6-byte tagged: there is a length-prefix u32 / u16 before each. String 3 sits at 0x43fc, far inside the region; the ~2 KB gap between 0x3bd5+34 and 0x43fc is dense binary (likely the campaign-state header proper).
+
+Script: `scripts/save-cracker/dig-preamble-strings1.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
