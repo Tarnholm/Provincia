@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.295",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Settlement hover tooltip's Y coordinate now matches the in-game `show_cursorstat` console output. User report: Riusiava tooltip showed y=198 but in-game says pos 258, 501 — that's because the tooltip displayed the TGA-pixel (top-down) Y instead of the descr_strat-native (bottom-up) Y. Display now flips via `imgHeight - 1 - tga_y` (the same convention the save-cracker dossier records). Internal coord math is unchanged — only the displayed value in the tooltip flips, so live unit positioning stays accurate." },
+    ],
+  },
+  {
     version: "0.9.294",
     date: "2026-05-11",
     items: [

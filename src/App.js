@@ -8785,8 +8785,14 @@ function App() {
                   maxHeight: canvasSize.height - 16, overflowY: "auto",
                   width: 240, boxSizing: "border-box",
                 }}>
+                  {/* Map-mode panels first (Factions legend, Settlement
+                      legend, Homeland, Resources) so the active mode's
+                      context sits at the top of the sidebar. Army Types
+                      always at the bottom — same ordering regardless of
+                      map mode. */}
                   {renderLegend()}
                   {renderSettlementLegend()}
+                  {renderResourceFilter()}
                   {colorMode === "homeland" && selectedFaction && (
                     <div style={{
                       background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
@@ -8859,7 +8865,6 @@ function App() {
                       )}
                     </div>
                   )}
-                  {renderResourceFilter()}
                 </div>
                 <canvas
                   ref={canvasRef}
@@ -9001,7 +9006,7 @@ function App() {
                   }}>
                     <strong>{hoveredCity.city}</strong>
                     {hoveredCity.tier !== "unknown" && <> &mdash; {hoveredCity.tier.replace(/_/g, " ")}</>}
-                    <br /><span style={{ fontSize: "0.75rem", color: "#aaa" }}>x: {hoveredCity.x}, y: {hoveredCity.y}</span>
+                    <br /><span style={{ fontSize: "0.75rem", color: "#aaa" }}>x: {hoveredCity.x}, y: {imgSize.height - 1 - hoveredCity.y}</span>
                   </div>
                 )}
 
