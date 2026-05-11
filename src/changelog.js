@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.303",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "Live tracking now resets when you click the Live button, not just when a save snapshot lands. Clearing passenger lists / unit-flow / char positions, re-anchoring the log watcher to current EOF — same logic as the auto-reset on save. So if you load Provincia mid-game, the live view starts clean instead of replaying old session state." },
+      { type: "fix", text: "Characters-list filter now keeps trait epithets (`the Eagle`, `the Drunkard`, etc) when matching across armiesToRender ↔ saveCharactersByRegion. 0.9.302 stripped them on one side only, so any general with an epithet was invisible to the move filter and got stuck in their save-tagged region. Also registers the BIRTH name (pre-epithet) as a fallback when the army entry was constructed before the trait fired." },
+      { type: "fix", text: "Merged army roster now sorts bodyguard units first. After Marcus merges into Aulus, both bodyguards (one for each general) lead the unit list instead of being scattered into file-order. Bodyguard = unit with a real `commanderUuid` (foot units have `commanderUuid: null` and inherit via `inferredCmd`). User report: 'one bodyguard at the start, one at the end — they should both be first'." },
+    ],
+  },
+  {
     version: "0.9.302",
     date: "2026-05-11",
     items: [

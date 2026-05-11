@@ -10429,11 +10429,20 @@ function App() {
                             }
                           }
                           const buildEntry = (e) => {
-                            prefetchUnitIcons(modDataDir, e._units.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
+                            // Sort: bodyguard units (real commanderUuid)
+                            // first, foot last. After a merge like
+                            // Marcus + Aulus, both bodyguards must lead
+                            // the roster — not get scattered by file order.
+                            const sortedUnits = e._units.slice().sort((u1, u2) => {
+                              const bg1 = u1.commanderUuid ? 0 : 1;
+                              const bg2 = u2.commanderUuid ? 0 : 1;
+                              return bg1 - bg2;
+                            });
+                            prefetchUnitIcons(modDataDir, sortedUnits.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
                             return {
                               character: e.character,
                               faction: e.faction,
-                              units: e._units.map((u) => {
+                              units: sortedUnits.map((u) => {
                                 const queue = fieldStartingByName.get(u.name);
                                 const seed = queue && queue.length ? queue.shift() : null;
                                 // Prefer live XP / weapon / armour from the
@@ -10505,25 +10514,33 @@ function App() {
                       characters={(() => {
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
-                        // Build a name → live region map from armiesToRender
-                        // (whose `region` field is already resolved against
-                        // each commander's CURRENT tile, including live-log
-                        // positions). When a character has moved away from
-                        // their save-tagged region — Marcus leaving
-                        // Metapontion to merge with Aulus, for example —
-                        // we drop them from the source region's character
-                        // list. Used as a filter below in both the live
-                        // and non-live (starting) paths.
+                        // Build a name → live region map from armiesToRender.
+                        // CRITICAL: when an epithet trait fires (e.g. "the
+                        // Eagle"), Marcus's display name becomes "Marcus
+                        // Livius Drusus the Eagle" — but saveCharacters-
+                        // ByRegion stores lastName with the epithet baked
+                        // in too. Normalize BOTH sides identically:
+                        // lowercase + underscores→spaces + KEEP epithets.
+                        // (The 0.9.302 attempt stripped epithets on one
+                        // side only, causing the filter to miss every
+                        // character with a trait nickname.)
+                        const normName = (full) => String(full || "").toLowerCase().replace(/_/g, " ").trim();
                         const liveRegionByCharName = new Map();
                         if (Array.isArray(armiesToRender)) {
                           for (const a of armiesToRender) {
                             if (!a || !a.region || !a.character) continue;
-                            const norm = String(a.character).toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim();
-                            liveRegionByCharName.set(norm, a.region);
+                            liveRegionByCharName.set(normName(a.character), a.region);
+                            // Also register the birth name (pre-epithet)
+                            // for the case where saveCharactersByRegion's
+                            // lastName carries the epithet but the army
+                            // entry's character was constructed pre-trait.
+                            if (a.firstName && a.originalLastName) {
+                              liveRegionByCharName.set(normName(a.firstName + " " + a.originalLastName), a.region);
+                            }
                           }
                         }
                         const isMovedAway = (firstName, lastName) => {
-                          const fullName = (firstName + " " + (lastName ? String(lastName).replace(/_/g, " ") : "")).toLowerCase().trim();
+                          const fullName = normName(firstName + " " + (lastName || ""));
                           const liveRegion = liveRegionByCharName.get(fullName);
                           return liveRegion && liveRegion !== r.region;
                         };

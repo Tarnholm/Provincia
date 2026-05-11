@@ -4561,6 +4561,22 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
   activeSaveDir = saveDir;
   activePinnedSave = pinnedSave || null;
 
+  // Clicking Live = fresh session. Drop any live-log state accumulated
+  // before now (passengers, unit-flow, char positions, per-char army uuid
+  // tracking). Also re-anchor the log watcher's offset to current EOF so
+  // we ignore old game-session entries. User requested this 2026-05-11.
+  try {
+    clearPassengers();
+    if (logPollInterval && _lastWatchedLogDir) {
+      const lp = path.join(_lastWatchedLogDir, "message_log.txt");
+      if (fs.existsSync(lp)) logOffset = fs.statSync(lp).size;
+      const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
+      if (fs.existsSync(ap)) logOffsetAI = fs.statSync(ap).size;
+    }
+    const winR = BrowserWindow.getAllWindows()[0];
+    if (winR) winR.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
+  } catch {}
+
   // Parse latest save as baseline and send initial snapshot.
   const latestFile = activePinnedSave || findLatestSave(saveDir);
   console.log("[save-watch] latest save:", latestFile);
