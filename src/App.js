@@ -10361,6 +10361,28 @@ function App() {
                       characters={(() => {
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
+                        // Build a name → live region map from armiesToRender
+                        // (whose `region` field is already resolved against
+                        // each commander's CURRENT tile, including live-log
+                        // positions). When a character has moved away from
+                        // their save-tagged region — Marcus leaving
+                        // Metapontion to merge with Aulus, for example —
+                        // we drop them from the source region's character
+                        // list. Used as a filter below in both the live
+                        // and non-live (starting) paths.
+                        const liveRegionByCharName = new Map();
+                        if (Array.isArray(armiesToRender)) {
+                          for (const a of armiesToRender) {
+                            if (!a || !a.region || !a.character) continue;
+                            const norm = String(a.character).toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim();
+                            liveRegionByCharName.set(norm, a.region);
+                          }
+                        }
+                        const isMovedAway = (firstName, lastName) => {
+                          const fullName = (firstName + " " + (lastName ? String(lastName).replace(/_/g, " ") : "")).toLowerCase().trim();
+                          const liveRegion = liveRegionByCharName.get(fullName);
+                          return liveRegion && liveRegion !== r.region;
+                        };
                         // Non-live fallback: synthesize a character list
                         // from descr_strat so traits / ancillaries / age
                         // are browsable without a save loaded. Live-save
@@ -10389,7 +10411,13 @@ function App() {
                           const all = [...(reg.garrison || []), ...(reg.field || [])];
                           const real = all.filter((g) => {
                             const nm = (g.character || "").toLowerCase();
-                            return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
+                            if (!nm || nm.startsWith("garrison of") || nm === "biggus dickus") return false;
+                            // Drop chars who moved away per the live log.
+                            const parts = (g.character || "").split(/\s+/);
+                            const firstName = parts[0] || "";
+                            const lastName = parts.slice(1).join("_");
+                            if (isMovedAway(firstName, lastName)) return false;
+                            return true;
                           });
                           if (real.length === 0) return null;
                           // Build a runtime lookup keyed by firstName+
@@ -10482,6 +10510,10 @@ function App() {
                               }
                             }
                           }
+                          // Drop chars whose live-log position has moved
+                          // them to a different region — same filter as
+                          // the non-live path above.
+                          if (isMovedAway(c.firstName, c.lastName)) return false;
                           return true;
                         });
                         return filtered.length > 0 ? filtered : null;

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.297",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Characters who've moved out of their save-tagged region (per the live log) no longer appear in the old region's Characters list. User report: 'Marcus Livius Drusus' still showed under Metapontion's Characters even though he'd merged into Aulus's stack at Taras. Now both the live path and the descr_strat starting fallback check armiesToRender's live-resolved region for each char — if it's different from the panel's region, the char is dropped. (Live-region info comes from the same source that already moves the map dot when a character moves.)" },
+    ],
+  },
+  {
     version: "0.9.296",
     date: "2026-05-11",
     items: [
