@@ -8926,16 +8926,46 @@ function App() {
                     whiteSpace: "normal",
                     wordBreak: "break-word",
                   }}>
-                    <div style={{ fontWeight: 700, marginBottom: 2 }}>
-                      {hoveredArmy.army.armyClass === 'navy' ? '⚓' : hoveredArmy.army.armyClass === 'garrison' ? '🏰' : '⚔'} {hoveredArmy.army.character || hoveredArmy.army.name || '(unnamed)'}
-                      {typeof hoveredArmy.army.age === 'number' ? <span style={{ color: "#9ab", fontWeight: 400, marginLeft: 6 }}>age {hoveredArmy.army.age}</span> : null}
-                    </div>
-                    <div style={{ color: "#bbb", marginBottom: 4 }}>
-                      {(hoveredArmy.army.faction || '').replace(/_/g, " ")}
-                      {hoveredArmy.army.units && hoveredArmy.army.units.length > 0 ? <> &mdash; {hoveredArmy.army.units.length} unit{hoveredArmy.army.units.length !== 1 ? 's' : ''}</> : null}
-                      {hoveredArmy.army.region ? <span style={{ color: "#bba", marginLeft: 6 }} title="Region the army's tile resolves to (this is the region whose RegionInfo panel shows this army's roster).">in {hoveredArmy.army.region}</span> : null}
-                      {hoveredArmy.army.logOnly ? <span style={{ color: "#88a", marginLeft: 6 }}>(log-tracked)</span> : hoveredArmy.army.liveTracked ? <span style={{ color: "#4a8", marginLeft: 6 }} title="Position updated from the live log, not the save">(live)</span> : null}
-                    </div>
+                    {(() => {
+                      // Same-tile merge: RTW stacks can hold multiple
+                      // generals + their bodyguards. The save records each
+                      // general's bodyguard with its own commanderUuid, so
+                      // a multi-general stack like Marcus + Aulus shows
+                      // as two separate armies in armiesToRender. The
+                      // region panel already merges them visually by
+                      // (faction, x, y); the map hover tooltip didn't —
+                      // apply the same merge here so the displayed unit
+                      // count matches the in-game stack.
+                      const a = hoveredArmy.army;
+                      let totalUnits = a.units ? a.units.length : 0;
+                      const otherCommanders = [];
+                      if (a.faction && typeof a.x === "number" && typeof a.y === "number") {
+                        const targetFac = a.faction.toLowerCase();
+                        for (const other of (armiesToRender || [])) {
+                          if (other === a) continue;
+                          if (!other.faction) continue;
+                          if (other.faction.toLowerCase() !== targetFac) continue;
+                          if (other.x !== a.x || other.y !== a.y) continue;
+                          if (Array.isArray(other.units)) totalUnits += other.units.length;
+                          if (other.character) otherCommanders.push(other.character);
+                        }
+                      }
+                      const displayName = otherCommanders.length > 0
+                        ? `${a.character || a.name || "(unnamed)"} + ${otherCommanders.join(" + ")}`
+                        : (a.character || a.name || "(unnamed)");
+                      return <>
+                        <div style={{ fontWeight: 700, marginBottom: 2 }}>
+                          {a.armyClass === 'navy' ? '⚓' : a.armyClass === 'garrison' ? '🏰' : '⚔'} {displayName}
+                          {typeof a.age === 'number' && otherCommanders.length === 0 ? <span style={{ color: "#9ab", fontWeight: 400, marginLeft: 6 }}>age {a.age}</span> : null}
+                        </div>
+                        <div style={{ color: "#bbb", marginBottom: 4 }}>
+                          {(a.faction || '').replace(/_/g, " ")}
+                          {totalUnits > 0 ? <> &mdash; {totalUnits} unit{totalUnits !== 1 ? 's' : ''}</> : null}
+                          {a.region ? <span style={{ color: "#bba", marginLeft: 6 }} title="Region the army's tile resolves to (this is the region whose RegionInfo panel shows this army's roster).">in {a.region}</span> : null}
+                          {a.logOnly ? <span style={{ color: "#88a", marginLeft: 6 }}>(log-tracked)</span> : a.liveTracked ? <span style={{ color: "#4a8", marginLeft: 6 }} title="Position updated from the live log, not the save">(live)</span> : null}
+                        </div>
+                      </>;
+                    })()}
                     {typeof hoveredArmy.army.movementPoints === "number" ? (
                       <div style={{ color: "#9c8", fontSize: "0.78rem", marginBottom: 4 }}
                         title="Movement points remaining (f32 at bodyguard unit's commanderUuid+4 in the save; decoded 2026-05-10). 1 tile costs ~7.4 MP.">
@@ -8966,24 +8996,42 @@ function App() {
                         </div>
                       );
                     })() : null}
-                    {(hoveredArmy.army.units || []).slice(0, 12).map((u, i) => {
-                      const uname = typeof u === 'string' ? u : (u.name || '');
-                      const soldiers = typeof u === 'object' ? u.soldiers : null;
-                      const maxSoldiers = typeof u === 'object' ? u.maxSoldiers : null;
-                      return (
-                        <div key={i} style={{ color: "#ddd", paddingLeft: 6, display: "flex", justifyContent: "space-between", gap: 8 }}>
-                          <span>{uname.replace(/_/g, " ")}</span>
-                          {typeof soldiers === 'number' && typeof maxSoldiers === 'number' && maxSoldiers > 0 ? (
-                            <span style={{ color: "#9ba", fontVariantNumeric: "tabular-nums" }}>{soldiers}/{maxSoldiers}</span>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                    {(hoveredArmy.army.units || []).length > 12 ? (
-                      <div style={{ color: "#999", paddingLeft: 6, fontStyle: "italic" }}>
-                        … +{(hoveredArmy.army.units || []).length - 12} more
-                      </div>
-                    ) : null}
+                    {(() => {
+                      // Merge unit lists from same-tile armies (same logic
+                      // as the header above).
+                      const a = hoveredArmy.army;
+                      const mergedUnits = [...(a.units || [])];
+                      if (a.faction && typeof a.x === "number" && typeof a.y === "number") {
+                        const targetFac = a.faction.toLowerCase();
+                        for (const other of (armiesToRender || [])) {
+                          if (other === a) continue;
+                          if (!other.faction) continue;
+                          if (other.faction.toLowerCase() !== targetFac) continue;
+                          if (other.x !== a.x || other.y !== a.y) continue;
+                          if (Array.isArray(other.units)) mergedUnits.push(...other.units);
+                        }
+                      }
+                      return <>
+                        {mergedUnits.slice(0, 12).map((u, i) => {
+                          const uname = typeof u === 'string' ? u : (u.name || '');
+                          const soldiers = typeof u === 'object' ? u.soldiers : null;
+                          const maxSoldiers = typeof u === 'object' ? u.maxSoldiers : null;
+                          return (
+                            <div key={i} style={{ color: "#ddd", paddingLeft: 6, display: "flex", justifyContent: "space-between", gap: 8 }}>
+                              <span>{uname.replace(/_/g, " ")}</span>
+                              {typeof soldiers === 'number' && typeof maxSoldiers === 'number' && maxSoldiers > 0 ? (
+                                <span style={{ color: "#9ba", fontVariantNumeric: "tabular-nums" }}>{soldiers}/{maxSoldiers}</span>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                        {mergedUnits.length > 12 ? (
+                          <div style={{ color: "#999", paddingLeft: 6, fontStyle: "italic" }}>
+                            … +{mergedUnits.length - 12} more
+                          </div>
+                        ) : null}
+                      </>;
+                    })()}
                   </div>
                   );
                 })()}

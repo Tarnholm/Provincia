@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.298",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Map army hover tooltip now applies the same-tile merge that the region panel already does. RTW stacks can hold multiple generals + their bodyguards (Marcus + Aulus = one army of 15 in-game), but the save records each general's bodyguard as a separate cmd-grouped army. Previous tooltip showed only the hovered general's own army (e.g. Aulus 14 units), now it sums all same-faction same-coord armies and lists their combined commanders + unit roster (e.g. 'Aulus Gabinius + Marcus Livius Drusus — 15 units')." },
+    ],
+  },
+  {
     version: "0.9.297",
     date: "2026-05-11",
     items: [
