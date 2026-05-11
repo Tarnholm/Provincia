@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.314",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "Conquered settlements no longer show the dead-defender's marker. User report: after capturing Brundisium, the map still showed Titus (the original Messapian governor per descr_strat) as a separate Messapian army at the city tile, even though he died in the battle. Cause: the bundled-armies synthesis dedupes only by character NAME and exact coord — when the defender's character is gone from the save entirely, neither dedupe matches. Now: if any save-army of a DIFFERENT faction sits at or within 1 tile of the bundled army's coord, the bundled synth is skipped (the defender is gone, the conqueror is here). Verified against Brundisium where Aulus's live coord drifted 1 tile from Titus's exact city pixel." },
+      { type: "fix", text: "Conqueror's army marker now becomes a garrison circle (yellow) when sitting on the captured settlement tile, instead of staying a field-army diamond (red). main.js's liveArmies build hard-codes armyClass=field for any non-navy army; the renderer now reclassifies to garrison post-hoc when the army's (x,y) is at or within 1 tile of a settlement tile. Same 1-tile tolerance for live-log coord shifts." },
+      { type: "improvement", text: "Removed the temp Characters-row diagnostic (provincia.log [char-diag] lines) — issue was resolved in 0.9.311." },
+    ],
+  },
+  {
     version: "0.9.313",
     date: "2026-05-11",
     items: [

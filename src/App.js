@@ -2078,6 +2078,27 @@ function App() {
           const dKey = makeNameKey(parts[0], parts.slice(1).join(" "), d.faction);
           if (armyByCharFaction.has(dKey)) continue;
         }
+        // Cross-faction conquest dedupe: if a save army of a DIFFERENT
+        // faction is sitting at or 1 tile from the bundled army's coord,
+        // the bundled army's character is gone (killed/displaced when
+        // the settlement was conquered). Skip the synth. Without this,
+        // a conquered settlement keeps its descr_strat garrison
+        // commander rendered as a Messapian marker forever — even
+        // though the save shows a Roman general at the same tile.
+        // Garrison armies sit at the city pixel exactly; live-log
+        // updates can shift the conqueror's coord by 1 tile.
+        if (d.faction) {
+          let conquered = false;
+          for (let dy = -1; dy <= 1 && !conquered; dy++) {
+            for (let dx = -1; dx <= 1 && !conquered; dx++) {
+              const nb = armyByPos.get(`${d.x+dx},${d.y+dy}`);
+              if (nb && nb.faction && nb.faction.toLowerCase() !== d.faction.toLowerCase()) {
+                conquered = true;
+              }
+            }
+          }
+          if (conquered) continue;
+        }
         if (liveMovesActive) continue;
         let armyClass = d.armyClass || "field";
         if (armyClass === "field" && settlementTiles.has(key)) armyClass = "garrison";
@@ -2135,6 +2156,24 @@ function App() {
     };
     for (const a of result) {
       a.region = tileToRegion(a.x, a.y);
+      // Reclassify field-class armies as garrison when sitting exactly
+      // on a settlement tile. main.js's liveArmies build hard-codes
+      // armyClass=field for any non-navy army; this picks up the
+      // conqueror-now-garrisoning case so e.g. Aulus's marker becomes
+      // the yellow garrison circle inside Brundisium instead of a red
+      // field-army diamond. 1-tile tolerance for live-log shifts.
+      if (a.armyClass === "field" && typeof a.x === "number" && typeof a.y === "number") {
+        let onSettlement = settlementTiles.has(`${a.x},${a.y}`);
+        if (!onSettlement) {
+          for (let dy = -1; dy <= 1 && !onSettlement; dy++) {
+            for (let dx = -1; dx <= 1 && !onSettlement; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              if (settlementTiles.has(`${a.x+dx},${a.y+dy}`)) onSettlement = true;
+            }
+          }
+        }
+        if (onSettlement) a.armyClass = "garrison";
+      }
     }
     // Final filter: drop any army whose commander/character has been
     // reported dead by the live log. Save-derived armies linger
@@ -10848,26 +10887,6 @@ function App() {
                           }
                         }
                         const combined = [...filtered, ...incoming];
-                        // TEMP DIAG: write to provincia.log when Uria
-                        // panel is open so we can see why the live path
-                        // is still producing zero chars. Remove once
-                        // fixed.
-                        try {
-                          if (r.region === "Salentinia" || r.city === "Uria") {
-                            const liveKeysSample = [...liveRegionByCharName.entries()].filter(([k, v]) => v === r.region || /aulus|gabinius|messapiv/.test(k)).slice(0, 8);
-                            const saveRegions = Object.keys(saveCharactersByRegion || {}).length;
-                            const tarasChars = (saveCharactersByRegion?.Taras || []).filter(c => /aulus/i.test(c.firstName || ""));
-                            const tarasSample = tarasChars.slice(0, 3).map(c => `${c.firstName}|${c.lastName}|olast=${c.originalLastName}`).join(" :: ");
-                            // Also dump what armiesToRender has for Aulus.
-                            const aulusArmies = (armiesToRender || []).filter(a => /aulus/i.test(a.character || a.firstName || ""));
-                            const aulusSample = aulusArmies.slice(0, 3).map(a => `char='${a.character}' first='${a.firstName}' olast='${a.originalLastName}' region='${a.region}' x=${a.x} y=${a.y}`).join(" :: ");
-                            window.electronAPI?.logMessage?.("info",
-                              `[char-diag] r.region=${r.region} r.city=${r.city} filtered=${filtered.length} incoming=${incoming.length} ` +
-                              `saveRegions=${saveRegions} tarasCharsAulus=${tarasChars.length} tarasSample=[${tarasSample}] ` +
-                              `armies=[${aulusSample}] ` +
-                              `liveKeys=[${liveKeysSample.map(([k,v]) => k+'=>'+v).join(' / ')}]`);
-                          }
-                        } catch {}
                         return combined.length > 0 ? combined : null;
                       })()}
                       liveUnits={(() => {
