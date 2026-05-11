@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.311",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Characters row in a conquered region now actually populates. 0.9.310 added the inbound-character pass, but the live path bailed out with `return null` BEFORE the pass ran when the region's save-time char list was empty. After Aulus conquered Uria, the original Messapian governors were displaced — saveCharactersByRegion[Salentinia] was empty — so the function exited early and Aulus never got pulled in. Now treats an empty list as [] and falls through to the incoming pass." },
+    ],
+  },
+  {
     version: "0.9.310",
     date: "2026-05-11",
     items: [

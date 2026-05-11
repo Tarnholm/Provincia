@@ -10740,8 +10740,16 @@ function App() {
                         // IIFE to re-evaluate after death events / assault
                         // wipes flip the filter state.
                         void liveCharPositionsVersion;
-                        const list = saveCharactersByRegion[r.region] || null;
-                        if (!list) return null;
+                        // Don't bail out when the region has no save-time
+                        // chars — incoming chars (moved INTO the region
+                        // via live log / settlement-tile re-bucketing)
+                        // still need a chance to populate the list. The
+                        // user reported empty Characters row in Uria
+                        // after conquest because the original Messapian
+                        // governors were gone and the early-exit fired
+                        // before Aulus could be added via the incoming
+                        // pass.
+                        const list = saveCharactersByRegion[r.region] || [];
                         // Build a primary-uuid → char lookup across ALL
                         // regions so children of a character in this
                         // region can be resolved by name even when the
