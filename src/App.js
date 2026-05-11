@@ -2179,15 +2179,24 @@ function App() {
     const flow = liveUnitFlow.current || [];
     const runtimeToSaveSecondary = new Map();
     if (flow.length > 0 && saveCharactersByRegion) {
-      // Flatten save chars + index by (firstName, lastName, faction).
-      // Multiple chars with identical triple → ambiguous → bridge skipped.
+      // Flatten save chars + index by (firstName, lastName, faction) AND
+      // by (firstName, lastName) for the faction-unknown fallback below.
+      // Recipients (e.g. Aulus when Marcus merges INTO him) don't emit
+      // MOVING_NORMAL events, so their faction isn't in
+      // factionByRuntimeUuid. If their name pair is unique across the
+      // entire save char list, that's enough — we accept it.
       const tripleMatches = new Map();
+      const pairMatches = new Map();
       for (const list of Object.values(saveCharactersByRegion)) {
         for (const c of list) {
           if (!c.secondaryUuid || !c.firstName) continue;
-          const key = (c.firstName || "").toLowerCase() + "|" + ((c.lastName || "").replace(/_/g, " ").toLowerCase()) + "|" + ((c.faction || "").toLowerCase());
-          if (!tripleMatches.has(key)) tripleMatches.set(key, []);
-          tripleMatches.get(key).push(c.secondaryUuid);
+          const last = ((c.lastName || "").replace(/_/g, " ").toLowerCase());
+          const tripleKey = (c.firstName || "").toLowerCase() + "|" + last + "|" + ((c.faction || "").toLowerCase());
+          if (!tripleMatches.has(tripleKey)) tripleMatches.set(tripleKey, []);
+          tripleMatches.get(tripleKey).push(c.secondaryUuid);
+          const pairKey = (c.firstName || "").toLowerCase() + "|" + last;
+          if (!pairMatches.has(pairKey)) pairMatches.set(pairKey, []);
+          pairMatches.get(pairKey).push(c.secondaryUuid);
         }
       }
       const parseRuntimeName = (fullName) => {
@@ -2196,9 +2205,7 @@ function App() {
         const parts = clean.split(/\s+/);
         return { first: parts[0] || "", last: parts.slice(1).join(" ") };
       };
-      // For each flow entry, try to bridge. Runtime char's faction isn't
-      // emitted on the transfer line directly, so cross-check against
-      // liveCharPositions where MOVING_NORMAL captured faction.
+      // For each flow entry, try to bridge.
       const factionByRuntimeUuid = new Map();
       for (const v of liveCharPositions.current.values()) {
         if (v.charUuid && v.faction) factionByRuntimeUuid.set(v.charUuid, v.faction.toLowerCase());
@@ -2208,11 +2215,20 @@ function App() {
         const p = parseRuntimeName(runtimeName);
         if (!p) return null;
         const fac = factionByRuntimeUuid.get(runtimeUuid);
-        if (!fac) return null;
-        const key = p.first + "|" + p.last + "|" + fac;
-        const matches = tripleMatches.get(key);
-        if (!matches || matches.length !== 1) return null;
-        return matches[0];
+        // Tier 1: full triple match (preferred).
+        if (fac) {
+          const key = p.first + "|" + p.last + "|" + fac;
+          const matches = tripleMatches.get(key);
+          if (matches && matches.length === 1) return matches[0];
+        }
+        // Tier 2: unique (firstName, lastName) match across ALL save chars
+        // when faction is unknown (recipient of a merge never emits a
+        // MOVING_NORMAL with their faction). Skipped if the name pair
+        // collides — keeps us safe from the 0.9.271 first-name flood.
+        const pairKey = p.first + "|" + p.last;
+        const pairList = pairMatches.get(pairKey);
+        if (pairList && pairList.length === 1) return pairList[0];
+        return null;
       };
       for (const f of flow) {
         const donorSecondary = bridgeOne(f.from, f.fromName);

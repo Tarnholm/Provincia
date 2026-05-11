@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.293",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Merge re-bucketing now works for the recipient even when they don't emit MOVING_NORMAL log events. 0.9.291's bridge required both donor and recipient to have a known faction (captured from MOVING_NORMAL); for a merge like Marcus → Aulus, only Marcus emits a move (Aulus stays put), so the recipient bridge always failed and no units flowed. Now: tier 1 still uses the strict (firstName, lastName, faction) match when faction is known; tier 2 falls back to (firstName, lastName) only IF that pair is unique across the entire save char list. Aulus Gabinius is unique by name in any RIS save, so the bridge resolves. The collision safeguard from 0.9.271 (no first-name-only fallback) still applies — only the LASTNAME-combined pair is accepted, not bare first names." },
+    ],
+  },
+  {
     version: "0.9.292",
     date: "2026-05-11",
     items: [
