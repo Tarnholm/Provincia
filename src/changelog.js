@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.299",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Same-tile army merge logic is now lenient about exact pixel-coords. After a live-log merge (Marcus → Aulus), the engine can leave the two bodyguards 1-2 tiles apart visually even though they're one logical stack, so the strict (faction, x, y) match in 0.9.298 missed them. Now: exact-coord match runs first as before; then a second pass merges any remaining live-tracked entries of the same faction within the same region. The same fallback applies to both the map hover tooltip AND the region panel's 'Other faction armies' section. Result: Aulus + Marcus merged stack should now show as one combined entry with 15 units in both surfaces." },
+    ],
+  },
+  {
     version: "0.9.298",
     date: "2026-05-11",
     items: [
