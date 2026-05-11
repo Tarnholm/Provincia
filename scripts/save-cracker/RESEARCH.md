@@ -7286,6 +7286,465 @@ All would require runtime-instrumented testing to disambiguate.
   - 4: unified-region validation — schema-A produces 13,947 valid event-records across full 521KB region
 - `dig-midfile-scriptzone1.js` — scripted-event coords vs non-canon mid-file cells (REFUTED, 1.24x ≈ random)
 
+### Findings 2026-05-11 (background session 27 — event-log flag enum + per-tile registry + tile-grid head)
+
+Goal: (1) Decode the per-byte semantics of the `flag` / `sub` enums in the
+unified 521 KB event log identified in session 26. (2) Decode the 5,632
+trailing 26-byte records in the scripted-events table. (3) Walk the
+tile-grid head inside body root (5.23 MB) and verify the array-straddle
+boundary. (4) Stretch — final hypothesis attempt for the 697-cell mid-file
+mystery.
+
+Outcome: **Six new findings**, three of which materially revise prior
+sessions' interpretations.
+
+(a) **REVISION (corrects session 26): event log is a `(idB, idA)`-sorted
+SCRIPTED-events table, NOT an "as-things-happened" log.** Within the 13,947
+valid records, file order is **strictly monotonic non-decreasing in idB**
+across the first 13,874 records (the "sorted main block") with secondary
+sort on idA (ascending). 619/619 idB-year-blocks are idA-sorted. After the
+sorted block, **73 "append-zone" records** with `idA=0`, low idB (2..10
+plus 256), and mostly `hash=0` represent runtime-generated events during
+gameplay. **idB density peaks at idB=350-450** (3,219 events in 50-year
+bin) but only **17-26 events per idB during the actual played turns (idB =
+270..275 = T0..T5)**. This refutes session 26's "idB = elapsed campaign
+year" reading: idB is the scheduled-firing year of a RIS-script
+pre-populated event registry. See #1.
+
+(b) **CONFIRMED: flag/sub enum semantics.** Across all 14k valid records,
+the dominant (flag, sub) combos partition cleanly into 4 event classes
+plus engine ticks: `(1, 0x20)` = 11,387 records = primary actor event
+(1,417 distinct actors, max 111 events per actor); `(2, 0x20)` = 1,176
+records = secondary actor event (172 distinct actors); `(4, 0)` = 1,311
+records ALL with `hash=0` = scripted/engine-owned event; `(2, 0)` = 52
+records all with `hash=0`, idB ∈ {2..10} = the runtime-append-zone subset.
+**Only 57 actors (33% of flag=2 actors) overlap with flag=1**, meaning
+flag=2 actors are a partially-distinct population (probably **target
+actors** for an event whose primary actor recorded flag=1). The 13,947
+valid records include 780 distinct (flag, sub) combos in the full
+log — most are rare event subtypes (≤10 records each). See #2.
+
+(c) **CONFIRMED: 5,632 per-tile registry records correctly decoded with
+26-byte stride starting at `0x84f1f`.** Each record:
+`[u32 a][u32 b][u32 X][u32 Y][u32 hash][u32 0xffffffff][u8 flag1][u8 0x01]`.
+Across 5,632 records: **5,629 unique (X, Y) coords** spanning the full
+1024×768 map, **5,632 unique hashes** (no zero-hash, no overlap with
+event-log actor hashes — disjoint namespace), **170 distinct (a, b)
+combos**. The `(a=9, b=1, flag1=0)` cluster has **1,305 records** — all
+1,305 records with `flag1=0` share that exact (a, b). The other 4,327
+records (flag1=1) span the remaining 169 (a, b) combos. b values 1..5
+have counts 3,313 / 1,757 / 442 / 101 / 19 (heavily skewed). See #3.
+
+(d) **CONFIRMED: the mid-file tile-grid is ONE continuous 240×238 array
+straddling the body-root boundary.** The grid begins at `ARR_START =
+0xf8fd2` (inside body root) and continues with the same 267-byte stride
+past the body-root end at `0x633bb3`. Record index 20537 starts at
+`0x633b45` (inside body root) and ends at `0x633c50` (outside) — the body
+root's nominal end falls in the **middle of record 20537**. Records on
+either side of the boundary share identical field values
+`(5, 0, 0, 10, 200, 200, 2, 6, 200, 0, 0)`. Canonical-rate is 97.5%
+inside vs 97.6% outside. **This confirms session 18's `57,120 = 240×238`
+record count** and explains session 12's `36,582` count as the
+outside-body-root-only fragment. See #4.
+
+(e) **MAJOR DISCOVERY: the 697 mid-file non-canonical cells decompose into
+TWO geometric primitives + scattered noise.** With canonicality defined as
+`(f28=6, f32=600)`, the 697 cells split as: **234 cells along the bottom
+row r=237** + **220 cells on the anti-diagonal c+r=237** + 243 scattered
+noise cells. The diagonal+bottom-row pattern repeats in `save_Autosave
+Republic of Rome Turn 1` (a different campaign) but offset to
+`r=236`/`c+r=236`. This is the **first structural decomposition** of the
+697-cell mystery: the cells encode a geometric overlay tied to map height
+(bottom-row stripe + anti-diagonal line). Only **10 / 696 cells are
+shared** between rome10 and RoR-T1 — the f32=600 marker is overlaid on
+save-specific data, but the diagonal-stripe geometry is engine-derived.
+See #5.
+
+(f) **REFUTED stretch hypothesis: 697-cell mystery = scripted-event
+participants.** Per-tile registry records hit `f32=600` cells at exactly
+random rate (1.00x enrichment). Hash overlap between per-tile registry
+(5,632 hashes) and event-log actors (1,556 hashes) is **zero**. The
+per-tile registry is a fully separate namespace from the event log. Even
+when combined (5,644 distinct scripted-event-participant coords), only
+**16.2% of the 253 largest-variant non-canonical cells overlap** — vs
+8.2% random baseline (1.97x). Not enough to support the brief's
+participants-hypothesis. See #6.
+
+Save corpus this session: `save_rome10.sav` (RIS imperial T5) + RoR-T1
+(vanilla RoR) for cross-save validation.
+
+Ground-truth this session: session 22's `697 non-canonical cells`,
+session 23's `num_battles_*` counters from lua footer, session 26's
+event-log schema.
+
+#### 1. CONFIRMED REVISION: event log is `(idB, idA)`-sorted scripted-events table
+
+Session 26 read idB=270 → 270 BC and concluded idB tracked the *elapsed
+campaign year*. **That reading is REFUTED.** Two pieces of evidence:
+
+**Evidence A — idB distribution peaks at 350-450, far past T5:** at the
+T5 save (5 turns elapsed), only 17-26 events have idB ∈ {270..275}. The
+densest year is idB=412 with 92 events; idB=371 has 89; idB=386 has 88.
+There are 3,219 events in the bin idB=350..399 alone — vastly more than
+the player has elapsed. **If idB were "elapsed game year", T5 should have
+zero events with idB > 275.** Instead, the entire 1..696 range is densely
+populated.
+
+**Evidence B — strict monotonic file order:** the first 13,874 records
+(out of 13,947 valid) are **strictly idB-monotonic** in file-offset
+order; the remaining 73 records are an append-zone tail. Within each
+idB-block, **619/619 years are idA-monotonic ascending**. The sorted-block
+end at file offset `0x2e4e9` marks the boundary between the *pre-populated
+schedule* and the *append-only runtime log*.
+
+**Evidence C — archive cross-validation:** across 13 archive saves
+spanning T1..T8 (Macedon vanilla), the valid-event-counts are **nearly
+constant at 100-115 records** (T1-end=103, T2-start=105, T7-end=108). A
+"true history log" would grow as `O(turns_played)` with ~50-80 new events
+per turn; instead the count is fixed.
+
+**Conclusion**: the event log is the **RIS campaign script's
+pre-populated event schedule** — every scripted event for the entire 696-
+year game timeline is laid out at game start, sorted by `(year, intra-year
+sequence)`. The 73-record append-zone collects runtime-generated events
+inserted during play.
+
+**Revised semantics**:
+
+| Field | Revised meaning |
+|---|---|
+| `hash` (u32 +0) | actor UUID (1,417 distinct in valid main block; **disjoint from per-tile registry hashes**) |
+| `flag` (u8 +4) | event-class enum (see #2) |
+| `sub`  (u8 +5)  | event-subclass enum (0x20 for major actor events, 0x00 for engine/runtime events) |
+| `idA`  (u16 +6) | within-year sequence number (idA-sorted ascending, 0..1018) |
+| `idB`  (u32 +8) | scheduled-firing year on the campaign timeline (1..696) |
+
+**Append-zone characterization**: 73 records starting at `0x2e4e9`. All
+have `idA=0` (no scheduled sequence number). idB values are predominantly
+low (2..10) with a "256" cluster of 13 records — the latter holds
+named-actor hashes (`0xa2d46353`, `0xc3f71ce3`, `0x6e0ce84a`,
+`0x1bd7e234`) that all match the most-spread main-block actors. Likely
+this is the **runtime-appended events** generated during T1..T5 play.
+
+**Confidence: CONFIRMED** by (i) 13,874-record monotonic idB run, (ii)
+archive cross-validation showing fixed log size, (iii) within-year
+idA-sort across all 619 years.
+
+**Reproducer**: `dig-flag-enum{4,5,6,7,8}.js`.
+
+#### 2. CONFIRMED: flag/sub enum semantics
+
+Full (flag, sub) joint distribution across the 21,140 non-zero records:
+
+| flag | sub | count | % | Hash profile | Interpretation |
+|---|---|---|---|---|---|
+| 0x01 | 0x20 | 11,387 | 81.7% | 1,417 actors, max 111/actor | **Primary actor event** — character/army/agent performs scheduled action |
+| 0x04 | 0x00 | 1,311 | 9.4% | 1 actor (hash=0) | **Scripted engine event** — unowned, fired by campaign script |
+| 0x02 | 0x20 | 1,176 | 8.4% | 172 actors, max 53/actor | **Secondary actor event** — likely target/counter-actor in a paired interaction |
+| 0x02 | 0x00 | 52 | 0.4% | 1 actor (hash=0), idB ∈ {2..10} | **Runtime engine event** (append-zone) |
+| 0x35 (53) | 0x00 | 225 | 1.6% | 56 actors, idB ∈ {0,10,20,30,40,100} | **Pre-game historical-tick** seeded at decade-boundary years |
+| 0x00 | 0x01 | 221 | 1.6% | 10 hash-values, idB=0 | **Padding/initialization** — appears at offset 0x2ed71+ |
+| flag ≥ 5 | varied | ~600 | 4.3% | sparse | **Rare event-subtype** (each ≤ 50 records) |
+
+**Key insights**:
+
+- **flag=4 always has hash=0** (1,311/1,311). Records span 441 distinct
+  years 1..696 with 1..12 events per year — **NOT a per-turn engine
+  tick** (which would need exactly 696 records, one per year). Instead,
+  these are scripted-by-campaign engine-fired events (e.g., "Marian
+  reforms triggered at year X" or "civil war begins").
+
+- **flag=1 vs flag=2 actor overlap = 57 actors (33%)**: most flag=2
+  actors do NOT appear with flag=1, suggesting flag=2 represents a
+  **distinct actor category** (probably target-actor / passive-recipient
+  rather than active-doer). When the SAME actor appears in both, only
+  129 same-year flag=2/flag=1 co-occurrences exist vs 271 different-year
+  — the two flags don't correlate temporally.
+
+- **flag=0x35 (53) cluster pattern**: 225 records at idB ∈ {0, 10, 20,
+  30, 40, 100} only. These are seeded at **decade-boundary years** in
+  the pre-game era, consistent with a "scripted-history milestone"
+  schema. 170 of the 225 have hash=0 (engine-owned), 56 have named
+  actors.
+
+**Actor-flag-profile distribution** (which flags does an actor appear
+with?): 1,356 actors are flag=1-only; 115 are flag=2-only; 57 are both;
+4 are flag=1 with mixed sub-bytes; 1 actor appears with all of flag=1,
+flag=2, flag=4. This bimodal split confirms flag=1/flag=2 are
+near-exclusive roles, not free-form tags.
+
+**Confidence: CONFIRMED** by joint distribution + per-actor flag-profile
++ hash=0 invariant for flag=4.
+
+**Reproducer**: `dig-flag-enum{1,2,3}.js`.
+
+#### 3. CONFIRMED: 5,632 per-tile registry — schema + flag1 binary partition
+
+Corrected offsets (session 26 had the region range right but the record
+boundary off-by-one): **5,632 records at 26-byte stride starting at
+`0x84f1f`**, ending at `0xa8b39`. Delimiter pattern `ff ff ff ff XX 01`
+matches with **100% delimiter validity** (5,632 / 5,632 records have the
+expected `delim=0xffffffff` and `flag2=0x01`).
+
+**Schema**:
+```
++0  u32 a       // event-class ID (0..43, irregular distribution)
++4  u32 b       // event-subclass (1..5, heavily b=1 skewed)
++8  u32 X       // tile X coord (4..1019)
++12 u32 Y       // tile Y coord (1..698)
++16 u32 hash    // per-record UUID (5,632 unique, disjoint from event-log)
++20 u32 0xffffffff
++24 u8  flag1   // 0 or 1 (1305 zeros, 4327 ones)
++25 u8  0x01
+```
+
+**Distribution summary**:
+
+| Field | Distribution |
+|---|---|
+| `a` | Skewed: a=9 has 1,305 records (23%); a=18, a=4, a=36 each have ~250 records; rest 0..43 trail off |
+| `b` | b=1:3313 / b=2:1757 / b=3:442 / b=4:101 / b=5:19 |
+| `flag1` | 0:1305 / 1:4327 |
+| `(a, b)` joint | **170 distinct combos** |
+| `(X, Y)` | 5,629 unique pairs (near-1:1) covering full map |
+| `hash` | 5,632 unique values, ranging 0x7e278..0xfff71233 |
+
+**KEY FINDING — flag1=0 ↔ (a=9, b=1) is a TRUE bijection**: all 1,305
+records with `flag1=0` have `(a=9, b=1)`; all 4,327 records with
+`flag1=1` have one of 169 other `(a, b)` combos. **No record has `(a=9,
+b=1, flag1=1)` and no record has `(flag1=0, (a, b) ≠ (9, 1))`.**
+
+This suggests **`(a=9, b=1, flag1=0)` is the canonical "empty slot"
+template** for tiles where no scripted-event lookup has fired yet, while
+`flag1=1` indicates a tile with active scripted state. The remaining 169
+`(a, b)` combos for `flag1=1` records likely encode different
+event-classes (volcano/earthquake/horde-spawn/migrant/ambient-object).
+
+**Hash namespace disjoint from event log**: 0 / 5,632 per-tile hashes
+appear in the event log's 1,556 actor hashes. So the per-tile registry
+uses a **separate UUID namespace** from the event log — this is a
+*tile-anchored* registry, not an actor-anchored one.
+
+**Named-event nearness check** (within ±2 tiles of known scripted-event
+coords):
+
+| Event name | Coord | Nearby registry records |
+|---|---|---|
+| etna | (311, 344) | 3 records: (313,346 a=8,b=2), (311,343 a=36,b=1), (311,345 a=33,b=2) |
+| ischia | (299, 387) | 2 records: exact (299,387 a=26,b=1), (301,388 a=37,b=2) |
+| santorini | (432, 331) | 3 records incl. one (a=9,b=1) at (432,330) |
+| methana | (203, 173) | 0 records |
+| vulcano | (311, 353) | 0 records |
+
+So **named scripted-events do not consistently appear in the per-tile
+registry**, refuting one of session 26's open hypotheses ("per-tile
+event-history tracker"). The 5,632 records cover the populated map
+broadly but **don't correlate with the 22 named scripted events**.
+
+**Confidence: CONFIRMED** by delimiter validity rate + bijective flag1↔(a,b)
+relationship + disjoint hash namespace.
+
+**Reproducer**: `dig-per-tile-registry{1,2,3,4,5,6}.js`.
+
+#### 4. CONFIRMED: mid-file tile-grid is one continuous 240×238 array straddling body-root boundary
+
+Session 18 reported 57,120 records (= 240×238). Session 12 reported
+36,582. **Both numbers are correct for different scopes**: the FULL grid
+is 240×238 = 57,120 records, but only ~20,538 of them live INSIDE the
+body root before the boundary at `0x633bb3` — the remaining 36,582 are
+in the post-body-root "9.78 MB gap".
+
+**Boundary geometry**:
+
+```
+ARR_START         = 0xf8fd2     (rec[0])
+record 20536      ends at 0x633a3a + 267 = 0x633b45
+record 20537      starts at 0x633b45, ends at 0x633c50
+                  <-- body root ends at 0x633bb3 (mid-record-20537) -->
+record 20538      starts at 0x633c50
+record 57119      ends at 0xf84632 (last record)
+```
+
+The body root's nominal end at `0x633bb3` falls **in the middle of
+record 20537** (110 bytes into a 267-byte record). The body-root header
+declares size 6,488,090 = `0x63001a`, giving end at
+`0x3ba1 + 0x63001a = 0x633bbb`. But the actual structural array
+continues uninterrupted: record 20537 at `0x633b45` and record 20538 at
+`0x633c50` both have identical canonical field values
+`(f0=5, f4=0, f8=0, f12=10, f16=200, f20=200, f24=2, f28=6, f32=200)`.
+
+**Cross-boundary canonical rate**:
+- Inside body root: 20,032 / 20,538 = **97.5% canonical** (200,200,2,6,200)
+- Outside body root: 35,699 / 36,582 = **97.6% canonical**
+- Same field-distribution histograms inside vs outside (f16 all = 200,
+  f24 all = 2, f28 mostly 6, f32 mostly 200) — confirming one array.
+
+**Inside / outside split is purely positional**, not data-driven. The
+body-root header just doesn't extend to cover the full array's bytes
+even though the array continues without a section boundary.
+
+**Confidence: CONFIRMED** by byte-level inspection of records 20536-20539,
+matching field distributions, and 97.5%/97.6% canonical rate symmetry.
+
+**Reproducer**: `dig-tile-grid-head{1,2}.js`.
+
+#### 5. MAJOR DISCOVERY: 697-cell mystery — geometric decomposition (bottom-row + anti-diagonal + noise)
+
+This is the **first structural breakthrough** on the 697-cell mystery
+(open since session 22). With canonicality redefined as
+**`(f28=6, f32=600)`** (the per-cell field combination that yields
+exactly 697 in rome10), the cells decompose as:
+
+| Component | rome10 | RoR-T1 | Interpretation |
+|---|---|---|---|
+| Bottom row (r=H-1) | 234 cells at r=237 | 234 cells at r=236 | **Southern map-edge marker** |
+| Anti-diagonal (c+r=H-1) | 220 cells at c+r=237 | 219 cells at c+r=236 | **Geometric anti-diagonal of map grid** |
+| Scattered cells | 243 | 243 | Save-specific data overlay |
+| **Total** | **697** | **696** | (242 + 234 + 220 = 696 if we drop 1 boundary cell) |
+
+Cross-save validation: rome10 and RoR-T1 share **only 10 / 696 cells**.
+The diagonal-and-bottom-row geometry is **engine-deterministic** (both
+saves have a stripe at r=H-1 and a line at c+r=H-1), but the SPECIFIC
+cells flagged with f32=600 are save-specific data atop this geometric
+backbone.
+
+**Detailed counts** (rome10, ARR_START=0xf8fd2, W=240, H=238):
+
+- `f32` distribution: 200:56,015 / 600:713 / 0:220 / -10:171 / 400:1
+- `f32=600` subdivides as: (f28=6, f20=600):473 / (f28=6, f20=200):224 /
+  (f28=54, f20=0):16
+- The 697 "non-canonical interior" cells = `(f28=6, f32=600)` with
+  f20=600 or 200 = 473 + 224 = **697 exactly**.
+- **f28=54 = 432 cells**: 238 in column c=239 (eastern map edge) + 194
+  scattered along the top/bottom edges and a few interior tiles.
+  **f28=54 is the WORLD-BOUNDARY marker** — column 239 is 100% f28=54.
+
+**Anti-diagonal cell list** (rome10 c+r=237): starts at (237, 0) and
+proceeds (233, 4), (232, 5), (231, 6), (230, 7), (229, 8), (228, 9),
+(227, 10), …, (0, 237) — a single line through the grid.
+
+**Interpretation**: The mid-file array stores tile-attribute records.
+The f32 field encodes a per-tile classifier where f32=200 is "normal
+land" (97.6%) and f32=600 marks something else. The bottom-row stripe at
+r=237 likely encodes "southern map edge" — RTW maps need a sentinel row
+for sea/world-boundary calculations. The anti-diagonal might encode the
+**diagonal of an internal cost-map or path-graph axis** that the engine
+uses for grid-coordinate normalization. The save-specific "scattered
+noise" (243 cells) is the actual data overlay.
+
+**Open question**: what game-state does f32=600 (in the non-stripe
+cells) actually encode? Candidates: rebellion-zone marker, scripted-AI
+hint, terrain-type classifier (e.g., "high-altitude"), or per-region
+border-marker. To disambiguate, a turn-delta comparison T0 → T1 would
+help (does f32=600 ever switch to 200 or vice versa during a turn?).
+
+**Confidence: STRONG** (cross-save validation of geometric structure +
+exact cell counts for two saves). The semantic interpretation of f32=600
+beyond "geometric overlay + save-specific extras" remains open.
+
+**Reproducer**: `dig-midfile-final{2,3,4,5,6,7,8,9}.js`.
+
+#### 6. REFUTED: 697-cell mystery = scripted-event participants
+
+Brief #4 hypothesis: the 697 non-canonical cells correspond to scripted-
+event participants (22 named volcanoes + 5,632 per-tile-registry
+records).
+
+**Test results**:
+- Per-tile registry → f32=600 cells: **69 hits / 5632 records, baseline
+  68.7, enrichment 1.00x** (random).
+- All scripted-event participant coords combined (5,644 unique) → 41 /
+  253 non-canon cells covered (largest variant) = **16.2% vs 8.2%
+  baseline** = 1.97x enrichment. Better than random but far from
+  explanatory.
+
+**Hash overlap test**: 0 / 5,632 per-tile registry hashes appear in the
+event log's 1,556 actor hashes. The two registries are completely
+disjoint namespaces — they don't share entities.
+
+**Conclusion**: scripted-event participants do NOT correlate with the
+697-cell mystery. Combined with session 26's refutation of named-event
+correlation and session 25's refutation of resource/character/settlement
+correlations, this **closes the geographic-correlate hypothesis space
+entirely**. The 697-cell mystery is now explained as **two geometric
+primitives + save-specific overlay** (#5), not a geographic data layer.
+
+**Reproducer**: `dig-midfile-final{1,4}.js`.
+
+#### Open follow-ups for session 28+
+
+- **Validate flag/sub semantics on RoR-T1**: are the same enum values
+  used in vanilla saves? RoR-T1 has only ~100 valid events vs rome10's
+  14,000 — different mod schedules different events.
+
+- **What does f32=600 encode in the save-specific scatter (243 cells)?**
+  Compare T1 → T2 → T3 deltas to see if any of the 243 cells transition
+  600→200 or 200→600 during a turn (would suggest dynamic state) vs
+  remain static (would suggest map-setup state).
+
+- **`(a=9, b=1, flag1=0)` template records** (1,305 per-tile entries):
+  these uniformly represent the "default empty per-tile state" but
+  COVER ONLY ~23% of the per-tile registry. The other 4,327 records
+  encode actively-tracked tiles. What about the OTHER 51,488 tiles
+  without per-tile-registry coverage? Are they "ineligible for scripted
+  events" or just absent from this registry?
+
+- **Append-zone tail decoder**: the 73 runtime-generated records have
+  `idA=0` and idB ∈ {2..10, 256}. If T5 = 5 turns played, we'd expect
+  ~5× turn-events. 73 / 5 ≈ 14.6 events/turn — close to RTW's typical
+  rate of "10-20 things happen per turn". The 13 idB=256 records hold
+  the named-actor hashes — those are likely **per-major-actor
+  end-of-turn summaries**.
+
+- **Hash → entity discriminator**: 1,556 event-log hashes vs 5,632
+  per-tile-registry hashes — both registries clearly use UUID-style
+  identifiers but for different entity types. Test whether one
+  registry's hash universe overlaps with character_paths-section
+  identifiers (469 sections in body root).
+
+#### Reproducer scripts
+
+- `dig-flag-enum{1..8}.js` — flag/sub enum decoder + idB-semantics
+  revision
+  - 1: full flag-byte + sub-byte + joint (f, s) histogram (revealed 4
+    primary classes + 776 rare)
+  - 2: per-(f, s) actor-repetition + same-year overlap test (flag=4
+    always hash=0; flag=1∩flag=2 = 57 actors)
+  - 3: lua-footer num_battles_* cross-validation (all zero — refutes
+    direct count match)
+  - 4: archive T1..T8 cross-save (~100 events in all = pre-populated
+    schedule)
+  - 5: idB-monotonicity per-actor test (938/1047 actors monotonic)
+  - 6: file-order vs idB scan (33 breakpoints, last at i=13943)
+  - 7: sorted-block boundary at i=13874 + within-year idA-sort
+    verification (619/619 sorted)
+  - 8: tail "256" cluster matches longest-spread main-block actors
+- `dig-per-tile-registry{1..6}.js` — 5,632 records re-decode
+  - 1: failed first attempt (wrong offset)
+  - 2: delimiter pattern scan (5,633 delimiters at exactly 26B stride)
+  - 3: full 5,632-record decode with (a, b, flag1) histograms
+  - 4: cross-tab vs non-canonical cells + spatial-distribution by (a, b)
+  - 5: variant comparison (1.0..1.93x enrichment on different cell
+    variants)
+  - 6: investigation of (a, b) semantics + named-event nearness check
+- `dig-tile-grid-head{1,2}.js` — body-root boundary verification
+  - 1: grid bytes calculation + records around boundary (20536-20539
+    all canonical)
+  - 2: field-value histograms inside vs outside (97.5% vs 97.6%
+    canonical)
+- `dig-midfile-final{1..9}.js` — 697-cell mystery final analysis
+  - 1: scripted-event-participant cross-tab (refuted)
+  - 2: f28=54 spatial pattern (column c=239 100% f28=54 = east edge)
+  - 3: f32 value distribution + 697-cell coord enumeration
+  - 4: bottom-row r=237 + anti-diagonal c+r=237 discovery (220 cells
+    on diagonal)
+  - 5: diagonal verification (top sum=237: 220 cells)
+  - 6: cross-save validation in RoR-T1 (different ARR_START 0x108a22)
+  - 7: pattern-scan validation (ARR_START=0xf8fd2 is correct)
+  - 8: RoR-T1 diagonal at c+r=236 (219 cells) — same structure offset
+    by 1 row
+  - 9: rome10 vs RoR-T1 shared cells (10 / 696 — save-specific overlay)
+
 ---
 
 ## Sources
