@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.316",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "30-second timeout on the parallel character + building workers. User saw post-conquest saves (save_11.1, save_13.1, Turn 2 Start) sit forever in 'queued (reparse already in progress)' state because one of the workers stopped responding — without a timeout the `await charsP` blocked indefinitely and the renderer kept showing pre-conquest data. Now: if a worker doesn't return within 30s, fall back to null and let parseCharactersAndUnits run its synchronous path. Side benefit: also unblocks any save with a structural feature we haven't seen before that trips the worker." },
+      { type: "note", text: "(0.9.315's tileToRegion hypothesis was wrong — Brundisium doesn't border Taras as I assumed. The real cause was the parser hang above, which left the renderer on pre-march data where Aulus was still at Tarentum. The 1-tile-city-neighbour check is harmless and still ships, but isn't load-bearing.)" },
+    ],
+  },
+  {
     version: "0.9.315",
     date: "2026-05-12",
     items: [

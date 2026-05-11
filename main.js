@@ -4384,16 +4384,29 @@ async function reparseLatestSave() {
     // instead of running sequentially. Each worker falls back to the
     // synchronous path if it fails or if its required mod data is
     // unavailable.
+    // 30-second timeout on each worker — if the worker hangs (which
+    // we've seen on post-conquest saves), bail to null and let the
+    // synchronous fallback take over inside parseCharactersAndUnits.
+    // Without this, a stuck worker locks up the entire reparse chain
+    // and the renderer never sees the new save. User saw this with
+    // save_13.1+ where parses stayed in "queued" forever.
+    const withTimeout = (p, ms, name) => Promise.race([
+      p,
+      new Promise((resolve) => setTimeout(() => {
+        console.warn(`[save-watch] ${name} worker timed out after ${ms}ms — falling back to sync`);
+        resolve(null);
+      }, ms)),
+    ]);
     const charsP = (modNameLookup && modTraitNames)
-      ? findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
+      ? withTimeout(findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
           console.warn("[save-watch] chars worker failed, falling back to sync:", e.message);
           return null;
-        })
+        }), 30000, "chars")
       : Promise.resolve(null);
-    const buildingsP = parseBuildingsInWorker(saveBuf).catch((e) => {
+    const buildingsP = withTimeout(parseBuildingsInWorker(saveBuf).catch((e) => {
       console.warn("[save-watch] buildings worker failed, falling back to sync:", e.message);
       return null;
-    });
+    }), 30000, "buildings");
 
     const newData = await parseSaveData(full, ({ stage }) => emitSaveProgress(stage, 30), saveBuf);
     if (lastSaveData) {
