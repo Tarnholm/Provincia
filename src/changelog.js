@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.312",
+    date: "2026-05-11",
+    items: [
+      { type: "improvement", text: "Temp diagnostic: when you click Uria (or any Salentinia region) and the Characters row is still empty, the app now writes a one-line summary to provincia.log showing what the renderer actually sees (filtered count, incoming count, sample of save chars in Taras, sample of liveRegionByCharName keys for that region). Lets us pin down the remaining miss without more guess-and-ship cycles." },
+    ],
+  },
+  {
     version: "0.9.311",
     date: "2026-05-11",
     items: [
