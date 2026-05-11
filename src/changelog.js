@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.296",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Sidebar panel order is now consistent across all map modes: map-mode context panels (Factions / Culture / Religion legend, Settlement legend, Homeland, Resources) always at the top; Army Types always at the bottom. Previously in resource map mode the Resources panel rendered AFTER Army Types, so it appeared below the Army stack — inverted compared to every other map mode where the map-mode legend sat on top. Same panels visible, same toggles; just consistent ordering." },
+    ],
+  },
+  {
     version: "0.9.295",
     date: "2026-05-11",
     items: [
