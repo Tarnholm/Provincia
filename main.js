@@ -1156,6 +1156,14 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     const leader = {
       firstName: v1?.firstName || captainLabel,
       lastName: v1?.lastName || bodyguard?.region || null,
+      // Preserve the BIRTH lastName when a trait epithet renamed the
+      // displayed lastName (e.g. Aulus Gabinius → Aulus Messapivs the
+      // Wallbreaker after RomanConquerorMessapians + Legendary_Siege_Expert
+      // fired). The character parser sets originalLastName before
+      // replacing lastName; without this propagation step, the renderer's
+      // synth-dedupe falls back to the renamed name and produces a
+      // duplicate marker at the descr_strat starting tile.
+      originalLastName: v1?.originalLastName || null,
       x: (pos?.x) ?? null,
       y: (pos?.y) ?? null,
       moved: !!(pos && pos.moved),

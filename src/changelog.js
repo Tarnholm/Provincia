@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.309",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "0.9.308 dedupe-by-birth-name still didn't fire because main.js's leader object didn't propagate `originalLastName` from the v1 character record. So saveLiveArmies entries shipped with `originalLastName: null` even when the parser set it correctly. The renderer's birth-name dedupe then fell back to the (trait-renamed) lastName — `Aulus Messapivs` vs the bundled `Aulus Gabinius` → no match → synthetic marker still added. main.js now propagates v1.originalLastName onto the armyMap leader object. Verified via standalone parse of save_3: Aulus Gabinius (uuid 0xa77c10f) carries `RomanConquerorMessapians:2` trait → renamed to Messapivs. Birth lastName `Gabinius` is now preserved end-to-end." },
+    ],
+  },
+  {
     version: "0.9.308",
     date: "2026-05-11",
     items: [
