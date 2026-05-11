@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.301",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Critical: save parser was silently crashing with `ReferenceError: bodyguard is not defined` whenever a save snapshot was processed. The `bodyguard` const was declared inside one for-loop's scope but referenced from a separate later loop where it had no value. The try/catch wrapping the parser hid this — instead of erroring loudly it just bailed out and emitted '0 characters, 0 units'. Result for the user: saveCharactersByRegion / saveLiveArmies never populated, so every live feature added in the last few versions (merge re-bucketing, character move filtering, hover-tile merge, etc) appeared completely broken. Each commit was correct in isolation; nothing reached the renderer because the parser threw on every save. Fix: use the inner loop's own commanded units to grab the bodyguard. Apologies for the chase." },
+    ],
+  },
+  {
     version: "0.9.300",
     date: "2026-05-11",
     items: [

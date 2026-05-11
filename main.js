@@ -1178,6 +1178,14 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
   const liveArmies = [];
   for (const [, army] of armyMap) {
     const { leader, passengers, units: commandedUnits } = army;
+    // The bodyguard unit (first commanded unit) carries f32 movement
+    // points at +4 from its commanderUuid. Take it from THIS army's
+    // own unit list — not the outer-loop's bodyguard which is out of
+    // scope here. (Fixed 0.9.301: silent ReferenceError on this line
+    // had been crashing the entire save parser, blanking out
+    // saveCharactersByRegion / saveLiveArmies → live merge etc never
+    // worked because the data never reached the renderer.)
+    const armyBodyguard = commandedUnits[0] || null;
     const unitNames = commandedUnits.map(u => (u.name || "").toLowerCase());
     const isNavy = commandedUnits.length > 0 && unitNames.every(n => /^naval\b/.test(n));
     liveArmies.push({
@@ -1202,7 +1210,7 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       // field). Save-cracker dossier 2026-05-10. The bodyguard's record
       // mirrors the general's MP; we surface it on the army so hover
       // tooltips can show "MP: 231.1" without an extra lookup.
-      movementPoints: bodyguard?.movementPoints ?? null,
+      movementPoints: armyBodyguard?.movementPoints ?? null,
       // Has-moved-this-turn flag — bit 7 of the byte at character-position
       // record +9. Decoded in save-cracker session 4, cross-validated in
       // session 2 (one move pair + one no-move pair). Lets the hover
