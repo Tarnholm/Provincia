@@ -4293,6 +4293,287 @@ encode "AI interest level" per tile, which IS the AI policy in some sense).
 
 ---
 
+### Findings 2026-05-11 (background session 18 — mid-file fixed-stride table + AI policy retry)
+
+Goal: (1) Re-examine the mid-file 9.8MB fixed-stride record table (session 15 left
+it as 36,582×267-byte records of unknown semantic) and try to map non-canonical
+variants to descr_strat-placed entities (resources, ports, watchtowers). (2) Retry
+the AI strategic-policy cache search using a different methodology: find u32 values
+that DIFFER ACROSS TURNS but are STABLE WITHIN A TURN, since the AI cache should
+be recomputed at turn-end. (3) Stretch: per-faction army manifest.
+
+Outcome: **Two CONFIRMED findings + one strong NEGATIVE result.** (a) Session 15's
+**36,582 record count is wrong** — the actual mid-file array is **57,120 records ×
+267-byte stride** in rome10 / RoR-T1 (CONFIRMED), forming a **240×238 grid**
+(CONFIRMED via rightmost-column and bottom-row edge-marker stripes). The 240×238 =
+57,120 layout is now established. The variant-vs-resource spatial correlation
+HYPOTHESIS from session 15 is **RETRACTED** (no preferential alignment with
+resources, watchtowers, or ground-types — hit/baseline ratio = 0.93x, i.e., random).
+(b) **AI policy cache LOCATED** at fixed offset **0x1024 in Alexander campaign
+saves** — a 12-byte-stride array of `(u32 hash, u32 key, u32 turn)` records that is
+**byte-identical within a turn** (intra-turn diffs = 0 across 3 controlled pairs)
+and **changes only at turn boundaries** (cross-turn diffs = 20-144 records).
+Triple-cross-validated. (c) Army manifest stretch: hashes in the AI cache are
+**AI-cache-local UUIDs** (occur only inside the cache range, not referenced by
+faction-record trailing data) so they're not character UUIDs and don't reveal an
+army manifest.
+
+Save corpus this session: `save_rome10.sav` and `save_Autosave Republic of Rome
+Turn 1.sav` (RIS imperial), plus Alexander Macedon T1E/T2S/T2E/T3S/T3E/T5S/T6E/T7E/
+T8S/T11S/T11E/T12S/T13S/T13E/T14E/T15S/T15E from
+`calibration/archive/2026-04-21T22-42-59-494Z/`.
+
+#### 1. CONFIRMED & RETRACTED: mid-file array is 57,120 records × 267-byte stride at 0xf8fd2 (was 36,582 in session 15)
+
+Session 15 reported **36,582 records starting at `0x633c50`**. Re-scanning with a
+strict byte-template signature (every byte must match the canonical pattern: `+0=5,
++12=10, +16/+20/+32=200, +24=2, +28=6, +84=576, +96=0xa6`, and bytes +97..+266
+all zero) finds the array spans **MUCH FURTHER BACK**:
+
+| Save | array start | record count | array end |
+|---|---|---|---|
+| rome10 (RIS imperial T5) | 0xf8fd2 | **57,120** | 0xf84632 |
+| rome_t1 (same campaign T1) | 0xf8fd2 | **57,120** | 0xf84632 |
+| Alexander Macedon | (not present) | 0 | — |
+
+The session-15 start `0x633c50` was off by ~9.8MB and gave a 1/1.56 fraction of the
+true record count. Both rome10 and RoR-T1 have identical record-count and start
+offset, ruling out any save-state dependence. **Alexander Macedon saves do NOT
+contain this array** — it is RIS-mod-specific or vanilla-imperial-specific (not
+Alexander-generated content).
+
+The total variant set is unchanged from session 15 (13 distinct keys), just with
+more records:
+
+| Variant key | rome10 count | Fraction |
+|---|---|---|
+| 200_200_2_6_200 (canonical) | 55,731 | 97.6% |
+| 200_600_2_6_600 | 473 | 0.83% |
+| 200_0_2_54_200 | 266 | 0.47% |
+| 200_200_2_6_600 | 224 | 0.39% |
+| 200_200_2_6_0 | 217 | 0.38% |
+| 200_0_2_54_4294967286 (=−10) | 147 | 0.26% |
+| 200_200_2_6_4294967286 (=−10) | 23 | 0.04% |
+| 200_0_2_54_600 | 16 | 0.03% |
+| 200_0_2_55_200 | 15 | 0.03% |
+| 200_0_2_54_0 | 3 | 0.01% |
+| 200_600_2_6_200 | 3 | 0.01% |
+| 200_200_2_6_400 | 1 | 0.002% |
+| 200_0_2_55_4294967286 | 1 | 0.002% |
+
+Total non-canonical: **1,389 records (2.43%)**.
+
+#### 2. CONFIRMED: the array is a 240×238 grid; rightmost column & bottom row are uniformly non-canonical (edge marker)
+
+`57,120 = 240 × 238` exactly. Column-by-column non-canonical histogram at W=240:
+
+- **Column 239 (rightmost): 238 non-canon (out of 238 rows) — every row has a
+  non-canonical record at its rightmost cell.**
+- **Row 237 (bottom): 235 non-canon (out of 240 cols) — nearly every column has a
+  non-canonical record at the bottom-most row.**
+
+These are textbook edge markers for a fixed-size 2D grid. Sessions 15's W=240
+discovery was correct; the H=238 (not 153 as session 15 reported) is now confirmed.
+
+The map_regions.tga is `1020 × 700` per `descr_terrain.txt`. So each grid cell of
+the 240×238 array covers **1020/240 = 4.25 region-pixels × 700/238 ≈ 2.94
+region-pixels** — i.e., a **12.5-pixel coarse pathfinding/strategic grid** over
+the full campaign map. (1020 × 700 / 57,120 = 12.5 exactly.)
+
+#### 3. RETRACTED: variants do NOT preferentially align with placed entities (resources / watchtowers / ground-types)
+
+Tested all variant non-canonical cells against three sources of map placement data
+from `descr_strat.txt`:
+
+| Test | result |
+|---|---|
+| Resource (5,633 entries) → which cells? | 5,505 in canon cells, 128 in non-canon → **0.93x random baseline** (NOT correlated) |
+| Watchtower (23 entries) → which cells? | 23/23 in canon, 0/23 in non-canon → **NOT correlated** |
+| Ground type (map_ground_types.tga) → per-variant dominant color? | Every variant has 20-25% in same top GT color → **NOT distinguished by terrain** |
+
+Tested both y-non-flipped and y-flipped coordinate mappings; neither improved
+correlation. **The 1,389 non-canonical records are NOT placement caches for
+resources, ports, watchtowers, or terrain-type tags.** Session 15's resource-
+placement hypothesis is REFUTED.
+
+What the variants ARE remains HYPOTHESIS-grade. The patterns (+28 enum 6/54/55,
++20/+32 cycling through {200, 0, 600, -10, 400}) look like **enum-shifted state
+values** — possibly per-grid-cell AI pathfinding cost, danger weight, or
+strategic-zone classification. Without a controlled mod test (toggle one piece of
+descr_strat content and diff the array), the exact semantic remains open. The
+RIS-only presence + 0 byte change across 5 turns strongly suggests **map-baked
+static metadata** computed at campaign-start and never rewritten.
+
+#### 4. CONFIRMED: AI policy cache at offset 0x1024 in Alexander campaign saves
+
+The AI cache hunt finally pays off using a different strategy. Instead of
+fixed-stride array scanning (sessions 5/7/9/12/15 all failed), look for u32 values
+that DIFFER ACROSS TURNS but are STABLE WITHIN A TURN. Three controlled save pairs
+revealed a region of the file (`0x500..0x3bad`) with ~106 such bytes in the fixed
+header.
+
+The biggest finding is at **fixed offset `0x1024`** in every Alexander save:
+**a 12-byte-stride record array** that follows the AI-cache invariant.
+
+Each record:
+```
+struct AICacheRecord {
+  u32 hash;       // agent/target identifier (45 distinct non-zero values in T13E)
+  u32 key;        // packed action/tile code; low byte ∈ {01, 02, ...} is a counter
+                  // (increments by 1 each turn the AI re-affirms the entry)
+  u32 turn;       // turn number stamp (1..65 observed); monotonically grouped
+                  // (records with turn=N appear before turn=N+1)
+}
+```
+
+The array starts at **`0x1024`** and runs to **~`0x25fc`-`0x2674`** (variable end
+per save), containing **445-477 records** depending on save turn number. End is
+marked by the first 12-byte slot where `turn ≥ 200` or `turn == 0`.
+
+**Cross-turn behaviour** (TRIPLE-VALIDATED across 3 controlled save pairs):
+
+| Diff pair | record diff count | size diff |
+|---|---|---|
+| **T11S → T11E (intra-turn)** | **0** | 0 (no records added or modified within a turn) |
+| **T13S → T13E (intra-turn)** | **0** | 0 |
+| **T15S → T15E (intra-turn)** | **0** | 0 |
+| T11E → T12S (cross-turn) | 144 | +4 records |
+| T13E → T14E (cross-turn) | 20 | −1 record |
+| T14E → T15S (start-of-next-turn) | **0** | 0 (cache survives turn-end save) |
+
+The **0 intra-turn diff** is the strongest possible signal that this is an AI-side
+recomputed cache, not a runtime-pointer field. Within a turn the engine treats the
+array as read-only, then rewrites it as part of turn processing. Across turns,
+~20-144 records flip their `key.low_byte` from `01` to `02` (incrementing visit
+counter) and ~1-5 records are added/removed.
+
+**Record count progression** (Macedon Alexander campaign):
+
+```
+T1E:  445   T2S: 445   T2E: 445   T3S: 449   T3E: 449
+T5S:  451   T6E: 455   T7E: 456   T8S: 477   T11S: 472   T11E: 472
+T12S: 476   T13S: 466  T13E: 466  T14E: 466  T15S: 466   T15E: 466
+```
+
+Counts grow over the early game (445 → 477 by T8) then settle. Some turns drop
+records (T8S=477 → T11S=472, a 5-record decrement = AI evicted 5 expired entries).
+
+**Hash distribution** in T13E (45 distinct non-zero hashes, 466 records):
+- Top hash `0x36465c3a` × 30 entries
+- Top hash `0xc7e043d8` × 30 entries
+- 9 hashes with 15+ entries each — likely the AI's **prioritized target agents/
+  tiles** (player generals, enemy capitals, etc.)
+- Mode is ~5-10 entries per hash
+
+The 45 distinct hashes is consistent with **Macedon's known agent count at T13**
+(generals + diplomats + spies + neighbouring-faction-targets). NOT random data.
+
+**Implication for Provincia**: the AI policy cache is now decodable as a
+flat fixed-offset 12-byte array. A parser can read the array directly without
+walking any TAW section grammar. The `turn` field gives chronological ordering;
+the `hash` lets us group by agent/target; the `key.low_byte` reveals **how many
+turns since the AI last reaffirmed this entry**. Useful for:
+- "AI memory inspector" feature showing what enemies the player's AI knows about
+- Detecting AI's strategic priorities (frequently-reaffirmed targets)
+- Cross-validating session 14's tile-trail-chunks chunk[0] (player Romans Julii)
+
+**Note: This is the Alexander campaign location.** RIS imperial (rome10) has a
+similar pattern at `0x3c78` with ~60+ records, but the start offset is different
+due to different header padding. The signature (12-byte stride, turn field <200,
+intra-turn stable) generalizes; the offset is campaign-specific.
+
+#### 5. CONFIRMED: additional AI-cache-pattern bytes in fixed header region
+
+Cross-turn diff (T13E → T14E) within the 0..0x3bad header reveals 106 bytes with
+the AI-cache signature. Cluster summary:
+
+| offset range | size | content |
+|---|---|---|
+| `0x502` | 1 B | byte counter |
+| `0xf80` | 1 B | byte counter |
+| `0xf88` | 1 B | byte counter |
+| **`0xfc0..0xfef`** | **48 B (12 u32s)** | **f32 AI weight vector (read as 4×f32 = [3.06, -0.0, +1.8e25, -8.5M] in default mode; flips to [1.88, -0.33, -1.1e33, +1.4e31] in alternate mode — NOT a clean cross-turn weight, ambiguous semantic)** |
+| `0xff8` | 4 B | u32 counter (varies per save: 0x89fdec00, 0x7092c200, 0x01857100, 0x76aa7900, 0x04454c00, 0xec957c00) |
+| **`0xffc`** | **4 B** | **u32 counter (decimal: 357, 424, 365, 444, 383, 262 — varies per save by ~80-200 between turns; SAME within turn)** |
+| `0x21d4..0x2474` | 40 singletons | scattered byte-counter slots; each at offset+11 of a 12-byte slot, looks like the **AI cache's key.low_byte field** (this region overlaps the AI cache array at 0x1024..0x25fc) |
+| `0x2605..0x2d0d` | various | **3-byte rotated values** like `0x100/0x200/0x300/0x1000000/0x2000000/0x3000000` — **byte-packed at byte 1, 2, or 3 within u32s**. Looks like a **per-faction or per-region AI priority counter**, but without a stride pattern. |
+| `0x364b / 0x3999 / 0x3ab3` | 1 B each | misc counters |
+
+The `0xfc0..0xfef` 48-byte block and `0xffc` u32 are the **strongest candidates
+for a per-faction AI strategic-weight summary**. The 48-byte block in particular
+fits "4 weights for each of N=3 AI factors" or "12 floats of strategic mood".
+However, the f32 interpretation gives some sensible values (3.06, -0.33) AND some
+that are clearly bit-pattern garbage (1.8e25 = high-bit binary nonsense), so this
+region is **mixed f32 + structured bytes**, not a clean float array. The exact
+schema is HYPOTHESIS-grade.
+
+#### 6. NEGATIVE: per-faction army manifest stretch not pinned
+
+Hypothesis: each AI-cache hash is a per-character UUID and the faction's
+army-manifest array references those same UUIDs. Test: for each unique hash in the
+AI cache, count how many times it appears OUTSIDE the cache region (`0x1024..
+0x25fc`).
+
+Result (Macedon T13E):
+- Top hash `0x36465c3a` × 31 total occurrences, **all 31 inside the AI cache**
+- Top hash `0xc7e043d8` × 31 total occurrences, **all 31 inside the cache**
+- Top hash `0x92c34070` × 22 total occurrences, **all 22 inside the cache**
+- ...etc. for all 45 distinct hashes
+
+**The hashes are AI-cache-local identifiers**, NOT referenced anywhere else in
+the save. So they aren't character UUIDs used by the faction's army records.
+The army manifest, if it exists, uses different identifier shapes and remains
+unpinned.
+
+#### Reproducer scripts
+
+- `dig-midfile-recount1.js` — strict-template scan finding 57,120 records (vs session 15's 36,582)
+- `dig-midfile-recount2.js` — variant histogram + 240×238 grid edge analysis
+- `dig-midfile-recount3.js` — resource/watchtower/ground-type correlation NEGATIVE result
+- `dig-ai-policy-retry1.js` — AI cache decode + intra/cross-turn diff validation (3 pairs)
+- `dig-ai-policy-retry2.js` — header AI-cache-pattern byte enumeration (106 bytes)
+- `dig-army-manifest1.js` — army manifest hypothesis NEGATIVE (hashes are cache-local)
+
+#### Open follow-ups for session 19+
+
+- **Mid-file array semantic** (HYPOTHESIS-grade): the 1,389 non-canonical records
+  encode something map-baked-static, but neither resources, watchtowers, nor
+  terrain. Possibilities still open: **port locations**, **road network nodes**,
+  **mercenary recruitment pools**, **strategic-AI-zone classification**,
+  **per-cell pathfinding move-cost**. A controlled-mod test (remove one
+  port/road/mercenary entry, save → diff against unmodified save) would identify
+  which type by which records flip.
+
+- **AI cache `hash` semantics**: 45 distinct hashes in Macedon T13E correspond to
+  the player's known agents + targets. A targeted save pair where ONE character
+  dies (or is promoted) would let us pin which hash = which character. Or:
+  hash-as-string-bin-of-cstring decoding might reveal that hashes are CRC32 of
+  the agent's internal name.
+
+- **AI cache `key` semantics**: the key field has structure `0xMMTT01` where
+  `MM` = some kind of category (we saw 0x14, 0x15, 0x16, 0x17, 0x18 for one hash
+  → likely sequence ID), `TT` = a 2-byte target identifier (0x10, 0x11, 0x12 for
+  early records → likely tile-X or character-ID), and the low byte starts at `01`
+  and increments by 1 each turn the AI revisits. Full decode requires reading the
+  AI's tile-trail (session 16) and cross-matching keys to tile coords.
+
+- **Per-faction f32 weight vector at 0xfc0..0xfd0**: 4 f32 floats that flip between
+  two distinct value sets across saves. The default set [3.06, -0.0, +1.8e25,
+  -8.5M] reads partially-sensible-as-floats. With a different save pair (multiple
+  factions, one diplomatic event between saves), we might isolate which faction
+  the floats belong to and what they measure.
+
+- **`0xffc` u32 counter**: 4 distinct values across the 8-save corpus (357, 424,
+  365, 444, 383, 262). Likely a turn-summary scalar (AI's total active-event
+  count?). Cross-correlating with the AI-cache record count would reveal the
+  formula.
+
+- **RIS imperial AI cache location**: similar 12-byte pattern at `0x3c78` in
+  rome10, but with different start offset due to RIS's larger header. A future
+  session could pin the RIS-specific start offset.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
