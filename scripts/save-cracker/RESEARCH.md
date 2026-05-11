@@ -8703,6 +8703,337 @@ actions.
 
 ---
 
+### Findings 2026-05-12 (background session 34 — occupy/enslave/exterminate + alliance + siege fields)
+
+**HEADLINE: Siege block size + besieger back-reference corrected (was 73B/5B
+in session 33 — actually 69B/4B). Post-conquest action choice (occupy /
+enslave / exterminate) reflected in a 3-field "settlement unrest" block at
+Uria-1590..-1582 with initial values that discriminate the choice. Alliance
+state still not isolated — buried in end-of-turn AI cache churn. Session
+33's typo `matEnd = 0x1ed64b5` corrected to `matEnd = 0xf8473d`.**
+
+#### Save corpus used
+
+| File | Action | Uria settle marker | Comparison role |
+|---|---|---|---|
+| save_2.1 | trade-rights baseline (no alliance) | n/a | alliance A |
+| save_3.1 | +alliance Mess (after end-turn) | n/a | alliance B |
+| save_6.1 | war w/ Mess (no siege) | n/a | siege A |
+| save_7.1 | siege Brundisium | n/a | siege B |
+| save_8.1 | siege Tarentum (Brundisium siege replaced) | n/a | siege C |
+| save_9.1 | stop siege Tarentum | n/a | siege D |
+| save_9.1 | (pre-Uria-capture) | 0x1264861 | occupy A |
+| save_10.1 | ENSLAVE Uria | 0x1264861 | occupy B |
+| save_11.1 | captured Brundisium (different branch, 1 turn later) | 0x12693c6 | aging |
+| save_12.1 | EXTERMINATE Uria (alternate branch) | 0x1264861 | occupy C |
+
+#### CONFIRMED REVISION: session 33's siege block is 69 bytes, not 73; back-reference is 4 bytes, not 5; session 32 had a `matEnd` typo
+
+- **Matrix end is `0xf8473d`** (= `0xf8fd2 + 239*239*267` = `0xf8fd2 +
+  0xe8b66b`). Session 32's RESEARCH.md states `0x1ed64b5` — **TYPO**.
+  Verified: cell `[238][238]` starts at `0xf84632`, cell `[238][238]+267 =
+  0xf8473d`. Confirmed via direct cell-start arithmetic for `r=238, c=237`.
+- **Siege block is 69 bytes at `0x152f529`, NOT 73 bytes**. The 73-byte file
+  delta on siege-start consists of two separate inserts:
+    1. **4 bytes at `0x1263384..0x1263387`** (besieger-side reference,
+       inside the besieging army's record). In save_6 (pre-siege) those
+       4 bytes were `00 00 00 00`; in save_7 (Brundisium besieging) they
+       became `8c a7 c1 90` — the **4-byte siege-UUID prefix**. The byte at
+       `0x1263380..0x1263383` (one before the back-ref) also changed
+       (`07 f1 74 00` → `05 2b ee 01`), but that's a 4-byte runtime hash
+       recomputation, NOT an insert.
+    2. **69 bytes at `0x152f529..0x152f56d`**: the siege record proper:
+        - `+0` u8 `0x01` — active-siege flag
+        - `+1..+12` u8[12] — 12-byte siege UUID
+        - `+13..+65` u8[53] — all zeros (reserved fields)
+        - `+66..+67` u16 LE = `0x08d5` = **2261** (semantics still unclear,
+          see "REFUTED: wall HP" below)
+        - `+68` u8 = 0 — terminator
+- Cross-validated: save_6 → save_7 inserts +73 bytes total = 4 + 69.
+  save_8 → save_9 deletes -73 bytes total = 4 (at besieger record) + 69
+  (at `0x152f529`).
+- Reproducer: `dig-siege-turn6.js` (save_6→save_7 shift-diff with run≥64),
+  `dig-siege-turn8.js` (save_8→save_9).
+- Confidence: **CONFIRMED** (cross-validated, exact byte accounting).
+
+#### REFUTED: u16 = 2261 at siege block +66 is NOT wall HP
+
+Session 33 said `u16(+66) = 2261 = settlement strength / wall HP`. **Refuted**:
+
+- Brundisium's `defenses` chain record (per session 17, HP at chain start
+  + 40) reads **HP = 100** in save_6, save_7, save_8, save_9 — never 2261.
+  Wall is also at HP=100 in undamaged settlements per the building parser.
+- u16 = 2261 occurs ONLY at the siege block site in save_7 and save_8
+  (other occurrences are far away — diplomacy-matrix internal hashes or
+  per-tile registry data, unrelated to walls).
+- u16 at +66 is **identical (= 2261) for two different cities** (Brundisium
+  walls level ≠ Tarentum walls level in descr_strat — they should differ
+  if it were wall HP).
+
+**STRONG / HYPOTHESIS**: u16=2261 is a CONSTANT engine literal — possibly
+"siege state magic / record-type tag" or `(0x08, 0xd5)` interpreted as a
+2-byte (siege_max_duration_turns=8, internal_constant=0xd5). Not enough
+samples (only 2 sieges captured) to distinguish "constant" vs "varies".
+
+**No turn-counter byte found inside the 69-byte siege block** — bytes
+`+13..+65` are all zeros in BOTH save_7 (Brundisium siege, just-started)
+and save_8 (Tarentum siege, just-started). To find a turn-counter we'd
+need a save with a siege that has progressed several turns; the corpus
+doesn't include one. The siege duration tracker most likely lives in the
+besieging army's character record (per RTW's "siegeTurnsInSet" string
+referenced in the engine), NOT in the siege block.
+
+Reproducer: `dig-siege-turn1.js`, `dig-siege-turn2.js`,
+`dig-siege-turn10.js`, `dig-siege-turn11.js`, `dig-siege-turn12.js`.
+
+#### STRONG / HYPOTHESIS: Post-conquest action choice (occupy/enslave/exterminate) encoded in 3-field "settlement unrest" block at Uria-1590..-1582
+
+Settlement record schema for **Uria** (RIS imperial mod, file offset
+`0x1264861` in save_9.1, save_10.1, save_12.1) examined across 4 saves to
+distinguish ENSLAVE (save_10.1) from EXTERMINATE (save_12.1) from
+pre-capture (save_9.1) from "1 turn after enslave" (save_11.1):
+
+| Field | Description | save_9.1 (pre) | save_10.1 (enslave) | save_11.1 (+1 turn enslave) | save_12.1 (exterminate) |
+|---|---|---|---|---|---|
+| Uria-34 (u16) | settlement population | 1500 | 750 | 746 | 400 |
+| Uria-28 (u32) | per-turn modification tick | 82695 | 82720 | 82632 | 82710 |
+| Uria-1606 (u32) | unrest-event-slot-A | 0 | 0 | 0 | **1100** |
+| Uria-1602 (u32) | unrest-event-slot-B | 0 | **750** | 0 | 0 |
+| **Uria-1590 (u32)** | **post-conquest event code / unrest counter** | 0 | **1** | 2 | **4** |
+| Uria-1586 (u32) | population-derived secondary | 133 | 75 | 72 | 41 |
+| Uria-1582 (u32) | population-derived tertiary | 1215 | 511 | 469 | 276 |
+
+**Cross-reference Brundisium-1590 = 11 in save_11.1** (Brundisium just
+captured + OCCUPIED). Combined enum values observed:
+
+- **1** = ENSLAVE just chosen (Uria save_10.1)
+- **4** = EXTERMINATE just chosen (Uria save_12.1)
+- **11** = OCCUPY just chosen (Brundisium save_11.1)
+- **0** = never conquered (Uria save_9.1, all uncaptured settlements)
+
+**HYPOTHESIS** (single observation per action — not yet CONFIRMED): the
+3-field block at -1590..-1582 represents `(post-conquest_event_counter,
+disorder_remaining_a, disorder_remaining_b)` where the initial value of
+the first u32 depends on the action chosen. Subsequent turns INCREMENT
+the counter (Uria-1590 went 1→2 from save_10.1 to save_11.1) which is
+consistent with a "turns since post-conquest event" counter. The
+"discriminating signal" is therefore the **fresh-after-action value**, not
+the long-running value.
+
+Alternative interpretation: -1590 may encode a hash of (action, fresh)
+that just happens to differ. Without more conquest data points (e.g., 2
+separate save pairs each for occupy/enslave/exterminate at different
+turn rotations), this remains HYPOTHESIS.
+
+**Population (Uria-34) is the cleanest discriminator** as a continuous
+value: ENSLAVE halves population (`1500 → 750`), EXTERMINATE reduces it
+more aggressively (`1500 → ~400` ≈ 27% of pre-conquest). OCCUPY would
+leave population intact or close to it.
+
+Per brief, EXTERMINATE should also damage buildings. **REFUTED for Uria**:
+Uria's 2 chain records (`hinterland_region`, `core_building`) BOTH show
+HP=100 in save_12.1 (exterminate). Per session 17, `core_building` (the
+settlement-itself) shows HP=45 and `defenses` shows HP=88 for Brundisium
+in save_11.1 (post-assault occupy). So **assault damage applies in OCCUPY
+mode (when the player chose to storm walls)**, NOT to extermination per
+se. Exterminate's effect appears to be POPULATION-only, not buildings.
+
+Reproducer: `dig-occupy1..14.js`. Confidence: **STRONG** for the population
+discriminator; **HYPOTHESIS** for the -1590 enum encoding.
+
+#### CONFIRMED: Settlement record schema extension (RIS imperial mod)
+
+Fields verified in this session (offsets relative to settlement UTF-16LE
+name marker byte = `0x01` flag at marker offset):
+
+| Offset | Type | Field | Notes |
+|---|---|---|---|
+| -34..-33 | u16 LE | **current population** | halves on enslave, ~ 27% on exterminate |
+| -32..-29 | u32 LE | (zeros) | reserved |
+| -28..-25 | u32 LE | **per-turn modification tick** | tiny variation per turn (82632..82720 in samples) |
+| -21..-9 | varies | **8-byte settlement UUID pair** | `5348 2601 5748 2601` (consistent across saves with same Uria) |
+| -8..-5 | u32 LE | `0xef000000` | terminator marker |
+| -4..-1 | u32 LE | `0x00010400` | record-class tag |
+| +0 | u8 | `0x01` | name-flag (= 0x00 in some Alex saves) |
+| +1 | u8 | name length (chars) | =4 for "Uria" |
+| +2 | u8 | `0x00` | UTF-16 high byte |
+| +3..+10 | UTF-16LE | settlement name | "Uria" |
+| +11..+15 | u8[5] | zeros | pad |
+| +16..+19 | u32 LE | `0xfcfcfcfc` | sentinel after name |
+| +20..+23 | u32 LE | 0x64 = 100 | major-class echo |
+| +24..+27 | u32 LE | 0x00000398 = 920 | count? |
+
+Post-conquest "unrest" block (HYPOTHESIS):
+
+| Offset | Type | Field | Initial value (action) |
+|---|---|---|---|
+| -1610..-1607 | u32 | unrest-event-slot-pre? | 0 |
+| -1606..-1603 | u32 | unrest-event-slot-A | 1100 fresh exterminate; 0 otherwise |
+| -1602..-1599 | u32 | unrest-event-slot-B | 750 fresh enslave; 0 otherwise |
+| **-1590..-1587** | **u32** | **post-conquest event code** | 1 enslave / 4 exterminate / 11 occupy / 0 never |
+| -1586..-1583 | u32 | unrest secondary | 75 enslave / 41 exterminate (decays) |
+| -1582..-1579 | u32 | unrest tertiary | 511 enslave / 276 exterminate (decays) |
+
+Confidence: **CONFIRMED** for population at -34 (4 data points, monotonic
+decrease across enslave→further-decay→exterminate); **STRONG** for the
+3-field unrest block existing (consistent zero baseline in 3 other
+settlements; non-zero only in just-captured settlements);
+**HYPOTHESIS** for the discrete enum encoding of -1590.
+
+Reproducer: `dig-occupy12.js` (full byte-aligned u32 dump),
+`dig-occupy13.js` (cross-settlement -1590..-1582 comparison).
+
+#### REFUTED: Alliance state isolated from end-of-turn churn (still BLOCKED)
+
+save_2.1 → save_3.1 (+alliance w/ Mess) was re-attacked using the
+diplomacy matrix mask. **Within the matrix, only 3 cells changed**:
+
+- `[0][156]` (Romans→Mess): **0 byte diffs** — confirms session 33's
+  "alliance does NOT change prev/curr"
+- `[156][0]` (Mess→Romans): **0 byte diffs** — same
+- `[238][238]` (final boundary cell): 8 byte diffs at +44..+47 and
+  +121..+124 — but `[238][238]` is the section-boundary cell that overlaps
+  with the next file section (per session 32's note "cell may stop at
+  col 237"); the changed bytes there are **runtime-hash recomputations
+  in the post-matrix section** (which begins with "default_set" /
+  "hinterland_region" strings), NOT alliance state.
+
+**Outside the matrix, pre-matrix bytes (range `0..0xf8fd2`) have 88,205
+diffs** in 2,208 clusters, dominated by:
+
+1. **Cluster `[0x84f2f..0xa8bf7]` (146 KB)** — a fixed 26-byte stride
+   structure (4 hash bytes + 22 constant bytes per cell, per
+   `dig-alliance-deep7.js`). This is the per-tile or per-entity AI
+   evaluation cache; **every cell got its 4-byte hash recomputed** when
+   alliance state changed. It is NOT the alliance entry but downstream
+   AI cache churn.
+2. **Cluster `[0x52ed..0x1ec28]` (104 KB)** — a fixed 12-byte stride
+   structure (4 hash bytes + 8 structured bytes per cell). Per-tile or
+   per-entity ID-keyed runtime data. Also AI cache.
+3. ~72 medium clusters (60-400 B) — each one ~28-byte stride records
+   with 4-byte hash recomputation, scattered through `0xae00..0xf7000`.
+   Again AI cache.
+
+**None of the small inserts (8-96 bytes) between save_2.1 and save_3.1
+in the pre-matrix region contain the u32 = 156 (Messapians)** as a
+"list-entry-added" signature. The classic vanilla-RTW model — a per-faction
+allied-factions list with one u32 entry per ally — is NOT how this mod
+stores alliances, OR the list is stored with a different encoding
+(perhaps as a packed bit-set indexed by faction ID).
+
+**Search-space narrowed**:
+
+- NOT in the diplomacy matrix (CONFIRMED).
+- NOT as a small inserted-record carrying `u32(156)` (CONFIRMED).
+- LIKELY hidden in either: (a) a fixed-length per-faction structure
+  inside the pre-matrix region that overwrites bytes in place (no
+  size change, just bit-flips), OR (b) the lua-state region (session
+  14) where script-driven flags would be plausible.
+- **Bit-set theory** (best HYPOTHESIS): if each major faction's record
+  has a 239-bit (=30-byte) allies bitmap, the alliance flip would
+  toggle 2 bits (one on Romans' bitmap for Messapians, one on Mess's
+  bitmap for Romans). Such a flip would NOT match any of the 88K
+  byte-diff clusters (which are all hash-shaped 4-byte u32s), unless
+  the bitmap byte happens to also include the relevant bit.
+
+Recommended next probe: capture an in-turn save pair (no end-turn
+between trade-rights and alliance) to eliminate the 88K-byte churn
+entirely. The current corpus's `save_2.1 → save_3.1` had a turn rotation,
+which is the root cause of irreducible noise.
+
+Reproducer: `dig-alliance-deep1..10.js`. Confidence: **REFUTED**
+that alliance state lives in the diplomacy matrix or in any cleanly
+isolated insert; **HYPOTHESIS** that it lives in a per-faction
+fixed-length bitmap inside the pre-matrix region.
+
+#### Practical implications for Provincia
+
+- **Decode current population** of any settlement: read u16 LE at
+  `(settlement_marker_offset - 34)`. Halves on enslave; reduces to ~27%
+  on exterminate.
+- **Detect freshly-conquered settlement**: read u32 LE at
+  `(settlement_marker_offset - 1590)`. Values:
+    - 0 = never conquered by current owner
+    - 1 (fresh) = enslaved
+    - 4 (fresh) = exterminated
+    - 11 (fresh) = occupied
+    - Increments each turn — fresh value most informative.
+- **Siege detection (revised)**: 69-byte block (not 73) at
+  `0x152f529..0x152f56d`. The fingerprint test in session 33's brief
+  works (`+13..+65` all zero, u16 at `+66`, etc.), but the block ends
+  at +68, not +72. Bytes `+69..+72` are part of the FOLLOWING settlement
+  record. Adjust extractors accordingly.
+- **Besieger back-reference is 4 bytes**, not 5: a 4-byte siege-UUID
+  prefix written into the besieging army's record at a slot that was
+  previously zero. Scan for `01` byte FOLLOWED BY the siege block's
+  first 4 UUID bytes is misleading — the `01` is part of the army
+  record's pre-existing structure, only the next 4 bytes change.
+- **Alliance state cannot yet be decoded**. Trade rights and rejection
+  are decoded (session 32/33); alliance and protectorate remain blocked
+  pending a cleaner save corpus.
+
+#### Confidence summary
+
+- **CONFIRMED** (cross-validated across ≥2 observations):
+  - matEnd = `0xf8473d` (session 32 RESEARCH typo corrected)
+  - Siege block size = 69 bytes (file delta matches exactly: 4 + 69 = 73)
+  - Besieger back-reference = 4-byte UUID prefix at the army record
+    (not 5-byte `01+prefix`)
+  - Settlement population at marker-34 (u16) halves on enslave, ~27% on
+    exterminate
+  - u16=2261 at siege block +66 is NOT wall HP (defenses chain shows
+    HP=100, not 2261)
+- **STRONG** (single direct observation + indirect support):
+  - The 3-field block at Uria-1590..-1582 is a "post-conquest unrest"
+    structure (consistent zero baseline in 3 other settlements; non-zero
+    only after conquest; values decay over turns)
+- **HYPOTHESIS** (one observation, alternative interpretations possible):
+  - u32 at Uria-1590 = action-discriminating enum with initial values
+    1 (enslave), 4 (exterminate), 11 (occupy) — single observation per
+    action; could also be a derived counter
+  - u16=2261 at siege block +66 is an engine constant (siege state
+    magic / record-type tag), not wall HP
+  - Alliance state stored as a per-faction 239-bit allies bitmap inside
+    the pre-matrix region (not yet located — buried in end-of-turn
+    AI cache churn)
+
+#### Reproducer scripts
+
+- `dig-occupy1.js` — locate Uria/Brundisium/Tarentum markers across 4
+  saves
+- `dig-occupy2..5.js` — diff Uria record save_9 vs save_10 (enslave) and
+  save_11 vs save_12 (exterminate); find bytes that differ in BOTH diffs
+- `dig-occupy6..8.js` — verify field offsets; isolate the -1590..-1582
+  unrest block
+- `dig-occupy9..10.js` — Uria & Brundisium building HP scans (no damage
+  on enslave/exterminate; assault damage on occupy)
+- `dig-occupy11.js` — direct enslave vs exterminate diff (33 runs, all
+  hash-shaped except the unrest block + population)
+- `dig-occupy12..13.js` — exact u32 field dump at Uria-1620..-1570 across
+  all 4 saves; cross-faction comparison shows Brundisium-1590=11 (occupy)
+- `dig-occupy14.js` — net +143 byte size-delta save_10 → save_12 diff
+  decomposition
+- `dig-alliance-deep1..3.js` — masked diff outside diplomacy matrix
+- `dig-alliance-deep4.js` — cluster the 88K pre-matrix byte diffs into
+  2208 clusters
+- `dig-alliance-deep5.js` — examine 72 medium-sized clusters (all
+  AI-cache shaped)
+- `dig-alliance-deep6..8.js` — sample big clusters (26-byte and 12-byte
+  stride structures = per-tile AI cache, not alliance)
+- `dig-alliance-deep9..10.js` — cell-by-cell matrix diff (0 diffs at
+  [0][156]/[156][0] for alliance; 8 diffs at [238][238] are
+  section-boundary hashes)
+- `dig-siege-turn1..5.js` — siege block characterization across save
+  corpus; relaxed-fingerprint scans for false-positive control
+- `dig-siege-turn6..8.js` — exact 73-byte insert/delete accounting:
+  4 bytes at besieger record + 69 bytes at siege block site
+- `dig-siege-turn9.js` — besieger back-reference decomposition (4-byte
+  UUID prefix at army record offset 0x1263384)
+- `dig-siege-turn10..12.js` — defenses chain HP verification (HP=100 in
+  all saves; refutes u16=2261 = wall HP)
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
