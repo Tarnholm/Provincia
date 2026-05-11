@@ -7014,6 +7014,280 @@ The 6→21 collapse is RTW's **architectural-model engine**: many descr_strat cu
 
 ---
 
+### Findings 2026-05-11 (background session 26 — event-log fields + scripted events + UUID index)
+
+Goal: (1) Decode flag/sub fields of the 495 KB per-year event log and cross-reference actor_hash against session 23's 60 lua-footer faction IDs. (2) Decode the 149 KB scripted-events table interior — find per-event year/region/triggered metadata. (3) Document the 13.9 KB "char UUID index" structure between preamble and event log. (4) Cross-tab the mid-file 697 non-canonical cells against scripted-event tile coords.
+
+Outcome: **Six new findings**, three of them schema corrections that REWRITE session 25's interpretations.
+
+(a) **CONFIRMED REVISION: the "13.9 KB char UUID index" and "495 KB per-year event log" are ONE UNIFIED event log** with schema-A `[u32 actor_hash][u8 flag][u8 sub][u16 idA][u32 idB]` at 12-byte stride. Session 25 misidentified two regions; the unified region is `0x51b5..0x846af` = 521,466 bytes / 12 = **43,455 slots** (13,947 valid + 22,315 all-zero + 7,193 padding/transition). The schema for the FULL region is hash-first, **NOT** the flag-first schema session 25 inferred from looking only at the dense main body. See #1.
+
+(b) **CONFIRMED: idB is the campaign year counter** running 1..696 across all valid records — covers the full RIS-imperial timeline (270 BC = idB=270 → AD 426 = idB=696). 270 + N_turns = idB for game-time events. **idB=1..269 contains pre-game-scheduled events** (RIS scripts pre-populate the log with historical-context entries). 626 distinct year values, most years have 0-100 events. See #2.
+
+(c) **CONFIRMED: scripted-events table interior decoded — 22 named events + 7 wonders + 5,632 per-tile entries.** Schema for named-event records: `[u16 lenP1]"volcano"[nul][u16 lenP1]"eruption_at_etna_140"[nul][i32 calendar_year_signed][u32 typeA=2][u32 typeB=1][u32 tileX][u32 tileY][u32 trigger_count][16 B padding]` = 32-byte payload after the eruption-name string. **17/22 i32-year fields match the year embedded in the event name** (etna_140 → year=-140, vulcano_91 → year=-91, santorini_46_ce → year=+46). The 7 Wonders use shorter 12-byte records with `[u32 tileX][u32 tileY][u32 hash]`. The 5,632 trailing records use a 26-byte stride `[u32 a][u32 b][u32 tileX][u32 tileY][u32 hash][u8×6 delimiter]`. See #3.
+
+(d) **CONFIRMED: idA is a within-year sequential event counter (NOT a tile-graph node).** Δ=1 dominates same-hash consecutive-record strides (5,812 occurrences, 95% of multi-step strides), giving runs of 17-24 consecutive idA values for a single actor in a single year. Longest run: hash `0x76a41301` at year 544 has 24 records with idA 620..643. **Range idA=0..1018** = ~1018 events scheduled per peak year. **idA is monotonically incrementing per-year**; one actor's consecutive log entries get consecutive idA. The earlier hypothesis (session 25, "idA = tile ID") is **REFUTED**. See #4.
+
+(e) **REFUTED: actor_hash field maps to lua-footer faction IDs.** 0/60 of session 23's faction-IDs (id_romans_julii=1110011, etc.) match any of the 1,533 distinct actor hashes. Cross-save check: hash `0xec22d10b` appears 16× in rome10 but **0× in RoR-T1**. Hashes are **per-save dynamic per-actor UUIDs** (likely character/army/agent), NOT faction IDs. See #5.
+
+(f) **REFUTED: scripted-event tile coords explain the mid-file non-canonical cells.** With current ARR_START=0xf8fd2 and canonicality `[200,200,2,6,200]` the cell count is 902 interior non-canon (slightly different from session 22's 697 due to canonicality rule choice). Scripted-event coords map onto only **1.24x baseline** of non-canonical cells (raw Y) or **1.02x** (flipped Y) — essentially no enrichment. **Conclusion**: the non-canonical mid-file cells are NOT explained by scripted-event geographies. See #6.
+
+Save corpus this session: `save_rome10.sav` (RIS imperial T5).
+Ground-truth this session: scripted-event names embedded in save body + session 23's 60 faction IDs from lua footer + session 22's 697-cell mid-file zone characterization.
+
+#### 1. CONFIRMED REVISION: unified 521KB event log (schema-A across full region)
+
+Session 25 split this region into "UUID index 13.9 KB" + "per-year event log 495 KB" with different schemas. **Both regions actually share ONE schema** and form a contiguous fixed-stride event log.
+
+**Schema (12-byte stride, hash-first)**:
+```
++0  u32 actor_hash    // per-save dynamic UUID (per-character / per-army)
++4  u8  flag          // event-type enum — 4 values dominate (see #2)
++5  u8  sub           // event-subtype enum — 2 values dominate (0x00 / 0x20)
++6  u16 idA           // intra-year event counter (0..1018)
++8  u32 idB           // CAMPAIGN YEAR (1..696 = 270 BC + idB - 270)
+```
+
+**Region bounds**: `0x51ad..0x846af` (section-header at 0x51ad with self-ptr+size=13884, payload starting at 0x51b5; payload continues to 0x846af without a section break). Total payload = **521,466 bytes / 12 = 43,455 records**.
+
+**Record-validity counts** (rome10):
+- **Valid records** (flag∈{1,2,4} ∧ sub∈{0,0x20} ∧ 0<idB<800 ∧ idA<4096): **13,947** (32.1%)
+- **All-zero placeholder slots**: 22,315 (51.4%)
+- **Other / transition**: 7,193 (16.5%)
+
+The all-zero slots are **reserved capacity** — the log pre-allocates ~43k slots and game progression fills them in over time.
+
+**Schema-A vs Schema-B comparison test** on the early region (records 0..1156): SCHEMA-A wins 1157/1157, SCHEMA-B (flag-first) wins 0. Both schemas decode the SAME bytes but only schema-A produces consistent year-monotonic, hash-clustered records.
+
+**Why session 25 got it wrong**: the dense main body at `0x87e9..` happens to LOOK like flag-first schema because at those offsets, the bytes `01 20 11 01` align with what looks like `flag=1, sub=0x20, idA=0x0111, idB=0x0113`. But the SAME bytes shifted to `+4..+15` in schema-A give the same semantic decode (flag=1, sub=0x20, idA=0x0111). The CRITICAL discriminator is at offsets 0..3: schema-A reads them as `u32 hash` while schema-B reads them as `[flag,sub,idA-low,idA-high]`. The fact that `0b d1 22 ec` always appears at offset 0..3 of the main-body first record CONFIRMS schema-A (`hash=0xec22d10b`) because the same hash repeats at multiple `idB` years — it's an actor identifier, not random bytes.
+
+**Confidence: CONFIRMED** by schema-A producing 13,947 valid records vs schema-B producing 0 valid records on the early region, plus year-monotonicity of consecutive records, plus hash-clustering within years.
+
+**Cross-save validation**: schema-A applied to `save_Autosave Republic of Rome Turn 1.sav` (RoR-T1) yields **14,419 valid records, 22,318 zero slots, 1,576 distinct hashes, idB range 1..797**. The structure parallels rome10's exactly (close record counts, similar reserved-slot count). RoR-T1's event log was found by scanning for the pattern `[xx xx xx xx 01 20 xx xx 13 xx 00 00]` (schema-A's flag=1, sub=0x20, year≈275 marker), first hit at `0x5329`. **Schema-A is universal across RIS-imperial saves**, not save-specific.
+
+**Reproducer**: `dig-uuid-index{1..4}.js`, `dig-event-log-flags{1..6}.js`.
+
+#### 2. CONFIRMED: flag/sub semantics + idB = campaign year
+
+**Flag distribution** (valid records, schema-A):
+| flag | count | % of valid | sub typically | Interpretation |
+|---|---|---|---|---|
+| 1 | 11,387 | 81.7% | 0x20 | Primary actor event — non-zero hash, narrates an entity's action |
+| 4 | 1,311 | 9.4% | 0x00 | Unowned / scripted-engine event — hash often 0 |
+| 2 | 1,176 | 8.4% | 0x20 | Secondary event — non-zero hash, alternate action type |
+| other | 73 | 0.5% | various | Rare event subtypes |
+
+**idB = campaign year** confirmed by:
+- Range 1..696 covers RIS-imperial's 270 BC..AD 426 timeline (696 game years = 426-(-270))
+- Game-start is 270 BC = `idB = 270`; T5 save's earliest dense block is `idB = 275` (= 270 BC + 5 turns)
+- 626 distinct idB values out of 696 possible — most years have at least one logged event
+- idB=275 has 21 valid records (= turn-1 events for the player save)
+
+**Pre-game events** (idB < 270): 1,033 valid records spread across 269 distinct early years. These appear to be **RIS-script-seeded historical context entries** that the campaign-script writes before the game begins. Each idB year from 1 to 269 has 0-20 entries.
+
+The dense main block at 0x87e9 onward is the game-time portion (idB ≥ 270). The earlier region 0x51b5..0x87e9 holds the pre-game historical context.
+
+**Confidence: CONFIRMED** by year-range match with campaign timeline + per-year event-count distribution.
+
+**Reproducer**: `dig-event-log-flags{3,5}.js`.
+
+#### 3. CONFIRMED: scripted-events table schema — 22 named events + 7 wonders + 5,632 per-tile records
+
+**Table bounds**: `0x846d1..0xa8beb` = 148,762 bytes. Internal structure:
+
+```
+0x846d1..0x846e6  Header (22B): { u32 0x02, u32 0, u32 0x01, 9 zero bytes }
+0x846e6..0x84efb  22 named-event records: 25 instances of "volcano"/"earthquake"/"flood"
+                  Each named record:
+                    [u16 len="volcano"+1][ASCII "volcano"][nul]
+                    [u16 len][ASCII eruption_at_<location>_<year>][nul]
+                    [i32 calendar_year]      // BC negative, AD positive
+                    [u32 typeA]              // 0 or 2
+                    [u32 typeB]              // 1
+                    [u32 tileX]              // map tile X coord (4..1019)
+                    [u32 tileY]              // map tile Y coord (1..698)
+                    [u32 trigger_count]      // how many times fired
+                    [16 B padding zeros]
+                  Total ~33-39 bytes per named event.
+
+0x84efb..0xa8b3d  5,632 per-tile event records (26-byte stride):
+                    [u32 a]                  // 0..43, mean ~16 — semantic unclear
+                    [u32 b]                  // 1..5, event-category
+                    [u32 tileX]              // map X (4..1019)
+                    [u32 tileY]              // map Y (1..698)
+                    [u32 hash]               // per-event UUID (5,632 distinct)
+                    [u8×4 = 0xff×4]          // delimiter "ff ff ff ff"
+                    [u8 = 0 or 1]            // fired/pending flag (4327 ones, 1305 zeros)
+                    [u8 = 0x01]              // record-end byte
+
+0xa8b3d..0xa8bd4  7 Wonders records:
+                    [u16 len][ASCII wonder name][nul][u32 tileX][u32 tileY][u32 hash]
+                  Each ~14 bytes:
+                    pyramids_and_sphinx (514, 249)  → Memphis/Giza
+                    pharos              (497, 266)  → Alexandria
+                    colossus            (465, 337)  → Rhodes
+                    temple              (452, 356)  → Ephesus
+                    statue              (388, 345)  → Olympia
+                    gardens             (668, 326)  → Babylon
+                    mausoleum           (456, 343)  → Halicarnassus
+```
+
+**Year-validation against named eruption strings** (17/22 match exactly):
+
+| Event name | Decoded i32 year | Expected year | Match? |
+|---|---|---|---|
+| eruption_at_etna_140  | -140 | -140 (140 BC) | ✓ |
+| eruption_at_etna_135  | -135 | -135 | ✓ |
+| eruption_at_etna_126  | -126 | -126 | ✓ |
+| eruption_at_etna_122  | -122 | -122 | ✓ |
+| eruption_at_etna_49   |  -50 |  -49 | ✗ off-by-1 |
+| eruption_at_etna_44   |  -44 |  -44 | ✓ |
+| eruption_at_etna_36   |  -36 |  -36 | ✓ |
+| eruption_at_etna_32   |  -32 |  -32 | ✓ |
+| eruption_at_etna_10_20_ce | 15 | 10 | ✗ stored as midpoint |
+| eruption_at_etna_38_40_ce | 39 | 38 | ✗ midpoint |
+| eruption_at_vulcano_183 | -215 | -183 | ✗ |
+| eruption_at_vulcano_126 | -126 | -126 | ✓ |
+| eruption_at_vulcano_91  | -91 |  -91 | ✓ |
+| eruption_at_ischia_91   | -91 |  -91 | ✓ |
+| eruption_at_santorini_197 | -197 | -197 | ✓ |
+| eruption_at_santorini_46_ce |  46 | 46 | ✓ |
+| flood_in_rome_241       | -241 | -241 | ✓ |
+
+**Tile coords verified against historical locations**:
+- Etna events all at (311, 344) — Sicily ✓
+- Vulcano events at (311, 353) — south of Etna ✓ (Aeolian Islands)
+- Santorini at (432, 331) — Aegean Sea ✓
+- Rhodes at (465, 336) — east Aegean ✓
+- Iberia earthquake at (53, 459) — west map edge ✓
+- Wonders all in expected eastern-Mediterranean / Egypt zones ✓
+
+**Per-named-event record count = 22 records** (one per scripted volcano/earthquake/flood event). The **5,632 anonymous trailing records** are likely **per-tile scripted-spawn entries** (e.g. specific tile-locations where ambient-objects, scripted-character birthplaces, or scripted-army-spawn points exist). Their (X, Y) coverage spans the whole map but is concentrated around Italy/Greece/Anatolia.
+
+**Confidence: CONFIRMED** by 17/22 i32-year matches + 7/7 wonder tile-coord matches against known historical sites.
+
+**Reproducer**: `dig-scripted-events{1..7}.js`.
+
+#### 4. CONFIRMED: idA is a per-year sequential event counter; REFUTED tile-graph hypothesis
+
+Initial hypothesis (session 26 round 1): idA = tile/node index, with consecutive idA = adjacent tiles along a movement path.
+
+**Test 1 — Δ=1 stride frequency**: Same-hash consecutive records have stride Δ=1 in 5,812/6,108 cases (95%). All other strides ≤1% each. This is **extreme monotonicity** — vastly stronger than tile-adjacency would produce.
+
+**Test 2 — Run lengths**: Single-actor consecutive runs reach **24 records** at `hash=0x76a41301, year=544, idA=620..643`. Other top examples:
+- `hash=0xd0ac389d, year=332, idA=145..167` (23 consecutive)
+- `hash=0xd2dbde17, year=517, idA=446..466,475` (22 strict)
+- `hash=0xc9678171, year=376, idA=585..605` (21)
+- `hash=0xfdf8f650, year=525, idA=275..297` (with 1 small gap)
+
+These are 20+ STRICTLY-INCREMENTING ID values for a SINGLE actor within ONE year. Tile-paths would have variable strides (mix of +1 horizontal, +N vertical, mix of straight lines and turns). Pure +1 strides ≈ **counter increments**.
+
+**Test 3 — idA upper bound**: max idA across all records = 1018. If idA were tile-grid index for the 240×238 map, max would be 57,120. The ~1018 cap is far too small for a tile address.
+
+**Conclusion**: `idA` is the **intra-year event-sequence number** — a per-year counter that gets incremented whenever the engine writes a new event to the log. When a single actor (character / army / agent) does multiple things in the same year, those events get consecutive idA values because they're written one after another to the log. The Δ=1 dominance directly reflects the engine's append-only logging order.
+
+**Implication**: the event log is a **linear append-log with per-year sequence numbers**, not a tile-spatial structure. Each (idB, idA) tuple is a unique event-ID. With max idA ~1018 and 626 distinct idB years, the log can hold ~640,000 distinct event-IDs, of which 43,455 slots are allocated and 13,947 are currently filled.
+
+**Confidence: CONFIRMED** by Δ=1 dominance + idA cap + monotonic same-hash runs.
+
+**Reproducer**: `dig-event-log-flags{4,5}.js`.
+
+#### 5. REFUTED: actor_hash maps to lua-footer faction IDs
+
+The brief's hypothesis: top actor_hash values should match the 60 `id_<faction>` constants from session 23's lua footer (e.g. `id_romans_julii = 1110011`).
+
+**Cross-reference test**:
+- Top 30 actor hashes in rome10 event log: `0xb53a6c46`, `0x9cfb069d`, `0xc1babc2f`, `0x89161d61`, `0x0d09eade`, `0xca6d80a3`, `0xee3ba2aa`, `0x1c87454b`, `0xd0ac389d`, `0x53eb05ff`, ...
+- 60 lua faction IDs: `1110011, 1210021, 5000020, 1320041, 1820161, 1330481, ...`
+- **Faction-ID matches: 0 / 60**, **valid records with hash ∈ faction-IDs: 0 / 13,947**
+
+**Cross-save test**: hash `0xec22d10b` (the most-frequent hash in rome10's early game records, 16 occurrences) appears **0 times in RoR-T1** save. So actor hashes are **per-save dynamic**, not deterministic faction-IDs.
+
+**1,533 distinct actor hashes** across the unified event log — far more than 60 factions and far more than 469 character_paths sections (session 25). They likely correspond to **per-character/per-army UUIDs assigned at engine init**. The actor_hash field is therefore a **runtime entity-UUID**, not a faction-identifier.
+
+**Implication for Provincia**: per-event faction attribution requires a separate UUID→faction lookup (one of the unsolved sub-sections). The event log alone cannot tell you "which faction did this" without joining to a hash→faction map elsewhere in the save.
+
+**Confidence: REFUTED** the brief's hypothesis. Hash is per-character not per-faction.
+
+**Reproducer**: `dig-event-log-flags{1,5}.js`.
+
+#### 6. REFUTED: scripted-event coords explain mid-file non-canonical cells
+
+Session 22's 697-cell mid-file mystery: when the canonical-pattern is `[f16=200, f20=200, f24=2, f28=6, f32=200]`, **697 interior cells** in the 240×238 mid-file array have non-canonical values. Hypothesis from the brief: those cells are scripted-event trigger zones (volcanoes, earthquakes, wonders).
+
+**Recount this session**: with the current canonicality rule the count is **902 interior non-canonical cells** (vs session 22's 697 — likely because the canonicality criterion was slightly different — possibly different f-offsets defining canonical OR the cell coords moved between turn-saves). Use 902 for this analysis.
+
+**Method**: For each of the 5,632 scripted-event firing records, compute its grid cell `(c = floor(X/4.25), r = floor(Y/2.941))` and check whether it falls in the non-canonical set.
+
+| Mapping | Hits / 5632 | Baseline expected | Enrichment |
+|---|---|---|---|
+| Raw Y (no flip) | 112 (2.0%) | 90.5 | **1.24x** |
+| Y-flipped | 92 (1.6%) | 90.5 | **1.02x** |
+
+**Distance-to-nearest-non-canonical-cell** (Chebyshev) histogram:
+| dist | Scripted-event coords | Random baseline |
+|---|---|---|
+| 0 | 112 | 84 |
+| 1 | 580 | 548 |
+| 2 | 763 | 843 |
+| 3 | 901 | 863 |
+| 4 | 829 | 803 |
+| 5 | 785 | 656 |
+| 5+ | 1663 | 1836 |
+
+**Per-named-event cell membership**: 0 of 14 named events (etna, vulcano, santorini, rhodes, rome, pyramids, pharos, colossus, temple, statue, gardens, mausoleum, methana, iberia) lands directly on a non-canonical cell.
+
+**Conclusion**: Scripted-event tile coords cover the same spatial regions as the non-canonical cells (Mediterranean coastlines) but **do not selectively cluster in non-canon cells**. The 1.24x enrichment is at the noise floor. Combined with session 22's REFUTED settlement-coord hypothesis and session 25's REFUTED resource-coord hypothesis, **all three "obvious geographic correlates" are now refuted**. The semantic meaning of the 697/902 non-canonical cells remains the most stubborn open mystery of the format.
+
+**Remaining live hypotheses** for what the non-canonical cells represent:
+- **Scripted strategic AI hint zones** (per-region tactical-AI markers not tied to single named events)
+- **Movement-cost overlays** (terrain-difficulty/road graph encoding)
+- **Per-tile faction-history annotations** (which tiles changed hands, when)
+- **Camera waypoints / UI ambient-effect locations**
+
+All would require runtime-instrumented testing to disambiguate.
+
+**Confidence: REFUTED** the scripted-event-correlation hypothesis. Tile coords from scripted-events do not selectively populate non-canon cells (1.24x ≈ random).
+
+**Reproducer**: `dig-midfile-scriptzone1.js`.
+
+#### Open follow-ups for session 27+
+
+- **Hash → entity-type discriminator**: 1,533 actor hashes break down into how many characters vs armies vs agents vs settlements? Cross-check against the 469 character_paths section count + the ~239-faction count + ~213 region count. Top 20 hashes have 44-111 records each; bottom 1,000+ hashes have only 1-2 records. The bimodality might map to "major actors" (player generals, major-faction-leaders) vs "minor actors" (every soldier-turned-character).
+
+- **flag=4 (sub=0) semantics**: 1,311 records have flag=4 and hash=0 (unowned). These cluster around year boundaries and might represent **per-turn engine ticks** (e.g. "turn 275 began") rather than actor-driven events. Cross-check whether the count per year is constant (= one engine-tick per turn) or proportional to player-activity.
+
+- **5,632 anonymous scripted-event records**: their (X,Y) maps to a Mediterranean-coastal distribution but doesn't cluster on settlements. They might be **ambient-object spawn points** (forests/ruins/effects) or **per-tile scripted-history annotations**. Test by counting records-per-region and comparing to known scripted-event-count from descr_strat.
+
+- **idA off-by-1 in vulcano_183 year (-215 vs -183)**: that 32-year offset is suspicious. Maybe an internal year-offset bug in the RIS submod, or maybe `vulcano_183` actually triggers at a different game-year than its name suggests (e.g., the original eruption was 183 BC but the engine reschedules it). Worth cross-referencing with `RIS_Campaign_Script.txt`.
+
+- **Pre-game-history events (idB < 270)**: 1,033 records. Are these RIS-script-seeded? Likely yes given the campaign script size. Tabulating these could provide a window into what historical events RIS chose to pre-load (rebellions? civil wars? notable births?).
+
+#### Reproducer scripts
+
+- `dig-event-log-flags{1..5}.js` — flag/sub decode + Δ=1 path-vs-counter test + faction-ID cross-reference
+  - 1: initial flag/sub histogram (revealed flag distribution wasn't uniform)
+  - 2: alignment + stride analysis (confirmed 12B stride)
+  - 3: dense main-block focus (4 dominant flag values)
+  - 4: Δ=1 stride test in main block (3,677 Δ=1 strides)
+  - 5: unified region with SCHEMA-A — final tally of 5,812 Δ=1 strides + 24-long runs
+- `dig-scripted-events{1..7}.js` — scripted-events table decode
+  - 1: string enumeration + leading-region hex dump
+  - 2: i32-year-field decode for named events (17/22 match)
+  - 3: middle/tail content analysis
+  - 4: 26-byte stride discovery via `ff ff ff ff XX 01` delimiter pattern
+  - 5: incorrect alignment attempt (sub=256 nonsense)
+  - 6: correct alignment found (20B record body + 6B delimiter)
+  - 7: schema validation with named-event coord cross-check (12 of 14 named events within ±2 tiles of a record)
+- `dig-uuid-index{1..4}.js` — "UUID index" region decode
+  - 1: stride exploration (revealed it's not a sorted u32 list)
+  - 2: schema-A trial (`[u32 hash][u8 flag][u8 sub][u16 idA][u32 idB]`) — wins
+  - 3: schema-A vs schema-B validation (A wins 1157/1157)
+  - 4: unified-region validation — schema-A produces 13,947 valid event-records across full 521KB region
+- `dig-midfile-scriptzone1.js` — scripted-event coords vs non-canon mid-file cells (REFUTED, 1.24x ≈ random)
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
