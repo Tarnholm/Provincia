@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.308",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Dedupe by BIRTH name (originalLastName), not display name. After conquering Uria + gaining the RomanConquerorMessapians cognomen + Wallbreaker nickname, Aulus Gabinius's displayed name became `Aulus Messapivs the Wallbreaker`. The 0.9.306/307 dedupe matched display names, so `Aulus Gabinius` (bundled descr_strat) ≠ `Aulus Messapivs the Wallbreaker` (current save) → both got rendered as separate markers. Now the renderer keys saveLiveArmies entries under their birth lastName (preserved by main.js as `originalLastName` exactly for this case), so the bundled descr_strat synth correctly dedupes against the current save record even when the display name changed via traits." },
+    ],
+  },
+  {
     version: "0.9.307",
     date: "2026-05-11",
     items: [

@@ -2026,13 +2026,32 @@ function App() {
       // as a synth because no save army was at the descr_strat tile.
       const armyByPos = new Map();
       const armyByCharFaction = new Map();
+      // Dedupe key uses the BIRTH lastName so chars with trait-driven
+      // cognomen overrides (Aulus Gabinius → Aulus Messapivs the
+      // Wallbreaker after gaining RomanConquerorMessapians) still match
+      // the bundled descr_strat record's plain birth name. main.js's
+      // liveArmies build preserves the birth value as `originalLastName`
+      // exactly for this matching purpose.
+      const makeNameKey = (firstName, lastName, faction) => {
+        return (firstName || "").toLowerCase() + " " + ((lastName || "").replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim().toLowerCase()) + "|" + (faction || "").toLowerCase();
+      };
       for (const a of result) {
         if (typeof a.x === "number" && typeof a.y === "number") {
           armyByPos.set(`${a.x},${a.y}`, a);
         }
-        if (a.character && a.faction) {
-          const nameKey = a.character.toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim() + "|" + a.faction.toLowerCase();
-          armyByCharFaction.set(nameKey, a);
+        if (a.faction) {
+          // Index BOTH birth and current display names so any of them
+          // catches the synth dedupe below.
+          const birthLast = a.originalLastName || a.lastName;
+          if (a.firstName) {
+            armyByCharFaction.set(makeNameKey(a.firstName, birthLast, a.faction), a);
+            if (a.lastName && a.lastName !== birthLast) {
+              armyByCharFaction.set(makeNameKey(a.firstName, a.lastName, a.faction), a);
+            }
+          } else if (a.character) {
+            const parts = String(a.character).split(/\s+/);
+            armyByCharFaction.set(makeNameKey(parts[0], parts.slice(1).join(" "), a.faction), a);
+          }
         }
       }
       // Once a save has been parsed, save armies are authoritative for
@@ -2052,16 +2071,12 @@ function App() {
           }
           continue;
         }
-        // Name dedupe: if this character is already in saveLiveArmies at
-        // ANY position, skip the synth — they've moved, and the save's
-        // position is authoritative. Bundled armiesData stores the name
-        // under `name`, not `character` (the bundle script writes both
-        // forms inconsistently); accept either so the dedupe actually
-        // fires for descr_strat starting armies.
+        // Name dedupe via birth-name key (see makeNameKey above).
         const dName = d.character || d.name;
         if (dName && d.faction) {
-          const nameKey = dName.toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim() + "|" + d.faction.toLowerCase();
-          if (armyByCharFaction.has(nameKey)) continue;
+          const parts = String(dName).split(/\s+/);
+          const dKey = makeNameKey(parts[0], parts.slice(1).join(" "), d.faction);
+          if (armyByCharFaction.has(dKey)) continue;
         }
         if (liveMovesActive) continue;
         let armyClass = d.armyClass || "field";
