@@ -746,6 +746,12 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     charactersByRegion[c.region].push({
       firstName: c.firstName,
       lastName: c.lastName,
+      // Birth lastName (pre-epithet) — same purpose as in liveArmies. The
+      // renderer uses this to match a character by birth name when an
+      // epithet trait has renamed lastName. Without it the move-region
+      // filter / character-incoming pass can fail when the displayed name
+      // changes mid-campaign.
+      originalLastName: c.originalLastName || null,
       age: c.age,
       gender: c.gender,
       isLeader: c.isLeader,

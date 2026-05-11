@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.310",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Two follow-ups after the duplicate-marker fix. (1) The 'bodyguard currently at Taras' message in the garrison commander block was a lie: it was reading the stale unit-record region tag, which never updates on move. Now reads from liveUnitsByRegion (which re-buckets armies on settlement tiles per 0.9.305), so a governor whose bodyguard moved with him reports the correct region and the misleading sub-message disappears. (2) The Characters row now correctly lists characters who moved INTO this region. The renderer's inbound-character pass now also matches by birth name (originalLastName), propagated through to saveCharactersByRegion. So Aulus Messapivs the Wallbreaker (renamed from Aulus Gabinius via traits) shows up in Uria's Characters list after he conquered it." },
+    ],
+  },
+  {
     version: "0.9.309",
     date: "2026-05-11",
     items: [

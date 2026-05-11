@@ -9617,8 +9617,20 @@ function App() {
                             // the unit is physically parked.
                             let bodyguard = null;
                             let bodyguardRegion = null;
-                            if (g.uuid && saveUnitsByRegion) {
-                              for (const [reg, arr] of Object.entries(saveUnitsByRegion)) {
+                            // Prefer liveUnitsByRegion — the unit-record's
+                            // `region` field is stale after a move (RTW
+                            // doesn't update it when a general moves), so
+                            // the raw saveUnitsByRegion would always say
+                            // the bodyguard is at the pre-move tile.
+                            // liveUnitsByRegion re-buckets armies on a
+                            // settlement tile to the resolved region
+                            // (0.9.305+), so for a governor that's
+                            // actually at his city, the bodyguard lands
+                            // there too — and bodyguardRegion ends up
+                            // matching r.region (no misleading message).
+                            const unitSource = liveUnitsByRegion || saveUnitsByRegion;
+                            if (g.uuid && unitSource) {
+                              for (const [reg, arr] of Object.entries(unitSource)) {
                                 for (const u of arr) {
                                   if (u.commanderUuid === g.uuid) {
                                     bodyguard = u;
@@ -10801,8 +10813,13 @@ function App() {
                           for (const c of arr) {
                             if (!c.firstName) continue;
                             const fullName = (c.firstName + " " + (c.lastName || "").replace(/_/g, " ")).toLowerCase().trim();
+                            const birthName = c.originalLastName
+                              ? (c.firstName + " " + c.originalLastName.replace(/_/g, " ")).toLowerCase().trim()
+                              : null;
                             if (alreadyIn.has(fullName)) continue;
-                            if (liveRegionByCharName.get(fullName) !== r.region) continue;
+                            const liveRegion = liveRegionByCharName.get(fullName)
+                              || (birthName ? liveRegionByCharName.get(birthName) : null);
+                            if (liveRegion !== r.region) continue;
                             // Dead/wiped filter — same as above.
                             if (c.secondaryUuid && deadUuids.has(c.secondaryUuid.toString(16).padStart(8, "0"))) continue;
                             // Enrich with children resolution (same shape).
