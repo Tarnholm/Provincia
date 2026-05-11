@@ -5620,6 +5620,328 @@ rather than persisting an aggregate.
 
 ---
 
+### Findings 2026-05-11 (background session 22 — terrain enum confirmation + RIS event counter + field army tail)
+
+Goal: (1) Confirm session 21's terrain enum hypothesis for the mid-file
+240×238 array (f28=54 sea, f28=55 mountain, f20=600/f32=600 elevated) by
+cross-referencing actual `map_heights.tga`/`map_regions.tga` pixels. (2)
+Find the RIS imperial equivalent of the Alex `+(92+4N+20)` per-faction
+event counter. (3) Decode the 200KB field-army-units block in the tail at
+`0x1f10c72..0x1f42cb6` — does it follow the standard unit schema
+(+12=soldiers, +16=armour, +17=weapon, +19=morale, +20=XP)?
+
+Outcome: **Three new findings.** (a) **Session 21's mid-file terrain
+hypothesis is REFUTED.** The non-canonical cells with `f20=600`/`f32=600`
+that session 21 attributed to "elevated terrain" are actually **sentinel
+data on the anti-diagonal `c + r = 237`** — 220 of 238 cells on that
+diagonal carry the marker, a clear structural artifact not terrain. After
+filtering out the anti-diagonal, the remaining 697 off-diagonal
+non-canonical cells show **no significant correlation** with sea-pixel
+fraction or mean-elevation: `f28=54` cells have sea% = 9.6% vs canonical
+7.4% (Δ=2.2 percentage points, not "sea/coast"), and `f28=55` cells have
+mean height 10.0 vs canonical 7.43 (factor 1.34x, not "mountain"). The
+mid-file array is structurally NOT a per-cell terrain grid. (b) **STRONG:
+RIS imperial per-faction turn counter at `+(52+4N+188)`** — all 23 major
+factions tick `0 → 4` between Republic-of-Rome-T1 and rome10 (T5), exactly
+matching 4 turns of game time. This is the **per-faction "turns since
+campaign start"** counter, the RIS analogue (different relative offset,
++188 vs +20) of Alex's session-21 event counter. The Alex pattern at
++(92+4N+20) is faction-specific monotone events (battles?), while the RIS
++(52+4N+188) is per-turn ticking. (c) **CONFIRMED: tail field-army records
+fully decoded — 122 records, 14,636 total soldiers, schema differs from
+settlement-embedded units.** Each record has a clean
+`[u16 nameLen][ASCII unit][0xee + 8B hash + 8B uuid + 0x0001012c constant][u16 settLen][UTF-16LE settlement][0xffffffff terminator][44-byte header][N × 9-byte soldier records][0xff…0xff padding]`
+structure. Soldier counts match descr_unit.txt (24=bodyguard, 200=peltasts,
+240=hoplites). **The brief's hypothesis that +12=soldiers, +16=armour,
++17=weapon, +19=morale, +20=XP applies here is REFUTED** — +12 and +16
+are both soldier_count (current and max), +20 is a constant `0x40000040`
+(= float 2.0, formation/spacing marker), and armour/weapon/morale/XP are
+not at those byte offsets; they appear to be packed into the per-soldier
+3-byte status records.
+
+Save corpus this session: `save_rome10.sav` (RIS imperial T5), the
+`save_Autosave   Republic of Rome   Turn 1.sav` (RIS imperial T1) — both
+share campaign_name `"imperial_campaign"` per offset 0x3a. Map ground-truth:
+`C:/RIS/RIS/data/world/maps/base/map_heights.tga` (2041×1401, 24bpp BGR;
+sea sentinel = RGB(0,0,253)), `map_regions.tga` (1020×700, 24bpp BGR).
+
+#### 1. CONFIRMED RETRACTION: session 21's terrain enum hypothesis is wrong; non-canonical mid-file cells include a structural sentinel anti-diagonal
+
+The 240×238 mid-file record array (1,389 non-canonical cells per session
+21's count) was hypothesized to encode per-cell terrain (f28=54 sea,
+f28=55 mountain, f20=600 elevated). Cross-validation with
+`map_heights.tga` and `map_regions.tga` at each cell's pixel footprint
+**fails to support that interpretation**.
+
+**Critical structural finding**: 220 of 238 (92%) cells on the
+anti-diagonal `c + r = 237` carry BOTH `f20=600` AND `f32=600` — i.e.,
+75% of all `f20=600` cells (192/256) and 29% of all `f32=600` cells
+(139/479) lie on this single 1-cell-wide diagonal stripe. Diff-of-indices
+analysis confirms it: 192/256 transitions between consecutive `f20=600`
+cells have `Δidx = W - 1 = 239` (perfect anti-diagonal step). The
+diagonal occupies the row-1-above-bottom of the grid (the right-most
+column 239 and bottom row 237 were already known to be edge sentinels
+per session 21 / session 18).
+
+**With sentinel anti-diagonal filtered out**, the remaining 697
+non-canonical cells show **no significant terrain correlation**:
+
+| Field | Value | n (off-diag) | mean sea% | mean elevation | hypothesis result |
+|---|---|---|---|---|---|
+| canonical (`200_200_2_6_200`) | — | 55,709 | 7.4% | 7.43 | baseline |
+| `f28 = 54` | "sea/coast"? | 194 | **9.6%** | 8.47 | **REFUTED** (Δ +2.2 pp, 19/194 fully-sea) |
+| `f28 = 55` | "mountain"? | 16 | 0.0% | **10.0** | **REFUTED** (only 1.34x baseline, not mountain) |
+| `f20 = 600` | "elevated"? | 36 | 9.0% | 9.84 | **REFUTED** (1.32x baseline) |
+| `f32 = 600` | "elevated"? | 259 | 8.3% | 8.59 | **REFUTED** (1.16x baseline) |
+
+(Same correlation table as session 21 but **with the anti-diagonal cells
+removed from the denominator** — the session-21 result that gave 19.16
+mean elevation for variant `200_600_2_6_600` is now revealed to be
+**80% of those cells were anti-diagonal sentinels, not terrain markers**;
+the 33 truly-interior cells have mean elevation 10.48 — only 1.41x
+baseline.)
+
+**Interpretation**: the 240×238 mid-file array is structurally NOT a
+per-cell terrain grid. The non-canonical cells are dominated by:
+- A hard-coded **sentinel anti-diagonal** `c + r = 237` (single diagonal line through the grid)
+- Edge sentinels at column 239 and row 237 (session 21 already filtered these)
+- ~697 scattered interior cells whose values do not correlate with any
+  terrain feature in `map_heights.tga` or `map_regions.tga`
+
+What the array IS remains an open question. Working hypothesis: it might
+be a **strategic/AI per-cell hint table** (e.g., AI valuation of
+defensive positions, choke-points, reserved zones), or simply a sparse
+**index/lookup structure** with the anti-diagonal as a hardcoded
+terminator/boundary. Without runtime instrumentation or a controlled mod
+test that flips one specific cell, the semantic meaning is unrecoverable
+from static analysis alone.
+
+**Confidence**: CONFIRMED that session 21's "terrain enum" interpretation
+is wrong. HYPOTHESIS-grade for what the array actually represents.
+
+**Reproducer**: `dig-terrain-confirm{1..6}.js` — TGA loading with
+sea-sentinel detection (#1), spatial visualization with coastline overlay
+(#2), diagonal idx-difference histogram (#3), anti-diagonal sentinel
+enumeration (#4), anti-diagonal filter (#5), final off-diagonal
+correlation table (#6).
+
+#### 2. STRONG: RIS imperial per-faction turn counter at `+(52 + 4N + 188)` (different relative offset from Alex's event counter at +(92+4N+20))
+
+The Alex campaign's per-faction stats block at `+(92 + 4N + 16)` (5-faction
+campaign, schema tag `21`, monotone event counter A at +20) does **not**
+appear at the same offset in RIS imperial. Probing `save_rome10.sav`
+(RIS imperial T5) and `save_Autosave   Republic of Rome   Turn 1.sav`
+(RIS imperial T1) — both 23-major-faction saves with shared
+campaign_name `"imperial_campaign"` — yields a different layout, with
+the analogous "turn-tied counter" living at `+(52 + 4N + 188)`.
+
+**Decisive observation**: at `+52+4N+188`, **all 23 major factions tick
+in lockstep `0 → 4`** between T1 and T5 saves:
+
+| Faction # | N (region count) | T1 (+188) | T5 (+188) | Δ |
+|---|---|---|---|---|
+| 0 (Romans Julii, player) | 35 | 0 | 4 | +4 |
+| 1..22 (all AI factions) | varies | 0 | 4 | +4 |
+
+This is **per-faction "turns since campaign start" / "campaign turn
+counter"**, ticking at exactly +1 per turn. Confirms 4 turns elapsed
+between the two saves (T1 → T5 = 4 turn-rotations).
+
+**Adjacent fields in the RIS per-faction post-region-list block** (offsets
+relative to `+52+4N`):
+
+| Δ from `+52+4N` | Width | Value | Meaning |
+|---|---|---|---|
+| `+0` | `u32` | `30` (constant across factions) | block schema tag |
+| `+4..+28` | 28 B | zeros | padding |
+| `+32` | `u32` | `1677721600 = 0x64000000` or `3355443200 = 0xC8000000` (per-faction) | f32 marker (0x64=100, 0xC8=200) |
+| `+40` | `u32` | start-of-turn treasury (matches `+0` of record) | duplicate |
+| `+44` | `u32` | `30` (constant) | secondary schema tag |
+| `+48..+72` | zeros | — | padding |
+| `+76` | `u32` | `50331648` or `4009754624` (per-faction) | block-end marker |
+| `+108..+136` | 28 B | per-faction RNG / state | varies |
+| `+140..+180` | 40 B | per-faction hash / RNG seeds | varies T1→T5 |
+| `+184` | `u32` | `7` (constant across factions) | schema tag |
+| **`+188`** | **`u32`** | **`0 → 4` across T1 → T5 (uniform across factions)** | **per-faction turn counter** |
+| `+192` | `u32` | `958660613` (constant per faction record across saves) | hash / GUID |
+| `+196` | `u32` | per-faction constant (1, 34, 84, 115, 12, 1, 2, 5, ...) | faction-id-derived metadata |
+| `+200` | `u32` | per-faction constant (1317, 765, 1206, 973, ...) | secondary metadata |
+| `+208` | `u32` | small int 0..4, varies T1→T5 | possible intra-turn event count |
+| `+212` | `u32` | `65793 = 0x10101` (constant) | padding/marker |
+| `+220` | `u32` | `239` (flag) or `0`/`2` | flag |
+| `+224` | `u32` | when `+220=239`: large counter 22M+ incrementing by ~7K-50K T1→T5; otherwise 0..4 | AI strategic score (only on flagged factions: 0, 5, 13, 17, 21) |
+
+**Cross-validation**: the `+188` ticks uniformly by +4 across **every
+single one** of the 23 factions, with no exceptions. This is the
+strongest signal of a turn counter. Compare to Alex's `+(92+4N+20)`
+counter which ticked 0→9 over 99 turns and varied faction-by-faction —
+the Alex counter is per-faction events, the RIS counter is the campaign
+turn number.
+
+**Implication for Provincia**: a "current campaign turn" can be read from
+any of the 23 major-faction records by `buf.readUInt32LE(rec.offset + 52
++ rec.N * 4 + 188)`. This is the same value across all factions, so any
+record works. Useful when an interface needs the current turn but the
+save file doesn't expose it via a section name.
+
+**Open**: the per-faction event counter (RIS analogue of Alex's A counter
+at +(92+4N+20)) was NOT pinned this session. The RIS records have a
+different schema header (`30` tag, not `21`), and the "+208" field is
+the closest small-int candidate but doesn't show monotone-cumulative
+behavior across just 2 saves (would need a per-turn corpus for RIS to
+confirm). The `+224` large counter on the 5 flagged factions
+(positional indices 0, 5, 13, 17, 21 — possibly major-power factions
+that have AI-strategic-tracking on) is a separate phenomenon, likely an
+AI score not a battle count.
+
+**Reproducer**: `dig-ris-counter{1..4}.js` — major-faction record
+discovery (#1), per-faction byte diff between T1 and T5 (#2), zoom on
++148/+172/+188/+208/+224 (#3), per-faction summary table (#4).
+
+#### 3. CONFIRMED: tail field-army units block fully decoded — 122 records, 14,636 soldiers, distinct schema from settlement units
+
+The ~200KB tail region at `0x1f10c72..0x1f42cb6` (session-14-documented
+bounds) contains **122 unit records** (session 14's "~144" was an
+approximation). Each record has a clean structure:
+
+```
+[u16 nameLen][ASCII unit name e.g. "thracian peltasts"]
+[1 B = 0xee marker]
+[8 B per-record hash/UUID prefix]                  ← changes per record
+[8 B per-record UUID]                              ← changes per record
+[4 B = 0x0001012c constant = 76,860 — likely a record-type tag = 76860]
+[4 B = 0x00000001 = 1]
+[u16 settLen][UTF-16LE settlement name]            ← regional/tribal origin
+[4 B = 0xffffffff terminator]
+[44 B "soldier-persistent header"]
+[N × 9 B per-soldier records]                      ← N = soldier_count
+[padding: 0xff bytes filling out to record end]
+```
+
+The 44-byte soldier-persistent header at offset `persistentStart`:
+
+| Δ | Width | Value | Meaning |
+|---|---|---|---|
+| `+0` | `u32` | `0xffffffff` | terminator/start marker |
+| `+4..+11` | 8 B | varies (looks like float32 or position data) | possibly tile position |
+| `+12` | `u32` | soldier count (current) | **CONFIRMED: matches descr_unit values** |
+| `+16` | `u32` | soldier count (max) | usually same as +12 |
+| `+20` | `u32` | `0x40000040` = float32 `2.0` (constant) | formation/spacing marker |
+| `+24..+43` | 20 B | zeros + scattered flags | padding/reserved |
+| `+44...` | N × 9 B | per-soldier records (state + packed stats) | individual soldier data |
+
+**Soldier counts validated against unit type** (per descr_unit.txt):
+
+| Unit type | n in tail | soldier counts observed |
+|---|---|---|
+| greek hoplites | 31 | 240 (all) |
+| greek general | 40 | 16, 20, 24, 28, 32, 36, 44, 48 (variable bodyguard) |
+| thracian peltasts | 5 | 200 (all) |
+| thracian royal bodyguards | 10 | 24, 28 |
+| caetrati swordsmen | 1 | 240 |
+| thracian slingers | 1 | 160 |
+| getic archers | 1 | 160 |
+| illyrian peltasts | 1 | 200 |
+| thynoi clubmen | 1 | 240 |
+| cappadocian slingers | 3 | 160 (all) |
+
+**Per-soldier 9-byte record structure** (from the dump of `thracian
+peltasts[0]`):
+```
++0  u8   state low byte (0/4/5/2 — possibly casualty flag or HP)
++1..+3  3 B varying values (packed stats: probably weapon/armour/morale/XP)
++4..+8  5 B zeros (padding/reserved)
+```
+
+**Validation**: total tail soldier count = 14,636 across 121 records with
+parsed soldier counts (avg 121 soldiers/unit). 62 distinct settlement
+names referenced — only 4 of these 62 also appear in the main settlement
+zone (per session 14's cross-check), so these are armies stationed in
+**non-faction-claimed regions** (likely rebel armies / spawn-script-created
+hordes / mercenary garrisons / tribal homelands without permanent
+settlement cards).
+
+**The brief's standard-unit-schema hypothesis is REFUTED for tail records**:
+
+| Field per brief | Brief's expected offset | Actual content at that offset |
+|---|---|---|
+| soldiers | `+12` | ✓ MATCHES (soldier count current) |
+| armour | `+16` | ✗ Actually soldier count max (= +12) |
+| weapon | `+17` | ✗ High byte of soldier count u32 (always 0) |
+| morale | `+19` | ✗ Soldier count high byte (always 0) |
+| XP | `+20` | ✗ Constant `0x40000040` = float 2.0 |
+
+The settlement-embedded unit records (per session 10/11) follow a
+DIFFERENT layout. The tail field-army records have a more compact schema
+where individual soldier stats are packed into the per-soldier 9-byte
+records (3 stat bytes each) rather than living at fixed offsets in the
+record header.
+
+**Implication for Provincia**: a tail-field-army parser can extract:
+- Per-record: unit name (ASCII), home settlement (UTF-16LE), soldier
+  count, max soldier count, soldier-level state array
+- 122 records × ~14,636 soldiers = a complete rebel/horde army roster
+  separate from the main faction-owned army inventory
+
+A surface-level "Show rebel armies" panel can be built on this. Decoding
+the 9-byte per-soldier stats packing would require either (a) a
+controlled save where one unit fights a battle and per-soldier HP/XP
+changes are diffed across save pairs, or (b) cross-reference to the
+RTW per-soldier-persistent schema definition (likely documented in
+TWC threads on M2TW which shares the same schema family).
+
+**Reproducer**: `dig-field-army-tail{1..4}.js` — unit-name record scan
+(#1), per-record settlement+soldier decode (#2), bodyguard vs unit-record
+size analysis (#3), per-soldier stride confirmation (#4).
+
+#### Open follow-ups for session 23+
+
+- **Mid-file array decode**: with the anti-diagonal sentinel identified
+  and terrain refuted, the 697 truly-interior non-canonical cells remain
+  unexplained. Worth probing for: (a) correlation with the descr_strat
+  starting region placement, (b) correlation with mercenary pool
+  locations, (c) correlation with the 6 spawn_scripts rebellion seed
+  points from session 14.
+- **RIS event counter** (analogue of Alex's A counter at +(92+4N+20)):
+  this session pinned the turn counter at +(52+4N+188) but NOT the event
+  counter. Need a per-turn RIS imperial corpus (T1, T2, T3, ... like the
+  Alex Macedon T1-T99 sequence) to find a monotone-cumulative u32 inside
+  each faction record's per-turn-stats block.
+- **Per-soldier 3-byte stat packing**: decode bytes +1..+3 of each
+  9-byte soldier record. The brief's hypothesis was XP/armour/weapon/morale
+  at +16/+17/+19/+20 of a unit, but in tail records these live INSIDE
+  each soldier sub-record. Need a save-pair where one tail field army
+  fights a battle (gains XP / takes armour upgrade) — those bytes
+  should change.
+- **Field-army UUID/hash semantics**: the 8-byte hash + 8-byte UUID
+  prefix in the pre-settlement zone (offsets +0..+16 of unit record post
+  ASCII name) is per-record-unique. These likely connect tail records
+  to faction-records or character-records elsewhere in the file. A
+  cross-search for these UUIDs in the body section could reveal which
+  faction "owns" each tail field army.
+
+#### Reproducer scripts
+
+- `dig-terrain-confirm{1..6}.js` — mid-file terrain hypothesis REFUTATION
+  - 1: TGA loader + per-cell heights/sea/region sampling correlation
+  - 2: spatial overlay with coastline rendering
+  - 3: idx-difference histogram for `f32==600` (139/479 diff=239)
+  - 4: per-row dump of `f20==600` cells (220/238 on c+r=237 diagonal)
+  - 5: anti-diagonal sentinel filter + variant histogram (697 truly-interior non-canon)
+  - 6: re-running terrain correlation with anti-diagonal removed — REFUTES session 21
+- `dig-ris-counter{1..4}.js` — RIS imperial per-faction stats block
+  - 1: major-faction record discovery on rome10 + romeT1 (both have 23 majors)
+  - 2: per-faction T1-vs-T5 u32 diff scan inside the post-region-list block
+  - 3: zoom on +148/+172/+188/+208/+224 fields with per-faction tables
+  - 4: final summary — +188 uniformly ticks 0→4 across all 23 factions
+- `dig-field-army-tail{1..4}.js` — tail field-army full decode
+  - 1: unit-name record walk + settlement+payload parse (122 records)
+  - 2: per-unit-type soldier-count consistency check + 64B payload dump
+  - 3: bodyguard vs unit-record size distribution + ff-marker stride
+  - 4: per-soldier 9-byte stride confirmation (9.005 B/soldier exact for peltasts)
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
