@@ -9217,12 +9217,12 @@ function App() {
                       garrisonCommander={(() => {
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
-                        // Non-live mode: pull the starting garrison
-                        // commander from the bundled descr_strat data
-                        // (first garrison character, his faction).
-                        // Merges in runtime descr_strat traits by name+
-                        // faction when available so mod edits show up.
-                        if (!liveLogActive) {
+                        // Non-live mode (or live mode while save is still
+                        // parsing): pull the starting garrison commander
+                        // from the bundled descr_strat data so the panel
+                        // never looks broken in the load gap.
+                        const liveGovReady = saveGovernorByCity && Object.keys(saveGovernorByCity).length > 0;
+                        if (!liveLogActive || !liveGovReady) {
                           const reg = startingArmiesByRegion?.[r.region];
                           if (!reg) return null;
                           const gar = (reg.garrison || []).find((g) => {
@@ -9328,7 +9328,12 @@ function App() {
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
                         let normalised = null;
-                        if (liveLogActive) {
+                        // Live mode is on but live data hasn't loaded yet
+                        // (save parse takes a few seconds). Fall back to
+                        // the descr_strat starting garrison so the panel
+                        // never looks broken in the gap.
+                        const liveDataReady = saveUnitsByRegion && Object.keys(saveUnitsByRegion).length > 0;
+                        if (liveLogActive && liveDataReady) {
                           // liveUnitsByRegion re-buckets save units by each
                           // commander's CURRENT region (from log-position
                           // events), so an army that moved mid-turn shows
@@ -9891,7 +9896,11 @@ function App() {
                         // army as garrison (on settlement tile), player's
                         // own field army, or foreign. Falls back to EDU-
                         // ownership heuristic when coords aren't available.
-                        if (liveLogActive) {
+                        // If live mode is on but live data hasn't loaded
+                        // yet, fall through to the non-live path so the
+                        // panel never looks empty during save-parse.
+                        const liveDataReady = saveUnitsByRegion && Object.keys(saveUnitsByRegion).length > 0;
+                        if (liveLogActive && liveDataReady) {
                           const r = lockedRegionInfo || regionInfo;
                           if (!r) return null;
                           // Same liveUnitsByRegion path as the Garrison
@@ -10188,7 +10197,8 @@ function App() {
                         //      contains traits only if the dev rebundled
                         //      with the trait-capturing version of the
                         //      bundle script.
-                        if (!liveLogActive || !saveCharactersByRegion) {
+                        const liveCharsReady = saveCharactersByRegion && Object.keys(saveCharactersByRegion).length > 0;
+                        if (!liveLogActive || !liveCharsReady) {
                           // Use the bundled per-region structure as the
                           // index of which characters live where (it has
                           // correct region bucketing because the bundle

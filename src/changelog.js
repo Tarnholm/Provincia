@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.289",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Region panel no longer goes empty during the save-parse gap right after clicking Live. Previously: user clicks Live → liveLogActive flips to true → the live data paths (garrison, fieldArmies, characters, garrisonCommander) gate on liveLogActive and bypass the non-live fallbacks → save takes 2-3s to parse → in the gap, all four panels return null. Now each of those props checks 'is the live data actually loaded yet?' separately, and falls back to descr_strat starting data when not. Once the save lands, live data takes over automatically. User reported this as 'units in Taras disappear after going live'." },
+    ],
+  },
+  {
     version: "0.9.288",
     date: "2026-05-11",
     items: [
