@@ -4818,6 +4818,376 @@ roman-road-passing-through-here).
 
 ---
 
+### Findings 2026-05-11 (background session 20 — trade goods + roads + battle log)
+
+Goal: (1) Trade goods / per-settlement resource production. (2) Battle log /
+"Famous Battles" history. (3) Tile-level road network (beyond the
+per-settlement `hinterland_roads` presence flag found in session 8).
+
+Outcome: **Two CONFIRMED findings + one major NEGATIVE.** (a) **Road
+infrastructure LEVEL** decoded at `hinterland_roads` payload+4 = u8 in
+`{0=dirt, 1=paved, 2=highways}` (CONFIRMED, cross-validated across RIS
+imperial rome10/RoR-T1 + Alexander Macedon T97/T98/T99 + Alexander T1
+saveturn1start). (b) **56-name settlement sub-record inventory** for the
+RIS imperial settlement zone, including 24 resource-related production
+chains (CONFIRMED). (c) **Trade-good placement data is NOT stored as
+strings, NOT as a per-settlement bitmask, NOT as a positional (X,Y) cache
+in the mid-file 240×238 grid** (RETRACTED candidates from earlier sessions
+not landing; session 18's NEGATIVE result CONFIRMED on resources).
+Battle log: **NOT pinned** (HST has FAMOUS_BATTLE_DETAIL v=4 and
+FAMOUS_BATTLE_SITE_MANAGER v=1 schemas; only header-region HST matches
+in body — no schema-named body instances; player-record trailing data
+scans at strides 16..64 yielded ≤80 candidate records out of 11,557, far
+below the noise threshold for a battle history list).
+
+Save corpus this session: `save_rome10.sav` (RIS imperial T5),
+`save_Autosave Republic of Rome Turn 1.sav` (RIS imperial T1), Alexander
+Macedon T97/T98E/T99S, `save_saveturn1start.sav` / `save_saveturn2start.sav`,
+`save_damagedturn1.sav` / `save_damagedturn2.sav`,
+`save_Noarmiesmovedturn1.sav`. Ground truth: `public/resources_large.json`
+(1305 regions × 5,633 placed resources, with per-resource type + (X,Y) +
+amount); `C:/RIS/RIS/data/world/maps/base/descr_regions.txt` for region →
+city name mapping (e.g. "Roma" → "Rome"); `C:/RIS/RIS/data/descr_sm_resources.txt`
+for the 792-entry master resource ID list and the canonical 44-entry
+short list.
+
+#### 1. CONFIRMED: road infrastructure LEVEL at `hinterland_roads` payload+4 (u8 = 0/1/2)
+
+Anchor: the dossier's session-8 finding identified that 539 settlements in
+rome10 have a `hinterland_roads` sub-record (the "has roads" flag). This
+session refines that to a **3-level enum** by reading the byte at
+**relative offset +4 from the sub-record's name+NUL** (i.e. payload+4 in
+the standard `[u32 selfPtr][u16 nameLen+1][asciiz "hinterland_roads"][u32
+runtime_hash][u8 LEVEL][...]` layout — session 10's "level byte at +4 after
+hash" rule applies).
+
+**Decoded levels** (cross-validated across 7 saves on 3 different campaigns):
+
+| Save | total roads | level 0 (dirt) | level 1 (paved) | level 2 (highways) |
+|---|---|---|---|---|
+| rome10 (RIS imperial T5) | 539 | 491 | 46 | 2 |
+| RoR T1 start (RIS imperial T1) | 539 | 491 | 46 | 2 |
+| Macedon T97 (Alexander, turn 97) | 27 | 16 | 11 | 0 |
+| Macedon T98 End | 27 | 16 | 11 | 0 |
+| Macedon T99 Start | 27 | 16 | 11 | 0 |
+| Alexander saveturn1start | 25 | 25 | 0 | 0 |
+| Alexander saveturn2start | 25 | 25 | 0 | 0 |
+
+**Validation by city name**: Level-1 (paved) settlements in rome10 include
+**Carthage, Pella, Chalkis, Alexandria, Aleria, Tingi, Baria, Nagidos,
+Kaunos** — all major capitals or commercially significant cities, which
+matches descr_strat's higher-tier road buildings in those locations.
+Level-2 (highways) hits only `Han_Settlement` and `Agrianon_Teichos` in
+rome10 — both end-of-the-line trade hubs in eastern Asia. In Macedon T97
+(late Alexander campaign) level-1 hits include **Pella, Babylon,
+Halicarnassus, Tyre, Issus, Epidamnus** — Alexander's empire capitals as
+expected.
+
+**Stability across turns**: rome10 vs RoR-T1 (5 turns apart in the same
+campaign) is byte-identical for all 539 road records — no construction
+between turns. Macedon T97/T98E/T99S all share the same 27-record state,
+showing that turn-end processing doesn't perturb the level field on its
+own.
+
+**Parser strategy for Provincia**: scan each settlement's record from the
+settlement-name marker forward up to ~3500 bytes for the cstring
+`hinterland_roads\0`. If absent → no roads. If present → read the u8 at
+`namePos + 17 + 4` = the level (0, 1, or 2). Maps directly onto the in-game
+"dirt roads / paved roads / highways" tier display.
+
+The dossier's session-8 hypothesis that "trade routes are NOT stored as
+(settlement_id_a, settlement_id_b) pairs in the save body" remains true.
+The save persists only the **per-settlement road-tier infrastructure**;
+the engine computes tile-to-tile edges and trade-route graphs from this
++ ownership + diplomacy + descr_strat road-tile descriptors at load time.
+
+**Reproducer**: `node scripts/save-cracker/dig-roads7.js` decodes road
+levels for any save (just edits the path); `dig-roads8.js` runs the
+7-save cross-validation table above.
+
+#### 2. CONFIRMED: 56-name settlement sub-record inventory (production chains + infrastructure)
+
+Brute-force scan of the RIS imperial settlement zone (rome10's
+`0xf80000..0x1f10000`) for u16-prefixed lowercase-snake-case sub-record
+names with valid `[selfPtr][nameLen][name\0]` headers yields **56 unique
+sub-record names**, far more than the 5 dossier session 3 enumerated for
+Rome alone. The complete list and per-name occurrence counts (top 40,
+sorted descending):
+
+```
+1305 core_building            // every settlement
+1296 hinterland_region        // every regular settlement
+ 552 market
+ 539 hinterland_roads         // session-8 "has roads" flag (now with level decoded)
+ 539 defenses                 // walls
+ 432 health                   // sewers/cisterns
+ 367 military_industrial_complex
+ 240 irrigated_farming        // farms (variant 1)
+ 227 port_buildings
+ 170 garrison
+ 143 highland_pastoralism
+  76 herds
+  42 theatres
+  31 hospitals
+  24 nomadic_pastoralism
+  22 shifting_cultivation
+  19 wine_industry            // RESOURCE PRODUCTION
+  18 sedentary_animal_husbandry
+  18 horse_trainer            // RESOURCE PRODUCTION
+  17 academic
+  16 textiles_production      // RESOURCE PRODUCTION
+  14 olive_cultivation        // RESOURCE PRODUCTION
+  13 grain_industry           // RESOURCE PRODUCTION
+  13 wetland_pastoralism
+  12 timber_industry          // RESOURCE PRODUCTION
+  10 marsh_reclamation
+   9 salted_fish              // RESOURCE PRODUCTION
+   9 rainfed_farming
+   9 mines                    // RESOURCE PRODUCTION
+   9 amphitheatres
+   8 forest_pastoralism
+   7 colony
+   7 agroforestry
+   7 dates_cultivation        // RESOURCE PRODUCTION
+   7 qanat_farming
+   6 dyes_production          // RESOURCE PRODUCTION
+   6 temples_of_viking
+   6 perfumes_industry        // RESOURCE PRODUCTION
+   6 silk_trader              // RESOURCE PRODUCTION
+   5 temples_of_horse_2
+   4 pottery_production       // RESOURCE PRODUCTION
+   3 glass_production         // RESOURCE PRODUCTION
+   3 honey_industry           // RESOURCE PRODUCTION
+   3 purple_dye_production    // RESOURCE PRODUCTION
+   3 hunters
+   2 river_port
+   2 papyrus_maker            // RESOURCE PRODUCTION
+   2 slave_market              // RESOURCE PRODUCTION
+   2 spices_trading           // RESOURCE PRODUCTION
+   2 jewelry                  // RESOURCE PRODUCTION
+   2 hides_industry           // RESOURCE PRODUCTION
+   2 hemp_cultivation         // RESOURCE PRODUCTION
+   1 incense_trader           // RESOURCE PRODUCTION
+   1 marble_production        // RESOURCE PRODUCTION
+   1 ivory_trade              // RESOURCE PRODUCTION
+   1 smith
+```
+
+These 24 resource-production chains (marked above) are the **engine's
+record of which trade-good production buildings have been constructed
+in each settlement**. They are NOT the same as the placed-resource
+(X, Y, type) records from descr_strat (see finding #3 below) — they're
+the build-state of optional player-/AI-constructed industries.
+
+Each sub-record uses the standard `[u32 selfPtr][u16 nameLen+1][asciiz
+name][u32 runtime_hash][u8 LEVEL][padding][u32 max_health][...]`
+layout (session-10/11 building-chain schema). Reading payload+4
+yields the current chain level (0..N depending on the chain's max tier).
+
+**Practical use for Provincia**: a "trade good production" UI panel can
+be derived by scanning each settlement for which of these 24 production
+chains is present, with the level at +4 giving the tier. The actual
+**placed resource tiles** (which determine WHICH chains a settlement is
+eligible to build) are stored elsewhere — see finding #3.
+
+**Reproducer**: `dig-trade-goods` family (specifically the brute-force
+sub-record-name scan in `dig-trade-goods` later steps).
+
+#### 3. NEGATIVE / RETRACTED: trade-good placement (X, Y, type) is NOT stored as a positional cache anywhere in the body
+
+Cross-validated against the ground-truth `public/resources_large.json`
+(5,633 placed resources across 1305 regions, each with x∈[4..1019],
+y∈[2..699], type ∈ 42 distinct strings, amount ∈ [1..3]).
+
+**Searches attempted, all NEGATIVE**:
+
+| Search strategy | Result |
+|---|---|
+| ASCII trade-good names (`"slaves\0"`, `"grain\0"`, etc.) in save | 0 hits for 40 of 42 types; `salt` 1 UTF-16, `tin` 31 UTF-16 — both spurious matches inside other words (Latin city names) |
+| Resource type IDs (44-entry short list, 792-entry long list) inside settlement records | Sparse, no signature pattern. Rome's resource IDs `{2,4,9,11,25,40,43}` appear ≤3 times each as u32 inside its 3728-byte record, scattered, no clean fingerprint |
+| Per-settlement bitmask (8 bytes encoding 44 bits) at any fixed offset in settlement record | NO MATCH. Rome's mask `140a000200090000` doesn't appear anywhere in Rome's record |
+| u8 byte correlation with resource COUNT (1304 settlements) | Best r=0.413 at T=1095 — too weak for a direct count field |
+| u32 correlation with TOTAL resource amount | Best r=0.507 at T=1093/1094/1095 — same offset cluster, but cross-inspecting bytes shows values like `001a0001` (high-byte-only pattern) that look like a 24-bit packed counter, not a resource list |
+| Stride-12/16/20 scan of body for resource (X, Y) coord clusters | Top run len = 3 hits at any stride. No 5633-record array exists in the body |
+| Resource (X, Y) → mid-file 240×238 grid cell with Y-flip | 5,509/5,633 resources fall in **canonical (default) cells**; 124 fall in non-canonical variants. **Inverse of expected: placed resources prefer canonical cells**. The 1,389 non-canonical records don't encode resources (matches session 18's RETRACTION) |
+| u32 pairs (X, Y) matching ANY placed resource location | 1,322 hits cluster in 0xa0000..0xf0000 (CHARACTER_PATHS body root) and 0x20d0000..0x2110000 (end-of-file tile-trail). The hits are character-path waypoints that incidentally cross resource tiles, NOT a resource cache |
+
+The architectural conclusion that matches all the data: **the engine
+loads placed-resource (X, Y, type, amount) records at campaign start
+from descr_strat.txt and keeps them in runtime memory; the save does
+NOT persist this data** (it's already in the mod files). On load, the
+engine re-reads descr_strat to rebuild the resource grid. This matches
+the dossier's broader architecture observation that names/strings of
+all kinds (character names, region names, faction names of unmet
+factions, trait names, ancillary names) are typically NOT in the save
+— only IDs, indices, and runtime state.
+
+**Y-coordinate flip discovered (incidental)**: settlements use Y values
+in save that differ from descr_strat by `save_Y = 700 - descr_Y` (700 =
+map height). Confirmed: Rome's save Y=404, resources_large.json Y=296;
+700-296=404. Verified on 5 sample settlements. **This is a useful
+parser fact for any future Y-coord work**, but doesn't help locate the
+trade-good cache (because the cache isn't in the save).
+
+**Implication for Provincia**: trade-good production per settlement
+should be derived by **(a) cross-referencing the settlement's
+descr_strat region against `public/resources_large.json`** for the
+placed-resource list (this is mod-data static), and **(b) scanning the
+settlement's sub-records for which of the 24 production chains
+(finding #2) is currently built** for the live "is this industry
+operational" state. The two together fully describe the trade-good
+state without needing to decode an in-save resource cache.
+
+#### 4. NEGATIVE: FAMOUS_BATTLE_DETAIL section instances not found
+
+HST in rome10 declares `FAMOUS_BATTLE_DETAIL v=4` (at HST offset
+0x37bc) and `FAMOUS_BATTLE_SITE_MANAGER v=1` (at 0x3a53) — both are
+recognized RTW battle-history schemas. The ASCII `BATTLE` string
+appears **only 2 times** in rome10, both inside the HST manifest;
+**zero body instances**. In late-campaign Macedon T97 saves, the
+substring `battle` (lowercase) appears 1 time, but it's inside the
+unit-name `ALEX_alexander_general_battle` (a bodyguard unit type),
+not a battle-log entry. Same for `damagedturn1/2` saves — `battle`
+only inside unit type names.
+
+**Stride/cluster scan negative**: walked Macedon's player major-faction
+record trailing data (184,920 bytes) at strides 16/20/24/28/32/36/40/48/56/64
+looking for fixed-stride records with (X∈[1..1020], Y∈[1..700])
+adjacent u32 pairs. Best hit: 81 records out of 5,136 at stride 36 —
+far below the noise threshold for a battle history list, and the X/Y
+hits are scattered, not clustering into a contiguous "battle log" array.
+
+**Working hypothesis** (UNVALIDATED): FAMOUS_BATTLE_DETAIL records are
+embedded inside CHARACTER_PATHS-shaped sections in the body root (each
+character's path may carry their battle history). Or they live in a
+section not currently identifiable by greedy section-grammar walking
+(some sections in RTW Remastered's save are positional, not
+self-pointing — per session 12's settlement-zone retraction). To pin
+the battle-log section requires a save pair where exactly ONE battle
+happens between saves (e.g., damagedturn1 → damagedturn2 spans a
+single autoresolved battle, but session 11's 8-byte diff showed only
+unit-casualty/building-HP changes — no battle-log record was written).
+The battle log may be **populated only at turn-end**, requiring a save
+pair that crosses an end-turn boundary.
+
+**Reproducer**: `dig-battle-log{1..6}.js` — all NEGATIVE.
+
+#### 5. Negative confirmations & retractions
+
+- **Mid-file 240×238 array as resource cache**: session 18 NEGATIVE result
+  CONFIRMED on a fresh probe with the correct (X,Y) → (col,row) mapping
+  including the 700-Y flip. Resources distribute almost identically to
+  the global canonical-vs-variant ratio (5,509/5,633 = 97.8% canonical
+  for resources vs 55,731/57,120 = 97.6% canonical for all records).
+  No correlation. The mid-file array is NOT a placed-resource cache.
+
+- **`hinterland_roads` payload bytes beyond +4**: bytes at +5/+8/+12/+16/+20/+24
+  are 0 in 539/539 records; payload+0x28 (= "+36 from cstring" per
+  session 11/17 building-HP rule) is always 0 in roads sub-records (no
+  damage tracked — matches the road infrastructure being indestructible).
+  Byte +4 (the LEVEL field) is the **only** non-trivial byte in the
+  hinterland_roads payload.
+
+- **`descr_sm_resources.txt`-derived resource type IDs**: the 26-entry RIS
+  short list, 44-entry medium list, and 792-entry full list ARE
+  internally used by the engine's `RESOURCE` v=4 schema. But none of
+  these IDs surface as bytes in any settlement record at a fixed
+  per-settlement offset.
+
+- **Architectural insight**: the HST has 8 resource/trade-related schemas
+  (`RESOURCE v=4`, `RESOURCE_MANAGER v=2`, `RESOURCE_ID v=1`,
+  `RESOURCE_HEADER v=3`, `MAKE_TRADE_AGREEMENT_BUILDER v=1`,
+  `LANDMARK_MANAGER v=1`, `WONDER_SHROUD v=1`, plus the 24 inline
+  building chains identified). Of these, only `RESOURCE_MANAGER` and
+  `LANDMARK_MANAGER` are plausible candidates for the global
+  placed-resource list in the body. Neither has a string anchor;
+  finding their instances requires section-grammar walking which is
+  unreliable for non-section data.
+
+#### Reproducer scripts
+
+- `dig-trade-goods{1..12}.js` — full trade-good probe sequence:
+  - 1: cb-tag-based settlement search + name marker → resource lookup
+  - 2: u32/u16/u8 ID byte scan inside Rome's record (NEGATIVE)
+  - 3: file-wide (X,Y) coord-pair scan for resource matches (1,322 hits)
+  - 4: stride 8..64 dense-cluster search (NEGATIVE)
+  - 5: body root direct-children resource-hit ranking (NEGATIVE)
+  - 6: u8 byte ↔ resource count correlation (NEGATIVE)
+  - 7: u32 byte ↔ resource total-amount correlation (best r=0.5, T=1093)
+  - 8: u8 / u16 / u32 bitmask search (NEGATIVE)
+  - 9: byte-level decomposition of T=1093 candidate (NEGATIVE)
+  - 10: stride-based dense-region resource cluster finder (NEGATIVE)
+  - 11: hex inspection of 0xa8c00..0xa9400 (= CHARACTER_PATHS body root,
+        confirms (X,Y) hits are path waypoints not resource records)
+  - 12: mid-file 240×238 grid → resource (X,Y) correlation with Y-flip
+        (5,509/5,633 fall in canonical cells = NEGATIVE for resource cache)
+- `dig-roads{1..8}.js` — road network probe:
+  - 1: byte-histogram scan for a global tile-road map (NEGATIVE — no 700KB
+       sparse byte map exists)
+  - 2: HST parse (106 entries; identifies ROAD, ROAD_MANAGER, RESOURCE,
+       FAMOUS_BATTLE_DETAIL, FAMOUS_BATTLE_SITE_MANAGER schemas)
+  - 3: body root children deep-scan (295 children, all CHARACTER_PATHS-shaped)
+  - 4: top-level section walker (only 1 top-level section = body root)
+  - 5: post-body-root section scan (NEGATIVE — gap is zero-padding)
+  - 6: body root depth 1 children enumeration (NEGATIVE for road sections)
+  - 7: **DECISIVE** — hinterland_roads payload+4 LEVEL decode (539 records,
+       3 levels)
+  - 8: cross-validation across 7 saves on 3 campaigns (table above)
+- `dig-battle-log{1..6}.js` — battle log probe (NEGATIVE):
+  - 1: ASCII/UTF-16 "battle" + "Battle" + "FAMOUS_BATTLE" search across saves
+  - 2: section walker on Macedon T97 (38 small sections, no battle table)
+  - 3: decode small sections as u32 arrays (header-region encoded data)
+  - 4: body root non-CHARACTER_PATHS-shaped children search (NEGATIVE)
+  - 5: (X,Y)-pair stride scan in body root (NEGATIVE — top runs are
+       permutation arrays, not battle records)
+  - 6: player major-faction trailing data scan at strides 16..64 (NEGATIVE)
+- `region-to-city.json` — utility lookup table (1311 entries) built from
+  `C:/RIS/RIS/data/world/maps/base/descr_regions.txt`, mapping each
+  region name (Roma, Etruria, etc.) to its city/settlement display name
+  (Rome, Arretium, etc.). Useful for any future work that cross-references
+  resources_large.json (region-keyed) against save data (city-keyed).
+
+#### Open follow-ups for session 21+
+
+- **Battle log location**: most promising next probe is a save pair that
+  spans a turn-end boundary where exactly ONE battle was autoresolved
+  during the AI turn rotation. The Macedon T97 → T98E pair has
+  many turns of AI activity between saves, making byte-diff noisy. A
+  cleaner test would be (a) saving at turn-start, (b) ending player turn
+  (no battles), (c) autoresolving one battle on the next turn's AI
+  rotation, (d) saving immediately. The diff isolates the battle-log
+  write to a small region.
+
+- **Tile-level road graph (if any)**: the per-settlement `hinterland_roads`
+  level (decoded above) is the only road state in the save. To verify
+  the engine doesn't also persist a tile-graph cache, examine: the
+  `WORLD_MAP_STREAMING_GAME_TILE v=1` section (untraced), and any
+  records keyed by `ROAD v=2` schema (also untraced). Both would
+  require finding their body instances; the section walker has not
+  located them.
+
+- **Resource amount per production chain**: the 24 production-chain
+  sub-records (e.g., `wine_industry`, `dyes_production`) likely encode
+  the resource's **amount/quality** in a payload byte. Sample probe:
+  decode payload bytes 8..40 of each `dyes_production` record (6
+  settlements: Susa, Ephesos, Pimprama, Oppidum_Silurum, 2 unknown);
+  cross-check against `descr_strat.txt`'s initial building variant
+  (e.g., `dyes_production dyes_1` vs `dyes_2` vs `dyes_3`). The byte
+  at payload+4 (LEVEL per session 10) gives the chain tier, but the
+  PRODUCTION VOLUME may be in a separate byte that this session didn't
+  probe.
+
+- **Per-settlement available-resource enum** (build eligibility): the
+  engine must know which settlements CAN build `wine_industry` (those
+  in regions with a `wine` placed-resource tile). This eligibility data
+  must come from somewhere at runtime — either re-derived from
+  descr_strat each session, or cached in a place this session didn't
+  find. A controlled mod test where one settlement's region has a
+  resource added/removed would reveal whether the save persists this
+  eligibility or recomputes it.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
