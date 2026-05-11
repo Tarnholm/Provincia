@@ -2018,36 +2018,47 @@ function App() {
     // location). Disable synthetic creation when log-position events have
     // been received; fall back to save+log as the authoritative source.
     if (saveLiveArmies && saveLiveArmies.length > 0 && armiesData && armiesData.length > 0) {
-      const posTaken = new Set();
-      // Index existing armies by position so we can either merge units in
-      // (when the save-derived army has none — typically captains placed by
-      // the descr_strat fallback in main.js) or skip duplicates.
-      const armyByPos = new Map(); // "x,y" → army from result
+      // Index existing armies by position AND by character name so we can
+      // dedupe even when the save's coord differs from descr_strat's. Was:
+      // dedup-by-coord-only meant Aulus showed at BOTH his descr_strat
+      // starting tile (337,385) AND his save-time position (340,384)
+      // after he marched away — the bundled descr_strat marker got added
+      // as a synth because no save army was at the descr_strat tile.
+      const armyByPos = new Map();
+      const armyByCharFaction = new Map();
       for (const a of result) {
         if (typeof a.x === "number" && typeof a.y === "number") {
           armyByPos.set(`${a.x},${a.y}`, a);
         }
+        if (a.character && a.faction) {
+          const nameKey = a.character.toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim() + "|" + a.faction.toLowerCase();
+          armyByCharFaction.set(nameKey, a);
+        }
       }
+      // Once a save has been parsed, save armies are authoritative for
+      // ALL characters they include. Synthesis fills in descr_strat
+      // entries the save didn't surface (rare — most chars are in
+      // saveLiveArmies). Skip when live-log events have flowed too —
+      // those positions are the freshest.
       const liveMovesActive = useLiveOverride && livePos.size > 0;
       for (const d of armiesData) {
         if (typeof d.x !== "number" || typeof d.y !== "number") continue;
         const key = `${d.x},${d.y}`;
         const existing = armyByPos.get(key);
         if (existing) {
-          // If save-side army has no units (captain at descr_strat coords),
-          // borrow descr_strat's unit list so the tooltip isn't empty.
           if ((!existing.units || existing.units.length === 0) && d.units && d.units.length > 0) {
             existing.units = d.units;
             existing._unitsFromDescrStrat = true;
           }
           continue;
         }
-        // No save army at this tile. In live mode (with log moves
-        // flowing) skip the synthetic to avoid pinning the character to
-        // his descr_strat starting tile after he's already moved — the
-        // user reported a duplicate Aulus marker showing him both at his
-        // current Uria position AND at his original Taras spawn, which
-        // was this synthetic exactly.
+        // Name dedupe: if this character is already in saveLiveArmies at
+        // ANY position, skip the synth — they've moved, and the save's
+        // position is authoritative.
+        if (d.character && d.faction) {
+          const nameKey = d.character.toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim() + "|" + d.faction.toLowerCase();
+          if (armyByCharFaction.has(nameKey)) continue;
+        }
         if (liveMovesActive) continue;
         let armyClass = d.armyClass || "field";
         if (armyClass === "field" && settlementTiles.has(key)) armyClass = "garrison";

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.306",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Generals no longer show duplicate markers on the map after moving away from their descr_strat starting tile. User report: after Aulus marched from Taras to Uria and occupied it, the map showed him at BOTH his current Uria position AND his original Taras spawn. Cause: the descr_strat synthesis loop in armiesToRender deduped only by coordinate, not by character name. Save_3 has Aulus at (340, 384), bundled JSON has him at (337, 385) — different coords, so a synthetic marker got added at the bundled position even though the save already had him at the new one. Now: dedupe by (character + faction) as well as coord, so a character present anywhere in saveLiveArmies skips the synth entirely." },
+    ],
+  },
+  {
     version: "0.9.305",
     date: "2026-05-11",
     items: [
