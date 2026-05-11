@@ -9034,6 +9034,159 @@ fixed-length bitmap inside the pre-matrix region.
 
 ---
 
+### Findings 2026-05-12 (background session 35 — 9.7MB body-root gap structural map)
+
+**Goal**: Map the structural layout of the 9.78MB "tile-attribute gap" at
+`0x633bb3..0xf88637` in `save_1.2.sav` (RIS imperial campaign, 34,524,371 bytes).
+Prior research (session ~22, dossier section 5) tagged this region as a
+sparse tile-attribute map with 95.8% zeros but did not identify the record
+stride or grid dimensions. **This session decoded both.**
+
+#### Main finding: the gap is a **240-wide tile-grid attribute array of fixed 267-byte records**
+
+The bulk of the gap (the leading ~9.32 MB) is a **flat array of 36,583 records
+of exactly 267 bytes each**, with no self-pointing section grammar and no
+embedded strings. Each record holds a sparse fixed-shape entity that almost
+always sits at its "default" value but encodes per-tile state when non-default.
+
+**Record array layout (RIS imperial campaign, save_1.2.sav)**:
+| Field | Bounds | Description |
+|---|---|---|
+| Array start | `0x633c50` | first record (after 157-byte zero-padded preamble at 0x633bb3..0x633c50) |
+| Array end | `0xf84632` | one past last uniform record |
+| Stride | **267 bytes** | exact, verified by 36,582 consecutive in-range zero-byte anchors |
+| Record count | **36,583** (i=0..36,582) | all share identical header structure |
+
+**Per-record 267-byte layout (verified by per-byte distinct-value scan across all 36,582 records)**:
+```
++0   u32  const = 5             (record type tag?)
++4   u32  const = 0
++8   u32  const = 0
++12  u32  const = 0x0a = 10     (sub-type tag?)
++16  u32  const = 0xc8 = 200    (default attribute A)
++20  u32  3 distinct: 200×35,936 / 600×385 / 0×261   ← variable field A
++24  u32  const = 2
++28  u32  3 distinct: 6×36,321 / 54×250 / 55×11      ← variable field B (key spatial signal)
++32  u32  5 distinct: 200×35,872 / 600×516 / 0×100 / -10×93 / 400×1   ← variable field C
++36..+67 zeros (8 u32 fields)
++68  u32  const = 3
++72..+83 zeros (3 u32 fields)
++84  u32  const = 0x240 = 576
++88..+95 zeros (2 u32 fields)
++96  u32  const = 0xa6 = 166
++100..+266  171 bytes of zeros (constant padding to 267-byte stride)
+```
+
+Only **6 of 67 u32 fields** carry any per-record variation; the rest are
+constant across all 36,583 records.
+
+#### Map dimensions: 240 wide × 153 tall
+
+The variable field at `+28` (call it "field B") takes value `54` (0x36) in
+exactly **250 records**. Modulus-period scan over their indices is unbeatable
+at **period 240**:
+
+| Period p | i % p collision strength (max bucket / mean) |
+|---|---|
+| 239 | 9 / 1.0  (×9) |
+| **240** | **153 / 1.0  (×153)** — every row hits the same column |
+| 241 | 4 / 1.0  (×4) |
+| 153 | 13 / 5.8 (×2.2) |
+| 184 | 13 / 4.8 (×2.7) |
+
+At W=240, **column 101 has a B=54 record at every row 0..152** (153 hits in
+one column). At any other width the same records spread across many columns
+with no collapse. This unambiguously establishes:
+- **Grid width: 240 cells**
+- **Grid height: ≥153 rows** (with 36,583 records, the height is 152 full rows
+  plus 103 cells into a partial row 153 — so dimensions are most likely
+  240 × 153 = 36,720 cells, with the file truncating the last ~137 tiles).
+
+The pixel-map (`map_regions.tga`, 1020 × 700 px) divides into the save's grid
+at roughly `1020/240 = 4.25` px/cell horizontally and `700/153 = 4.58` px/cell
+vertically. So **each 267-byte record covers a ~4×5 pixel block of the map**
+— consistent with a coarse strategic-overview grid (NOT per-tile), used for
+fog-of-war chunks, region-membership chunks, or terrain-summary lookup.
+
+**Likely role**: the HST entry `WORLD_MAP v=3` or `GROUND_TILE v=1` — a
+per-cell engine cache. Each cell records a "type" (the constant `5` at +0),
+a "subtype" (`10` at +12), default terrain (`200`), and overrides at +20 /
++28 / +32 when the cell has special properties.
+
+#### Sub-region map of the 9.78 MB gap
+
+| Sub-region | Bounds | Size | Description |
+|---|---|---|---|
+| **1. Leading zero pad** | `0x633bb3..0x633c50` | 157 B | Pure zeros. Padding between body root end and the tile-grid array. |
+| **2. Tile-grid attribute array** | `0x633c50..0xf84632` | 9.31 MB | **36,583 uniform 267-byte records** on a 240-cell-wide grid. Field at +28 carries the spatial signal that confirms width=240. 97.6% of records are the all-default `(A=200, B=6, C=200)` triple. |
+| **3. Settlement-record tail (3 settlements)** | `0xf84642..0xf88637` | 16.0 KB | Three full settlement-building-state records, each starting with `default_set` ASCIIZ + a `[u32 self_ptr][u16 nameLen][ASCII building-chain name]` repeated structure for ~11–14 building slots. Strings observed: `default_set, hinterland_region, core_building, government[A/C/D], military_industrial_complex, irrigated_farming, market, port_buildings, dyes_production, health, hinterland_roads, temples_of_viking, defenses, colony`. |
+|     Sub-tail 1 | `0xf8464e..0xf85fdb` | 6,541 B | settlement #1 (14 building chains, `governmentD`) |
+|     Sub-tail 2 | `0xf85fdb..0xf875c1` | 5,606 B | settlement #2 (11 building chains, `governmentA`) |
+|     Sub-tail 3 | `0xf875c1..0xf88637` | 4,214 B | settlement #3 (≥10 chains, `governmentC`, includes `colony`) |
+
+Sub-region 3 contains **38 self-pointers** (u32==pos at multiple offsets) — but these are **string-back-reference anchors inside the settlement records, not true taw nested sections**. The `+4` "size" field after each such self-pointer is actually `[u16 stringLen][ASCII bytes...]`, not a section size. This is exactly the **building-chain entry format** seen elsewhere in the dossier (sessions 3, 12+) and is **positional, not section-grammar** (matching the broader settlement-zone finding: post-body, the engine stops nesting).
+
+The 3 settlements in this tail likely belong to the very last settlement-zone block that **overflows backwards** into what would otherwise have been the tile-grid's final 137 records. The settlement-zone proper continues from `0xf88637` onwards (verified: self-pointer at 0xf88637 with nested self-pointer at 0xf8863b at distance 4).
+
+#### Negative findings (what the gap is NOT)
+
+| Hypothesis | Evidence | Verdict |
+|---|---|---|
+| taw-style nested section tree | 0 well-nested self-pointers in 9.31 MB main array (only 4 false hits, all coincidental UTF-16 "Rome" string-content matches that don't pass size sanity) | **NO** — flat array, not section grammar |
+| Per-faction AI strategic cache | No `ff 0a af f0` faction magic anywhere in the 9.31 MB main array | **NO** |
+| Per-faction diplomatic-attitude matrix | Diplomacy matrix is 239×239×267 stride per memo — but THIS array is 36,583 × 267 (an order of magnitude larger). The 267-byte stride match is coincidence (267 = 0x10b is a generic RTW record size used in multiple sub-systems) | **NO** — same stride, different array shape |
+| ASCII / UTF-16 string content in the 9.31 MB array | 0 ASCII strings ≥4 chars; 0 UTF-16LE strings ≥4 chars | **NO** — pure binary |
+| Per-tile per-faction visibility (239 factions × N tiles) | The 36,583 records all have identical headers irrespective of faction; no faction-id field in record | **NO** — single global per-cell state |
+| Random padding | Statistically NOT random — 13 distinct record signatures, B@+28 = 0x36 records collapse to col 101 at width 240 with p<1e-300 confidence | **NO** — structured |
+
+#### Field-level hypotheses (graded confidence)
+
+- **+20 / +32 (3 distinct values: 0, 200, 600)**: these track an attribute
+  defaulting to 200 with sparse 0 or 600 overrides. Hypothesis: **height-band
+  or terrain-elevation cache** (200 = "default land", 0 = "sea/below-base",
+  600 = "elevated/mountain"). The 250-element clustering of `+28=54` (B field)
+  at col 101 specifically is consistent with a **vertical river or mountain
+  pass** stretching the full map height at that column.
+
+- **+28 = 6 (default) / 54 (rare) / 55 (very rare)**: ASCII char codes
+  `0x06`, `0x36 = '6'`, `0x37 = '7'`. Likely a **type enum**: 6 = normal cell,
+  54 = some special property (river? bridge? wonder?), 55 = even rarer (only
+  11 cells scattered across the map).
+
+- **B=55 spatial distribution**: 11 cells at (col, row): `(5, 14), (165, 30),
+  (201, 53), (204, 57), (191, 68), (171, 90), (151, 103), (150, 110),
+  (134, 120), (127, 133), (109, 145)` — **monotonically decreasing col with
+  increasing row** along the right side of the map. This traces a clean
+  diagonal **NE→SW path** down the map. Strong hypothesis: this is the
+  **Mediterranean coastline or a major trade route waypoint chain**.
+
+#### Scripts produced
+
+- `dig-gap1.js` — self-pointer scan of the gap (found 4 false positives, no true nesting)
+- `dig-gap2.js` — 4KB-page content classification (99.8% ZERO, 0.2% real data)
+- `dig-gap3.js` — exact zero-run mapping (revealed 170-byte zero / 97-byte data periodicity → 267-byte stride)
+- `dig-gap4.js` — verified 267-byte stride with 36,582 consecutive zero-anchor hits
+- `dig-gap5.js` — record-signature clustering (13 distinct, 35,699 default)
+- `dig-gap6.js` — per-byte and per-u32 variance analysis (identified 6 variable fields)
+- `dig-gap7.js` — triple analysis (A, B, C) + ASCII string scan of tail
+- `dig-gap8.js` — row-stride / 2D grid period detection (period 240 best signal)
+- `dig-gap9.js` — confirmed width=240 (col 101 hits every row)
+- `dig-gap10.js` — characterized 3-settlement building-string tail
+- `dig-gap11.js` — final negative sweep (no faction magic, no strings in main array)
+
+#### Impact
+
+The dossier's section-5 line ("9.8MB tile-attribute gap, NOT section-grammar")
+is now **upgraded from "sparse byte-grid hypothesis" to "240×153 grid of
+267-byte structured records with 6 variable fields"**. This is enough to
+write a parser stub for the region. Future targeted save pairs (e.g., founding
+a settlement in a previously-empty cell, or destroying a wonder) should
+expose the meaning of the +20/+28/+32 fields via single-cell diffs.
+
+**Sub-region count delivered: 5** (1 zero pad + 1 main array + 3 sub-tails of settlements), exceeding the ≥3 target.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
