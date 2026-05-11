@@ -7799,6 +7799,24 @@ Script: `scripts/save-cracker/dig-model-names1.js`.
 
 ---
 
+### Findings 2026-05-11 (background session 30 — scripted-events typeA/typeB enum)
+
+Goal: tabulate the i32 year + u32 typeA + u32 typeB triple for each of the 22 named scripted-events at 0x846d1..0xa8beb in save_rome10.sav. Test whether typeA = event-category discriminator (0=volcano / 1=quake / 2=flood) and typeB = severity rating.
+
+**Result: BOTH HYPOTHESES REFUTED.**
+
+- **typeB is constant = 1 across all 22 events** (volcanoes, earthquakes, flood). Not a severity rating; likely a "scripted-event version" or "is-enabled" flag.
+- **typeA does NOT discriminate event category.** Distribution: VOLC {0: 2, 2: 16}, QUAKE {0: 1, 2: 2}, FLOOD {2: 1}. The flood, the Iberia/Santorini quakes, and 16 volcanoes all share `typeA=2`. Only 3 outliers carry `typeA=0`: `eruption_at_etna_49` (year -50), `eruption_at_vulcano_91` (year -91), `earthquake_in_rhodes` (year -226). The `typeA=0` rows correlate with `trigger_count=0` for the etna entry, but vulcano_91 and rhodes also have low/zero triggers, so the link is weak. typeA is plausibly **"already-triggered before save-start"** flag (0 = pre-history-skipped / 2 = active in timeline) but the corpus (1 save, T5) is too thin to confirm.
+- The (typeA, typeB) pair distribution is `{(2,1): 19, (0,1): 3}` — i.e. a binary discriminator on a single dimension.
+
+Full 22-event table (all volcanoes at Sicily/Aegean/Italian-coast tiles, all years matching the embedded name modulo session 26's known off-by-1 and midpoint cases): see script output.
+
+**Implication**: the volcano/earthquake/flood category is **NOT stored as an enum field** — it is encoded purely in the leading category string `"volcano"`/`"earthquake"`/`"flood"` that prefixes each named-event record. The 6-field tail `[year][typeA][typeB][X][Y][trigger_count]` is category-agnostic schedule metadata.
+
+Script: `scripts/save-cracker/dig-event-enum1.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
