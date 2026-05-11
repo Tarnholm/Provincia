@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.287",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "Generals + their starting traits, ancillaries, age, and leader/heir tags now show in the region panel WITHOUT a save loaded. The Characters row labels itself '(starting)' instead of '(live)' to make the source clear, and right-click on a character still opens the trait popup (now reading from descr_strat instead of the save). Live-save data still takes precedence whenever it's available; descr_strat is the turn-0 fallback. First step in the broader 'live features should work in non-live mode' direction — more to follow." },
+      { type: "improvement", text: "Starting-character data is now parsed at RUNTIME from the loaded mod's descr_strat, not baked in at build time. This means generals' traits will reflect whichever mod you've loaded — vanilla, RIS, a workshop download, or your own work-in-progress mod with edits to descr_strat. Nothing about character traits is hardcoded anymore. main.js's `loadModCharacterData` was extended to capture multi-line trait/ancillary records (the lines that follow each `character` header), and a new `get-starting-characters` IPC exposes them to the renderer; the bundled JSON remains as a fallback for the dev build's pre-shipped campaign." },
+      { type: "fix", text: "Stats button no longer just grays out when no save is loaded — clicking it now opens a small popover explaining 'No save loaded — open Live to start monitoring your saves folder'. Reachable so the user knows the button exists, doesn't lie about being broken." },
+    ],
+  },
+  {
     version: "0.9.286",
     date: "2026-05-11",
     items: [

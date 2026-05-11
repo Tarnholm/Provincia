@@ -177,6 +177,13 @@ function makeLRU(limit) {
 let modTraitNames = null;
 let modDescrStratSurnames = null;
 let modDescrStratCharByName = null; // "firstName|faction" → { x, y, lastName, faction } from descr_strat
+// Per-region map of starting characters with their descr_strat traits /
+// ancillaries / age / tags. Populated by loadModCharacterData when a mod
+// folder is loaded; exposed to the renderer via IPC so the region panel
+// can show generals + traits without a save loaded. Works with any mod
+// or vanilla — the parser only depends on the standard descr_strat
+// `traits Foo 1, ...` / `ancillaries ...` line shape.
+let modDescrStratCharactersByRegion = null;
 let modDescrStratCharsByFirstName = null; // "firstName" → [{ x, y, lastName, faction }, ...] (multi-faction lookup)
 let modUnitOfficerCounts = null; // { unitName: officerCount } from EDU — added to in-save soldier counts to match in-game UI
 let modBuildingChains = null;
@@ -288,28 +295,84 @@ function loadModCharacterData(modDataDir) {
     path.join(modDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
     path.join(modDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
   ];
+  // Collect full character records (with traits + ancillaries + age + tags)
+  // alongside the name lookup. We need to track state across lines because
+  // traits / ancillaries appear on the lines AFTER the character header.
+  const fullCharRecords = [];
   for (const dsPath of descrStratPaths) {
     if (!fs.existsSync(dsPath)) continue;
     let currentFaction = null;
-    for (const line of fs.readFileSync(dsPath, "utf8").split(/\r?\n/)) {
+    let currentChar = null; // open record awaiting trait / ancillary lines
+    const lines = fs.readFileSync(dsPath, "utf8").split(/\r?\n/);
+    for (const rawLine of lines) {
+      const line = rawLine.replace(/\s+$/, "");
+      const t = line.trim();
       const factMatch = line.match(/^faction\s+(\S+?),/);
-      if (factMatch) { currentFaction = factMatch[1]; continue; }
-      // character\tName[ surname], role, [leader,] age N, , x X, y Y[, ...]
-      const charMatch = line.match(/^character\s+([^,]+?),\s*\w+(?:\s+\w+)?,.*?\bx\s+(\d+),\s*y\s+(\d+)/);
-      if (!charMatch) continue;
-      const nameField = charMatch[1].trim();
-      const [first, ...rest] = nameField.split(/\s+/);
-      const lastName = rest.join(" ") || null;
-      if (lastName) modDescrStratSurnames.add(lastName);
-      const x = parseInt(charMatch[2]);
-      const y = parseInt(charMatch[3]);
-      const entry = { firstName: first, lastName, x, y, faction: currentFaction };
-      const key = first + "|" + (currentFaction || "");
-      if (!modDescrStratCharByName.has(key)) modDescrStratCharByName.set(key, entry);
-      if (!modDescrStratCharsByFirstName.has(first)) modDescrStratCharsByFirstName.set(first, []);
-      modDescrStratCharsByFirstName.get(first).push(entry);
+      if (factMatch) { currentFaction = factMatch[1]; currentChar = null; continue; }
+      const charMatch = line.match(/^character\s+([^,]+?),\s*([^,]+?),.*?\bx\s+(\d+),\s*y\s+(\d+)/);
+      if (charMatch) {
+        const nameField = charMatch[1].trim();
+        const headerRest = charMatch[0]; // entire matched header
+        const [first, ...rest] = nameField.split(/\s+/);
+        const lastName = rest.join(" ") || null;
+        if (lastName) modDescrStratSurnames.add(lastName);
+        const x = parseInt(charMatch[3]);
+        const y = parseInt(charMatch[4]);
+        const ageMatch = /\bage\s+(\d+)/.exec(headerRest);
+        const ageVal = ageMatch ? parseInt(ageMatch[1]) : null;
+        const tags = [];
+        if (/\bleader\b/i.test(headerRest)) tags.push("leader");
+        if (/\bheir\b/i.test(headerRest)) tags.push("heir");
+        if (/\bnamed character\b/i.test(headerRest)) tags.push("named");
+        const charSubType = (charMatch[2] || "").trim().toLowerCase();
+        const entry = { firstName: first, lastName, x, y, faction: currentFaction };
+        const key = first + "|" + (currentFaction || "");
+        if (!modDescrStratCharByName.has(key)) modDescrStratCharByName.set(key, entry);
+        if (!modDescrStratCharsByFirstName.has(first)) modDescrStratCharsByFirstName.set(first, []);
+        modDescrStratCharsByFirstName.get(first).push(entry);
+        currentChar = {
+          firstName: first, lastName, x, y,
+          faction: currentFaction,
+          age: ageVal,
+          tags,
+          charSubType,
+          traits: [],
+          ancillaries: [],
+        };
+        fullCharRecords.push(currentChar);
+        continue;
+      }
+      if (!currentChar) continue;
+      const tm = /^traits\s+(.+)$/i.exec(t);
+      if (tm) {
+        const parts = tm[1].split(",").map((p) => p.trim()).filter(Boolean);
+        for (const p of parts) {
+          const m = /^(\S+)\s+(\d+)$/.exec(p);
+          if (m) currentChar.traits.push({ name: m[1], level: parseInt(m[2]) });
+          else if (p) currentChar.traits.push({ name: p, level: 1 });
+        }
+        continue;
+      }
+      const am = /^ancillaries\s+(.+)$/i.exec(t);
+      if (am) {
+        const parts = am[1].split(",").map((p) => p.trim()).filter(Boolean);
+        for (const p of parts) currentChar.ancillaries.push(p);
+        continue;
+      }
+      // Once we hit `army` or the next `character` line, the current
+      // character's metadata is sealed. Leave `currentChar` set so trait
+      // and ancillary lines that appear AFTER `army` (rare but seen) are
+      // still captured for the same character — they're harmless if the
+      // record is overwritten by the next character header.
     }
   }
+  // Group full records by region using descr_strat coords + the
+  // ownership map's settlement → region lookup if available. The renderer
+  // already does its own (X,Y) → region pixel lookup, so we expose the
+  // raw list keyed by faction; the renderer joins by coords against
+  // startingArmiesByRegion (which already has the same coord→region
+  // mapping from the bundled JSON OR from the runtime ownership build).
+  modDescrStratCharactersByRegion = { byCoord: fullCharRecords };
   // Parse export_descr_unit.txt for officer counts. The save stores only
   // rank-and-file soldiers; the in-game UI shows that count plus any
   // officers/standard-bearers/musicians defined in EDU. Counting `officer`
@@ -495,6 +558,7 @@ function loadModCharacterData(modDataDir) {
     factionDisplay: Object.keys(modFactionDisplayMap).length,
     factionDisplayNames: Object.keys(modFactionDisplayNames).length,
     owners: Object.keys(modInitialOwnerByCity || {}).length,
+    descrStratCharCount: modDescrStratCharactersByRegion?.byCoord?.length || 0,
   };
 }
 
@@ -1722,6 +1786,20 @@ ipcMain.handle("get-unit-description", async (_event, modDataDir, unitName) => {
 // IPC: clear all parse caches (EDB / EDU / display names / cultures /
 // stats / descriptions). Used by the "Reload mod data" button so a
 // modder can re-edit text files and see the changes without restarting.
+// IPC: return the runtime-parsed descr_strat starting characters with
+// their traits / ancillaries / age / tags. The renderer uses this when
+// no save is loaded so generals' traits are browsable for ANY mod
+// (vanilla, RIS, Workshop downloads — not just the dev's bundled mod).
+// Returns a flat array keyed by `firstName|faction`; the renderer
+// buckets by region via its existing tileToRegion / regionsByPixel
+// machinery to avoid duplicating that logic in main.js.
+ipcMain.handle("get-starting-characters", async () => {
+  if (!modDescrStratCharactersByRegion || !Array.isArray(modDescrStratCharactersByRegion.byCoord)) {
+    return { ok: false, characters: [] };
+  }
+  return { ok: true, characters: modDescrStratCharactersByRegion.byCoord };
+});
+
 ipcMain.handle("clear-mod-caches", async () => {
   try { _buildingRecruitsCache.clear(); } catch {}
   try { _unitOwnershipCache.clear(); } catch {}

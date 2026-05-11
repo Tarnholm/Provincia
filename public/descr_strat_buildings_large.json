@@ -9116,8 +9116,12 @@
             "level": "wooden_pallisade"
           },
           {
-            "type": "governmentD",
-            "level": "gov4"
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "health",
@@ -9420,8 +9424,12 @@
             "level": "wooden_pallisade"
           },
           {
-            "type": "governmentD",
-            "level": "gov4"
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "hinterland_region",
@@ -9456,8 +9464,12 @@
             "level": "wooden_pallisade"
           },
           {
-            "type": "governmentD",
-            "level": "gov4"
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "hinterland_region",
@@ -9784,8 +9796,12 @@
             "level": "governors_villa"
           },
           {
-            "type": "governmentD",
-            "level": "gov4"
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "hinterland_region",
@@ -11016,8 +11032,12 @@
             "level": "wooden_pallisade"
           },
           {
-            "type": "governmentD",
-            "level": "gov4"
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "hinterland_region",
@@ -11308,8 +11328,12 @@
             "level": "governors_villa"
           },
           {
-            "type": "governmentD",
-            "level": "gov4"
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "hinterland_region",
@@ -20599,14 +20623,18 @@
         ]
       },
       {
-        "region": "Tigurinia-Tougenia",
+        "region": "Rauracia-Latobrigia",
         "level": "town",
-        "population": 1760,
+        "population": 1500,
         "faction_creator": "arverni",
         "buildings": [
           {
             "type": "core_building",
             "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
           },
           {
             "type": "colony",
@@ -20615,10 +20643,30 @@
           {
             "type": "governmentC",
             "level": "gov3"
+          }
+        ]
+      },
+      {
+        "region": "Tulingia-Verbigenia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "arverni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
           },
           {
             "type": "hinterland_region",
             "level": "region_base"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
           }
         ]
       }
@@ -32479,22 +32527,6 @@
         ]
       },
       {
-        "region": "Tulingia-Verbigenia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "arverni",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
         "region": "Santonia",
         "level": "town",
         "population": 1500,
@@ -32546,6 +32578,22 @@
         "region": "Veragria",
         "level": "town",
         "population": 1500,
+        "faction_creator": "arverni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Tigurinia-Tougenia",
+        "level": "town",
+        "population": 1760,
         "faction_creator": "arverni",
         "buildings": [
           {
@@ -32643,22 +32691,6 @@
         "level": "town",
         "population": 1500,
         "faction_creator": "arevaci",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Rauracia-Latobrigia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "arverni",
         "buildings": [
           {
             "type": "core_building",

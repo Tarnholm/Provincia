@@ -169,6 +169,8 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
         character: a.name, faction: a.faction,
         x: tile?.x ?? null, y: tile?.y ?? null,
         units: normUnits(a.units),
+        // garrisoned_army blocks have no character header so no traits/ancillaries/age — keep keys consistent
+        age: null, tags: [], traits: [], ancillaries: [], charType: a.charType || "garrison",
       });
       continue;
     }
@@ -185,6 +187,11 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
       character: a.name, faction: a.faction,
       x: a.x, y: a.y,
       units: normUnits(a.units),
+      age: a.age ?? null,
+      tags: Array.isArray(a.tags) ? a.tags : [],
+      traits: Array.isArray(a.traits) ? a.traits : [],
+      ancillaries: Array.isArray(a.ancillaries) ? a.ancillaries : [],
+      charType: a.charType || "general",
     });
   }
   return byRegion;
@@ -332,6 +339,16 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
       const name = rest.split(",")[0].trim().replace(/_/g, " ");
       const [ac, snapX, snapY] = armyClass(rest, prevComment, sx, sy, getPixel);
       const loc = prevComment.startsWith(";") ? prevComment.replace(/^;/, "").trim() : "";
+      // descr_strat header tags: parse `age N`, leader/heir flags, and the
+      // character sub-type (named character vs spy vs diplomat...). These
+      // give RegionInfo's character popup something to show in non-live
+      // mode, mirroring what the save-cracker character parser surfaces.
+      const ageMatch = /\bage\s+(\d+)/.exec(rest);
+      const ageVal = ageMatch ? parseInt(ageMatch[1]) : null;
+      const tags = [];
+      if (/\bleader\b/i.test(rest)) tags.push("leader");
+      if (/\bheir\b/i.test(rest)) tags.push("heir");
+      if (/\bnamed character\b/i.test(rest)) tags.push("named");
       current = {
         name, charType: charType(rest), armyClass: ac, location: loc, faction,
         x: snapX,
@@ -339,10 +356,36 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
         // so the bundled JSON matches the dev-import / live-save data —
         // the renderer flips once for all of them.
         y: snapY,
+        age: ageVal,
+        tags,
+        traits: [],
+        ancillaries: [],
         units: [],
       };
       prevComment = "";
       continue;
+    }
+    // Capture `traits <name> <level>, <name> <level>, ...` and
+    // `ancillaries <name>, <name>, ...` lines that follow the character
+    // header. These appear before the `army` keyword. Both lines are
+    // optional and either can be absent.
+    if (current && !inArmy) {
+      const tm = /^traits\s+(.+)$/i.exec(t);
+      if (tm) {
+        const parts = tm[1].split(",").map((p) => p.trim()).filter(Boolean);
+        for (const p of parts) {
+          const m = /^(\S+)\s+(\d+)$/.exec(p);
+          if (m) current.traits.push({ name: m[1], level: parseInt(m[2]) });
+          else if (p) current.traits.push({ name: p, level: 1 });
+        }
+        continue;
+      }
+      const am = /^ancillaries\s+(.+)$/i.exec(t);
+      if (am) {
+        const parts = am[1].split(",").map((p) => p.trim()).filter(Boolean);
+        for (const p of parts) current.ancillaries.push(p);
+        continue;
+      }
     }
     if (t === "army") { inArmy = true; continue; }
     if (inArmy && current) {

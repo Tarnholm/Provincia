@@ -718,13 +718,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           height: "100%",
         }}
       >
-        {characters && characters.length > 0 && (
+        {characters && characters.length > 0 && (() => {
+          const isStarting = characters[0]?._source === "starting";
+          return (
           <div style={{ marginBottom: 4 }}>
             <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#fd8" }}>
               Characters:
               <span
-                title={saveFile ? `As of: ${saveFile}` : "From save file"}
-                style={{ fontSize: "0.65rem", color: "#a98", marginLeft: 6, fontWeight: 400, cursor: "help" }}>(live)</span>
+                title={isStarting
+                  ? "Starting roster from descr_strat — turn-1 traits, ancillaries, age. Load a save to switch to live values."
+                  : (saveFile ? `As of: ${saveFile}` : "From save file")}
+                style={{ fontSize: "0.65rem", color: "#a98", marginLeft: 6, fontWeight: 400, cursor: "help" }}>
+                {isStarting ? "(starting)" : "(live)"}
+              </span>
             </div>
             <div style={{ maxHeight: 80, overflowY: "auto", fontSize: "0.72rem" }}>
               {characters.map((c, i) => {
@@ -743,14 +749,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     style={{ padding: "1px 0", color: "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: onShowInfo ? "context-menu" : "default" }}
                   >
                     {sym ? sym + " " : ""}{fullName}
-                    <span style={{ color: "#999", fontVariantNumeric: "tabular-nums", marginLeft: 6 }}>· age {c.age}</span>
+                    <span style={{ color: "#999", fontVariantNumeric: "tabular-nums", marginLeft: 6 }}>· age {c.age != null ? c.age : "?"}</span>
                     {status && <span style={{ color: "#c66", marginLeft: 4 }}>{status}</span>}
                   </div>
                 );
               })}
             </div>
           </div>
-        )}
+          );
+        })()}
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
         {buildingItems.length > 0 ? (
           (() => {

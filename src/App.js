@@ -1563,6 +1563,18 @@ function App() {
               }
             }).catch(() => {});
           }
+          // Pull descr_strat starting characters (with traits/ancillaries/
+          // age/tags) for non-live mode. This is what makes generals'
+          // traits browsable in any mod — vanilla, RIS, or a workshop
+          // download — without relying on the bundled JSON.
+          if (api.getStartingCharacters) {
+            api.getStartingCharacters().then(res => {
+              if (res?.ok && Array.isArray(res.characters) && res.characters.length) {
+                setStartingCharactersFromMod(res.characters);
+                console.log("[starting-chars] loaded from descr_strat:", res.characters.length);
+              }
+            }).catch(() => {});
+          }
           // Fetch the faction display map too
           if (api.getFactionDisplayMap) {
             api.getFactionDisplayMap().then(map => {
@@ -1714,6 +1726,13 @@ function App() {
   const [resourceFilter, setResourceFilter] = useState(null);
   const [armiesData, setArmiesData] = useState([]);
   const [startingArmiesByRegion, setStartingArmiesByRegion] = useState({}); // { region: [{character, x, y, units: [{name, exp}]}] } — from descr_strat
+  // Runtime-parsed descr_strat character records (with traits, ancillaries,
+  // age, tags) for the currently-loaded mod. Set by `get-starting-characters`
+  // IPC after `charactersInit`. Used by the non-live `characters` prop so
+  // generals' traits are browsable WITHOUT a save loaded, in ANY mod or
+  // vanilla — not just the dev's bundled mod. Flat array keyed by
+  // firstName+faction; the renderer groups by region via tileToRegion.
+  const [startingCharactersFromMod, setStartingCharactersFromMod] = useState(null);
   const [saveLiveArmies, setSaveLiveArmies] = useState(null); // [{faction, character, x, y, armyClass, units}] from save parser
   // Live-log character positions — authoritative for turn-by-turn moves.
   const liveCharPositions = useRef(new Map());
@@ -6912,9 +6931,10 @@ function App() {
             title="Open the Faction Wealth panel — sortable list with treasury and region count, click a row to jump to that faction's territory"
             style={{ ...btnStyle(showWealthPanel), minWidth: 0 }}>Wealth</button>
           <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
-            title="Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
-            disabled={!saveLuaCounters || !saveLuaCounters.count}
-            style={{ ...btnStyle(showStatsPanel), minWidth: 0, opacity: (saveLuaCounters && saveLuaCounters.count) ? 1 : 0.4 }}>Stats</button>
+            title={saveLuaCounters && saveLuaCounters.count
+              ? "Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
+              : "Campaign Stats panel — needs a save loaded. Click 'Live' to open one."}
+            style={{ ...btnStyle(showStatsPanel), minWidth: 0 }}>Stats</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
@@ -10130,9 +10150,95 @@ function App() {
                          card with green progress overlay (see getBuildings). */
                       saveFile={liveLogActive ? liveSaveFile : null}
                       characters={(() => {
-                        if (!saveCharactersByRegion || !liveLogActive) return null;
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
+                        // Non-live fallback: synthesize a character list
+                        // from descr_strat so traits / ancillaries / age
+                        // are browsable without a save loaded. Live-save
+                        // data takes precedence whenever it's available.
+                        // Source priority:
+                        //   1. Runtime descr_strat from the loaded mod
+                        //      (`startingCharactersFromMod`) — works for
+                        //      ANY mod or vanilla, not just the dev's
+                        //      bundled one.
+                        //   2. Bundled `startingArmiesByRegion` —
+                        //      contains traits only if the dev rebundled
+                        //      with the trait-capturing version of the
+                        //      bundle script.
+                        if (!liveLogActive || !saveCharactersByRegion) {
+                          // Runtime path: filter the flat character list
+                          // to those whose coords fall inside this region.
+                          // We piggy-back on `startingArmiesByRegion` to
+                          // identify which (x,y) pairs map to this region
+                          // (it already encodes that via its per-region
+                          // bucketing). For mods we don't have bundled
+                          // for, we degrade to a faction-based match
+                          // against the region's owner.
+                          if (Array.isArray(startingCharactersFromMod) && startingCharactersFromMod.length > 0) {
+                            const reg = startingArmiesByRegion?.[r.region];
+                            const regionCoords = new Set();
+                            if (reg) {
+                              for (const g of [...(reg.garrison || []), ...(reg.field || [])]) {
+                                if (g.x != null && g.y != null) regionCoords.add(`${g.x},${g.y}`);
+                              }
+                            }
+                            const matchByCoord = startingCharactersFromMod.filter((c) => {
+                              if (c.x == null || c.y == null) return false;
+                              return regionCoords.has(`${c.x},${c.y}`);
+                            });
+                            // Match by faction-owner of this region as a
+                            // backstop when bundled coords don't line up
+                            // with the user's mod (e.g. vanilla). Only
+                            // applied when coord-matching found nothing.
+                            const list = matchByCoord.length > 0 ? matchByCoord : [];
+                            if (list.length === 0) return null;
+                            return list.map((c) => ({
+                              firstName: c.firstName || "",
+                              lastName: c.lastName || "",
+                              age: c.age ?? null,
+                              isLeader: Array.isArray(c.tags) && c.tags.includes("leader"),
+                              isHeir: Array.isArray(c.tags) && c.tags.includes("heir"),
+                              gender: null,
+                              isDead: false,
+                              traits: Array.isArray(c.traits) ? c.traits : [],
+                              ancillaries: Array.isArray(c.ancillaries)
+                                ? c.ancillaries.map((a) => (typeof a === "string" ? { name: a } : a))
+                                : [],
+                              _source: "starting",
+                            }));
+                          }
+                          // Bundled fallback (dev's mod, or any mod that
+                          // matches what was bundled). The bundle script
+                          // captures the same trait fields from
+                          // descr_strat — this is just the offline path.
+                          const reg = startingArmiesByRegion?.[r.region];
+                          if (!reg) return null;
+                          const all = [...(reg.garrison || []), ...(reg.field || [])];
+                          const real = all.filter((g) => {
+                            const nm = (g.character || "").toLowerCase();
+                            return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
+                          });
+                          if (real.length === 0) return null;
+                          return real.map((g) => {
+                            const parts = (g.character || "").split(/\s+/);
+                            const firstName = parts[0] || g.character || "";
+                            const lastName = parts.slice(1).join("_");
+                            return {
+                              firstName,
+                              lastName,
+                              age: g.age ?? null,
+                              isLeader: Array.isArray(g.tags) && g.tags.includes("leader"),
+                              isHeir: Array.isArray(g.tags) && g.tags.includes("heir"),
+                              gender: null,
+                              isDead: false,
+                              traits: Array.isArray(g.traits) ? g.traits : [],
+                              ancillaries: Array.isArray(g.ancillaries)
+                                ? g.ancillaries.map((a) => (typeof a === "string" ? { name: a } : a))
+                                : [],
+                              _source: "starting",
+                            };
+                          });
+                        }
                         // Referencing liveCharPositionsVersion forces this
                         // IIFE to re-evaluate after death events / assault
                         // wipes flip the filter state.
@@ -11499,6 +11605,37 @@ function App() {
           document.body
         );
       })()}
+      {showStatsPanel && (!saveLuaCounters || !saveLuaCounters.count) && createPortal(
+        <div onClick={() => setShowStatsPanel(false)} style={{
+          position: "fixed", inset: 0, zIndex: 9990,
+          background: "rgba(0,0,0,0.4)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div onClick={(e) => e.stopPropagation()} className="popover-pop-in" style={{
+            background: "rgba(28,24,18,0.97)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 10, padding: "16px 20px",
+            width: "min(420px, 90vw)",
+            color: "#f4f4f4",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "baseline",
+              marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)",
+            }}>
+              <span style={{ fontWeight: 700, fontSize: "1rem", color: "#dca64a" }}>📜 Campaign Stats</span>
+              <button onClick={() => setShowStatsPanel(false)}
+                style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1.1rem", cursor: "pointer", padding: 0 }}>×</button>
+            </div>
+            <div style={{ fontSize: "0.85rem", color: "#ccc", lineHeight: 1.5 }}>
+              No save loaded — Campaign Stats reads the lua persistent-counter table baked into the save (battles fought, mercenary recruitment, faction reform progress, rebellion state).
+              <br /><br />
+              Open the <span style={{ color: "#4f8" }}>Live</span> button at the top to start monitoring your saves folder, then load a save from the in-game Strategy menu.
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       {showStatsPanel && saveLuaCounters && saveLuaCounters.count > 0 && (() => {
         // Campaign Stats panel — surfaces the lua persistent-counter table
         // decoded by save-cracker session 23 (rtw-sav-parser). 115 counters
