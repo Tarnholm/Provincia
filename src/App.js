@@ -9287,10 +9287,27 @@ function App() {
                             };
                           }
                           if (g && g.unresolved) {
-                            // We know there's a governor (uuid is non-zero)
-                            // but we don't have a v1 char record for them.
-                            // Show a placeholder so the user knows someone's
-                            // there.
+                            // Save says there's a governor but our v1 char
+                            // pool doesn't have a name for the uuid (timing
+                            // race, or RIS-imperial auto-generated char that
+                            // v1 can't decode). Use the descr_strat starting
+                            // garrison name as a best-effort label — it's
+                            // accurate at turn 1 and stays useful as a
+                            // "started here as" hint at later turns.
+                            const reg = startingArmiesByRegion?.[r.region];
+                            const gar = reg && (reg.garrison || []).find((g2) => {
+                              const nm = (g2.character || "").toLowerCase();
+                              return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
+                            });
+                            if (gar) {
+                              return {
+                                character: gar.character,
+                                faction: gar.faction || (currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || null,
+                                age: gar.age ?? null,
+                                isLeader: Array.isArray(gar.tags) && gar.tags.includes("leader"),
+                                isHeir: Array.isArray(gar.tags) && gar.tags.includes("heir"),
+                              };
+                            }
                             return {
                               character: "(governor — character record not decoded)",
                               faction: (currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || null,

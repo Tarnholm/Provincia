@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.290",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "When the save says a settlement has a governor but our v1 char pool can't decode that uuid (timing race during load, or an RIS-imperial auto-generated character whose record format v1 doesn't recognize), the Garrison commander line now falls back to the descr_strat starting commander's name + faction + age, instead of the unhelpful '(governor — character record not decoded)'. Accurate at turn 1, useful as a 'started here as' hint at later turns." },
+    ],
+  },
+  {
     version: "0.9.289",
     date: "2026-05-11",
     items: [
