@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.305",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Armies sitting on a captured settlement tile now correctly appear in that region's panel, not their pre-move region. User report: after Romans Julii conquered Uria, Aulus's units still appeared in Taras's region panel (his starting location). Cause: the engine doesn't update a unit-record's `region` field when its general moves — only the separate world-object position record updates. The map marker uses world-position (correct), but the region panel was using the stale unit-record region tag. The 0.9.282 fix prevented general-purpose region overrides because save coords can drift 1-3 tiles off settlement markers into adjacent regions, but settlement TILES specifically are unambiguous (exact pixel match). Now: when an army's (x, y) matches a known settlement-tile EXACTLY, the live-bucketing uses the army's resolved region instead of the stale unit-record tag. Live-log overrides still take precedence; non-settlement positions still keep their save region tag (no drift risk)." },
+    ],
+  },
+  {
     version: "0.9.304",
     date: "2026-05-11",
     items: [

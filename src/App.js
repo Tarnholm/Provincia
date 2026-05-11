@@ -2201,10 +2201,34 @@ function App() {
     // but Field armies: None". Save region is authoritative when there's
     // no live-log signal.
     const cmdToLiveRegion = new Map();
+    // Build a settlement-tile set for the save-derived position fast path
+    // below. cityPixels is the in-memory list of (x, y, rgbKey) for every
+    // settlement on the map. World-army positions use BOTTOM-UP world y,
+    // while cityPixels.y is TOP-DOWN pixel y — flip when comparing.
+    const settlementTilesByXy = new Set();
+    const H_world2 = imgSize.height;
+    for (const cp of (cityPixels || [])) {
+      const worldY = (H_world2 - 1) - cp.y;
+      settlementTilesByXy.add(`${cp.x},${worldY}`);
+    }
     for (const a of armiesToRender) {
       if (!a.commanderUuid || !a.region) continue;
-      if (!a.liveTracked) continue;
-      cmdToLiveRegion.set(a.commanderUuid, a.region);
+      // Live-tracked: log told us the up-to-date region.
+      if (a.liveTracked) { cmdToLiveRegion.set(a.commanderUuid, a.region); continue; }
+      // Save-derived position on a settlement tile: trust it over the
+      // stale unit-record region tag. The engine doesn't update the unit-
+      // record region when a general moves, so after Aulus marches from
+      // Taras to Uria and occupies, his bodyguard unit still says
+      // region=Taras while the world-object record places him at Uria's
+      // settlement tile. The 0.9.282 fix avoided this override generally
+      // because save positions can drift 1-3 tiles off settlement
+      // markers — but here we ONLY override when the army's x/y match
+      // EXACTLY a known settlement-tile, where the region is unambiguous.
+      if (typeof a.x === "number" && typeof a.y === "number"
+          && settlementTilesByXy.has(`${a.x},${a.y}`)
+          && a.region) {
+        cmdToLiveRegion.set(a.commanderUuid, a.region);
+      }
     }
     const deadUuids = liveDeadCharUuids.current;
     const isCmdDead = (cmd) => {
