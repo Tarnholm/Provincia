@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.288",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "0.9.287 added a Characters row to non-live mode but it never showed up in regions like Tarentum because the runtime descr_strat coord-match filter rejected everything — bundled coords are TGA-snapped (e.g. Milon @ 336,384) while descr_strat raw coords are different (e.g. 168,191). Switched to a firstName+faction merge instead: bundled per-region structure stays as the index, runtime descr_strat trait data overrides per-character when present. Generals + traits now appear in non-live mode for Tarentum, Rome, every populated region. Right-click on a name to see the trait popup." },
+      { type: "fix", text: "Garrison commander name now shows in non-live mode (e.g. 'Milon — taras' in Tarentum). Previously the Garrison Commander block was gated on liveLogActive and returned null without a save loaded, so the garrison-units list appeared with no commander attribution. Now pulls from the bundled starting_armies JSON's first garrison entry." },
+      { type: "change", text: "Stats button moved next to the Live button at the top of the panel, and only renders when Live mode is active. Was previously next to Wealth in the bottom toolbar where it didn't belong — Wealth works without a save, Stats doesn't. Pairing it with Live makes the dependency obvious." },
+    ],
+  },
+  {
     version: "0.9.287",
     date: "2026-05-11",
     items: [

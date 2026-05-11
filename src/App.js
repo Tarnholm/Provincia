@@ -6930,11 +6930,6 @@ function App() {
           <button className="map-mode-btn" onClick={() => setShowWealthPanel(prev => !prev)}
             title="Open the Faction Wealth panel — sortable list with treasury and region count, click a row to jump to that faction's territory"
             style={{ ...btnStyle(showWealthPanel), minWidth: 0 }}>Wealth</button>
-          <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
-            title={saveLuaCounters && saveLuaCounters.count
-              ? "Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
-              : "Campaign Stats panel — needs a save loaded. Click 'Live' to open one."}
-            style={{ ...btnStyle(showStatsPanel), minWidth: 0 }}>Stats</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
@@ -7130,6 +7125,13 @@ function App() {
             }
           }}
             style={{ ...btnStyle(liveLogActive), minWidth: 0, color: liveLogActive ? "#4f8" : undefined }}>Live</button>
+          {liveLogActive && (
+            <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
+              title={saveLuaCounters && saveLuaCounters.count
+                ? "Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
+                : "Campaign Stats — waiting on save data"}
+              style={{ ...btnStyle(showStatsPanel), minWidth: 0 }}>Stats</button>
+          )}
           {liveLogActive && (
             <button
               className="map-mode-btn"
@@ -9214,7 +9216,28 @@ function App() {
                       })()}
                       garrisonCommander={(() => {
                         const r = lockedRegionInfo || regionInfo;
-                        if (!r || !liveLogActive) return null;
+                        if (!r) return null;
+                        // Non-live mode: pull the starting garrison
+                        // commander from the bundled descr_strat data
+                        // (first garrison character, his faction).
+                        // Merges in runtime descr_strat traits by name+
+                        // faction when available so mod edits show up.
+                        if (!liveLogActive) {
+                          const reg = startingArmiesByRegion?.[r.region];
+                          if (!reg) return null;
+                          const gar = (reg.garrison || []).find((g) => {
+                            const nm = (g.character || "").toLowerCase();
+                            return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
+                          });
+                          if (!gar) return null;
+                          return {
+                            character: gar.character,
+                            faction: gar.faction || null,
+                            age: gar.age ?? null,
+                            isLeader: Array.isArray(gar.tags) && gar.tags.includes("leader"),
+                            isHeir: Array.isArray(gar.tags) && gar.tags.includes("heir"),
+                          };
+                        }
                         // Source of truth: the per-settlement governor field
                         // (decoded at marker-1940). This works even for
                         // characters who don't command a bodyguard army
@@ -10166,51 +10189,14 @@ function App() {
                         //      with the trait-capturing version of the
                         //      bundle script.
                         if (!liveLogActive || !saveCharactersByRegion) {
-                          // Runtime path: filter the flat character list
-                          // to those whose coords fall inside this region.
-                          // We piggy-back on `startingArmiesByRegion` to
-                          // identify which (x,y) pairs map to this region
-                          // (it already encodes that via its per-region
-                          // bucketing). For mods we don't have bundled
-                          // for, we degrade to a faction-based match
-                          // against the region's owner.
-                          if (Array.isArray(startingCharactersFromMod) && startingCharactersFromMod.length > 0) {
-                            const reg = startingArmiesByRegion?.[r.region];
-                            const regionCoords = new Set();
-                            if (reg) {
-                              for (const g of [...(reg.garrison || []), ...(reg.field || [])]) {
-                                if (g.x != null && g.y != null) regionCoords.add(`${g.x},${g.y}`);
-                              }
-                            }
-                            const matchByCoord = startingCharactersFromMod.filter((c) => {
-                              if (c.x == null || c.y == null) return false;
-                              return regionCoords.has(`${c.x},${c.y}`);
-                            });
-                            // Match by faction-owner of this region as a
-                            // backstop when bundled coords don't line up
-                            // with the user's mod (e.g. vanilla). Only
-                            // applied when coord-matching found nothing.
-                            const list = matchByCoord.length > 0 ? matchByCoord : [];
-                            if (list.length === 0) return null;
-                            return list.map((c) => ({
-                              firstName: c.firstName || "",
-                              lastName: c.lastName || "",
-                              age: c.age ?? null,
-                              isLeader: Array.isArray(c.tags) && c.tags.includes("leader"),
-                              isHeir: Array.isArray(c.tags) && c.tags.includes("heir"),
-                              gender: null,
-                              isDead: false,
-                              traits: Array.isArray(c.traits) ? c.traits : [],
-                              ancillaries: Array.isArray(c.ancillaries)
-                                ? c.ancillaries.map((a) => (typeof a === "string" ? { name: a } : a))
-                                : [],
-                              _source: "starting",
-                            }));
-                          }
-                          // Bundled fallback (dev's mod, or any mod that
-                          // matches what was bundled). The bundle script
-                          // captures the same trait fields from
-                          // descr_strat — this is just the offline path.
+                          // Use the bundled per-region structure as the
+                          // index of which characters live where (it has
+                          // correct region bucketing because the bundle
+                          // script does TGA pixel lookup), then merge in
+                          // runtime trait data from descr_strat by
+                          // firstName+faction match. The runtime data
+                          // wins when present so live mod edits show up
+                          // even without rebuilding the bundle.
                           const reg = startingArmiesByRegion?.[r.region];
                           if (!reg) return null;
                           const all = [...(reg.garrison || []), ...(reg.field || [])];
@@ -10219,22 +10205,41 @@ function App() {
                             return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
                           });
                           if (real.length === 0) return null;
+                          // Build a runtime lookup keyed by firstName+
+                          // faction for fast merge.
+                          const runtimeByKey = new Map();
+                          if (Array.isArray(startingCharactersFromMod)) {
+                            for (const c of startingCharactersFromMod) {
+                              const key = (c.firstName || "") + "|" + (c.faction || "");
+                              runtimeByKey.set(key, c);
+                            }
+                          }
                           return real.map((g) => {
                             const parts = (g.character || "").split(/\s+/);
                             const firstName = parts[0] || g.character || "";
                             const lastName = parts.slice(1).join("_");
+                            const rt = runtimeByKey.get(firstName + "|" + (g.faction || ""));
+                            const traits = rt && Array.isArray(rt.traits) && rt.traits.length > 0
+                              ? rt.traits
+                              : (Array.isArray(g.traits) ? g.traits : []);
+                            const ancRaw = rt && Array.isArray(rt.ancillaries) && rt.ancillaries.length > 0
+                              ? rt.ancillaries
+                              : (Array.isArray(g.ancillaries) ? g.ancillaries : []);
+                            const tags = rt && Array.isArray(rt.tags) && rt.tags.length > 0
+                              ? rt.tags
+                              : (Array.isArray(g.tags) ? g.tags : []);
+                            const age = rt && rt.age != null ? rt.age : (g.age ?? null);
                             return {
                               firstName,
                               lastName,
-                              age: g.age ?? null,
-                              isLeader: Array.isArray(g.tags) && g.tags.includes("leader"),
-                              isHeir: Array.isArray(g.tags) && g.tags.includes("heir"),
+                              age,
+                              isLeader: tags.includes("leader"),
+                              isHeir: tags.includes("heir"),
                               gender: null,
                               isDead: false,
-                              traits: Array.isArray(g.traits) ? g.traits : [],
-                              ancillaries: Array.isArray(g.ancillaries)
-                                ? g.ancillaries.map((a) => (typeof a === "string" ? { name: a } : a))
-                                : [],
+                              faction: g.faction || null,
+                              traits,
+                              ancillaries: ancRaw.map((a) => (typeof a === "string" ? { name: a } : a)),
                               _source: "starting",
                             };
                           });
@@ -11605,37 +11610,6 @@ function App() {
           document.body
         );
       })()}
-      {showStatsPanel && (!saveLuaCounters || !saveLuaCounters.count) && createPortal(
-        <div onClick={() => setShowStatsPanel(false)} style={{
-          position: "fixed", inset: 0, zIndex: 9990,
-          background: "rgba(0,0,0,0.4)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div onClick={(e) => e.stopPropagation()} className="popover-pop-in" style={{
-            background: "rgba(28,24,18,0.97)",
-            border: "1px solid rgba(255,255,255,0.15)",
-            borderRadius: 10, padding: "16px 20px",
-            width: "min(420px, 90vw)",
-            color: "#f4f4f4",
-            boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
-          }}>
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "baseline",
-              marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)",
-            }}>
-              <span style={{ fontWeight: 700, fontSize: "1rem", color: "#dca64a" }}>📜 Campaign Stats</span>
-              <button onClick={() => setShowStatsPanel(false)}
-                style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1.1rem", cursor: "pointer", padding: 0 }}>×</button>
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "#ccc", lineHeight: 1.5 }}>
-              No save loaded — Campaign Stats reads the lua persistent-counter table baked into the save (battles fought, mercenary recruitment, faction reform progress, rebellion state).
-              <br /><br />
-              Open the <span style={{ color: "#4f8" }}>Live</span> button at the top to start monitoring your saves folder, then load a save from the in-game Strategy menu.
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
       {showStatsPanel && saveLuaCounters && saveLuaCounters.count > 0 && (() => {
         // Campaign Stats panel — surfaces the lua persistent-counter table
         // decoded by save-cracker session 23 (rtw-sav-parser). 115 counters
