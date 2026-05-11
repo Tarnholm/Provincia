@@ -17,6 +17,7 @@
     "Frentania",
     "Daunia",
     "Peucetia",
+    "Kroton",
     "Kanysion",
     "Thourioi",
     "Parthenope",
@@ -26,13 +27,13 @@
     "Lokroi_Epizephyrioi"
   ],
   "roman_rebels_1": [
-    "Anatolians_Region"
+    "Roman_Rebels_1_Region"
   ],
   "roman_rebels_2": [
-    "Thracians_Region"
+    "Roman_Rebels_2_Region"
   ],
   "roman_senate": [
-    "Illyrians_Region"
+    "Han_Region"
   ],
   "carthage": [
     "Qart-Khadasht",
@@ -42,6 +43,7 @@
     "Maleth",
     "Karaly",
     "Olbiana-Sardinia",
+    "Qart-Khadasht_biShardana",
     "Sulky",
     "Kyrnos",
     "Adrumet",
@@ -56,7 +58,7 @@
     "Zabrutuxun",
     "Rush_Adir",
     "Salda",
-    "Ay-Bushum",
+    "Ay-Bushim",
     "Malaka",
     "Calpe",
     "Elymia",
@@ -73,7 +75,7 @@
     "Lepqi_Zaxyirt",
     "Rushikade",
     "Maqoma_Zaxyir",
-    "Zekz",
+    "Zekzi",
     "Bastetania_Maritima"
   ],
   "antigonid": [
@@ -131,6 +133,7 @@
     "Salamina",
     "Amathousia",
     "Aipeia",
+    "Ake",
     "Rabat_Xaman",
     "Paralia",
     "Gadaris",
@@ -156,11 +159,10 @@
     "Epi_Theron",
     "Samos",
     "Deire",
-    "Kyklades",
-    "Delos",
+    "Anatolike_Kyklades",
+    "Dytike_Kyklades",
     "Samothrake",
     "Kalliste",
-    "Paros",
     "Latmikos_Kolpos",
     "Mimas",
     "Arinna",
@@ -171,6 +173,7 @@
     "Etennia-Kotennia",
     "Methymnia",
     "Beruta",
+    "Kitiy",
     "Arka",
     "Ashqalon",
     "Idoumaia",
@@ -178,6 +181,7 @@
     "Ashdud",
     "Massyas",
     "Boreia_Palaistine",
+    "Chrysorrhoas",
     "Abilene",
     "Saites-Xoites_Nomoi",
     "Heroopolites-Heliopolites_Nomoi",
@@ -191,6 +195,7 @@
     "Notios_Dodekaschoinos",
     "Itania",
     "Hesperos_Tracheiotis",
+    "Notia_Tracheiotis",
     "Peri_Thebas-Pathyrites_Nomos",
     "Tlawa",
     "Kalbia"
@@ -211,12 +216,13 @@
     "Pisidia",
     "Pamphylia",
     "Lykaonia",
+    "Kappadokike_Kilikia",
     "Kilikia",
     "Media",
     "Rhagiane",
     "Parthia",
     "Boreia_Hyrkania",
-    "Paraitakene",
+    "Ano_Persia",
     "Karmania",
     "Anaouon",
     "Ariane",
@@ -226,9 +232,10 @@
     "Adramyttenos_Kolpos",
     "Pelopeia",
     "Nea_Ionia",
+    "Klazomenia",
     "Katakekaumene_Lykaonia",
     "Pessinountis",
-    "Tracheiotis",
+    "Anatolike_Tracheiotis",
     "Mysia",
     "Orgasia",
     "Megale_Phrygia",
@@ -243,7 +250,7 @@
     "Khalab",
     "Dolicheia",
     "Gordyene",
-    "Kossaia",
+    "Chalonitis",
     "Babylonia",
     "Nikephoreia",
     "Bambyke",
@@ -258,9 +265,8 @@
     "Hesperos_Ariane",
     "Taokene",
     "Kadousia",
-    "Choarene",
+    "Notia_Parthia",
     "Syromedia",
-    "Sigrianike",
     "Komisene",
     "Amardokaia-Anariakaia",
     "Hyrkania",
@@ -284,6 +290,7 @@
     "Mallotis",
     "Mese_Kilikia",
     "Emesene",
+    "Belos",
     "Khamat",
     "Kardia",
     "Elaiousa",
@@ -295,12 +302,9 @@
     "Anthemousia",
     "Dytike_Apolloniatis",
     "Boreia_Sittakene",
-    "Eremikos_Euphrates",
-    "Anatolike_Osrhoene",
-    "Artakene",
     "Chaldaia",
+    "Artakene",
     "Paralia_Chaldaia",
-    "Palaia_Zeugma",
     "Nisaia",
     "Apauarktikene",
     "Drangiane",
@@ -308,9 +312,10 @@
     "Derbikia",
     "Notia_Karmania",
     "Mese_Ariane",
-    "Tapyria",
-    "Ouxiana",
-    "Kyrtia"
+    "Tapyria-Kyrtia",
+    "Ouxia-Paraitakene",
+    "Kossaia-Mardia",
+    "Notia_Margiane"
   ],
   "bactria": [
     "Baktriane",
@@ -401,6 +406,12 @@
     "Aorsia",
     "Ano_Aorsia"
   ],
+  "apuani": [
+    "Apuania"
+  ],
+  "arados": [
+    "Arwad-Marat"
+  ],
   "ardiaei": [
     "Ardiaia",
     "Narensia"
@@ -409,12 +420,6 @@
     "Arevacia",
     "Arevacia_Septentrionalis",
     "Arevacia_Centralis"
-  ],
-  "apuani": [
-    "Apuania"
-  ],
-  "arados": [
-    "Arwad"
   ],
   "argos": [
     "Argolis",
@@ -528,9 +533,6 @@
     "Buridavensia",
     "Buridavensia_Meridionalis"
   ],
-  "byllis": [
-    "Byllionia-Amantia"
-  ],
   "byzantium": [
     "Bosporos",
     "Chalkedonia",
@@ -568,7 +570,7 @@
   ],
   "carpetani": [
     "Carpetania",
-    "Carpetania_Montana"
+    "Carpetania_Meridionalis"
   ],
   "catuvellauni": [
     "Catuvellaunia",
@@ -577,7 +579,7 @@
   ],
   "celtici": [
     "Celticia",
-    "Celticia_Meridionalis"
+    "Celticia_Orientalis"
   ],
   "cenomani": [
     "Cenomania",
@@ -665,9 +667,6 @@
   "dentheletae": [
     "Denthelentike"
   ],
-  "edeta": [
-    "Edetania"
-  ],
   "dumnonii": [
     "Dumnonia",
     "Dumnonia_Occidentalis",
@@ -682,6 +681,9 @@
   "eburones": [
     "Eburonia",
     "Eburonia_Orientalis"
+  ],
+  "edeta": [
+    "Edetania"
   ],
   "elis": [
     "Elis",
@@ -757,7 +759,7 @@
     "Tigurinia-Tougenia"
   ],
   "heniochi": [
-    "Heniochia-Kerketaia"
+    "Heniochia"
   ],
   "heraclea_pontica": [
     "Hellenike_Mariandynia",
@@ -884,8 +886,10 @@
   ],
   "lugii": [
     "Naharvalia",
-    "Helveconia-Helisia",
-    "Manimia-Haria"
+    "Helveconia",
+    "Haria",
+    "Manimia",
+    "Helisia"
   ],
   "lysiad": [
     "Synnadia"
@@ -947,14 +951,14 @@
   "mossynoeci": [
     "Mossynoikia"
   ],
+  "musulamii": [
+    "Gaetulia",
+    "Gaetulia_Septentrionalis"
+  ],
   "nabataea": [
     "Raqemo",
     "Hesperos_Arabia",
     "Ailanitos_Kolpos"
-  ],
-  "musulamii": [
-    "Gaetulia",
-    "Gaetulia_Septentrionalis"
   ],
   "nasamones": [
     "Nasamonia",
@@ -1001,8 +1005,7 @@
     "Antheia",
     "Mesambria",
     "Odessia",
-    "Tomea",
-    "Krounio"
+    "Tomea"
   ],
   "pergamon": [
     "Kaikia",
@@ -1010,7 +1013,7 @@
   ],
   "persis": [
     "Persia",
-    "Pasargadaia"
+    "Pasargadaia-Kyrtia"
   ],
   "picentes": [
     "Picenum"
@@ -1064,13 +1067,15 @@
     "Avaticia"
   ],
   "samnites": [
-    "Pentria",
-    "Carricinia",
+    "Pentria-Carricinia",
     "Hirpinia"
   ],
   "sardinians": [
     "Balaria",
     "Iliensia"
+  ],
+  "sarsinates": [
+    "Sassinia"
   ],
   "scordisci": [
     "Skordiskia",
@@ -1142,8 +1147,7 @@
     "Tauriscia_Occidentalis",
     "Tauriscia_Meridionalis",
     "Tauriscia_Orientalis",
-    "Tauriscia_Centralis",
-    "Tauriscia_Septentrionalis"
+    "Tauriscia_Centralis"
   ],
   "tencteri": [
     "Tencteria_Vetus"
@@ -1195,7 +1199,7 @@
   ],
   "vascones": [
     "Vasconia",
-    "Vasconia_Orientalis"
+    "Vasconia_Meridionalis"
   ],
   "venedae": [
     "Venedia"
@@ -1238,12 +1242,11 @@
     "Brenaia"
   ],
   "dummies": [
-    "Tonelandia"
+    "Armenian_Rebels_Region"
   ],
   "slave": [
     "Desertum",
     "Rhegion",
-    "Sassinia",
     "Sikelia",
     "Sikania",
     "Dytike_Sikania",
@@ -1268,7 +1271,7 @@
     "Nicivia-Suburburia",
     "Massylia_Septentrionalis",
     "Massylia_Occidentalis",
-    "Mactarxim",
+    "Maktarxim",
     "Altiburosh",
     "Thipaxatan",
     "Ubusia",
@@ -1283,7 +1286,7 @@
     "Mastienia",
     "Suessetania",
     "Tagia",
-    "Lusitania_Centralis",
+    "Lusitania_Occidentalis",
     "Turdetania_Occidentalis",
     "Conia",
     "Helmantike",
@@ -1299,7 +1302,7 @@
     "Contestania",
     "Baliares_Maiores",
     "Turdetania_Septentrionalis",
-    "Conia_Orientalis",
+    "Celticia_Meridionalis",
     "Vaccaea_Meridionalis",
     "Sedetania",
     "Vettonia_Meridionalis",
@@ -1307,10 +1310,9 @@
     "Bergistania",
     "Turdetania_Meridionalis",
     "Turdetania_Orientalis",
-    "Ilditurgi",
-    "Baliares_Cartaginenses",
+    "Bastetania_Septentrionalis",
     "Contestania_Orientalis",
-    "Carpetania_Orientalis",
+    "Carpetania_Septentrionalis",
     "Turdulia_Veterum",
     "Autrigonia",
     "Bellia_Septentrionalis",
@@ -1325,7 +1327,7 @@
     "Beronia",
     "Bastetania_Occidentalis",
     "Contestania_Occidentalis",
-    "Celticia_Maritima",
+    "Celticia_Occidentalis",
     "Vaccaea_Durica",
     "Turdulia_Orientalis",
     "Olcadia",
@@ -1337,17 +1339,18 @@
     "Vasconia_Maritima",
     "Tittia",
     "Conia_Maritima",
-    "Lusitania_Meridionalis",
+    "Celticia_Maritima",
     "Ausetania",
     "Zoelaea",
     "Vettonia_Septentrionalis",
     "Artabria",
     "Lucensia",
+    "Lucensia_Meridionalis",
     "Ilercavonia_Septentrionalis",
     "Elusatia",
     "Pictonia",
     "Leucia",
-    "Elysicia",
+    "Elisycia",
     "Lemovicia",
     "Carnutia",
     "Remia",
@@ -1413,7 +1416,7 @@
     "Brigantia-Alpes",
     "Estionia",
     "Ambidravia-Ambilicia",
-    "Cammunia-Venostia",
+    "Camunnia-Venostia",
     "Saevatia-Laiancia",
     "Catalia",
     "Ambisontia",
@@ -1423,6 +1426,7 @@
     "Osia",
     "Racataea-Racatriaea",
     "Cotinia",
+    "Hercuniatia",
     "Latobicia",
     "Anartophractia",
     "Britolagia",
@@ -1467,7 +1471,6 @@
     "Eudosia",
     "Suardonia",
     "Nuithonia",
-    "Sitonia",
     "Varinia",
     "Sidonia_Vetus",
     "Sciria",
@@ -1475,7 +1478,7 @@
     "Buria",
     "Burgundia",
     "Favonaea-Firaesia",
-    "Suionia",
+    "Suionia-Sitonia",
     "Chaedinia",
     "Aestia",
     "Galindia",
@@ -1503,11 +1506,9 @@
     "Teutonia",
     "Finnia",
     "Insula_Osiorum",
-    "Carbonia",
-    "Stavania",
+    "Carbonia-Salia",
     "Igyllionia",
-    "Careotaea",
-    "Salia",
+    "Careotaea-Stavania",
     "Cugernia_Vetus",
     "Mugilonia-Sibinia",
     "Reudignia",
@@ -1524,6 +1525,7 @@
     "Maezaeia",
     "Mania",
     "Olkinia",
+    "Byllionia-Amantia",
     "Daorsia",
     "Savia",
     "Naissitania",
@@ -1561,7 +1563,6 @@
     "Diotike",
     "Sapaia-Bistonia",
     "Ratiariai",
-    "Greeks_Region",
     "Massalike_Kontestania",
     "Ankon_Petra",
     "Liburnonesoi",
@@ -1597,6 +1598,8 @@
     "Koilaletia",
     "Borysthenes",
     "Iaxamataia",
+    "Oudia-Orgasia",
+    "Isondaia-Olondaia",
     "Taurike",
     "Hesperos_Georgike_Skythia",
     "Kallippidia-Alazonia",
@@ -1615,14 +1618,14 @@
     "Hesperos_Pisidia",
     "Kibyratis",
     "Isauria",
+    "Homonadia-Oroandia",
     "Anatolike_Isauria",
     "Petnelissos",
     "Hesperos_Pamphylia",
-    "Anatolike_Tracheiotis",
+    "Tracheiotis",
     "Themiskyra_Pedion",
     "Gadilonitis",
     "Lykos",
-    "Kappadokike_Kilikia",
     "Syspiritis",
     "Madabitis",
     "Trachonitis",
@@ -1648,7 +1651,7 @@
     "Aromaton_Akroterion",
     "Aithiopia",
     "Tenessis",
-    "Aouranitis",
+    "Auranitis",
     "Rhaabenia-Masania",
     "Omanitis",
     "Banizomeneia",
@@ -1691,6 +1694,7 @@
     "Zygia-Achaia",
     "Moschia",
     "Soanaia",
+    "Kerketaia",
     "Makronia",
     "Drilaia",
     "Tibarenia",
@@ -1717,8 +1721,9 @@
     "Xandia-Paria",
     "Attasia",
     "Apasiakaia",
-    "Amyrgia",
+    "Anatolike_Amyrgia",
     "Tsatsene",
+    "Amyrgia",
     "Thyssagetaia-Iyrkaia",
     "Massagetaia",
     "Issedonia",

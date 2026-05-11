@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.195",
+  "version": "0.9.285",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -48,11 +48,15 @@
       "package.json",
       "src/characterParser.js",
       "src/characterParserV2.js",
+      "src/charactersWorker.js",
+      "src/buildingsWorker.js",
       "src/messageLogParser.js",
       "src/unitParser.js",
       "src/buildingParser.js",
       "src/ownershipParser.js",
-      "src/saveOwnershipParser.js"
+      "src/saveOwnershipParser.js",
+      "src/factionRecordParser.js",
+      "src/luaCounterParser.js"
     ],
     "extraMetadata": {
       "main": "main.js"
@@ -62,7 +66,8 @@
       {
         "provider": "github",
         "owner": "Tarnholm",
-        "repo": "Provincia"
+        "repo": "Provincia",
+        "releaseType": "release"
       }
     ],
     "win": {

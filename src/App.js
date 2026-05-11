@@ -857,8 +857,81 @@ const DEV_EDIT_OPTIONS = {
 };
 
 
-// Patch descr_strat.txt with updated resources and/or population
-function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles, mapHeight) {
+// Move settlement blocks between faction sections per ownerChanges
+// ({ regionName: targetFactionId }, case-insensitive). Idempotent — moving
+// to the current owner is a no-op. Unknown target factions are dropped with
+// a console warning rather than appended to the file.
+function applyOwnershipMoves(lines, ownerChanges) {
+  const lower = (s) => String(s || "").toLowerCase();
+  const changes = {};
+  for (const [k, v] of Object.entries(ownerChanges || {})) {
+    if (v == null) continue;
+    changes[lower(k)] = lower(v);
+  }
+  if (Object.keys(changes).length === 0) return lines;
+
+  const isFaction = (line) => /^faction\s+\w/.test(line);
+  const isSettlementOpen = (line) => /^settlement\s*$/.test(line.trim());
+  const preface = [];
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length && !isFaction(lines[i])) { preface.push(lines[i]); i++; }
+  while (i < lines.length) {
+    const fm = lines[i].match(/^faction\s+(\w+)/);
+    if (!fm) { i++; continue; }
+    const block = { factionId: lower(fm[1]), headerLines: [lines[i]], settlements: [], tailLines: [] };
+    i++;
+    while (i < lines.length && !isFaction(lines[i]) && !isSettlementOpen(lines[i])) {
+      block.headerLines.push(lines[i]); i++;
+    }
+    while (i < lines.length && isSettlementOpen(lines[i])) {
+      const settLines = [lines[i]]; i++;
+      let regionName = null, depth = 0, opened = false;
+      while (i < lines.length) {
+        settLines.push(lines[i]);
+        const rm = lines[i].match(/^\s*region\s+(\S+)/);
+        if (rm && !regionName) regionName = rm[1];
+        for (const ch of lines[i]) {
+          if (ch === "{") { depth++; opened = true; }
+          else if (ch === "}") depth--;
+        }
+        i++;
+        if (opened && depth === 0) break;
+      }
+      block.settlements.push({ regionName, lines: settLines });
+    }
+    while (i < lines.length && !isFaction(lines[i])) { block.tailLines.push(lines[i]); i++; }
+    blocks.push(block);
+  }
+
+  const moves = [];
+  for (const block of blocks) {
+    const keep = [];
+    for (const s of block.settlements) {
+      const tgt = changes[lower(s.regionName)];
+      if (tgt && tgt !== block.factionId) moves.push({ settlement: s, targetFactionId: tgt });
+      else keep.push(s);
+    }
+    block.settlements = keep;
+  }
+  for (const { settlement, targetFactionId } of moves) {
+    const target = blocks.find(b => b.factionId === targetFactionId);
+    if (target) target.settlements.push(settlement);
+    else console.warn(`patchDescrStrat: target faction "${targetFactionId}" not found in descr_strat for region "${settlement.regionName}"; ownership change dropped.`);
+  }
+
+  const out = [];
+  out.push(...preface);
+  for (const block of blocks) {
+    out.push(...block.headerLines);
+    for (const s of block.settlements) out.push(...s.lines);
+    out.push(...block.tailLines);
+  }
+  return out;
+}
+
+// Patch descr_strat.txt with updated resources, population and/or ownership
+function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles, mapHeight, ownerChanges) {
   const lines = originalText.split(/\r?\n/);
   const out = [];
   const patchResources = dirtyFiles.has("resources");
@@ -936,7 +1009,10 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
     out.splice(insertAt, 0, ...newLines);
   }
 
-  return out.join("\n");
+  const final = ownerChanges && Object.keys(ownerChanges).length > 0
+    ? applyOwnershipMoves(out, ownerChanges)
+    : out;
+  return final.join("\n");
 }
 
 // Extract population data from buildings parse result
@@ -1137,7 +1213,16 @@ function App() {
   const [devGrid, setDevGrid] = useState(false);
   const [devCultureBorders, setDevCultureBorders] = useState(false);
   const [showSettlementTier, setShowSettlementTier] = useState(false);
-  const [showArmies, setShowArmies] = useState(false);
+  // Persist the Armies-overlay toggle. Defaults to ON — the user's main
+  // reason to be in Live mode is seeing where everyone's stacks are; the
+  // overlay was off-by-default which buried the feature behind a toggle
+  // most users didn't know existed.
+  const [showArmies, setShowArmies] = useState(() => {
+    try { return localStorage.getItem("showArmies") !== "0"; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showArmies", showArmies ? "1" : "0"); } catch {}
+  }, [showArmies]);
   const [showLabels, setShowLabels] = useState("off"); // "off" | "city" | "region"
   const [cityPixels, setCityPixels] = useState([]); // [{x, y, rgbKey}] — black pixel positions mapped to nearest region
   const [hoveredCity, setHoveredCity] = useState(null); // { city, region, x, y, tier, screenX, screenY }
@@ -1277,6 +1362,10 @@ function App() {
     maxZoom = 100;
 
   const [factionRegionsMap, setFactionRegionsMap] = useState({});
+  // Dev mode: { regionName: targetFactionId } — settlement ownership moves
+  // queued for export. patchDescrStrat consumes this and physically moves
+  // each settlement block into the target faction's section in descr_strat.txt.
+  const [factionOwnerChanges, setFactionOwnerChanges] = useState({});
   const [factions, setFactions] = useState([]);
   // Ref mirror so handlers inside effects always see the up-to-date list.
   const factionsRef = useRef(factions);
@@ -1300,6 +1389,9 @@ function App() {
 
   // Dev "hidden_resource" map mode: which hidden resource to highlight (search box reuses legendSearch)
   const [selectedHiddenResource, setSelectedHiddenResource] = useState(null);
+  // Dev-mode inline "Add new HR" input: null = closed, "" or string = open
+  const [newHrDraft, setNewHrDraft] = useState(null);
+  const [newHrError, setNewHrError] = useState(null);
   // hiddenResourcesList is defined further down — homelandsData is declared
   // after this block and we need it inside that useMemo.
 
@@ -1332,12 +1424,50 @@ function App() {
   const [saveBuildingsData, setSaveBuildingsData] = useState(null); // { city: { building: {level,health} } } from save parser
   const [saveArmiesData, setSaveArmiesData] = useState(null); // { region: [{unit, soldiers, max}] } from save parser
   const [saveQueues, setSaveQueues] = useState(null); // { city: [chainName, ...] } currently-queued buildings from save parser
+  const [saveTaxByCity, setSaveTaxByCity] = useState(null); // { city: "low"|"normal"|"high"|"very_high" } from save parser
+  const [saveHappinessByCity, setSaveHappinessByCity] = useState(null); // { city: f32 } from save parser (f32 at settlement.offset-30, raw 100..200 scale, see save-cracker dossier 2026-05-10)
+  const [savePopulationByCity, setSavePopulationByCity] = useState(null); // { city: u32 } live population from save parser (u32 at settlement.offset-1494, save-cracker session 2)
+  const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
+  const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
+  const [saveTreasuryRecords, setSaveTreasuryRecords] = useState(null); // { records: [{ pos, treasury, turnStart, regionCount }, ...] } — raw 23 major-faction treasury records from save (session 5)
   const [liveSaveFile, setLiveSaveFile] = useState(null); // filename of the .sav file currently reflected in saveBuildingsData/saveArmiesData
   const [saveCharactersByRegion, setSaveCharactersByRegion] = useState(null); // { region: [character, ...] }
   const [saveScriptedByFaction, setSaveScriptedByFaction] = useState(null); // { faction: [char with x,y, traits, ...] } from v2 parser
   const [saveCurrentYear, setSaveCurrentYear] = useState(null); // current in-game year from save header
   const [saveCurrentTurn, setSaveCurrentTurn] = useState(null); // current turn number from save header
+  // Faction-record array (239 records, magic ff 0a af f0). Decoded 2026-05-09
+  // by rtw-sav-parser. The array span is the dominant per-turn bloat source —
+  // grows ~90 bytes/turn/faction, dwarfing dead-character accumulation.
+  const [saveFactionRecords, setSaveFactionRecords] = useState(null);
+  // Lua persistent-counter table (115 named entries near EOF). Each is
+  // `{ name, value }` from `declare_persistent_counter` plus engine internals.
+  const [saveLuaCounters, setSaveLuaCounters] = useState(null);
+  // Governor per settlement (settlementName → { firstName, lastName, age, ... }
+  // or { uuid, unresolved: true }). Decoded from the per-settlement governor
+  // field at marker-1940. Surfaces installed governors in the region panel
+  // even when they don't command a bodyguard army (= no unit record links).
+  const [saveGovernorByCity, setSaveGovernorByCity] = useState(null);
+  // Live-mode parse progress — populated by `save-progress` IPC events.
+  // `liveLoading` flips on at click and off when the snapshot lands.
+  // `liveLoadingStage` shows the current step ("Parsing characters & armies").
+  // We don't show a numeric % anymore — between two emits the main process is
+  // genuinely synchronous and the bar would appear stuck. An indeterminate
+  // animation + live elapsed-seconds counter conveys "still working" honestly.
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveLoadingStage, setLiveLoadingStage] = useState("");
+  const [liveLoadingStartedAt, setLiveLoadingStartedAt] = useState(null);
+  const liveLoadingStartedAtRef = useRef(null);
+  const [liveLoadingElapsedSec, setLiveLoadingElapsedSec] = useState(0);
   const [saveLoadedAt, setSaveLoadedAt] = useState(null); // wall-clock ms when the last save snapshot landed
+  // Tick the elapsed-seconds counter while a parse is in flight. Runs at
+  // 250ms cadence — fine enough to feel responsive, sparing on re-renders.
+  useEffect(() => {
+    if (!liveLoading || !liveLoadingStartedAt) return;
+    const id = setInterval(() => {
+      setLiveLoadingElapsedSec(Math.floor((Date.now() - liveLoadingStartedAt) / 1000));
+    }, 250);
+    return () => clearInterval(id);
+  }, [liveLoading, liveLoadingStartedAt]);
   const [, setNowTick] = useState(0); // force re-render every 30s so the "ago" label updates without a save event
   useEffect(() => {
     if (!saveLoadedAt) return;
@@ -1587,6 +1717,37 @@ function App() {
   const [saveLiveArmies, setSaveLiveArmies] = useState(null); // [{faction, character, x, y, armyClass, units}] from save parser
   // Live-log character positions — authoritative for turn-by-turn moves.
   const liveCharPositions = useRef(new Map());
+  // charUuids that the live log has reported as dead (DYING / death_type
+  // events). Used to hide their save-derived army markers immediately
+  // instead of waiting for the next save snapshot to write the death.
+  // Common case: defender wiped during a siege resolution — without
+  // this, the slain general's marker lingers until the save updates.
+  const liveDeadCharUuids = useRef(new Set());
+  // Cumulative unit-flow snapshot streamed from main.js whenever a transfer
+  // event (general_transfer or unit_transfer) fires. Each entry is
+  // { from: runtimeCharUuid, to: runtimeCharUuid, count: N }. The renderer
+  // resolves runtime char uuids to save char uuids by name (via
+  // liveCharPositions where the engine emitted the full name on a move
+  // event, paired with saveCharactersByRegion for the save secondary uuid),
+  // then re-buckets `count` units from save-from-char to save-to-char in
+  // the field-army panel. Count-based instead of identity-based because
+  // the engine's runtime unit uuids have no stable mapping to save units.
+  const liveUnitFlow = useRef([]);
+  // Settlement names (lowercase) whose entire garrison was wiped by a
+  // successful assault. The losing faction's units inside the settlement
+  // (tagged unit.region === <settlement>) get dropped from
+  // liveUnitsByRegion + the Characters panel until the next save refresh.
+  // Defenders parked OUTSIDE the settlement aren't affected — they're in
+  // a different region tag and can survive a siege battle per RTW rules.
+  const liveAssaultWipedSettlements = useRef(new Set());
+  // Mirror of saveCharactersByRegion accessible from the live-event handler
+  // (which is inside a useEffect whose deps don't include
+  // saveCharactersByRegion — closure capture would be stale). Used to map
+  // a runtime memory uuid in the log (e.g. Titus's `14f47c40`) back to
+  // the save's stored secondaryUuid by matching name+faction, so the
+  // existing dead-uuid filter in armiesToRender can drop the save's
+  // stale army entry without waiting for a save refresh.
+  const saveCharactersByRegionRef = useRef(null);
   const [liveCharPositionsVersion, setLiveCharPositionsVersion] = useState(0);
   // User toggle: whether to override save positions with live-log positions.
   // Default ON (pixel-accurate for live play). Turn off when reviewing old
@@ -1606,15 +1767,40 @@ function App() {
   const armiesToRender = useMemo(() => {
     const src = saveLiveArmies && saveLiveArmies.length > 0 ? saveLiveArmies : armiesData;
     if (!src || src.length === 0) return [];
+    // Drop armies whose commander has died per the live log, even
+    // though the save still has them alive. Covers the post-siege
+    // "defender wiped, save hasn't updated yet" case where Titus's
+    // marker would otherwise linger until the next autosave.
+    const deadUuids = liveDeadCharUuids.current;
+    const isDeadCmd = (uuid) => {
+      if (!uuid || deadUuids.size === 0) return false;
+      const hex = uuid.toString(16).padStart(8, "0");
+      return deadUuids.has(hex);
+    };
     // Build a quick Set of "x,y" strings for all settlement tiles.
+    // CRITICAL: cityPixels uses TOP-DOWN visual coords (canvas getImageData
+    // order), but army positions from the save's type-6 records and
+    // descr_strat are BOTTOM-UP world coords. Flip cityPixels.y to world
+    // coords so the .has() comparison actually matches. Earlier rule
+    // compared coords across mismatched axes — only ~10 armies happened
+    // to land at coincidental matches. Now Titus at world (343, 386)
+    // correctly matches Brundisium's city pixel.
     const settlementTiles = new Set();
-    for (const cp of (cityPixels || [])) settlementTiles.add(`${cp.x},${cp.y}`);
+    const H_world = imgSize.height;
+    for (const cp of (cityPixels || [])) {
+      const worldY = (H_world - 1) - cp.y;
+      settlementTiles.add(`${cp.x},${worldY}`);
+    }
     const livePos = liveCharPositions.current;
     // Track which live-position keys we've used (so we can add un-matched
     // log-only entries as synthetic armies at the end). Skip all live-log
     // processing if user has disabled the override.
     const matchedKeys = new Set();
     const useLive = useLiveOverride;
+    // charUuid → { key, entry } — built lazily on first use inside the
+    // match loop. O(1) lookups for Tier 0 / Tier 0.5 instead of the
+    // O(livePos) linear scan that hung the app on busy saves.
+    let liveByCharUuid = null;
     // If the loaded save is from an older turn than the log's tail, only
     // apply log events whose turn is <= save turn. Prevents "future"
     // positions leaking into a historical save view. saveCurrentTurn is
@@ -1627,40 +1813,82 @@ function App() {
       let x = a.x, y = a.y;
       const faction = (a.faction || "").toLowerCase();
       const first = (a.firstName || (a.character || "").split(" ")[0] || "").toLowerCase();
-      const lastStub = (a.lastName || "").toLowerCase().replace(/[_]/g, "").split(/\s+/)[0] || "";
+      // Use originalLastName when an epithet trait replaced lastName.
+      // Engine logs continue emitting the BIRTH name in MOVING_NORMAL
+      // events even after a trait grants a cognomen, so matching has
+      // to happen on the birth-record value (e.g. Marcus's epithet
+      // override changed his lastName from "Livius_Drusus" to
+      // "Messapivs", but the log still says "Marcus Livius Drusus" on
+      // every move).
+      const matchLastName = a.originalLastName || a.lastName || "";
+      const lastStub = matchLastName.toLowerCase().replace(/[_]/g, "").split(/\s+/)[0] || "";
       // Primary: exact match on (firstName|lastNameStub|faction).
       // Fallback 1: any entry with same firstName and faction (different lastName).
       // Fallback 2: (for unknown-faction armies) any entry with same firstName.
       let liveEntry = null;
       let matchedKey = null;
       if (useLive) {
-        // Tier 0: direct uuid match. The save's primaryUuid (character id)
-        // equals the log's charUuid (last 8 hex chars). This bypasses all
-        // name-based fuzzy matching when both sides agree on identity —
-        // handles same-name generals across factions, renamed captains,
-        // and cases where the save and log spell a lastName differently.
-        if (a.primaryUuid) {
-          const hex = a.primaryUuid.toString(16).padStart(8, "0");
+        // Build a charUuid → entry index ONCE per memo run instead of
+        // scanning livePos linearly inside each army's match loop. The
+        // earlier per-army scan was O(armies × livePos), which combined
+        // with my 0.9.235 Tier 0.5 made the app hang on saves with many
+        // armies + active log streaming.
+        if (!liveByCharUuid) {
+          liveByCharUuid = new Map();
           for (const [k, v] of livePos) {
-            if (v.charUuid === hex && inTurn(v)) { liveEntry = v; matchedKey = k; break; }
+            if (v.charUuid) liveByCharUuid.set(v.charUuid, { key: k, entry: v });
           }
+        }
+        // Tier 0: primaryUuid → log charUuid.
+        if (a.primaryUuid) {
+          const hit = liveByCharUuid.get(a.primaryUuid.toString(16).padStart(8, "0"));
+          if (hit && inTurn(hit.entry)) { liveEntry = hit.entry; matchedKey = hit.key; }
+        }
+        // Tier 0.5: commanderUuid → log charUuid (covers characters the
+        // v1 parser misses — their saveLiveArmies entry has no
+        // primaryUuid but the unit-record cmd field IS the engine's
+        // character id, which is what the log emits as charUuid).
+        if (!liveEntry && a.commanderUuid) {
+          const hit = liveByCharUuid.get(a.commanderUuid.toString(16).padStart(8, "0"));
+          if (hit && inTurn(hit.entry)) { liveEntry = hit.entry; matchedKey = hit.key; }
         }
         const fullKey = first + "|" + lastStub + "|" + faction;
         if (!liveEntry) {
           const primary = livePos.get(fullKey);
           if (primary && inTurn(primary)) { liveEntry = primary; matchedKey = fullKey; }
         }
-        if (!liveEntry && faction) {
+        // Tier 2 (firstName + faction prefix) is OFF by default. It used
+        // to fire whenever the save's lastName didn't exactly match the
+        // log's, but in factions with many same-firstName generals
+        // (Roman families have ~5 active "Marcus" characters at any
+        // time) it eagerly mis-matched: the first "marcus|*|romans_julii"
+        // key in livePos got applied to EVERY save Marcus, dragging
+        // unrelated heirs and consuls onto the moving general's tile.
+        // Only fire it when the save army has NO lastName at all (i.e.
+        // a placeholder firstName like "romans_julii captain") AND there
+        // is EXACTLY ONE candidate key starting with that firstName in
+        // the same faction. Same conservative rule for the unknown-
+        // faction Tier 3 fallback.
+        const isPlaceholderName = !lastStub || /\s/.test(first); // "romans_julii captain", etc.
+        if (!liveEntry && isPlaceholderName && faction) {
+          let candidate = null, candidateKey = null, candidateCount = 0;
           for (const [k, v] of livePos) {
             if (k.startsWith(first + "|") && k.endsWith("|" + faction) && inTurn(v)) {
-              liveEntry = v; matchedKey = k; break;
+              candidate = v; candidateKey = k; candidateCount++;
+              if (candidateCount > 1) break;
             }
           }
+          if (candidateCount === 1) { liveEntry = candidate; matchedKey = candidateKey; }
         }
-        if (!liveEntry && (!faction || faction === "unknown") && first) {
+        if (!liveEntry && isPlaceholderName && (!faction || faction === "unknown") && first) {
+          let candidate = null, candidateKey = null, candidateCount = 0;
           for (const [k, v] of livePos) {
-            if (k.startsWith(first + "|") && inTurn(v)) { liveEntry = v; matchedKey = k; break; }
+            if (k.startsWith(first + "|") && inTurn(v)) {
+              candidate = v; candidateKey = k; candidateCount++;
+              if (candidateCount > 1) break;
+            }
           }
+          if (candidateCount === 1) { liveEntry = candidate; matchedKey = candidateKey; }
         }
         if (matchedKey) matchedKeys.add(matchedKey);
       }
@@ -1678,19 +1906,59 @@ function App() {
       }
       return { ...a, x, y, armyClass, liveTracked: !!liveEntry };
     });
-    // Append log-only armies — characters the log has positions for but
-    // the save parser didn't cover. Typically generated captains (brigands,
-    // rebels) whose lightweight records aren't in the v2 parser's output.
-    // Dedupe by (faction, x, y) so stacked captains share one marker.
+    // Pass 2: proximity-based position fix-up. If the match cascade
+    // missed a save-army ↔ log entry pair (e.g. name spelling drift,
+    // uuid encoding mismatch), but a same-faction same-firstName log
+    // entry is within 2 tiles of a save army, treat them as the same
+    // character and UPDATE the save army's (x, y) to the log entry's
+    // position. Earlier 0.9.244 SKIPPED the log entry instead — that
+    // left the stale save marker visible at the old tile, so a "move
+    // back to original tile" didn't update on the map. Updating in
+    // place ensures the marker tracks the latest live position.
+    const NEAR_TILES_SQ = 4; // 2-tile radius
+    if (useLive) {
+      for (const [key, entry] of livePos) {
+        if (matchedKeys.has(key)) continue;
+        if (!inTurn(entry)) continue;
+        const fac = (entry.faction || "").toLowerCase();
+        const entryFirst = (entry.name || "").toLowerCase().replace(/^(captain|admiral|general)\s+/, "").split(/\s+/)[0];
+        if (!entryFirst || !fac) continue;
+        for (const a of result) {
+          if (typeof a.x !== "number" || typeof a.y !== "number") continue;
+          const aFac = (a.faction || "").toLowerCase();
+          if (aFac !== fac) continue;
+          const aFirst = (a.firstName || (a.character || "").split(" ")[0] || "").toLowerCase();
+          if (aFirst !== entryFirst) continue;
+          const dx = entry.x - a.x, dy = entry.y - a.y;
+          if (dx * dx + dy * dy > NEAR_TILES_SQ) continue;
+          // Same character — adopt the log entry's position and mark
+          // the key as matched so the synthetic-entry block below
+          // doesn't add a duplicate.
+          a.x = entry.x;
+          a.y = entry.y;
+          a.liveTracked = true;
+          matchedKeys.add(key);
+          break;
+        }
+      }
+    }
+
+    // Append log-only armies — characters the log has positions for
+    // but the save parser genuinely didn't cover (true generated
+    // captains, brigands, rebels). Now built AFTER the proximity
+    // fix-up so save armies that drifted on stale data already moved.
     const alreadyAtPos = new Set();
-    for (const a of result) alreadyAtPos.add((a.faction || "") + "|" + a.x + "," + a.y);
+    for (const a of result) {
+      if (typeof a.x !== "number" || typeof a.y !== "number") continue;
+      alreadyAtPos.add((a.faction || "") + "|" + a.x + "," + a.y);
+    }
     const logOnlyByPos = new Map(); // "faction|x,y" → [entries]
     if (useLive) {
       for (const [key, entry] of livePos) {
         if (matchedKeys.has(key)) continue;
-        if (!inTurn(entry)) continue; // skip entries newer than the loaded save
+        if (!inTurn(entry)) continue;
         const posKey = (entry.faction || "") + "|" + entry.x + "," + entry.y;
-        if (alreadyAtPos.has(posKey)) continue; // save-parser already shows an army there
+        if (alreadyAtPos.has(posKey)) continue;
         if (!logOnlyByPos.has(posKey)) logOnlyByPos.set(posKey, []);
         logOnlyByPos.get(posKey).push(entry);
       }
@@ -1717,13 +1985,17 @@ function App() {
         passengers,
       });
     }
-    // descr_strat fallback: for each starting-army position descr_strat knows
-    // about that the save-parser left uncovered, add a synthetic entry. This
-    // restores the initial captain-led garrisons (Borus at Pella, Attalos at
-    // Sparta, etc.) that the save stores as generic captain records with no
-    // named-character entry — the descr_strat name is a useful placeholder
-    // even though it's not preserved in-game. Only applies when armiesData
-    // is the descr_strat source (not the already-loaded save's liveArmies).
+    // descr_strat fallback: borrow units lists from descr_strat for save
+    // armies positioned at matching tiles, AND add synthetic markers for
+    // descr_strat armies the save genuinely missed.
+    //
+    // Caveat: in live mode the synthetic-marker addition is harmful once
+    // a save army has moved off its descr_strat starting tile — the
+    // descr_strat coord still holds an entry, the save army holds another
+    // entry at its new position, and the user sees the same character
+    // duplicated on the map (one at the old spawn, one at the current
+    // location). Disable synthetic creation when log-position events have
+    // been received; fall back to save+log as the authoritative source.
     if (saveLiveArmies && saveLiveArmies.length > 0 && armiesData && armiesData.length > 0) {
       const posTaken = new Set();
       // Index existing armies by position so we can either merge units in
@@ -1735,6 +2007,7 @@ function App() {
           armyByPos.set(`${a.x},${a.y}`, a);
         }
       }
+      const liveMovesActive = useLiveOverride && livePos.size > 0;
       for (const d of armiesData) {
         if (typeof d.x !== "number" || typeof d.y !== "number") continue;
         const key = `${d.x},${d.y}`;
@@ -1748,6 +2021,13 @@ function App() {
           }
           continue;
         }
+        // No save army at this tile. In live mode (with log moves
+        // flowing) skip the synthetic to avoid pinning the character to
+        // his descr_strat starting tile after he's already moved — the
+        // user reported a duplicate Aulus marker showing him both at his
+        // current Uria position AND at his original Taras spawn, which
+        // was this synthetic exactly.
+        if (liveMovesActive) continue;
         let armyClass = d.armyClass || "field";
         if (armyClass === "field" && settlementTiles.has(key)) armyClass = "garrison";
         const synth = { ...d, armyClass, descrStratOnly: true };
@@ -1755,8 +2035,140 @@ function App() {
         armyByPos.set(key, synth);
       }
     }
-    return result;
-  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn]);
+    // Compute live region for each army from its (x, y). City tiles are
+    // BLACK on the regions TGA so a raw pixel lookup fails for armies
+    // sitting on a settlement (0,0,0 isn't a region key) — we fall back
+    // to cityPixels (which carries the region rgbKey for each settlement
+    // tile) and, finally, to a 1-tile neighbourhood scan that catches
+    // armies one tile off the city center. Without these fallbacks an
+    // army garrisoning Uria gets `region = null` and its units stay
+    // bucketed under the stale save region instead of moving to the
+    // panel for the city the marker is on.
+    const pxData = pixelDataRef.current;
+    const W = imgSize.width, H = imgSize.height;
+    // cityByXy keyed by WORLD coords (bottom-up) so tileToRegion's
+    // settlement-tile fast path matches the army-position coord system.
+    const cityByXy = new Map();
+    for (const cp of (cityPixels || [])) {
+      const worldY = (H - 1) - cp.y;
+      cityByXy.set(`${cp.x},${worldY}`, cp.rgbKey);
+    }
+    const sampleAt = (x, y) => {
+      if (!pxData || x < 0 || y < 0 || x >= W || y >= H) return null;
+      const tgaY = (H - 1) - y;
+      const idx = (tgaY * W + x) * 4;
+      const r = pxData[idx], g = pxData[idx + 1], b = pxData[idx + 2];
+      if (r === 0 && g === 0 && b === 0) return null; // city pixel — handled by cityByXy
+      return regions[`${r},${g},${b}`]?.region || null;
+    };
+    const tileToRegion = (x, y) => {
+      if (x == null || y == null) return null;
+      // 1) Settlement-tile fast path.
+      const cityRgb = cityByXy.get(`${x},${y}`);
+      if (cityRgb) return regions[cityRgb]?.region || null;
+      // 2) Direct pixel sample.
+      const direct = sampleAt(x, y);
+      if (direct) return direct;
+      // 3) 1-tile neighbourhood scan — picks up armies that stand 1px
+      //    off the settlement center, which is common for stacks
+      //    laid down by descr_strat at coords adjacent to the city
+      //    pixel rather than on it.
+      for (const dy of [-1, 0, 1]) for (const dx of [-1, 0, 1]) {
+        if (dx === 0 && dy === 0) continue;
+        const nbCity = cityByXy.get(`${x+dx},${y+dy}`);
+        if (nbCity) return regions[nbCity]?.region || null;
+        const nb = sampleAt(x + dx, y + dy);
+        if (nb) return nb;
+      }
+      return null;
+    };
+    for (const a of result) {
+      a.region = tileToRegion(a.x, a.y);
+    }
+    // Final filter: drop any army whose commander/character has been
+    // reported dead by the live log. Save-derived armies linger
+    // otherwise — defeated armies in a siege resolution would still
+    // show their old marker until the next save snapshot.
+    const wiped = liveAssaultWipedSettlements.current;
+    const inWipedSettlement = (a) => {
+      if (wiped.size === 0) return false;
+      // Bodyguard unit is the first in the army's unit list. Its region
+      // tag is the settlement the army was stationed in. If that's been
+      // wiped by a successful assault, the bodyguard (and the rest of
+      // the garrison) is dead.
+      const bg = a.units && a.units[0];
+      if (!bg || !bg.region) return false;
+      return wiped.has(bg.region.toLowerCase());
+    };
+    const filtered = (deadUuids.size === 0 && wiped.size === 0)
+      ? result
+      : result.filter((a) => !isDeadCmd(a.commanderUuid) && !isDeadCmd(a.primaryUuid) && !inWipedSettlement(a));
+    return filtered;
+  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn, regions, imgSize]);
+
+  // Live-aware unitsByRegion: re-bucket save-tagged units using the
+  // commander's CURRENT region from armiesToRender, so the side panel
+  // reflects mid-turn moves the same way the map markers do. The save's
+  // unit-record region is frozen to the last save; armiesToRender layers
+  // log-position events on top, giving us each commander's tile-accurate
+  // location. If a commander has no live entry (or pixelData isn't ready),
+  // we fall back to the save's region.
+  const liveUnitsByRegion = useMemo(() => {
+    if (!saveUnitsByRegion) return null;
+    // Only override the unit's save-time region tag when the commander's
+    // CURRENT position came from a live-log event (`liveTracked`). For
+    // save-derived positions, tileToRegion(a.x, a.y) can drift to an
+    // adjacent region purely because the bodyguard's world-object record
+    // sits a couple of tiles off the settlement marker — Quintus
+    // Ogulnius_Gallus, the appointed governor of Rome at (285, 404), is
+    // 1-3 tiles away from Rome's center pixel and resolves to a
+    // neighbouring region's RGB; without this gate his 13 units (bg +
+    // 12 foot via Pass 2) bucketed out of Roma's panel even though their
+    // save region tag IS "Roma". User report: "Rome should list armies
+    // but Field armies: None". Save region is authoritative when there's
+    // no live-log signal.
+    const cmdToLiveRegion = new Map();
+    for (const a of armiesToRender) {
+      if (!a.commanderUuid || !a.region) continue;
+      if (!a.liveTracked) continue;
+      cmdToLiveRegion.set(a.commanderUuid, a.region);
+    }
+    const deadUuids = liveDeadCharUuids.current;
+    const isCmdDead = (cmd) => {
+      if (!cmd || deadUuids.size === 0) return false;
+      return deadUuids.has(cmd.toString(16).padStart(8, "0"));
+    };
+    const wiped = liveAssaultWipedSettlements.current;
+    // 0.9.271's unit-flow override is REVERTED here pending investigation —
+    // it caused a regression where many units (from different factions)
+    // flooded into Uria's panel. Suspected cause: the runtime→save char
+    // mapping was matching by first name with a weak last-name discriminator,
+    // donating foot from the wrong save char to the wrong recipient via
+    // Pass 2 phantom file-order attribution (a single "greek general" record
+    // with cmd=266b0168 has 763 foot units attached to it via Pass 2, which
+    // is a Pass 2 design trade-off unrelated to flow, but the override sat
+    // on top of it and amplified misattributions). Main.js's flow tracking
+    // (unitFlowFromTo + recordUnitTransfer) is left in place so we have the
+    // data plumbing ready for a more conservative reattempt later — but the
+    // renderer no longer applies it. To reintroduce safely we'd need: (a)
+    // faction tagging on save char records so the runtime→save match is
+    // unique within a faction, (b) Pass 2 region-aware attribution so the
+    // donor pool doesn't include cross-region foot units, (c) probably
+    // tracking the source army's leader at every transfer event in main.js
+    // and only flowing within named-character pairs.
+    const out = {};
+    for (const [region, units] of Object.entries(saveUnitsByRegion)) {
+      for (const u of units) {
+        if (wiped.size > 0 && u.region && wiped.has(u.region.toLowerCase())) continue;
+        const cmd = u.commanderUuid || u.inferredCmd || 0;
+        if (isCmdDead(cmd)) continue;
+        const effective = (cmd && cmdToLiveRegion.get(cmd)) || region;
+        if (!out[effective]) out[effective] = [];
+        out[effective].push(u);
+      }
+    }
+    return out;
+  }, [saveUnitsByRegion, armiesToRender, liveCharPositionsVersion]);
   const [homelandsData, setHomelandsData] = useState({}); // faction → [hidden_resource, ...]
   // [{ name, count, group }, ...] — every hidden-resource token in the active
   // campaign, classified into a logical group. Group classification is
@@ -1927,6 +2339,17 @@ function App() {
       const captureMatch = line.match(/faction\(([^)]+)\) captures ([^ ]+) from ([^.]+)\. Reason - (\w+)/);
       if (captureMatch) {
         events.push({ type: "capture", faction: captureMatch[1], settlement: captureMatch[2], from: captureMatch[3], reason: captureMatch[4] });
+        continue;
+      }
+      // Surrender event — fires just BEFORE the matching capture line, and
+      // its `reason` distinguishes a successful assault (whole garrison
+      // dies) from peaceful surrender or auto-capture of an abandoned
+      // settlement. The capture event itself always has reason=CAPTURED so
+      // it can't tell them apart on its own.
+      // faction(messapians) surrenders Brundisium to faction(romans_julii). Reason - SUCCESSFUL_ASSAULT
+      const surrenderMatch = line.match(/faction\(([^)]+)\) surrenders ([^ ]+) to faction\(([^)]+)\)\. Reason - (\w+)/);
+      if (surrenderMatch) {
+        events.push({ type: "surrender", from: surrenderMatch[1], settlement: surrenderMatch[2], to: surrenderMatch[3], reason: surrenderMatch[4] });
         continue;
       }
       // Region attachment
@@ -2142,16 +2565,50 @@ function App() {
             if (!next[faction].some(r => r.toLowerCase() === settlement.toLowerCase())) next[faction].push(settlement);
             return next;
           });
+          // Do the city-name lookup inside setRegions's updater so we read
+          // the CURRENT regions state (the outer `regions` variable here
+          // is stale — processLogEvents is a useCallback with deps
+          // [replayToTurn], so the captured `regions` is the initial empty
+          // map from first render and never updates). The settlement from
+          // the regex is the REGION name (e.g. "Salentinia"); we need to
+          // map it to the CITY name (e.g. "Uria") to key
+          // currentOwnerByCity — the map render's live-ownership override
+          // (App.js:3767). Without this update the region keeps its
+          // pre-capture color even though the live panel shows
+          // "X attached to Y".
           setRegions(prev => {
             const next = { ...prev };
+            let cityName = null;
             for (const [rgbKey, r] of Object.entries(next)) {
               if (r.city?.toLowerCase() === settlement.toLowerCase() || r.region?.toLowerCase() === settlement.toLowerCase()) {
                 next[rgbKey] = { ...r, faction };
+                cityName = r.city || null;
                 break;
               }
             }
+            // Chain currentOwnerByCity update with the city we just
+            // resolved. React batches state updates issued from within
+            // another updater; this fires in the same render cycle.
+            if (cityName) {
+              setCurrentOwnerByCity(prevOwner => {
+                if (!prevOwner) return prevOwner;
+                return { ...prevOwner, [cityName]: faction };
+              });
+            }
             return next;
           });
+        }
+        // Successful-assault surrender: the entire garrison of the losing
+        // faction inside this settlement dies on the same turn. Track so
+        // liveUnitsByRegion + the Characters panel can drop them without
+        // waiting for a save refresh (user report: Titus survived in the
+        // panel after Marcus stormed Brundisium, no new save since the
+        // siege resolution). Defenders parked OUTSIDE the settlement
+        // aren't on this list — their region tag isn't this settlement.
+        if (!isBackfill && ev.type === "surrender" && ev.reason === "SUCCESSFUL_ASSAULT" && ev.settlement) {
+          liveAssaultWipedSettlements.current.add(ev.settlement.toLowerCase());
+          // Force liveUnitsByRegion + armiesToRender memos to recompute.
+          setLiveCharPositionsVersion(v => v + 1);
         }
       }
       // Append to persistent history
@@ -2227,16 +2684,36 @@ function App() {
     // Listen for live character moves — authoritative positions from the
     // engine's own movement events, used to keep army markers pixel-
     // accurate between save snapshots.
-    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset }) => {
-      if (reset) { liveCharPositions.current = new Map(); setLiveCharPositionsVersion(v => v + 1); return; }
+    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow }) => {
+      if (reset) {
+        liveCharPositions.current = new Map();
+        liveUnitFlow.current = [];
+        setLiveCharPositionsVersion(v => v + 1);
+        return;
+      }
+      if (unitFlow) {
+        liveUnitFlow.current = unitFlow;
+        setLiveCharPositionsVersion(v => v + 1);
+      }
       // Key format: "firstName|lastNameStub|faction". lastNameStub is the
       // first word of the character's surname (log: "of Rhodes" → "of",
       // save: "of_Rhodes" → "of_Rhodes" or similar). Empty if no surname.
       const keyFromName = (name, faction) => {
-        const clean = (name || "").toLowerCase().replace(/^(captain|admiral|general)\s+/, "");
+        // Strip role prefix and trailing trait epithet (e.g. "the
+        // Defender", "the Drunkard"). What's left is "FirstName +
+        // optionally compound surname".
+        const cleanRaw = (name || "").toLowerCase().replace(/^(captain|admiral|general|admiral)\s+/, "");
+        const clean = cleanRaw.replace(/\s+the\s+\S+$/i, "");
         const parts = clean.split(/\s+/);
         const first = parts[0] || "";
-        const lastStub = (parts[1] || "").replace(/[_]/g, "");
+        // Engine logs split compound surnames with SPACES while saves
+        // store them with underscores: log "Lucius Valerius Flaccus"
+        // vs save "Valerius_Flaccus". Concatenate parts[1..] with
+        // underscores stripped so both sides produce "valeriusflaccus"
+        // and the keys match. Without this the match cascade's Tier 1
+        // (full key) failed for every multi-word Roman surname,
+        // leaving their position updates orphaned.
+        const lastStub = parts.slice(1).join("").replace(/[_]/g, "");
         return first + "|" + lastStub + "|" + (faction || "").toLowerCase();
       };
       // Store positions ONLY under the canonical key (first|lastStub|faction).
@@ -2247,7 +2724,7 @@ function App() {
       if (moves) {
         for (const m of moves) {
           if (m.x == null || m.y == null || !m.name) continue;
-          if (m.x < 0 || m.x > 200 || m.y < 0 || m.y > 150) continue;
+          if (m.x < 0 || m.x > 1100 || m.y < 0 || m.y > 800) continue; // raised 2026-05-09 for RIS imperial 1020x700 map
           const key = keyFromName(m.name, m.faction);
           liveCharPositions.current.set(key, {
             x: m.x, y: m.y, name: m.name, faction: m.faction, role: m.role || null,
@@ -2258,8 +2735,72 @@ function App() {
       }
       if (deaths) {
         for (const d of deaths) {
+          // Track charUuid for every death so armiesToRender can skip
+          // save-derived armies whose commander is dead per the log,
+          // even before the next save snapshot writes that fact.
+          if (d.charUuid) liveDeadCharUuids.current.add(d.charUuid);
+          // Also map the runtime memory uuid in the log back to the save's
+          // stored secondaryUuid via a name lookup against
+          // saveCharactersByRegionRef. Without this, when the log says
+          // "Titus died (charUuid 14f47c40)" the existing uuid filter
+          // misses Titus's save entry (his save secondaryUuid is some
+          // other value, e.g. cb79a1ae for save_rome10's Aulus). User
+          // report: Titus killed at Brundisium siege, no new save yet,
+          // his marker + 8-unit roster still showed at the captured tile.
+          //
+          // Two-pass name match: the DYING log line emits ONLY the first
+          // name ("Titus(uuid):DYING..."), but if the same character had
+          // emitted a MOVING_NORMAL earlier in this session, livePos has
+          // his full name keyed under (first|lastStub|faction). Find that
+          // entry by charUuid → recover the full name → match save chars
+          // on BOTH first AND last name. Falls back to first-name-only if
+          // no live entry exists (e.g. stationary character that never
+          // emitted a move).
+          if (d.name) {
+            const dFirst = d.name.toLowerCase().split(/\s+/)[0];
+            // Recover full name + faction from liveCharPositions if
+            // possible — engine logs the full surname in MOVING_NORMAL
+            // events even when DYING strips it.
+            let dLastStub = null;
+            let dFaction = (d.faction || "").toLowerCase() || null;
+            if (d.charUuid) {
+              for (const [k, v] of liveCharPositions.current) {
+                if (v.charUuid === d.charUuid) {
+                  // k format: "first|lastStub|faction"
+                  const parts = k.split("|");
+                  if (parts[0] === dFirst) {
+                    dLastStub = parts[1] || null;
+                    dFaction = dFaction || parts[2] || null;
+                  }
+                  break;
+                }
+              }
+            }
+            const byReg = saveCharactersByRegionRef.current || {};
+            for (const list of Object.values(byReg)) {
+              for (const c of list) {
+                if ((c.firstName || "").toLowerCase() !== dFirst) continue;
+                // Last-name discriminator when we recovered one. Save
+                // stores compound surnames with underscores; the live
+                // lastStub strips those. Use the same normalization on
+                // BOTH sides for the compare.
+                if (dLastStub) {
+                  const cLast = (c.originalLastName || c.lastName || "").toLowerCase().replace(/_/g, "").split(/\s+/)[0];
+                  if (cLast !== dLastStub) continue;
+                }
+                // No faction tag on char records yet, so we can't
+                // discriminate further on faction. With first+last match
+                // and a recovered lastStub this is unique enough in
+                // practice (two characters sharing both first AND last
+                // name across factions would be a rare collision).
+                if (c.secondaryUuid) liveDeadCharUuids.current.add(c.secondaryUuid.toString(16).padStart(8, "0"));
+              }
+            }
+          }
           if (d.name) {
             const key = keyFromName(d.name, d.faction);
+            const entry = liveCharPositions.current.get(key);
+            if (entry && entry.charUuid) liveDeadCharUuids.current.add(entry.charUuid);
             if (liveCharPositions.current.delete(key)) changed = true;
           } else if (d.charUuid) {
             // Uuid-only death: iterate the map and drop entries whose stored
@@ -2307,6 +2848,7 @@ function App() {
   // Ref to always have latest processLogEvents without re-running the save watcher effect
   const processLogEventsRef = useRef(processLogEvents);
   useEffect(() => { processLogEventsRef.current = processLogEvents; }, [processLogEvents]);
+  useEffect(() => { saveCharactersByRegionRef.current = saveCharactersByRegion; }, [saveCharactersByRegion]);
 
   // Effect: start/stop save file watcher (alongside log watcher)
   useEffect(() => {
@@ -2319,7 +2861,33 @@ function App() {
     // backwards compatibility with old saved state.
     const saveDir = liveSaveDir || liveLogDir.replace(/[/\\]logs\/?$/, "/saves");
 
-    // Set up listeners BEFORE starting the watcher
+    // Set up listeners BEFORE starting the watcher.
+    // Loading banner subscription — flip the indicator on as soon as the
+    // user clicks Live so the app doesn't appear frozen during the parse.
+    setLiveLoading(true);
+    setLiveLoadingStage("Starting live mode...");
+    setLiveLoadingStartedAt(Date.now());
+    setLiveLoadingElapsedSec(0);
+    const unsubProgress = api.onSaveProgress?.(({ stage, pct }) => {
+      setLiveLoadingStage(stage || "");
+      if (stage === "Done" || pct === 100) {
+        liveLoadingStartedAtRef.current = null;
+        setTimeout(() => setLiveLoading(false), 250);
+      } else {
+        // Show the loading banner whenever a progress event arrives —
+        // not just on the initial save-watch-start. Reparses triggered
+        // by in-game saves emit the same progress events; without this,
+        // the user saw a frozen UI with no indication anything was
+        // happening (the banner was only flipped on at Live-mode start).
+        setLiveLoading(true);
+        if (!liveLoadingStartedAtRef.current) {
+          liveLoadingStartedAtRef.current = Date.now();
+          setLiveLoadingStartedAt(Date.now());
+          setLiveLoadingElapsedSec(0);
+        }
+      }
+    });
+
     const unsubEvents = api.onSaveEvents(({ file, events }) => {
       const saveEvents = events.map(ev => ({
         ...ev,
@@ -2365,15 +2933,41 @@ function App() {
       // Wall-clock stamp of the latest snapshot — drives the "loaded Xm ago"
       // label, lets the user notice if the watcher's gone quiet.
       setSaveLoadedAt(Date.now());
+      // Clear the assault-wiped-settlements list on every save refresh.
+      // The wipe was added in 0.9.267 to drop a defender's units from the
+      // captured-settlement's panel during the live moment between the
+      // surrender event and the next save snapshot. Once a fresh save
+      // lands, the save data itself is correct — keeping settlements on
+      // the wipe list any longer filters out the new owner's units too
+      // (user report: Aulus's 14-unit army at recaptured Taras showed
+      // 'No units stationed' because Taras had been wiped earlier in
+      // the campaign and never cleared).
+      liveAssaultWipedSettlements.current.clear();
+      // Same reasoning for the dead-uuid set — those flags were stale-
+      // save guards. Once the save is fresh, the death is in the
+      // characters list (or NOT in the characters list if the engine
+      // dropped them) — so the runtime guard isn't needed.
+      liveDeadCharUuids.current.clear();
+      setLiveCharPositionsVersion(v => v + 1);
       if (data && data.buildings) setSaveBuildingsData(data.buildings);
       if (data && data.armies) setSaveArmiesData(data.armies);
       if (data && data.queues) setSaveQueues(data.queues);
+      if (data && data.taxByCity) setSaveTaxByCity(data.taxByCity);
+      if (data && data.happinessByCity) setSaveHappinessByCity(data.happinessByCity);
+      if (data && data.populationByCity) setSavePopulationByCity(data.populationByCity);
+      if (data && data.incomeByCity) setSaveIncomeByCity(data.incomeByCity);
+      if (data && data.sizeByCity) setSaveSizeByCity(data.sizeByCity);
+      if (data && data.treasuryByFaction) setSaveTreasuryRecords(data.treasuryByFaction);
       if (data && data.charactersByRegion) setSaveCharactersByRegion(data.charactersByRegion);
       if (data && data.unitsByRegion) setSaveUnitsByRegion(data.unitsByRegion);
       if (data && data.scriptedByFaction) setSaveScriptedByFaction(data.scriptedByFaction);
       if (data && data.currentYear != null) setSaveCurrentYear(data.currentYear);
       if (data && data.currentTurn != null) setSaveCurrentTurn(data.currentTurn);
+      if (data && data.factionRecords) setSaveFactionRecords(data.factionRecords);
+      if (data && data.luaCounters) setSaveLuaCounters(data.luaCounters);
+      if (data && data.governorByCity) setSaveGovernorByCity(data.governorByCity);
       if (data && data.liveArmies) setSaveLiveArmies(data.liveArmies);
+      if (data && data.navyDiag) console.log("[navy-diag]", data.navyDiag);
       if (data && data.builtBuildingsByCity) setBuiltBuildingsByCity(data.builtBuildingsByCity);
       if (data && data.queuedBuildingsByCity) setQueuedBuildingsByCity(data.queuedBuildingsByCity);
       if (data && data.initialOwnerByCity) setInitialOwnerByCity(data.initialOwnerByCity);
@@ -2403,6 +2997,12 @@ function App() {
         if (d.buildings) setSaveBuildingsData(d.buildings);
         if (d.armies) setSaveArmiesData(d.armies);
         if (d.queues) setSaveQueues(d.queues);
+        if (d.taxByCity) setSaveTaxByCity(d.taxByCity);
+        if (d.happinessByCity) setSaveHappinessByCity(d.happinessByCity);
+        if (d.populationByCity) setSavePopulationByCity(d.populationByCity);
+        if (d.incomeByCity) setSaveIncomeByCity(d.incomeByCity);
+        if (d.sizeByCity) setSaveSizeByCity(d.sizeByCity);
+        if (d.treasuryByFaction) setSaveTreasuryRecords(d.treasuryByFaction);
         // New parser outputs were missing from the initial-load path — until
         // the user triggered a save, Units / Built / Queued stayed empty.
         if (d.charactersByRegion) setSaveCharactersByRegion(d.charactersByRegion);
@@ -2410,6 +3010,9 @@ function App() {
         if (d.scriptedByFaction) setSaveScriptedByFaction(d.scriptedByFaction);
         if (d.currentYear != null) setSaveCurrentYear(d.currentYear);
         if (d.currentTurn != null) setSaveCurrentTurn(d.currentTurn);
+        if (d.factionRecords) setSaveFactionRecords(d.factionRecords);
+        if (d.luaCounters) setSaveLuaCounters(d.luaCounters);
+        if (d.governorByCity) setSaveGovernorByCity(d.governorByCity);
         if (d.liveArmies) setSaveLiveArmies(d.liveArmies);
         if (d.builtBuildingsByCity) setBuiltBuildingsByCity(d.builtBuildingsByCity);
         if (d.queuedBuildingsByCity) setQueuedBuildingsByCity(d.queuedBuildingsByCity);
@@ -2429,15 +3032,29 @@ function App() {
           if (m) pushToast(`Couldn't identify faction from save name "${m[1].trim()}" — pick manually.`, "info");
         }
       }
+      // Belt-and-braces: even if the "Done" progress event was missed,
+      // the resolved promise means parsing is over. Hide the banner.
+      setLiveLoading(false);
     });
 
     return () => {
       api.saveWatchStop();
       if (unsubEvents) unsubEvents();
       if (unsubSnapshot) unsubSnapshot();
+      if (unsubProgress) unsubProgress();
+      setLiveLoading(false);
       setSaveBuildingsData(null);
       setSaveArmiesData(null);
       setSaveQueues(null);
+      setSaveTaxByCity(null);
+      setSaveHappinessByCity(null);
+      setSavePopulationByCity(null);
+      setSaveIncomeByCity(null);
+      setSaveSizeByCity(null);
+      setSaveTreasuryRecords(null);
+      setSaveFactionRecords(null);
+      setSaveLuaCounters(null);
+      setSaveGovernorByCity(null);
       setSaveCharactersByRegion(null);
       setSaveUnitsByRegion(null);
       setBuiltBuildingsByCity(null);
@@ -2969,11 +3586,49 @@ function App() {
         const lvl = b.level;
         let displayName = null;
         if (lvl && gameDisplayNames) {
+          // Try multiple key orderings the mod might use:
+          //   1. <level>_<culture>          (RIS gov-chain style: gov2_roman)
+          //   2. <chain>_<token>_<tier>     (RIS colony-chain style: colony_italic_2)
+          //   3. <level>                    (plain key)
+          // Order #2 is necessary because RIS imperial uses culture-or-
+          // ethnicity tokens INSIDE the level key for the colony chain
+          // (`colony_italic_2`) rather than appended like governments
+          // (`gov2_roman`). Without it the colony chain falls back to the
+          // bundled JSON's "Large Colony" instead of the mod's localized
+          // "Colony 2 - Italic" — and the user notices the gov-themed
+          // name (e.g. "Provincia (Direct Rule)") going missing.
           if (culture && gameDisplayNames[`${lvl}_${culture}`]) {
             displayName = gameDisplayNames[`${lvl}_${culture}`];
-          } else if (gameDisplayNames[lvl]) {
+          }
+          if (!displayName && b.type && lvl) {
+            // Parse the trailing "_<tier>" suffix off the level name, then
+            // try the mod's alternate ordering: chain_token_tier.
+            const m = lvl.match(/^(.*)_(\d+)$/);
+            if (m && m[1] === b.type) {
+              const tier = m[2];
+              // Try the region's culture tokens (lowercase). r.tags includes
+              // ethnic markers (italic, italiote, hellenic, ...). The
+              // bundled regionTags closure isn't directly accessible here,
+              // so use the resolved `culture` plus a small fallback list
+              // of common RIS tokens — Italic, Hellenic, Iberian, etc.
+              const tokens = [];
+              if (culture) tokens.push(culture);
+              // The faction's culture often matches; the region's ethnic
+              // tag is what RIS keys by. Probe common tokens — cheap (the
+              // gameDisplayNames map lookup is O(1)).
+              for (const t of ["italic", "italiote", "hellenic", "celtic", "iberian", "germanic", "thracian", "illyrian", "persian", "indian", "arab", "punic", "carthaginian", "romanized"]) {
+                if (!tokens.includes(t)) tokens.push(t);
+              }
+              for (const tok of tokens) {
+                const key = `${b.type}_${tok}_${tier}`;
+                if (gameDisplayNames[key]) { displayName = gameDisplayNames[key]; break; }
+              }
+            }
+          }
+          if (!displayName && gameDisplayNames[lvl]) {
             displayName = gameDisplayNames[lvl];
-          } else {
+          }
+          if (!displayName) {
             console.warn("[buildings] NO DISPLAY NAME for level", JSON.stringify(lvl),
               "culture:", culture,
               "gameDisplayNames keys:", Object.keys(gameDisplayNames).length,
@@ -3346,7 +4001,15 @@ function App() {
       if (!pxData) return;
       const W = imgSize.width, H = imgSize.height;
       if (colorMode === "faction") {
-        // Build rgbKey → owner faction from descr_strat (actual campaign ownership)
+        // Build rgbKey → owner faction.
+        // Base layer: descr_strat starting ownership.
+        // Live override: when a save is loaded (currentOwnerByCity set),
+        // overwrite each region whose owner has changed. Without this the
+        // map permanently shows turn-0 borders even after the player has
+        // conquered half the world. (User report 2026-05-09: "I should
+        // own this area as Rome. Salentinia." — the side-panel showed
+        // Faction: Rome, but the tile stayed brown because this loop
+        // never consulted currentOwnerByCity.)
         const rgbToOwner = {};
         for (const [faction, regionNames] of Object.entries(factionRegionsMap)) {
           for (const rn of regionNames) {
@@ -3356,6 +4019,28 @@ function App() {
                 break;
               }
             }
+          }
+        }
+        if (currentOwnerByCity) {
+          let changeCount = 0;
+          const samples = [];
+          for (const [rgbKey, r] of Object.entries(regions)) {
+            const liveOwner = currentOwnerByCity[r.city];
+            if (liveOwner) {
+              const prev = rgbToOwner[rgbKey];
+              if (prev !== liveOwner) {
+                changeCount++;
+                if (samples.length < 5) samples.push(`${r.region}/${r.city}: ${prev || "(none)"} → ${liveOwner}`);
+              }
+              rgbToOwner[rgbKey] = liveOwner;
+            }
+          }
+          // Only log when the override actually flipped a region's owner.
+          // Quiet on normal repaints (dev-mode toggles, color-mode switches);
+          // fires on the first render after a conquest so the conquest is
+          // visible in the dev console with timestamps.
+          if (changeCount > 0) {
+            console.log(`[map-render] live-ownership override flipped ${changeCount} region(s). Samples: ${samples.join(" | ")}`);
           }
         }
         // Build faction → color map (use sm_factions primary if available, else region's pixel color)
@@ -4090,10 +4775,18 @@ function App() {
     // which picks the save-parsed live armies when available, else falls
     // back to descr_strat starting armies.
     if (armiesToRender.length > 0 && showArmies) {
-      // radius in image-pixel space: half of half a pixel = 0.25
-      // but enforce a minimum screen size of 1.5px
-      const r = Math.max(1.5 / totalScale, 0.25);
+      // Marker radius scales with zoom so the dot is visible at every
+      // zoom level: ~3px at full-map view, growing as you zoom in. The
+      // earlier 1.5px floor was too small to spot at default zoom — the
+      // user had to zoom way in before seeing anything, which made the
+      // feature feel broken. Floor of 3 screen-px is small enough not
+      // to clutter, big enough to spot a stack at a glance.
+      const r = Math.max(3 / totalScale, 0.4);
 
+      // Class shape conventions: garrison = filled circle (sits on the
+      // city tile), field = diamond (mobile), navy = anchor-style. Keep
+      // them simple; the faction-coloured border + class-coloured fill
+      // is enough to read at a glance.
       const COLORS = {
         garrison: 'rgba(220,160,40,0.95)',
         field:    'rgba(180,40,40,0.95)',
@@ -4104,19 +4797,11 @@ function App() {
         if (army.armyClass === 'garrison' && !showGarrisons) continue;
         if (army.armyClass === 'field'    && !showFieldArmies) continue;
         if (army.armyClass === 'navy'     && !showNavies) continue;
-        // Skip armies missing coords — parser output shapes have drifted
-        // (descr_strat armies have x/y, but some bundled data lacks them).
         if (typeof army.x !== 'number' || typeof army.y !== 'number') continue;
-        // descr_strat coords are bottom-up (y=0 at bottom), both from the
-        // live save parser AND from dev-imported parseDescrStratArmies.
-        // Flip to canvas top-down. (The old pre-bundled JSON was already
-        // top-down — but as soon as the user runs a dev import it gets
-        // replaced with bottom-up data, and the live-mode path always
-        // produces bottom-up, so flipping is right for every fresh path.)
         const mapY = (imgSize.height - 1) - army.y;
         const sx = army.x * totalScale + baseOffsetX + offset.x;
         const sy = mapY * totalScale + baseOffsetY + offset.y;
-        const margin = r * totalScale + 2;
+        const margin = r * totalScale + 4;
         if (sx < -margin || sx > canvasSize.width + margin) continue;
         if (sy < -margin || sy > canvasSize.height + margin) continue;
 
@@ -4125,15 +4810,15 @@ function App() {
         ctx.arc(army.x + 0.5, mapY + 0.5, r, 0, Math.PI * 2);
         ctx.fillStyle = COLORS[army.armyClass] || COLORS.field;
         ctx.fill();
-        // Faction-colored border when we know the faction and have color data.
-        // Falls back to black stroke for unknown factions.
+        // Faction-coloured outline. Wider line than before so it reads
+        // as a coloured halo around the dot rather than a hairline.
         const fc = factionColors[(army.faction || "").toLowerCase()];
         if (fc && fc.primary) {
           ctx.strokeStyle = `rgb(${fc.primary[0]},${fc.primary[1]},${fc.primary[2]})`;
-          ctx.lineWidth = Math.max(0.5 / totalScale, 0.2);
+          ctx.lineWidth = Math.max(1.2 / totalScale, 0.3);
         } else {
           ctx.strokeStyle = "rgba(0,0,0,0.85)";
-          ctx.lineWidth = Math.max(0.3 / totalScale, 0.15);
+          ctx.lineWidth = Math.max(0.8 / totalScale, 0.25);
         }
         ctx.stroke();
         ctx.restore();
@@ -4760,7 +5445,33 @@ function App() {
         return { ...prev, [rgbKey]: { ...r, tags: next.join(", ") } };
       }
       // Direct field edit (faction, culture, farm, religion)
-      if (field === "faction") return { ...prev, [rgbKey]: { ...r, faction: value } };
+      if (field === "faction") {
+        // Also move this region in factionRegionsMap (the descr_strat-derived
+        // ownership map that faction map mode actually colors from). Without
+        // this, the rebel-default in descr_regions changes but the canvas
+        // doesn't redraw because owned regions read from factionRegionsMap.
+        // And queue an ownership move for descr_strat patching on export.
+        const regionName = r.region;
+        if (regionName) {
+          setFactionRegionsMap(prevMap => {
+            const next = {};
+            let placed = false;
+            for (const [fac, list] of Object.entries(prevMap)) {
+              const filtered = (list || []).filter(rn => String(rn).toLowerCase() !== regionName.toLowerCase());
+              if (fac === value) {
+                next[fac] = [...filtered, regionName];
+                placed = true;
+              } else {
+                next[fac] = filtered;
+              }
+            }
+            if (!placed) next[value] = [regionName];
+            return next;
+          });
+          setFactionOwnerChanges(prev => ({ ...prev, [regionName]: value }));
+        }
+        return { ...prev, [rgbKey]: { ...r, faction: value } };
+      }
       if (field === "culture") return { ...prev, [rgbKey]: { ...r, culture: value } };
       if (field === "farm") {
         const newTags = r.tags.replace(/\bFarm\d+\b/, `Farm${value}`);
@@ -4781,8 +5492,10 @@ function App() {
       }
       return prev;
     });
-    // All region edits (tags, faction, culture, farm, religion) go into descr_regions.txt
-    markDirty("descr_regions.txt");
+    // All region edits (tags, faction, culture, farm, religion) go into descr_regions.txt.
+    // Faction edits ALSO require a descr_strat.txt patch (settlement block move).
+    if (field === "faction") markDirty("descr_regions.txt", "descr_strat.txt");
+    else markDirty("descr_regions.txt");
     setDevContextMenu(null);
   }
   function handleDoubleClick(e) {
@@ -4994,6 +5707,83 @@ function App() {
                 {saveCurrentYear != null ? `${Math.abs(saveCurrentYear)} ${saveCurrentYear < 0 ? "BC" : "AD"}` : ""}
               </span>
             )}
+            {/* Faction-record + Lua-counter badges added 2026-05-09 — show
+                live the new structures decoded by rtw-sav-parser. */}
+            {liveLogActive && saveFactionRecords && saveFactionRecords.count > 0 && (
+              <span
+                title={`Faction record array: ${saveFactionRecords.count} records, ${(saveFactionRecords.arraySpan?.totalBytes / 1024).toFixed(0)} KB total. Grows ~90 B/turn/faction — the dominant bloat source. Magic ff 0a af f0.`}
+                style={{
+                  fontSize: "0.65rem", fontWeight: 600,
+                  color: "#7aa2c7",
+                  background: "rgba(122,162,199,0.12)",
+                  padding: "1px 6px", borderRadius: 4,
+                  fontFamily: "Consolas, monospace",
+                }}
+              >
+                {saveFactionRecords.count}fr · {(saveFactionRecords.arraySpan?.totalBytes / 1024).toFixed(0)}KB
+              </span>
+            )}
+            {liveLogActive && saveLuaCounters && saveLuaCounters.count > 0 && (
+              <span
+                title={
+                  `Lua persistent counters: ${saveLuaCounters.count} entries.\n` +
+                  Object.entries(saveLuaCounters.byName)
+                    .slice(0, 12)
+                    .map(([k, v]) => `${k} = ${v}`).join("\n") +
+                  (saveLuaCounters.count > 12 ? `\n…and ${saveLuaCounters.count - 12} more` : "")
+                }
+                style={{
+                  fontSize: "0.65rem", fontWeight: 600,
+                  color: "#9ec77a",
+                  background: "rgba(158,199,122,0.12)",
+                  padding: "1px 6px", borderRadius: 4,
+                  fontFamily: "Consolas, monospace",
+                }}
+              >
+                {saveLuaCounters.count}lua
+                {saveLuaCounters.byName?.turn_number != null && ` · tn=${saveLuaCounters.byName.turn_number | 0}`}
+              </span>
+            )}
+            {/* Parser-stats badge — quick-glance health check. Hover to see
+                all per-pass counts. Lights up red when any expected count
+                is suspiciously low (e.g. 0 units in a populated save). */}
+            {liveLogActive && saveUnitsByRegion && (() => {
+              const unitTotal = Object.values(saveUnitsByRegion).reduce((s, arr) => s + arr.length, 0);
+              const regionCount = Object.keys(saveUnitsByRegion).length;
+              const charCount = Object.values(saveCharactersByRegion || {}).reduce((s, arr) => s + arr.length, 0);
+              const armyCount = (saveLiveArmies || []).length;
+              const ownerCount = currentOwnerByCity ? Object.keys(currentOwnerByCity).length : 0;
+              let conquests = 0;
+              if (currentOwnerByCity && initialOwnerByCity) {
+                for (const [city, owner] of Object.entries(currentOwnerByCity)) {
+                  if (initialOwnerByCity[city] && initialOwnerByCity[city] !== owner) conquests++;
+                }
+              }
+              const tooltip =
+                `Parser stats for the current save\n` +
+                `\n` +
+                `Units:      ${unitTotal} (across ${regionCount} regions)\n` +
+                `Armies:     ${armyCount} (named + captain stacks on the map)\n` +
+                `Characters: ${charCount} (parsed from v1 layout — RIS-imperial undercounts)\n` +
+                `Settlements w/ owner: ${ownerCount}\n` +
+                `Conquests:  ${conquests} (regions whose owner ≠ descr_strat starting owner)`;
+              const looksWrong = unitTotal === 0 || regionCount === 0;
+              return (
+                <span
+                  title={tooltip}
+                  style={{
+                    fontSize: "0.65rem", fontWeight: 600,
+                    color: looksWrong ? "#e88" : "#c79e7a",
+                    background: looksWrong ? "rgba(230,128,128,0.15)" : "rgba(199,158,122,0.12)",
+                    padding: "1px 6px", borderRadius: 4,
+                    fontFamily: "Consolas, monospace",
+                    cursor: "help",
+                  }}
+                >
+                  {unitTotal}u·{armyCount}a·{conquests}cq
+                </span>
+              );
+            })()}
             {liveLogActive && saveLoadedAt && (() => {
               // "loaded Xm ago" — refreshes every 30s via setNowTick. Lets
               // users on long campaigns notice if the watcher's gone stale.
@@ -5098,7 +5888,24 @@ function App() {
             padding: "4px 4px",
           }}
         >
-          {list.filter(f => !factionSearch || f.toLowerCase().includes(factionSearch.toLowerCase())).map((faction) => {
+          {list.filter(f => {
+            // Search filter
+            if (factionSearch && !f.toLowerCase().includes(factionSearch.toLowerCase())) return false;
+            // Hide eliminated factions: in Live mode, drop factions
+            // that hold zero regions per the live factionRegionsMap.
+            // (The map is updated on every capture event so dead
+            // factions disappear from the grid as soon as their last
+            // city falls.) Slave/rebel default factions are special —
+            // keep them visible since they're synthetic and
+            // factionRegionsMap may not list their occupied tiles.
+            if (liveLogActive && factionRegionsMap && factionRegionsMap[f]) {
+              const regions = factionRegionsMap[f];
+              if (Array.isArray(regions) && regions.length === 0 && !/(slave|rebel)/i.test(f)) {
+                return false;
+              }
+            }
+            return true;
+          }).map((faction) => {
             const isSelected = selectedFactions.has(faction);
             return (
               <Tooltip label={(factionDisplayNames && factionDisplayNames[faction]) || faction.replace(/_/g, " ")} key={faction}>
@@ -5113,6 +5920,18 @@ function App() {
                     transition: "box-shadow 0.15s, transform 0.15s",
                   }}
                   onClick={(e) => setFactionSelection(faction, e.shiftKey)}
+                  onContextMenu={(e) => {
+                    // Right-click → show the same faction card the
+                    // homeland-row icons open. One overlay handles both.
+                    e.preventDefault();
+                    setInfoPopup({
+                      type: "faction",
+                      factionId: faction,
+                      name: faction,
+                      label: (factionDisplayNames && factionDisplayNames[faction]) || faction.replace(/_/g, " "),
+                      modIconsDir,
+                    });
+                  }}
                   onDoubleClick={() => {
                     // Zoom to fit all territory of this faction
                     const keys = regionNamesToKeys(regionsForFaction(faction));
@@ -5766,10 +6585,11 @@ function App() {
                     }
                     download("descr_regions.txt", regLines.join("\n") + "\n");
                   }
-                  // descr_strat.txt — resources and/or population changes
-                  if ((dirty.has("resources") || dirty.has("population")) && devOrigStratRef.current) {
-                    download("descr_strat.txt", patchDescrStrat(devOrigStratRef.current, resourcesData, populationData, dirty, imgSize.height));
-                  } else if ((dirty.has("resources") || dirty.has("population")) && !devOrigStratRef.current) {
+                  // descr_strat.txt — resources, population and/or ownership changes
+                  const stratNeeded = dirty.has("resources") || dirty.has("population") || dirty.has("descr_strat.txt");
+                  if (stratNeeded && devOrigStratRef.current) {
+                    download("descr_strat.txt", patchDescrStrat(devOrigStratRef.current, resourcesData, populationData, dirty, imgSize.height, factionOwnerChanges));
+                  } else if (stratNeeded && !devOrigStratRef.current) {
                     alert("Cannot export descr_strat.txt — no original file loaded. Import the campaign folder first via the Import button.");
                   }
                   // descr_win_conditions.txt
@@ -5786,9 +6606,19 @@ function App() {
                   if (dirty.size === 0) {
                     alert("No changes to export.");
                   } else {
+                    const regionsEdited = dirty.has("descr_regions.txt");
                     setDevDirtyFiles(new Set());
+                    setFactionOwnerChanges({});
                     setExportConfirm(true);
                     setTimeout(() => setExportConfirm(false), 3000);
+                    if (regionsEdited) {
+                      alert(
+                        "descr_regions.txt was edited — you must regenerate map.rwm before launching the campaign.\n\n" +
+                        "Delete map.rwm from the campaign folder (e.g. data/world/maps/campaign/imperial_campaign/map.rwm). " +
+                        "RTW will rebuild it from descr_regions.txt + map_regions.tga the next time the campaign loads. " +
+                        "Without this, your tag/faction/culture/HR edits won't appear in-game."
+                      );
+                    }
                   }
                 }}
                 style={{
@@ -6064,7 +6894,7 @@ function App() {
           </div>
         )}
         {/* View options — always visible */}
-        <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, gap: 4, width: "fit-content" }}>
+        <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, maxWidth: Math.max(200, canvasSize.width - 280) }}>
           <span style={{ opacity: 0.7, fontSize: "0.78rem" }}>View:</span>
           <button className="map-mode-btn" onClick={() => setDevFlatColors(prev => !prev)}
             style={{ ...btnStyle(devFlatColors), minWidth: 0 }}>Flat</button>
@@ -7274,6 +8104,92 @@ function App() {
               }}
             />
           )}
+          {!legendCollapsed && devMode && (() => {
+            const lqExact = lq && hiddenResourcesList.some(e => e.name.toLowerCase() === lq);
+            const proposed = lq && !lqExact && /^[a-z0-9_]+$/.test(lq) ? lq : null;
+            const commit = (raw) => {
+              const name = String(raw || "").trim().toLowerCase();
+              if (!name) { setNewHrError("Token can't be empty."); return; }
+              if (!/^[a-z0-9_]+$/.test(name)) { setNewHrError("Lowercase letters, digits and underscores only."); return; }
+              const existing = hiddenResourcesList.find(e => e.name.toLowerCase() === name);
+              setSelectedHiddenResource(existing ? existing.name : name);
+              setLegendSearch("");
+              setNewHrDraft(null);
+              setNewHrError(null);
+            };
+            if (newHrDraft !== null) {
+              return (
+                <div style={{
+                  marginBottom: 4, padding: 6, borderRadius: 8,
+                  background: "rgba(232,160,48,0.08)", border: "1px dashed rgba(232,160,48,0.45)",
+                }}>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={newHrDraft}
+                    onChange={(e) => { setNewHrDraft(e.target.value); if (newHrError) setNewHrError(null); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); commit(newHrDraft); }
+                      else if (e.key === "Escape") { e.preventDefault(); setNewHrDraft(null); setNewHrError(null); }
+                    }}
+                    placeholder="new_hr_token"
+                    style={{
+                      width: "100%", boxSizing: "border-box", padding: "4px 8px",
+                      borderRadius: 6, border: "1px solid rgba(232,160,48,0.5)",
+                      background: "rgba(0,0,0,0.4)", color: "#eee",
+                      fontSize: "0.74rem", outline: "none",
+                    }}
+                  />
+                  {newHrError && (
+                    <div style={{ color: "#e8a030", fontSize: "0.65rem", marginTop: 3 }}>{newHrError}</div>
+                  )}
+                  <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+                    <button
+                      onClick={() => commit(newHrDraft)}
+                      style={{
+                        flex: 1, padding: "3px 8px", borderRadius: 6, cursor: "pointer",
+                        border: "1px solid rgba(232,160,48,0.5)", background: "#dca64a",
+                        color: "#221", fontSize: "0.7rem", fontWeight: 700,
+                      }}
+                    >Add</button>
+                    <button
+                      onClick={() => { setNewHrDraft(null); setNewHrError(null); }}
+                      style={{
+                        flex: 1, padding: "3px 8px", borderRadius: 6, cursor: "pointer",
+                        border: "1px solid rgba(255,255,255,0.2)", background: "transparent",
+                        color: "#aaa", fontSize: "0.7rem",
+                      }}
+                    >Cancel</button>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <button
+                onClick={() => { setNewHrDraft(proposed || ""); setNewHrError(null); }}
+                title="Define a new hidden_resource token, then right-click a province to add it"
+                style={{
+                  width: "100%", padding: "4px 10px", marginBottom: 4,
+                  borderRadius: 8, border: "1px dashed rgba(232,160,48,0.45)",
+                  background: "rgba(232,160,48,0.08)", color: "#dca64a",
+                  fontSize: "0.72rem", cursor: "pointer", textAlign: "center",
+                }}
+              >+ Add{proposed ? ` "${proposed}"` : " new hidden resource…"}</button>
+            );
+          })()}
+          {!legendCollapsed && selectedHiddenResource && !hiddenResourcesList.some(e => e.name === selectedHiddenResource) && (
+            <div style={{
+              padding: "6px 8px", marginBottom: 4, borderRadius: 6,
+              background: "rgba(232,160,48,0.12)", border: "1px solid rgba(232,160,48,0.4)",
+              fontSize: "0.7rem", color: "#dca64a", lineHeight: 1.35,
+            }}>
+              <div style={{ fontWeight: 700, textTransform: "capitalize" }}>{selectedHiddenResource.replace(/_/g, " ")} <span style={{ fontWeight: 400, color: "#aaa" }}>(new — 0 regions)</span></div>
+              <div style={{ color: "#aaa", fontSize: "0.65rem" }}>Right-click a province to add this token.</div>
+              <div style={{ marginTop: 4, fontSize: "0.65rem" }}>
+                <span onClick={() => setSelectedHiddenResource(null)} style={{ cursor: "pointer", textDecoration: "underline", color: "#aaa" }}>Cancel</span>
+              </div>
+            </div>
+          )}
           <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
             {groupNames.length === 0 && (
               <div style={{ color: "#aaa", fontSize: "0.72rem", padding: "8px 4px", textAlign: "center" }}>
@@ -7517,6 +8433,53 @@ function App() {
         toasts={toasts}
         onDismiss={(id) => setToasts(prev => prev.filter(x => x.id !== id))}
       />
+      {/* Live-mode loading banner: shows while the main process parses the
+          latest save (5-30s on big mid-game saves). Without this, the user
+          sees a frozen window and assumes the app crashed. */}
+      {liveLoading && (
+        <div
+          style={{
+            position: "fixed", top: 8, right: 12, zIndex: 10010,
+            background: "linear-gradient(90deg, #1a1a1a 0%, #2a1f10 100%)",
+            color: "#dca64a",
+            border: "1px solid rgba(220,166,74,0.4)",
+            borderRadius: 8,
+            padding: "6px 12px",
+            fontFamily: "Consolas, monospace",
+            fontSize: "0.8rem",
+            display: "inline-flex", alignItems: "center", gap: 10,
+            boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+            maxWidth: "min(380px, 40vw)",
+          }}
+        >
+          {/* Whole pill content is shimmer-text. Single sweeping
+              gradient passes through "Loading save… <stage>", which
+              both shows what's happening and signals progress with no
+              extra spinner or stripe widget. */}
+          <span
+            style={{
+              flex: "1 1 auto",
+              minWidth: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              backgroundImage: "linear-gradient(90deg, #a8865c 0%, #a8865c 35%, #ffe6a8 50%, #a8865c 65%, #a8865c 100%)",
+              backgroundSize: "300% 100%",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+              animation: "live-shimmer 1.6s linear infinite",
+              fontWeight: 600,
+            }}
+          >
+            Loading save… {liveLoadingStage || ""}
+          </span>
+          <style>{`
+            @keyframes live-shimmer {
+              0%   { background-position: 200% 0; }
+              100% { background-position: -100% 0; }
+            }
+          `}</style>
+        </div>
+      )}
       {showFactionPicker && factions && factions.length > 0 && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 10004,
@@ -7743,21 +8706,38 @@ function App() {
                 />
 
                 {/* Army hover tooltip */}
-                {hoveredArmy && (
+                {hoveredArmy && (() => {
+                  // Clamp the tooltip inside the viewport. A long traits
+                  // line (e.g. Lucius Valerius_Flaccus with 3 listed
+                  // traits) used to spill out the right side of the map
+                  // into the info panel. We don't know the tooltip's
+                  // exact rendered width up front, so use the maxWidth
+                  // we set (300px) as a conservative reservation and
+                  // flip the tooltip to the LEFT side of the marker
+                  // when it would overflow the right edge.
+                  const TT_W = 300, TT_H_EST = 120;
+                  let left = hoveredArmy.screenX + 14;
+                  let top = hoveredArmy.screenY - 10;
+                  const vw = window.innerWidth, vh = window.innerHeight;
+                  if (left + TT_W > vw - 8) left = Math.max(8, hoveredArmy.screenX - TT_W - 14);
+                  if (top + TT_H_EST > vh - 8) top = Math.max(8, vh - TT_H_EST - 8);
+                  if (top < 8) top = 8;
+                  return (
                   <div style={{
                     position: "absolute",
-                    left: hoveredArmy.screenX + 14,
-                    top: hoveredArmy.screenY - 10,
+                    left,
+                    top,
                     background: "rgba(20,20,20,0.92)",
                     color: "#f7f7f7",
                     padding: "6px 10px",
                     borderRadius: 6,
                     fontSize: "0.82rem",
                     pointerEvents: "none",
-                    whiteSpace: "nowrap",
                     zIndex: 11,
                     border: "1px solid #555",
-                    maxWidth: 260,
+                    maxWidth: TT_W,
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
                   }}>
                     <div style={{ fontWeight: 700, marginBottom: 2 }}>
                       {hoveredArmy.army.armyClass === 'navy' ? '⚓' : hoveredArmy.army.armyClass === 'garrison' ? '🏰' : '⚔'} {hoveredArmy.army.character || hoveredArmy.army.name || '(unnamed)'}
@@ -7766,8 +8746,23 @@ function App() {
                     <div style={{ color: "#bbb", marginBottom: 4 }}>
                       {(hoveredArmy.army.faction || '').replace(/_/g, " ")}
                       {hoveredArmy.army.units && hoveredArmy.army.units.length > 0 ? <> &mdash; {hoveredArmy.army.units.length} unit{hoveredArmy.army.units.length !== 1 ? 's' : ''}</> : null}
+                      {hoveredArmy.army.region ? <span style={{ color: "#bba", marginLeft: 6 }} title="Region the army's tile resolves to (this is the region whose RegionInfo panel shows this army's roster).">in {hoveredArmy.army.region}</span> : null}
                       {hoveredArmy.army.logOnly ? <span style={{ color: "#88a", marginLeft: 6 }}>(log-tracked)</span> : hoveredArmy.army.liveTracked ? <span style={{ color: "#4a8", marginLeft: 6 }} title="Position updated from the live log, not the save">(live)</span> : null}
                     </div>
+                    {typeof hoveredArmy.army.movementPoints === "number" ? (
+                      <div style={{ color: "#9c8", fontSize: "0.78rem", marginBottom: 4 }}
+                        title="Movement points remaining (f32 at bodyguard unit's commanderUuid+4 in the save; decoded 2026-05-10). 1 tile costs ~7.4 MP.">
+                        MP remaining: <span style={{ fontVariantNumeric: "tabular-nums" }}>{hoveredArmy.army.movementPoints.toFixed(1)}</span>
+                        {hoveredArmy.army.moved ? (
+                          <span style={{ color: "#aaa", marginLeft: 6, fontStyle: "italic" }} title="Moved-this-turn flag set (bit 7 of byte +9 in the character-position record). The general has already issued at least one move this turn.">· moved this turn</span>
+                        ) : null}
+                      </div>
+                    ) : hoveredArmy.army.moved ? (
+                      <div style={{ color: "#aaa", fontSize: "0.78rem", marginBottom: 4, fontStyle: "italic" }}
+                        title="Moved-this-turn flag set (bit 7 of byte +9 in the character-position record).">
+                        moved this turn
+                      </div>
+                    ) : null}
                     {hoveredArmy.army.passengers && hoveredArmy.army.passengers.length > 0 ? (
                       <div style={{ color: "#aaa", fontSize: "0.76rem", marginBottom: 4, paddingLeft: 6 }}>
                         with {hoveredArmy.army.passengers.map(p => (typeof p === 'string' ? p : (p.firstName || p.name || ''))).filter(Boolean).join(", ")}
@@ -7803,7 +8798,8 @@ function App() {
                       </div>
                     ) : null}
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* City label hover tooltip — hidden when resource tooltip is showing */}
                 {hoveredCity && !hoveredResource && (
@@ -8155,6 +9151,16 @@ function App() {
                       modeExtra={getModeExtra(lockedRegionInfo || regionInfo)}
                       devMode={devMode}
                       onShowInfo={setInfoPopup}
+                      modIconsDir={modIconsDir}
+                      onFactionRightClick={({ factionId, displayName }) => {
+                        setInfoPopup({
+                          type: "faction",
+                          factionId,
+                          name: factionId,
+                          label: displayName,
+                          modIconsDir,
+                        });
+                      }}
                       factionDisplayNames={factionDisplayNames}
                       homelandFactions={(() => {
                         // Factions whose homeland token (from homelands.json)
@@ -8182,16 +9188,73 @@ function App() {
                         catch { return null; }
                       })()}
                       garrisonCommander={(() => {
-                        // The governor commanding the garrison, if any —
-                        // rendered as a character line under the "Garrison:"
-                        // header to match the "Region owners armies:" /
-                        // "Other faction armies:" layout.
                         const r = lockedRegionInfo || regionInfo;
                         if (!r || !liveLogActive) return null;
+                        // Source of truth: the per-settlement governor field
+                        // (decoded at marker-1940). This works even for
+                        // characters who don't command a bodyguard army
+                        // (= no unit-record link), which the previous
+                        // settlement-tile-coord match couldn't see.
+                        if (saveGovernorByCity && r.city) {
+                          const g = saveGovernorByCity[r.city];
+                          if (g && !g.unresolved) {
+                            const owner = (currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || null;
+                            // Locate the governor's bodyguard unit. The
+                            // unit-record region is whatever tile the
+                            // bodyguard currently stands on, which can lag
+                            // behind the governor's appointment (e.g. the
+                            // governor moves to a neighbour and the unit
+                            // record's region updates to that neighbour).
+                            // So we search ALL regions for a unit whose
+                            // commanderUuid matches the governor's uuid —
+                            // this guarantees we attach the bodyguard to
+                            // the appointed governor regardless of where
+                            // the unit is physically parked.
+                            let bodyguard = null;
+                            let bodyguardRegion = null;
+                            if (g.uuid && saveUnitsByRegion) {
+                              for (const [reg, arr] of Object.entries(saveUnitsByRegion)) {
+                                for (const u of arr) {
+                                  if (u.commanderUuid === g.uuid) {
+                                    bodyguard = u;
+                                    bodyguardRegion = reg;
+                                    break;
+                                  }
+                                }
+                                if (bodyguard) break;
+                              }
+                            }
+                            return {
+                              character: g.lastName
+                                ? `${g.firstName} ${g.lastName.replace(/_/g, " ")}`
+                                : g.firstName,
+                              faction: owner,
+                              age: g.age,
+                              isLeader: g.isLeader,
+                              isHeir: g.isHeir,
+                              bodyguardUnit: bodyguard ? bodyguard.name : null,
+                              bodyguardSoldiers: bodyguard ? bodyguard.soldiers : null,
+                              bodyguardMax: bodyguard ? bodyguard.maxSoldiers : null,
+                              bodyguardRegion: bodyguardRegion !== r.region ? bodyguardRegion : null,
+                            };
+                          }
+                          if (g && g.unresolved) {
+                            // We know there's a governor (uuid is non-zero)
+                            // but we don't have a v1 char record for them.
+                            // Show a placeholder so the user knows someone's
+                            // there.
+                            return {
+                              character: "(governor — character record not decoded)",
+                              faction: (currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || null,
+                            };
+                          }
+                        }
+                        // Legacy fallback: settlement-tile coord match.
+                        // (Same y-flip rationale as the garrison block.)
                         let settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
                         if (!settlementTile && cityPixels && cityPixels.length) {
                           const cp = cityPixels.find(p => regions[p.rgbKey]?.region === r.region);
-                          if (cp) settlementTile = { x: cp.x, y: cp.y };
+                          if (cp) settlementTile = { x: cp.x, y: (imgSize.height - 1) - cp.y };
                         }
                         if (!settlementTile) return null;
                         for (const list of Object.values(saveCharactersByRegion || {})) {
@@ -8218,7 +9281,13 @@ function App() {
                         if (!r) return null;
                         let normalised = null;
                         if (liveLogActive) {
-                          const fresh = saveUnitsByRegion?.[r.region];
+                          // liveUnitsByRegion re-buckets save units by each
+                          // commander's CURRENT region (from log-position
+                          // events), so an army that moved mid-turn shows
+                          // up under its destination region's panel as
+                          // soon as the log fires the move event — same
+                          // as the map markers, no save snapshot required.
+                          const fresh = liveUnitsByRegion?.[r.region];
                           const legacy = saveArmiesData?.[r.region] || saveArmiesData?.[r.city];
                           const rawFresh = fresh || null;
                           // Coord-based garrison definition: units whose
@@ -8233,30 +9302,88 @@ function App() {
                           let settlementTile = startingArmiesByRegion?.[r.region]?.settlement || null;
                           if (!settlementTile && cityPixels && cityPixels.length) {
                             const cp = cityPixels.find(p => regions[p.rgbKey]?.region === r.region);
-                            if (cp) settlementTile = { x: cp.x, y: cp.y };
+                            // cityPixels.y is TOP-DOWN; army positions are
+                            // BOTTOM-UP world coords. Flip when building
+                            // the settlement tile so settlementTile.y
+                            // matches army.y for exact comparison below.
+                            if (cp) settlementTile = { x: cp.x, y: (imgSize.height - 1) - cp.y };
                           }
                           const charByUuid = new Map();
                           for (const list of Object.values(saveCharactersByRegion || {})) {
                             for (const c of list) { if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c); }
                           }
                           if (rawFresh) {
-                            // Garrison = units with no commander at all, OR
-                            // units whose commander is a governor positioned
-                            // EXACTLY on the settlement tile.
-                            normalised = rawFresh.filter((u) => {
-                              const cmd = u.inferredCmd || u.commanderUuid;
-                              if (!cmd) return true;
-                              const commander = charByUuid.get(cmd);
-                              if (!commander) return false;
-                              if (settlementTile && commander.x != null && commander.y != null) {
-                                return commander.x === settlementTile.x && commander.y === settlementTile.y;
+                            // Garrison = (a) commander-LESS units AND
+                            // (b) units commanded by the appointed
+                            // governor AND (c) units whose commander is
+                            // standing on the settlement tile WITH the
+                            // same faction as the region owner.
+                            //
+                            // The faction guard on (c) excludes besiegers
+                            // / passers-through whose stack happens to
+                            // sit on the settlement tile (or whose live
+                            // log position resolved to it incorrectly).
+                            // Without it the user saw foreign Roman
+                            // bodyguards (Marcus Ogulnius_Gallus 55, etc.)
+                            // in messapian-held Brundisium's garrison
+                            // because the live-position attribution had
+                            // pulled them into that bucket.
+                            const ownerFaction = ((currentOwnerByCity && currentOwnerByCity[r.city])
+                              || (initialOwnerByCity && initialOwnerByCity[r.city])
+                              || r.faction || "").toLowerCase();
+                            const governorUuid = (saveGovernorByCity && r.city && saveGovernorByCity[r.city] && !saveGovernorByCity[r.city].unresolved)
+                              ? saveGovernorByCity[r.city].uuid
+                              : null;
+                            const cmdsAtSettlement = new Set();
+                            const cmdToFaction = new Map();
+                            for (const a of (armiesToRender || [])) {
+                              if (a.commanderUuid && a.faction) cmdToFaction.set(a.commanderUuid, a.faction.toLowerCase());
+                            }
+                            if (settlementTile) {
+                              for (const a of (armiesToRender || [])) {
+                                if (!a.commanderUuid) continue;
+                                if (a.x !== settlementTile.x || a.y !== settlementTile.y) continue;
+                                if (ownerFaction && a.faction && a.faction.toLowerCase() !== ownerFaction) continue;
+                                cmdsAtSettlement.add(a.commanderUuid);
                               }
-                              return false;
-                            }).map((u) => ({
-                              unit: u.name,
-                              soldiers: u.soldiers,
-                              max: u.maxSoldiers,
-                            }));
+                            }
+                            // For commanded units the commander's faction
+                            // must match the region owner — keeps a Roman
+                            // siege bodyguard from showing up in a
+                            // messapian city's defender list even when
+                            // his live position resolves to that region.
+                            const sameFaction = (cmd) => {
+                              if (!cmd || !ownerFaction) return false;
+                              const f = cmdToFaction.get(cmd);
+                              return f && f === ownerFaction;
+                            };
+                            normalised = rawFresh
+                              .filter((u) => {
+                                if (!u.commanderUuid && !u.inferredCmd) return true;
+                                if (governorUuid && (u.commanderUuid === governorUuid || u.inferredCmd === governorUuid)) return true;
+                                if (cmdsAtSettlement.has(u.commanderUuid) || cmdsAtSettlement.has(u.inferredCmd)) return true;
+                                // Final inclusive case: any commanded unit
+                                // whose commander's faction matches the
+                                // region owner is part of the city's
+                                // defence. Keeps friendly stacks
+                                // co-located with defenders inside.
+                                if (sameFaction(u.commanderUuid) || sameFaction(u.inferredCmd)) return true;
+                                return false;
+                              })
+                              .map((u) => ({
+                                unit: u.name,
+                                soldiers: u.soldiers,
+                                max: u.maxSoldiers,
+                                // Live XP / weapon / armour read directly from
+                                // the save record (save-cracker session 10:
+                                // u8 at regionEnd+20 / +17 / +16). Replaces
+                                // the descr_strat seed fallback used here
+                                // before, which missed mid-campaign recruits
+                                // and just-fought chevron gains.
+                                xp: u.xp || 0,
+                                weapon: u.weapon || 0,
+                                armour: u.armour || 0,
+                              }));
                           } else if (legacy) {
                             normalised = legacy.map((u) => ({
                               unit: typeof u === "string" ? u : (u.unit || u.name),
@@ -8265,11 +9392,12 @@ function App() {
                             }));
                           }
                           // Seed exp/armour/weapon from the bundled
-                          // starting_armies_<suffix>.json by unit name (FIFO
-                          // match within region). The save binary format
-                          // doesn't carry these, so the turn-0 descr_strat
-                          // values are the best fallback. Mid-campaign
-                          // recruits with no matching seed default to 0.
+                          // starting_armies_<suffix>.json — ONLY for units
+                          // that the save didn't already provide a value for
+                          // (legacy path / mid-campaign recruits absent from
+                          // descr_strat). The fresh path above already reads
+                          // live values from the unit record, so we don't
+                          // overwrite them.
                           if (normalised && normalised.length > 0) {
                             const startingByName = new Map();
                             const startingArms = startingArmiesByRegion?.[r.region]?.garrison || [];
@@ -8284,9 +9412,9 @@ function App() {
                               const seed = queue && queue.length ? queue.shift() : null;
                               return {
                                 ...u,
-                                xp: seed?.exp || 0,
-                                armour: seed?.armour || 0,
-                                weapon: seed?.weapon || 0,
+                                xp: u.xp || seed?.exp || 0,
+                                armour: u.armour || seed?.armour || 0,
+                                weapon: u.weapon || seed?.weapon || 0,
                               };
                             });
                           }
@@ -8718,7 +9846,11 @@ function App() {
                         if (liveLogActive) {
                           const r = lockedRegionInfo || regionInfo;
                           if (!r) return null;
-                          const raw = saveUnitsByRegion?.[r.region];
+                          // Same liveUnitsByRegion path as the Garrison
+                          // panel — armies that moved mid-turn show up
+                          // here under the destination region instead of
+                          // their stale save-time region.
+                          const raw = liveUnitsByRegion?.[r.region];
                           if (!raw || raw.length === 0) return null;
                           const ownerId = (
                             (currentOwnerByCity && currentOwnerByCity[r.city])
@@ -8769,23 +9901,68 @@ function App() {
                           // than dozens of "Army #XXX" single-unit entries
                           // when the save parser's character coverage is
                           // incomplete.
+                          // The settlement's governor commands the
+                          // garrison stack — those units now appear in the
+                          // Garrison panel above. Skip the governor's group
+                          // here so it doesn't also appear in "Region
+                          // owners armies".
+                          const governorUuidForFA = (saveGovernorByCity && r.city && saveGovernorByCity[r.city] && !saveGovernorByCity[r.city].unresolved)
+                            ? saveGovernorByCity[r.city].uuid
+                            : null;
+                          // Same settlement-tile garrison promotion as the
+                          // Garrison panel above — symmetrically skip
+                          // commanders that ARE the garrison (own-faction
+                          // stack on the settlement tile) so they don't
+                          // double-list. Besiegers (foreign faction
+                          // standing on or near the tile) are NOT
+                          // garrison; they belong in this panel.
+                          let settlementTileFA = startingArmiesByRegion?.[r.region]?.settlement || null;
+                          if (!settlementTileFA && cityPixels && cityPixels.length) {
+                            const cp = cityPixels.find(p => regions[p.rgbKey]?.region === r.region);
+                            if (cp) settlementTileFA = { x: cp.x, y: (imgSize.height - 1) - cp.y };
+                          }
+                          const cmdsAtSettlementFA = new Set();
+                          if (settlementTileFA) {
+                            for (const a of (armiesToRender || [])) {
+                              if (!a.commanderUuid) continue;
+                              if (a.x !== settlementTileFA.x || a.y !== settlementTileFA.y) continue;
+                              // Faction guard: only OWN-faction stacks on
+                              // the tile count as garrison and get
+                              // skipped here.
+                              if (ownerId && a.faction && a.faction.toLowerCase() !== ownerId.toLowerCase()) continue;
+                              cmdsAtSettlementFA.add(a.commanderUuid);
+                            }
+                          }
                           const mergedOwn = []; // identified own-faction armies
                           const mergedOthers = []; // identified foreign armies
                           const unknownByFaction = new Map(); // fac → units[]
-                          for (const [cmd, units] of byCmd) {
-                            if (!cmd) continue; // unassigned units = Garrison
-                            const commander = charByUuid.get(cmd);
-                            // A commander standing EXACTLY on the settlement
-                            // tile is a governor — his stack is the garrison.
-                            // (Alexander at Pella turns out to NOT be on the
-                            // settlement tile per user — so this rule doesn't
-                            // mis-classify him as garrison there. Vaumisa at
-                            // Halicarnassus IS on-tile → correctly garrison.)
-                            let isGarrison = false;
-                            if (settlementTile && commander && commander.x != null && commander.y != null) {
-                              isGarrison = commander.x === settlementTile.x && commander.y === settlementTile.y;
+                          // commanderUuid → "x,y" tile, for merging multi-general
+                          // stacks. RTW armies hold up to 20 units, any number
+                          // of which can be general units; when Marcus is
+                          // transferred into Aulus's stack mid-turn, the save
+                          // still records two separate cmd-grouped unit lists
+                          // (the bodyguard unit's `cmd` field stays = Marcus's
+                          // own char uuid). They share a tile, so merge by
+                          // (faction, x, y).
+                          const cmdPos = new Map();
+                          for (const a of (armiesToRender || [])) {
+                            if (a.commanderUuid && typeof a.x === "number" && typeof a.y === "number") {
+                              cmdPos.set(a.commanderUuid, `${a.x},${a.y}`);
                             }
-                            if (isGarrison) continue;
+                          }
+                          for (const [cmd, units] of byCmd) {
+                            if (!cmd) continue; // commander-less = Garrison panel
+                            if (governorUuidForFA && cmd === governorUuidForFA) continue; // governor stack handled by Garrison panel
+                            if (cmdsAtSettlementFA.has(cmd)) continue; // settlement-tile stack handled by Garrison panel
+                            const commander = charByUuid.get(cmd);
+                            // Every commanded army shows in the field-armies
+                            // panel (named or aggregated). The previous
+                            // "commander on settlement tile = garrison"
+                            // shortcut required exact-pixel x/y match against
+                            // a settlement tile we can't always resolve, and
+                            // hid governor armies the user expected to see.
+                            // Garrison panel now strictly = commander-LESS
+                            // defenders; everything with a commander is here.
                             // Prefer the commander's actual faction (from
                             // the save's character record) over guessing
                             // from unit ownership. Parmenion's hoplites can
@@ -8805,6 +9982,7 @@ function App() {
                                 : null,
                               faction: fac,
                               _units: units,
+                              _pos: cmdPos.get(cmd) || null,
                             };
                             if (!commander) {
                               // Aggregate unknown commanders by faction so
@@ -8822,8 +10000,44 @@ function App() {
                               character: "(unidentified army)",
                               faction: fac,
                               _units: units,
+                              _pos: null,
                             });
                           }
+                          // Post-pass: merge entries that share (faction, tile).
+                          // RTW lets up to 20 units (any number generals) live
+                          // in a single army. When two named generals end up
+                          // on the same tile after a mid-turn unit-transfer,
+                          // they're really one combined stack — show them as
+                          // one block with both names instead of two markers
+                          // stacked at the same coords.
+                          const mergeByTile = (list) => {
+                            const out = [];
+                            const idx = new Map(); // (fac+","+pos) → out index
+                            for (const e of list) {
+                              if (!e._pos) { out.push(e); continue; }
+                              const key = (e.faction || "") + "@" + e._pos;
+                              const hit = idx.get(key);
+                              if (hit == null) {
+                                idx.set(key, out.length);
+                                out.push({ ...e, _characters: [e.character] });
+                              } else {
+                                const target = out[hit];
+                                target._units = target._units.concat(e._units);
+                                target._characters.push(e.character);
+                              }
+                            }
+                            // Collapse _characters back into a display string.
+                            // One name = unchanged; two+ generals = "A + B".
+                            for (const e of out) {
+                              if (e._characters && e._characters.length > 1) {
+                                e.character = e._characters.filter(Boolean).join(" + ");
+                              }
+                              delete e._characters;
+                            }
+                            return out;
+                          };
+                          const mergedOwnFinal = mergeByTile(mergedOwn);
+                          const mergedOthersFinal = mergeByTile(mergedOthers);
                           const dictMap = unitOwnership?.__dictionary || {};
                           // Same starting-values fallback as the garrison path
                           // — save format doesn't carry exp/armour/weapon, so
@@ -8844,11 +10058,15 @@ function App() {
                               units: e._units.map((u) => {
                                 const queue = fieldStartingByName.get(u.name);
                                 const seed = queue && queue.length ? queue.shift() : null;
+                                // Prefer live XP / weapon / armour from the
+                                // save (save-cracker session 10). Fall back
+                                // to descr_strat starting seed only when the
+                                // save value is 0/missing.
                                 return {
                                   unit: u.name,
-                                  xp: seed?.exp || 0,
-                                  armour: seed?.armour || 0,
-                                  weapon: seed?.weapon || 0,
+                                  xp: u.xp || seed?.exp || 0,
+                                  armour: u.armour || seed?.armour || 0,
+                                  weapon: u.weapon || seed?.weapon || 0,
                                   soldiers: typeof u.soldiers === "number" ? u.soldiers : null,
                                   max: typeof u.maxSoldiers === "number" ? u.maxSoldiers : null,
                                   faction: e.faction,
@@ -8857,8 +10075,8 @@ function App() {
                               }),
                             };
                           };
-                          const own = mergedOwn.map(buildEntry);
-                          const others = mergedOthers.map(buildEntry);
+                          const own = mergedOwnFinal.map(buildEntry);
+                          const others = mergedOthersFinal.map(buildEntry);
                           if (own.length === 0 && others.length === 0) return null;
                           return { own, others };
                         }
@@ -8910,7 +10128,60 @@ function App() {
                         if (!saveCharactersByRegion || !liveLogActive) return null;
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
-                        return saveCharactersByRegion[r.region] || null;
+                        // Referencing liveCharPositionsVersion forces this
+                        // IIFE to re-evaluate after death events / assault
+                        // wipes flip the filter state.
+                        void liveCharPositionsVersion;
+                        const list = saveCharactersByRegion[r.region] || null;
+                        if (!list) return null;
+                        // Build a primary-uuid → char lookup across ALL
+                        // regions so children of a character in this
+                        // region can be resolved by name even when the
+                        // child is governing a different settlement.
+                        // Save-cracker session 13: child slots store
+                        // primary uuids of the children.
+                        const byPrimary = new Map();
+                        for (const arr of Object.values(saveCharactersByRegion)) {
+                          for (const c of arr) {
+                            if (c.primaryUuid) byPrimary.set(c.primaryUuid, c);
+                          }
+                        }
+                        // Resolve each character's children to names.
+                        // Unresolvable uuids (dead child whose slot is
+                        // preserved, or character not parsed) are dropped.
+                        const enriched = list.map((c) => {
+                          if (!Array.isArray(c.childUuids) || c.childUuids.length === 0) return c;
+                          const childNames = [];
+                          for (const u of c.childUuids) {
+                            const ch = byPrimary.get(u);
+                            if (ch) {
+                              const nm = ch.lastName
+                                ? `${ch.firstName} ${ch.lastName.replace(/_/g, " ")}`
+                                : ch.firstName;
+                              childNames.push(nm);
+                            }
+                          }
+                          return childNames.length > 0 ? { ...c, _resolvedChildren: childNames } : c;
+                        });
+                        const deadUuids = liveDeadCharUuids.current;
+                        const wiped = liveAssaultWipedSettlements.current;
+                        const filtered = enriched.filter((c) => {
+                          if (c.secondaryUuid && deadUuids.has(c.secondaryUuid.toString(16).padStart(8, "0"))) return false;
+                          // Drop chars whose bodyguard is inside a wiped
+                          // settlement. Find a unit they command in
+                          // saveUnitsByRegion and check its region tag
+                          // against the assault-wipe list. Skip the
+                          // check if no wipes are active (the common case).
+                          if (wiped.size > 0 && c.secondaryUuid && saveUnitsByRegion) {
+                            for (const units of Object.values(saveUnitsByRegion)) {
+                              for (const u of units) {
+                                if (u.commanderUuid === c.secondaryUuid && u.region && wiped.has(u.region.toLowerCase())) return false;
+                              }
+                            }
+                          }
+                          return true;
+                        });
+                        return filtered.length > 0 ? filtered : null;
                       })()}
                       liveUnits={(() => {
                         if (!saveUnitsByRegion || !liveLogActive) return null;
@@ -8937,6 +10208,91 @@ function App() {
                         // Translate internal faction id to in-game display name when known
                         // (e.g., "roman_rebels_2" → "The House of Cornelii").
                         return (factionDisplayNames && factionDisplayNames[id]) || id;
+                      })()}
+                      taxLevel={(() => {
+                        try {
+                          if (!liveLogActive || !saveTaxByCity) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          const v = saveTaxByCity[r.city];
+                          if (!v) return null;
+                          // Gate by player-ownership when we know it — the tax byte at
+                          // settlement_name_offset-2269 only reads correctly for the
+                          // player's settlements. When playerFaction isn't yet set,
+                          // we still display whatever was parsed (best-effort).
+                          if (playerFaction) {
+                            const owner = (currentOwnerByCity && currentOwnerByCity[r.city])
+                              || (initialOwnerByCity && initialOwnerByCity[r.city]);
+                            if (owner && owner !== playerFaction) return null;
+                          }
+                          return v;
+                        } catch { return null; }
+                      })()}
+                      happiness={(() => {
+                        // Public-order f32 at settlement.offset-30. Raw save
+                        // value ranges roughly 105..195 per the cracker;
+                        // engine clips to a 0-100% bar at render. Apply the
+                        // same player-ownership gate as taxLevel — the offset
+                        // was only verified for the player's settlements.
+                        try {
+                          if (!liveLogActive || !saveHappinessByCity) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          const v = saveHappinessByCity[r.city];
+                          if (typeof v !== "number") return null;
+                          if (playerFaction) {
+                            const owner = (currentOwnerByCity && currentOwnerByCity[r.city])
+                              || (initialOwnerByCity && initialOwnerByCity[r.city]);
+                            if (owner && owner !== playerFaction) return null;
+                          }
+                          return v;
+                        } catch { return null; }
+                      })()}
+                      livePopulation={(() => {
+                        // Live settlement population u32 at settlement.offset
+                        // -1494. Cross-validated by the save-cracker against
+                        // descr_strat starting pops; diverges from start as
+                        // turns progress (growth / decay events apply).
+                        try {
+                          if (!liveLogActive || !savePopulationByCity) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          const v = savePopulationByCity[r.city];
+                          if (typeof v !== "number") return null;
+                          return v;
+                        } catch { return null; }
+                      })()}
+                      liveIncome={(() => {
+                        // Per-turn + cumulative settlement income, decoded
+                        // 2026-05-10 via save-cracker session 3. STRONG
+                        // confidence (one clean correlation across rome1..
+                        // rome10 turn boundaries). Surfaced for player-
+                        // owned settlements only (gate matches tax row).
+                        try {
+                          if (!liveLogActive || !saveIncomeByCity) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          const v = saveIncomeByCity[r.city];
+                          if (!v || typeof v.perTurn !== "number") return null;
+                          if (playerFaction) {
+                            const owner = (currentOwnerByCity && currentOwnerByCity[r.city])
+                              || (initialOwnerByCity && initialOwnerByCity[r.city]);
+                            if (owner && owner !== playerFaction) return null;
+                          }
+                          return v;
+                        } catch { return null; }
+                      })()}
+                      liveSize={(() => {
+                        // Settlement size class enum from the save (live
+                        // value, reflects mid-campaign upgrades). u8 at
+                        // settlement.offset-2207. CONFIRMED across
+                        // multiple samples.
+                        try {
+                          if (!liveLogActive || !saveSizeByCity) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          return saveSizeByCity[r.city] || null;
+                        } catch { return null; }
                       })()}
                     />
                   </div>
@@ -9956,13 +11312,70 @@ function App() {
         // treasury (from descr_strat) and region count (from
         // factionRegionsMap). Click a row to zoom-fit that faction's
         // territory. Esc / outside click / X-button close it.
-        const rows = factions.map(f => ({
-          faction: f,
-          wealth: factionWealth[f] ?? 0,
-          regions: (factionRegionsMap[f] || []).length,
-          name: (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " "),
-        })).filter(r => r.regions > 0 || r.wealth !== 0);
-        rows.sort((a, b) => b.wealth - a.wealth);
+        // Live counts when a save is loaded — overlays the starting
+        // descr_strat numbers with what the parser reads from the save now.
+        // armiesByFaction is built from saveLiveArmies; regionsByFaction
+        // (live) from currentOwnerByCity; unitsByFaction by counting
+        // units whose army-faction or settlement-owner matches.
+        const liveArmiesByFaction = {};
+        for (const a of (saveLiveArmies || [])) {
+          const f = (a.faction || "").toLowerCase();
+          if (!f || f === "unknown") continue;
+          liveArmiesByFaction[f] = (liveArmiesByFaction[f] || 0) + 1;
+        }
+        const liveRegionsByFaction = {};
+        if (currentOwnerByCity) {
+          for (const owner of Object.values(currentOwnerByCity)) {
+            liveRegionsByFaction[owner] = (liveRegionsByFaction[owner] || 0) + 1;
+          }
+        }
+        // Live treasury: map the raw 23-record scan to faction names using
+        // the descr_strat RIS imperial major-faction order. Player at
+        // index 0 (always), others follow descr_strat with player removed.
+        // Decoded by save-cracker session 5 (CONFIRMED across 14 saves /
+        // 4 campaigns). Falls back gracefully to descr_strat starting
+        // wealth when live data isn't loaded yet or count != 23.
+        const liveTreasuryByFaction = (() => {
+          const recs = saveTreasuryRecords && saveTreasuryRecords.records;
+          if (!recs || recs.length !== 23 || !playerFaction) return null;
+          const MAJOR_FACTIONS = [
+            "romans_julii", "carthage", "antigonid", "ptolemaic", "seleucid",
+            "bactria", "parni", "saka", "armenia", "pontus", "lusitani",
+            "getae", "acarnania", "achaea", "acragas", "aedui", "aetolia",
+            "allobroges", "anatolians", "arevaci", "ardiaei", "argos",
+            "arverni",
+          ];
+          const out = {};
+          const others = MAJOR_FACTIONS.filter(f => f !== playerFaction);
+          out[playerFaction] = { treasury: recs[0].treasury, turnStart: recs[0].turnStart };
+          for (let k = 0; k < others.length && k + 1 < recs.length; k++) {
+            out[others[k]] = { treasury: recs[k + 1].treasury, turnStart: recs[k + 1].turnStart };
+          }
+          return out;
+        })();
+        const rows = factions.map(f => {
+          const lf = f.toLowerCase();
+          const liveRegions = liveRegionsByFaction[lf];
+          const liveArmies = liveArmiesByFaction[lf];
+          const startRegions = (factionRegionsMap[f] || []).length;
+          // Prefer live treasury when available; fall back to descr_strat
+          // starting wealth. The live value carries a sign (bankruptcy
+          // shows as negative).
+          const liveTreasury = liveTreasuryByFaction && liveTreasuryByFaction[lf];
+          const wealth = liveTreasury ? liveTreasury.treasury : (factionWealth[f] ?? 0);
+          return {
+            faction: f,
+            wealth,
+            wealthIsLive: !!liveTreasury,
+            wealthTurnStart: liveTreasury ? liveTreasury.turnStart : null,
+            regions: liveRegions != null ? liveRegions : startRegions,
+            startingRegions: startRegions,
+            armies: liveArmies || 0,
+            isLive: liveLogActive && liveRegions != null,
+            name: (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " "),
+          };
+        }).filter(r => r.regions > 0 || r.wealth !== 0);
+        rows.sort((a, b) => b.regions - a.regions || b.wealth - a.wealth);
         const jumpToFaction = (f) => {
           const keys = regionNamesToKeys(regionsForFaction(f));
           const pts = keys.map(k => regionCentroids[k]).filter(Boolean);
@@ -10023,19 +11436,20 @@ function App() {
               </div>
               <div style={{ overflowY: "auto", padding: "4px 8px" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "28px 1fr 100px 80px",
+                  display: "grid", gridTemplateColumns: "28px 1fr 90px 70px 60px",
                   fontSize: "0.7rem", color: "#999", padding: "4px 8px",
                   borderBottom: "1px solid rgba(255,255,255,0.06)",
                 }}>
                   <span></span><span>Faction</span>
                   <span style={{ textAlign: "right" }}>Treasury</span>
                   <span style={{ textAlign: "right" }}>Regions</span>
+                  <span style={{ textAlign: "right" }}>Armies</span>
                 </div>
                 {rows.map((r, i) => (
                   <div key={r.faction}
                     onClick={() => jumpToFaction(r.faction)}
                     style={{
-                      display: "grid", gridTemplateColumns: "28px 1fr 100px 80px",
+                      display: "grid", gridTemplateColumns: "28px 1fr 90px 70px 60px",
                       alignItems: "center", padding: "4px 8px", borderRadius: 6,
                       cursor: "pointer", fontSize: "0.85rem",
                       background: selectedFaction === r.faction ? "rgba(220,166,74,0.18)" : "transparent",
@@ -10046,10 +11460,29 @@ function App() {
                   >
                     <span style={{ color: "#888", textAlign: "right", paddingRight: 4, fontSize: "0.75rem" }}>{i + 1}</span>
                     <span style={{ textTransform: "capitalize" }}>{r.name}</span>
-                    <span style={{ textAlign: "right", color: r.wealth >= 5000 ? "#9ec78a" : r.wealth >= 1000 ? "#f4cd57" : "#e89030", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                    <span style={{ textAlign: "right", color: r.wealth < 0 ? "#e85050" : r.wealth >= 5000 ? "#9ec78a" : r.wealth >= 1000 ? "#f4cd57" : "#e89030", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}
+                      title={r.wealthIsLive
+                        ? `Live treasury from save (decoded 2026-05-10 via save-cracker session 5). ${typeof r.wealthTurnStart === "number" && r.wealthTurnStart !== r.wealth ? `Started this turn at ${r.wealthTurnStart.toLocaleString()}, mid-turn delta ${(r.wealth - r.wealthTurnStart >= 0 ? "+" : "") + (r.wealth - r.wealthTurnStart).toLocaleString()}.` : ""}`
+                        : "Starting denarii from descr_strat. Live treasury not loaded (no save active, or non-RIS-imperial campaign)."}>
                       {r.wealth.toLocaleString()}
+                      {r.wealthIsLive && <span style={{ color: "#4a8", marginLeft: 4, fontSize: "0.7rem", fontWeight: 400 }}>·live</span>}
                     </span>
-                    <span style={{ textAlign: "right", color: "#bbb", fontVariantNumeric: "tabular-nums" }}>{r.regions}</span>
+                    <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums",
+                                   color: r.isLive ? (r.regions > r.startingRegions ? "#9ec78a" : r.regions < r.startingRegions ? "#e89030" : "#bbb") : "#bbb" }}
+                      title={r.isLive
+                        ? `Live: ${r.regions} (started with ${r.startingRegions})`
+                        : "Starting region count from descr_strat"}>
+                      {r.regions}
+                      {r.isLive && r.regions !== r.startingRegions && (
+                        <span style={{ fontSize: "0.65rem", marginLeft: 2, opacity: 0.8 }}>
+                          {r.regions > r.startingRegions ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ textAlign: "right", color: r.armies > 0 ? "#bbb" : "#555", fontVariantNumeric: "tabular-nums" }}
+                      title={r.isLive ? `Field armies the parser placed on the map` : "Live mode shows army counts"}>
+                      {r.isLive ? r.armies : "—"}
+                    </span>
                   </div>
                 ))}
               </div>

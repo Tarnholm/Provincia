@@ -29,8 +29,15 @@
 // Regexes anchored on the strictest distinguishing tokens first.
 const RX = {
   // Captain Cambyses(a638fee0:army(a5bb19e0):parthia:general):MOVING_NORMAL:start(94,28):end(88,26)[:multi-turns left(2)]
-  // The trailing loco(...) variant (EXCHANGE) is optional.
-  move: /^(.+?)\(([0-9a-f]+):army\(([0-9a-f]+)\):([a-z_]+):([a-z_ ]+)\):([A-Z_]+):start\((\d+),(\d+)\):end\((\d+),(\d+)\)(?::multi-turns left\((\d+)\))?(?::loco\(([A-Z_]+)\))?$/,
+  // The trailing loco(...) variant (EXCHANGE) is optional. Some lines
+  // have an additional "seige_scroll scroll closed" suffix appended by
+  // the engine when a siege UI was active during the move (typo with
+  // 'i' before 'e' is the engine's, not ours). Drop the `$` anchor so
+  // those trailing tokens don't break the match — without this fix
+  // every MOVING_NORMAL emitted while a siege scroll was open got
+  // silently ignored, leaving the user's general's marker frozen at
+  // the pre-siege tile until the next save snapshot caught up.
+  move: /^(.+?)\(([0-9a-f]+):army\(([0-9a-f]+)\):([a-z_]+):([a-z_ ]+)\):([A-Z_]+):start\((\d+),(\d+)\):end\((\d+),(\d+)\)(?::multi-turns left\((\d+)\))?(?::loco\(([A-Z_]+)\))?/,
   // Name(uuid) has gained a new trait(TraitName)(level-LevelName)
   traitGain: /^(.+?)\(([0-9a-f]+)\) has gained a new trait\(([^)]+)\)\(level-([^)]+)\)$/,
   // Name(uuid) has gained a level(LevelName) in trait(TraitName)
@@ -53,6 +60,13 @@ const RX = {
   fleeingToSettlement: /^(.+?)\(([0-9a-f]+)\) army\(([0-9a-f]+)\) is fleeing to settlement (.+?)\((\d+),(\d+)\)/,
   // transferring unit(unitUuid) from army(fromArmyUuid) to general(Name:charUuid):army(toArmyUuid)
   unitTransfer: /^transferring unit\(([0-9a-f]+)\) from army\(([0-9a-f]+)\) to general\((.+?):([0-9a-f]+)\):army\(([0-9a-f]+)\)/,
+  // transferring general(MovedName:movedCharUuid) unit(unitUuid) from army(fromArmyUuid) to named general(DestName:destCharUuid):army(toArmyUuid)
+  // Engine emits this form when ONE general's bodyguard unit gets folded
+  // into ANOTHER named general's army stack (Marcus → Aulus mid-turn).
+  // Without this regex the position update for Marcus's bodyguard never
+  // propagated when Aulus then moved the merged stack — Marcus stayed
+  // pinned at the merge tile until next save snapshot.
+  generalTransfer: /^transferring general\((.+?):([0-9a-f]+)\) unit\(([0-9a-f]+)\) from army\(([0-9a-f]+)\) to named general\((.+?):([0-9a-f]+)\):army\(([0-9a-f]+)\)/,
   // Name(faction) army(armyUuid) is dead
   armyDead: /^(.+?)\(([a-z_]+)\) army\(([0-9a-f]+)\) is dead$/,
   // army(armyUuid) deleted
@@ -182,6 +196,18 @@ function parseLine(line) {
       toCommanderName: m[3].trim(),
       toCommanderUuid: shortUuid(m[4]),
       toArmyUuid: shortUuid(m[5]),
+    };
+  }
+  if ((m = RX.generalTransfer.exec(line))) {
+    return {
+      type: "general_transfer",
+      movedCharName: m[1].trim(),
+      movedCharUuid: shortUuid(m[2]),
+      unitUuid: shortUuid(m[3]),
+      fromArmyUuid: shortUuid(m[4]),
+      toCommanderName: m[5].trim(),
+      toCommanderUuid: shortUuid(m[6]),
+      toArmyUuid: shortUuid(m[7]),
     };
   }
   if ((m = RX.armyDead.exec(line))) {

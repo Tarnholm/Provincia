@@ -655,10 +655,34 @@
         ]
       },
       {
+        "region": "Kroton",
+        "level": "town",
+        "population": 1800,
+        "faction_creator": "greeks",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentA",
+            "level": "gov1"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          }
+        ]
+      },
+      {
         "region": "Kanysion",
         "level": "large_town",
         "population": 1750,
-        "faction_creator": "greeks",
+        "faction_creator": "romans_julii",
         "buildings": [
           {
             "type": "core_building",
@@ -940,7 +964,7 @@
     "faction": "roman_rebels_1",
     "settlements": [
       {
-        "region": "Anatolians_Region",
+        "region": "Roman_Rebels_1_Region",
         "level": "town",
         "population": 400,
         "faction_creator": "roman_rebels_1",
@@ -957,7 +981,7 @@
     "faction": "roman_rebels_2",
     "settlements": [
       {
-        "region": "Thracians_Region",
+        "region": "Roman_Rebels_2_Region",
         "level": "town",
         "population": 400,
         "faction_creator": "roman_rebels_2",
@@ -974,7 +998,7 @@
     "faction": "roman_senate",
     "settlements": [
       {
-        "region": "Illyrians_Region",
+        "region": "Han_Region",
         "level": "town",
         "population": 400,
         "faction_creator": "roman_senate",
@@ -1262,6 +1286,30 @@
         "region": "Olbiana-Sardinia",
         "level": "town",
         "population": 1000,
+        "faction_creator": "carthage",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "colony",
+            "level": "colony_1"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Qart-Khadasht_biShardana",
+        "level": "town",
+        "population": 1200,
         "faction_creator": "carthage",
         "buildings": [
           {
@@ -1903,7 +1951,7 @@
         ]
       },
       {
-        "region": "Ay-Bushum",
+        "region": "Ay-Bushim",
         "level": "city",
         "population": 1000,
         "faction_creator": "carthage",
@@ -2335,7 +2383,7 @@
         ]
       },
       {
-        "region": "Zekz",
+        "region": "Zekzi",
         "level": "town",
         "population": 1500,
         "faction_creator": "carthage",
@@ -4673,6 +4721,42 @@
         ]
       },
       {
+        "region": "Ake",
+        "level": "large_town",
+        "population": 3400,
+        "faction_creator": "carthage",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "port_buildings",
+            "level": "port"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          }
+        ]
+      },
+      {
         "region": "Rabat_Xaman",
         "level": "large_town",
         "population": 1500,
@@ -5569,7 +5653,7 @@
         ]
       },
       {
-        "region": "Kyklades",
+        "region": "Anatolike_Kyklades",
         "level": "large_town",
         "population": 2000,
         "faction_creator": "greeks",
@@ -5621,7 +5705,7 @@
         ]
       },
       {
-        "region": "Delos",
+        "region": "Dytike_Kyklades",
         "level": "town",
         "population": 1300,
         "faction_creator": "greeks",
@@ -5709,30 +5793,6 @@
           {
             "type": "sedentary_animal_husbandry",
             "level": "open_grazing_fields"
-          }
-        ]
-      },
-      {
-        "region": "Paros",
-        "level": "large_town",
-        "population": 1750,
-        "faction_creator": "greeks",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "market",
-            "level": "trader"
           }
         ]
       },
@@ -6181,6 +6241,38 @@
         ]
       },
       {
+        "region": "Kitiy",
+        "level": "large_town",
+        "population": 2400,
+        "faction_creator": "carthage",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "port_buildings",
+            "level": "port"
+          }
+        ]
+      },
+      {
         "region": "Arka",
         "level": "town",
         "population": 1700,
@@ -6413,6 +6505,34 @@
           {
             "type": "governmentB",
             "level": "gov2"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Chrysorrhoas",
+        "level": "large_town",
+        "population": 3400,
+        "faction_creator": "nabataea",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentC",
+            "level": "gov3"
+          },
+          {
+            "type": "colony",
+            "level": "colony_2"
           },
           {
             "type": "garrison",
@@ -6897,6 +7017,46 @@
           {
             "type": "governmentC",
             "level": "gov3"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "port_buildings",
+            "level": "port"
+          }
+        ]
+      },
+      {
+        "region": "Notia_Tracheiotis",
+        "level": "large_town",
+        "population": 2400,
+        "faction_creator": "greeks",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "garrison",
+            "level": "garrison"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
           },
           {
             "type": "hinterland_region",
@@ -7802,6 +7962,22 @@
         ]
       },
       {
+        "region": "Kappadokike_Kilikia",
+        "level": "town",
+        "population": 1300,
+        "faction_creator": "cappadocia",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
         "region": "Kilikia",
         "level": "city",
         "population": 4900,
@@ -8070,7 +8246,7 @@
         ]
       },
       {
-        "region": "Paraitakene",
+        "region": "Ano_Persia",
         "level": "town",
         "population": 1800,
         "faction_creator": "parni",
@@ -8518,6 +8694,42 @@
         ]
       },
       {
+        "region": "Klazomenia",
+        "level": "large_town",
+        "population": 3400,
+        "faction_creator": "greeks",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
+          },
+          {
+            "type": "governmentA",
+            "level": "gov1"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
         "region": "Katakekaumene_Lykaonia",
         "level": "town",
         "population": 1500,
@@ -8602,7 +8814,7 @@
         ]
       },
       {
-        "region": "Tracheiotis",
+        "region": "Anatolike_Tracheiotis",
         "level": "large_town",
         "population": 2250,
         "faction_creator": "cilicians",
@@ -9286,7 +9498,7 @@
         ]
       },
       {
-        "region": "Kossaia",
+        "region": "Chalonitis",
         "level": "town",
         "population": 1500,
         "faction_creator": "parni",
@@ -9886,7 +10098,7 @@
         ]
       },
       {
-        "region": "Choarene",
+        "region": "Notia_Parthia",
         "level": "large_town",
         "population": 2100,
         "faction_creator": "parni",
@@ -9978,58 +10190,6 @@
           {
             "type": "military_industrial_complex",
             "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Sigrianike",
-        "level": "large_town",
-        "population": 2650,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "garrison",
-            "level": "garrison"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "nomadic_pastoralism",
-            "level": "nomadic_herding"
-          },
-          {
-            "type": "theatres",
-            "level": "odeon"
           }
         ]
       },
@@ -10842,6 +11002,42 @@
         ]
       },
       {
+        "region": "Belos",
+        "level": "town",
+        "population": 1800,
+        "faction_creator": "seleucid",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
         "region": "Khamat",
         "level": "town",
         "population": 1600,
@@ -11194,30 +11390,10 @@
         ]
       },
       {
-        "region": "Eremikos_Euphrates",
+        "region": "Chaldaia",
         "level": "town",
         "population": 1100,
         "faction_creator": "nabataea",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Anatolike_Osrhoene",
-        "level": "town",
-        "population": 1400,
-        "faction_creator": "seleucid",
         "buildings": [
           {
             "type": "core_building",
@@ -11254,30 +11430,6 @@
         ]
       },
       {
-        "region": "Chaldaia",
-        "level": "town",
-        "population": 1400,
-        "faction_creator": "parni",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          }
-        ]
-      },
-      {
         "region": "Paralia_Chaldaia",
         "level": "large_town",
         "population": 1500,
@@ -11294,26 +11446,6 @@
           {
             "type": "governmentC",
             "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Palaia_Zeugma",
-        "level": "town",
-        "population": 1200,
-        "faction_creator": "armenia",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
           },
           {
             "type": "hinterland_region",
@@ -11514,7 +11646,7 @@
         ]
       },
       {
-        "region": "Tapyria",
+        "region": "Tapyria-Kyrtia",
         "level": "town",
         "population": 400,
         "faction_creator": "parni",
@@ -11534,7 +11666,7 @@
         ]
       },
       {
-        "region": "Ouxiana",
+        "region": "Ouxia-Paraitakene",
         "level": "town",
         "population": 400,
         "faction_creator": "parni",
@@ -11554,7 +11686,7 @@
         ]
       },
       {
-        "region": "Kyrtia",
+        "region": "Kossaia-Mardia",
         "level": "town",
         "population": 400,
         "faction_creator": "parni",
@@ -11570,6 +11702,26 @@
           {
             "type": "governmentA",
             "level": "gov1"
+          }
+        ]
+      },
+      {
+        "region": "Notia_Margiane",
+        "level": "town",
+        "population": 1400,
+        "faction_creator": "parni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "governmentB",
+            "level": "gov2"
           }
         ]
       }
@@ -13661,6 +13813,108 @@
     ]
   },
   {
+    "faction": "apuani",
+    "settlements": [
+      {
+        "region": "Apuania",
+        "level": "large_town",
+        "population": 2000,
+        "faction_creator": "apuani",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "highland_pastoralism",
+            "level": "slope_herding"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_2"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "faction": "arados",
+    "settlements": [
+      {
+        "region": "Arwad-Marat",
+        "level": "city",
+        "population": 3000,
+        "faction_creator": "arados",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_palace"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_2"
+          },
+          {
+            "type": "port_buildings",
+            "level": "port"
+          },
+          {
+            "type": "sedentary_animal_husbandry",
+            "level": "open_grazing_fields"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "faction": "ardiaei",
     "settlements": [
       {
@@ -13837,108 +14091,6 @@
           {
             "type": "military_industrial_complex",
             "level": "mic_1"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "faction": "apuani",
-    "settlements": [
-      {
-        "region": "Apuania",
-        "level": "large_town",
-        "population": 2000,
-        "faction_creator": "apuani",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "governmentD",
-            "level": "gov4"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "highland_pastoralism",
-            "level": "slope_herding"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_2"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "faction": "arados",
-    "settlements": [
-      {
-        "region": "Arwad",
-        "level": "city",
-        "population": 3000,
-        "faction_creator": "arados",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_palace"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentD",
-            "level": "gov4"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_2"
-          },
-          {
-            "type": "port_buildings",
-            "level": "port"
-          },
-          {
-            "type": "sedentary_animal_husbandry",
-            "level": "open_grazing_fields"
           }
         ]
       }
@@ -16106,59 +16258,6 @@
     ]
   },
   {
-    "faction": "byllis",
-    "settlements": [
-      {
-        "region": "Byllionia-Amantia",
-        "level": "large_town",
-        "population": 4000,
-        "faction_creator": "byllis",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentD",
-            "level": "gov4"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "highland_pastoralism",
-            "level": "slope_herding"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_2"
-          },
-          {
-            "type": "theatres",
-            "level": "odeon"
-          }
-        ]
-      }
-    ]
-  },
-  {
     "faction": "byzantium",
     "settlements": [
       {
@@ -16899,7 +16998,7 @@
         ]
       },
       {
-        "region": "Carpetania_Montana",
+        "region": "Carpetania_Meridionalis",
         "level": "town",
         "population": 1500,
         "faction_creator": "carpetani",
@@ -17017,7 +17116,7 @@
         ]
       },
       {
-        "region": "Celticia_Meridionalis",
+        "region": "Celticia_Orientalis",
         "level": "town",
         "population": 1500,
         "faction_creator": "celtici",
@@ -18716,59 +18815,6 @@
     ]
   },
   {
-    "faction": "edeta",
-    "settlements": [
-      {
-        "region": "Edetania",
-        "level": "large_town",
-        "population": 2500,
-        "faction_creator": "edeta",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "governmentD",
-            "level": "gov4"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "honey_industry",
-            "level": "honey_1"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "irrigation_ditches"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_2"
-          }
-        ]
-      }
-    ]
-  },
-  {
     "faction": "dumnonii",
     "settlements": [
       {
@@ -19010,6 +19056,59 @@
           {
             "type": "hinterland_region",
             "level": "region_base"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "faction": "edeta",
+    "settlements": [
+      {
+        "region": "Edetania",
+        "level": "large_town",
+        "population": 2500,
+        "faction_creator": "edeta",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "honey_industry",
+            "level": "honey_1"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "irrigation_ditches"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_2"
           }
         ]
       }
@@ -20529,7 +20628,7 @@
     "faction": "heniochi",
     "settlements": [
       {
-        "region": "Heniochia-Kerketaia",
+        "region": "Heniochia",
         "level": "large_town",
         "population": 1000,
         "faction_creator": "heniochi",
@@ -23051,10 +23150,6 @@
     ]
   },
   {
-    "faction": "libyans",
-    "settlements": []
-  },
-  {
     "faction": "lihyan",
     "settlements": [
       {
@@ -23228,7 +23323,7 @@
         ]
       },
       {
-        "region": "Helveconia-Helisia",
+        "region": "Helveconia",
         "level": "town",
         "population": 725,
         "faction_creator": "lugii",
@@ -23242,8 +23337,24 @@
             "level": "gov4"
           },
           {
-            "type": "herds",
-            "level": "herds"
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Haria",
+        "level": "town",
+        "population": 2300,
+        "faction_creator": "lugii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
           },
           {
             "type": "hinterland_region",
@@ -23252,7 +23363,7 @@
         ]
       },
       {
-        "region": "Manimia-Haria",
+        "region": "Manimia",
         "level": "town",
         "population": 580,
         "faction_creator": "lugii",
@@ -23266,8 +23377,24 @@
             "level": "gov4"
           },
           {
-            "type": "herds",
-            "level": "herds"
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Helisia",
+        "level": "town",
+        "population": 2070,
+        "faction_creator": "lugii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
           },
           {
             "type": "hinterland_region",
@@ -23276,6 +23403,10 @@
         ]
       }
     ]
+  },
+  {
+    "faction": "libyans",
+    "settlements": []
   },
   {
     "faction": "lycia",
@@ -23447,6 +23578,10 @@
         ]
       }
     ]
+  },
+  {
+    "faction": "scythians",
+    "settlements": []
   },
   {
     "faction": "mamertines",
@@ -24513,6 +24648,63 @@
     ]
   },
   {
+    "faction": "musulamii",
+    "settlements": [
+      {
+        "region": "Gaetulia",
+        "level": "large_town",
+        "population": 1600,
+        "faction_creator": "musulamii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "herds",
+            "level": "herds"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          }
+        ]
+      },
+      {
+        "region": "Gaetulia_Septentrionalis",
+        "level": "town",
+        "population": 1600,
+        "faction_creator": "musulamii",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "herds",
+            "level": "herds"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "faction": "nabataea",
     "settlements": [
       {
@@ -24588,63 +24780,6 @@
           {
             "type": "governmentB",
             "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "faction": "musulamii",
-    "settlements": [
-      {
-        "region": "Gaetulia",
-        "level": "large_town",
-        "population": 1600,
-        "faction_creator": "musulamii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "governmentD",
-            "level": "gov4"
-          },
-          {
-            "type": "herds",
-            "level": "herds"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          }
-        ]
-      },
-      {
-        "region": "Gaetulia_Septentrionalis",
-        "level": "town",
-        "population": 1600,
-        "faction_creator": "musulamii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentD",
-            "level": "gov4"
-          },
-          {
-            "type": "herds",
-            "level": "herds"
           },
           {
             "type": "hinterland_region",
@@ -25567,30 +25702,6 @@
             "level": "port"
           }
         ]
-      },
-      {
-        "region": "Krounio",
-        "level": "town",
-        "population": 1800,
-        "faction_creator": "greeks",
-        "buildings": [
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentB",
-            "level": "gov2"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
       }
     ]
   },
@@ -25759,7 +25870,7 @@
         ]
       },
       {
-        "region": "Pasargadaia",
+        "region": "Pasargadaia-Kyrtia",
         "level": "large_town",
         "population": 2500,
         "faction_creator": "persis",
@@ -26724,7 +26835,7 @@
     "faction": "samnites",
     "settlements": [
       {
-        "region": "Pentria",
+        "region": "Pentria-Carricinia",
         "level": "large_town",
         "population": 1800,
         "faction_creator": "romans_julii",
@@ -26744,26 +26855,6 @@
           {
             "type": "military_industrial_complex",
             "level": "mic_2"
-          }
-        ]
-      },
-      {
-        "region": "Carricinia",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "romans_julii",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "governmentD",
-            "level": "gov4"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
           }
         ]
       },
@@ -26833,6 +26924,39 @@
           {
             "type": "governmentD",
             "level": "gov4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "faction": "sarsinates",
+    "settlements": [
+      {
+        "region": "Sassinia",
+        "level": "large_town",
+        "population": 2800,
+        "faction_creator": "sarsinates",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "governmentD",
+            "level": "gov4"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_3"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_wall"
           }
         ]
       }
@@ -26950,10 +27074,6 @@
         ]
       }
     ]
-  },
-  {
-    "faction": "scythians",
-    "settlements": []
   },
   {
     "faction": "selge",
@@ -28331,30 +28451,6 @@
             "level": "region_base"
           }
         ]
-      },
-      {
-        "region": "Tauriscia_Septentrionalis",
-        "level": "town",
-        "population": 1400,
-        "faction_creator": "taurisci",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "colony",
-            "level": "colony_2"
-          },
-          {
-            "type": "governmentC",
-            "level": "gov3"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
       }
     ]
   },
@@ -29128,7 +29224,7 @@
         ]
       },
       {
-        "region": "Vasconia_Orientalis",
+        "region": "Vasconia_Meridionalis",
         "level": "town",
         "population": 1500,
         "faction_creator": "vascones",
@@ -30014,7 +30110,7 @@
     "faction": "dummies",
     "settlements": [
       {
-        "region": "Tonelandia",
+        "region": "Armenian_Rebels_Region",
         "level": "town",
         "population": 400,
         "faction_creator": "greeks",
@@ -30079,22 +30175,6 @@
           {
             "type": "port_buildings",
             "level": "port"
-          }
-        ]
-      },
-      {
-        "region": "Sassinia",
-        "level": "town",
-        "population": 1800,
-        "faction_creator": "picentes",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
           }
         ]
       },
@@ -30591,7 +30671,7 @@
         ]
       },
       {
-        "region": "Mactarxim",
+        "region": "Maktarxim",
         "level": "town",
         "population": 1500,
         "faction_creator": "massylii",
@@ -30883,7 +30963,7 @@
         ]
       },
       {
-        "region": "Lusitania_Centralis",
+        "region": "Lusitania_Occidentalis",
         "level": "town",
         "population": 2000,
         "faction_creator": "lusitani",
@@ -31270,7 +31350,7 @@
         "region": "Baliares_Maiores",
         "level": "town",
         "population": 1500,
-        "faction_creator": "carthage",
+        "faction_creator": "edeta",
         "buildings": [
           {
             "type": "core_building",
@@ -31319,7 +31399,7 @@
         ]
       },
       {
-        "region": "Conia_Orientalis",
+        "region": "Celticia_Meridionalis",
         "level": "town",
         "population": 1500,
         "faction_creator": "lusitani",
@@ -31515,7 +31595,7 @@
         ]
       },
       {
-        "region": "Ilditurgi",
+        "region": "Bastetania_Septentrionalis",
         "level": "large_town",
         "population": 1500,
         "faction_creator": "edeta",
@@ -31535,26 +31615,10 @@
         ]
       },
       {
-        "region": "Baliares_Cartaginenses",
-        "level": "town",
-        "population": 1500,
-        "faction_creator": "carthage",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
         "region": "Contestania_Orientalis",
         "level": "town",
         "population": 1000,
-        "faction_creator": "greeks",
+        "faction_creator": "edeta",
         "buildings": [
           {
             "type": "core_building",
@@ -31567,7 +31631,7 @@
         ]
       },
       {
-        "region": "Carpetania_Orientalis",
+        "region": "Carpetania_Septentrionalis",
         "level": "town",
         "population": 1500,
         "faction_creator": "arevaci",
@@ -31811,7 +31875,7 @@
         ]
       },
       {
-        "region": "Celticia_Maritima",
+        "region": "Celticia_Occidentalis",
         "level": "town",
         "population": 1500,
         "faction_creator": "arevaci",
@@ -32003,7 +32067,7 @@
         ]
       },
       {
-        "region": "Lusitania_Meridionalis",
+        "region": "Celticia_Maritima",
         "level": "large_town",
         "population": 1500,
         "faction_creator": "edeta",
@@ -32123,6 +32187,22 @@
         ]
       },
       {
+        "region": "Lucensia_Meridionalis",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "arevaci",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
         "region": "Ilercavonia_Septentrionalis",
         "level": "town",
         "population": 1500,
@@ -32207,7 +32287,7 @@
         ]
       },
       {
-        "region": "Elysicia",
+        "region": "Elisycia",
         "level": "city",
         "population": 6300,
         "faction_creator": "arevaci",
@@ -33659,7 +33739,7 @@
         ]
       },
       {
-        "region": "Cammunia-Venostia",
+        "region": "Camunnia-Venostia",
         "level": "town",
         "population": 1500,
         "faction_creator": "arverni",
@@ -33843,6 +33923,22 @@
         "level": "town",
         "population": 1000,
         "faction_creator": "arverni",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Hercuniatia",
+        "level": "town",
+        "population": 1400,
+        "faction_creator": "taurisci",
         "buildings": [
           {
             "type": "core_building",
@@ -34599,26 +34695,6 @@
         ]
       },
       {
-        "region": "Sitonia",
-        "level": "town",
-        "population": 875,
-        "faction_creator": "suebi",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "herds",
-            "level": "herds"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
         "region": "Varinia",
         "level": "town",
         "population": 525,
@@ -34755,7 +34831,7 @@
         ]
       },
       {
-        "region": "Suionia",
+        "region": "Suionia-Sitonia",
         "level": "town",
         "population": 750,
         "faction_creator": "suebi",
@@ -35219,25 +35295,9 @@
         ]
       },
       {
-        "region": "Carbonia",
+        "region": "Carbonia-Salia",
         "level": "town",
         "population": 400,
-        "faction_creator": "suebi",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Stavania",
-        "level": "town",
-        "population": 1010,
         "faction_creator": "suebi",
         "buildings": [
           {
@@ -35267,23 +35327,7 @@
         ]
       },
       {
-        "region": "Careotaea",
-        "level": "town",
-        "population": 400,
-        "faction_creator": "suebi",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Salia",
+        "region": "Careotaea-Stavania",
         "level": "town",
         "population": 400,
         "faction_creator": "suebi",
@@ -35579,6 +35623,50 @@
           {
             "type": "port_buildings",
             "level": "port"
+          }
+        ]
+      },
+      {
+        "region": "Byllionia-Amantia",
+        "level": "large_town",
+        "population": 4000,
+        "faction_creator": "ardiaei",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "highland_pastoralism",
+            "level": "slope_herding"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_2"
+          },
+          {
+            "type": "theatres",
+            "level": "odeon"
           }
         ]
       },
@@ -36475,22 +36563,6 @@
           {
             "type": "hinterland_region",
             "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Greeks_Region",
-        "level": "town",
-        "population": 400,
-        "faction_creator": "greeks",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
           }
         ]
       },
@@ -37503,6 +37575,38 @@
         ]
       },
       {
+        "region": "Oudia-Orgasia",
+        "level": "town",
+        "population": 800,
+        "faction_creator": "siraces",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Isondaia-Olondaia",
+        "level": "town",
+        "population": 800,
+        "faction_creator": "siraces",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
         "region": "Taurike",
         "level": "town",
         "population": 1700,
@@ -37883,6 +37987,22 @@
         ]
       },
       {
+        "region": "Homonadia-Oroandia",
+        "level": "town",
+        "population": 1750,
+        "faction_creator": "selge",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
         "region": "Anatolike_Isauria",
         "level": "town",
         "population": 1000,
@@ -37971,7 +38091,7 @@
         ]
       },
       {
-        "region": "Anatolike_Tracheiotis",
+        "region": "Tracheiotis",
         "level": "large_town",
         "population": 3000,
         "faction_creator": "cilicians",
@@ -37999,10 +38119,6 @@
           {
             "type": "market",
             "level": "trader"
-          },
-          {
-            "type": "port_buildings",
-            "level": "port"
           }
         ]
       },
@@ -38067,22 +38183,6 @@
         "level": "town",
         "population": 1000,
         "faction_creator": "pontus",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Kappadokike_Kilikia",
-        "level": "town",
-        "population": 1300,
-        "faction_creator": "cappadocia",
         "buildings": [
           {
             "type": "core_building",
@@ -38535,7 +38635,7 @@
         ]
       },
       {
-        "region": "Aouranitis",
+        "region": "Auranitis",
         "level": "town",
         "population": 800,
         "faction_creator": "nabataea",
@@ -39375,6 +39475,22 @@
         ]
       },
       {
+        "region": "Kerketaia",
+        "level": "town",
+        "population": 1500,
+        "faction_creator": "armenia",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
         "region": "Makronia",
         "level": "town",
         "population": 1500,
@@ -40015,7 +40131,7 @@
         ]
       },
       {
-        "region": "Amyrgia",
+        "region": "Anatolike_Amyrgia",
         "level": "town",
         "population": 1200,
         "faction_creator": "parni",
@@ -40056,6 +40172,26 @@
       },
       {
         "region": "Tsatsene",
+        "level": "town",
+        "population": 1200,
+        "faction_creator": "saka",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "herds",
+            "level": "herds"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
+      },
+      {
+        "region": "Amyrgia",
         "level": "town",
         "population": 1200,
         "faction_creator": "saka",

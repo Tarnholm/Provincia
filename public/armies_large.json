@@ -1006,6 +1006,23 @@
     "name": "sub faction greeks",
     "charType": "general",
     "armyClass": "garrison",
+    "location": "Croton",
+    "faction": "romans_julii",
+    "x": 335,
+    "y": 363,
+    "units": [
+      {
+        "name": "roman general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "sub faction greeks",
+    "charType": "general",
+    "armyClass": "garrison",
     "location": "Epizephyrian Locri",
     "faction": "romans_julii",
     "x": 325,
@@ -1108,25 +1125,8 @@
     "name": "Biggus Dickus",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Anatolians Settlement",
+    "location": "Roman Rebels 1 Settlement",
     "faction": "roman_rebels_1",
-    "x": 1010,
-    "y": 4,
-    "units": [
-      {
-        "name": "roman general",
-        "exp": 9,
-        "armour": 9,
-        "weapon": 9
-      }
-    ]
-  },
-  {
-    "name": "Biggus Dickus",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Thracians Settlement",
-    "faction": "roman_rebels_2",
     "x": 1010,
     "y": 7,
     "units": [
@@ -1142,9 +1142,26 @@
     "name": "Biggus Dickus",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Illyrians Settlement",
+    "location": "Roman Rebels 2 Settlement",
+    "faction": "roman_rebels_2",
+    "x": 1010,
+    "y": 4,
+    "units": [
+      {
+        "name": "roman general",
+        "exp": 9,
+        "armour": 9,
+        "weapon": 9
+      }
+    ]
+  },
+  {
+    "name": "Biggus Dickus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Han Settlement",
     "faction": "roman_senate",
-    "x": 1006,
+    "x": 998,
     "y": 1,
     "units": [
       {
@@ -1221,6 +1238,25 @@
     "x": null,
     "y": null,
     "region": "Olbiana-Sardinia",
+    "units": [
+      {
+        "name": "caetrati swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Qart-Khadasht_biShardana",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Qart-Khadasht_biShardana",
+    "faction": "carthage",
+    "x": null,
+    "y": null,
+    "region": "Qart-Khadasht_biShardana",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -1422,14 +1458,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Ay-Bushum",
+    "name": "Garrison of Ay-Bushim",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Ay-Bushum",
+    "location": "Ay-Bushim",
     "faction": "carthage",
     "x": null,
     "y": null,
-    "region": "Ay-Bushum",
+    "region": "Ay-Bushim",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -1688,14 +1724,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Zekz",
+    "name": "Garrison of Zekzi",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Zekz",
+    "location": "Zekzi",
     "faction": "carthage",
     "x": null,
     "y": null,
-    "region": "Zekz",
+    "region": "Zekzi",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -3246,6 +3282,25 @@
     "_garrisoned": true
   },
   {
+    "name": "Garrison of Chrysorrhoas",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Chrysorrhoas",
+    "faction": "ptolemaic",
+    "x": null,
+    "y": null,
+    "region": "Chrysorrhoas",
+    "units": [
+      {
+        "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Garrison of Abilene",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -4328,6 +4383,23 @@
     ]
   },
   {
+    "name": "Aetos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nagidos",
+    "faction": "ptolemaic",
+    "x": 520,
+    "y": 341,
+    "units": [
+      {
+        "name": "ptolemaic cavalry of the court",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Eunostos",
     "charType": "general",
     "armyClass": "garrison",
@@ -4390,6 +4462,29 @@
       },
       {
         "name": "thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Iolaos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ptolemais-Phoinike",
+    "faction": "ptolemaic",
+    "x": 554,
+    "y": 301,
+    "units": [
+      {
+        "name": "ptolemaic cavalry of the court",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "machairaphoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -4800,23 +4895,6 @@
     ]
   },
   {
-    "name": "Bacchon",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Paros",
-    "faction": "ptolemaic",
-    "x": 428,
-    "y": 340,
-    "units": [
-      {
-        "name": "ptolemaic cavalry of the court",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
     "name": "Kallikrates",
     "charType": "general",
     "armyClass": "garrison",
@@ -4932,6 +5010,23 @@
     "faction": "ptolemaic",
     "x": 484,
     "y": 337,
+    "units": [
+      {
+        "name": "ptolemaic cavalry of the court",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Lysitheides",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kition",
+    "faction": "ptolemaic",
+    "x": 531,
+    "y": 326,
     "units": [
       {
         "name": "ptolemaic cavalry of the court",
@@ -5295,14 +5390,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Paraitakene",
+    "name": "Garrison of Ano_Persia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Paraitakene",
+    "location": "Ano_Persia",
     "faction": "seleucid",
     "x": null,
     "y": null,
-    "region": "Paraitakene",
+    "region": "Ano_Persia",
     "units": [
       {
         "name": "greek slingers",
@@ -5466,14 +5561,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Kossaia",
+    "name": "Garrison of Chalonitis",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Kossaia",
+    "location": "Chalonitis",
     "faction": "seleucid",
     "x": null,
     "y": null,
-    "region": "Kossaia",
+    "region": "Chalonitis",
     "units": [
       {
         "name": "greek slingers",
@@ -5588,25 +5683,6 @@
     "x": null,
     "y": null,
     "region": "Syromedia",
-    "units": [
-      {
-        "name": "greek slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Sigrianike",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Sigrianike",
-    "faction": "seleucid",
-    "x": null,
-    "y": null,
-    "region": "Sigrianike",
     "units": [
       {
         "name": "greek slingers",
@@ -5770,63 +5846,6 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Eremikos_Euphrates",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Eremikos_Euphrates",
-    "faction": "seleucid",
-    "x": null,
-    "y": null,
-    "region": "Eremikos_Euphrates",
-    "units": [
-      {
-        "name": "greek slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Anatolike_Osrhoene",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Anatolike_Osrhoene",
-    "faction": "seleucid",
-    "x": null,
-    "y": null,
-    "region": "Anatolike_Osrhoene",
-    "units": [
-      {
-        "name": "greek slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Artakene",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Artakene",
-    "faction": "seleucid",
-    "x": null,
-    "y": null,
-    "region": "Artakene",
-    "units": [
-      {
-        "name": "greek slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
     "name": "Garrison of Chaldaia",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -5846,14 +5865,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Palaia_Zeugma",
+    "name": "Garrison of Artakene",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Palaia_Zeugma",
+    "location": "Artakene",
     "faction": "seleucid",
     "x": null,
     "y": null,
-    "region": "Palaia_Zeugma",
+    "region": "Artakene",
     "units": [
       {
         "name": "greek slingers",
@@ -5922,14 +5941,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Tapyria",
+    "name": "Garrison of Tapyria-Kyrtia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Tapyria",
+    "location": "Tapyria-Kyrtia",
     "faction": "seleucid",
     "x": null,
     "y": null,
-    "region": "Tapyria",
+    "region": "Tapyria-Kyrtia",
     "units": [
       {
         "name": "greek slingers",
@@ -5941,14 +5960,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Ouxiana",
+    "name": "Garrison of Ouxia-Paraitakene",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Ouxiana",
+    "location": "Ouxia-Paraitakene",
     "faction": "seleucid",
     "x": null,
     "y": null,
-    "region": "Ouxiana",
+    "region": "Ouxia-Paraitakene",
     "units": [
       {
         "name": "greek slingers",
@@ -5960,14 +5979,33 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Kyrtia",
+    "name": "Garrison of Kossaia-Mardia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Kyrtia",
+    "location": "Kossaia-Mardia",
     "faction": "seleucid",
     "x": null,
     "y": null,
-    "region": "Kyrtia",
+    "region": "Kossaia-Mardia",
+    "units": [
+      {
+        "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Notia_Margiane",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Notia_Margiane",
+    "faction": "seleucid",
+    "x": null,
+    "y": null,
+    "region": "Notia_Margiane",
     "units": [
       {
         "name": "greek slingers",
@@ -6768,6 +6806,29 @@
         "exp": 0,
         "armour": 0,
         "weapon": 1
+      }
+    ]
+  },
+  {
+    "name": "sub faction cappadocia",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kybistra",
+    "faction": "seleucid",
+    "x": 529,
+    "y": 364,
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 1
+      },
+      {
+        "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -7802,7 +7863,7 @@
     "armyClass": "garrison",
     "location": "Seleukeia-Soloke",
     "faction": "seleucid",
-    "x": 730,
+    "x": 731,
     "y": 326,
     "units": [
       {
@@ -8164,6 +8225,29 @@
     ]
   },
   {
+    "name": "Thales",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Klazomenai",
+    "faction": "seleucid",
+    "x": 445,
+    "y": 361,
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Melanthios",
     "charType": "general",
     "armyClass": "garrison",
@@ -8295,6 +8379,29 @@
       {
         "name": "seleucid general",
         "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Damasos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Chalkis-Belos",
+    "faction": "seleucid",
+    "x": 566,
+    "y": 349,
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 0,
         "armour": 0,
         "weapon": 0
       }
@@ -8616,7 +8723,7 @@
     "name": "DiodotosB",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Baktra Basileion",
+    "location": "Baktrias Basileion",
     "faction": "bactria",
     "x": 903,
     "y": 516,
@@ -9197,7 +9304,7 @@
     "y": 412,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -9214,20 +9321,56 @@
     "y": 415,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian light spearmen",
-        "exp": 0,
+        "name": "cappadocian levy spearmen",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian skirmishers",
-        "exp": 0,
+        "name": "cappadocian levy spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian light infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian light infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian javelinmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian archers",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       },
@@ -9238,44 +9381,8 @@
         "weapon": 0
       },
       {
-        "name": "asian light spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
         "name": "cappadocian cavalry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "caucasian hillmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian light spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "persian foot archers",
-        "exp": 0,
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -9291,7 +9398,7 @@
     "y": 409,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -9308,7 +9415,7 @@
     "y": 413,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -9325,7 +9432,7 @@
     "y": 406,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -9342,7 +9449,7 @@
     "y": 411,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -9355,8 +9462,8 @@
     "armyClass": "garrison",
     "location": "Oxthracae",
     "faction": "lusitani",
-    "x": 65,
-    "y": 406,
+    "x": 63,
+    "y": 398,
     "units": [
       {
         "name": "celtiberian noble bodyguards",
@@ -9440,10 +9547,10 @@
   {
     "name": "Astolpus",
     "charType": "general",
-    "armyClass": "garrison",
+    "armyClass": "field",
     "location": "Lusitania",
     "faction": "lusitani",
-    "x": 65,
+    "x": 67,
     "y": 406,
     "units": [
       {
@@ -10672,6 +10779,164 @@
     ]
   },
   {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apua",
+    "faction": "apuani",
+    "x": 258,
+    "y": 441,
+    "units": [
+      {
+        "name": "gallic royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic skirmishers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic skirmishers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic light cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "treverian noble cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "scordiscian infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "",
+    "faction": "apuani",
+    "x": 259,
+    "y": 439,
+    "units": [
+      {
+        "name": "gallic royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Bodas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arados-Marathos",
+    "faction": "arados",
+    "x": 558,
+    "y": 330,
+    "units": [
+      {
+        "name": "asian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "median spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "asian skirmishers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "asian skirmishers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sogdian armoured spearmen archers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sogdian mounted javelineers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "persian foot archers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "asian light spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "asian light spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "asian light spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Boodes",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "outside Arados-Marathos",
+    "faction": "arados",
+    "x": 559,
+    "y": 331,
+    "units": [
+      {
+        "name": "asian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Pleuratos",
     "charType": "general",
     "armyClass": "garrison",
@@ -10904,164 +11169,6 @@
       {
         "name": "iberian skirmishers",
         "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Bolgios",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Apua",
-    "faction": "apuani",
-    "x": 258,
-    "y": 441,
-    "units": [
-      {
-        "name": "gallic royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "celtic spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "celtic skirmishers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "celtic skirmishers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "gallic light cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "treverian noble cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "scordiscian infantry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Catuuolcus",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "",
-    "faction": "apuani",
-    "x": 259,
-    "y": 439,
-    "units": [
-      {
-        "name": "gallic royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Bodas",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Arados",
-    "faction": "arados",
-    "x": 558,
-    "y": 330,
-    "units": [
-      {
-        "name": "asian royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "median spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian skirmishers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian skirmishers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "sogdian armoured spearmen archers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "sogdian mounted javelineers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "persian foot archers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian light spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian light spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian light spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Boodes",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "outside Arados",
-    "faction": "arados",
-    "x": 559,
-    "y": 331,
-    "units": [
-      {
-        "name": "asian royal bodyguards",
-        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -13119,7 +13226,7 @@
     "region": "Aspourgiania",
     "units": [
       {
-        "name": "psiloi",
+        "name": "sindian infantry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -13138,7 +13245,7 @@
     "region": "Maiotis",
     "units": [
       {
-        "name": "psiloi",
+        "name": "maeotian archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -13204,19 +13311,19 @@
         "weapon": 0
       },
       {
-        "name": "greek archers",
+        "name": "bosporan archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "paphlagonian cavalry",
+        "name": "xystophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "paphlagonian cavalry",
+        "name": "maeotian mounted archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -13591,88 +13698,6 @@
     "units": [
       {
         "name": "getic royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Killes",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Byllis-Amantia",
-    "faction": "byllis",
-    "x": 364,
-    "y": 385,
-    "units": [
-      {
-        "name": "illyrian warlords bodyguard",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "illyrian peltasts",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "illyrian warband",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "southern illyrian spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "illyrian cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Bardylis",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "",
-    "faction": "byllis",
-    "x": 362,
-    "y": 385,
-    "units": [
-      {
-        "name": "illyrian warlords bodyguard",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "illyrian slingers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "southern illyrian spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "illyrian noble spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "southern illyrian axemen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -14179,7 +14204,7 @@
     "y": 381,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -14196,7 +14221,7 @@
     "y": 383,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -14208,56 +14233,56 @@
         "weapon": 0
       },
       {
-        "name": "asian slingers",
+        "name": "cappadocian slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian slingers",
+        "name": "cappadocian slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian light spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian light spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian light spearmen",
+        "name": "cappadocian levy spearmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "persian foot archers",
+        "name": "cappadocian levy spearmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian light spearmen",
-        "exp": 0,
+        "name": "cappadocian light infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian light infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian archers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian royal infantry guard",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
         "name": "cappadocian skirmisher cavalry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "caucasian hillmen",
-        "exp": 0,
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -14273,7 +14298,7 @@
     "y": 368,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -14290,7 +14315,7 @@
     "y": 383,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -14307,7 +14332,7 @@
     "y": 375,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -14324,7 +14349,7 @@
     "y": 386,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -14729,7 +14754,7 @@
     "name": "Bituitus",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Nertobriga-Celticia",
+    "location": "Nertobriga_Celticorum",
     "faction": "celtici",
     "x": 68,
     "y": 379,
@@ -15748,7 +15773,7 @@
     "name": "Orontes",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Kytaia",
+    "location": "Koutatision",
     "faction": "colchians",
     "x": 605,
     "y": 454,
@@ -16768,111 +16793,6 @@
     ]
   },
   {
-    "name": "Edeco",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "Outside Edeta",
-    "faction": "edeta",
-    "x": 136,
-    "y": 388,
-    "units": [
-      {
-        "name": "celtiberian noble bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "EdecoA",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Edeta",
-    "faction": "edeta",
-    "x": 138,
-    "y": 386,
-    "units": [
-      {
-        "name": "celtiberian noble bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Deunoro",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "Outside Edeta",
-    "faction": "edeta",
-    "x": 138,
-    "y": 384,
-    "units": [
-      {
-        "name": "celtiberian noble bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "caetrati swordsmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "iberian slingers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "caetrati swordsmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "iberian slingers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "caetrati cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "caetrati cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "iberian heavy swordsmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "iberian skirmishers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "caetrati",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
     "name": "Garrison of Dumnonia_Occidentalis",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -17187,6 +17107,111 @@
     "units": [
       {
         "name": "gallic royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Edeco",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Edeta",
+    "faction": "edeta",
+    "x": 136,
+    "y": 388,
+    "units": [
+      {
+        "name": "celtiberian noble bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "EdecoA",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Edeta",
+    "faction": "edeta",
+    "x": 138,
+    "y": 386,
+    "units": [
+      {
+        "name": "celtiberian noble bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Deunoro",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Edeta",
+    "faction": "edeta",
+    "x": 138,
+    "y": 384,
+    "units": [
+      {
+        "name": "celtiberian noble bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "caetrati swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "caetrati swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "caetrati cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "caetrati cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian heavy swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian skirmishers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "caetrati",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -21757,6 +21782,44 @@
     ]
   },
   {
+    "name": "Garrison of Haria",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Haria",
+    "faction": "lugii",
+    "x": null,
+    "y": null,
+    "region": "Haria",
+    "units": [
+      {
+        "name": "outsider skirmisher rabble",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Helisia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Helisia",
+    "faction": "lugii",
+    "x": null,
+    "y": null,
+    "region": "Helisia",
+    "units": [
+      {
+        "name": "outsider skirmisher rabble",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Lugius",
     "charType": "general",
     "armyClass": "garrison",
@@ -23355,6 +23418,94 @@
     ]
   },
   {
+    "name": "Niptasan",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Castrum Gaetulorum",
+    "faction": "musulamii",
+    "x": 172,
+    "y": 277,
+    "units": [
+      {
+        "name": "massylian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian light infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian javelinmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian javelinmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian light infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian light infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Yutpan",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Miglis",
+    "faction": "musulamii",
+    "x": 199,
+    "y": 305,
+    "units": [
+      {
+        "name": "massylian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Fara",
     "charType": "general",
     "armyClass": "field",
@@ -23470,94 +23621,6 @@
     "units": [
       {
         "name": "nabataean general",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Niptasan",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Castrum Gaetulorum",
-    "faction": "musulamii",
-    "x": 172,
-    "y": 277,
-    "units": [
-      {
-        "name": "massylian royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian light infantry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian javelinmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian javelinmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian light infantry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian light infantry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Yutpan",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Miglis",
-    "faction": "musulamii",
-    "x": 199,
-    "y": 305,
-    "units": [
-      {
-        "name": "massylian royal bodyguards",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -24474,13 +24537,13 @@
     "y": 405,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "paphlagonian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian slingers",
+        "name": "paphlagonian slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -24492,14 +24555,20 @@
         "weapon": 0
       },
       {
-        "name": "phrygian spearmen",
+        "name": "paphlagonian levy spearmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "phrygian spearmen",
+        "name": "paphlagonian light infantry",
         "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "masdyenian infantry",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       },
@@ -24527,7 +24596,7 @@
     "y": 406,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "paphlagonian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -24711,7 +24780,7 @@
   {
     "name": "Nikeratos",
     "charType": "general",
-    "armyClass": "garrison",
+    "armyClass": "field",
     "location": "Dionysopolis",
     "faction": "pentapolis",
     "x": 449,
@@ -25564,7 +25633,7 @@
     "name": "Aripharnes",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Basilon Saurmaton Taphai",
+    "location": "Basilikon Saurmaton Taphai",
     "faction": "royal_sarmatians",
     "x": 588,
     "y": 594,
@@ -25619,8 +25688,8 @@
     "armyClass": "garrison",
     "location": "Sauromaton Taphai",
     "faction": "royal_sarmatians",
-    "x": 594,
-    "y": 556,
+    "x": 595,
+    "y": 558,
     "units": [
       {
         "name": "armoured sarmatian general",
@@ -26095,25 +26164,6 @@
     ]
   },
   {
-    "name": "Garrison of Carricinia",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Carricinia",
-    "faction": "samnites",
-    "x": null,
-    "y": null,
-    "region": "Carricinia",
-    "units": [
-      {
-        "name": "oscan spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
     "name": "Titus",
     "charType": "general",
     "armyClass": "garrison",
@@ -26253,6 +26303,64 @@
     "units": [
       {
         "name": "celtiberian noble bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Titus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sarsina",
+    "faction": "sarsinates",
+    "x": 281,
+    "y": 433,
+    "units": [
+      {
+        "name": "picentine general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "picentine light spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "picentine heavy spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "picentine swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "picentine light cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Aulus",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Compsa",
+    "faction": "sarsinates",
+    "x": 281,
+    "y": 433,
+    "units": [
+      {
+        "name": "picentine general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -27871,25 +27979,6 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Tauriscia_Septentrionalis",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Tauriscia_Septentrionalis",
-    "faction": "taurisci",
-    "x": null,
-    "y": null,
-    "region": "Tauriscia_Septentrionalis",
-    "units": [
-      {
-        "name": "celtic swordsmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
     "name": "Bolgios",
     "charType": "general",
     "armyClass": "garrison",
@@ -29283,9 +29372,9 @@
     "name": "Bituitus",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Arsaos",
+    "location": "Andelos",
     "faction": "vascones",
-    "x": 139,
+    "x": 133,
     "y": 430,
     "units": [
       {
@@ -30081,7 +30170,7 @@
     "armyClass": "garrison",
     "location": "Eddopolis",
     "faction": "dummies",
-    "x": 1016,
+    "x": 998,
     "y": 4,
     "units": [
       {
@@ -30091,25 +30180,6 @@
         "weapon": 9
       }
     ]
-  },
-  {
-    "name": "Garrison of Sassinia",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Sassinia",
-    "faction": "slave",
-    "x": null,
-    "y": null,
-    "region": "Sassinia",
-    "units": [
-      {
-        "name": "sabellian spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
   },
   {
     "name": "Garrison of Sikelia",
@@ -30688,14 +30758,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Mactarxim",
+    "name": "Garrison of Maktarxim",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Mactarxim",
+    "location": "Maktarxim",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Mactarxim",
+    "region": "Maktarxim",
     "units": [
       {
         "name": "numidian cavalry",
@@ -31045,14 +31115,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Lusitania_Centralis",
+    "name": "Garrison of Lusitania_Occidentalis",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Lusitania_Centralis",
+    "location": "Lusitania_Occidentalis",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Lusitania_Centralis",
+    "region": "Lusitania_Occidentalis",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -31445,14 +31515,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Conia_Orientalis",
+    "name": "Garrison of Celticia_Meridionalis",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Conia_Orientalis",
+    "location": "Celticia_Meridionalis",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Conia_Orientalis",
+    "region": "Celticia_Meridionalis",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -31645,14 +31715,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Ilditurgi",
+    "name": "Garrison of Bastetania_Septentrionalis",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Ilditurgi",
+    "location": "Bastetania_Septentrionalis",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Ilditurgi",
+    "region": "Bastetania_Septentrionalis",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -31670,39 +31740,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Baliares_Cartaginenses",
+    "name": "Garrison of Carpetania_Septentrionalis",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Baliares_Cartaginenses",
+    "location": "Carpetania_Septentrionalis",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Baliares_Cartaginenses",
-    "units": [
-      {
-        "name": "caetrati swordsmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "iberian skirmishers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Carpetania_Orientalis",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Carpetania_Orientalis",
-    "faction": "slave",
-    "x": null,
-    "y": null,
-    "region": "Carpetania_Orientalis",
+    "region": "Carpetania_Septentrionalis",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -32070,14 +32115,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Celticia_Maritima",
+    "name": "Garrison of Celticia_Occidentalis",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Celticia_Maritima",
+    "location": "Celticia_Occidentalis",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Celticia_Maritima",
+    "region": "Celticia_Occidentalis",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -32370,14 +32415,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Lusitania_Meridionalis",
+    "name": "Garrison of Celticia_Maritima",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Lusitania_Meridionalis",
+    "location": "Celticia_Maritima",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Lusitania_Meridionalis",
+    "region": "Celticia_Maritima",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -32520,6 +32565,31 @@
     "_garrisoned": true
   },
   {
+    "name": "Garrison of Lucensia_Meridionalis",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Lucensia_Meridionalis",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Lucensia_Meridionalis",
+    "units": [
+      {
+        "name": "caetrati swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Garrison of Ilercavonia_Septentrionalis",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -32620,14 +32690,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Elysicia",
+    "name": "Garrison of Elisycia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Elysicia",
+    "location": "Elisycia",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Elysicia",
+    "region": "Elisycia",
     "units": [
       {
         "name": "caetrati swordsmen",
@@ -34270,14 +34340,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Cammunia-Venostia",
+    "name": "Garrison of Camunnia-Venostia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Cammunia-Venostia",
+    "location": "Camunnia-Venostia",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Cammunia-Venostia",
+    "region": "Camunnia-Venostia",
     "units": [
       {
         "name": "celtic swordsmen",
@@ -34512,6 +34582,25 @@
       },
       {
         "name": "celtic spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Hercuniatia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Hercuniatia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Hercuniatia",
+    "units": [
+      {
+        "name": "celtic swordsmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -35620,31 +35709,6 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Sitonia",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Sitonia",
-    "faction": "slave",
-    "x": null,
-    "y": null,
-    "region": "Sitonia",
-    "units": [
-      {
-        "name": "freemen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "outsider skirmisher rabble",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
     "name": "Garrison of Varinia",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -35820,14 +35884,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Suionia",
+    "name": "Garrison of Suionia-Sitonia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Suionia",
+    "location": "Suionia-Sitonia",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Suionia",
+    "region": "Suionia-Sitonia",
     "units": [
       {
         "name": "freemen",
@@ -36520,39 +36584,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Carbonia",
+    "name": "Garrison of Carbonia-Salia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Carbonia",
+    "location": "Carbonia-Salia",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Carbonia",
-    "units": [
-      {
-        "name": "freemen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "outsider skirmisher rabble",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Stavania",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Stavania",
-    "faction": "slave",
-    "x": null,
-    "y": null,
-    "region": "Stavania",
+    "region": "Carbonia-Salia",
     "units": [
       {
         "name": "freemen",
@@ -36595,39 +36634,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Careotaea",
+    "name": "Garrison of Careotaea-Stavania",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Careotaea",
+    "location": "Careotaea-Stavania",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Careotaea",
-    "units": [
-      {
-        "name": "freemen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "outsider skirmisher rabble",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Salia",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Salia",
-    "faction": "slave",
-    "x": null,
-    "y": null,
-    "region": "Salia",
+    "region": "Careotaea-Stavania",
     "units": [
       {
         "name": "freemen",
@@ -37503,6 +37517,44 @@
     "_garrisoned": true
   },
   {
+    "name": "Garrison of Oudia-Orgasia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Oudia-Orgasia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Oudia-Orgasia",
+    "units": [
+      {
+        "name": "sarmatian archers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Isondaia-Olondaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Isondaia-Olondaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Isondaia-Olondaia",
+    "units": [
+      {
+        "name": "sarmatian archers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Garrison of Taurike",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -37513,7 +37565,7 @@
     "region": "Taurike",
     "units": [
       {
-        "name": "sarmatian archers",
+        "name": "taurian archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -38216,14 +38268,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Aouranitis",
+    "name": "Garrison of Auranitis",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Aouranitis",
+    "location": "Auranitis",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Aouranitis",
+    "region": "Auranitis",
     "units": [
       {
         "name": "arab skirmishers",
@@ -39241,6 +39293,31 @@
     "_garrisoned": true
   },
   {
+    "name": "Garrison of Kerketaia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Kerketaia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Kerketaia",
+    "units": [
+      {
+        "name": "asian skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "asian slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Garrison of Makronia",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -39771,14 +39848,14 @@
     "_garrisoned": true
   },
   {
-    "name": "Garrison of Amyrgia",
+    "name": "Garrison of Anatolike_Amyrgia",
     "charType": "garrison",
     "armyClass": "garrison",
-    "location": "Amyrgia",
+    "location": "Anatolike_Amyrgia",
     "faction": "slave",
     "x": null,
     "y": null,
-    "region": "Amyrgia",
+    "region": "Anatolike_Amyrgia",
     "units": [
       {
         "name": "sarmatian archers",
@@ -39798,6 +39875,25 @@
     "x": null,
     "y": null,
     "region": "Tsatsene",
+    "units": [
+      {
+        "name": "sarmatian archers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Amyrgia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Amyrgia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Amyrgia",
     "units": [
       {
         "name": "sarmatian archers",
@@ -40330,6 +40426,29 @@
     "name": "sub faction ardiaei",
     "charType": "general",
     "armyClass": "garrison",
+    "location": "Byllis-Amantia",
+    "faction": "slave",
+    "x": 364,
+    "y": 385,
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "sub faction ardiaei",
+    "charType": "general",
+    "armyClass": "garrison",
     "location": "Splonum",
     "faction": "slave",
     "x": 329,
@@ -40787,52 +40906,6 @@
     ]
   },
   {
-    "name": "sub faction greeks",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Contestanium",
-    "faction": "slave",
-    "x": 137,
-    "y": 368,
-    "units": [
-      {
-        "name": "greek general",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek hoplites",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "sub faction greeks",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Narona",
-    "faction": "slave",
-    "x": 339,
-    "y": 421,
-    "units": [
-      {
-        "name": "greek general",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek hoplites",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
     "name": "Solon",
     "charType": "general",
     "armyClass": "garrison",
@@ -40856,6 +40929,29 @@
     ]
   },
   {
+    "name": "sub faction edetani",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Contestanium",
+    "faction": "slave",
+    "x": 137,
+    "y": 368,
+    "units": [
+      {
+        "name": "celtiberian noble bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "caetrati swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Iottalambdios",
     "charType": "general",
     "armyClass": "garrison",
@@ -40872,6 +40968,29 @@
       },
       {
         "name": "ankonitan hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "sub faction greeks",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Narona",
+    "faction": "slave",
+    "x": 339,
+    "y": 421,
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41549,7 +41668,7 @@
         "weapon": 0
       },
       {
-        "name": "scythian medium cavalry",
+        "name": "maeotian archers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41658,13 +41777,13 @@
     "y": 397,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian skirmishers",
+        "name": "cappadocian javelinmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41681,13 +41800,13 @@
     "y": 424,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian slingers",
+        "name": "cappadocian slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41704,13 +41823,13 @@
     "y": 413,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian slingers",
+        "name": "cappadocian slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41718,22 +41837,22 @@
     ]
   },
   {
-    "name": "sub faction cappadocia",
+    "name": "sub faction pontus",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Kybistra",
+    "location": "Kamisa",
     "faction": "slave",
-    "x": 529,
-    "y": 364,
+    "x": 558,
+    "y": 404,
     "units": [
       {
-        "name": "asian royal bodyguards",
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "asian slingers",
+        "name": "cappadocian slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41756,7 +41875,7 @@
         "weapon": 0
       },
       {
-        "name": "greek slingers",
+        "name": "pisidian javelinmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41779,7 +41898,7 @@
         "weapon": 0
       },
       {
-        "name": "greek slingers",
+        "name": "lydian akontistai",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41796,13 +41915,13 @@
     "y": 356,
     "units": [
       {
-        "name": "greek general",
+        "name": "cilician general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "phrygian javelinmen",
+        "name": "kietaian hillmen",
         "exp": 2,
         "armour": 0,
         "weapon": 0
@@ -41816,16 +41935,39 @@
     "location": "Isaura",
     "faction": "slave",
     "x": 509,
-    "y": 355,
+    "y": 354,
     "units": [
       {
-        "name": "greek general",
+        "name": "cilician general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "phrygian javelinmen",
+        "name": "isaurian marauders",
+        "exp": 2,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "sub faction selge",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Homona",
+    "faction": "slave",
+    "x": 506,
+    "y": 356,
+    "units": [
+      {
+        "name": "cilician general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "isaurian marauders",
         "exp": 2,
         "armour": 0,
         "weapon": 0
@@ -41848,7 +41990,7 @@
         "weapon": 0
       },
       {
-        "name": "greek slingers",
+        "name": "pisidian javelinmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41871,7 +42013,7 @@
         "weapon": 0
       },
       {
-        "name": "greek slingers",
+        "name": "pamphylian hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41885,39 +42027,16 @@
     "location": "Olbe",
     "faction": "slave",
     "x": 530,
-    "y": 349,
+    "y": 350,
     "units": [
       {
-        "name": "greek general",
+        "name": "cilician general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "greek slingers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "sub faction armenia",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Kamisa",
-    "faction": "slave",
-    "x": 558,
-    "y": 404,
-    "units": [
-      {
-        "name": "asian royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "asian slingers",
+        "name": "cilician spearmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0

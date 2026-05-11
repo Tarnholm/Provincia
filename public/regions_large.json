@@ -4,7 +4,7 @@
     "city": "Rome",
     "faction": "romans_julii",
     "culture": "Romans",
-    "tags": "rome, italy, n_italy, italic, rel_italic_4, Farm11, river_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "rome, italy, n_italy, italic, camillan, latin, rel_italic_4, Farm11, river_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "11",
     "ethnicities": "italic 100"
@@ -14,7 +14,7 @@
     "city": "Capua",
     "faction": "romans_julii",
     "culture": "Campanians",
-    "tags": "italy, c_italy, italic, capuan, rel_italic_4, Farm13, floodplains_delta, mediterranean, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "italy, c_italy, italic, camillan, capuan_homeland, campanian, oscan, rel_italic_4, Farm13, floodplains_delta, mediterranean, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "13",
     "ethnicities": "italic 100"
@@ -24,7 +24,7 @@
     "city": "Arretium",
     "faction": "romans_julii",
     "culture": "Etruscans",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm11, river_valley, mediterranean, rivertrade, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, etruscan, rel_italic_4, Farm11, river_valley, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "11",
     "ethnicities": "italic 100"
@@ -34,7 +34,7 @@
     "city": "Asculum",
     "faction": "romans_julii",
     "culture": "Picentes",
-    "tags": "italy, n_italy, italic, picenian, rel_italic_4, Farm7, hills, humid_sub_tropical, base_port_level_1, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, picentine, picentine_homeland, rel_italic_4, Farm7, hills, humid_sub_tropical, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "italic 100"
@@ -44,7 +44,7 @@
     "city": "Tarentum",
     "faction": "taras",
     "culture": "Tarentines",
-    "tags": "italy, s_italy, greece, deuteroi, italiote, greek_aor, euzonoi, tarentine, rel_dorian_4, rel_italic_2, Farm9, grassland, mediterranean, base_port_level_3, rivertrade, irrigation_river",
+    "tags": "italy, s_italy, greece, camillan, deuteroi, italiote, greek_aor, euzonoi, tarentine, rel_dorian_4, rel_italic_2, Farm9, grassland, mediterranean, base_port_level_3, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "dorian 70 italic 30"
@@ -54,7 +54,7 @@
     "city": "Maleventum",
     "faction": "romans_julii",
     "culture": "Samnites",
-    "tags": "italy, c_italy, italic, samnite, rel_italic_4, Farm6, hills, mediterranean, irrigation_river",
+    "tags": "italy, c_italy, italic, camillan, samnite, oscan, samnite_homeland, rel_italic_4, Farm6, hills, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -64,17 +64,27 @@
     "city": "Venusia",
     "faction": "romans_julii",
     "culture": "Peucetians",
-    "tags": "italy, s_italy, italic, rel_italic_4, rel_illyrian_2, Farm8, grassland, mediterranean, base_port_level_1, irrigation_lake",
+    "tags": "italy, s_italy, italic, camillan, messapian, rel_italic_4, rel_illyrian_2, Farm8, grassland, mediterranean, base_port_level_1, irrigation_lake",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "italic 70 illyrian 30"
+  },
+  "13,170,198": {
+    "region": "Kroton",
+    "city": "Croton",
+    "faction": "greeks",
+    "culture": "Crotoniates",
+    "tags": "italy, s_italy, Farm6, greece, camillan, italiote, greek, greek_aor, euzonoi, rel_dorian_4, rel_italic_2",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": "dorian 70 italic 30"
   },
   "52,13,13": {
     "region": "Lucania",
     "city": "Grumentum",
     "faction": "romans_julii",
     "culture": "Lucanians",
-    "tags": "italy, s_italy, italic, lucanian, rel_italic_4, Farm6, mountains, temperate, base_port_level_1, irrigation_river",
+    "tags": "italy, s_italy, italic, camillan, lucanian, oscan, oscan_southern, lucanian_homeland, rel_italic_4, Farm6, mountains, temperate, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -84,7 +94,7 @@
     "city": "Brundisium",
     "faction": "romans_julii",
     "culture": "Calabrians",
-    "tags": "italy, s_italy, italic, messapian, rel_italic_4, rel_illyrian_1, Farm10, grassland, mediterranean, base_port_level_3",
+    "tags": "italy, s_italy, italic, camillan, messapian, messapian_homeland, rel_italic_4, rel_illyrian_1, Farm10, grassland, mediterranean, base_port_level_3",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "italic 75 illyrian 25"
@@ -94,7 +104,7 @@
     "city": "Rhegium",
     "faction": "greeks",
     "culture": "Rheginians",
-    "tags": "italy, s_italy, greece, italiote, greek, greek_aor, euzonoi, rel_ionian_4, rel_italic_2, Farm6, mountains, mediterranean, base_port_level_3",
+    "tags": "italy, s_italy, greece, camillan, italiote, greek, greek_aor, euzonoi, rel_ionian_4, rel_italic_2, Farm6, mountains, mediterranean, base_port_level_3",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "ionian 70 italic 30"
@@ -104,7 +114,7 @@
     "city": "Iguvium",
     "faction": "romans_julii",
     "culture": "Umbrians",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm5, karst_terrain, temperate",
+    "tags": "italy, n_italy, italic, camillan, umbrian, rel_italic_4, Farm5, karst_terrain, temperate",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "italic 100"
@@ -114,7 +124,7 @@
     "city": "Sena_Gallica",
     "faction": "romans_julii",
     "culture": "Romans",
-    "tags": "italy, n_italy, italic, rel_italic_4, rel_celtic_1, Farm8, grassland, humid_sub_tropical, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, picentine, rel_italic_4, rel_celtic_1, Farm8, grassland, humid_sub_tropical, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "italic 75 celtic 25"
@@ -124,7 +134,7 @@
     "city": "Consentia",
     "faction": "romans_julii",
     "culture": "Bruttians",
-    "tags": "italy, s_italy, italic, bruttian, rel_italic_4, Farm6, mountain_valley, mediterranean, base_port_level_1, irrigation_river",
+    "tags": "italy, s_italy, italic, camillan, bruttian_homeland, oscan, oscan_southern, rel_italic_4, Farm6, mountain_valley, mediterranean, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -134,7 +144,7 @@
     "city": "Volaterrae",
     "faction": "romans_julii",
     "culture": "Etruscans",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm9, river_valley, mediterranean, base_port_level_1, irrigation_lake",
+    "tags": "italy, n_italy, italic, camillan, etruscan, rel_italic_4, Farm9, river_valley, mediterranean, base_port_level_1, irrigation_lake",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "italic 100"
@@ -144,7 +154,7 @@
     "city": "Volsinii",
     "faction": "romans_julii",
     "culture": "Etruscans",
-    "tags": "italy, n_italy, italic, volsinian, rel_italic_4, Farm7, hills, mediterranean, base_port_level_2, irrigation_lake",
+    "tags": "italy, n_italy, italic, camillan, etruscan, volsinian_homeland, rel_italic_4, Farm7, hills, mediterranean, base_port_level_2, irrigation_lake",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "italic 100"
@@ -154,7 +164,7 @@
     "city": "Corfinium",
     "faction": "romans_julii",
     "culture": "Paelignians-Marsians",
-    "tags": "italy, c_italy, italic, rel_italic_4, Farm4, mountains, continental, rivertrade, irrigation_river",
+    "tags": "italy, c_italy, italic, camillan, paelignian, sabellian, rel_italic_4, Farm4, mountains, continental, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "italic 100"
@@ -164,7 +174,7 @@
     "city": "Neapolis",
     "faction": "greeks",
     "culture": "Neapolitans",
-    "tags": "italy, c_italy, greece, italiote, greek, greek_aor, euzonoi, rel_ionian_4, rel_italic_2, Farm9, mountain_valley, mediterranean, base_port_level_3, irrigation_springs",
+    "tags": "italy, c_italy, greece, camillan, campanian, oscan, greek, rel_ionian_4, rel_italic_2, Farm9, mountain_valley, mediterranean, base_port_level_3, irrigation_springs",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "ionian 70 italic 30"
@@ -174,7 +184,7 @@
     "city": "Sarsina",
     "faction": "romans_julii",
     "culture": "Umbrians",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm5, forest, temperate, base_port_level_1, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, umbrian, sarsinate_homeland, rel_italic_4, Farm5, forest, temperate, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "italic 100"
@@ -184,7 +194,7 @@
     "city": "Paestum",
     "faction": "greeks",
     "culture": "Poseidonians",
-    "tags": "italy, s_italy, greece, italiote, greek, greek_aor, euzonoi, rel_dorian_4, rel_italic_2, Farm6, mountain_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "italy, s_italy, greece, camillan, lucanian, oscan, oscan_southern, greek, lucanian_homeland, rel_dorian_4, rel_italic_2, Farm6, mountain_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "dorian 70 italic 30"
@@ -194,17 +204,17 @@
     "city": "Arpi",
     "faction": "romans_julii",
     "culture": "Daunians",
-    "tags": "italy, c_italy, italic, rel_italic_4, rel_illyrian_1, Farm10, grassland, mediterranean, base_port_level_1, rivertrade, irrigation_river",
+    "tags": "italy, c_italy, italic, camillan, messapian, rel_italic_4, rel_illyrian_1, Farm10, grassland, mediterranean, base_port_level_1, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "italic 75 illyrian 25"
   },
   "15,200,142": {
-    "region": "Pentria",
+    "region": "Pentria-Carricinia",
     "city": "Bovianum",
     "faction": "romans_julii",
     "culture": "Samnites",
-    "tags": "italy, c_italy, italic, samnite, rel_italic_4, Farm6, hills, temperate",
+    "tags": "italy, c_italy, italic, camillan, samnite, oscan, samnite_homeland, rel_italic_4, Farm6, hills, temperate",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -214,7 +224,7 @@
     "city": "Falerii",
     "faction": "romans_julii",
     "culture": "Faliscians",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm8, forest, mediterranean, rivertrade, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, etruscan, faliscan, rel_italic_4, Farm8, forest, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "italic 100"
@@ -224,7 +234,7 @@
     "city": "Larinum",
     "faction": "romans_julii",
     "culture": "Frentanians",
-    "tags": "italy, c_italy, italic, rel_italic_4, Farm7, hills, mediterranean, base_port_level_1, irrigation_river",
+    "tags": "italy, c_italy, italic, camillan, frentanian, samnite, oscan, rel_italic_4, Farm7, hills, mediterranean, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "italic 100"
@@ -234,7 +244,7 @@
     "city": "Cosa",
     "faction": "romans_julii",
     "culture": "Etruscans",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm7, hills, mediterranean, base_port_level_2, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, etruscan, rel_italic_4, Farm7, hills, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "italic 100"
@@ -244,7 +254,7 @@
     "city": "Epizephyrian_Locri",
     "faction": "greeks",
     "culture": "Locrians",
-    "tags": "italy, s_italy, greece, italiote, greek, greek_aor, euzonoi, rel_dorian_4, rel_italic_2, Farm5, karst_terrain, mediterranean, base_port_level_2",
+    "tags": "italy, s_italy, greece, camillan, italiote, greek, greek_aor, euzonoi, rel_dorian_4, rel_italic_2, Farm5, karst_terrain, mediterranean, base_port_level_2",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "dorian 70 italic 30"
@@ -254,7 +264,7 @@
     "city": "Teate",
     "faction": "romans_julii",
     "culture": "Marrucinians-Vestinians",
-    "tags": "italy, c_italy, italic, rel_italic_4, Farm5, karst_terrain, humid_sub_tropical, base_port_level_0, irrigation_river",
+    "tags": "italy, c_italy, italic, camillan, marrucinian, sabellian, rel_italic_4, Farm5, karst_terrain, humid_sub_tropical, base_port_level_0, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "italic 100"
@@ -264,7 +274,7 @@
     "city": "Ankon",
     "faction": "greeks",
     "culture": "Anconitans",
-    "tags": "italy, n_italy, euzonoi, spine, greece, ankonitan, greek, greek_aor, rel_dorian_4, rel_italic_2, Farm7, hills, humid_sub_tropical, base_port_level_3",
+    "tags": "italy, n_italy, euzonoi, spine, greece, camillan, ankonitan, greek, greek_aor, rel_dorian_4, rel_italic_2, Farm7, hills, humid_sub_tropical, base_port_level_3",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "dorian 70 italic 30"
@@ -274,7 +284,7 @@
     "city": "Uria",
     "faction": "romans_julii",
     "culture": "Salentinians",
-    "tags": "italy, s_italy, italic, rel_italic_4, Farm9, grassland, mediterranean, base_port_level_2",
+    "tags": "italy, s_italy, italic, camillan, messapian, messapian_homeland, rel_italic_4, Farm9, grassland, mediterranean, base_port_level_2",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "italic 100"
@@ -284,7 +294,7 @@
     "city": "Pisae",
     "faction": "romans_julii",
     "culture": "Etruscans",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm7, wetlands, mediterranean, base_port_level_3, rivertrade, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, etruscan, rel_italic_4, Farm7, wetlands, mediterranean, base_port_level_3, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "italic 100"
@@ -294,7 +304,7 @@
     "city": "Metapontum",
     "faction": "greeks",
     "culture": "Metapontians",
-    "tags": "italy, s_italy, greece, italiote, tarentine, greek_aor, euzonoi, rel_dorian_4, rel_italic_1, Farm10, grassland, mediterranean, base_port_level_2, irrigation_river",
+    "tags": "italy, s_italy, greece, camillan, italiote, tarentine, greek_aor, euzonoi, rel_dorian_4, rel_italic_1, Farm10, grassland, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "dorian 80 italic 20"
@@ -304,7 +314,7 @@
     "city": "Thurii",
     "faction": "greeks",
     "culture": "Thurians",
-    "tags": "italy, s_italy, greece, italiote, greek, greek_aor, euzonoi, rel_dorian_4, rel_italic_1, Farm8, mountain_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "italy, s_italy, greece, camillan, italiote, greek, greek_aor, euzonoi, rel_dorian_4, rel_italic_1, Farm8, mountain_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "dorian 80 italic 20"
@@ -314,7 +324,7 @@
     "city": "Reate",
     "faction": "romans_julii",
     "culture": "Sabines-Aequians",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm7, mountain_valley, temperate, irrigation_lake",
+    "tags": "italy, n_italy, italic, camillan, sabellian, rel_italic_4, Farm7, mountain_valley, temperate, irrigation_lake",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "italic 100"
@@ -324,7 +334,7 @@
     "city": "Praeneste",
     "faction": "romans_julii",
     "culture": "Latins",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm8, hills, mediterranean, base_port_level_1",
+    "tags": "italy, n_italy, italic, camillan, latin, rel_italic_4, Farm8, hills, mediterranean, base_port_level_1",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "italic 100"
@@ -334,7 +344,7 @@
     "city": "Fregellae",
     "faction": "romans_julii",
     "culture": "Latins",
-    "tags": "italy, c_italy, italic, rel_italic_4, Farm6, mountain_valley, mediterranean, base_port_level_1, rivertrade, irrigation_river",
+    "tags": "italy, c_italy, italic, camillan, latin, rel_italic_4, Farm6, mountain_valley, mediterranean, base_port_level_1, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -344,7 +354,7 @@
     "city": "Potentia",
     "faction": "romans_julii",
     "culture": "Lucanians",
-    "tags": "italy, s_italy, italic, lucanian, rel_italic_4, Farm6, hills, mediterranean, irrigation_springs",
+    "tags": "italy, s_italy, italic, camillan, lucanian, oscan, oscan_southern, lucanian_homeland, rel_italic_4, Farm6, hills, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -352,19 +362,19 @@
   "37,17,17": {
     "region": "Kanysion",
     "city": "Canusium",
-    "faction": "greeks",
+    "faction": "romans_julii",
     "culture": "Canusians",
-    "tags": "italy, s_italy, greece, italiote, greek_aor, euzonoi, rel_dorian_4, rel_italic_3, Farm9, river_valley, mediterranean, base_port_level_1, rivertrade, irrigation_river",
+    "tags": "italy, s_italy, camillan, messapian, rel_italic_4, Farm9, river_valley, mediterranean, base_port_level_1, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
-    "ethnicities": "dorian 60 italic 40"
+    "ethnicities": "italic 100"
   },
   "162,165,203": {
     "region": "Etruria_Orientalis",
     "city": "Perusia",
     "faction": "romans_julii",
     "culture": "Etruscans",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm7, hills, humid_sub_tropical, rivertrade, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, etruscan, rel_italic_4, Farm7, hills, humid_sub_tropical, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "italic 100"
@@ -374,7 +384,7 @@
     "city": "Compsa",
     "faction": "romans_julii",
     "culture": "Hirpinians",
-    "tags": "italy, c_italy, italic, rel_italic_4, Farm6, hills, mediterranean, irrigation_springs",
+    "tags": "italy, c_italy, italic, camillan, samnite, oscan, samnite_homeland, rel_italic_4, Farm6, hills, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -384,19 +394,9 @@
     "city": "Camerinum",
     "faction": "romans_julii",
     "culture": "Umbrians",
-    "tags": "italy, n_italy, italic, rel_italic_4, Farm7, mountain_valley, temperate, irrigation_river",
+    "tags": "italy, n_italy, italic, camillan, umbrian, rel_italic_4, Farm7, mountain_valley, temperate, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
-    "ethnicities": "italic 100"
-  },
-  "201,117,102": {
-    "region": "Carricinia",
-    "city": "Aufidena",
-    "faction": "romans_julii",
-    "culture": "Carricinians",
-    "tags": "italy, c_italy, italic, rel_italic_4, Farm4, karst_terrain, temperate, irrigation_river",
-    "farm_level": "5",
-    "pop_level": "4",
     "ethnicities": "italic 100"
   },
   "57,201,146": {
@@ -404,7 +404,7 @@
     "city": "Petelia",
     "faction": "romans_julii",
     "culture": "Bruttians",
-    "tags": "italy, s_italy, italic, bruttian, rel_italic_4, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_1, irrigation_springs",
+    "tags": "italy, s_italy, italic, camillan, bruttian_homeland, oscan, oscan_southern, rel_italic_4, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_1, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "italic 100"
@@ -414,7 +414,7 @@
     "city": "Messana",
     "faction": "romans_julii",
     "culture": "Mamertines",
-    "tags": "sicily, greek, greek_aor, euzonoi, mamertine, rel_ionian_4, rel_italic_2, Farm7, hills, mediterranean, base_port_level_3, irrigation_springs",
+    "tags": "sicily, campanian, mamertine_homeland, rel_ionian_4, rel_italic_2, Farm7, hills, mediterranean, base_port_level_3, irrigation_springs",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "ionian 70 italic 30"
@@ -607,6 +607,16 @@
     "tags": "italic, sardinian, carthaginian, rel_phoenician_4, rel_italic_3, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_3, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
+    "ethnicities": "phoenician 60 italic 40"
+  },
+  "116,36,79": {
+    "region": "Qart-Khadasht_biShardana",
+    "city": "Neapolis-Sardinia",
+    "faction": "carthage",
+    "culture": "Carthaginians",
+    "tags": "Farm5, italic, sardinian, rel_phoenician_4, rel_italic_3",
+    "farm_level": "5",
+    "pop_level": "5",
     "ethnicities": "phoenician 60 italic 40"
   },
   "200,14,15": {
@@ -1000,7 +1010,7 @@
     "ethnicities": "phoenician 80 libyan 20"
   },
   "37,17,248": {
-    "region": "Mactarxim",
+    "region": "Maktarxim",
     "city": "Mactaris",
     "faction": "massylii",
     "culture": "Mactarians",
@@ -1350,7 +1360,7 @@
     "ethnicities": "libyan 100"
   },
   "41,232,225": {
-    "region": "Ay-Bushum",
+    "region": "Ay-Bushim",
     "city": "Ebusus",
     "faction": "carthage",
     "culture": "Phoenicians",
@@ -1374,7 +1384,7 @@
     "city": "Arse",
     "faction": "edeta",
     "culture": "Edetanians",
-    "tags": "iberian, edetanian, rel_iberian_4, Farm10, floodplains_delta, cold_semi_arid, base_port_level_1, rivertrade, irrigation_river",
+    "tags": "iberian, arsetan, rel_iberian_4, Farm10, floodplains_delta, cold_semi_arid, base_port_level_1, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "iberian 90 ionian 10"
@@ -1501,7 +1511,7 @@
   },
   "12,161,31": {
     "region": "Turdulia",
-    "city": "Iulipa",
+    "city": "Erisana",
     "faction": "lusitani",
     "culture": "Turdulians",
     "tags": "iberian, rel_celtic_4, rel_iberian_3, Farm6, plateau, mediterranean, irrigation_river",
@@ -1514,7 +1524,7 @@
     "city": "Kelin",
     "faction": "edeta",
     "culture": "Edetanians",
-    "tags": "iberian, edetanian, rel_celtic_4, rel_iberian_3, Farm5, karst_terrain, cold_semi_arid, irrigation_river",
+    "tags": "iberian, rel_celtic_4, rel_iberian_3, Farm5, karst_terrain, cold_semi_arid, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "celtic 60 iberian 40"
@@ -1533,7 +1543,7 @@
     "region": "Ergavicia",
     "city": "Ergavica",
     "faction": "arevaci",
-    "culture": "Ergavicians",
+    "culture": "Ergavicans",
     "tags": "iberian, rel_celtic_4, rel_iberian_2, Farm5, plateau, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
@@ -1630,7 +1640,7 @@
     "ethnicities": "iberian 100"
   },
   "206,108,200": {
-    "region": "Lusitania_Centralis",
+    "region": "Lusitania_Occidentalis",
     "city": "Moron",
     "faction": "lusitani",
     "culture": "Lusitanians",
@@ -1700,7 +1710,7 @@
     "ethnicities": "celtic 70 iberian 30"
   },
   "56,16,33": {
-    "region": "Conia_Orientalis",
+    "region": "Celticia_Meridionalis",
     "city": "Myrtilis",
     "faction": "lusitani",
     "culture": "Conians",
@@ -1744,7 +1754,7 @@
     "city": "Segeda",
     "faction": "arevaci",
     "culture": "Bellians",
-    "tags": "iberian, rel_celtic_4, rel_iberian_2, Farm7, mountain_valley, cold_semi_arid, irrigation_river",
+    "tags": "bellian, iberian, rel_celtic_4, rel_iberian_2, Farm7, mountain_valley, cold_semi_arid, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "celtic 70 iberian 30"
@@ -1814,7 +1824,7 @@
     "city": "Contrebia_Belaisca",
     "faction": "arevaci",
     "culture": "Bellians",
-    "tags": "iberian, rel_celtic_4, rel_iberian_2, Farm5, hills, cold_semi_arid, irrigation_river",
+    "tags": "bellian, iberian, rel_celtic_4, rel_iberian_2, Farm5, hills, cold_semi_arid, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "celtic 70 iberian 30"
@@ -1870,7 +1880,7 @@
     "ethnicities": "iberian 100"
   },
   "18,111,14": {
-    "region": "Ilditurgi",
+    "region": "Bastetania_Septentrionalis",
     "city": "Iliturgi",
     "faction": "edeta",
     "culture": "Turdetanians",
@@ -1901,7 +1911,7 @@
   },
   "193,202,41": {
     "region": "Contestania_Occidentalis",
-    "city": "Castrum_Contestanorum",
+    "city": "Oppidum_Contestanorum",
     "faction": "edeta",
     "culture": "Contestanians",
     "tags": "iberian, contestanian, rel_iberian_4, Farm5, karst_terrain, cold_semi_arid, irrigation_springs",
@@ -1914,7 +1924,7 @@
     "city": "Kili",
     "faction": "edeta",
     "culture": "Edetanians",
-    "tags": "iberian, edetanian, rel_iberian_4, Farm6, hills, cold_semi_arid, irrigation_river",
+    "tags": "iberian, rel_iberian_4, Farm6, hills, cold_semi_arid, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "iberian 100"
@@ -1924,13 +1934,13 @@
     "city": "Contestanium",
     "faction": "edeta",
     "culture": "Contestanians",
-    "tags": "euzonoi, greek, greek_aor, contestanian, rel_ionian_4, rel_iberian_3, Farm7, hills, cold_semi_arid, base_port_level_2, irrigation_river",
+    "tags": "iberian, rel_iberian_4, Farm7",
     "farm_level": "5",
     "pop_level": "7",
-    "ethnicities": "ionian 60 iberian 40"
+    "ethnicities": "iberian 60 phoenician 40"
   },
   "19,89,36": {
-    "region": "Carpetania_Montana",
+    "region": "Carpetania_Meridionalis",
     "city": "Consabura",
     "faction": "arevaci",
     "culture": "Carpetanians",
@@ -1954,10 +1964,20 @@
     "city": "Nertobriga",
     "faction": "arevaci",
     "culture": "Bellians",
-    "tags": "iberian, rel_celtic_4, rel_iberian_2, Farm9, river_valley, cold_semi_arid, irrigation_river",
+    "tags": "bellian, iberian, rel_celtic_4, rel_iberian_2, Farm9, river_valley, cold_semi_arid, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "celtic 70 iberian 30"
+  },
+  "23,204,204": {
+    "region": "Lucensia_Meridionalis",
+    "city": "Lansbricae",
+    "faction": "arevaci",
+    "culture": "Lucenses",
+    "tags": "Farm5, rivertrade, iberian, rel_celtic_4",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": "celtic 100"
   },
   "48,203,210": {
     "region": "Arevacia_Septentrionalis",
@@ -2010,8 +2030,8 @@
     "ethnicities": "iberian 60 celtic 40"
   },
   "247,109,16": {
-    "region": "Vasconia_Orientalis",
-    "city": "Arsaos",
+    "region": "Vasconia_Meridionalis",
+    "city": "Andelos",
     "faction": "arevaci",
     "culture": "Vascones",
     "tags": "iberian, vasconian, rel_celtic_4, rel_iberian_1, Farm7, mountain_valley, oceanic, irrigation_river",
@@ -2041,7 +2061,7 @@
   },
   "63,208,57": {
     "region": "Indicetia",
-    "city": "Castrum_Indicetum",
+    "city": "Oppidum_Indicetum",
     "faction": "edeta",
     "culture": "Indicetes",
     "tags": "iberian, rel_iberian_4, rel_ionian_2, Farm7, mountain_valley, humid_sub_tropical, base_port_level_1, irrigation_river",
@@ -2070,7 +2090,7 @@
     "ethnicities": "celtic 80 iberian 20"
   },
   "205,205,205": {
-    "region": "Zekz",
+    "region": "Zekzi",
     "city": "Sexi",
     "faction": "carthage",
     "culture": "Exitanians",
@@ -2100,7 +2120,7 @@
     "ethnicities": "iberian 100"
   },
   "20,20,54": {
-    "region": "Celticia_Maritima",
+    "region": "Celticia_Occidentalis",
     "city": "Mirobriga_Celticorum",
     "faction": "arevaci",
     "culture": "Celticians",
@@ -2110,8 +2130,8 @@
     "ethnicities": "celtic 80 iberian 20"
   },
   "245,239,205": {
-    "region": "Celticia_Meridionalis",
-    "city": "Nertobriga-Celticia",
+    "region": "Celticia_Orientalis",
+    "city": "Nertobriga_Celticorum",
     "faction": "arevaci",
     "culture": "Celticians",
     "tags": "iberian, rel_iberian_4, rel_celtic_3, Farm6, hills, mediterranean, rivertrade, irrigation_river",
@@ -2150,8 +2170,8 @@
     "ethnicities": "ionian 80 iberian 20"
   },
   "23,110,40": {
-    "region": "Carpetania_Orientalis",
-    "city": "Alces",
+    "region": "Carpetania_Septentrionalis",
+    "city": "Complutum",
     "faction": "arevaci",
     "culture": "Carpetanians",
     "tags": "iberian, carpetanian, rel_celtic_4, rel_iberian_2, Farm5, plateau, cold_semi_arid, irrigation_river",
@@ -2230,10 +2250,10 @@
     "ethnicities": "celtic 80 iberian 20"
   },
   "21,206,233": {
-    "region": "Baliares_Cartaginenses",
+    "region": "Baliares_Maiores",
     "city": "Bocchoris",
-    "faction": "carthage",
-    "culture": "Phoenicians",
+    "faction": "edeta",
+    "culture": "Balearics",
     "tags": "balearic, iberian, rel_phoenician_4, island_settlement, Farm8, mountain_valley, mediterranean, base_port_level_3, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
@@ -2280,7 +2300,7 @@
     "ethnicities": "iberian 70 celtic 30"
   },
   "53,210,210": {
-    "region": "Lusitania_Meridionalis",
+    "region": "Celticia_Maritima",
     "city": "Salacia",
     "faction": "edeta",
     "culture": "Lusitanians",
@@ -2318,16 +2338,6 @@
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "celtic 80 iberian 20"
-  },
-  "50,22,18": {
-    "region": "Baliares_Maiores",
-    "city": "Castrum_Baliarium",
-    "faction": "edeta",
-    "culture": "Balearics",
-    "tags": "balearic, iberian, rel_iberian_4, rel_phoenician_3, island_settlement, Farm5, karst_terrain, cold_semi_arid, base_port_level_2",
-    "farm_level": "5",
-    "pop_level": "5",
-    "ethnicities": "iberian 60 phoenician 40"
   },
   "23,112,21": {
     "region": "Artabria",
@@ -2371,7 +2381,7 @@
   },
   "54,119,216": {
     "region": "Vettonia_Septentrionalis",
-    "city": "Castrum_Vettonum",
+    "city": "Oppidum_Vettonum",
     "faction": "arevaci",
     "culture": "Vettones",
     "tags": "iberian, vettonian, rel_celtic_4, rel_iberian_1, Farm5, plateau, oceanic, rivertrade, irrigation_river",
@@ -2514,7 +2524,7 @@
     "city": "Samarobriva",
     "faction": "belgae",
     "culture": "Ambianians",
-    "tags": "belgica, gallic, celtic, rel_celtic_4, Farm8, wetlands, oceanic, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "belgica, belgae, gallic, celtic, rel_celtic_4, Farm8, wetlands, oceanic, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "celtic 100"
@@ -2580,10 +2590,10 @@
     "ethnicities": "celtic 100"
   },
   "34,76,42": {
-    "region": "Elysicia",
+    "region": "Elisycia",
     "city": "Narbo",
     "faction": "arevaci",
-    "culture": "Elysicians",
+    "culture": "Elisycians",
     "tags": "iberian, gallic, celtic, rel_celtic_4, rel_iberian_2, Farm9, river_valley, mediterranean, base_port_level_2, rivertrade",
     "farm_level": "5",
     "pop_level": "9",
@@ -2704,7 +2714,7 @@
     "city": "Suessionium",
     "faction": "belgae",
     "culture": "Suessiones",
-    "tags": "belgica, gallic, celtic, rel_celtic_4, Farm8, forest, oceanic, rivertrade, irrigation_river",
+    "tags": "belgica, belgae, gallic, celtic, rel_celtic_4, Farm8, forest, oceanic, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "celtic 100"
@@ -2714,7 +2724,7 @@
     "city": "Bellovacium",
     "faction": "belgae",
     "culture": "Bellovacians",
-    "tags": "belgica, gallic, celtic, rel_celtic_4, Farm7, forest, oceanic, rivertrade, irrigation_river",
+    "tags": "belgica, belgae, gallic, celtic, rel_celtic_4, Farm7, forest, oceanic, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "celtic 100"
@@ -2724,7 +2734,7 @@
     "city": "Atrebatium",
     "faction": "belgae",
     "culture": "Atrebates",
-    "tags": "belgica, gallic, celtic, rel_celtic_4, Farm9, grassland, oceanic, rivertrade, irrigation_river",
+    "tags": "belgica, belgae, gallic, celtic, rel_celtic_4, Farm9, grassland, oceanic, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "celtic 100"
@@ -2744,7 +2754,7 @@
     "city": "Viromanduium",
     "faction": "belgae",
     "culture": "Viromanduians",
-    "tags": "belgica, gallic, celtic, rel_celtic_4, Farm9, grassland, oceanic, irrigation_river",
+    "tags": "belgica, belgae, gallic, celtic, rel_celtic_4, Farm9, grassland, oceanic, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "celtic 100"
@@ -2884,7 +2894,7 @@
     "city": "Alesia",
     "faction": "aedui",
     "culture": "Mandubians-Blannovians",
-    "tags": "aeduia, gallic, celtic, rel_celtic_4, Farm6, hills, oceanic, irrigation_river",
+    "tags": "gallic, celtic, rel_celtic_4, Farm6, hills, oceanic, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "celtic 100"
@@ -2984,7 +2994,7 @@
     "city": "Indiciacum",
     "faction": "arverni",
     "culture": "Vellavians-Eleutetians",
-    "tags": "arvernia, gallic, celtic, rel_celtic_4, Farm5, plateau, continental",
+    "tags": "gallic, celtic, rel_celtic_4, Farm5, plateau, continental",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "celtic 100"
@@ -3024,7 +3034,7 @@
     "city": "Brioratis",
     "faction": "allobroges",
     "culture": "Ambarrians",
-    "tags": "allobrogia, gallic, celtic, rel_celtic_4, Farm11, floodplains_delta, oceanic, rivertrade, irrigation_river",
+    "tags": "gallic, celtic, rel_celtic_4, Farm11, floodplains_delta, oceanic, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "11",
     "ethnicities": "celtic 100"
@@ -3221,7 +3231,7 @@
   },
   "154,162,97": {
     "region": "Elusatia",
-    "city": "Elusa",
+    "city": "Elusatium",
     "faction": "arevaci",
     "culture": "Elusates",
     "tags": "gallic, celtic, rel_celtic_4, Farm7, grassland, oceanic, irrigation_river",
@@ -3710,7 +3720,7 @@
     "ethnicities": "celtic 100"
   },
   "127,100,51": {
-    "region": "Cammunia-Venostia",
+    "region": "Camunnia-Venostia",
     "city": "Camunnium",
     "faction": "arverni",
     "culture": "Camunnians-Venostes",
@@ -3842,9 +3852,9 @@
   "194,48,124": {
     "region": "Hercynia",
     "city": "Eburum",
-    "faction": "boii",
-    "culture": "Boians",
-    "tags": "boiaea, gallic, celtic, rel_celtic_4, Farm4, hills, continental, irrigation_river",
+    "faction": "volcae",
+    "culture": "Volcaeans",
+    "tags": "volcaea, gallic, celtic, rel_celtic_4, Farm4, hills, continental, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "celtic 100"
@@ -4073,7 +4083,7 @@
     "region": "Reginia_Septentrionalis",
     "city": "Oppidum_Reginorum",
     "faction": "trinovantes",
-    "culture": "Regnians",
+    "culture": "Reginians",
     "tags": "brittonic, rel_celtic_4, Farm6, forest, oceanic, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
@@ -4081,7 +4091,7 @@
   },
   "219,233,208": {
     "region": "Ecenia",
-    "city": "Castrum_Icenorum",
+    "city": "Castrum_Ecenorum",
     "faction": "trinovantes",
     "culture": "Ecenians",
     "tags": "brittonic, rel_celtic_4, Farm6, wetlands, oceanic, base_port_level_2, rivertrade, irrigation_river",
@@ -4203,7 +4213,7 @@
     "region": "Reginia",
     "city": "Castrum_Reginorum",
     "faction": "trinovantes",
-    "culture": "Regnians",
+    "culture": "Reginians",
     "tags": "brittonic, rel_celtic_4, Farm7, hills, oceanic, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
@@ -4739,6 +4749,16 @@
     "pop_level": "3",
     "ethnicities": "baltic 100"
   },
+  "59,173,69": {
+    "region": "Haria",
+    "city": "Harium",
+    "faction": "lugii",
+    "culture": "Harians",
+    "tags": "Farm4, rivertrade, harian, germanic, lugian, rel_germanic_4",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": "germanic 100"
+  },
   "177,78,58": {
     "region": "Buria",
     "city": "Calisia",
@@ -4750,13 +4770,23 @@
     "ethnicities": "germanic 90 celtic 10"
   },
   "221,10,245": {
-    "region": "Manimia-Haria",
+    "region": "Manimia",
     "city": "Manimium",
     "faction": "lugii",
-    "culture": "Manimians-Harians",
+    "culture": "Manimians",
     "tags": "germanic, lugian, rel_germanic_4, Farm4, forest, continental, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
+    "ethnicities": "germanic 100"
+  },
+  "15,43,168": {
+    "region": "Helisia",
+    "city": "Helisium",
+    "faction": "lugii",
+    "culture": "Helisians",
+    "tags": "Farm5, rivertrade, germanic, lugian, rel_germanic_4",
+    "farm_level": "5",
+    "pop_level": "5",
     "ethnicities": "germanic 100"
   },
   "234,69,57": {
@@ -4820,10 +4850,10 @@
     "ethnicities": "germanic 100"
   },
   "222,44,58": {
-    "region": "Suionia",
+    "region": "Suionia-Sitonia",
     "city": "Suionium",
     "faction": "suebi",
-    "culture": "Suiones",
+    "culture": "Suiones-Sitones",
     "tags": "germanic, rel_germanic_4, Farm5, forest, continental, base_port_level_2, irrigation_lake",
     "farm_level": "5",
     "pop_level": "5",
@@ -4950,7 +4980,7 @@
     "ethnicities": "germanic 100"
   },
   "12,154,45": {
-    "region": "Helveconia-Helisia",
+    "region": "Helveconia",
     "city": "Helveconium",
     "faction": "suebi",
     "culture": "Helveconians",
@@ -5083,30 +5113,20 @@
     "region": "Gutia_Orientalis",
     "city": "Castrum_Gutarum",
     "faction": "suebi",
-    "culture": "Eastern_Gauts",
+    "culture": "Gauts",
     "tags": "gautic, germanic, rel_germanic_4, Farm4, forest, continental, base_port_level_1, irrigation_lake",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "germanic 100"
   },
   "63,13,211": {
-    "region": "Carbonia",
+    "region": "Carbonia-Salia",
     "city": "Carbonium",
     "faction": "suebi",
-    "culture": "Carbones",
+    "culture": "Carbones-Salians",
     "tags": "rel_baltic_4, Farm3, wetlands, sub_artic, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "3",
-    "ethnicities": "baltic 100"
-  },
-  "225,204,238": {
-    "region": "Stavania",
-    "city": "Stavanium",
-    "faction": "suebi",
-    "culture": "Stavanians",
-    "tags": "rel_baltic_4, Farm4, forest, continental, rivertrade, irrigation_river",
-    "farm_level": "5",
-    "pop_level": "4",
     "ethnicities": "baltic 100"
   },
   "209,73,172": {
@@ -5120,23 +5140,13 @@
     "ethnicities": "baltic 100"
   },
   "45,201,61": {
-    "region": "Careotaea",
+    "region": "Careotaea-Stavania",
     "city": "Careotaeum",
     "faction": "suebi",
-    "culture": "Careotaeans",
+    "culture": "Careotaeans-Stavanians",
     "tags": "rel_baltic_4, Farm4, forest, continental, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
-    "ethnicities": "baltic 100"
-  },
-  "14,47,212": {
-    "region": "Salia",
-    "city": "Salium",
-    "faction": "suebi",
-    "culture": "Salians",
-    "tags": "rel_baltic_4, Farm3, forest, sub_artic, rivertrade, irrigation_river",
-    "farm_level": "5",
-    "pop_level": "3",
     "ethnicities": "baltic 100"
   },
   "226,184,213": {
@@ -5261,7 +5271,7 @@
   },
   "241,136,104": {
     "region": "Marsia_Vetus",
-    "city": "Alisum",
+    "city": "Marsium",
     "faction": "suebi",
     "culture": "Germanic_Marsians",
     "tags": "germanic, belgica, gallic, celtic, rel_celtic_4, rel_germanic_3, Farm6, forest, oceanic, irrigation_river",
@@ -5349,16 +5359,6 @@
     "pop_level": "6",
     "ethnicities": "germanic 100"
   },
-  "80,209,177": {
-    "region": "Sitonia",
-    "city": "Sitonium",
-    "faction": "suebi",
-    "culture": "Sitones",
-    "tags": "germanic, rel_germanic_4, Farm4, forest, sub_artic, base_port_level_1, rivertrade, irrigation_lake",
-    "farm_level": "5",
-    "pop_level": "4",
-    "ethnicities": "germanic 100"
-  },
   "250,128,151": {
     "region": "Eraviscia",
     "city": "Aquincum",
@@ -5392,7 +5392,7 @@
   "6,171,34": {
     "region": "Amantinia",
     "city": "Sirmion",
-    "faction": "scordisci",
+    "faction": "ardiaei",
     "culture": "Amantinians",
     "tags": "galatian, celtic, scordiscia, rel_celtic_4, rel_delmato_pannonian_2, Farm9, river_valley, temperate, rivertrade, irrigation_river",
     "farm_level": "5",
@@ -5420,10 +5420,10 @@
     "ethnicities": "delmato_pannonian 60 celtic 40"
   },
   "134,119,61": {
-    "region": "Tauriscia_Septentrionalis",
+    "region": "Hercuniatia",
     "city": "Scarbantia",
     "faction": "arverni",
-    "culture": "Tauriscians",
+    "culture": "Hercuniates",
     "tags": "galatian, celtic, tauriscian, rel_celtic_4, Farm8, mountain_valley, continental, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
@@ -5613,8 +5613,8 @@
     "region": "Byllionia-Amantia",
     "city": "Byllis-Amantia",
     "faction": "ardiaei",
-    "culture": "Bylliones",
-    "tags": "southern_illyrian, illyrian, greek_aor, byllionia, rel_illyrian_4, Farm6, hills, mediterranean, irrigation_river",
+    "culture": "Bylliones-Amantes",
+    "tags": "southern_illyrian, illyrian, greek_aor, rel_illyrian_4, Farm6, hills, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "illyrian 100"
@@ -6349,16 +6349,6 @@
     "pop_level": "6",
     "ethnicities": "thracian 65 ionian 35"
   },
-  "93,201,72": {
-    "region": "Krounio",
-    "city": "Dionysopolis",
-    "faction": "pentapolis",
-    "culture": "Dionysopolitans",
-    "tags": "pentapolitan, greek_aor, rel_ionian_4, rel_thracian_3, Farm5, small_islands_and_rocky_coast, humid_sub_tropical, base_port_level_1",
-    "farm_level": "5",
-    "pop_level": "5",
-    "ethnicities": "ionian 55 thracian 40 scythian 5"
-  },
   "96,96,73": {
     "region": "Odrysia",
     "city": "Seuthopolis",
@@ -6990,7 +6980,7 @@
     "ethnicities": "arcadian 100"
   },
   "59,41,193": {
-    "region": "Kyklades",
+    "region": "Anatolike_Kyklades",
     "city": "Naxos",
     "faction": "greeks",
     "culture": "Cycladians",
@@ -7054,7 +7044,7 @@
     "city": "Argos_Orestikon",
     "faction": "greeks",
     "culture": "Orestians-Elimiotaeans",
-    "tags": "macedonian, antigonid, greek_aor, euzonoi, rel_epirote_4, rel_macedonian_3, Farm6, plateau, temperate",
+    "tags": "macedonian, greek_aor, euzonoi, rel_epirote_4, rel_macedonian_3, Farm6, plateau, temperate",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 45 epirote 55"
@@ -7224,7 +7214,7 @@
     "city": "Herakleia_Lynkestis",
     "faction": "greeks",
     "culture": "Lyncestians-Eordaeans",
-    "tags": "macedonian, antigonid, greek_aor, euzonoi, rel_macedonian_4, Farm6, mountain_valley, temperate",
+    "tags": "macedonian, greek_aor, euzonoi, rel_macedonian_4, Farm6, mountain_valley, temperate",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 100"
@@ -7270,7 +7260,7 @@
     "ethnicities": "ionian 100"
   },
   "132,165,92": {
-    "region": "Delos",
+    "region": "Dytike_Kyklades",
     "city": "Delos",
     "faction": "greeks",
     "culture": "Delians",
@@ -7473,7 +7463,7 @@
     "region": "Phokis-Doris",
     "city": "Elateia",
     "faction": "greeks",
-    "culture": "Phocians",
+    "culture": "Phocians-Dorians",
     "tags": "mixed, greek, greek_aor, rel_northwest_greek_4, Farm6, mountain_valley, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
@@ -7594,7 +7584,7 @@
     "city": "Prasiai",
     "faction": "greeks",
     "culture": "Laconians",
-    "tags": "argive, greek_aor, rel_dorian_4, Farm4, mountains, mediterranean, base_port_level_1, irrigation_river",
+    "tags": "greek_aor, rel_dorian_4, Farm4, mountains, mediterranean, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "dorian 100"
@@ -7658,16 +7648,6 @@
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "dorian 100"
-  },
-  "50,180,54": {
-    "region": "Paros",
-    "city": "Paros",
-    "faction": "greeks",
-    "culture": "Parians",
-    "tags": "greek, greek_aor, rel_ionian_4, island_settlement, Farm4, small_islands_and_rocky_coast, mediterranean, base_port_level_1",
-    "farm_level": "5",
-    "pop_level": "4",
-    "ethnicities": "ionian 100"
   },
   "239,66,74": {
     "region": "Lemnos",
@@ -8009,6 +7989,16 @@
     "pop_level": "4",
     "ethnicities": "baltic 60 scythian 40"
   },
+  "179,35,17": {
+    "region": "Oudia-Orgasia",
+    "city": "Oudon_Taphai",
+    "faction": "siraces",
+    "culture": "Udians-Orgasians",
+    "tags": "Farm2, rivertrade, scythian, alanic, rel_scythian_4",
+    "farm_level": "5",
+    "pop_level": "2",
+    "ethnicities": "scythian 100"
+  },
   "65,108,170": {
     "region": "Neuria",
     "city": "Neuron_Taphai",
@@ -8047,6 +8037,16 @@
     "tags": "scythian, rel_scythian_4, Farm4, steppe, continental, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
+    "ethnicities": "scythian 100"
+  },
+  "214,77,128": {
+    "region": "Isondaia-Olondaia",
+    "city": "Isondon_Taphai",
+    "faction": "siraces",
+    "culture": "Isondaeans-Olondaeans",
+    "tags": "Farm2, scythian, alanic, rel_scythian_4",
+    "farm_level": "5",
+    "pop_level": "2",
     "ethnicities": "scythian 100"
   },
   "203,173,117": {
@@ -8101,7 +8101,7 @@
   },
   "111,93,129": {
     "region": "Basilike_Sauromataia",
-    "city": "Basilon_Sauromaton_Taphai",
+    "city": "Basilikon_Sauromaton_Taphai",
     "faction": "siraces",
     "culture": "Royal_Sarmatians",
     "tags": "scythian, sarmatian, rel_scythian_4, Farm5, steppe, continental, rivertrade, irrigation_river",
@@ -8183,7 +8183,7 @@
     "region": "Notia_Basilike_Skythia",
     "city": "Basilikon_Skython_Taphai",
     "faction": "siraces",
-    "culture": "Scythians",
+    "culture": "Royal_Scythians",
     "tags": "scythian, royal_scythian, rel_scythian_4, Farm6, steppe, hot_semi_arid, base_port_level_0, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
@@ -8253,7 +8253,7 @@
     "region": "Hypios",
     "city": "Kieros",
     "faction": "selge",
-    "culture": "Heracleotes",
+    "culture": "Mariandynians",
     "tags": "greek, greek_aor, rel_dorian_4, rel_paphlagonian_3, Farm6, mountain_valley, temperate, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
@@ -8313,7 +8313,7 @@
     "region": "Adramyttenos_Kolpos",
     "city": "Adramyttion",
     "faction": "selge",
-    "culture": "Mysians",
+    "culture": "Aeolians",
     "tags": "mysian, asia_minor, greek, greek_aor, rel_aeolian_3, rel_mysian_4, Farm7, mountain_valley, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
@@ -8387,6 +8387,16 @@
     "tags": "prienian, asia_minor, ionian, greek_aor, rel_ionian_4, Farm6, hills, mediterranean, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
+    "ethnicities": "ionian 100"
+  },
+  "181,63,99": {
+    "region": "Klazomenia",
+    "city": "Klazomenai",
+    "faction": "greeks",
+    "culture": "Clazomenians",
+    "tags": "Farm4, asia_minor, ionian, greek, greek_aor, rel_ionian_4",
+    "farm_level": "5",
+    "pop_level": "4",
     "ethnicities": "ionian 100"
   },
   "210,67,185": {
@@ -8778,6 +8788,16 @@
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "pisidian 60 macedonian 40"
+  },
+  "137,20,58": {
+    "region": "Homonadia-Oroandia",
+    "city": "Homona",
+    "faction": "pontus",
+    "culture": "Homonadeis-Oroandeis",
+    "tags": "Farm3, pisidian, asia_minor, anatolian, rel_pisidian_4",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": "isaurian 100"
   },
   "221,14,63": {
     "region": "Pamphylia",
@@ -9200,7 +9220,7 @@
     "ethnicities": "cilician 75 macedonian 20 dorian 5"
   },
   "204,117,79": {
-    "region": "Tracheiotis",
+    "region": "Anatolike_Tracheiotis",
     "city": "Seleukeia-Kalykadnos",
     "faction": "cilicians",
     "culture": "Cilicians",
@@ -9240,14 +9260,24 @@
     "ethnicities": "dorian 90 cilician 10"
   },
   "41,97,91": {
-    "region": "Anatolike_Tracheiotis",
+    "region": "Tracheiotis",
     "city": "Olbe",
     "faction": "cilicians",
-    "culture": "Olbans",
+    "culture": "Cilicians",
     "tags": "cilician, cilician_home, rel_cilician_4, rel_macedonian_1, Farm3, karst_terrain, mediterranean, base_port_level_1",
     "farm_level": "5",
     "pop_level": "3",
     "ethnicities": "cilician 85 macedonian 15"
+  },
+  "134,22,130": {
+    "region": "Notia_Tracheiotis",
+    "city": "Nagidos",
+    "faction": "cilicians",
+    "culture": "Cilicians",
+    "tags": "Farm4, cilician, cilician_home, rel_cilician_4, rel_ionian_2",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": "cilician 70 ionian 30"
   },
   "157,164,139": {
     "region": "Issikos_Kolpos",
@@ -9381,7 +9411,7 @@
   },
   "127,187,15": {
     "region": "Massyas_Pedion",
-    "city": "Laodikeia-Libanos",
+    "city": "Heliou_Polis-Syria",
     "faction": "armenia",
     "culture": "Aramaeans",
     "tags": "macedonian, seleucid, greek_aor, syrian, rel_assyrian_4, rel_macedonian_3, Farm7, hills, mediterranean, irrigation_springs",
@@ -9430,14 +9460,24 @@
     "ethnicities": "cypriot_greek 90 phoenician 10"
   },
   "15,188,31": {
-    "region": "Arwad",
-    "city": "Arados",
+    "region": "Arwad-Marat",
+    "city": "Arados-Marathos",
     "faction": "carthage",
     "culture": "Phoenicians",
     "tags": "asian, arados, rel_phoenician_4, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "phoenician 95 assyrian 5"
+  },
+  "128,205,15": {
+    "region": "Ake",
+    "city": "Ptolemais-Phoinike",
+    "faction": "carthage",
+    "culture": "Phoenicians",
+    "tags": "Farm9, greek_aor, rel_phoenician_4",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": "phoenician 95 macedonian 5"
   },
   "97,15,167": {
     "region": "Apamene",
@@ -9559,6 +9599,16 @@
     "pop_level": "7",
     "ethnicities": "phoenician 100"
   },
+  "18,249,34": {
+    "region": "Kitiy",
+    "city": "Kition",
+    "faction": "carthage",
+    "culture": "Cypriots",
+    "tags": "Farm5, cypriot, asian, rel_phoenician_4, rel_cypriot_greek_2",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": "phoenician 70 cypriot_greek 30"
+  },
   "131,249,18": {
     "region": "Hesperos_Arabia",
     "city": "Eboda",
@@ -9608,6 +9658,16 @@
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "arab 70 assyrian 30"
+  },
+  "41,250,19": {
+    "region": "Belos",
+    "city": "Chalkis-Belos",
+    "faction": "seleucid",
+    "culture": "Macedonians",
+    "tags": "Farm9, macedonian, seleucid, greek_aor, syrian, rel_macedonian_4, rel_assyrian_1",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": "macedonian 80 assyrian 20"
   },
   "133,193,21": {
     "region": "Ailanitos_Kolpos",
@@ -9698,6 +9758,16 @@
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "phoenician 80 ionian 15 macedonian 5"
+  },
+  "135,22,120": {
+    "region": "Chrysorrhoas",
+    "city": "Gerasa",
+    "faction": "nabataea",
+    "culture": "Arabs",
+    "tags": "Farm5, macedonian, ptolemaic, greek_aor, rel_arab_4, rel_assyrian_2, rel_macedonian_4",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": "arab 40 assyrian 20 macedonian 40"
   },
   "251,251,172": {
     "region": "Abilene",
@@ -10440,7 +10510,7 @@
     "ethnicities": "arab 100"
   },
   "13,244,160": {
-    "region": "Aouranitis",
+    "region": "Auranitis",
     "city": "Bostra",
     "faction": "nabataea",
     "culture": "Arabs",
@@ -10783,7 +10853,7 @@
     "region": "Marda",
     "city": "Mariama",
     "faction": "saba",
-    "culture": "Sabaeans",
+    "culture": "Qatabanians",
     "tags": "arab, sabaean, rel_arab_4, Farm6, hills, hot_semi_arid, irrigation_lake",
     "farm_level": "5",
     "pop_level": "6",
@@ -10943,7 +11013,7 @@
     "region": "Agraia-Agoubenia",
     "city": "Barathena",
     "faction": "nabataea",
-    "culture": "Agraeans-Agoubenians",
+    "culture": "Agraeans-Agubenians",
     "tags": "arab, rel_arab_4, Farm1, desert, arid",
     "farm_level": "5",
     "pop_level": "1",
@@ -11044,7 +11114,7 @@
     "city": "Arsarata",
     "faction": "atropatene",
     "culture": "Caspians-Vitians",
-    "tags": "media, asian, rel_iranian_4, Farm10, floodplains_delta, cold_semi_arid, base_port_level_0, rivertrade, irrigation_river",
+    "tags": "asian, rel_iranian_4, Farm10, floodplains_delta, cold_semi_arid, base_port_level_0, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "iranian 100"
@@ -11131,7 +11201,7 @@
   },
   "201,212,179": {
     "region": "Sanaraia",
-    "city": "Sanaron_Kome",
+    "city": "Sanaron_Taphai",
     "faction": "armenia",
     "culture": "Sanaraeans",
     "tags": "caucasian, asian, rel_caucasian_4, Farm6, steppe, continental, base_port_level_0, irrigation_river",
@@ -11141,7 +11211,7 @@
   },
   "161,130,248": {
     "region": "Didouria-Touskia",
-    "city": "Didouron_Kome",
+    "city": "Didouron_Taphai",
     "faction": "armenia",
     "culture": "Didurians-Tuscians",
     "tags": "caucasian, asian, rel_caucasian_4, Farm7, mountain_valley, cold_semi_arid, base_port_level_0, irrigation_springs",
@@ -11271,7 +11341,7 @@
   },
   "203,243,181": {
     "region": "Kolchis",
-    "city": "Kytaia",
+    "city": "Koutatision",
     "faction": "armenia",
     "culture": "Colchians",
     "tags": "caucasian, asian, colchian, rel_caucasian_4, Farm7, mountain_valley, continental, rivertrade, irrigation_river",
@@ -11320,13 +11390,23 @@
     "ethnicities": "caucasian 100"
   },
   "0,133,22": {
-    "region": "Heniochia-Kerketaia",
+    "region": "Heniochia",
     "city": "Heniochon_Kome",
     "faction": "armenia",
-    "culture": "Heniochians-Cercetaeans",
+    "culture": "Heniochians",
     "tags": "caucasian, asian, rel_caucasian_4, Farm4, mountains, humid_sub_tropical, base_port_level_0",
     "farm_level": "5",
     "pop_level": "4",
+    "ethnicities": "caucasian 100"
+  },
+  "207,63,251": {
+    "region": "Kerketaia",
+    "city": "Kerketon_Kome",
+    "faction": "armenia",
+    "culture": "Cercetaeans",
+    "tags": "Farm3, caucasian, asian, rel_caucasian_4",
+    "farm_level": "5",
+    "pop_level": "3",
     "ethnicities": "caucasian 100"
   },
   "66,36,106": {
@@ -11500,10 +11580,10 @@
     "ethnicities": "mesopotamian 80 macedonian 10 iranian 10"
   },
   "240,219,14": {
-    "region": "Kossaia",
+    "region": "Chalonitis",
     "city": "Chala",
     "faction": "parni",
-    "culture": "Kassites",
+    "culture": "Cossaeans",
     "tags": "babylonian, greek_aor, rel_iranian_4, rel_macedonian_1, rel_ionian_1, Farm5, mountains, temperate, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
@@ -11641,7 +11721,7 @@
   },
   "248,188,17": {
     "region": "Anatolike_Chalybonitis",
-    "city": "Arimara",
+    "city": "Amphipolis-Chalybonitis",
     "faction": "armenia",
     "culture": "Aramaeans",
     "tags": "syrian, asian, rel_assyrian_4, rel_macedonian_1, Farm7, steppe, hot_semi_arid, irrigation_river",
@@ -11651,7 +11731,7 @@
   },
   "187,126,37": {
     "region": "Anthemousia",
-    "city": "Anthemousias",
+    "city": "Anthemousias-Batnai",
     "faction": "seleucid",
     "culture": "Osrhoenians",
     "tags": "macedonian, seleucid, greek_aor, syrian, osrhoenian, rel_macedonian_4, rel_assyrian_3, Farm6, steppe, mediterranean, irrigation_river",
@@ -11710,7 +11790,7 @@
     "ethnicities": "arab 100"
   },
   "246,65,40": {
-    "region": "Eremikos_Euphrates",
+    "region": "Chaldaia",
     "city": "Charmande",
     "faction": "nabataea",
     "culture": "Arabs",
@@ -11719,35 +11799,15 @@
     "pop_level": "5",
     "ethnicities": "arab 90 mesopotamian 10"
   },
-  "212,129,68": {
-    "region": "Anatolike_Osrhoene",
-    "city": "Ichnai",
-    "faction": "seleucid",
-    "culture": "Osrhoenians",
-    "tags": "macedonian, seleucid, greek_aor, syrian, osrhoenian, rel_macedonian_4, rel_assyrian_3, Farm6, steppe, dry_sub_tropical, irrigation_river",
-    "farm_level": "5",
-    "pop_level": "6",
-    "ethnicities": "macedonian 60 assyrian 40"
-  },
   "190,65,174": {
     "region": "Artakene",
-    "city": "Sandrakai",
+    "city": "Sadrakai",
     "faction": "armenia",
     "culture": "Artacenians",
     "tags": "syrian, asian, rel_assyrian_4, rel_iranian_1, Farm6, steppe, hot_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "assyrian 80 iranian 20"
-  },
-  "79,191,174": {
-    "region": "Chaldaia",
-    "city": "Birande",
-    "faction": "parni",
-    "culture": "Chaldaeans",
-    "tags": "arab, babylonian, asian, rel_mesopotamian_4, Farm3, desert, arid, irrigation_oasis",
-    "farm_level": "5",
-    "pop_level": "3",
-    "ethnicities": "mesopotamian 100"
   },
   "202,226,69": {
     "region": "Paralia_Chaldaia",
@@ -11769,22 +11829,12 @@
     "pop_level": "4",
     "ethnicities": "mesopotamian 60 macedonian 40"
   },
-  "104,122,175": {
-    "region": "Palaia_Zeugma",
-    "city": "Thapsakos",
-    "faction": "nabataea",
-    "culture": "Aramaeans",
-    "tags": "asian, rel_assyrian_4, rel_arab_1, rel_macedonian_1, Farm8, river_valley, hot_semi_arid, rivertrade, irrigation_river",
-    "farm_level": "5",
-    "pop_level": "8",
-    "ethnicities": "arab 20 assyrian 60 macedonian 20"
-  },
   "58,167,177": {
     "region": "Media",
     "city": "Ekbatana",
     "faction": "atropatene",
     "culture": "Medians",
-    "tags": "seleucid, greek_aor, upper_satrapies, merc_center_no_port, rel_iranian_4, rel_macedonian_1, Farm6, plateau, dry_sub_tropical, irrigation_river",
+    "tags": "media, seleucid, greek_aor, upper_satrapies, merc_center_no_port, rel_iranian_4, rel_macedonian_1, Farm6, plateau, dry_sub_tropical, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "iranian 90 macedonian 10"
@@ -11890,7 +11940,7 @@
     "ethnicities": "iranian 80 macedonian 20"
   },
   "59,45,43": {
-    "region": "Paraitakene",
+    "region": "Ano_Persia",
     "city": "Gabai",
     "faction": "parni",
     "culture": "Persians",
@@ -11924,7 +11974,7 @@
     "city": "Kyropolis-Kadousia",
     "faction": "atropatene",
     "culture": "Cadusians",
-    "tags": "media, asian, upper_satrapies, rel_iranian_4, Farm7, mountain_valley, mediterranean, base_port_level_1, irrigation_river",
+    "tags": "asian, upper_satrapies, rel_iranian_4, Farm7, mountain_valley, mediterranean, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "iranian 100"
@@ -11940,7 +11990,7 @@
     "ethnicities": "iranian 100"
   },
   "26,180,141": {
-    "region": "Choarene",
+    "region": "Notia_Parthia",
     "city": "Apameia-Rhagiane",
     "faction": "parni",
     "culture": "Medians",
@@ -11950,10 +12000,10 @@
     "ethnicities": "macedonian 35 iranian 65"
   },
   "42,178,9": {
-    "region": "Pasargadaia",
+    "region": "Pasargadaia-Kyrtia",
     "city": "Pasargadai",
     "faction": "parni",
-    "culture": "Pasargadaeans",
+    "culture": "Pasargadaeans-Persian_Cyrtians",
     "tags": "persia, asian, upper_satrapies, rel_iranian_4, Farm7, mountain_valley, cold_semi_arid, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
@@ -11961,23 +12011,13 @@
   },
   "195,9,178": {
     "region": "Syromedia",
-    "city": "Antiocheia-Media",
+    "city": "Laodikeia-Media",
     "faction": "atropatene",
     "culture": "Medians",
-    "tags": "seleucid, greek_aor, upper_satrapies, rel_iranian_4, rel_macedonian_2, Farm5, mountains, continental, irrigation_river",
+    "tags": "media, seleucid, greek_aor, upper_satrapies, rel_iranian_4, rel_macedonian_2, Farm5, mountains, continental, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "iranian 65 macedonian 35"
-  },
-  "60,126,178": {
-    "region": "Sigrianike",
-    "city": "Choana",
-    "faction": "parni",
-    "culture": "Medians",
-    "tags": "seleucid, greek_aor, upper_satrapies, rel_iranian_4, rel_macedonian_1, Farm2, desert, arid, irrigation_aquifer",
-    "farm_level": "5",
-    "pop_level": "2",
-    "ethnicities": "macedonian 25 iranian 75"
   },
   "213,164,3": {
     "region": "Komisene",
@@ -11991,9 +12031,9 @@
   },
   "25,174,228": {
     "region": "Amardokaia-Anariakaia",
-    "city": "Amardion_Kome",
+    "city": "Amardion_Phrourion",
     "faction": "parni",
-    "culture": "Amardians-Anarcaeans",
+    "culture": "Amardians-Anariacaeans",
     "tags": "hyrkania, asian, upper_satrapies, rel_iranian_4, Farm7, forest, mediterranean, base_port_level_0, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
@@ -12024,7 +12064,7 @@
     "city": "Kapouta",
     "faction": "atropatene",
     "culture": "Medians",
-    "tags": "media, asian, upper_satrapies, rel_iranian_4, Farm5, mountains, continental, irrigation_river",
+    "tags": "asian, upper_satrapies, rel_iranian_4, Farm5, mountains, continental, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "iranian 100"
@@ -12080,30 +12120,30 @@
     "ethnicities": "iranian 90 macedonian 10"
   },
   "63,50,13": {
-    "region": "Tapyria",
-    "city": "Tapyron_Kome",
+    "region": "Tapyria-Kyrtia",
+    "city": "Tapyron_Phrourion",
     "faction": "parni",
-    "culture": "Tapurians",
+    "culture": "Tapurians-Cyrtians",
     "tags": "hyrkania, asian, upper_satrapies, rel_iranian_4, Farm4, mountains, cold_semi_arid, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "iranian 100"
   },
   "28,184,72": {
-    "region": "Ouxiana",
-    "city": "Ouxion_Kome",
+    "region": "Ouxia-Paraitakene",
+    "city": "Ouxion_Phrourion",
     "faction": "parni",
-    "culture": "Uxians",
+    "culture": "Uxians-Paraetacenians",
     "tags": "persia, asian, upper_satrapies, rel_iranian_4, Farm5, mountains, temperate, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "iranian 100"
   },
   "122,73,47": {
-    "region": "Kyrtia",
-    "city": "Kyrtion_Kome",
+    "region": "Kossaia-Mardia",
+    "city": "Kossaion_Phrourion",
     "faction": "parni",
-    "culture": "Cyrtians",
+    "culture": "Cossaeans-Mardians",
     "tags": "persia, asian, upper_satrapies, rel_iranian_4, Farm4, mountains, cold_semi_arid, irrigation_aquifer",
     "farm_level": "5",
     "pop_level": "4",
@@ -12131,10 +12171,10 @@
   },
   "129,123,31": {
     "region": "Anatolike_Baktriane",
-    "city": "Baktra_Basileion",
+    "city": "Baktrias_Basileion",
     "faction": "bactria",
     "culture": "Greco-Bactrians",
-    "tags": "bactrian, greek_aor, rel_greco_bactrian_4, rel_iranian_3, Farm5, mountains, continental, irrigation_river",
+    "tags": "bactrian, baktria, greek_aor, rel_greco_bactrian_4, rel_iranian_3, Farm5, mountains, continental, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "iranian 40 greco_bactrian 60"
@@ -12224,7 +12264,7 @@
     "city": "Oxeiana",
     "faction": "parni",
     "culture": "Greco-Bactrians",
-    "tags": "bactrian, greek_aor, sogdia, rel_macedonian_4, rel_iranian_4, rel_greco_bactrian_2, Farm12, floodplains_delta, cold_semi_arid, rivertrade, irrigation_river",
+    "tags": "bactrian, baktria, greek_aor, sogdia, rel_macedonian_4, rel_iranian_4, rel_greco_bactrian_2, Farm12, floodplains_delta, cold_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "12",
     "ethnicities": "macedonian 40 iranian 40 greco_bactrian 20"
@@ -12274,7 +12314,7 @@
     "city": "Marouka",
     "faction": "parni",
     "culture": "Bactrians",
-    "tags": "asian, persia, rel_iranian_4, rel_greco_bactrian_2, rel_macedonian_1, Farm8, mountain_valley, cold_semi_arid, rivertrade, irrigation_river",
+    "tags": "asian, baktria, bactrian, persia, rel_iranian_4, rel_greco_bactrian_2, rel_macedonian_1, Farm8, mountain_valley, cold_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "iranian 60 greco_bactrian 30 macedonian 10"
@@ -12294,7 +12334,7 @@
     "city": "Indikomordana",
     "faction": "bactria",
     "culture": "Greco-Bactrians",
-    "tags": "bactrian, asian, rel_greco_bactrian_4, rel_iranian_3, Farm8, mountain_valley, dry_sub_tropical, irrigation_river",
+    "tags": "bactrian, baktria, asian, rel_greco_bactrian_4, rel_iranian_3, Farm8, mountain_valley, dry_sub_tropical, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "iranian 40 greco_bactrian 60"
@@ -12304,7 +12344,7 @@
     "city": "Alexandreia-Oxeiane",
     "faction": "bactria",
     "culture": "Greco-Bactrians",
-    "tags": "bactrian, asian, rel_macedonian_4, rel_greco_bactrian_3, rel_iranian_3, Farm6, hills, continental, irrigation_aquifer",
+    "tags": "bactrian, baktria, asian, rel_macedonian_4, rel_greco_bactrian_3, rel_iranian_3, Farm6, hills, continental, irrigation_aquifer",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 40 greco_bactrian 30 iranian 30"
@@ -12630,7 +12670,7 @@
     "ethnicities": "scythian 80 iranian 20"
   },
   "124,179,169": {
-    "region": "Amyrgia",
+    "region": "Anatolike_Amyrgia",
     "city": "Amyrgion_Kome",
     "faction": "saka",
     "culture": "Amyrgians",
@@ -12729,6 +12769,16 @@
     "pop_level": "6",
     "ethnicities": "iranian 80 scythian 20"
   },
+  "155,58,5": {
+    "region": "Notia_Margiane",
+    "city": "Iasonion",
+    "faction": "parni",
+    "culture": "Margianans",
+    "tags": "Farm7, bactrian, greek_aor, rel_iranian_4, rel_macedonian_1",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": "iranian 80 macedonian 20"
+  },
   "64,183,81": {
     "region": "Xandia-Paria",
     "city": "Xandon_Taphai",
@@ -12758,6 +12808,16 @@
     "farm_level": "5",
     "pop_level": "1",
     "ethnicities": "iranian 100"
+  },
+  "65,11,92": {
+    "region": "Amyrgia",
+    "city": "Amyrgon_Taphai",
+    "faction": "saka",
+    "culture": "Amyrgians",
+    "tags": "Farm2, scythian, rel_scythian_4",
+    "farm_level": "5",
+    "pop_level": "2",
+    "ethnicities": "scythian 100"
   },
   "249,105,109": {
     "region": "Kasiane",
@@ -12929,74 +12989,124 @@
     "pop_level": "1",
     "ethnicities": "libyan 100"
   },
-  "64,64,64": {
-    "region": "Tonelandia",
-    "city": "Eddopolis",
-    "faction": "dummies",
-    "culture": "Ferals",
-    "tags": "nobuild, cg_antibonus",
-    "farm_level": "5",
-    "pop_level": "1",
-    "ethnicities": "ionian 100"
-  },
-  "32,32,32": {
-    "region": "Greeks_Region",
-    "city": "Greeks_Settlement",
-    "faction": "greeks",
-    "culture": "Pontians",
-    "tags": "nobuild, cg_antibonus",
-    "farm_level": "5",
-    "pop_level": "1",
-    "ethnicities": "ionian 100"
-  },
-  "16,16,16": {
-    "region": "Anatolians_Region",
-    "city": "Anatolians_Settlement",
+  "240,240,240": {
+    "region": "Roman_Rebels_1_Region",
+    "city": "Roman_Rebels_1_Settlement",
     "faction": "roman_rebels_1",
     "culture": "Romans",
-    "tags": "nobuild, cg_antibonus",
+    "tags": "nobuild",
     "farm_level": "5",
     "pop_level": "1",
     "ethnicities": "italic 100"
   },
-  "8,8,8": {
-    "region": "Thracians_Region",
-    "city": "Thracians_Settlement",
+  "224,224,224": {
+    "region": "Roman_Rebels_2_Region",
+    "city": "Roman_Rebels_2_Settlement",
     "faction": "roman_rebels_2",
     "culture": "Romans",
-    "tags": "nobuild, cg_antibonus",
+    "tags": "nobuild",
     "farm_level": "5",
     "pop_level": "1",
     "ethnicities": "italic 100"
   },
-  "24,24,24": {
-    "region": "Cilicians_Region",
-    "city": "Cilicians_Settlement",
-    "faction": "cilicians",
-    "culture": "Cilicians",
-    "tags": "nobuild, cg_antibonus",
+  "208,208,208": {
+    "region": "Seleucid_Rebels_Region",
+    "city": "Seleucid_Rebels_Settlement",
+    "faction": "seleucid_rebels",
+    "culture": "Macedonians",
+    "tags": "nobuild",
     "farm_level": "5",
     "pop_level": "1",
-    "ethnicities": "cilician 100"
+    "ethnicities": "macedonian 100"
   },
-  "40,40,40": {
-    "region": "Illyrians_Region",
-    "city": "Illyrians_Settlement",
-    "faction": "roman_senate",
-    "culture": "Romans",
-    "tags": "nobuild, cg_antibonus",
+  "192,192,192": {
+    "region": "Seleucid_Rebels_2_Region",
+    "city": "Seleucid_Rebels_2_Settlement",
+    "faction": "seleucid_rebels2",
+    "culture": "Macedonians",
+    "tags": "nobuild",
     "farm_level": "5",
     "pop_level": "1",
-    "ethnicities": "italic 100"
+    "ethnicities": "macedonian 100"
   },
-  "72,72,72": {
+  "176,176,176": {
+    "region": "Ptolemaic_Rebels_Region",
+    "city": "Ptolemaic_Rebels_Settlement",
+    "faction": "ptolemaic_rebels",
+    "culture": "Macedonians",
+    "tags": "nobuild",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": "macedonian 100"
+  },
+  "160,160,160": {
     "region": "Hellenistic_Rebels_Region",
     "city": "Hellenistic_Rebels_Settlement",
     "faction": "hellenistic_rebels",
     "culture": "Macedonians",
-    "tags": "nobuild, cg_antibonus",
+    "tags": "nobuild",
     "farm_level": "5",
     "pop_level": "1",
     "ethnicities": "macedonian 100"
+  },
+  "144,144,144": {
+    "region": "Cilicians_Region",
+    "city": "Cilicians_Settlement",
+    "faction": "cilicians",
+    "culture": "Cilicians",
+    "tags": "nobuild",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": "cilician 100"
+  },
+  "128,128,128": {
+    "region": "Arsacid_Rebels_Region",
+    "city": "Arsacid_Rebels_Settlement",
+    "faction": "parni",
+    "culture": "Parnians",
+    "tags": "nobuild",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": "iranian 100"
+  },
+  "112,112,112": {
+    "region": "Indians_Region",
+    "city": "Indians_Settlement",
+    "faction": "indians",
+    "culture": "Indians",
+    "tags": "nobuild",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": "indian 100"
+  },
+  "96,96,96": {
+    "region": "Judaeans_Region",
+    "city": "Judaeans_Settlement",
+    "faction": "parni",
+    "culture": "Judaeans",
+    "tags": "nobuild",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": "judaean 100"
+  },
+  "80,80,80": {
+    "region": "Armenian_Rebels_Region",
+    "city": "Armenian_Rebels_Settlement",
+    "faction": "armenia",
+    "culture": "Armenians",
+    "tags": "nobuild",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": "armenian 100"
+  },
+  "64,64,64": {
+    "region": "Han_Region",
+    "city": "Han_Settlement",
+    "faction": "saka",
+    "culture": "Saka",
+    "tags": "nobuild",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": "iranian 100"
   }
 }

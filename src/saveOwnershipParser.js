@@ -97,8 +97,25 @@ function detectOwnerOffset(buf, setts, initialOwnerByCity) {
   return best;
 }
 
-// Build UUID → faction dictionary using descr_strat majority vote at given offset.
-// Returns Map<uuid_u32, factionId_string>.
+// Build UUID → faction dictionary using descr_strat plurality vote at the
+// given offset. Returns Map<uuid_u32, factionId_string>.
+//
+// Key insight: each UUID is unique to ONE faction. When that faction
+// conquers settlements from others, those settlements adopt the
+// conqueror's UUID. So a UUID's set of settlements always includes some
+// of the conqueror's ORIGINAL (descr_strat-anchored) settlements PLUS
+// however many they've conquered. The plurality faction in the descr_strat
+// distribution is therefore the conqueror.
+//
+// Earlier code required 60%+ majority — too strict for mid/late game.
+// At turn 22, factions like Athens commonly hold 4 starting + 3 conquered
+// from multiple enemies = 4/7=57% majority, which the old rule rejected.
+// That orphaned ~30% of settlements (the user's missing conquests).
+//
+// New rule: trust the top faction if it has the strict plurality AND has
+// at least one descr_strat-anchored settlement under this UUID. Ties go
+// to whichever faction has a clearer starting-cluster signature (broken by
+// the alphabet as a last resort).
 function buildUuidToFaction(buf, setts, offset, initialOwnerByCity) {
   const uuidToFac = new Map();
   for (const s of setts) {
@@ -112,14 +129,15 @@ function buildUuidToFaction(buf, setts, offset, initialOwnerByCity) {
     const fm = uuidToFac.get(v);
     fm.set(fac, (fm.get(fac) || 0) + 1);
   }
-  // Collapse to majority faction per UUID
   const dict = new Map();
   for (const [uuid, fmap] of uuidToFac) {
-    const entries = [...fmap.entries()].sort((a, b) => b[1] - a[1]);
-    const [topFac, topCount] = entries[0];
-    const total = [...fmap.values()].reduce((a, b) => a + b, 0);
-    // Require 60%+ majority to trust this UUID→faction mapping
-    if (topCount / total >= 0.6) dict.set(uuid, topFac);
+    if (fmap.size === 0) continue;
+    // Sort by vote DESC, then alphabet ASC for stable tie-break.
+    const entries = [...fmap.entries()].sort((a, b) =>
+      b[1] - a[1] || a[0].localeCompare(b[0])
+    );
+    const [topFac] = entries[0];
+    dict.set(uuid, topFac);
   }
   return dict;
 }
@@ -136,13 +154,31 @@ function resolveCurrentOwners(buf, initialOwnerByCity) {
     return { ownerByCity: {}, error: "could not detect owner offset" };
   }
   const dict = buildUuidToFaction(buf, setts, det.d, initialOwnerByCity);
+  // Identify the "slave/rebel" faction id from descr_strat — every RTW
+  // campaign carries one. Settlements with uuid=0 (the rebel sentinel)
+  // resolve to this faction. Without this, ~10 rebel-occupied settlements
+  // per save stayed unresolved and showed as "unknown" on the map.
+  const slaveFaction = (() => {
+    const counts = new Map();
+    for (const f of Object.values(initialOwnerByCity)) counts.set(f, (counts.get(f) || 0) + 1);
+    for (const candidate of ["slave", "rebels", "slaves"]) {
+      if (counts.has(candidate)) return candidate;
+    }
+    // Fall back to the most common faction (almost always the rebel default).
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    return top ? top[0] : null;
+  })();
   const ownerByCity = {};
   const unknown = {};
   for (const s of setts) {
     const o = s.offset + det.d;
     if (o < 0 || o + 4 > buf.length) continue;
     const uuid = buf.readUInt32LE(o);
-    if (uuid === 0 || uuid === 0xffffffff) continue;
+    if (uuid === 0xffffffff) continue;
+    if (uuid === 0) {
+      if (slaveFaction) ownerByCity[s.name] = slaveFaction;
+      continue;
+    }
     const fac = dict.get(uuid);
     if (fac) ownerByCity[s.name] = fac;
     else unknown[s.name] = uuid.toString(16).padStart(8, "0");
@@ -156,8 +192,38 @@ function resolveCurrentOwners(buf, initialOwnerByCity) {
   };
 }
 
+// Read the per-settlement governor reference field. Located at
+// `marker.offset - 1940` (RIS imperial), 4 bytes after the owner UUID
+// at -1944. CONFIRMED 2026-05-10 by matching against v1 character
+// secondaryUuids on a turn-5 RoR save: Rome → Quintus Ogulnius_Gallus
+// (player leader, garrisoned in capital), Uria → Aulus Gabinius (the
+// player's installed governor after conquering Salentinia from rebels).
+//
+// Returns { settlement_name: governor_secondary_uuid } for every
+// settlement that has a non-zero governor. The caller cross-references
+// the uuid against findCharacterRecords()'s output to get the name.
+//
+// Caveat: only ~19 of 1310 settlements had matchable v1 chars on the
+// RoR T5 save. The other settlements either:
+//   1. Have no governor (lots of small AI cities don't),
+//   2. Have an AI faction's character we don't decode (RIS-imperial
+//      auto-generated chars are in a v1-incompatible format), or
+//   3. The uuid here points to a captain not represented as a v1 record.
+function findSettlementGovernors(buf, settlements, governorOffset = -1940) {
+  const out = {};
+  for (const s of settlements) {
+    const o = s.offset + governorOffset;
+    if (o < 0 || o + 4 > buf.length) continue;
+    const v = buf.readUInt32LE(o);
+    if (v === 0 || v === 0xffffffff) continue;
+    out[s.name] = v;
+  }
+  return out;
+}
+
 module.exports = {
   detectOwnerOffset,
   buildUuidToFaction,
   resolveCurrentOwners,
+  findSettlementGovernors,
 };

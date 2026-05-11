@@ -2,7 +2,61 @@
 const { app, BrowserWindow, Menu, session, dialog, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { Worker } = require("worker_threads");
 const { autoUpdater } = require("electron-updater");
+
+// Spawn the v1-character parser in a worker so it runs in parallel with
+// the main thread's parseSaveData. Worker is short-lived (one parse per
+// invocation, then terminate) — the spawn cost (~30-50ms) is small
+// relative to the ~1-1.5s the byte-by-byte scan saves us.
+function findCharsInWorker(saveBuf, nameLookup, traitNames, traitEpithets) {
+  return new Promise((resolve, reject) => {
+    let workerPath = path.join(__dirname, "src", "charactersWorker.js");
+    let worker;
+    try { worker = new Worker(workerPath); }
+    catch (e) { reject(e); return; }
+    worker.once("message", (msg) => {
+      worker.terminate();
+      if (msg && msg.ok) resolve(msg.characters);
+      else reject(new Error(msg && msg.error ? msg.error : "worker failed"));
+    });
+    worker.once("error", (err) => { worker.terminate(); reject(err); });
+    worker.postMessage({ saveBuf, nameLookup, traitNames, traitEpithets });
+  });
+}
+
+// Same pattern for the buildings parser — runs in parallel with the
+// chars worker AND parseSaveData. Worth ~200-400ms off the main-thread
+// time on a typical save reload.
+function parseBuildingsInWorker(saveBuf) {
+  return new Promise((resolve, reject) => {
+    let workerPath = path.join(__dirname, "src", "buildingsWorker.js");
+    let worker;
+    try { worker = new Worker(workerPath); }
+    catch (e) { reject(e); return; }
+    worker.once("message", (msg) => {
+      worker.terminate();
+      if (msg && msg.ok) resolve({ buildingsByCity: msg.buildingsByCity, queuedByCity: msg.queuedByCity });
+      else reject(new Error(msg && msg.error ? msg.error : "worker failed"));
+    });
+    worker.once("error", (err) => { worker.terminate(); reject(err); });
+    // Build the union whitelist on the main thread (it's tiny — a set
+    // of chain names) and pass as an array. Worker reconstitutes a Set.
+    let whitelist = modBuildingChains;
+    if (!whitelist || whitelist.size === 0) {
+      whitelist = getBaselineBuildingChains();
+    } else {
+      const merged = new Set(whitelist);
+      for (const k of getBaselineBuildingChains()) merged.add(k);
+      whitelist = merged;
+    }
+    worker.postMessage({
+      saveBuf,
+      whitelist: Array.from(whitelist),
+      maxLevels: modChainMaxLevels || {},
+    });
+  });
+}
 
 // Pin the AppUserModelID so taskbar / Start-Menu pins survive updates.
 // NSIS sets the installed shortcut's AppUserModelID from package.json's
@@ -88,7 +142,10 @@ const { parseLine: parseLogLineV2 } = require("./src/messageLogParser.js");
 const { findUnitRecords } = require("./src/unitParser.js");
 const { parseSettlements } = require("./src/buildingParser.js");
 const { buildInitialOwnership } = require("./src/ownershipParser.js");
-const { resolveCurrentOwners } = require("./src/saveOwnershipParser.js");
+const { resolveCurrentOwners, findSettlementGovernors } = require("./src/saveOwnershipParser.js");
+const { findAllSettlementMarkers } = require("./src/buildingParser.js");
+const { findFactionRecords, summarizeFactionArray } = require("./src/factionRecordParser.js");
+const { findLuaCounters, indexCountersByName } = require("./src/luaCounterParser.js");
 
 // Cache for mod data (names_lookup, traits, surnames). Populated lazily when
 // the renderer calls "characters-init" with the mod data directory.
@@ -129,20 +186,95 @@ let modFactionDisplayMap = null; // { lowercase display name → internal factio
 let modFactionDisplayNames = null; // { internal faction id → display name } — used in UI
 let modFactionCultures = null; // { factionId: cultureFolderName } — "roman", "greek", "barbarian", etc.
 let modInitialOwnerByCity = null; // { settlementName → factionId } from descr_strat (turn 0 ground truth)
+let modRegionToCity = null; // { regionName → settlementName } from descr_regions — used to bridge save's region-keyed unit data to city-keyed owner data
+// Trait → epithet (cognomen) override map. RTW grants an "Epithet" keyword
+// at certain trait levels (e.g. RomanConquerorMessapians L2 → "Messapivs").
+// The save stores the character's BIRTH surname (e.g. "Gabinius"); the in-
+// game UI overrides it with the highest-priority epithet from active traits.
+// Without this table the app shows the birth surname while the user sees
+// the epithet ("Aulus Gabinius" vs "Aulus Messapivs"). Built from
+// export_descr_character_traits.txt + text/export_vnvs.txt.
+//   modTraitEpithets[traitName] = [{ level, key, text }, …] in level order
+let modTraitEpithets = null;
+// Ancillary names indexed by id (0-based), loaded from
+// export_descr_ancillaries.txt. ID 0 = labrys_maker, ID 1 = saffron_merchant,
+// ... 1092 entries in RIS imperial. Decoded by save-cracker session 6:
+// ancillary IDs sit inline in the character record between the trait block
+// and portrait paths as [u16=0, u16=ancId] pairs.
+let modAncillaryNames = null;
 
 function loadModCharacterData(modDataDir) {
   const nameLookupPath = path.join(modDataDir, "descr_names_lookup.txt");
   const traitsPath = path.join(modDataDir, "export_descr_character_traits.txt");
+  const ancillariesPath = path.join(modDataDir, "export_descr_ancillaries.txt");
   const edbPath = path.join(modDataDir, "export_descr_buildings.txt");
   const descrStratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
   if (!fs.existsSync(nameLookupPath) || !fs.existsSync(traitsPath)) {
     throw new Error("Mod character data files missing in " + modDataDir);
   }
+  // Optional: ancillaries. If missing, ancillary names just render as `#<id>`.
+  modAncillaryNames = [];
+  if (fs.existsSync(ancillariesPath)) {
+    const lines = fs.readFileSync(ancillariesPath, "utf8").split(/\r?\n/);
+    for (const line of lines) {
+      const m = line.match(/^Ancillary\s+(\S+)/);
+      if (m) modAncillaryNames.push(m[1]);
+    }
+  }
   modNameLookup = fs.readFileSync(nameLookupPath, "utf8").split(/\r?\n/).map(s => s.trim());
   modTraitNames = [];
-  for (const line of fs.readFileSync(traitsPath, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^Trait\s+(\S+)/);
-    if (m) modTraitNames.push(m[1]);
+  // While we walk the traits file we ALSO collect Trait → [{ level, epithetKey }]
+  // pairs. The first pass through the file gives us the trait→key skeleton;
+  // a second pass on text/export_vnvs.txt fills in epithetKey → text.
+  modTraitEpithets = {};
+  {
+    const lines = fs.readFileSync(traitsPath, "utf8").split(/\r?\n/);
+    let curTrait = null;
+    let curLevel = null;     // level name (e.g. "Roman_Conqueror_Messapians")
+    let curLevelIdx = 0;     // 1-indexed level position within current trait
+    for (const line of lines) {
+      const tm = line.match(/^Trait\s+(\S+)/);
+      if (tm) {
+        curTrait = tm[1];
+        curLevel = null;
+        curLevelIdx = 0;
+        modTraitNames.push(curTrait);
+        continue;
+      }
+      const lm = line.match(/^\s*Level\s+(\S+)/);
+      if (lm) {
+        curLevel = lm[1];
+        curLevelIdx++;
+        continue;
+      }
+      const em = line.match(/^\s*Epithet\s+(\S+)/);
+      if (em && curTrait && curLevel) {
+        if (!modTraitEpithets[curTrait]) modTraitEpithets[curTrait] = [];
+        modTraitEpithets[curTrait].push({ level: curLevelIdx, levelName: curLevel, key: em[1], text: null });
+      }
+    }
+  }
+  // Resolve epithet keys → text by scanning text/export_vnvs.txt. The file
+  // is UTF-16 LE; entries look like `{Roman_Conqueror_Messapians_epithet_desc}\tMessapivs`.
+  {
+    const vnvsPath = path.join(modDataDir, "text", "export_vnvs.txt");
+    if (fs.existsSync(vnvsPath)) {
+      const buf3 = fs.readFileSync(vnvsPath);
+      const text = (buf3[0] === 0xff && buf3[1] === 0xfe) ? buf3.toString("utf16le", 2) : buf3.toString("utf8");
+      const keyToText = new Map();
+      for (const line of text.split(/\r?\n/)) {
+        const m = line.match(/^\{([^}]+)\}\s*(.+?)\s*$/);
+        if (m) keyToText.set(m[1], m[2]);
+      }
+      for (const trait of Object.keys(modTraitEpithets)) {
+        for (const entry of modTraitEpithets[trait]) {
+          if (keyToText.has(entry.key)) entry.text = keyToText.get(entry.key);
+        }
+        // Drop entries with no resolvable text (rare — typo'd keys).
+        modTraitEpithets[trait] = modTraitEpithets[trait].filter(e => e.text);
+        if (modTraitEpithets[trait].length === 0) delete modTraitEpithets[trait];
+      }
+    }
   }
   modDescrStratSurnames = new Set();
   modDescrStratCharByName = new Map();
@@ -343,6 +475,18 @@ function loadModCharacterData(modDataDir) {
     console.warn("[mod-load] ownership parse failed:", e.message);
     modInitialOwnerByCity = {};
   }
+  // Region → city map (descr_regions.txt). The save tags every unit with
+  // its REGION; the owner / governor lookups are CITY-keyed. This bridge
+  // lets the army-faction re-attribution step turn a unit's region into
+  // a settlement and then into an owner.
+  try {
+    const { findDescrRegions, parseDescrRegions } = require("./src/ownershipParser.js");
+    const rPath = findDescrRegions(modDataDir, "imperial_campaign") || findDescrRegions(modDataDir, "ris_classic");
+    modRegionToCity = rPath ? parseDescrRegions(rPath) : {};
+  } catch (e) {
+    console.warn("[mod-load] descr_regions parse failed:", e.message);
+    modRegionToCity = {};
+  }
   return {
     names: modNameLookup.length,
     traits: modTraitNames.length,
@@ -370,9 +514,12 @@ function parseWorldObjectPositions(buf) {
     if (buf.readUInt32LE(N - 12) !== 6) continue;
     if (buf.readUInt32LE(N - 4) !== N - 4) continue;
     const x = buf.readUInt32LE(N);
-    if (x < 0 || x > 200) continue;
+    // Bounds raised 2026-05-09: RIS imperial map is 1020x700, vanilla RTW
+    // ~200x150. Old bounds rejected 99.6% of legit position records on
+    // imperial-campaign saves, hiding most armies from the map.
+    if (x < 0 || x > 1100) continue;
     const y = buf.readUInt32LE(N + 4);
-    if (y < 0 || y > 150) continue;
+    if (y < 0 || y > 800) continue;
     const uuid = buf.readUInt32LE(N - 8);
     if (uuid === 0) continue;
     map.set(uuid, { x, y });
@@ -400,7 +547,7 @@ function readTurnFromSave(saveBuf) {
   return turnCounter + 1; // displayed turn number
 }
 
-function parseCharactersAndUnits(saveBuf) {
+function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
   if (!modNameLookup || !modTraitNames) return null;
   // v2 parser: finds the scripted-character section reliably. Uses the
   // confirmed record layout (type=3 header, birth year, trait list, etc).
@@ -437,21 +584,85 @@ function parseCharactersAndUnits(saveBuf) {
 
   // Legacy broad scan (may find a handful of generated/family chars v2 misses).
   // We dedupe by offset below.
-  const characters = findCharacterRecords(saveBuf, modNameLookup, modTraitNames, null);
+  // Use precomputedChars if a worker thread already ran this scan. The
+  // worker also applies trait-driven epithets, so when we use it we can
+  // skip the epithet pass below.
+  const characters = precomputedChars || findCharacterRecords(saveBuf, modNameLookup, modTraitNames, null);
+  // Apply trait-driven cognomen overrides. (Skipped when chars came
+  // from the worker — it does this pass itself.)
+  if (!precomputedChars && modTraitEpithets) {
+    // RTW's `Epithet` keyword grants either a SURNAME-replacement (a Latin
+    // cognomen like "Messapivs", "Africanus") or a NICKNAME ("the
+    // Drunkard"). The text content distinguishes them — nicknames start
+    // with a leading article ("the ", "der ", etc.). We only override
+    // lastName for surname-style epithets; nickname-style ones are
+    // appended (with a leading space) so the displayed name reads e.g.
+    // "Aulus Gabinius the Drunkard" or "Aulus Messapivs". This matches
+    // the in-game UI's display order.
+    const isNickname = (s) => /^(the|de|der|le|la|el|il|den|den)\s/i.test(s);
+    for (const c of characters) {
+      if (!c.traits || c.traits.length === 0) continue;
+      let surname = null, nickname = null;
+      for (const t of c.traits) {
+        const candidates = modTraitEpithets[t.name];
+        if (!candidates) continue;
+        // Highest-level epithet wins within a trait family. Across
+        // families, last one applied wins for nicknames; surnames stack
+        // by deepest trait level (more conquests → fancier cognomen).
+        let best = null;
+        for (const cand of candidates) {
+          if (!best || cand.level > best.level) best = cand;
+        }
+        if (!best) continue;
+        if (isNickname(best.text)) nickname = best.text;
+        else if (!surname || best.level > (surname.level || 0)) surname = best;
+      }
+      // Preserve the original (birth) lastName for live-log key
+      // matching — the engine emits the birth name even after an
+      // epithet trait fires. See charactersWorker.js for the same
+      // logic on the worker path.
+      if (surname || nickname) {
+        c.originalLastName = c.lastName || null;
+      }
+      if (surname) c.lastName = surname.text;
+      if (nickname) c.lastName = (c.lastName ? c.lastName + " " : "") + nickname;
+    }
+  }
   const worldPositions = parseWorldObjectPositions(saveBuf);
+  // Parse units first so we can build a `commanderUuid → region` index. The
+  // legacy `findCharacterRegion()` did a full-buffer indexOf scan PER
+  // character (~33s on a 40MB save with 100 characters); the index makes
+  // each lookup O(1) and the unit parse runs in ~0.2s.
+  const units = findUnitRecords(saveBuf);
+  const regionByCommanderUuid = new Map();
+  for (const u of units) {
+    if (u.commanderUuid && u.region && !regionByCommanderUuid.has(u.commanderUuid)) {
+      regionByCommanderUuid.set(u.commanderUuid, u.region);
+    }
+  }
   for (const c of characters) {
-    c.region = findCharacterRegion(saveBuf, c.secondaryUuid);
-    // worldObjectUuid lives at (first-name-offset - 16) in the character
-    // record — different from primary/secondary UUIDs. Cross-references
-    // the position record in the world-objects section.
+    c.region = regionByCommanderUuid.get(c.secondaryUuid) || null;
+    // For v1 character records the army-commander UUID is `secondaryUuid`
+    // (offset -43 from record start). The earlier code read offset -16,
+    // which works for v2 but is junk for v1 — that's why position-on-map
+    // was empty for ~50% of v1 chars. Try secondaryUuid first, fall back
+    // to a few legacy offsets so any character we identified gets a shot.
     try {
-      const wo = c.offset >= 16 ? saveBuf.readUInt32LE(c.offset - 16) : 0;
-      c.worldObjectUuid = wo;
-      const pos = wo && worldPositions.get(wo);
-      if (pos) { c.x = pos.x; c.y = pos.y; }
+      const candidates = [];
+      if (c.secondaryUuid) candidates.push(c.secondaryUuid);
+      if (c.primaryUuid) candidates.push(c.primaryUuid);
+      if (c.offset >= 16) candidates.push(saveBuf.readUInt32LE(c.offset - 16));
+      for (const uuid of candidates) {
+        const pos = uuid && worldPositions.get(uuid);
+        if (pos) {
+          c.worldObjectUuid = uuid;
+          c.x = pos.x;
+          c.y = pos.y;
+          break;
+        }
+      }
     } catch {}
   }
-  const units = findUnitRecords(saveBuf);
   // Add officer counts to soldier/maxSoldier so the displayed totals match
   // the in-game UI (the save stores only rank-and-file).
   if (modUnitOfficerCounts) {
@@ -486,6 +697,35 @@ function parseCharactersAndUnits(saveBuf) {
       keyTraits: c.traits
         .filter(t => /^(Factionleader|Factionheir|Leader_Rating|GoodCommander|GoodAdministrator|NaturalMilitarySkill|PoliticsSkill|Patrician|Senatorial)$/.test(t.name))
         .map(t => ({ name: t.name, level: t.level })),
+      // Full trait list (name + level) for the right-click popup. Cheap to
+      // ship through IPC (each char has <30 traits typically) and saves a
+      // round-trip when the user wants to inspect.
+      traits: c.traits.map(t => ({ name: t.name, level: t.level })),
+      // Ancillaries — list of { id, name }. Names resolved via the
+      // mod's export_descr_ancillaries.txt (ID is the 0-based position
+      // of an `Ancillary <name>` declaration). Empty list when the
+      // character has none (most do).
+      ancillaries: (c.ancillaries || []).map(a => ({
+        id: a.id,
+        name: (modAncillaryNames && modAncillaryNames[a.id]) || `#${a.id}`,
+      })),
+      // Clan-head / cognomen link — save-cracker session 8. Most chars
+      // have null here; specific ones bound to a Roman gens (e.g. Aulus
+      // and Marcus both linked to `Cornelius_Scapula`) carry a real
+      // name-lookup index.
+      clanHead: c.clanHead ? { name: c.clanHead.name, relType: c.clanHead.relType } : null,
+      // Fine-grained age (4-turns-per-year precision) — save-cracker
+      // session 4. Engine ticks +64 per turn. The basic `age` field
+      // above is the rounded integer; this one is for tooltips that
+      // want sub-year precision.
+      ageFineQuarter: c.ageFineQuarter || null,
+      // Primary uuid for cross-referencing parent→child links — save-
+      // cracker session 13 confirmed children's primaryUuids are stored
+      // as a 4-slot array at character +54..+66 (LAYOUT_A) / +50..+62
+      // (LAYOUT_B). The renderer resolves child names via a global
+      // primaryUuid index built from this field.
+      primaryUuid: c.primaryUuid || null,
+      childUuids: Array.isArray(c.childUuids) ? c.childUuids : [],
       portrait: c.portraits[0] || null,
     });
   }
@@ -584,90 +824,106 @@ function parseCharactersAndUnits(saveBuf) {
     });
   }
 
-  // Build liveArmies: group units into per-army bundles.
-  // Linking approach:
-  //   - Sort unit records by file offset.
-  //   - A unit with a non-zero commanderUuid opens a new army block and
-  //     establishes the "army region" (the region of the bodyguard).
-  //   - Following commander-less units belong to that army ONLY while
-  //     they share the same region as the bodyguard. A region change
-  //     (or next commanderUuid, or large file-offset gap) ends the army.
+  // Group units into armies, REGION-BASED.
   //
-  // Region-filtering is critical: within a faction's unit block the save
-  // stores multiple armies' units sequentially; region tag distinguishes
-  // which army a unit belongs to. Observed: Memnon's 43-unit "group" was
-  // really Lydia(20) + Bactria(14) + Parapamisadale(9) = three separate
-  // armies stored contiguously.
-  const SECTION_GAP = 10000;
-  // Pre-pass: scan for "stack header" markers. Each stack is preceded by a
-  // tiny header record of shape [ffffffff][filler=0x15][uuid]:
-  //   - nonzero uuid matching a known character → named/captain stack
-  //   - uuid=0 → "null stack" = garrison (commander-less units follow)
-  // Discovering both lets the UI separate Pella's 2 unassigned garrison
-  // hoplites (after a uuid=0 marker) from Alexander's 16-unit field army
-  // (under his nonzero marker) — previously the sequential grouping kept
-  // inheriting Alexander's uuid until another unit with its own
-  // commanderUuid appeared.
-  const knownCmdUuids = new Set();
-  for (const c of charsV2) if (c.commanderUuid) knownCmdUuids.add(c.commanderUuid);
-  const stackMarkers = []; // [{ pos, uuid }]  uuid===0 means reset
-  for (let p = 0; p + 12 < saveBuf.length; p++) {
-    if (saveBuf.readUInt32LE(p) !== 0xffffffff) continue;
-    const filler = saveBuf.readUInt32LE(p + 4);
-    if (filler !== 21) continue; // 0x15 is the only marker filler observed
-    const uuid = saveBuf.readUInt32LE(p + 8);
-    if (uuid !== 0 && !knownCmdUuids.has(uuid)) continue;
-    stackMarkers.push({ pos: p, uuid });
-  }
-  stackMarkers.sort((a, b) => a.pos - b.pos);
-  // Quick lookup: for an offset O, find the uuid of the nearest marker at
-  // pos <= O. Binary search, then caller verifies the marker is within
-  // SECTION_GAP (same save section).
-  const markerBefore = (off) => {
-    let lo = 0, hi = stackMarkers.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (stackMarkers[mid].pos <= off) lo = mid + 1; else hi = mid;
-    }
-    return lo > 0 ? stackMarkers[lo - 1] : null;
-  };
-
-  const sortedUnits = units.slice().sort((a, b) => a.offset - b.offset);
+  // Old approach (sequential): walked units by file offset, opened a new
+  // "army" on every commanderUuid, attached subsequent commander-less
+  // units to that army only if their region matched. This relied on the
+  // file's storage order encoding stack membership — it doesn't on RIS
+  // imperial. ~36% of units (2002 of 5573 in athens_t22mid) fell through
+  // because their region didn't match the most-recent named-army region
+  // (a Roman garrison sitting in Roma after a Frentania field army record
+  // was stored ahead of it would get DROPPED). Stack markers `[ff…][0x15]
+  // [uuid]` were also looked for but don't appear in RIS-imperial saves.
+  //
+  // New approach: trust the unit record's own data. Each unit carries its
+  // own `commanderUuid` (or null for settlement garrison). Group by:
+  //   • commanderUuid != null  →  belongs to that army, full stop
+  //   • commanderUuid == null  →  the region's settlement garrison
+  // No sequential context. No region-match dance. Each unit ends up
+  // exactly where the engine wrote it.
+  //
+  // This loses the heuristic that "commander-less units after a named
+  // army in the same region might be that army's foot units" — but that
+  // heuristic was wrong as often as right (a 36% drop rate on RIS), and
+  // the real signal lives in the unit record's own commanderUuid byte.
   const unitsByCommander = new Map();
-  let currentCmd = null;
-  let currentRegion = null;
-  let prevOffset = 0;
-  for (const u of sortedUnits) {
-    const gap = u.offset - prevOffset;
-    if (gap > SECTION_GAP) { currentCmd = null; currentRegion = null; }
-    // A stack marker sitting between this unit and the previous one is an
-    // authoritative signal that the commander changed. A nonzero uuid
-    // opens a new named/captain stack; a zero uuid opens a commander-less
-    // stack (garrison).
-    const m = markerBefore(u.offset);
-    if (m && m.pos > prevOffset && m.pos < u.offset) {
-      if (m.uuid === 0) {
-        currentCmd = null;
-        currentRegion = null;
-      } else {
-        currentCmd = m.uuid;
-        currentRegion = u.region || null;
-        if (!unitsByCommander.has(currentCmd)) unitsByCommander.set(currentCmd, []);
-      }
-    }
+  for (const u of units) {
     if (u.commanderUuid) {
-      currentCmd = u.commanderUuid;
-      currentRegion = u.region || null;
-      if (!unitsByCommander.has(currentCmd)) unitsByCommander.set(currentCmd, []);
-      unitsByCommander.get(currentCmd).push(u);
-      u.inferredCmd = currentCmd;
-    } else if (currentCmd && u.region === currentRegion) {
-      unitsByCommander.get(currentCmd).push(u);
-      u.inferredCmd = currentCmd;
+      if (!unitsByCommander.has(u.commanderUuid)) unitsByCommander.set(u.commanderUuid, []);
+      unitsByCommander.get(u.commanderUuid).push(u);
+      u.inferredCmd = u.commanderUuid;
     }
-    // Region-mismatch units are skipped; we continue scanning so units
-    // of the bodyguard's region that come later still get picked up.
-    prevOffset = u.offset;
+    // Commander-less: no inferredCmd yet. The next pass attaches them to
+    // the most recent preceding general's stack IF the region matches —
+    // restoring the file-order foot-unit attribution. Without this pass,
+    // every cmd=0 foot unit (legions following a Roman general into
+    // enemy territory, garrison defenders inside an enemy-held city,
+    // etc.) ended up in the destination region's garrison list — even
+    // when they were clearly part of a named field army stored just
+    // ahead of them. Tested on save_rome1.sav: the player's invasion
+    // stack at Taras (Aulus + 13 roman foot) was pile-driving into the
+    // garrison panel, while the Tarentine defenders (Milon + 6 greek
+    // foot) were also in there — both stacks fully misattributed.
+    //
+    // The region-match guard is what makes this safe. The earlier
+    // sequential-grouping bug (~36% drop rate on athens_t22mid) was
+    // because the rule attached units to the most recent general WITHOUT
+    // checking region — so a Roma garrison stored after a Frentania
+    // field army got tagged as Frentania's. Requiring region equality
+    // pulls only ACTUAL stack members, leaves true settlement garrisons
+    // alone (their region differs from any general's region anyway, or
+    // there's no preceding general in their region).
+  }
+  // Pass 2: file-order foot-unit attribution.
+  //
+  // RTW writes each army's units contiguously in the save (bodyguard
+  // first, then foot). So the immediately-preceding cmd!=0 general in
+  // file order is almost always the foot's commander.
+  //
+  // Earlier rule required the general's region to MATCH the foot's
+  // region, on the theory that mismatched regions meant the foot were
+  // settlement defenders that just happened to be filed after a
+  // foreign-region general. In practice the opposite is more common:
+  // when a general's army moves mid-turn the engine updates his
+  // bodyguard's region tag immediately but the foot's region tag lags
+  // (or vice-versa), so a strict region match drops his real foot.
+  //
+  // Concrete case (save_rome4): user moves new general Marcus into Uria
+  // and "grabs" Aulus's army, then moves the merged stack to siege
+  // Brundisium. Save state at the moment: Marcus's bodyguard tagged
+  // Metapontion, his 13 foot still tagged Taras (Aulus's old region).
+  // File order has Marcus's bodyguard immediately before the 13 foot —
+  // they ARE his army — but the strict region-match rule rejected
+  // them, leaving Marcus's army showing 1 unit and the foot stuck as
+  // orphan settlement defenders.
+  //
+  // New rule: attach foot to the immediately preceding general by file
+  // order, full stop. Trade-off: if the engine ever stores a true
+  // settlement garrison RIGHT AFTER an unrelated general's record, the
+  // garrison would mis-attribute. In practice that ordering is rare —
+  // RTW groups units by army and settlements by city.
+  {
+    const ordered = units.slice().sort((a, b) => a.offset - b.offset);
+    let lastCmd = null;
+    for (const u of ordered) {
+      if (u.commanderUuid) {
+        lastCmd = u.commanderUuid;
+        continue;
+      }
+      if (!lastCmd) continue;
+      // Skip naval units — they're anonymous fleets handled by the
+      // navy-synthesis pass below (each cluster grouped by army_uuid
+      // from u32(i-20) → type-4 position record). Without this skip the
+      // file-order rule swept naval biremes into the nearest land
+      // general's stack (user reported a "24" naval bireme showing
+      // inside Aulus's garrison). Both the unit name prefix and the
+      // "the sea" region uniquely identify naval units in RTW saves.
+      if (/^naval\b/i.test(u.name || "") || u.region === "the sea") continue;
+      u.inferredCmd = lastCmd;
+      const list = unitsByCommander.get(lastCmd);
+      if (list) list.push(u);
+    }
   }
   // Build unitsByRegion here, AFTER every unit's inferredCmd has been set,
   // so the payload going to the renderer carries accurate stack linkage.
@@ -681,6 +937,14 @@ function parseCharactersAndUnits(saveBuf) {
       maxSoldiers: u.maxSoldiers,
       commanderUuid: u.commanderUuid,
       inferredCmd: u.inferredCmd || null,
+      // Live XP / weapon / armour from the save (save-cracker session 10).
+      // Provincia's panel previously seeded these from descr_strat by
+      // unit-name FIFO match within region — that missed mid-campaign
+      // recruits, multi-recruit name collisions, and just-fought units
+      // that gained chevrons. Now they come from the actual unit record.
+      xp: u.xp || 0,
+      weapon: u.weaponUpgrade || 0,
+      armour: u.armourUpgrade || 0,
     });
   }
   // Group characters who share the same army. A character links to an army
@@ -745,32 +1009,104 @@ function parseCharactersAndUnits(saveBuf) {
       const type = saveBuf.readUInt32LE(N - 12);
       if (type !== 6 && type !== 5 && type !== 4) continue;
       const x = saveBuf.readUInt32LE(N);
-      if (x < 0 || x > 200) continue;
+      // Bounds raised 2026-05-09 — see parseWorldObjectPositions above.
+      if (x < 0 || x > 1100) continue;
       const y = saveBuf.readUInt32LE(N + 4);
-      if (y < 0 || y > 150) continue;
+      if (y < 0 || y > 800) continue;
       const uuid = saveBuf.readUInt32LE(N - 8);
       if (!uuid) continue;
-      if (type === 6 || !m.has(uuid)) m.set(uuid, { x, y });
+      // Moved-this-turn flag — save-cracker session 4 CONFIRMED across two
+      // independent move-pair diffs. Bit 7 of the byte at N+9 (relative
+      // to the x coord) flips from 0 to 1 when the character moves
+      // this turn. Lets us mark armies "has moved" / "still has actions"
+      // without waiting for the next save snapshot.
+      const movedFlag = N + 9 < saveBuf.length ? (saveBuf[N + 9] & 0x80) !== 0 : false;
+      if (type === 6 || !m.has(uuid)) m.set(uuid, { x, y, moved: movedFlag });
     }
     return m;
   })();
+  // Index v1 characters by their commander UUID (secondaryUuid). On RIS
+  // imperial — where charsV2 is empty — this is the ONLY way to put a
+  // real name on an army. Without this, every one of the ~1100 RIS armies
+  // showed as "(unknown)" on the map, despite the v1 parser knowing each
+  // commander's name.
+  const v1CharByCmdUuid = new Map();
+  for (const c of characters) {
+    if (c.secondaryUuid) v1CharByCmdUuid.set(c.secondaryUuid, c);
+  }
+  // Faction-block markers: every faction's character/unit run in the save
+  // is preceded by a `captain_card_<faction>.tga` ASCII path. Each unit's
+  // file offset tells us which faction's block it sits in, and therefore
+  // which faction commands the army it's part of.
+  const factionMarkers = (function() {
+    const out = [];
+    const pattern = Buffer.from("captain_card_", "ascii");
+    let p = 0;
+    while ((p = saveBuf.indexOf(pattern, p)) !== -1) {
+      let end = p + pattern.length;
+      let factionName = "";
+      while (end < saveBuf.length && saveBuf[end] !== 0x2e /* . */) {
+        const b = saveBuf[end];
+        if (b < 0x20 || b > 0x7e) break;
+        factionName += String.fromCharCode(b);
+        end++;
+      }
+      if (factionName.length > 0 && factionName.length < 30) {
+        out.push({ pos: p, faction: factionName });
+      }
+      p += pattern.length;
+    }
+    out.sort((a, b) => a.pos - b.pos);
+    return out;
+  })();
+  // Binary search the most recent faction marker preceding `off`.
+  const factionAtOffset = (off) => {
+    let lo = 0, hi = factionMarkers.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (factionMarkers[mid].pos <= off) lo = mid + 1; else hi = mid;
+    }
+    return lo > 0 ? factionMarkers[lo - 1].faction : null;
+  };
+
   for (const [cmdUuid, armyUnits] of unitsByCommander) {
     const key = "U:" + cmdUuid;
     if (armyMap.has(key)) continue;
-    // No character matched this army. Try to infer position from uuid.
+    // First try a v1 character match — works on RIS imperial.
+    const v1 = v1CharByCmdUuid.get(cmdUuid);
     const pos = positions.get(cmdUuid);
-    if (!pos) continue;
+    if (!pos && !v1) continue;
     const bodyguard = armyUnits[0];
+    // Faction: prefer v1 char's parsed faction (TODO: parser doesn't tag
+    // v1 chars with faction yet), else look at the first unit's offset
+    // and read the captain_card faction marker preceding it. Falls back
+    // to the bodyguard's region's faction (resolveCurrentOwners), then
+    // "unknown".
+    const factionFromMarker = bodyguard?.offset != null ? factionAtOffset(bodyguard.offset) : null;
+    // Label fallback: when no v1 character attaches, label as a captain of
+    // the faction that owns the unit-block. Better than "(unknown)" — gives
+    // the user a real attribution when the character record isn't decoded.
+    const captainLabel = factionFromMarker
+      ? `${factionFromMarker.replace(/_/g, " ")} captain`
+      : "Captain";
     const leader = {
-      firstName: "(unknown)",
-      lastName: bodyguard?.region || null,
-      x: pos.x, y: pos.y,
-      faction: "unknown",
-      offset: null,
-      traitCount: 0,
-      traits: [],
+      firstName: v1?.firstName || captainLabel,
+      lastName: v1?.lastName || bodyguard?.region || null,
+      x: (pos?.x) ?? null,
+      y: (pos?.y) ?? null,
+      moved: !!(pos && pos.moved),
+      faction: factionFromMarker || "unknown",
+      offset: v1?.offset || null,
+      age: v1?.age,
+      gender: v1?.gender,
+      traitCount: v1?.traits?.length || 0,
+      traits: v1?.traits || [],
+      isLeader: v1?.isLeader || false,
+      isHeir: v1?.isHeir || false,
+      isDead: v1?.isDead || false,
       worldObjectUuid: cmdUuid,
       commanderUuid: cmdUuid,
+      primaryUuid: v1?.primaryUuid || null,
     };
     armyMap.set(key, { leader, passengers: [], units: armyUnits });
   }
@@ -785,6 +1121,11 @@ function parseCharactersAndUnits(saveBuf) {
       character: leader.lastName ? `${leader.firstName} ${leader.lastName}` : leader.firstName,
       firstName: leader.firstName,
       lastName: leader.lastName || null,
+      // Birth-record lastName, preserved when an epithet trait
+      // overrode lastName for display. Used by armiesToRender's match
+      // cascade so the log's birth-name MOVING_NORMAL events still
+      // pair with the save army.
+      originalLastName: leader.originalLastName || null,
       role: null,
       age: leader.age,
       birthYear: leader.birthYear,
@@ -793,6 +1134,17 @@ function parseCharactersAndUnits(saveBuf) {
       x: leader.x,
       y: leader.y,
       armyClass: isNavy ? "navy" : "field",
+      // Movement points remaining (raw f32 from the bodyguard unit's +4
+      // field). Save-cracker dossier 2026-05-10. The bodyguard's record
+      // mirrors the general's MP; we surface it on the army so hover
+      // tooltips can show "MP: 231.1" without an extra lookup.
+      movementPoints: bodyguard?.movementPoints ?? null,
+      // Has-moved-this-turn flag — bit 7 of the byte at character-position
+      // record +9. Decoded in save-cracker session 4, cross-validated in
+      // session 2 (one move pair + one no-move pair). Lets the hover
+      // tooltip show "has moved" / "still has actions" without waiting
+      // for a save reload.
+      moved: !!leader.moved,
       units: commandedUnits.map(u => ({
         name: u.name,
         soldiers: u.soldiers,
@@ -814,11 +1166,100 @@ function parseCharactersAndUnits(saveBuf) {
     });
   }
 
+  // Anonymous-fleet synthesis. Naval units in the save have commanderUuid=0
+  // (RTW stores fleets without binding them to a character via the unit
+  // record's commander field). They never enter unitsByCommander, so the
+  // main loop above skips them and they never become navy-class liveArmies.
+  // Now that unitParser exposes each naval unit's fleetUuid (read from 22
+  // bytes before nameLen — verified against save_rome10), group naval
+  // units by fleetUuid (with file-order inheritance for multi-ship fleets
+  // whose later ships don't repeat the army header) and synthesize one
+  // navy entry per fleet, positioned via the matching type-4 world-object
+  // position record.
+  {
+    const navalUnits = units.filter(u => /^naval\b/i.test(u.name || "")).sort((a, b) => a.offset - b.offset);
+    // File-order inheritance: each ship's fleetUuid carries forward to the
+    // next ship in the same fleet. Only ACCEPT a fleetUuid when it has a
+    // matching type-4 position record — the parser reads (i-20) which is
+    // garbage for second-ship records (the first ship has the army header,
+    // subsequent ships in the same fleet don't), so we'd otherwise reset
+    // lastFleet to garbage on the second ship.
+    let lastFleet = null;
+    const fleetGroups = new Map(); // fleetUuid → [units]
+    for (const u of navalUnits) {
+      if (u.fleetUuid && positions.has(u.fleetUuid)) lastFleet = u.fleetUuid;
+      if (!lastFleet) continue;
+      if (!fleetGroups.has(lastFleet)) fleetGroups.set(lastFleet, []);
+      fleetGroups.get(lastFleet).push(u);
+    }
+    for (const [fleetUuid, fleetUnits] of fleetGroups) {
+      const pos = positions.get(fleetUuid);
+      if (!pos) continue; // no type-4 record, skip
+      const bodyguard = fleetUnits[0];
+      const factionFromMarker = bodyguard?.offset != null ? factionAtOffset(bodyguard.offset) : null;
+      const factionLabel = factionFromMarker
+        ? `${factionFromMarker.replace(/_/g, " ")} fleet`
+        : "Fleet";
+      liveArmies.push({
+        faction: factionFromMarker || "unknown",
+        character: factionLabel,
+        firstName: factionLabel,
+        lastName: null,
+        originalLastName: null,
+        role: "admiral",
+        age: null,
+        birthYear: null,
+        gender: null,
+        traits: [],
+        x: pos.x,
+        y: pos.y,
+        armyClass: "navy",
+        units: fleetUnits.map(u => ({
+          name: u.name,
+          soldiers: u.soldiers,
+          maxSoldiers: u.maxSoldiers,
+          region: u.region || null,
+          exp: 0,
+        })),
+        passengers: [],
+        worldObjectUuid: fleetUuid,
+        commanderUuid: fleetUuid,
+        primaryUuid: null,
+      });
+    }
+  }
+
+  // Diagnostic for the navy regression. Counts at each pipeline stage —
+  // surfaced both to the main-process console (terminal launches) AND
+  // attached to the returned save data so the renderer can log it to F12
+  // devtools, which is what an installed-from-exe user actually sees.
+  const navyDiag = (() => {
+    const navalUnits = units.filter(u => /^naval\b/i.test(u.name || ""));
+    const navalUnitsWithCmd = navalUnits.filter(u => u.commanderUuid);
+    const allShipNames = units.filter(u => /(naval|trireme|bireme|liburn|warship|quinquer|fleet)/i.test(u.name || ""));
+    const navyArmies = liveArmies.filter(a => a.armyClass === "navy");
+    const sampleShipNames = [...new Set(allShipNames.map(u => u.name))].slice(0, 8);
+    const navalNoCmdSample = navalUnits.filter(u => !u.commanderUuid).slice(0, 5).map(u => ({ name: u.name, region: u.region }));
+    const out = {
+      totalUnits: units.length,
+      navalPrefix: navalUnits.length,
+      navalPrefixWithCmd: navalUnitsWithCmd.length,
+      shipKeywordNames: allShipNames.length,
+      liveArmiesTotal: liveArmies.length,
+      liveArmiesNavy: navyArmies.length,
+      sampleShipNames,
+      navalNoCmdSample,
+    };
+    console.log("[navy-diag]", out);
+    return out;
+  })();
+
   return {
     characters,
     units,
     charactersByRegion,
     unitsByRegion,
+    navyDiag,
     scriptedCharacters: charsV2,
     scriptedByFaction: v2ByFaction,
     liveArmies,
@@ -2660,6 +3101,153 @@ let logPollInterval = null;
 // marker encountered while processing message_log lines.
 let logPollTurnIdx = 1;
 
+// Track army merges so the leader's MOVING_NORMAL events propagate to
+// passengers (lesser generals stacked into the leader's army).
+//
+// In RTW: when general A walks onto general B's tile and the user accepts
+// the merge prompt, the engine emits a `transferring general(A:uuid) unit(uuid)
+// from army(A_army) to named general(B:uuid):army(B_army)` line. From that
+// point on the engine tracks the merged stack under B's army_uuid, and
+// future moves emit MOVING_NORMAL only for B (the leader). A's marker
+// goes dark — until the next save snapshot updates A's character record
+// with the new (x, y).
+//
+// Map: leaderCharUuid → array of { charUuid, name, faction } passengers.
+// Cleared on log-watch-start (new campaign / fresh attach).
+const armyPassengers = new Map();
+// Reverse map for fast "is this character a passenger?" lookup, used to
+// drop a stale passenger relationship when the same character later
+// becomes a passenger of someone else (or the leader of their own stack).
+const passengerToLeader = new Map();
+// Live unit-flow tracking. Each transfer event in the log either moves
+// ONE unit between armies (so its leader chars), or moves a general (with
+// their bodyguard unit) between armies. We track the cumulative count of
+// units that flowed from one leader to another, then send a snapshot to
+// the renderer so the field-army `byCmd` grouping can re-bucket save
+// units accordingly.
+//
+// Why count-based instead of identity-based: the engine's runtime memory
+// uuid for a unit (e.g. `8f4f1c10` in the log) has no mapping to a save
+// unit (save units are identified by file offset and don't carry a stable
+// uuid that matches the runtime pointer). So we can't say "unit X moved
+// from save's-Aulus-roster to save's-Marcus-roster" by identity. But we
+// CAN say "13 units moved from Aulus's leader-runtime to Marcus's
+// leader-runtime", which we then apply by donating 13 generic foot units
+// from save-Aulus's roster to save-Marcus's roster on the renderer.
+//
+// Structure: unitFlow[fromRuntimeCharUuid][toRuntimeCharUuid] = count
+const unitFlowFromTo = new Map();
+// Who leads each army at any given time. Updated on transfer events.
+// Needed to identify the donor character when a unit transfer says
+// "from army(A) to named general(Y):army(B)" — Y is explicit, but the
+// donor is whoever leads A.
+const armyLeaderByArmyUuid = new Map();
+function unitFlowAdd(from, to) {
+  if (!from || !to || from === to) return;
+  if (!unitFlowFromTo.has(from)) unitFlowFromTo.set(from, new Map());
+  const inner = unitFlowFromTo.get(from);
+  inner.set(to, (inner.get(to) || 0) + 1);
+}
+function unitFlowSnapshot() {
+  const out = [];
+  for (const [from, inner] of unitFlowFromTo) {
+    for (const [to, count] of inner) {
+      out.push({ from, to, count });
+    }
+  }
+  return out;
+}
+
+// Last seen army_uuid per character. Used to detect SPLITS: when a
+// character's MOVING_NORMAL event reports a different army_uuid than we
+// last saw, AND we already had passengers attached, it means they split
+// off into a new army WITHOUT bringing their passengers along (the
+// passengers stay in the old army at the split tile). Per save_rome10's
+// log, the BESIEGE-to-Brundisium event for Marcus comes BEFORE the
+// `transferring general(Marcus:X) ... to named general(Marcus:X):army(NEW)`
+// transfer line — so we can't wait for the self-transfer to fire to clear
+// the relationship; we have to read the new army_uuid off the move itself.
+const armyUuidByCharUuid = new Map();
+function setPassenger(leaderUuid, passengerUuid, passengerName, passengerFaction) {
+  if (!leaderUuid || !passengerUuid) return;
+  // Self-transfer (movedChar === toCommander) signals a SPLIT: the
+  // general is moving themselves into a new empty army. Adding them to
+  // their own passenger list would synthesize duplicate move events
+  // forever. Skip — the split-detection in detectAndApplySplit already
+  // cleared any prior passengers when the move event with the new
+  // army_uuid fired.
+  if (leaderUuid === passengerUuid) return;
+  // Remove the passenger from any prior leader's list.
+  const priorLeader = passengerToLeader.get(passengerUuid);
+  if (priorLeader && priorLeader !== leaderUuid) {
+    const priorList = armyPassengers.get(priorLeader);
+    if (priorList) {
+      const filtered = priorList.filter(p => p.charUuid !== passengerUuid);
+      if (filtered.length) armyPassengers.set(priorLeader, filtered);
+      else armyPassengers.delete(priorLeader);
+    }
+  }
+  if (!armyPassengers.has(leaderUuid)) armyPassengers.set(leaderUuid, []);
+  const list = armyPassengers.get(leaderUuid);
+  if (!list.some(p => p.charUuid === passengerUuid)) {
+    list.push({ charUuid: passengerUuid, name: passengerName, faction: passengerFaction });
+  }
+  passengerToLeader.set(passengerUuid, leaderUuid);
+}
+function clearPassengers() {
+  armyPassengers.clear();
+  passengerToLeader.clear();
+  armyUuidByCharUuid.clear();
+  unitFlowFromTo.clear();
+  armyLeaderByArmyUuid.clear();
+}
+// Called on every character_move BEFORE fanout. If the moving character's
+// army_uuid doesn't match the last seen value AND they have passengers,
+// they've split off — clear the passenger list so we don't drag the lesser
+// general(s) along to the new army's destination. Returns true if a split
+// was detected (caller can skip fanout entirely).
+function detectAndApplySplit(charUuid, newArmyUuid) {
+  if (!charUuid || !newArmyUuid) return false;
+  const prev = armyUuidByCharUuid.get(charUuid);
+  armyUuidByCharUuid.set(charUuid, newArmyUuid);
+  if (!prev || prev === newArmyUuid) return false;
+  const passengers = armyPassengers.get(charUuid);
+  if (!passengers || passengers.length === 0) return false;
+  for (const p of passengers) passengerToLeader.delete(p.charUuid);
+  armyPassengers.delete(charUuid);
+  return true;
+}
+
+// Handle a unit-transfer event for the flow tracker. Pass in the transfer's
+// fromArmyUuid, toArmyUuid, the named-general char uuid of the to-army
+// (recipient = explicit), and OPTIONALLY the runtime char uuid of the
+// general moving for general-transfer events. The donor is `armyLeader[from]`.
+function recordUnitTransfer(fromArmyUuid, toArmyUuid, recipientCharUuid, movingGeneralUuid) {
+  // Update leader tracking. When a general transfer fires, set the named
+  // general as the recipient army's leader (if no one's there yet) AND
+  // ensure the moving general was the from-army's leader (so we know
+  // who's donating). This handles both merge and split forms.
+  if (movingGeneralUuid && fromArmyUuid && !armyLeaderByArmyUuid.has(fromArmyUuid)) {
+    armyLeaderByArmyUuid.set(fromArmyUuid, movingGeneralUuid);
+  }
+  if (recipientCharUuid && toArmyUuid && !armyLeaderByArmyUuid.has(toArmyUuid)) {
+    armyLeaderByArmyUuid.set(toArmyUuid, recipientCharUuid);
+  }
+  const donor = fromArmyUuid ? armyLeaderByArmyUuid.get(fromArmyUuid) : null;
+  const recipient = recipientCharUuid || (toArmyUuid ? armyLeaderByArmyUuid.get(toArmyUuid) : null);
+  if (donor && recipient && donor !== recipient) unitFlowAdd(donor, recipient);
+  // Update leader-after-the-move logic for general-transfer events.
+  if (movingGeneralUuid) {
+    // If the moving general was the from-army's leader, then they're
+    // leaving an army that may now be empty (split, single-general case)
+    // OR still have passengers. We can't know without more state — leave
+    // armyLeader[from] alone; subsequent transfer events from the same
+    // army will re-confirm or update it via the recipient pattern.
+    // If self-transfer (moving=recipient), recipient is now the leader
+    // of the to-army (already set above).
+  }
+}
+
 ipcMain.handle("log-watch-start", async (_event, logDir) => {
   // Stop any existing watcher
   if (logPollInterval) { clearInterval(logPollInterval); logPollInterval = null; }
@@ -2675,6 +3263,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
 
   // Reset turn counter for this fresh watch cycle.
   logPollTurnIdx = 1;
+  // Clear passenger tracking from any prior watch cycle.
+  clearPassengers();
 
   // Clear any prior live-position state in the renderer before backfilling.
   // Otherwise stale entries from a previous campaign would mix with the new
@@ -2707,7 +3297,46 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
         const ev = parseLogLineV2(line);
         if (!ev) continue;
         if (ev.type === "character_move") {
+          // Detect split: if this move's army_uuid differs from what we
+          // had recorded, the character moved to a new army without
+          // their passengers. Clears the passenger list so the fanout
+          // below doesn't fire for ex-passengers.
+          detectAndApplySplit(ev.charUuid, ev.armyUuid);
           moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn });
+          // Propagate to passengers: the leader is the one emitting
+          // MOVING_NORMAL; lesser generals folded into this stack don't
+          // emit their own move event, so synthesize one per passenger.
+          const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
+          if (passengers) {
+            for (const p of passengers) {
+              moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn: backfillTurn });
+            }
+          }
+        } else if (ev.type === "general_transfer") {
+          // Empirically verified against save_rome10's message_log:
+          //   `transferring general(Marcus:...) unit(...) from army(A) to named general(Aulus:...):army(B)`
+          // After this, Aulus's uuid never appears in another event.
+          // Marcus emits BESIEGE for the merged stack's move to Uria.
+          // So in this transfer form: the MOVED general (X) is the
+          // active mover that keeps emitting MOVING_NORMAL, and the
+          // DESTINATION army's named general (Z) is the passive
+          // passenger whose marker would otherwise freeze. Don't read
+          // intent into Z (governor / faction leader / whatever) —
+          // just trust the log: Z stops emitting after the transfer,
+          // so we propagate X's moves to Z.
+          setPassenger(ev.movedCharUuid, ev.toCommanderUuid, ev.toCommanderName, null);
+          // Update the army-uuid tracking so the next MOVING_NORMAL for
+          // the moved general doesn't trigger split-detection (the move
+          // will use the destination army's uuid, which is the new
+          // expected value after a merge). Without this, the merge
+          // itself would look like a split — the very next move event's
+          // armyUuid differs from the pre-merge tracking value.
+          if (ev.movedCharUuid && ev.toArmyUuid) {
+            armyUuidByCharUuid.set(ev.movedCharUuid, ev.toArmyUuid);
+          }
+          recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, ev.movedCharUuid);
+        } else if (ev.type === "unit_transfer") {
+          recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
         } else if (ev.type === "fleeing") {
           moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn: backfillTurn });
         } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
@@ -2732,6 +3361,12 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
         }
         if (deaths.length > 0) win0.webContents.send("live-char-moves", { moves: [], deaths });
       }
+      // Send the unit-flow snapshot after backfill so the renderer can
+      // re-bucket save units in the field-army panel before the user
+      // interacts. Snapshot is the cumulative {from, to, count} flow built
+      // from every transfer event seen so far.
+      const flow = unitFlowSnapshot();
+      if (flow.length > 0) win0.webContents.send("live-char-moves", { moves: [], unitFlow: flow });
     }
   } catch (e) { console.warn("[log-watch] backfill failed:", e.message); }
 
@@ -2764,7 +3399,22 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
             if (!ev) continue;
             const turn = logPollTurnIdx;
             if (ev.type === "character_move") {
+              detectAndApplySplit(ev.charUuid, ev.armyUuid);
               moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn });
+              const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
+              if (passengers) {
+                for (const p of passengers) {
+                  moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn });
+                }
+              }
+            } else if (ev.type === "general_transfer") {
+              setPassenger(ev.movedCharUuid, ev.toCommanderUuid, ev.toCommanderName, null);
+              if (ev.movedCharUuid && ev.toArmyUuid) {
+                armyUuidByCharUuid.set(ev.movedCharUuid, ev.toArmyUuid);
+              }
+              recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, ev.movedCharUuid);
+            } else if (ev.type === "unit_transfer") {
+              recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
             } else if (ev.type === "fleeing") {
               moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn });
             } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
@@ -2773,13 +3423,27 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
               moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn });
             } else if (ev.type === "army_dead") {
               deaths.push({ name: ev.commanderName, faction: ev.faction, turn });
-            } else if ((ev.type === "char_death" || ev.type === "char_dying") && !ev.alive) {
-              deaths.push({ name: ev.name, faction: ev.faction, turn });
+            } else if (ev.type === "char_death" || ev.type === "char_dying") {
+              // Treat DYING events as "remove from map" regardless of
+              // the death_type flag. DET_ALIVE means the character
+              // survived (e.g. captured / exiled rather than killed),
+              // but their army was destroyed and they no longer hold a
+              // map position — exactly the case the user hit when
+              // capturing Brundisium and seeing Titus's marker linger
+              // (DET_ALIVE was being filtered out, so the marker stuck
+              // until the next save snapshot dropped him).
+              deaths.push({ name: ev.name, faction: ev.faction, charUuid: ev.charUuid, turn });
             } else if (ev.type === "character_deleted") {
               deaths.push({ charUuid: ev.charUuid, turn });
             }
           }
-          if (moves.length > 0 || deaths.length > 0) win.webContents.send("live-char-moves", { moves, deaths });
+          // Always include the latest unit-flow snapshot alongside any
+          // move/death batch — it's small and lets the renderer re-bucket
+          // units on every live event.
+          const flow = unitFlowSnapshot();
+          if (moves.length > 0 || deaths.length > 0 || flow.length > 0) {
+            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow });
+          }
         }
       } else if (stat.size < logOffset) {
         // File was truncated (new campaign started) — reset and notify
@@ -2892,12 +3556,20 @@ function readUtf16Name(data, pos, len) {
   return { name: decoded, end: strEnd + 2 };
 }
 
-function parseSaveData(filePath) {
-  const data = fs.readFileSync(filePath);
+async function parseSaveData(filePath, onProgress, providedBuf = null) {
+  const _yieldHere = () => new Promise(resolve => setImmediate(resolve));
+  const tick = (stage) => { if (onProgress) onProgress({ stage }); };
+  // Reuse a buffer the caller already has in hand instead of re-reading
+  // the file from disk. On a 30MB save that's ~100-300ms saved per
+  // parse — both reparseLatestSave and saveWatchStart had already read
+  // the file before calling this, so the duplicate read was pure waste.
+  const data = providedBuf || fs.readFileSync(filePath);
   const len = data.length;
 
   // ── 1. Parse building records ──
   // Format: [uint16LE nameLen] [ascii name] [\0] [4-byte hash] [uint32LE level]
+  tick("Scanning building records");
+  await _yieldHere();
   const buildingRecords = [];
   let pos = 0;
   while (pos < len - 10) {
@@ -2933,6 +3605,8 @@ function parseSaveData(filePath) {
   }
 
   // ── 2. Find settlement names (UTF-16LE, preceded by \x01 [nchars] \x00) ──
+  tick("Scanning settlement markers");
+  await _yieldHere();
   const settlements = [];
   for (let i = 0; i < len - 10; i++) {
     if (data[i] === 0x01) {
@@ -2942,26 +3616,33 @@ function parseSaveData(filePath) {
   }
 
   // ── 3. Associate buildings with nearest preceding settlement (within 3000 bytes) ──
+  // Both buildingRecords and settlements were collected via sequential
+  // byte-order scans, so they're already sorted by offset. Two-pointer
+  // walk: O(N + M) instead of the original O(N × M) double loop, which
+  // was ~39M iterations on a typical 30MB save (30k buildings × 1.3k
+  // settlements). Saves several hundred ms on every save parse.
+  tick("Linking buildings to settlements");
+  await _yieldHere();
   const buildingsByCity = {};
+  let sIdx = -1; // index of last settlement whose offset <= current building
   for (const b of buildingRecords) {
-    let bestName = null, bestDist = Infinity;
-    for (const s of settlements) {
-      const dist = b.offset - s.offset;
-      if (dist > 0 && dist < 3000 && dist < bestDist) {
-        bestDist = dist;
-        bestName = s.name;
-      }
+    while (sIdx + 1 < settlements.length && settlements[sIdx + 1].offset <= b.offset) {
+      sIdx++;
     }
-    if (bestName) {
-      if (!buildingsByCity[bestName]) buildingsByCity[bestName] = {};
-      buildingsByCity[bestName][b.name] = { level: b.level, health: b.health };
-    }
+    if (sIdx < 0) continue;
+    const s = settlements[sIdx];
+    const dist = b.offset - s.offset;
+    if (dist <= 0 || dist >= 3000) continue;
+    if (!buildingsByCity[s.name]) buildingsByCity[s.name] = {};
+    buildingsByCity[s.name][b.name] = { level: b.level, health: b.health };
   }
 
   // ── 4. Parse unit/army records ──
   // Format: [\x01\x00] [uint16LE nameLen] [ascii unit name with spaces] [\0]
   //         [bytes...] [uint8 regionLen] [\x00] [UTF-16LE region] [\xff\xff\xff\xff]
   //         [4 bytes] [4 bytes float] [uint32 soldiers] [uint32 maxSoldiers]
+  tick("Scanning unit records");
+  await _yieldHere();
   const unitRecords = [];
   pos = 0;
   while (pos < len - 20) {
@@ -3041,6 +3722,8 @@ function parseSaveData(filePath) {
   }
 
   // ── 5. Group units by region ──
+  tick("Grouping units by region");
+  await _yieldHere();
   const armies = {};
   for (const u of unitRecords) {
     if (!armies[u.region]) armies[u.region] = [];
@@ -3100,7 +3783,250 @@ function parseSaveData(filePath) {
     if (queue.length > 0) queues[s.name] = queue;
   }
 
-  return { buildings: buildingsByCity, armies, queues };
+  // ── 7. Parse per-settlement tax level ──
+  // Confirmed empirically against RIS imperial-campaign Sparta saves
+  // (save_2.0/2.1/2.2 with all settlements set to high/very_high/low):
+  // the tax byte sits at exactly  settlement_name_offset - 2269  bytes
+  // (where settlement.offset is the `\x01` marker — the UTF-16LE string
+  // starts 3 bytes later and the tax byte sits 2272 bytes before that
+  // string start). Enum: 0=low, 1=normal (default), 2=high, 3=very_high.
+  // Validated across 3 cities × 3 enum values = 9 distinct measurements,
+  // identical offset every time.
+  const TAX_OFFSET = 2269; // bytes BEFORE settlement.offset (the \x01 marker)
+  const TAX_LEVELS = ["low", "normal", "high", "very_high"];
+  let taxByCity = null;
+  // Defensive: gate by header campaign-name. Formula was only verified on
+  // RIS imperial campaign saves (magic 0x070a, campaign "imperial_campaign").
+  // Wrapped in try/catch so any header anomaly silently skips tax parsing
+  // rather than aborting the whole snapshot — avoids a half-parsed state
+  // that could surface as a UI hang on the renderer side.
+  try {
+    const campaignLen = data.length >= 0x40 ? data.readUInt16LE(0x3a) : 0;
+    let campaignName = "";
+    if (campaignLen > 0 && campaignLen < 64 && 0x3c + campaignLen * 2 <= data.length) {
+      for (let i = 0; i < campaignLen; i++) {
+        const c = data.readUInt16LE(0x3c + i * 2);
+        if (c >= 0x20 && c <= 0x7e) campaignName += String.fromCharCode(c);
+      }
+    }
+    if (campaignName === "imperial_campaign" || campaignName === "ris_classic") {
+      taxByCity = {};
+      for (const s of settlements) {
+        const off = s.offset - TAX_OFFSET;
+        if (off < 0 || off >= len) continue;
+        const v = data[off];
+        if (v >= 0 && v <= 3) taxByCity[s.name] = TAX_LEVELS[v];
+      }
+    }
+  } catch (err) {
+    console.warn("[tax] parsing failed, skipping:", err && err.message);
+    taxByCity = null;
+  }
+
+  // Settlement per-turn income u32 (and cumulative income u32) — sit at
+  // tax_byte + 683 and tax_byte + 687 respectively. Per the save-cracker
+  // session-3 byte-map: STRONG-confidence, single clean correlation
+  // (Rome=902 d/turn dropping to 860 next turn; Sparta=444). Verified on
+  // save_rome10: Capua=400, Brundisium=266, Uria=133. Same campaign-name
+  // gate as the other settlement fields.
+  let incomeByCity = null;
+  // Settlement size class enum u8 at tax_byte + 62. CONFIRMED: 0=village,
+  // 1=town, 2=large_town, 3=city, 4=large_city, 5=huge_city. Matches
+  // descr_strat (Rome=4, Sparta=2). Live value reflects current upgrade
+  // tier — useful when the user has upgraded mid-campaign.
+  let sizeByCity = null;
+  try {
+    const campaignLen = data.length >= 0x40 ? data.readUInt16LE(0x3a) : 0;
+    let campaignName = "";
+    if (campaignLen > 0 && campaignLen < 64 && 0x3c + campaignLen * 2 <= data.length) {
+      for (let i = 0; i < campaignLen; i++) {
+        const c = data.readUInt16LE(0x3c + i * 2);
+        if (c >= 0x20 && c <= 0x7e) campaignName += String.fromCharCode(c);
+      }
+    }
+    if (campaignName === "imperial_campaign" || campaignName === "ris_classic") {
+      incomeByCity = {};
+      sizeByCity = {};
+      const SIZE_LABELS = ["village", "town", "large_town", "city", "large_city", "huge_city"];
+      for (const s of settlements) {
+        const taxOff = s.offset - TAX_OFFSET;
+        if (taxOff < 0) continue;
+        if (taxOff + 687 + 4 <= data.length) {
+          const perTurn = data.readUInt32LE(taxOff + 683);
+          const cumulative = data.readUInt32LE(taxOff + 687);
+          // Sanity: RTW settlement income is bounded — 0..50000/turn is
+          // reasonable, cumulative up to a few million. Out of range
+          // means the offset drifted or the slot is uninitialised.
+          if (perTurn <= 50000 && cumulative <= 10_000_000) {
+            incomeByCity[s.name] = { perTurn, cumulative };
+          }
+        }
+        if (taxOff + 62 < data.length) {
+          const v = data[taxOff + 62];
+          if (v >= 0 && v <= 5) sizeByCity[s.name] = SIZE_LABELS[v];
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[income/size] parsing failed, skipping:", err && err.message);
+    incomeByCity = null;
+    sizeByCity = null;
+  }
+
+  // Settlement live population u32 — sits at tax_byte + 775 (so
+  // settlement.offset - 1494 with TAX_OFFSET=2269). Cross-validated by the
+  // save-cracker (session 2): 18/18 across Sparta tax saves match the
+  // descr_strat starting pops (3500/1800/1400), and Roma's 9000-pop
+  // independently lines up in the Roman saves. Same campaign-name gate
+  // as tax. A SECOND pop-shaped u32 lives at tax_byte + 2235 (= settlement
+  // .offset - 34) that mostly mirrors the first but diverges at turn
+  // boundaries — likely "tax-eligible pop" or a pre-turn snapshot; not
+  // surfaced here.
+  let populationByCity = null;
+  try {
+    const campaignLen = data.length >= 0x40 ? data.readUInt16LE(0x3a) : 0;
+    let campaignName = "";
+    if (campaignLen > 0 && campaignLen < 64 && 0x3c + campaignLen * 2 <= data.length) {
+      for (let i = 0; i < campaignLen; i++) {
+        const c = data.readUInt16LE(0x3c + i * 2);
+        if (c >= 0x20 && c <= 0x7e) campaignName += String.fromCharCode(c);
+      }
+    }
+    if (campaignName === "imperial_campaign" || campaignName === "ris_classic") {
+      populationByCity = {};
+      for (const s of settlements) {
+        const off = s.offset - 1494;
+        if (off < 0 || off + 4 > data.length) continue;
+        const v = data.readUInt32LE(off);
+        // Sanity: settlement pop in RTW ranges 400 (village) to 60000
+        // (megalopolis). Clip out-of-range to detect record-layout drift.
+        if (Number.isFinite(v) && v >= 100 && v <= 100000) {
+          populationByCity[s.name] = v;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[pop] parsing failed, skipping:", err && err.message);
+    populationByCity = null;
+  }
+
+  // Settlement happiness / public-order f32 — sits at tax_byte + 2239 (so
+  // 30 bytes BEFORE the settlement marker on the RIS imperial-campaign
+  // layout, since tax_byte = settlement.offset - 2269 and happiness =
+  // tax_byte + 2239 = settlement.offset - 30). Triple-validated by the
+  // save-cracker against the Sparta tax-triple — the ONLY byte in any
+  // settlement record that changes between tax levels. Empirical range
+  // observed: 105..195 with a -25-per-tax-level slope. Engine likely
+  // clips this to a 0-100% bar on display, but the raw value is what
+  // surfaces here. Wrapped in the same campaign-name gate as the tax
+  // parsing because the offset was only verified on imperial-campaign.
+  let happinessByCity = null;
+  try {
+    const campaignLen = data.length >= 0x40 ? data.readUInt16LE(0x3a) : 0;
+    let campaignName = "";
+    if (campaignLen > 0 && campaignLen < 64 && 0x3c + campaignLen * 2 <= data.length) {
+      for (let i = 0; i < campaignLen; i++) {
+        const c = data.readUInt16LE(0x3c + i * 2);
+        if (c >= 0x20 && c <= 0x7e) campaignName += String.fromCharCode(c);
+      }
+    }
+    if (campaignName === "imperial_campaign" || campaignName === "ris_classic") {
+      happinessByCity = {};
+      for (const s of settlements) {
+        const off = s.offset - 30;
+        if (off < 0 || off + 4 > data.length) continue;
+        const v = data.readFloatLE(off);
+        // Sanity: clip to plausible range. Out-of-range means the offset
+        // didn't land where we expected (settlement layout drift between
+        // engine versions). Skip rather than show garbage.
+        if (Number.isFinite(v) && v >= 0 && v <= 500) {
+          happinessByCity[s.name] = v;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[happiness] parsing failed, skipping:", err && err.message);
+    happinessByCity = null;
+  }
+
+  // ── New magic-based decoders (added 2026-05-09 via rtw-sav-parser cracking) ──
+  // Faction record array: 239 records starting with `ff 0a af f0` magic.
+  // Lua persistent counters: named u32 values (turn_number, id_<faction>, etc.).
+  let factionRecords = null;
+  let luaCounters = null;
+  try {
+    const fr = findFactionRecords(data);
+    factionRecords = {
+      count: fr.length,
+      arraySpan: summarizeFactionArray(fr),
+      records: fr,
+    };
+  } catch (err) { console.warn("[faction-records] parse failed:", err && err.message); }
+  try {
+    const recs = findLuaCounters(data);
+    luaCounters = {
+      count: recs.length,
+      records: recs,
+      byName: Object.fromEntries(recs.map(r => [r.name, r.value])),
+    };
+  } catch (err) { console.warn("[lua-counters] parse failed:", err && err.message); }
+
+  // Per-faction current treasury (denarii) — CONFIRMED by save-cracker
+  // session 5. Major-faction records sit in a flat 23-entry array. Each
+  // record has a structural signature:
+  //   +0   u32  treasury (signed for bankruptcy)
+  //   +8   u32  == 100  (MAJOR-CLASS tag)
+  //   +12  u32  == 1    (version)
+  //   +24  u32  == self_offset+24
+  //   +40  u32  == self_offset+40
+  //   +44  u32  == 6
+  //   +48  u32  region count N
+  //   +(92+4N) u32 start-of-turn treasury snapshot
+  // Player is always at index 0; remaining 22 follow descr_strat order
+  // with player slot removed. RIS imperial campaign only — gated by
+  // campaign-name header check (same as tax/income/pop fields).
+  let treasuryByFaction = null;
+  try {
+    const campaignLen = data.length >= 0x40 ? data.readUInt16LE(0x3a) : 0;
+    let campaignName = "";
+    if (campaignLen > 0 && campaignLen < 64 && 0x3c + campaignLen * 2 <= data.length) {
+      for (let i = 0; i < campaignLen; i++) {
+        const c = data.readUInt16LE(0x3c + i * 2);
+        if (c >= 0x20 && c <= 0x7e) campaignName += String.fromCharCode(c);
+      }
+    }
+    if (campaignName === "imperial_campaign") {
+      // Scan for the structural signature.
+      const records = [];
+      for (let i = 0; i + 64 < data.length; i += 1) {
+        if (data.readUInt32LE(i + 8) !== 100) continue;
+        if (data.readUInt32LE(i + 12) !== 1) continue;
+        if (data.readUInt32LE(i + 16) !== 0 || data.readUInt32LE(i + 20) !== 0) continue;
+        if (data.readUInt32LE(i + 24) !== i + 24) continue;
+        if (data.readUInt32LE(i + 32) !== 0 || data.readUInt32LE(i + 36) !== 0) continue;
+        if (data.readUInt32LE(i + 40) !== i + 40) continue;
+        if (data.readUInt32LE(i + 44) !== 6) continue;
+        const regions = data.readUInt32LE(i + 48);
+        if (regions > 200) continue;
+        const treasury = data.readInt32LE(i);
+        const turnStartOff = i + 92 + 4 * regions;
+        const turnStart = turnStartOff + 4 <= data.length ? data.readInt32LE(turnStartOff) : null;
+        records.push({ pos: i, treasury, turnStart, regionCount: regions });
+        // Skip ahead by the record's known minimum span to avoid double
+        // matching inside the same record.
+        i = Math.min(data.length - 64, i + 92 + 4 * regions);
+      }
+      // Return raw records keyed by scan index — the renderer joins them
+      // to faction names using the player-faction state (which lives on
+      // that side) and the RIS imperial major-faction descr_strat order.
+      treasuryByFaction = { records };
+    }
+  } catch (err) {
+    console.warn("[treasury] parsing failed, skipping:", err && err.message);
+    treasuryByFaction = null;
+  }
+
+  return { buildings: buildingsByCity, armies, queues, taxByCity, happinessByCity, populationByCity, incomeByCity, sizeByCity, factionRecords, luaCounters, treasuryByFaction };
 }
 
 function diffSaveData(prev, curr) {
@@ -3184,16 +4110,34 @@ function diffSaveData(prev, curr) {
 let lastSaveData = null;
 let lastSaveFile = null;
 let lastSaveMtime = 0;
+// Cache the save buffer between parses so characters-init (which fires
+// after mod data loads) doesn't read the same 30MB file from disk a
+// second time. Invalidated whenever a new save replaces lastSaveFile.
+let lastSaveBuf = null;
 let activeSaveDir = null;
 let activePinnedSave = null; // exact filename the user chose to track, or null = latest-by-mtime
 let saveDirWatcher = null;
 let saveDebounceTimer = null;
 
+// "Turn N End" autosaves carry the state at end-of-player-turn — but RTW
+// writes a "Turn N+1 Start" autosave moments later that supersedes it (it's
+// the same state plus AI moves). User feedback 2026-05-10: don't auto-load
+// both, just take the freshest. Skip End autosaves in auto-detection paths
+// (keep them in the picker for manual selection though). Pattern matches:
+//   save_Autosave Republic of Rome Turn 5 End.sav   ← skip
+//   save_Autosave Republic of Rome Turn 5.sav       ← keep (no End suffix)
+//   save_Autosave Republic of Rome Turn 5 Start.sav ← keep
+//   save_rome10.sav                                 ← keep (manual)
+function isEndAutosave(filename) {
+  return /\bAutosave\b.*\bTurn\s+\d+\s+End\b/i.test(filename);
+}
+
 // Return the most recently modified .sav in saveDir. Includes autosaves AND manual
-// saves so mid-turn manual saves also trigger live updates.
+// saves so mid-turn manual saves also trigger live updates. Skips End-suffixed
+// autosaves so the freshly-written "Turn N+1 Start" wins on a tie.
 function findLatestSave(saveDir) {
   try {
-    const files = fs.readdirSync(saveDir).filter(f => f.endsWith(".sav"));
+    const files = fs.readdirSync(saveDir).filter(f => f.endsWith(".sav") && !isEndAutosave(f));
     if (!files.length) return null;
     let latest = null, latestTime = 0;
     for (const f of files) {
@@ -3227,10 +4171,11 @@ ipcMain.handle("list-saves", (_event, saveDir) => {
 
 // IPC: return { file, mtime } for the newest .sav in saveDir, or null. Used
 // by the renderer's auto-detect logic to rank candidate campaign folders.
+// Skips End autosaves — see findLatestSave above for rationale.
 ipcMain.handle("get-latest-save-mtime", (_event, saveDir) => {
   if (!saveDir) return null;
   try {
-    const files = fs.readdirSync(saveDir).filter(f => f.endsWith(".sav"));
+    const files = fs.readdirSync(saveDir).filter(f => f.endsWith(".sav") && !isEndAutosave(f));
     if (!files.length) return null;
     let latest = null, latestTime = 0;
     for (const f of files) {
@@ -3243,12 +4188,25 @@ ipcMain.handle("get-latest-save-mtime", (_event, saveDir) => {
   } catch { return null; }
 });
 
-// Parse the latest save in activeSaveDir, diff against last, emit events + snapshot.
-// Shared between log-triggered check and fs.watch-triggered auto-reparse.
-function reparseLatestSave() {
+// Single-flight + tail-coalescing lock for reparses. fs.watch fires bursts
+// during multi-MB save writes — even with a 1.5s debounce, a second event
+// can arrive while a 5s parse is still running. The previous version
+// (0.9.213) just dropped the second event; that left the renderer showing
+// stale data after a turn-end save. Now we mark a pending-reparse flag
+// and run one more pass when the current one finishes.
+let _reparsing = false;
+let _reparsePending = false;
+
+async function reparseLatestSave() {
   if (!activeSaveDir) return;
+  if (_reparsing) {
+    _reparsePending = true;
+    console.log("[save-watch] queued (reparse already in progress)");
+    return;
+  }
+  _reparsing = true;
   const win = BrowserWindow.getAllWindows()[0];
-  if (!win) return;
+  if (!win) { _reparsing = false; return; }
   // Pinned save wins: user explicitly chose a specific file to follow.
   // Otherwise fall back to the newest .sav in the directory.
   const latestFile = activePinnedSave || findLatestSave(activeSaveDir);
@@ -3261,45 +4219,153 @@ function reparseLatestSave() {
     lastSaveMtime = stat.mtimeMs;
   } catch { return; }
   try {
+    emitSaveProgress("Reading save file", 5);
+    await _yield();
     const saveBuf = fs.readFileSync(full);
-    const newData = parseSaveData(full);
+    lastSaveBuf = saveBuf;
+
+    // Kick off v1 character scan AND building scan in parallel workers
+    // before parseSaveData. Three heavy passes overlap on three cores
+    // instead of running sequentially. Each worker falls back to the
+    // synchronous path if it fails or if its required mod data is
+    // unavailable.
+    const charsP = (modNameLookup && modTraitNames)
+      ? findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
+          console.warn("[save-watch] chars worker failed, falling back to sync:", e.message);
+          return null;
+        })
+      : Promise.resolve(null);
+    const buildingsP = parseBuildingsInWorker(saveBuf).catch((e) => {
+      console.warn("[save-watch] buildings worker failed, falling back to sync:", e.message);
+      return null;
+    });
+
+    const newData = await parseSaveData(full, ({ stage }) => emitSaveProgress(stage, 30), saveBuf);
     if (lastSaveData) {
       const events = diffSaveData(lastSaveData, newData);
       if (events.length > 0) win.webContents.send("save-events", { file: latestFile, events });
     }
-    // Attach character + unit info if mod data is loaded
-    const extras = parseCharactersAndUnits(saveBuf);
+
+    emitSaveProgress("Parsing characters & armies", 50);
+    await _yield();
+    const precomputedChars = await charsP;
+    const extras = parseCharactersAndUnits(saveBuf, precomputedChars);
     if (extras) {
       newData.charactersByRegion = extras.charactersByRegion;
       newData.unitsByRegion = extras.unitsByRegion;
       newData.characterCount = extras.characters.length;
       newData.unitCount = extras.units.length;
-      // v2 parser output: reliable scripted-character data keyed by faction,
-      // current year/turn for age display.
       newData.scriptedByFaction = extras.scriptedByFaction;
       newData.currentYear = extras.currentYear;
       newData.currentTurn = extras.currentTurn;
       newData.liveArmies = extras.liveArmies;
     }
-    // Attach settlement-built-buildings via the inverted block parser.
-    // Overwrites the old heuristic buildings with a reliable list.
+
+    emitSaveProgress("Parsing built buildings", 80);
+    await _yield();
     try {
-      const bRes = parseSettlementBuildings(saveBuf);
+      // Worker is almost certainly done by now (it ran in parallel
+      // with parseSaveData + chars worker). Falls back to sync if it
+      // failed.
+      const bRes = (await buildingsP) || parseSettlementBuildings(saveBuf);
       newData.builtBuildingsByCity = bRes.buildingsByCity;
       newData.queuedBuildingsByCity = bRes.queuedByCity;
     } catch (e) { console.warn("[save-watch] building parse failed:", e.message); }
-    // Attach the starting-ownership map (turn-0 ground truth from descr_strat).
+
     if (modInitialOwnerByCity) newData.initialOwnerByCity = modInitialOwnerByCity;
-    // Resolve CURRENT ownership from the save by reading the per-settlement
-    // owner UUID. Uses descr_strat as ground truth to build UUID→faction dict.
     if (modInitialOwnerByCity) {
+      emitSaveProgress("Resolving settlement ownership", 90);
+      await _yield();
       try {
         const cur = resolveCurrentOwners(saveBuf, modInitialOwnerByCity);
         newData.currentOwnerByCity = cur.ownerByCity;
         newData.ownerOffset = cur.detectedOffset;
         if (cur.error) console.warn("[save-watch] owner resolve:", cur.error);
       } catch (e) { console.warn("[save-watch] owner resolve failed:", e.message); }
+      // Settlement governors (governor field at marker - 1940). Cross-reference
+      // each uuid against the v1 character pool we already parsed.
+      try {
+        const setts = findAllSettlementMarkers(saveBuf);
+        const govByCity = findSettlementGovernors(saveBuf, setts);
+        const charByUuid = new Map();
+        for (const c of (extras?.characters || [])) {
+          if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c);
+          if (c.primaryUuid && c.primaryUuid !== 0xffffffff) charByUuid.set(c.primaryUuid, c);
+        }
+        const resolved = {};
+        for (const [city, uuid] of Object.entries(govByCity)) {
+          const c = charByUuid.get(uuid);
+          if (c) {
+            resolved[city] = {
+              firstName: c.firstName,
+              lastName: c.lastName || null,
+              age: c.age,
+              gender: c.gender,
+              isLeader: c.isLeader,
+              isHeir: c.isHeir,
+              traitCount: c.traits?.length || 0,
+              uuid,
+            };
+          } else {
+            resolved[city] = { uuid, unresolved: true };
+          }
+        }
+        newData.governorByCity = resolved;
+      } catch (e) { console.warn("[save-watch] governor resolve failed:", e.message); }
+      // Re-attribute army factions using the region's current owner.
+      // The captain_card_<faction>.tga marker fallback in parseCharacters
+      // AndUnits gets EVERY rebel-faction army wrong: rebels (Picentes,
+      // Salentinians, etc.) don't have captain_card markers, so the most-
+      // recent marker before their unit block is some unrelated faction.
+      // The region's CURRENT owner (from currentOwnerByCity) is the
+      // authoritative answer for an army standing in its own territory.
+      try {
+        const own = newData.currentOwnerByCity || {};
+        // region → city → owner. modRegionToCity bridges from the save's
+        // region-tagged unit records to the city-keyed currentOwnerByCity.
+        if (newData.liveArmies && Object.keys(own).length > 0) {
+          // Build a fast lookup: governor uuid → city's owner. The
+          // captain_card_<faction>.tga marker fallback misattributes
+          // some governors (verified: Tarentum's Greek general gets
+          // marker captain_card_syracuse.tga but his governing faction
+          // is `taras`). When a v1 character IS a settlement governor,
+          // their faction should match the settlement owner regardless
+          // of which captain_card marker happens to precede them.
+          const governorOwnerByUuid = new Map();
+          if (newData.governorByCity) {
+            for (const [city, g] of Object.entries(newData.governorByCity)) {
+              if (!g || !g.uuid) continue;
+              const o = own[city];
+              if (o) governorOwnerByUuid.set(g.uuid, o);
+            }
+          }
+          for (const army of newData.liveArmies) {
+            // Re-attribute when the army's commander is a settlement
+            // governor — overrides the captain_card marker which can
+            // mis-attribute (e.g. the Tarentum governor's record
+            // happens to be preceded by `captain_card_syracuse.tga`
+            // but the governor's actual faction is `taras`).
+            const cmd = army.commanderUuid;
+            if (cmd && governorOwnerByUuid.has(cmd)) {
+              army.faction = governorOwnerByUuid.get(cmd);
+              continue;
+            }
+            // Existing rule for the OTHER case: identified v1
+            // characters have traits parsed from their record; their
+            // captain_card-derived faction is generally accurate for
+            // non-governor characters. Skip re-attribution to protect
+            // own-faction generals standing inside enemy territory.
+            if (army.traits && army.traits.length > 0) continue;
+            const region = army.units?.[0]?.region;
+            if (!region) continue;
+            const city = modRegionToCity?.[region];
+            const owner = (city && own[city]) || own[region];
+            if (owner) army.faction = owner;
+          }
+        }
+      } catch (e) { console.warn("[save-watch] army-faction re-attribution failed:", e.message); }
     }
+    emitSaveProgress("Done", 100);
     win.webContents.send("save-snapshot", { file: latestFile, data: newData });
     lastSaveData = newData;
     lastSaveFile = latestFile;
@@ -3307,7 +4373,28 @@ function reparseLatestSave() {
       extras ? `(chars=${extras.characters.length}, units=${extras.units.length})` : "(no char data yet)");
   } catch (e) {
     console.error("[save-watch] reparse error:", e.message);
+  } finally {
+    _reparsing = false;
+    if (_reparsePending) {
+      _reparsePending = false;
+      // Defer with setImmediate so the current call frame fully unwinds
+      // before the next reparse begins. Prevents recursion-style stack growth
+      // when many events queue up during a long parse.
+      setImmediate(() => { reparseLatestSave().catch(() => {}); });
+    }
   }
+}
+
+// Yield to the event loop so queued IPC sends actually flush to the
+// renderer between stages. Without this, the main process stays busy in a
+// synchronous parse and the user sees a frozen window for tens of seconds.
+const _yield = () => new Promise(resolve => setImmediate(resolve));
+
+// Emit a progress update to the renderer's loading banner. `stage` is a
+// short user-facing label; `pct` is 0..100 (integer or null).
+function emitSaveProgress(stage, pct) {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) win.webContents.send("save-progress", { stage, pct });
 }
 
 ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
@@ -3322,38 +4409,137 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
   if (latestFile) {
     try {
       const full = path.join(saveDir, latestFile);
-      lastSaveData = parseSaveData(full);
-      lastSaveFile = latestFile;
+      // Run the heavy parse in stages, yielding to the event loop between
+      // each one so the renderer's loading banner can actually update. Each
+      // stage emits a `save-progress` event with a human-readable label.
+      emitSaveProgress("Reading save file", 5);
+      await _yield();
+      const saveBuf = fs.readFileSync(full);
+      lastSaveBuf = saveBuf;
       try { lastSaveMtime = fs.statSync(full).mtimeMs; } catch {}
-      // Also attach character + unit data + built buildings to the initial
-      // snapshot if mod data is loaded. Read the save file once and share the
-      // buffer with the owner-resolve step below.
-      let saveBuf = null;
+
+      // Kick off v1 char scan + building scan in workers — they run
+      // parallel with parseSaveData on separate cores.
+      const charsP = (modNameLookup && modTraitNames)
+        ? findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
+            console.warn("[save-watch] initial chars worker failed, falling back:", e.message);
+            return null;
+          })
+        : Promise.resolve(null);
+      const buildingsP = parseBuildingsInWorker(saveBuf).catch((e) => {
+        console.warn("[save-watch] initial buildings worker failed, falling back:", e.message);
+        return null;
+      });
+
+      lastSaveData = await parseSaveData(full, ({ stage }) => emitSaveProgress(stage, 30), saveBuf);
+      lastSaveFile = latestFile;
+
+      emitSaveProgress("Parsing characters & armies", 50);
+      await _yield();
+      let initialExtras = null;
       try {
-        saveBuf = fs.readFileSync(full);
-        const extras = parseCharactersAndUnits(saveBuf);
-        if (extras) {
-          lastSaveData.charactersByRegion = extras.charactersByRegion;
-          lastSaveData.unitsByRegion = extras.unitsByRegion;
-          lastSaveData.characterCount = extras.characters.length;
-          lastSaveData.unitCount = extras.units.length;
-          lastSaveData.scriptedByFaction = extras.scriptedByFaction;
-          lastSaveData.currentYear = extras.currentYear;
-          lastSaveData.currentTurn = extras.currentTurn;
-          lastSaveData.liveArmies = extras.liveArmies;
+        const precomputedChars = await charsP;
+        initialExtras = parseCharactersAndUnits(saveBuf, precomputedChars);
+        if (initialExtras) {
+          lastSaveData.charactersByRegion = initialExtras.charactersByRegion;
+          lastSaveData.unitsByRegion = initialExtras.unitsByRegion;
+          lastSaveData.characterCount = initialExtras.characters.length;
+          lastSaveData.unitCount = initialExtras.units.length;
+          lastSaveData.scriptedByFaction = initialExtras.scriptedByFaction;
+          lastSaveData.currentYear = initialExtras.currentYear;
+          lastSaveData.currentTurn = initialExtras.currentTurn;
+          lastSaveData.liveArmies = initialExtras.liveArmies;
         }
-        const bRes = parseSettlementBuildings(saveBuf);
+      } catch (e) { console.warn("[save-watch] characters/units failed:", e.message); }
+
+      emitSaveProgress("Parsing built buildings", 80);
+      await _yield();
+      try {
+        const bRes = (await buildingsP) || parseSettlementBuildings(saveBuf);
         lastSaveData.builtBuildingsByCity = bRes.buildingsByCity;
         lastSaveData.queuedBuildingsByCity = bRes.queuedByCity;
-      } catch (e) { console.warn("[save-watch] extras failed:", e.message); }
+      } catch (e) { console.warn("[save-watch] settlement buildings failed:", e.message); }
+
       if (modInitialOwnerByCity && saveBuf) {
+        emitSaveProgress("Resolving settlement ownership", 90);
+        await _yield();
         lastSaveData.initialOwnerByCity = modInitialOwnerByCity;
         try {
           const cur = resolveCurrentOwners(saveBuf, modInitialOwnerByCity);
           lastSaveData.currentOwnerByCity = cur.ownerByCity;
           lastSaveData.ownerOffset = cur.detectedOffset;
         } catch (e) { console.warn("[save-watch] initial owner resolve failed:", e.message); }
+        try {
+          const setts = findAllSettlementMarkers(saveBuf);
+          const govByCity = findSettlementGovernors(saveBuf, setts);
+          // Use the full parser output (initialExtras.characters) — the
+          // flattened charactersByRegion view drops chars that didn't get
+          // a region assigned (sec-uuid → unit-region lookup miss), and
+          // it lacks primaryUuid keying. Mirror reparseLatestSave's
+          // logic so initial and incremental loads pick the same govs.
+          const charByUuid = new Map();
+          for (const c of (initialExtras?.characters || [])) {
+            if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c);
+            if (c.primaryUuid && c.primaryUuid !== 0xffffffff) charByUuid.set(c.primaryUuid, c);
+          }
+          const resolved = {};
+          for (const [city, uuid] of Object.entries(govByCity)) {
+            const c = charByUuid.get(uuid);
+            if (c) {
+              resolved[city] = {
+                firstName: c.firstName,
+                lastName: c.lastName || null,
+                age: c.age,
+                gender: c.gender,
+                isLeader: c.isLeader,
+                isHeir: c.isHeir,
+                traitCount: c.traits?.length || 0,
+                uuid,
+              };
+            } else {
+              resolved[city] = { uuid, unresolved: true };
+            }
+          }
+          lastSaveData.governorByCity = resolved;
+        } catch (e) { console.warn("[save-watch] governor resolve failed:", e.message); }
+        // Re-attribute army factions using the region's current owner.
+        // Mirror the reparseLatestSave logic — without this on the
+        // initial load, captain_card_<faction>.tga marker fallbacks
+        // misattribute factions (e.g. Titus's bodyguard at offset
+        // 0x1ae4768 reads the most-recent marker `captain_card_massalia`
+        // even though he's the messapians faction leader, then the panel
+        // filter rejects him as foreign-faction in messapian-held
+        // Brundisium and the Garrison ends up empty).
+        try {
+          const own = lastSaveData.currentOwnerByCity || {};
+          if (lastSaveData.liveArmies && Object.keys(own).length > 0) {
+            const governorOwnerByUuid = new Map();
+            if (lastSaveData.governorByCity) {
+              for (const [city, g] of Object.entries(lastSaveData.governorByCity)) {
+                if (!g || !g.uuid) continue;
+                const o = own[city];
+                if (o) governorOwnerByUuid.set(g.uuid, o);
+              }
+            }
+            for (const army of lastSaveData.liveArmies) {
+              const cmd = army.commanderUuid;
+              if (cmd && governorOwnerByUuid.has(cmd)) {
+                army.faction = governorOwnerByUuid.get(cmd);
+                continue;
+              }
+              // Skip identified v1 characters — see reparseLatestSave
+              // version for the full rationale.
+              if (army.traits && army.traits.length > 0) continue;
+              const region = army.units?.[0]?.region;
+              if (!region) continue;
+              const city = modRegionToCity?.[region];
+              const owner = (city && own[city]) || own[region];
+              if (owner) army.faction = owner;
+            }
+          }
+        } catch (e) { console.warn("[save-watch] army-faction re-attribution failed:", e.message); }
       }
+      emitSaveProgress("Done", 100);
       const bCount = Object.keys(lastSaveData.buildings || {}).length;
       const aCount = Object.keys(lastSaveData.armies || {}).length;
       const cCount = lastSaveData.characterCount || 0;
@@ -3373,9 +4559,19 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
   try {
     saveDirWatcher = fs.watch(saveDir, { persistent: false }, (eventType, filename) => {
       if (!filename || !filename.endsWith(".sav")) return;
+      // Skip End autosave writes — they fire seconds before the matching
+      // "Turn N+1 Start" autosave, and the Start one supersedes them.
+      // Without this skip, every turn-transition causes TWO reparses of
+      // a ~35MB save in quick succession; the End reparse is wasted work
+      // since the Start file lands right after.
+      if (isEndAutosave(filename)) return;
       if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
-      // 1.5s debounce — RTW writes saves in bursts, wait for file to finish.
-      saveDebounceTimer = setTimeout(() => { saveDebounceTimer = null; reparseLatestSave(); }, 1500);
+      // 600ms debounce — long enough that RTW finishes its multi-write
+      // save burst (the engine truncates+rewrites in a few stages), short
+      // enough that the colour flip lands within ~1s of the user pressing
+      // save, not three. The reparse-lock + tail-coalescing pass below
+      // catches any straggling writes that arrive during the parse.
+      saveDebounceTimer = setTimeout(() => { saveDebounceTimer = null; reparseLatestSave(); }, 600);
     });
     console.log("[save-watch] fs.watch started on", saveDir);
   } catch (e) {
@@ -3590,8 +4786,25 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
     // If we already have a cached save, re-emit the snapshot with the new data
     if (lastSaveData && activeSaveDir && lastSaveFile) {
       const full = path.join(activeSaveDir, lastSaveFile);
-      const saveBuf = fs.readFileSync(full);
-      const extras = parseCharactersAndUnits(saveBuf);
+      // Reuse the buffer cached by save-watch-start; only re-read from
+      // disk if the cache was cleared (e.g. save-watch-stop ran). Saves
+      // a 30MB read on the common path where characters-init fires
+      // right after save-watch-start.
+      const saveBuf = lastSaveBuf || fs.readFileSync(full);
+      lastSaveBuf = saveBuf;
+      // Run the v1 char scan AND building scan in parallel workers.
+      const charsP = (modNameLookup && modTraitNames)
+        ? findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
+            console.warn("[characters-init] chars worker failed, falling back:", e.message);
+            return null;
+          })
+        : Promise.resolve(null);
+      const buildingsP = parseBuildingsInWorker(saveBuf).catch((e) => {
+        console.warn("[characters-init] buildings worker failed, falling back:", e.message);
+        return null;
+      });
+      const precomputedChars = await charsP;
+      const extras = parseCharactersAndUnits(saveBuf, precomputedChars);
       if (extras) {
         lastSaveData.charactersByRegion = extras.charactersByRegion;
         lastSaveData.unitsByRegion = extras.unitsByRegion;
@@ -3607,7 +4820,7 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
       // whitelist was null and false positives like "siegeTurnsInSetSiege"
       // could leak through).
       try {
-        const bRes = parseSettlementBuildings(saveBuf);
+        const bRes = (await buildingsP) || parseSettlementBuildings(saveBuf);
         lastSaveData.builtBuildingsByCity = bRes.buildingsByCity;
         lastSaveData.queuedBuildingsByCity = bRes.queuedByCity;
       } catch (e) { console.warn("[characters-init] building re-parse failed:", e.message); }
@@ -3619,6 +4832,74 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
           lastSaveData.ownerOffset = cur.detectedOffset;
         } catch (e) { console.warn("[characters-init] owner resolve failed:", e.message); }
       }
+      // Re-resolve governors now that extras.characters has been refreshed
+      // with the mod-specific name lookup. Without this the initial-load
+      // governorByCity (resolved against an empty/incomplete v1 char pool
+      // before mod-init) sticks around, leaving cities like Rome marked
+      // "(governor — character record not decoded)" even though Quintus
+      // is fully decoded after mod-init.
+      try {
+        const setts = findAllSettlementMarkers(saveBuf);
+        const govByCity = findSettlementGovernors(saveBuf, setts);
+        const charByUuid = new Map();
+        for (const c of (extras?.characters || [])) {
+          if (c.secondaryUuid) charByUuid.set(c.secondaryUuid, c);
+          if (c.primaryUuid && c.primaryUuid !== 0xffffffff) charByUuid.set(c.primaryUuid, c);
+        }
+        const resolved = {};
+        for (const [city, uuid] of Object.entries(govByCity)) {
+          const c = charByUuid.get(uuid);
+          if (c) {
+            resolved[city] = {
+              firstName: c.firstName,
+              lastName: c.lastName || null,
+              age: c.age,
+              gender: c.gender,
+              isLeader: c.isLeader,
+              isHeir: c.isHeir,
+              traitCount: c.traits?.length || 0,
+              uuid,
+            };
+          } else {
+            resolved[city] = { uuid, unresolved: true };
+          }
+        }
+        lastSaveData.governorByCity = resolved;
+      } catch (e) { console.warn("[characters-init] governor resolve failed:", e.message); }
+      // Re-attribute army factions (mirrors reparseLatestSave + the
+      // initial saveWatchStart path). The captain_card marker fallback
+      // misattributes faction for characters whose bodyguard offset
+      // happens to follow another faction's captain_card_<faction>.tga
+      // path string in the file — without this re-run after mod-init
+      // the panel's faction-equality checks reject them as foreign.
+      try {
+        const own = lastSaveData.currentOwnerByCity || {};
+        if (lastSaveData.liveArmies && Object.keys(own).length > 0) {
+          const governorOwnerByUuid = new Map();
+          if (lastSaveData.governorByCity) {
+            for (const [city, g] of Object.entries(lastSaveData.governorByCity)) {
+              if (!g || !g.uuid) continue;
+              const o = own[city];
+              if (o) governorOwnerByUuid.set(g.uuid, o);
+            }
+          }
+          for (const army of lastSaveData.liveArmies) {
+            const cmd = army.commanderUuid;
+            if (cmd && governorOwnerByUuid.has(cmd)) {
+              army.faction = governorOwnerByUuid.get(cmd);
+              continue;
+            }
+            // Skip identified v1 characters — see reparseLatestSave
+            // version for the full rationale.
+            if (army.traits && army.traits.length > 0) continue;
+            const region = army.units?.[0]?.region;
+            if (!region) continue;
+            const city = modRegionToCity?.[region];
+            const owner = (city && own[city]) || own[region];
+            if (owner) army.faction = owner;
+          }
+        }
+      } catch (e) { console.warn("[characters-init] army-faction re-attribution failed:", e.message); }
       const win = BrowserWindow.getAllWindows()[0];
       if (win) win.webContents.send("save-snapshot", { file: lastSaveFile, data: lastSaveData });
     }

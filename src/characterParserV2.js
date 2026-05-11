@@ -280,9 +280,10 @@ function collectWorldObjectPositions(buf) {
     const type = buf.readUInt32LE(N - 12);
     if (type !== 6 && type !== 5 && type !== 4) continue;
     const x = buf.readUInt32LE(N);
-    if (x < 0 || x > 200) continue;
+    // Bounds raised 2026-05-09: RIS imperial map is 1020x700, not 200x150.
+    if (x < 0 || x > 1100) continue;
     const y = buf.readUInt32LE(N + 4);
-    if (y < 0 || y > 150) continue;
+    if (y < 0 || y > 800) continue;
     const uuid = buf.readUInt32LE(N - 8);
     if (uuid === 0) continue;
     // type-6 wins on collision (named-general bodyguard is more authoritative

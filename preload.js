@@ -81,6 +81,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("save-snapshot", (_event, data) => callback(data));
     return () => ipcRenderer.removeAllListeners("save-snapshot");
   },
+  onSaveProgress: (callback) => {
+    ipcRenderer.on("save-progress", (_event, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners("save-progress");
+  },
   // Auto-updater
   updaterCheck: () => ipcRenderer.invoke("updater-check"),
   updaterQuitAndInstall: () => ipcRenderer.invoke("updater-quit-and-install"),

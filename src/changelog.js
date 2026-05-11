@@ -8,6 +8,662 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.285",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "Character popup now lists CHILDREN (resolved to names). Decoded by save-cracker session 13 CONFIRMED: children's primary UUIDs sit in a 4-slot array at character record +54..+66 (LAYOUT_A) / +50..+62 (LAYOUT_B). 218/218 parent-child hits verified in Rome T1, byte-identical reproduction across game sessions. Children's names are resolved via a global primaryUuid lookup built from saveCharactersByRegion. Slot order is by birth; dead children preserve their slot leaving garbage uuids, which are dropped from the displayed list (we only show children we can resolve to a parsed character)." },
+    ],
+  },
+  {
+    version: "0.9.284",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Settlement governor armies now show in their own city's panel. User report: Tarentum (Taras region) showed 'Garrison: (governor — character record not decoded) — Taras / No units stationed / Field armies: None' even though the save has 21 units in the region (Greek governor + 6 foot + Roman invasion stack). Root cause: the captain_card_<faction>.tga marker fallback misattributed Tarentum's Greek governor as `syracuse` faction (his bodyguard record sits inside a syracuse-marked block in the save file), so the panel's sameFaction(commander, regionOwner) check failed and his 7 units were filtered out. 0.9.258's re-attribution guard was protecting parked own-faction generals but accidentally skipping governors of mis-attributed factions. Now: when an army's commanderUuid matches a settlement-governor uuid, override the captain_card-derived faction with that settlement's actual owner. Applied to all three re-attribution call sites (reparseLatestSave, initial saveWatchStart, characters-init)." },
+      { type: "feature", text: "Per-unit XP, weapon, and armour upgrades now read directly from the save (save-cracker session 10 CONFIRMED: u8 at unit-record regionEnd +20 / +17 / +16). Previously these were seeded from descr_strat turn-0 values by unit-name FIFO match within region — missed mid-campaign recruits, multi-unit name collisions, and just-fought chevron gains. Verified across the Macedon T13→T14 corpus: 3 phalangists units gained chevrons in the inter-turn AI rotation, picked up correctly by the parser. The descr_strat seed remains as a fallback for cases where the save value is 0/missing." },
+    ],
+  },
+  {
+    version: "0.9.283",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Building display-name lookup now tries the `chain_<token>_<tier>` ordering RIS imperial uses for the colony chain (e.g. `colony_italic_2`), in addition to the existing `<level>_<culture>` form government chains use (`gov2_roman`). Without this, the colony chain (RIS's Roman provincial governance system) was falling back to the bundled JSON's generic 'Large Colony' instead of the mod's localized 'Colony 2 - Italic'. User report: 'Provincia (direct rule) building not showing up in Venusia' — the building IS there as `colony_2` at level index 1, but the display label was wrong. Tries the resolved culture token first, then a fallback list of common RIS ethnicity tokens (italic, italiote, hellenic, celtic, iberian, germanic, ...). Note: Venusia at turn 1 has NO governmentA-D chain yet — the player still needs to construct one. The colony chain is what represents 'Roman provincial' status." },
+    ],
+  },
+  {
+    version: "0.9.282",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Stationary armies no longer drift into adjacent regions' panels. User report: Rome's panel showed 'Field armies: None' with only 2 units in Garrison, but Rome actually has 3 Roman generals + 12 foot units in the save. Cause: the live-region re-bucketing was overriding the save's unit-region tag with `tileToRegion(army.x, army.y)` for EVERY army in armiesToRender — including ones whose position came purely from the save's world-object record. Quintus Ogulnius_Gallus (governor of Rome) sits at (285, 404), 1-3 tiles off Rome's center pixel; the RGB at his exact coord resolves to a NEIGHBOURING region, so his 13 units bucketed out of Rome's panel even though their save region tag was `Roma`. Now the override only fires when the army's position came from a live-LOG event (`liveTracked=true`); save-only positions keep their original unit-region tag. Marcus/Aulus merge+split tracking still works (synthesized passenger moves are live-tracked)." },
+    ],
+  },
+  {
+    version: "0.9.281",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "Character popup now shows the clan-head / cognomen family link. Decoded by save-cracker session 8 (STRONG): u32 at character record +18 is a name-lookup index pointing to the character's Roman gens / patron family (verified Aulus Gabinius + Marcus Livius_Drusus both point to `Cornelius_Scapula` in save_rome6/7). Most characters have a 0xffffffff sentinel here; only those explicitly bound to a clan (via adoption, marriage, sworn loyalty, or specific trait gain) carry a real value. Subtitle also got fine-grained age precision (4-turns-per-year) when the engine's +86 u16 timer reads consistent with the integer age — 96.8% of chars match (the 3.2% with raw=0 fall back to integer years to stay safe)." },
+    ],
+  },
+  {
+    version: "0.9.280",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "Army hover tooltips now show `· moved this turn` when the general has already issued a move action. Decoded in save-cracker session 4 (cross-validated in session 2): bit 7 of the byte at character-position record +9 flips from 0 to 1 on movement, resets at turn start. Lets you see at a glance which armies still have actions to spend." },
+    ],
+  },
+  {
+    version: "0.9.279",
+    date: "2026-05-10",
+    items: [
+      { type: "feature", text: "Character right-click popup now shows ANCILLARIES alongside traits. Decoded by save-cracker session 6: ancillaries live inline in the character record between the trait block and the portrait paths, as zero or more `[u16=0, u16=ancId]` pairs followed by a `[u16=0]` sentinel. ID is the 0-based position of an `Ancillary <name>` line in the mod's `export_descr_ancillaries.txt` (1092 entries in RIS imperial). Cross-validated against rome1..rome10: lists are stable across saves and turn boundaries, change only when an ancillary is gained (Hanno's 51,55 → 51,55,170 at turn 5→6). Sample on save_rome10: Hannibal carries `prophet_carthage1` + `priest_of_Baal_Hammon` (thematic!), Hanno has `pontic_noble` + `hellene_wife`. 65 chars with ancillaries in save_rome10. Retracts session 4's 'terminator marker' interpretation — that was just the portrait length prefix overlapping with the last trait slot's flag bytes." },
+    ],
+  },
+  {
+    version: "0.9.278",
+    date: "2026-05-10",
+    items: [
+      { type: "feature", text: "Faction Wealth panel now shows LIVE treasury per faction (denarii in coffers right now), not just the descr_strat starting wealth. Decoded by save-cracker session 5: the save contains a flat 23-record array of major factions with a unique structural signature (+8 == 100, +12 == 1, +24/+40 self-pointers). Treasury sits at +0 of each record. CONFIRMED across 14 saves in 4 campaigns: every Saka T1 starting denarii matches descr_strat byte-for-byte, Ptolemaic stable at 20000 mid-turn → jumps to 32083 at turn 6 boundary, the user's romans_julii went bankrupt (-3137) at rome7. Each row tooltips with the start-of-turn snapshot when available, letting the user see mid-turn net delta (income minus upkeep so far). Negative values render red. Gated to RIS imperial-campaign saves (the descr_strat major-faction order was only verified for that ruleset)." },
+    ],
+  },
+  {
+    version: "0.9.277",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Character death detection now reads the proper death-marker u32 instead of a single byte. Save-cracker session 4 confirmed bytes +30..+33 of every character record carry a sentinel that flips from 0 to 0xfffffef7 (=-265 i32) on death — witnessed on two independent same-turn deaths. The previous heuristic read byte +34 (LAYOUT_A) / +30 (LAYOUT_B) as 'dead if >= 0xf0', which happened to work for LAYOUT_B (byte 0 of the marker) but was reading an unrelated byte for LAYOUT_A. The full u32 check is layout-agnostic — dead characters now drop reliably from the panel for both Roman and Greek characters." },
+    ],
+  },
+  {
+    version: "0.9.276",
+    date: "2026-05-10",
+    items: [
+      { type: "feature", text: "Region info panel now shows three new fields from the save: SIZE class (live, reflects upgrades — village / town / large_town / city / large_city / huge_city), per-turn INCOME in denarii (with cumulative total alongside), and the existing Population row. All read directly from the save via offsets decoded by the background save-cracker session 3 — pushed exhaustive coverage of the ~3728-byte settlement record from 4 known fields to 9+ identified, ~90% byte-classified overall. Sample on save_rome10: Capua (city) 400 d/turn, 2270 total; Brundisium (large_town) 266 d/turn; Uria (town, just captured) 133 d/turn. Income/size gated to player-owned settlements (the offset was only verified for those)." },
+    ],
+  },
+  {
+    version: "0.9.275",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Captured settlements no longer permanently hide their roster. The 0.9.267 wipe-filter (drop defenders from a settlement's panel during the live moment between SUCCESSFUL_ASSAULT and the next save snapshot) was sticky — once Taras was wiped earlier in the campaign, every subsequent unit at Taras region was filtered out forever, even after a save refresh, even when the user's own army moved in to occupy. User report: Aulus's 14-unit army at Taras showed 'No units stationed' in the panel despite the hover tooltip correctly listing all 14 units. Both the `liveAssaultWipedSettlements` Set and the `liveDeadCharUuids` Set now reset on every fresh save snapshot — those were stale-save guards that should expire as soon as the save catches up. Live captures + deaths still drop units in real time between events." },
+      { type: "improvement", text: "Army hover tooltip now shows which region the marker resolves to (`in <region>`). Helps disambiguate when a marker visually sits near a boundary — the user can confirm which region's RegionInfo panel will show the army's roster." },
+    ],
+  },
+  {
+    version: "0.9.274",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Movement-points readout was getting set on EVERY variant-A unit (4161 of 4161 on Turn 2 Start), almost all reading as exactly 128.0 — the f32 at +4 is a common engine constant (0x43000000) for non-bodyguard records and the [0,1000] sanity clip was too loose. Now: only reads MP when commanderUuid looks like a real char uuid (non-zero, non-0xffffffff), and the accepted range is tightened to [10, 500]. Verified on save_rome10: only 793 units now have MP set (all bodyguard records labelled 'roman general' / etc.), values in the realistic 170-225 range." },
+      { type: "feature", text: "Live settlement population shows in the region info panel — read directly from the save (u32 at settlement_name_offset-1494). Decoded by the save-cracker (session 2): 18/18 cross-validated against descr_strat starting pops, and diverges from start as turns advance (growth/decay events apply). Shows under the existing Pop Cap line, so you see both the cap (e.g. 'level 9, ~13,500') and the current live count (e.g. '9,000')." },
+    ],
+  },
+  {
+    version: "0.9.273",
+    date: "2026-05-10",
+    items: [
+      { type: "feature", text: "Public order percentage now shows in the region info panel for player-owned settlements. The background save-cracker session decoded a settlement happiness f32 sitting at `settlement_name_offset - 30` in the save (triple-validated against the Sparta tax-triple — it's the only byte in any settlement record that changes between tax levels, scales -25 per level). Raw save value is roughly 100..200; mapped linearly to a 0-100% bar with a green/yellow/red traffic light at 60/30 cutoffs. Verified on save_rome10: Capua 205→100%, Volsinii 185→85%, Uria 135→35% (just captured, post-conquest unrest). Same player-faction gate as the tax row — only renders when the settlement belongs to the player." },
+      { type: "feature", text: "Movement-points remaining now shows on the army hover tooltip. Decoded from a f32 at `bodyguard_unit.commanderUuid + 4` in the save (triple-validated: save_rome5→save_rome6 has one Roman general moving 1 tile and this float dropped by exactly -7.425; same value mirrored at character-position record +50). Sanity-clipped to [0, 1000] in the parser to reject false positives on non-bodyguard variant-A unit records (which have unrelated data at +4). Shown as 'MP remaining: 231.1' in green under the army header line." },
+    ],
+  },
+  {
+    version: "0.9.272",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Reverted 0.9.271's unit-flow override in the renderer — it caused 100+ units (across multiple unrelated factions) to flood into Uria's panel. Suspected combo of weak runtime→save char matching (first-name-only fallback for chars that never emitted a MOVING_NORMAL with a surname) plus Pass 2's pre-existing phantom-attribution (save_rome10 has a single 'greek general' record at cmd=266b0168 with 763 commander-less foot units file-order-attached to it — a known Pass 2 trade-off, but the override sat on top and amplified the misattributions). main.js's flow tracking + IPC plumbing is kept so we have the data ready for a more conservative reattempt: probably needs faction tagging on char records, Pass 2 region-aware attribution, and only flowing within explicitly-named character pairs. The 0.9.270 split-detection that breaks the passenger relationship is unaffected and still works." },
+    ],
+  },
+  {
+    version: "0.9.271",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Unit rosters now re-bucket live when units are transferred between armies — Marcus's split-off from the merged Marcus+Aulus stack now correctly shows Marcus with 14 units at Brundisium (his bg + 13 foot ex-Aulus) and Aulus with 1 unit at Uria (his bg only), instead of the save state's 1/14 distribution. Why the workaround: the engine's runtime memory uuid for a unit has no stable mapping to a save unit (save units are identified by file offset, no field matches the runtime pointer), so we can't say 'unit X moved from save-Aulus to save-Marcus' by identity. Instead main.js tracks the COUNT of units flowing between each pair of leaders (`unitFlowFromTo`) from every transfer event in the log, and the renderer applies it as a foot-unit pool donation: for each (from, to, count) entry, take N foot units (commanderUuid==null, attached via Pass 2 inferredCmd) from save-from-leader's roster and relabel them to save-to-leader. Bodyguards never donate — they stay with their general by identity. A per-donor cursor keeps multiple flows from the same source from double-donating. Renderer maps runtime char uuid → save secondaryUuid by name (via liveCharPositions, which has both runtime uuid and full name from MOVING_NORMAL events, joined to saveCharactersByRegion's stored names). Off-by-one is possible if a general-transfer drags an extra bodyguard count, but the visible delta is ±1 unit at most and a save flushes it." },
+    ],
+  },
+  {
+    version: "0.9.270",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Army splits now break the passenger relationship — when Marcus splits off the merged Marcus+Aulus stack to siege Brundisium, Aulus's marker should STAY at Uria with his lone bodyguard, not follow Marcus to Brundisium. Reading the user's message_log, the split sequence is: (1) Marcus's BESIEGE-to-Brundisium fires with a NEW army_uuid (926eb860) — different from the previously merged army's uuid (812f01b0); (2) THEN the `transferring general(Marcus:X) ... to named general(Marcus:X):army(NEW)` self-transfer line documents the split. So the new army_uuid is the FIRST signal of a split, and it appears on the move event itself — we can't wait for the self-transfer to fire because the move propagation already happened. main.js now tracks the last seen army_uuid per character and clears the passenger list on a mismatch BEFORE fanout. The transfer handler also updates the tracking on a merge so the next move with the merged army's uuid doesn't trip the split detector. Self-transfer in setPassenger is also guarded — without it Marcus would have been added as his own passenger." },
+    ],
+  },
+  {
+    version: "0.9.269",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Skip 'Turn N End' autosaves in auto-load. RTW writes both 'Turn N End' (end-of-player-turn snapshot) and 'Turn N+1 Start' (after AI moves resolve) for every turn transition. The Start version is freshly-written seconds later and supersedes the End version, so loading both means a redundant ~35MB reparse on every turn end. Three paths now filter End autosaves: findLatestSave (used by the post-write reparse), get-latest-save-mtime (used by renderer auto-detection), and the fs.watch save-dir callback (so the write itself doesn't trigger a debounced reparse). list-saves keeps showing End autosaves so they remain selectable from the picker if the user wants to inspect them manually." },
+    ],
+  },
+  {
+    version: "0.9.268",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Death-event name-match now uses BOTH first AND last name (user feedback on 0.9.267 first-name-only fallback: 'you need to check last names as well!'). The DYING log line emits only the first name (`Titus(uuid):DYING...`), but if the same character emitted a MOVING_NORMAL earlier in the session, liveCharPositions has them keyed under `first|lastStub|faction`. The death handler now recovers the lastStub by finding the live-pos entry with matching charUuid, then matches save chars on first AND last name (with the same underscore-strip normalization on both sides). Falls back to first-name-only when no live entry exists (stationary character that never emitted a move) — that path still over-filters across factions but it's the narrow tail case." },
+    ],
+  },
+  {
+    version: "0.9.267",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Garrison troops now disappear when their settlement is taken by successful assault — covers the live-log gap where the save hasn't refreshed yet. Verified from the user's message_log: `faction(messapians) surrenders Brundisium to faction(romans_julii). Reason - SUCCESSFUL_ASSAULT` fires, then `Titus(...):DYING...`, then `captures Brundisium`. The `captures` event itself always has `reason=CAPTURED` (uninformative); the SUCCESSFUL_ASSAULT signal lives on the preceding surrender line, which wasn't being parsed. Now parse it as a separate `surrender` event and on SUCCESSFUL_ASSAULT add the settlement to a `liveAssaultWipedSettlements` set. Three render paths consult this set: (1) liveUnitsByRegion drops units tagged region===<wiped settlement>, (2) the Characters panel drops chars whose bodyguard is inside a wiped settlement, (3) armiesToRender drops the army marker when the bodyguard's region is wiped. RTW rule the user reminded me of: 'when an attacker wins a siege all the garrison troops always die' — but defenders OUTSIDE the settlement walls (a separate region tag) can survive, so we only drop the in-settlement roster, not the surrounding region's armies." },
+      { type: "fix", text: "Death events now also map the engine's runtime memory uuid back to the save's stored secondaryUuid via a name match against the live saveCharactersByRegion (kept current through a ref so the log handler doesn't read a stale closure capture). Without this, the existing dead-uuid filter in armiesToRender missed the dead general because the log's `Titus(14f47c40):DYING` uuid never matched Titus's save-time secondary uuid. Trade-off: matches only on first name, so two characters sharing a name in different factions get over-filtered — death events are rare enough that this is acceptable until we tag char records with faction." },
+    ],
+  },
+  {
+    version: "0.9.266",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Naval units no longer leak into land army/garrison rosters. User saw a `24` (naval bireme crew) and a `51` (probably naval boat) inside Aulus's garrison panel. main.js's Pass 2 file-order foot-attribution attaches commander-less units to the nearest preceding general WITHOUT a region check (deliberate trade-off documented in the comment — strict region match was dropping legitimate foot units whose region tag lagged after a mid-turn move). But that swept naval biremes into land armies too. Now Pass 2 skips any unit whose name starts with `naval` OR whose region is `the sea` — those are anonymous fleets, owned exclusively by the 0.9.264 navy-synthesis pass." },
+    ],
+  },
+  {
+    version: "0.9.265",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "0.9.263's region-color-on-capture fix didn't actually work — confirmed by reading the user's message_log: `attaching region Salentinia(818) to faction(romans_julii)` does fire when Uria/Brundisium is captured, but my city-name lookup loop was iterating the `regions` variable from `processLogEvents`'s closure. processLogEvents is wrapped in useCallback with deps `[replayToTurn]` (no `regions`), so the captured `regions` is the EMPTY initial map from first render and never updates. Lookup found nothing → cityName stayed null → currentOwnerByCity was never updated → map render kept reading the stale faction. Now the lookup is folded into the existing `setRegions(prev => ...)` updater, which gets the live regions map via `prev`. setCurrentOwnerByCity is chained from inside that updater — React batches the two state updates in the same render cycle." },
+      { type: "fix", text: "When a defending general dies (DYING event), their units are now also dropped from the captured region's field-army panel. User report: 'I took over Brundisium and the Messapian army is still listed'. The Messapian Aulus died (DET_ALIVE — survived but army destroyed) when Marcus assaulted Uria, but the save still had his units tagged region=Uria with cmd=Aulus, and liveUnitsByRegion just fell back to unit.region for any cmd not in the live armies-to-render. Now liveUnitsByRegion checks liveDeadCharUuids and drops units whose commander is flagged dead. Caveat: only works when the runtime-memory uuid in the log matches the save's stored secondaryUuid (often does not — see save_rome10 Aulus where save uuid is cb79a1ae but log emits 2b0992e0). A name+faction-keyed dead lookup is the next step if the uuid path doesn't catch enough." },
+    ],
+  },
+  {
+    version: "0.9.264",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Navies now render on the map. The user pushed back that save_rome10 'def has a fleet', so I scanned the save bytes directly: 6+ occurrences of 'naval' / 'bireme' / 'liburn' ASCII strings — they're definitely there. Found TWO bugs preventing detection: (1) the unit-record region-name validator required an UPPERCASE first letter (filter against random noise), but RTW stores all naval units under region 'the sea' (lowercase) — every naval unit got dropped at the region scan. Validator now accepts lowercase too; the post-region 0xffffffff (or small+uuid) terminator is enough to keep noise out. (2) Once parsed, naval units have commanderUuid=0 (RTW stores fleets as anonymous, no character bound via the unit record) so they never enter `unitsByCommander` and never become navy-class liveArmies. Added anonymous-fleet synthesis: each naval unit's army_uuid sits at u32(i-20), maps 1:1 to a type-4 world-object position record. Multi-ship fleets only carry the uuid on the first ship; subsequent ships inherit via file-order. Save_rome10: 53 naval units → 46 fleets, all 46 with valid positions. Each becomes a navy-class liveArmies entry labelled '<faction> fleet'." },
+    ],
+  },
+  {
+    version: "0.9.263",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Region color now flips immediately when a settlement is captured live (the user reported siege won → live-event panel said 'Salentinia attached to romans_julii' but Uria stayed messapians-purple on the map). The region_attach handler was updating `regions[rgbKey].faction` and `factionRegionsMap` but NOT `currentOwnerByCity` — which is the live-ownership override the map render actually reads (App.js:3767). So the map kept showing the pre-capture color until the next save snapshot refreshed `currentOwnerByCity` from the save. Now the handler also flips `currentOwnerByCity[city]` to the new faction, mapping region name (e.g. 'Salentinia') back to the city name (e.g. 'Uria') via the regions dictionary." },
+    ],
+  },
+  {
+    version: "0.9.262",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "0.9.261's passenger-propagation fix didn't actually move Aulus's marker — backfill loop synth was emitting `faction: p.faction` (null at transfer time) where the poll loop was already using `p.faction || ev.faction`. So when the user re-attached log-watch and the backfill replayed the merge events, Aulus's synth move went out with faction=null. The renderer's keyFromName produced `aulus|gabinius|` (empty faction segment) and Tier 1 in armiesToRender looked for `aulus|gabinius|romans_julii` — miss. Backfill now uses the same `p.faction || ev.faction` fall-back as the poll loop. Verified by reading save_rome10.sav + the actual message_log.txt: confirmed transfer event fires for Marcus/Aulus uuids, fresh synth produces correct key now." },
+    ],
+  },
+  {
+    version: "0.9.261",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Aulus's marker now follows when Marcus moves the merged stack. Inspected save_rome10's actual message_log.txt: the engine emits `transferring general(Marcus...) unit(...) from army(...) to named general(Aulus...):army(...)` then Marcus emits BESIEGE/MOVING_NORMAL for the move to Uria — Aulus's uuid never appears in any movement event before OR after the merge (Aulus is the governor of Taras, stationary by role). So the MOVED general is the active mover and the receiving named-general is the passive passenger that needs synthetic position propagation. Main now parses the general-transfer event, tracks each leader's passenger list, and synthesizes a move event for every passenger when the leader moves. After 0.9.259's same-tile-merge UI logic kicks in on top, the combined stack displays as one block at the new tile." },
+      { type: "investigation", text: "Navy regression diagnosed but NOT yet fixed. Inspected save_rome10 + T5 autosave directly. Findings: save_rome10 genuinely has 0 naval-prefix units across all factions (you lost them between T5 and rome1 — game state, not parser bug). The T5 autosave has 18 naval-prefix units, but ALL have `commanderUuid = 0` in their unit record — RTW stores fleets as anonymous, with no character bound via the unit record's commander field. The current pipeline filters commanderless units into the garrison bucket, so navies never get classified as navy-class armies. Fix needs a separate 'anonymous fleet' synthesis path that groups naval units by region+faction marker and pairs them with type-4 world-object position records. Flagged for a follow-up ship." },
+    ],
+  },
+  {
+    version: "0.9.260",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Character age now sits inline next to the name (`Aulus Gabinius · age 20`) instead of being right-aligned across the panel — easier to scan when the panel widens for big regions." },
+      { type: "feature", text: "Right-click any character in the Characters panel to open a popup listing every trait they carry with its level. Trait names are humanized from the engine's CamelCase ids (e.g. `RomanConquerorMessapians` → `Roman Conqueror Messapians`); this won't match the in-game tooltip text exactly (that lives in `text/export_VnVs.txt` localization strings) but it's enough to see at a glance who the seasoned commanders / corrupt governors / drunkards are. Subtitle shows the role (Faction Leader / Heir / Princess / General) plus age." },
+    ],
+  },
+  {
+    version: "0.9.259",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Multi-general stacks now display as ONE merged army block instead of two separate panels. RTW armies hold up to 20 units with any number of general units inside, so when Marcus Livius Drusus moves onto Aulus Gabinius's tile to merge stacks, the in-game result is a single 15-unit army with two generals — not two armies sharing coords. The save still records each general's bodyguard under its own `cmd` field, so the byCmd grouping produced two separate entries. RegionInfo's field-army panel now post-passes mergedOwn/mergedOthers and combines any entries that share (faction, x, y) into one block titled `Aulus Gabinius + Marcus Livius Drusus the Eagle` with all 15 units listed together. Position comes from armiesToRender so live log moves are honored." },
+    ],
+  },
+  {
+    version: "0.9.258",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Own-faction generals parked in enemy territory no longer get reclassified as enemy. The army-faction re-attribution (added 0.9.222 to fix rebel captain_card misattribution) was unconditionally overwriting `army.faction` with whoever owns the region the bodyguard's parked in. So Aulus Gabinius (romans_julii) standing inside the `Taras` region got re-tagged as `taras` and showed up in Tarentum's garrison panel mixed with Milon's actual defenders. Re-attribution now skips identified v1 characters (those with parsed traits) and only fires for placeholder commanders where the captain_card_marker fallback can't be trusted. Same gate applied to all three load paths (initial save-watch, reparse, characters-init)." },
+    ],
+  },
+  {
+    version: "0.9.257",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Live tracking now works for characters who got a trait-driven cognomen (Marcus Livius_Drusus → Marcus Messapivs after capturing Brundisium, etc.). The 0.9.225 epithet override REPLACED `lastName` with the new cognomen for display, but the engine continues to emit MOVING_NORMAL events using the BIRTH name — so save key `marcus|messapivs|romans_julii` was matching against log key `marcus|liviusdrusus|romans_julii`, missed Tier 1, and the marker stayed put. Preserves the birth name as `originalLastName` and uses that for matching while keeping the epithet for display. Fixed in both the worker path and the synchronous fallback." },
+    ],
+  },
+  {
+    version: "0.9.256",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Captured-but-alive characters now disappear from the map immediately. The engine emits DYING events with `death_type(DET_ALIVE)` for characters who survived a battle but lost their army (typical of a settlement defender post-capture — Titus at Brundisium was the visible case). Main was filtering those events out via `!ev.alive`, so they never reached liveDeadCharUuids and the marker stayed glued to the old garrison tile until the next save snapshot caught up. Now we treat ALL DYING events as 'remove from map' regardless of death_type — the army is gone in either case, and the save will catch up to confirm. Also include charUuid in the death payload so the renderer can match by uuid as well as by name." },
+    ],
+  },
+  {
+    version: "0.9.255",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Fixed compound-surname key mismatch that was orphaning live moves for every Roman patrician. The engine writes log lines with surnames separated by SPACES — `Lucius Valerius Flaccus` — while save records use UNDERSCORES — `Valerius_Flaccus`. My keyFromName took only `parts[1]` as the lastName stub, producing log key `lucius|valerius|...` vs save key `lucius|valeriusflaccus|...`, so the match cascade's Tier 1 missed and the position update never reached the save army. Now: concatenate all parts after the firstName with underscores stripped, AND strip a trailing 'the X' trait-epithet phrase. Both sides produce `lucius|valeriusflaccus|...` — Tier 1 matches and Lucius's marker tracks every move event in real time." },
+    ],
+  },
+  {
+    version: "0.9.254",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Removed the spinner too — the loading pill is now just the shimmering text. Single sweeping gradient through 'Loading save… <stage>' carries the progress signal." },
+    ],
+  },
+  {
+    version: "0.9.253",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Save-loading pill: dropped the standalone progress stripe and put a shimmer animation on the stage-label text instead. A bright band sweeps left→right through the text continuously, signalling 'still working' the same way the stripe did but without the extra widget. Cleaner look, less screen real-estate." },
+    ],
+  },
+  {
+    version: "0.9.252",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "MOVING_NORMAL log lines with a trailing 'seige_scroll scroll closed' suffix now match. The engine appends that token (its typo for 'siege', kept verbatim) to character moves emitted while a siege scroll was open in-game — common for any move adjacent to a settlement currently under siege. The regex's `$` anchor rejected those lines, so every move logged during siege-active turns was silently dropped and the marker stayed frozen at the pre-siege tile until the next save snapshot caught up. Drop the anchor; trailing tokens are ignored. Verified against the user's message_log.txt line for Lucius Valerius Flaccus's E↔W shuffle outside Brundisium." },
+    ],
+  },
+  {
+    version: "0.9.251",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Save-loading indicator is now a compact pill in the top-right corner instead of a full-width banner. Less intrusive — keeps the rest of the toolbar usable while a parse runs in the background. Same content (spinner, stage label, animated stripe), just smaller and out of the way." },
+    ],
+  },
+  {
+    version: "0.9.250",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Save-reload progress bar now shows during in-game saves too. Earlier the loading banner only flipped on at the initial save-watch-start; reparses triggered by in-game saves emitted progress events but the banner was already gone, so the user saw a frozen UI for the duration of the parse. Now: any progress event from main re-shows the banner with the current stage label and the indeterminate stripe animation." },
+      { type: "improvement", text: "Eliminated factions no longer clutter the icon grid. In Live mode, factions with zero regions in factionRegionsMap (which the capture-event handler updates the moment the last city falls) are filtered out of the sidebar. Slave/rebel factions stay visible since they're synthetic placeholders and may not list their occupied tiles in the map." },
+      { type: "improvement", text: "Removed the '+14 −7 since turn 0' diff badge from the Garrison header. Cleaner panel layout — diff against turn 0 wasn't conveying useful info during play." },
+    ],
+  },
+  {
+    version: "0.9.249",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Character deaths now propagate live — no save snapshot required. The death-event handler already removed defeated characters from liveCharPositions, but the marker on the map (driven by saveLiveArmies) lingered until the next save reflected the death. Now: every DYING / death_type log event also adds the charUuid to a `liveDeadCharUuids` set, and armiesToRender filters out any save army whose commanderUuid or primaryUuid is in that set. Concrete case: defenders wiped during a siege resolution disappear from the map immediately instead of staying frozen at their settlement until autosave." },
+    ],
+  },
+  {
+    version: "0.9.248",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Buildings parser moved to a worker thread, running in parallel with the chars worker AND parseSaveData. Three CPU-bound passes now overlap on three cores: ~1-1.5s chars + ~1-1.5s parseSaveData + ~200-400ms buildings, total wall time ≈ max-of-three. Wired across all three load paths (initial, reparse, characters-init), each with sync fallback if worker spawn fails. The in-game save reload that was hanging the main thread should feel ~300-500ms shorter on top of 0.9.247's O(N+M) win." },
+    ],
+  },
+  {
+    version: "0.9.247",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Building→settlement linking is now O(N+M) instead of O(N×M). The original double loop was iterating ~30,000 buildings × ~1,300 settlements = ~39 million tight iterations on every save parse. Both arrays were already sorted by file offset (sequential byte-order scans produced them) so a two-pointer walk does the same work in ~31,300 iterations. Saves ~200-500ms per parse — particularly noticeable on the in-game save reload (when the file-watcher fires reparseLatestSave)." },
+    ],
+  },
+  {
+    version: "0.9.246",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Marker now follows live moves both ways. 0.9.244's proximity dedupe SKIPPED stale log entries instead of using them, which broke the 'move back to original tile' case: the save army stayed at the post-first-move position, and the matching log entry got dropped, leaving the marker frozen at the wrong tile. Replaced skip-with-update: when a same-faction same-firstName log entry is within 2 tiles of a save army (i.e. they're the same character whose match cascade missed), update the save army's (x, y) to the log entry's position. Marker now tracks each move event in real time." },
+      { type: "fix", text: "Army-marker tooltip no longer spills outside the viewport. The combination of `whiteSpace: nowrap` and a long traits line let it overflow the right edge into the side info panel. Removed nowrap (now wraps via wordBreak), and clamped position: when the tooltip would overflow the right edge it flips to the left side of the marker, and bottom-edge overflow shifts up." },
+    ],
+  },
+  {
+    version: "0.9.245",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Worker-thread parallelism for the v1 character scan. The byte-by-byte scan over the full save (~1-1.5s on a 30MB file) now runs in a worker_threads worker, in parallel with the main thread's parseSaveData (which also scans the buffer for buildings/settlements/units). Total Live-load time drops from sum-of-scans to max-of-scans — ~1-1.5s saved on top of 0.9.244's redundant-read fixes. Worker also applies trait epithets so the main thread doesn't redo that pass. Falls back to synchronous parsing if worker spawn fails or mod data isn't loaded yet — zero risk of behavior change." },
+    ],
+  },
+  {
+    version: "0.9.244",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Skipped two redundant 30MB save-file reads on the initial-load path. parseSaveData now accepts a buffer instead of a path (saves ~150-300ms per call where the caller already holds the buffer); the save buffer is also cached at module level so characters-init reuses it instead of reading from disk again. Net: ~300-500ms shaved off Live mode startup with zero behavior change." },
+      { type: "fix", text: "Duplicate 'log-tracked' marker after a 1-tile character move. The match cascade succeeded for the save army (its marker moved to the new tile correctly) but a leftover livePos entry whose key didn't match created a synthetic log-only marker right next to it. Added proximity dedupe: any log-only synthetic within 2 tiles of an existing save army of the same faction (and, when known, same firstName) is treated as the same character and skipped. Reproduced and fixed against Lucius Valerius_Flaccus the Defender after his eastward move." },
+    ],
+  },
+  {
+    version: "0.9.243",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Army-faction re-attribution now runs on ALL save-load paths (initial saveWatchStart, characters-init, reparseLatestSave). Previously it only fired in reparseLatestSave, so on the first save Provincia loaded each session, captain_card_<faction>.tga marker fallbacks misattributed factions and stuck. Concrete case (save_rome4): Titus's messapian general bodyguard sits at file offset 0x1ae4768; the most-recent captain_card marker BEFORE that offset is `captain_card_massalia.tga` (because messapians' own captain_card path appears later in the file or is missing). The marker fallback gave Titus's army faction='massalia', and the Garrison panel's faction-match check rejected him as foreign-faction in messapian-held Brundisium — leaving the panel showing Titus as the commander but 'No units stationed'. With re-attribution running on initial load, Titus's army gets faction='messapians' from currentOwnerByCity['Brundisium'] and his stack lands in the Garrison panel where it belongs." },
+    ],
+  },
+  {
+    version: "0.9.242",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Settlement-tile garrison classification was failing on a y-axis mismatch: cityPixels (built from canvas getImageData) is in TOP-DOWN visual coords, but army positions in the save (type-6 records) and descr_strat are BOTTOM-UP world coords. Compared as strings, they almost never matched — only ~10 of 857 commander-led armies were classified as garrison across the whole map, and Titus at Brundisium showed in 'Region owners armies' instead of Garrison even though he was sitting on his own city. All settlement-tile comparisons now flip cityPixels.y to world coords (`H-1-y`). Stations the messapian Titus's stack inside Brundisium's Garrison panel; should also flip the global garrison count from ~10 to several hundred, matching the actual number of governed cities on the map." },
+    ],
+  },
+  {
+    version: "0.9.241",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Damaged units now display the right way around. Unit-record bytes at regionEnd+8 hold MAX soldiers, +12 holds CURRENT — my parser had the labels swapped, so a damaged equites unit (real 94/120) rendered as '122/96' (max/current) instead of '96/122' (current/max). Full-strength units hid the bug because both fields are equal. Confirmed against the byte dump on save_rome4 (Marcus Livius_Drusus's damaged equites)." },
+    ],
+  },
+  {
+    version: "0.9.240",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Roman generals no longer drag each other across the map. The live-position match cascade had a Tier 2 (firstName + faction prefix) fallback that fired whenever the save's lastName didn't exactly match the log's — useful for renamed/cognomen cases, but in faction-heavy lines like the Roman Marcuses (heir + 2 active consuls + new generals all named Marcus) it grabbed the FIRST 'marcus|*|romans_julii' key in livePos and applied it to every save Marcus, dragging Marcus Ogulnius_Gallus and Marcus Atilius Regulus the Defender (both at Rome) onto Brundisium where Marcus Livius_Drusus was besieging. Now: Tier 2 only fires when the save army has a PLACEHOLDER firstName (e.g. 'romans_julii captain' for v1-undecoded commanders) AND there is exactly ONE candidate key in livePos. Same conservative rule for the unknown-faction Tier 3." },
+    ],
+  },
+  {
+    version: "0.9.239",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Foot units now follow their general by FILE ORDER, not save-region tag. Was: cmd=0 foot only attached to a preceding general if the general's region tag matched. That broke the army-merge case (user moves new general Marcus into Uria, grabs Aulus's army, moves merged stack to siege Brundisium): the 13 foot still carried their old Taras region tag while Marcus's bodyguard now tagged Metapontion, and the strict region match dropped them all — Marcus's army showed 1 unit. Now: foot attach to the immediately preceding cmd!=0 general regardless of region tag, since the save writes each army's units contiguously and the tags often lag mid-turn moves. Trade-off: if RTW ever stores a true settlement garrison right after an unrelated general's record, the garrison would mis-attribute — that ordering hasn't been observed in practice." },
+    ],
+  },
+  {
+    version: "0.9.238",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Garrison and 'Region owners armies' panels now require faction match for the settlement-tile rule. Without this, a foreign army standing on (or whose live position resolved to) the settlement tile got promoted into the city's garrison list — Marcus Ogulnius_Gallus's bodyguard appeared inside messapian-held Brundisium even though he's a Roman, and the actual Roman besieger (Marcus Livius_Drusus) was symmetrically pulled out of 'Region owners armies'. Now: only commanders whose faction matches the region owner are treated as garrison; everyone else stays in the field-armies panel where besiegers and through-passers belong. Same fix on both panels so nothing double-lists." },
+    ],
+  },
+  {
+    version: "0.9.237",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Character parser no longer misses characters whose +18..+25 'spouse uuid' slot is populated. The 0xff bytes there were a 'field unset' marker, not a structural anchor — a character who got married, gained certain traits (RomanConquerorMessapians, etc.), or otherwise had that slot filled was rejected. Aulus Gabinius post-conquest in save_rome3 was the first observed case (his record at 0x1504ae2 carried a Cornelius_Scapula name index there instead of 0xff). New anchor: traitCount + first trait record validity (real trait id, plausible level). Verified: Aulus now decoded correctly with all 28 traits." },
+      { type: "fix", text: "App was hanging on busy saves. The 0.9.235 Tier 0.5 commanderUuid match in armiesToRender did O(armies × livePos) per memo run — combined with active log streaming on a multi-thousand-character save, that's millions of iterations per render. Now: build a charUuid → entry index ONCE per memo run, both Tier 0 and Tier 0.5 lookups are O(1)." },
+    ],
+  },
+  {
+    version: "0.9.236",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Stack standing on the city tile is the garrison, not a field army. After 0.9.235 fixed Aulus's units bucketing to Salentinia, the panel still listed them under 'Region owners armies' because the garrison filter only accepted commander-LESS units OR the appointed governor's units — and Aulus isn't decoded as a v1 character (his cmd uuid has no v1 record), so the governor lookup couldn't see him. New rule: any commander whose live position equals the settlement tile of the clicked region is treated as garrison, regardless of governor-resolution status. Mirrors RTW's own UI which shows everything on the city tile as defenders. Field-armies symmetrically excludes those uuids so nothing double-lists." },
+      { type: "fix", text: "Removed the duplicate Aulus marker at his Taras spawn. The descr_strat fallback was still adding a synthetic army marker at every starting position from descr_strat, even when the actual character had moved off that tile in live play. So Aulus showed up TWICE on the map: once at his original (337, 385) Taras position (descr_strat synthetic) and once at Uria (save position updated by the log). Now: synthetic-marker creation is skipped when log-position events are flowing — save data + log positions become the single source of truth. The descr_strat unit-list borrowing for save armies at matching tiles is preserved." },
+    ],
+  },
+  {
+    version: "0.9.235",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Two related bugs that combined to leave Aulus duplicated on the map AND Salentinia/Uria's panel empty after he captured the city: (a) settlement tiles are black on the regions TGA (per RIS convention; ports are white) so the live-region lookup returned null for armies sitting in a city, leaving their units bucketed under the stale save region — fixed with a cityPixels fast path + 1-tile neighbourhood scan; (b) Aulus's bodyguard cmd uuid has no matching v1 character record (lesser-general / promoted-captain class, missed by both LAYOUT_A and LAYOUT_B), so the save army stored a placeholder firstName 'romans_julii captain' that didn't match the log's 'Aulus Gabinius', leaving the save entry stuck at its old position while the log entry created a separate marker — fixed by adding Tier 0.5 in armiesToRender's match cascade: when primaryUuid is null, fall back to commanderUuid → log charUuid (engine emits the same id for both). The live position now reaches the save army → marker moves AND units re-bucket to the destination region, no duplicate." },
+    ],
+  },
+  {
+    version: "0.9.234",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Governor resolution unified across all save-load paths. Three places ran governor lookup: (1) reparseLatestSave (correct — used full extras.characters with primaryUuid keying), (2) initial save-watch start (BUG: used a flattened charactersByRegion view that drops chars without a region and lacks primaryUuid keying), (3) characters-init after mod-data load (BUG: didn't re-resolve at all). Both bugs caused well-known leaders like Quintus Ogulnius_Gallus at Rome to show as '(governor — character record not decoded)' even though the v1 parser had decoded him fully — a stale unresolved entry from the pre-mod-data initial pass survived into the renderer. All three paths now use the same `extras.characters` + sec/primary uuid keying logic." },
+    ],
+  },
+  {
+    version: "0.9.233",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Garrison + Field-army panels now follow live commander moves. The map markers already shifted in real-time on each MOVING_NORMAL log event, but the side panels were still reading the save-time unit-record region — so an army that moved mid-turn would slide on the map yet still appear under the OLD region's panel until the next save snapshot. Now: armiesToRender carries each army's current region (resolved from its live (x,y) via the regions-map TGA pixel data), and a new liveUnitsByRegion memo re-buckets every save unit using its commander's current region. Garrison + Field-army panels read from this map. An army leaving its home tile drops out of that region's panel and appears in the destination's panel as soon as the log fires the move — same cadence as the marker." },
+      { type: "improvement", text: "Note on the capture→colour-flip path: this was already wired (App.js:2258 since 0.9.213) — captures from message_log.txt update factionRegionsMap + regions[].faction immediately, so the BASE map layer flips colour the moment the engine logs the capture. The save-derived currentOwnerByCity override (which fires after the next save write) is the redundant secondary path. The lag the user saw earlier was the save-watch debounce (now 600ms in 0.9.231)." },
+    ],
+  },
+  {
+    version: "0.9.232",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Army markers on the map are now ON by default and persist across sessions. The 'Armies' map-mode button has been wired up since 0.9.217 (faction-coloured halos at every commander's position, garrisons / field armies / navies separable via sub-toggles), but it defaulted OFF — the user reported 'Provincia doesn't visualise army positions' because the toggle was buried. Now defaults ON, persisted to localStorage like other map toggles." },
+      { type: "improvement", text: "Bumped marker size: floor 1.5px → 3px screen-pixels, with a thicker faction-coloured halo. The old size was readable only when zoomed all the way in, which is why the feature felt invisible. New size is spottable at full-map zoom without cluttering when zoomed out further." },
+    ],
+  },
+  {
+    version: "0.9.231",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Save-watch debounce 1500ms → 600ms. The user reported the map colour flipped to the new owner eventually after a mid-turn capture, just slowly. Most of the lag was sitting in the save-watch debounce, which was set conservatively to wait out RTW's multi-stage save burst. 600ms is short enough that the colour flip lands ~1s after pressing save (not ~3s) and still clears the burst — the reparse-lock + tail-coalescing already handles any straggling writes that arrive during the parse." },
+      { type: "improvement", text: "Quieted the 0.9.230 map-render diagnostic. It now only logs when the override actually flipped a region's owner (i.e. on the conquest itself), not on every repaint. Easier to spot real ownership transitions in the console without scrolling through dev-mode toggles." },
+    ],
+  },
+  {
+    version: "0.9.230",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Diagnostic log on map repaint. The user reported a captured region (Salentinia → romans_julii) staying its old colour even though the events log showed the capture and the save's per-settlement uuid had updated. Direct save inspection confirmed the data is correct (Uria's marker-1944 uuid = Rome's, and the resolver maps it to romans_julii) but couldn't reproduce the stale render. Console.log now prints how many cities the live-ownership override touched on each repaint and a few samples of regions whose colour changed — so the next time it happens the dev console pinpoints whether the override is running, applying the right faction, or being ignored downstream by colour/canvas caching." },
+    ],
+  },
+  {
+    version: "0.9.229",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Removed the redundant '↳ Bodyguard: greek general (63/63)' sub-line under the governor name. That was a 0.9.224 workaround for when the bodyguard unit wasn't rendering anywhere; since 0.9.227 the whole governor stack now appears as unit cards in the Garrison panel directly, so the sub-line just duplicates info already on the cards. Kept a discreet '(bodyguard currently at <region>)' note for the rare case where the bodyguard's unit-record region differs from the settlement's region — that's still useful context the unit cards don't show." },
+    ],
+  },
+  {
+    version: "0.9.228",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Field-army panels now group armies by faction. 'Region owners armies' and 'Other faction armies' both render a faction sub-header (e.g. 'Romans:') above each group's stacks, so multiple armies from the same faction collapse under one heading instead of repeating the faction tag on every line. Same grouping applied to both panels for consistency." },
+    ],
+  },
+  {
+    version: "0.9.227",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Governor's stack now displays in the Garrison panel instead of 'Region owners armies'. After 0.9.226 attached foot units to their general, Milon's Tarentum garrison (1 bodyguard + 6 greek foot, all attributed to Milon) moved out of the empty Garrison panel and into 'Region owners armies'. The user expects the governor's stack to BE the garrison — that's how it's stationed in-game. Garrison filter now also accepts units commanded (or inferred-commanded) by the settlement's governor; fieldArmies symmetrically skips that uuid so nothing double-counts. 'Region owners armies' shrinks to truly external own-faction stacks (e.g. a separate field army passing through), which is what the section name implies." },
+    ],
+  },
+  {
+    version: "0.9.226",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Foot units now follow their general's stack instead of dumping into the destination region's garrison panel. Reproduced on save_rome1.sav (RoR turn 1): Aulus Gabinius's invading army at Taras (1 bodyguard + 13 roman foot) and Milon's Tarentine garrison (1 bodyguard + 6 greek foot) were both showing as 'garrison' because foot units carry commanderUuid=0 in the save and the previous grouping pass refused to attribute them. Restored the file-order foot-attribution rule, but with a region-equality guard so a Roma garrison stored after a Frentania field-army record doesn't get misattributed (the regression that made me drop the original sequential pass)." },
+      { type: "fix", text: "Greek/single-name characters now decode. Milon of Tarentum, Leophron, Pyrrhos, and ~150 other faction leaders without family surnames were silently rejected by the v1 parser because their record format omits the lastName u32 — every in-record field shifts -4 (age at +22 instead of +26, traitCount at +298 instead of +302, etc.). Parser now anchors variant detection on the 8-byte 0xff sentinel position (LAYOUT_A: +18..+25, LAYOUT_B: +14..+21) and applies the right field offsets for each. The user's RoR T1 save: 61 chars → 2014 chars (148 leaders, all with sensible names + ages + traits). Greek-faction governors now show up by name in the garrison panel instead of '(governor — character record not decoded)'." },
+    ],
+  },
+  {
+    version: "0.9.225",
+    date: "2026-05-10",
+    items: [
+      { type: "feature", text: "Trait-driven cognomen overrides. RTW changes a character's displayed surname when they earn certain traits — e.g. capturing Messapian territory grants `RomanConquerorMessapians`, whose Epithet text is 'Messapivs'; the in-game UI shows 'Aulus Messapivs' while the save still stores his birth surname 'Gabinius'. The app now parses `export_descr_character_traits.txt` for `Epithet` keys, resolves them against `text/export_vnvs.txt` (UTF-16), and overrides each character's lastName based on their highest-level epithet trait. Nicknames (\"the Drunkard\", \"the Pious\") are detected separately and appended after the surname rather than replacing it. 991 epithet-bearing traits parsed from RIS imperial — covers RomanConqueror*, Africanus, Magnus, etc. Confirmed against user's RoR T5 save: Aulus Gabinius (governor of Uria) now displays as 'Aulus Messapivs', matching the in-game UI." },
+    ],
+  },
+  {
+    version: "0.9.224",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Governor's bodyguard now appears under the governor line in the Garrison panel, even when the bodyguard's unit-record region differs from the settlement's region. 0.9.223 fixed the parser so the unit was found, but the garrison panel filter dropped it: garrison strictly = commander-LESS units, and field-armies filter by clicked region. Aulus Gabinius's bodyguard at Uria/Salentinia got attributed to the unit-record's region (Taras) and didn't show up in Salentinia's panel at all. Now: when a city has a governor whose uuid matches a bodyguard unit anywhere on the map, the bodyguard is rendered as a sub-line of the governor, with a 'currently at <region>' note when the bodyguard is parked elsewhere — e.g. 'Aulus Gabinius — romans_iulii ↳ Bodyguard: roman general (28/33) — currently at Taras'." },
+    ],
+  },
+  {
+    version: "0.9.223",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Unit parser was missing freshly-recruited general bodyguards. After a unit's region UTF-16 string the parser required a `ff ff ff ff` terminator, but recently-recruited bodyguards use a small u32 instead (e.g. `0d 00 00 00`). Aulus Gabinius's bodyguard at Taras (the governor the user installed at Salentinia/Uria) was being skipped — that's why the user's report 'a male character who is of age always has a bodyguard' showed an empty garrison. Parser now also accepts the small-u32 variant when the next 4 bytes look like a real commander UUID. Roman generals on the user's RoR T5 save: 35 → 36 records." },
+    ],
+  },
+  {
+    version: "0.9.222",
+    date: "2026-05-10",
+    items: [
+      { type: "feature", text: "Decoded the per-settlement GOVERNOR field. Each settlement marker has the governor's character UUID at marker-1940 (4 bytes after the owner UUID at marker-1944). Cross-referenced against v1 characters to attach a name. Confirmed on user's RoR T5 save: Rome → Quintus Ogulnius_Gallus (player leader), Uria → Aulus Gabinius (the governor the user just installed after conquering Salentinia). The garrison panel now shows 'Governor: <name>' even when the character has no bodyguard army (= no unit record link), which was the case for the user's Salentinia/Uria report. Fall back to '(governor — character record not decoded)' when the uuid points to a character v1 doesn't recognize." },
+      { type: "fix", text: "Army faction attribution: rebel-faction armies (Picentes, Salentinians, etc.) were getting tagged with the most-recent `captain_card_<faction>.tga` marker before their unit block. Rebel factions don't have captain_card markers, so a Picentine army at Asculum showed as 'pergamon captain'. Now: after currentOwnerByCity is resolved, every army's faction is overridden with the region's current owner (bridging through descr_regions' region→city map). Picentes army at Picenum now reads as Picentes." },
+    ],
+  },
+  {
+    version: "0.9.221",
+    date: "2026-05-10",
+    items: [
+      { type: "fix", text: "Save-watch reparse lock now coalesces tail events instead of dropping them. The 0.9.213 lock prevented hangs from concurrent parses, but if a save fired during a parse the second event got silently discarded — the renderer kept showing stale data until the NEXT save. Now: in-flight parses set a pending flag; when they finish they immediately fire one more reparse. So the latest save always wins, no events lost, no overlapping parses." },
+    ],
+  },
+  {
+    version: "0.9.220",
+    date: "2026-05-10",
+    items: [
+      { type: "improvement", text: "Right-click any faction tile in the Factions sidebar to open its card (large icon + display name + internal id). Same overlay the homeland-row icons use — single InfoPopup handles all faction-card sources." },
+    ],
+  },
+  {
+    version: "0.9.219",
+    date: "2026-05-09",
+    items: [
+      { type: "improvement", text: "Wealth panel: live mode now shows current regions (from the save's owner UUIDs, ↑ green / ↓ amber arrows when changed from starting count) and live army count per faction (parsed from the save). Sort changed to current-regions descending. Treasury still shows starting denarii from descr_strat — live treasury values aren't decoded from the save yet (the engine stores them in a separate ECONOMICS_DATA section we've located but not field-mapped)." },
+    ],
+  },
+  {
+    version: "0.9.218",
+    date: "2026-05-09",
+    items: [
+      { type: "feature", text: "Parser-stats badge in the Factions header (live mode). Shows total units · armies · conquests at a glance, with a hover tooltip listing every count: Units / Armies / Characters parsed / Settlements with owner / Conquests detected. Lights amber when any count looks suspicious (e.g. zero units in a populated save). Spot regressions instantly without diving into logs." },
+      { type: "improvement", text: "Test coverage: added 11 new vitest cases covering unitParser (identical-pair determinism, RIS-imperial unit/region count sanity, long region names, naval-unit detection) and saveOwnershipParser (plurality-vote conquest recovery, uuid=0 → slave, identical-pair determinism). 26/26 passing." },
+    ],
+  },
+  {
+    version: "0.9.217",
+    date: "2026-05-09",
+    items: [
+      { type: "improvement", text: "Every commander-led army now gets a faction attribution via the `captain_card_<faction>.tga` boundary markers in the save. On a turn-22 athens save: 1116 armies, 43 named (matched to v1 characters), and ALL 1116 tagged with a faction. Armies whose commander isn't decoded show as e.g. 'romans_julii captain' instead of '(unknown)' — at minimum you see whose army it is." },
+    ],
+  },
+  {
+    version: "0.9.216",
+    date: "2026-05-09",
+    items: [
+      { type: "improvement", text: "Garrison and Field Armies panels are now non-overlapping. Garrison = the region's commander-less units (settlement defenders); every army with a commander shows up under Field Armies, named (when the parser identifies the commander) or aggregated by faction (when it doesn't). Previously a garrison army with a commander could appear in BOTH lists, or be hidden from both because the 'commander exactly on settlement tile' shortcut required pixel-perfect coords we don't always have." },
+    ],
+  },
+  {
+    version: "0.9.215",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "Field-army leader names + factions: on RIS imperial, every army on the map showed as '(unknown)' because the army-builder only consulted v2 scripted characters (which return zero on imperial). Now also indexes v1 characters by their secondaryUuid and reads `captain_card_<faction>.tga` boundary markers to attribute each army's faction by file offset. Roman armies show as Roman, Carthaginian armies as Carthaginian, etc. — even ones whose commanders aren't in the v2 scripted set." },
+    ],
+  },
+  {
+    version: "0.9.214",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "Army grouping rewrote: was sequential (file-offset-walk + region-match), is now region-based (group every unit by its own commanderUuid; commander-less units = settlement garrison). The old approach silently dropped 36% of units on RIS imperial because the file's storage order doesn't encode stack membership in a way that aligns with region — a Roman garrison in Roma sitting in the file after a Frentania field-army record got rejected as a 'region mismatch'. New approach trusts the unit record's own bytes: each unit goes exactly where the engine wrote it." },
+      { type: "feature", text: "'Homeland of:' switched from comma-separated text names to a row of faction icons. Hover any icon for the display name; right-click opens a faction card overlay (large icon + display name). Saves space, more visual." },
+      { type: "feature", text: "Faction-icon right-click → card view. Currently active in the Homeland-of row; the InfoPopup now handles type=faction so any future call site can light up the same overlay." },
+    ],
+  },
+  {
+    version: "0.9.213",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "App locked up when fs.watch fired bursts of save events. After making parseSaveData async (0.9.211), two debounced reparses could overlap — both running parsers in parallel, both writing lastSaveData, both flooding the renderer with IPC events. Added a single-flight lock (_reparsing flag): if a parse is already in progress, the next event is dropped. The 1.5s debounce already filters most bursts; the lock catches the residual." },
+      { type: "fix", text: "Region info panel showed an empty unit list even when units were clearly stationed there (user reported a Roman governor in Salentinia with no units shown). The garrison filter required each unit's commander to (a) exist in the saveCharactersByRegion-derived UUID map AND (b) be positioned EXACTLY on the settlement tile. Both conditions fail commonly on RIS imperial: half the v1 chars have no resolvable position, governors stationed on the city tile but parsed to coords ±1 get rejected. Switched to: every unit the parser placed in this region is shown. The unit's parsed `region` field IS the right signal — the engine writes it from the army's current tile. Mixes governor's army into the garrison view, but that's better than empty." },
+    ],
+  },
+  {
+    version: "0.9.212",
+    date: "2026-05-09",
+    items: [
+      { type: "improvement", text: "Removed the seconds counter from the live-mode loading banner — parses now finish in well under a second so the counter just sat on '0s' and looked broken. Stage label + sliding stripe is enough." },
+    ],
+  },
+  {
+    version: "0.9.211",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "Map STILL showed turn-0 borders even with conquests resolved. The faction-color renderer built rgbKey→owner from descr_strat's factionRegionsMap and never consulted currentOwnerByCity, so a conquered Salentinia stayed brown on the map even though the right-side panel correctly read 'Faction: Rome'. Added a live override pass: after building the descr_strat baseline, if a save is loaded and currentOwnerByCity has a different owner for that region's city, the rgbKey gets overwritten before the canvas is painted. Borders now follow the actual save state in real time." },
+      { type: "improvement", text: "Loading banner shows finer-grained stage labels: parseSaveData was a single black box behind 'Parsing buildings & settlements' for several seconds; now it ticks through 'Scanning building records' → 'Scanning settlement markers' → 'Linking buildings to settlements' → 'Scanning unit records' → 'Grouping units by region' as it works. Each sub-stage yields to the event loop so the renderer's banner actually receives the update mid-parse instead of after the whole function returns." },
+    ],
+  },
+  {
+    version: "0.9.210",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "Conquests weren't showing on the map. The owner-UUID resolver required a 60% descr_strat-anchored majority before trusting a UUID→faction mapping. At mid-game (turn 22+) this rejects ~30% of UUIDs because conquering factions hold a mix of starting + conquered settlements that splits below 60% (e.g., Athens with 4 starting + 3 conquered = 57% rejected). Switched to plurality vote (top faction wins, alphabet tiebreak), since each UUID is unique to one faction and the plurality must be the conqueror's own descr_strat anchor. Also map uuid=0 settlements to the slave/rebel faction (~10 per save). Net effect on athens_t22mid: 936 → 1090 settlements resolved, 90 → 167 conquests detected." },
+      { type: "improvement", text: "Live-mode loading banner overhauled. The 0.9.209 % bar appeared stuck at 15% the whole wait because parseSaveData is one big synchronous chunk between the 15%/50% emits — the bar lied. Replaced with an indeterminate animated stripe that always slides, plus an elapsed-seconds counter so users can see 'still working at 4s, 5s, 6s...' instead of a static %. The stage label still updates between phases (Reading save file → Parsing buildings → Parsing characters & armies → Resolving ownership → Done)." },
+    ],
+  },
+  {
+    version: "0.9.209",
+    date: "2026-05-09",
+    items: [
+      { type: "feature", text: "Live mode loading banner. Clicking Live used to freeze the window for 5-30s on big mid/late game saves while the main process synchronously parsed everything; the app looked crashed. Now you get an immediate top-of-window banner with: spinner, stage label ('Parsing characters & armies' / 'Resolving settlement ownership' / etc.), progress bar, and a percentage. Implemented by emitting per-stage `save-progress` IPC events from main.js and yielding to the event loop between stages so the renderer's banner actually updates instead of waiting for the whole pipeline. Same banner runs on initial Live activation AND on every save-watch reparse (turn ends, manual saves)." },
+    ],
+  },
+  {
+    version: "0.9.208",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "Units / armies on the map were missing or in the wrong place — most badly on mid-to-late game saves. Three independent bugs ganging up: (1) Position record bounds were `x ≤ 200, y ≤ 150` (vanilla RTW map size). RIS imperial is 1020×700; the old bounds rejected 99.6% of legitimate (x,y) records (only 5 out of 1422 made it through on a turn-22 save). Raised to 1100×800 in main.js, characterParserV2.js, App.js (live-log moves filter). (2) Unit-record region-name length capped at 25 chars; 22 RIS regions are longer (Bracarensia_Septentrionalis, Memphites-Letopolites_Nomoi, etc up to 35 chars), so units in those regions were silently dropped. Raised to 50 chars + widened the post-name search window to 80 bytes. (3) v1 character position lookup read u32 at `offset-16`, which is correct for v2 layout but reads junk for v1 — half of v1 chars never got x/y. Switched to the proper v1 commander-UUID source (`secondaryUuid`) with primary/legacy fallbacks. Net effect on athens_t22mid: 5573 → 5626 units, 1188 → 1208 regions, 100% of unit-commander UUIDs resolve to positions (was 0.5%)." },
+    ],
+  },
+  {
+    version: "0.9.207",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "Live mode hung for 30+ seconds on initial save parse. Root cause: `findCharacterRegion()` was called once per character (~100 chars at mid-game), each call doing a full-buffer indexOf scan + nested 1000×3×100 inner-loop hunt for unit-name strings. O(N×M) where N=save bytes (~40 MB) and M=character count. Fix: pre-build a `commanderUuid → region` map ONCE from unit records, then each character lookup is O(1). Total parse time drops from ~33 s to ~1 s on a 40 MB save. The legacy `findCharacterRegion` code path is no longer invoked during live parsing (still exported for any caller that needs the slow scan)." },
+    ],
+  },
+  {
+    version: "0.9.206",
+    date: "2026-05-09",
+    items: [
+      { type: "fix", text: "0.9.205 wouldn't open: 'Cannot find module ./src/factionRecordParser.js'. The new save-format parsers (factionRecordParser, luaCounterParser) were imported by main.js but missing from electron-builder's files allowlist in package.json — so they got stripped from the packaged asar. Added both to the allowlist; verified the asar now contains them. Apologies for the bricked build." },
+    ],
+  },
+  {
+    version: "0.9.205",
+    date: "2026-05-09",
+    items: [
+      { type: "feature", text: "Two new save-format structures decoded and surfaced live. (1) Faction record array — every save contains 239 per-faction state records starting with magic `ff 0a af f0`. The array span is the dominant per-turn bloat source (~90 bytes/turn/faction; projects to ~8.6 MB by turn 400 at 239 factions). New blue badge in the Factions header shows record count + total KB; hover for details. (2) Lua persistent-counter table — 115 named entries near EOF storing every `declare_persistent_counter` value plus engine internals like `turn_number` and faction UUIDs (`id_sparta = 1330481`, `id_romans_julii = 1110011`, `id_athens = 1330201` for RIS imperial). New green badge shows count + the live `turn_number`; hover lists the first 12 counters. Both findings came from the new rtw-sav-parser cracker at C:\\dev\\rtw-sav-parser; round-trip-tested across 10 saves; cross-validated identical-pair determinism. Format details: faction record header is 16 bytes (magic1 + 2× self-pointer + magic2 `f0 0a af f0`) followed by variable per-faction state. Counter format: u32 length + UTF-16LE name + u32 value, contiguous chain. New tests (`factionRecordParser.test.js`, `luaCounterParser.test.js`) — 19/19 passing." },
+    ],
+  },
+  {
+    version: "0.9.204",
+    date: "2026-05-05",
+    items: [
+      { type: "fix", text: "Defensive guards around the new tax parsing after a live-mode hang report. main.js: tax pass wrapped in try/catch and gated by header-detected campaign name (only runs on imperial_campaign or ris_classic; other campaigns silently skip). App.js: taxLevel IIFE wrapped in try/catch with relaxed gating — when playerFaction isn't yet known, still shows the parsed value rather than holding the prop. If the hang persists, it's not from the tax pass itself; please share what UI state you see when it happens." },
+    ],
+  },
+  {
+    version: "0.9.203",
+    date: "2026-05-05",
+    items: [
+      { type: "feature", text: "Live mode now shows per-settlement tax level (low/normal/high/very_high) parsed from the save. Discovered tonight via differential analysis: setting all of Sparta's 3 settlements to high/very_high/low produced exactly 3 byte transitions per save with values 2/3/0 against baseline=1. The tax byte sits at a fixed offset (settlement_name_offset - 2269) in every settlement record. Enum: 0=low, 1=normal (default), 2=high, 3=very_high. Gated to player-owned settlements only — the byte at that offset isn't meaningful for other factions' settlements in the player's save view (always reads 0). New 'Tax:' row in RegionInfo, color-coded (green=low, grey=normal, orange=high, red=very_high). New scripts/save-cracker/ directory contains the full reverse-engineering pipeline + RESEARCH.md dossier with 15 confirmed format facts." },
+    ],
+  },
+  {
+    version: "0.9.202",
+    date: "2026-05-05",
+    items: [
+      { type: "improvement", text: "Export now warns when descr_regions.txt was edited: 'delete map.rwm from the campaign folder so RTW rebuilds it from descr_regions.txt + map_regions.tga next campaign load.' RTW caches descr_regions parsing into map.rwm; without regen the edits silently don't take effect in-game. Alert fires after the export confirm, only when descr_regions.txt was in the dirty set." },
+    ],
+  },
+  {
+    version: "0.9.201",
+    date: "2026-05-05",
+    items: [
+      { type: "fix", text: "'+ Add new hidden resource…' button did nothing — Electron's renderer returns null from window.prompt by default. Replaced with an inline input + Add/Cancel that pops in place of the button. Enter commits, Escape cancels; validation errors render in-line in orange. Pre-seeds with the current legend search if it's a valid token." },
+    ],
+  },
+  {
+    version: "0.9.200",
+    date: "2026-05-05",
+    items: [
+      { type: "feature", text: "Province ownership changes in dev mode now export to descr_strat.txt. New factionOwnerChanges state tracks {regionName → targetFactionId} per right-click → change owner. patchDescrStrat gained a third pass — applyOwnershipMoves — that parses descr_strat into preface + per-faction blocks (header / settlements / tail), brace-counts each `settlement { ... }` to extract its region name, then physically moves the matched block from its current faction's settlements list to the target faction's. Idempotent (moving to the current owner is a no-op), so reverts collapse cleanly. Faction edits now mark BOTH descr_regions.txt (rebel default) AND descr_strat.txt (campaign owner) dirty; the dirty-set + factionOwnerChanges are both cleared after a successful export." },
+    ],
+  },
+  {
+    version: "0.9.199",
+    date: "2026-05-05",
+    items: [
+      { type: "feature", text: "Dev mode: define a brand-new hidden_resource. Hidden Resource legend now shows a dashed '+ Add new hidden resource…' button (devMode only). Click → prompt validates a lowercase/digit/underscore token, sets it as the active selection, and renders an inline 'new — 0 regions' banner with a hint to right-click provinces. The existing right-click 'Add 'X'' menu already toggles arbitrary tokens onto r.tags, so the new HR shows up in hiddenResourcesList automatically once attached to its first region. Search box doubles as a fast-path: typing a non-existing valid token relabels the button to '+ Add \"<query>\"'." },
+      { type: "fix", text: "Faction map mode in dev mode now recolors a province immediately when you right-click → change owner. Previously applyDevEdit only updated descr_regions' rebel-default field (r.faction); the canvas reads from factionRegionsMap (descr_strat-derived) for owned regions, so the visible color didn't budge. Now also moves the region between factions in factionRegionsMap, which triggers the coloredOffscreen useEffect via its existing dep on factionRegionsMap. Note: descr_strat ownership patching on export isn't implemented yet, so the change is in-session only — re-importing the campaign restores original ownership." },
+    ],
+  },
+  {
+    version: "0.9.198",
+    date: "2026-05-04",
+    items: [
+      { type: "improvement", text: "Region info Religion row now lists every religion in the region with its share (e.g. 'Pagan 50%, Mithras 33%, Jupiter 17%'), sorted strongest first. Percentage = rel_X_N strength as a fraction of total strength across all rel_* tags. Replaces the prior 'top + also'-with-strength-numbers layout, which was redundant with the bar chart underneath." },
+    ],
+  },
+  {
+    version: "0.9.197",
+    date: "2026-05-04",
+    items: [
+      { type: "fix", text: "View pill now wraps to multiple rows on narrow windows (matches Map Modes behaviour). Was stuck at width:fit-content + no flex-wrap, so it'd push past the right edge instead of breaking onto new lines." },
+    ],
+  },
+  {
+    version: "0.9.196",
+    date: "2026-05-04",
+    items: [
+      { type: "fix", text: "Settlement info: relabel 'Culture:' → 'Rebels:' (descr_regions field 4 is the rebel sub-faction that spawns when the region rebels, not the cultural identity). Tooltip clarifies the meaning." },
+    ],
+  },
+  {
     version: "0.9.195",
     date: "2026-05-03",
     items: [

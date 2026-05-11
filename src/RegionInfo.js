@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import FactionIcon from "./FactionIcon";
 
 const PUBLIC_URL = import.meta.env.BASE_URL || "./";
 
@@ -214,7 +215,7 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -402,7 +403,41 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             </div>
           );
         })()}
-        {row("Culture:", culture)}
+        {culture ? (
+          <div style={{ marginBottom: 2 }}
+            title="Rebel sub-faction that spawns when this region rebels (descr_regions field 4)">
+            <strong>Rebels:</strong> {culture}
+          </div>
+        ) : null}
+        {taxLevel ? (() => {
+          const colors = { low: "#7ed27e", normal: "#bbb", high: "#e8a030", very_high: "#e85050" };
+          const label = taxLevel.replace(/_/g, " ");
+          return (
+            <div style={{ marginBottom: 2 }}
+              title="Current tax rate from the live save (parsed via cracker invariant: byte at settlement_name_offset - 2269)">
+              <strong>Tax:</strong>{" "}
+              <span style={{ color: colors[taxLevel] || "#ccc", textTransform: "capitalize" }}>{label}</span>
+            </div>
+          );
+        })() : null}
+        {typeof happiness === "number" ? (() => {
+          // Raw save-cracker value sits roughly 100..200; RTW's UI clips it
+          // to a 0..100% bar. Linear map: 100 → 0%, 200 → 100% — that puts
+          // a "normal-tax neutral" reading near the middle of the bar,
+          // matching where the in-game public-order bar tends to sit on
+          // a stable city. Color: green/yellow/red traffic light.
+          const raw = happiness;
+          const pct = Math.max(0, Math.min(100, Math.round((raw - 100))));
+          const color = pct >= 60 ? "#7ed27e" : pct >= 30 ? "#e8a030" : "#e85050";
+          return (
+            <div style={{ marginBottom: 2 }}
+              title={`Public order (raw save value ${raw.toFixed(2)}, mapped to ${pct}%). Field at settlement_name_offset-30, decoded 2026-05-10 via the cracker.`}>
+              <strong>Public order:</strong>{" "}
+              <span style={{ color, fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
+              <span style={{ color: "#888", fontSize: "0.7rem", marginLeft: 6 }}>({raw.toFixed(0)})</span>
+            </div>
+          );
+        })() : null}
         {devMode && rgb && (() => {
           // Show both decimal RGB and hex, plus a swatch + colour-tinted
           // hex so the row reads as the colour it represents — easier
@@ -473,17 +508,67 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             </div>
           );
         })()}
-        {Array.isArray(homelandFactions) && homelandFactions.length > 0 && (
-          <div style={{ marginBottom: 2 }}>
-            <strong>Homeland of:</strong>{" "}
-            {homelandFactions.map((f, i) => (
-              <span key={f}>
-                {i > 0 ? ", " : ""}
-                <span style={{ textTransform: "capitalize" }}>
-                  {factionDisplayNames?.[f] || f.replace(/_/g, " ")}
-                </span>
+        {typeof livePopulation === "number" && (
+          <div style={{ marginBottom: 2 }}
+            title="Live population read from the save (u32 at settlement_name_offset-1494, decoded 2026-05-10). Updates each turn as growth/decay events apply.">
+            <strong>Population:</strong>{" "}
+            <span style={{ color: "#eee", fontVariantNumeric: "tabular-nums" }}>{livePopulation.toLocaleString()}</span>
+          </div>
+        )}
+        {liveSize && (
+          <div style={{ marginBottom: 2 }}
+            title="Current settlement size class read live from the save (u8 at settlement_name_offset-2207). Reflects mid-campaign upgrades; descr_strat only carries the starting tier.">
+            <strong>Size:</strong>{" "}
+            <span style={{ color: "#eee", textTransform: "capitalize" }}>{liveSize.replace(/_/g, " ")}</span>
+          </div>
+        )}
+        {liveIncome && typeof liveIncome.perTurn === "number" && (
+          <div style={{ marginBottom: 2 }}
+            title="Per-turn settlement income (denarii). u32 at settlement_name_offset-1586, decoded 2026-05-10 via save-cracker session 3. STRONG-confidence: one clean correlation across rome1..rome10 turn boundaries; exact game-UI semantics not fully pinned.">
+            <strong>Income:</strong>{" "}
+            <span style={{ color: liveIncome.perTurn >= 0 ? "#7ed27e" : "#e85050", fontVariantNumeric: "tabular-nums" }}>
+              {liveIncome.perTurn >= 0 ? "+" : ""}{liveIncome.perTurn.toLocaleString()}
+            </span>
+            <span style={{ color: "#888", fontSize: "0.72rem", marginLeft: 6 }}>denarii/turn</span>
+            {typeof liveIncome.cumulative === "number" && (
+              <span style={{ color: "#888", fontSize: "0.72rem", marginLeft: 6 }}
+                title="Cumulative income contributed by this settlement (lifetime). u32 at settlement_name_offset-1582.">
+                · {liveIncome.cumulative.toLocaleString()} total
               </span>
-            ))}
+            )}
+          </div>
+        )}
+        {Array.isArray(homelandFactions) && homelandFactions.length > 0 && (
+          <div style={{ marginBottom: 2, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+            <strong>Homeland of:</strong>{" "}
+            {homelandFactions.map((f) => {
+              const displayName = factionDisplayNames?.[f] || f.replace(/_/g, " ");
+              return (
+                <span
+                  key={f}
+                  title={displayName}
+                  onContextMenu={(e) => {
+                    if (!onFactionRightClick) return;
+                    e.preventDefault();
+                    onFactionRightClick({ factionId: f, displayName });
+                  }}
+                  style={{
+                    width: 22, height: 22,
+                    display: "inline-block",
+                    cursor: onFactionRightClick ? "context-menu" : "default",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <FactionIcon
+                    iconPath={`faction_icons/${f}.tga`}
+                    alt={displayName}
+                    size={22}
+                    tightCrop
+                    modIconsDir={modIconsDir}
+                  />
+                </span>
+              );
+            })}
             <span style={{ color: "#aaa", fontSize: "0.7rem", marginLeft: 4 }}>
               (non-native owners suffer happiness penalty)
             </span>
@@ -504,21 +589,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             .filter(Boolean);
           if (rels.length === 0) return null;
           rels.sort((a, b) => b.level - a.level);
-          const top = rels[0];
-          const others = rels.slice(1, 4);
+          const total = rels.reduce((s, r) => s + r.level, 0) || 1;
           return (
             <div style={{ marginBottom: 2 }}>
               <strong>Religion:</strong>{" "}
-              <span style={{ textTransform: "capitalize" }}>{top.name.replace(/_/g, " ")}</span>{" "}
-              <span style={{ color: "#aaa", fontSize: "0.72rem" }}>(strength {top.level})</span>
-              {others.length > 0 && (
-                <span style={{ color: "#aaa", fontSize: "0.7rem" }}>
-                  {" · also "}
-                  {others.map((r, i) => (
-                    <span key={i}>{i > 0 ? ", " : ""}<span style={{ textTransform: "capitalize" }}>{r.name.replace(/_/g, " ")}</span> {r.level}</span>
-                  ))}
-                </span>
-              )}
+              {rels.map((r, i) => {
+                const pct = Math.round((r.level / total) * 100);
+                return (
+                  <span key={i}>
+                    {i > 0 ? ", " : ""}
+                    <span style={{ textTransform: "capitalize" }}>{r.name.replace(/_/g, " ")}</span>{" "}
+                    <span style={{ color: "#aaa", fontSize: "0.72rem" }}>{pct}%</span>
+                  </span>
+                );
+              })}
             </div>
           );
         })()}
@@ -646,12 +730,21 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               {characters.map((c, i) => {
                 const sym = c.isLeader ? "👑" : c.isHeir ? "★" : c.gender === "female" ? "♀" : "";
                 const status = c.isDead ? " (dead)" : "";
+                const fullName = `${c.firstName}${c.lastName ? " " + c.lastName.replace(/_/g, " ") : ""}`;
                 return (
-                  <div key={i} style={{ display: "flex", gap: 6, padding: "1px 0" }}>
-                    <span style={{ flex: 1, color: "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {sym ? sym + " " : ""}{c.firstName}{c.lastName ? " " + c.lastName.replace(/_/g, " ") : ""}{status}
-                    </span>
-                    <span style={{ color: "#ccc", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>age {c.age}</span>
+                  <div key={i}
+                    onContextMenu={(e) => {
+                      if (onShowInfo) {
+                        e.preventDefault();
+                        onShowInfo({ type: "character", character: c, label: fullName });
+                      }
+                    }}
+                    title="Right-click to view traits"
+                    style={{ padding: "1px 0", color: "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: onShowInfo ? "context-menu" : "default" }}
+                  >
+                    {sym ? sym + " " : ""}{fullName}
+                    <span style={{ color: "#999", fontVariantNumeric: "tabular-nums", marginLeft: 6 }}>· age {c.age}</span>
+                    {status && <span style={{ color: "#c66", marginLeft: 4 }}>{status}</span>}
                   </div>
                 );
               })}
@@ -832,51 +925,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           overflowY: "auto",
         }}
       >
-        {(() => {
-          // Roster diff vs turn 0. Only show in live mode (when garrison
-          // came from a save) — otherwise we'd be diffing the descr_strat
-          // value against itself. Compares unit-name multisets and reports
-          // net +N / -N.
-          let diffBadge = null;
-          if (startingGarrison && garrison) {
-            const count = (arr, get) => {
-              const m = new Map();
-              for (const x of arr || []) {
-                const n = get(x); if (!n) continue;
-                m.set(n, (m.get(n) || 0) + 1);
-              }
-              return m;
-            };
-            const cur = count(garrison, u => u.unit);
-            const start = count(startingGarrison, u => u.unit || u.name);
-            let added = 0, removed = 0;
-            const allKeys = new Set([...cur.keys(), ...start.keys()]);
-            for (const k of allKeys) {
-              const d = (cur.get(k) || 0) - (start.get(k) || 0);
-              if (d > 0) added += d;
-              else if (d < 0) removed += -d;
-            }
-            if (added > 0 || removed > 0) {
-              diffBadge = (
-                <span style={{ fontSize: "0.65rem", fontWeight: 600 }}>
-                  {added > 0 && <span style={{ color: "#7c7", marginRight: 4 }}>+{added}</span>}
-                  {removed > 0 && <span style={{ color: "#e77" }}>−{removed}</span>}
-                  <span style={{ color: "#888", fontWeight: 400 }}> since turn 0</span>
-                </span>
-              );
-            }
-          }
-          return (
-            <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
-              display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-              <span>Garrison: {diffBadge}</span>
-              {hoveredUnit && <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a" }}>{hoverReadout(hoveredUnit)}</span>}
-            </div>
-          );
-        })()}
+        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
+          display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <span>Garrison:</span>
+          {hoveredUnit && <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a" }}>{hoverReadout(hoveredUnit)}</span>}
+        </div>
         {garrisonCommander && (
           <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
             {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}
+            {garrisonCommander.bodyguardRegion && (
+              <span style={{ color: "#aaa", marginLeft: 6 }}>
+                (bodyguard currently at {garrisonCommander.bodyguardRegion})
+              </span>
+            )}
           </div>
         )}
         {garrison && garrison.length > 0 ? (
@@ -976,12 +1037,33 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           </span>
         )}
         {(() => {
+          // Group armies by faction so the user can see at a glance who
+          // owns each foreign stack. Multiple Roman armies passing through
+          // collapse under one "Romans:" header instead of repeating the
+          // faction tag on every line.
+          const groupByFaction = (list) => {
+            const groups = new Map();
+            for (const a of list) {
+              const fac = a.faction || "";
+              if (!groups.has(fac)) groups.set(fac, []);
+              groups.get(fac).push(a);
+            }
+            return Array.from(groups.entries());
+          };
           const renderArmyList = (list) => (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {list.map((a, ai) => (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {groupByFaction(list).map(([fac, armies], gi) => (
+                <div key={gi}>
+                  {fac && (
+                    <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#cfa", marginBottom: 4 }}>
+                      {factionLabel(fac)}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {armies.map((a, ai) => (
                 <div key={ai}>
                   <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
-                    {a.character}{a.faction ? ` — ${factionLabel(a.faction)}` : ""}
+                    {a.character || (fac ? factionLabel(fac) + " army" : "Army")}
                   </div>
                   <div style={{
                     display: "grid",
@@ -1058,6 +1140,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       </div>
                       );
                     })}
+                  </div>
+                </div>
+              ))}
                   </div>
                 </div>
               ))}

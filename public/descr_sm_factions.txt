@@ -4470,79 +4470,6 @@
 		;;allow this faction to have a functioning family tree
 		"allow reproduction": true,
 	},
-	"byllis":
-	{
-		;;name and description
-		"string":      "BYLLIS",
-		"description": "BYLLIS_DESCR",
-
-		;;culture and (default?) character ethnicity
-		"culture":   "illyrian",
-		"ethnicity": "caucasiandark",
-
-		;;tags for faction groups
-		"tags": [ "fgroup_greek", "fgroup_thracian", ],
-
-		;;namelists
-		"namelists":
-		{
-			"men":      "illyrian_men",
-			"women":    "greek_women",
-			"surnames": "blank_surnames",
-		},
-
-		"logos":
-		{
-			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
-			"loading screen icon": "data/ui/faction_icons/byllis.tga",
-
-			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       131,
-			"rebel standard index": 69,
-
-			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       178,
-			"rebel logo index": 68,
-
-			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_illyrian_rebels.CAS",
-			"strat rebel symbol model": "data/models_strat/symbol_illyrian_rebels.CAS",
-		},
-
-		;;faction colours (some base game factions may have hardcoded overrides)
-		"colours":
-		{
-			"primary":   [  255, 116, 116, ],
-			"secondary": [  0, 0, 0, ],
-
-			"family tree":
-			{
-				"background":      [  255, 116, 116, ],
-				"font":            [  255, 255, 255, ],
-
-				"selected line":   [  255, 255, 255, ],
-				"unselected line": [  200, 187, 187, ],
-			},
-		},
-
-		"movies":
-		{
-			;;movie to play when starting a campaign
-			"intro": "data/fmv/intros/thrace_intro_1080p.wmv",
-
-			;;movie to play when this faction wins or is defeated, respectively
-			"victory": "data/fmv/victory/greek_outro.wmv",
-			"defeat": "data/fmv/lose/illyrians.wmv",
-		},
-
-		"available in custom battles": false,
-		"prefer naval invasions": false,
-		"default religion": "illyrian",
-		"default battle ai personality": "default_personality",
-
-		;;allow this faction to have a functioning family tree
-		"allow reproduction": true,
-	},
 	"byzantium": ;Byzantion
 	{
 		;;name and description
@@ -9021,26 +8948,6 @@
 			"surnames": "blank_surnames",
 		},
 
-		;;information for when this faction emerges
-		"emergence":
-		{
-			;;units to use if we emerge inside a settlement
-			"settlement units":
-			[
-				"psiloi",
-				"greek slingers",
-				"greek archers",
-				"greek peltasts",
-				"greek hoplites",
-				"thureophoroi",
-				"prodromoi",
-				"xystophoroi",
-			],
-
-			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
-		},
-
 		"logos":
 		{
 			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
@@ -9085,7 +8992,7 @@
 			"defeat": "data/fmv/lose/greeks.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -10682,7 +10589,7 @@
 			"loading screen icon": "data/ui/faction_icons/italics.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       145,
+			"standard index":       196,
 			"rebel standard index": 145,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
@@ -10690,7 +10597,7 @@
 			"rebel logo index": 143,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_italic_rebels.CAS",
+			"strat symbol model":       "data/models_strat/symbol_italics.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_italic_rebels.CAS",
 		},
 
@@ -12207,37 +12114,6 @@
 			"men":      "siraces_men",
 			"women":    "siraces_women",
 			"surnames": "blank_surnames",
-		},
-
-		;;horde information
-		"horde":
-		{
-			"horde units":
-			[
-				"horde sarmatian archers",
-				"horde scythian medium cavalry",
-				"horde sarmatian horse archers",
-				"horde scythian noble archers",
-			],
-
-			"min horde units": 20,
-			"max horde units": 40,
-
-			;;remove this amount of horde units from the max every time we re-horde
-			"horde unit reduction per horde": 5,
-
-			;;gain one random horde unit per this amount of population in this settlement, up to the cap
-			"population to horde units": 300,
-
-			;;minimum number of named characters we should have when we first go horde
-			"min named characters": 2,
-
-			;;maximum percentage of armies horde units can fill
-			"max horde unit army percent": 80,
-
-			;;the amount of horde units to disband every time we get a settlement
-			;;if amount of settlements exceeds the numbers in this array, 100% disband assumed
-			"horde unit disband per settlement": [ 33, 50, 100, ],
 		},
 
 		"logos":
@@ -15865,6 +15741,79 @@
 		;;allow this faction to have a functioning family tree
 		"allow reproduction": true,
 	},
+	"sarsinates":
+	{
+		;;name and description
+		"string":      "SARSINATES",
+		"description": "SARSINATES_DESCR",
+
+		;;culture and (default?) character ethnicity
+		"culture":   "roman",
+		"ethnicity": "mediterranean",
+
+		;;tags for faction groups
+		"tags": [ "fgroup_greek", "fgroup_thracian", ],
+
+		;;namelists
+		"namelists":
+		{
+			"men":      "roman_men",
+			"women":    "roman_women",
+			"surnames": "blank_surnames",
+		},
+
+		"logos":
+		{
+			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
+			"loading screen icon": "data/ui/faction_icons/sarsinates.tga",
+
+			;;standard index as declared in descr_standards (4 per page)
+			"standard index":       199,
+			"rebel standard index": 145,
+
+			;;logo index as declared in descr_sm_faction_logos (1 per page)
+			"logo index":       196,
+			"rebel logo index": 143,
+
+			;;flag models to be used on the strat map when a settlement is unoccupied
+			"strat symbol model":       "data/models_strat/symbol_italic_rebels.CAS",
+			"strat rebel symbol model": "data/models_strat/symbol_italic_rebels.CAS",
+		},
+
+		;;faction colours (some base game factions may have hardcoded overrides)
+		"colours":
+		{
+			"primary":   [  59, 182, 178, ],
+			"secondary": [  0, 0, 0, ],
+
+			"family tree":
+			{
+				"background":      [  59, 182, 178, ],
+				"font":            [  255, 255, 255, ],
+
+				"selected line":   [  255, 255, 255, ],
+				"unselected line": [  200, 187, 187, ],
+			},
+		},
+
+		"movies":
+		{
+			;;movie to play when starting a campaign
+			"intro": "data/fmv/intros/scipii_intro_1080p.wmv",
+
+			;;movie to play when this faction wins or is defeated, respectively
+			"victory": "data/fmv/victory/scipii_outro.wmv",
+			"defeat": "data/fmv/lose/SPQR_eliminated.wmv",
+		},
+
+		"available in custom battles": true,
+		"prefer naval invasions": false,
+		"default religion": "italic",
+		"default battle ai personality": "default_personality",
+
+		;;allow this faction to have a functioning family tree
+		"allow reproduction": true,
+	},
 	"scordisci":
 	{
 		;;name and description
@@ -15987,15 +15936,15 @@
 
 			;;standard index as declared in descr_standards (4 per page)
 			"standard index":       122,
-			"rebel standard index": 23,
+			"rebel standard index": 47,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
 			"logo index":       123,
-			"rebel logo index": 23,
+			"rebel logo index": 49,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
 			"strat symbol model":       "data/models_strat/symbol_selge.CAS",
-			"strat rebel symbol model": "data/models_strat/symbol_greek_rebel.CAS",
+			"strat rebel symbol model": "data/models_strat/symbol_anatolia_rebel.CAS",
 		},
 
 		;;faction colours (some base game factions may have hardcoded overrides)
@@ -18287,7 +18236,7 @@
 			"rebel logo index": 21,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_celtiberian_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_vaccaei.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_celtiberian_rebel.CAS",
 		},
 
@@ -18644,15 +18593,15 @@
 			"loading screen icon": "data/ui/faction_icons/vettones.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       21,
+			"standard index":       197,
 			"rebel standard index": 21,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       21,
+			"logo index":       195,
 			"rebel logo index": 21,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_celtiberian_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_vettones.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_celtiberian_rebel.CAS",
 		},
 
@@ -19002,30 +18951,6 @@
 			"men":      "greek_men",
 			"women":    "greek_women",
 			"surnames": "blank_surnames",
-		},
-
-		;;information for when this faction emerges
-		"emergence":
-		{
-			;;units to use if we emerge inside a settlement
-			"settlement units":
-			[
-				"psiloi",
-				"greek slingers",
-				"greek archers",
-				"greek peltasts",
-				"greek hoplites",
-				"thureophoroi",
-				"hypaspists",
-				"phalangites",
-				"agema phalangites",
-				"prodromoi",
-				"xystophoroi",
-				"hetairoi",
-			],
-
-			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
 		},
 
 		"logos":
