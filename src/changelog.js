@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.292",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "Right-side overlay panels (Factions legend, Homeland legend, Army Types) no longer overlap. All three (plus the settlement legend when shown) now stack vertically in a single sidebar container with hidden-scrollbar overflow, so multiple can fit on screen without overlapping. Each panel has its own collapse toggle (▶/▼ chevron next to the title) — click the title to minimize. Visibility is still map-mode-relevant: Homeland only shows in homeland mode, Army Types only shows when the Armies toggle is on AND there are armies, etc." },
+    ],
+  },
+  {
     version: "0.9.291",
     date: "2026-05-11",
     items: [

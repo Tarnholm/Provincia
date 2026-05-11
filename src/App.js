@@ -1186,6 +1186,8 @@ function App() {
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   const [settlementLegendCollapsed, setSettlementLegendCollapsed] = useState(false);
   const [resourcePanelCollapsed, setResourcePanelCollapsed] = useState(false);
+  const [homelandPanelCollapsed, setHomelandPanelCollapsed] = useState(false);
+  const [armyTypesPanelCollapsed, setArmyTypesPanelCollapsed] = useState(false);
   const [resourceSearch, setResourceSearch] = useState("");
   const [showShortcuts, setShowShortcuts] = useState(false);
   // Start each launch unmuted — mute is a transient per-session preference,
@@ -8765,68 +8767,88 @@ function App() {
             <div style={{ position: "absolute", top: MAP_PADDING, left: MAP_PADDING, width: canvasSize.width }}>
               <div style={{ position: "relative" }}>
                 {renderMapModeToggle()}
-                <div style={{ position: "absolute", top: 8, right: 8, zIndex: 3, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="legend-panel" style={{
+                  position: "absolute", top: 8, right: 8, zIndex: 3,
+                  display: "flex", flexDirection: "column", gap: 6,
+                  maxHeight: canvasSize.height - 16, overflowY: "auto",
+                  width: 220, boxSizing: "border-box",
+                }}>
                   {renderLegend()}
                   {renderSettlementLegend()}
+                  {colorMode === "homeland" && selectedFaction && (
+                    <div style={{
+                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+                      borderRadius: 10, padding: "8px 12px",
+                      color: "#f6f6f6", fontSize: "0.75rem",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+                    }}>
+                      <div style={{ fontWeight: 700, marginBottom: homelandPanelCollapsed ? 0 : 4, cursor: "pointer", userSelect: "none" }}
+                        onClick={() => setHomelandPanelCollapsed(p => !p)}>
+                        Homeland <span style={{ fontSize: "0.7rem", color: "#888" }}>{homelandPanelCollapsed ? "▶" : "▼"}</span>
+                      </div>
+                      {!homelandPanelCollapsed && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {[
+                            { color: "rgb(50,180,50)", label: "Homeland — owned" },
+                            { color: "rgb(210,190,40)", label: "Homeland — foreign-held" },
+                            { color: "rgb(180,50,50)", label: "Not homeland" },
+                          ].map(({ color, label }) => (
+                            <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ width: 12, height: 12, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
+                              <span>{label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {showArmies && armiesToRender.length > 0 && (
+                    <div style={{
+                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+                      borderRadius: 10, padding: "8px 12px",
+                      color: "#f6f6f6", fontSize: "0.75rem",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+                    }}>
+                      <div style={{ fontWeight: 700, marginBottom: armyTypesPanelCollapsed ? 0 : 4, cursor: "pointer", userSelect: "none" }}
+                        onClick={() => setArmyTypesPanelCollapsed(p => !p)}>
+                        Army Types <span style={{ fontSize: "0.7rem", color: "#888" }}>{armyTypesPanelCollapsed ? "▶" : "▼"}</span>
+                      </div>
+                      {!armyTypesPanelCollapsed && (
+                        <>
+                          <div onClick={() => setUseLiveOverride(v => !v)}
+                            style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: "0.7rem", color: useLiveOverride ? "#9ec" : "#888", marginBottom: 4, paddingBottom: 4, borderBottom: "1px solid #444" }}
+                            title="When ON, positions from the message log override save positions (pixel-accurate for live play). Turn OFF when reviewing older saves.">
+                            <span>{useLiveOverride ? "🟢" : "⚪"}</span>
+                            <span>Live-log override</span>
+                          </div>
+                          {(() => {
+                            const counts = { garrison: 0, field: 0, navy: 0 };
+                            for (const a of armiesToRender) {
+                              if (counts[a.armyClass] != null) counts[a.armyClass]++;
+                            }
+                            return [
+                              { key: 'garrison',  label: '🏰 Garrisons', color: '#dca040', get: showGarrisons,   set: setShowGarrisons },
+                              { key: 'field',     label: '⚔ Armies',       color: '#b42828', get: showFieldArmies, set: setShowFieldArmies },
+                              { key: 'navy',      label: '⚓ Navies',      color: '#2872d2', get: showNavies,      set: setShowNavies },
+                            ].map(({ key, label, color, get, set }) => (
+                              <div key={key} onClick={() => set(s => !s)}
+                                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", opacity: get ? 1 : 0.4 }}>
+                                <span style={{ width: 12, height: 12, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
+                                <span>{label}</span>
+                                <span style={{ color: "#9ab", marginLeft: "auto", fontVariantNumeric: "tabular-nums", fontSize: "0.76rem" }}>
+                                  {counts[key]}
+                                </span>
+                              </div>
+                            ));
+                          })()}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {renderResourceFilter()}
-                {colorMode === "homeland" && selectedFaction && (
-                  <div style={{
-                    position: "absolute", top: 8, right: 8, zIndex: 4,
-                    background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
-                    borderRadius: 10, padding: "8px 12px",
-                    color: "#f6f6f6", fontSize: "0.82rem", display: "flex", flexDirection: "column", gap: 6,
-                  }}>
-                    <div style={{ fontWeight: 700, marginBottom: 2 }}>Homeland</div>
-                    {[
-                      { color: "rgb(50,180,50)", label: "Homeland — owned" },
-                      { color: "rgb(210,190,40)", label: "Homeland — foreign-held" },
-                      { color: "rgb(180,50,50)", label: "Not homeland" },
-                    ].map(({ color, label }) => (
-                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ width: 12, height: 12, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
-                        <span>{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {showArmies && armiesToRender.length > 0 && (
-                  <div style={{
-                    position: "absolute", top: 8, right: 8, zIndex: 4,
-                    background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
-                    borderRadius: 10, padding: "8px 12px",
-                    color: "#f6f6f6", fontSize: "0.82rem", display: "flex", flexDirection: "column", gap: 6,
-                  }}>
-                    <div style={{ fontWeight: 700, marginBottom: 2 }}>Army Types</div>
-                    <div onClick={() => setUseLiveOverride(v => !v)}
-                      style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: "0.72rem", color: useLiveOverride ? "#9ec" : "#888", marginBottom: 4, paddingBottom: 4, borderBottom: "1px solid #444" }}
-                      title="When ON, positions from the message log override save positions (pixel-accurate for live play). Turn OFF when reviewing older saves.">
-                      <span>{useLiveOverride ? "🟢" : "⚪"}</span>
-                      <span>Live-log override</span>
-                    </div>
-                    {(() => {
-                      // Count armies per class (for the legend subtext).
-                      const counts = { garrison: 0, field: 0, navy: 0 };
-                      for (const a of armiesToRender) {
-                        if (counts[a.armyClass] != null) counts[a.armyClass]++;
-                      }
-                      return [
-                        { key: 'garrison',  label: '🏰 Garrisons', color: '#dca040', get: showGarrisons,   set: setShowGarrisons },
-                        { key: 'field',     label: '⚔ Armies',       color: '#b42828', get: showFieldArmies, set: setShowFieldArmies },
-                        { key: 'navy',      label: '⚓ Navies',      color: '#2872d2', get: showNavies,      set: setShowNavies },
-                      ].map(({ key, label, color, get, set }) => (
-                        <div key={key} onClick={() => set(s => !s)}
-                          style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", opacity: get ? 1 : 0.4 }}>
-                          <span style={{ width: 12, height: 12, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
-                          <span>{label}</span>
-                          <span style={{ color: "#9ab", marginLeft: "auto", fontVariantNumeric: "tabular-nums", fontSize: "0.76rem" }}>
-                            {counts[key]}
-                          </span>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                )}
                 <canvas
                   ref={canvasRef}
                   onClick={handleClick}
