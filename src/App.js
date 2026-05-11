@@ -2054,9 +2054,13 @@ function App() {
         }
         // Name dedupe: if this character is already in saveLiveArmies at
         // ANY position, skip the synth — they've moved, and the save's
-        // position is authoritative.
-        if (d.character && d.faction) {
-          const nameKey = d.character.toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim() + "|" + d.faction.toLowerCase();
+        // position is authoritative. Bundled armiesData stores the name
+        // under `name`, not `character` (the bundle script writes both
+        // forms inconsistently); accept either so the dedupe actually
+        // fires for descr_strat starting armies.
+        const dName = d.character || d.name;
+        if (dName && d.faction) {
+          const nameKey = dName.toLowerCase().replace(/_/g, " ").replace(/\s+the\s+\S+$/i, "").trim() + "|" + d.faction.toLowerCase();
           if (armyByCharFaction.has(nameKey)) continue;
         }
         if (liveMovesActive) continue;

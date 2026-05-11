@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.307",
+    date: "2026-05-11",
+    items: [
+      { type: "fix", text: "0.9.306 still showed the duplicate Aulus marker because the dedupe check looked at `d.character` but bundled `armiesData` entries write the name to `d.name` (the bundle script uses both forms inconsistently). The undefined check skipped the dedupe entirely, so the synthetic marker still got added. Now accepts either field — should be the last needed dedupe fix." },
+    ],
+  },
+  {
     version: "0.9.306",
     date: "2026-05-11",
     items: [
