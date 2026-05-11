@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.313",
+    date: "2026-05-11",
+    items: [
+      { type: "improvement", text: "Extended the temp Characters-in-Uria diagnostic to also dump what armiesToRender has for any Aulus-named entry (character / firstName / originalLastName / region / x,y). Click Uria after updating, then send me the [char-diag] line from provincia.log." },
+    ],
+  },
+  {
     version: "0.9.312",
     date: "2026-05-11",
     items: [

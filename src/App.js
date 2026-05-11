@@ -10848,18 +10848,23 @@ function App() {
                           }
                         }
                         const combined = [...filtered, ...incoming];
-                        // TEMP DIAG (remove after fix verified): write a
-                        // one-line summary to provincia.log so the user
-                        // can share what the renderer actually sees.
+                        // TEMP DIAG: write to provincia.log when Uria
+                        // panel is open so we can see why the live path
+                        // is still producing zero chars. Remove once
+                        // fixed.
                         try {
                           if (r.region === "Salentinia" || r.city === "Uria") {
                             const liveKeysSample = [...liveRegionByCharName.entries()].filter(([k, v]) => v === r.region || /aulus|gabinius|messapiv/.test(k)).slice(0, 8);
                             const saveRegions = Object.keys(saveCharactersByRegion || {}).length;
                             const tarasChars = (saveCharactersByRegion?.Taras || []).filter(c => /aulus/i.test(c.firstName || ""));
                             const tarasSample = tarasChars.slice(0, 3).map(c => `${c.firstName}|${c.lastName}|olast=${c.originalLastName}`).join(" :: ");
+                            // Also dump what armiesToRender has for Aulus.
+                            const aulusArmies = (armiesToRender || []).filter(a => /aulus/i.test(a.character || a.firstName || ""));
+                            const aulusSample = aulusArmies.slice(0, 3).map(a => `char='${a.character}' first='${a.firstName}' olast='${a.originalLastName}' region='${a.region}' x=${a.x} y=${a.y}`).join(" :: ");
                             window.electronAPI?.logMessage?.("info",
                               `[char-diag] r.region=${r.region} r.city=${r.city} filtered=${filtered.length} incoming=${incoming.length} ` +
                               `saveRegions=${saveRegions} tarasCharsAulus=${tarasChars.length} tarasSample=[${tarasSample}] ` +
+                              `armies=[${aulusSample}] ` +
                               `liveKeys=[${liveKeysSample.map(([k,v]) => k+'=>'+v).join(' / ')}]`);
                           }
                         } catch {}
