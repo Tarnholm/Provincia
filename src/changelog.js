@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.317",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "Found the actual root cause of the parser hang. Log showed `[ERROR] [save-watch] parse error: Cannot set properties of null (setting 'initialOwnerByCity')` — main.js was trying to assign `lastSaveData.initialOwnerByCity = ...` when `lastSaveData` was null (parseSaveData returned null on certain saves). The throw escaped, the finally cleared `_reparsing`, but subsequent state was corrupted in a way that hung future parses. Added null-checks before all three `lastSaveData.X = ...` assignments in the save-watch and characters-init flows." },
+      { type: "improvement", text: "Watchdog timeout on `reparseLatestSave` — if a reparse hasn't completed in 120 seconds (which is >2x the longest legitimate parse we've observed), force-clear `_reparsing` and kick off the next queued reparse. So even if a new unhandled hang slips through in future, the queue self-recovers instead of locking forever." },
+      { type: "improvement", text: "Reparse error log now includes the stack trace (was just `.message`), making future hangs easier to diagnose." },
+    ],
+  },
+  {
     version: "0.9.316",
     date: "2026-05-12",
     items: [

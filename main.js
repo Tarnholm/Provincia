@@ -4360,6 +4360,22 @@ async function reparseLatestSave() {
     return;
   }
   _reparsing = true;
+  // Watchdog: force-clear `_reparsing` after 120s even if the reparse
+  // hasn't naturally completed (e.g. a worker hang we haven't accounted
+  // for, an unhandled rejection that escaped the try/finally, etc).
+  // Without this, a stuck reparse locks the queue forever and every
+  // subsequent save event just emits "queued" with no progress.
+  // 120s is more than 2x the longest legitimate parse we've observed.
+  const watchdog = setTimeout(() => {
+    if (_reparsing) {
+      console.warn("[save-watch] watchdog: clearing _reparsing after 120s — reparse hung");
+      _reparsing = false;
+      if (_reparsePending) {
+        _reparsePending = false;
+        setImmediate(() => { reparseLatestSave().catch(() => {}); });
+      }
+    }
+  }, 120000);
   const win = BrowserWindow.getAllWindows()[0];
   if (!win) { _reparsing = false; return; }
   // Pinned save wins: user explicitly chose a specific file to follow.
@@ -4557,8 +4573,9 @@ async function reparseLatestSave() {
     console.log("[save-watch] reparsed:", latestFile,
       extras ? `(chars=${extras.characters.length}, units=${extras.units.length})` : "(no char data yet)");
   } catch (e) {
-    console.error("[save-watch] reparse error:", e.message);
+    console.error("[save-watch] reparse error:", e.message, e.stack);
   } finally {
+    clearTimeout(watchdog);
     _reparsing = false;
     if (_reparsePending) {
       _reparsePending = false;
@@ -4661,7 +4678,7 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
         lastSaveData.queuedBuildingsByCity = bRes.queuedByCity;
       } catch (e) { console.warn("[save-watch] settlement buildings failed:", e.message); }
 
-      if (modInitialOwnerByCity && saveBuf) {
+      if (lastSaveData && modInitialOwnerByCity && saveBuf) {
         emitSaveProgress("Resolving settlement ownership", 90);
         await _yield();
         lastSaveData.initialOwnerByCity = modInitialOwnerByCity;
@@ -5022,10 +5039,12 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
       // could leak through).
       try {
         const bRes = (await buildingsP) || parseSettlementBuildings(saveBuf);
-        lastSaveData.builtBuildingsByCity = bRes.buildingsByCity;
-        lastSaveData.queuedBuildingsByCity = bRes.queuedByCity;
+        if (lastSaveData) {
+          lastSaveData.builtBuildingsByCity = bRes.buildingsByCity;
+          lastSaveData.queuedBuildingsByCity = bRes.queuedByCity;
+        }
       } catch (e) { console.warn("[characters-init] building re-parse failed:", e.message); }
-      if (modInitialOwnerByCity) {
+      if (lastSaveData && modInitialOwnerByCity) {
         lastSaveData.initialOwnerByCity = modInitialOwnerByCity;
         try {
           const cur = resolveCurrentOwners(saveBuf, modInitialOwnerByCity);
