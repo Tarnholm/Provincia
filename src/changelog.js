@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.300",
+    date: "2026-05-11",
+    items: [
+      { type: "feature", text: "Same-tile merge now uses the live log's `transferring general(X) ... to named general(Y)` event directly instead of relying on coord-equality. Verified against the user's actual message_log: Marcus's EXCHANGE move puts him at (337,385) — same tile as Aulus — and the transfer event names both generals explicitly. The renderer now builds a Map<donor_secondaryUuid → target_secondaryUuid> from the flow snapshot's `fromName` / `toName` fields (matched against saveCharactersByRegion by firstName+lastName), and the region panel's mergeByTile + the map hover tooltip both group entries by (faction, merge-target) when present. Coord-equality is kept as a fallback for cases the flow tracker didn't capture (mod reload mid-merge, etc). Result: Aulus + Marcus merged stack shows as one entry with 15 units in both the region panel and the hover tooltip, even when the engine's coord resolution is off by a tile." },
+    ],
+  },
+  {
     version: "0.9.299",
     date: "2026-05-11",
     items: [

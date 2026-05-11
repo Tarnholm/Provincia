@@ -2134,6 +2134,58 @@ function App() {
   // log-position events on top, giving us each commander's tile-accurate
   // location. If a commander has no live entry (or pixelData isn't ready),
   // we fall back to the save's region.
+  // Build runtime char uuid → save secondaryUuid bridge ONCE from the
+  // current liveUnitFlow snapshot, exposing both directions:
+  //   mergedSecondaryByDonor: donor save secondary → recipient save secondary
+  //   mergedRecipients: set of all recipient save secondaries
+  // Used by liveUnitsByRegion (foot donation), the region panel's
+  // mergeByTile (combine merged-into entries), and the map hover tooltip.
+  const mergedPairsBySecondary = useMemo(() => {
+    const out = new Map();
+    const flow = liveUnitFlow.current || [];
+    if (flow.length === 0 || !saveCharactersByRegion) return out;
+    // Index save chars by (firstName, lastName) for unambiguous bridge.
+    const pairMatches = new Map();
+    for (const arr of Object.values(saveCharactersByRegion)) {
+      for (const c of arr) {
+        if (!c.secondaryUuid || !c.firstName) continue;
+        const last = ((c.lastName || "").replace(/_/g, " ").toLowerCase());
+        const key = (c.firstName || "").toLowerCase() + "|" + last;
+        if (!pairMatches.has(key)) pairMatches.set(key, []);
+        pairMatches.get(key).push(c.secondaryUuid);
+      }
+    }
+    const parse = (n) => {
+      if (!n) return null;
+      const clean = String(n).toLowerCase().replace(/^(captain|admiral|general)\s+/, "").replace(/\s+the\s+\S+$/i, "");
+      const parts = clean.split(/\s+/);
+      return parts[0] + "|" + parts.slice(1).join(" ");
+    };
+    const bridge = (name) => {
+      if (!name) return null;
+      const k = parse(name);
+      if (!k) return null;
+      const matches = pairMatches.get(k);
+      if (!matches || matches.length !== 1) return null;
+      return matches[0];
+    };
+    for (const f of flow) {
+      const donor = bridge(f.fromName);
+      const target = bridge(f.toName);
+      if (donor && target && donor !== target) {
+        // Resolve transitive chains (A→B, B→C ⇒ A→C).
+        let final = target;
+        for (let i = 0; i < 20; i++) {
+          const next = out.get(final);
+          if (!next || next === final) break;
+          final = next;
+        }
+        out.set(donor, final);
+      }
+    }
+    return out;
+  }, [liveCharPositionsVersion, saveCharactersByRegion]);
+
   const liveUnitsByRegion = useMemo(() => {
     if (!saveUnitsByRegion) return null;
     // Only override the unit's save-time region tag when the commander's
@@ -8927,38 +8979,38 @@ function App() {
                     wordBreak: "break-word",
                   }}>
                     {(() => {
-                      // Same-tile merge: RTW stacks can hold multiple
-                      // generals + their bodyguards. The save records each
-                      // general's bodyguard with its own commanderUuid, so
-                      // a multi-general stack like Marcus + Aulus shows
-                      // as two separate armies in armiesToRender. Merge by
-                      // (faction, live region) — coord-exact match was
-                      // too strict; armies that just merged via the live
-                      // log can land 1-2 tiles off because MOVING_NORMAL
-                      // and the in-game stack-merge resolution aren't
-                      // pixel-aligned. Region match captures the practical
-                      // case ("both in Taras") without false positives.
+                      // Same-tile merge via the runtime unit-flow events
+                      // (main.js's `transferring general(X) → Y` lines).
+                      // If a's commanderUuid is a merged donor or target,
+                      // group all armies in that merge cluster together.
+                      // Fallback: exact (faction, x, y) coord match for
+                      // cases where the merge wasn't captured (mod reload
+                      // mid-merge, etc).
                       const a = hoveredArmy.army;
+                      // Find a's role in mergedPairsBySecondary.
+                      const targetSec = a.commanderUuid
+                        ? (mergedPairsBySecondary.get(a.commanderUuid) || a.commanderUuid)
+                        : null;
                       let totalUnits = a.units ? a.units.length : 0;
                       const otherCommanders = [];
-                      if (a.faction && a.region) {
-                        const targetFac = a.faction.toLowerCase();
-                        const targetRegion = a.region;
-                        for (const other of (armiesToRender || [])) {
-                          if (other === a) continue;
-                          if (!other.faction) continue;
-                          if (other.faction.toLowerCase() !== targetFac) continue;
-                          if (other.region !== targetRegion) continue;
-                          // Within the same region, require same coords OR
-                          // both being live-tracked (= they've actually
-                          // merged on the live log, not just coincidentally
-                          // co-resident in the same region).
-                          const sameCoord = typeof a.x === "number" && typeof a.y === "number" && other.x === a.x && other.y === a.y;
-                          const bothLive = (a.liveTracked || a.logOnly) && (other.liveTracked || other.logOnly);
-                          if (!sameCoord && !bothLive) continue;
-                          if (Array.isArray(other.units)) totalUnits += other.units.length;
-                          if (other.character) otherCommanders.push(other.character);
+                      for (const other of (armiesToRender || [])) {
+                        if (other === a) continue;
+                        if (!other.faction || !a.faction) continue;
+                        if (other.faction.toLowerCase() !== a.faction.toLowerCase()) continue;
+                        // Merge-pair match: other belongs to the same
+                        // logical stack per the live log.
+                        let isMerge = false;
+                        if (targetSec && other.commanderUuid) {
+                          const otherTarget = mergedPairsBySecondary.get(other.commanderUuid) || other.commanderUuid;
+                          if (otherTarget === targetSec) isMerge = true;
                         }
+                        // Coord fallback.
+                        if (!isMerge && typeof a.x === "number" && typeof a.y === "number" && other.x === a.x && other.y === a.y) {
+                          isMerge = true;
+                        }
+                        if (!isMerge) continue;
+                        if (Array.isArray(other.units)) totalUnits += other.units.length;
+                        if (other.character) otherCommanders.push(other.character);
                       }
                       const displayName = otherCommanders.length > 0
                         ? `${a.character || a.name || "(unnamed)"} + ${otherCommanders.join(" + ")}`
@@ -9007,24 +9059,27 @@ function App() {
                       );
                     })() : null}
                     {(() => {
-                      // Merge unit lists from same-tile armies (same logic
-                      // as the header above — faction + region match,
-                      // tolerating off-by-1 coords from live-log merges).
+                      // Merge unit lists using the same flow-event +
+                      // coord-fallback rule as the header above.
                       const a = hoveredArmy.army;
                       const mergedUnits = [...(a.units || [])];
-                      if (a.faction && a.region) {
-                        const targetFac = a.faction.toLowerCase();
-                        const targetRegion = a.region;
-                        for (const other of (armiesToRender || [])) {
-                          if (other === a) continue;
-                          if (!other.faction) continue;
-                          if (other.faction.toLowerCase() !== targetFac) continue;
-                          if (other.region !== targetRegion) continue;
-                          const sameCoord = typeof a.x === "number" && typeof a.y === "number" && other.x === a.x && other.y === a.y;
-                          const bothLive = (a.liveTracked || a.logOnly) && (other.liveTracked || other.logOnly);
-                          if (!sameCoord && !bothLive) continue;
-                          if (Array.isArray(other.units)) mergedUnits.push(...other.units);
+                      const targetSec = a.commanderUuid
+                        ? (mergedPairsBySecondary.get(a.commanderUuid) || a.commanderUuid)
+                        : null;
+                      for (const other of (armiesToRender || [])) {
+                        if (other === a) continue;
+                        if (!other.faction || !a.faction) continue;
+                        if (other.faction.toLowerCase() !== a.faction.toLowerCase()) continue;
+                        let isMerge = false;
+                        if (targetSec && other.commanderUuid) {
+                          const otherTarget = mergedPairsBySecondary.get(other.commanderUuid) || other.commanderUuid;
+                          if (otherTarget === targetSec) isMerge = true;
                         }
+                        if (!isMerge && typeof a.x === "number" && typeof a.y === "number" && other.x === a.x && other.y === a.y) {
+                          isMerge = true;
+                        }
+                        if (!isMerge) continue;
+                        if (Array.isArray(other.units)) mergedUnits.push(...other.units);
                       }
                       return <>
                         {mergedUnits.slice(0, 12).map((u, i) => {
@@ -10283,6 +10338,7 @@ function App() {
                               _units: units,
                               _pos: cmdPos.get(cmd) || null,
                               _live: cmdLive.get(cmd) || false,
+                              _secondary: cmd, // the commanderUuid itself, used by mergeByTile's flow-event matching
                             };
                             if (!commander) {
                               // Aggregate unknown commanders by faction so
@@ -10311,15 +10367,36 @@ function App() {
                           // one block with both names instead of two markers
                           // stacked at the same coords.
                           const mergeByTile = (list) => {
+                            // Iterate entries; for each, compute its merge
+                            // key from (faction, target-secondary-uuid):
+                            //   - If the entry's commander has been merged
+                            //     INTO another army (per the live log's
+                            //     transfer events), use the target's
+                            //     secondary uuid as the merge key.
+                            //   - Else if the entry's own commander IS a
+                            //     known target (someone has merged INTO
+                            //     them), still use their own uuid as the
+                            //     key so donors aggregate to them.
+                            //   - Otherwise fall back to exact coords.
+                            const allTargets = new Set(mergedPairsBySecondary.values());
                             const out = [];
-                            const idx = new Map(); // (fac+","+pos) → out index
-                            // First pass: merge by exact (faction, pos) like before.
+                            const idx = new Map();
                             for (const e of list) {
-                              if (!e._pos) { out.push(e); continue; }
-                              const key = (e.faction || "") + "@" + e._pos;
-                              const hit = idx.get(key);
+                              const mergedInto = e._secondary ? mergedPairsBySecondary.get(e._secondary) : null;
+                              let mergeKey;
+                              if (mergedInto) {
+                                mergeKey = (e.faction || "") + "@target:" + mergedInto;
+                              } else if (e._secondary && allTargets.has(e._secondary)) {
+                                mergeKey = (e.faction || "") + "@target:" + e._secondary;
+                              } else if (e._pos) {
+                                mergeKey = (e.faction || "") + "@pos:" + e._pos;
+                              } else {
+                                out.push({ ...e, _characters: [e.character] });
+                                continue;
+                              }
+                              const hit = idx.get(mergeKey);
                               if (hit == null) {
-                                idx.set(key, out.length);
+                                idx.set(mergeKey, out.length);
                                 out.push({ ...e, _characters: [e.character] });
                               } else {
                                 const target = out[hit];
@@ -10327,45 +10404,15 @@ function App() {
                                 target._characters.push(e.character);
                               }
                             }
-                            // Second pass: collapse multiple live-tracked
-                            // entries of the same faction together. After a
-                            // live-log merge (Marcus → Aulus), the engine
-                            // can leave the two bodyguards 1 tile apart
-                            // visually, breaking the exact-coord match. If
-                            // both entries are live-tracked AND share
-                            // faction, treat them as one stack. Within the
-                            // same r.region scope (this function's caller
-                            // already filters to one region), this rarely
-                            // over-merges.
-                            const liveByFac = new Map();
-                            const stillOut = [];
                             for (const e of out) {
-                              if (e._live) {
-                                const k = e.faction || "";
-                                if (!liveByFac.has(k)) {
-                                  liveByFac.set(k, e);
-                                  stillOut.push(e);
-                                } else {
-                                  const target = liveByFac.get(k);
-                                  target._units = target._units.concat(e._units);
-                                  if (e._characters) {
-                                    target._characters = (target._characters || [target.character]).concat(e._characters);
-                                  }
-                                }
-                              } else {
-                                stillOut.push(e);
-                              }
-                            }
-                            // Collapse _characters back into a display string.
-                            // One name = unchanged; two+ generals = "A + B".
-                            for (const e of stillOut) {
                               if (e._characters && e._characters.length > 1) {
                                 e.character = e._characters.filter(Boolean).join(" + ");
                               }
                               delete e._characters;
                               delete e._live;
+                              delete e._secondary;
                             }
-                            return stillOut;
+                            return out;
                           };
                           const mergedOwnFinal = mergeByTile(mergedOwn);
                           const mergedOthersFinal = mergeByTile(mergedOthers);
