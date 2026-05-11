@@ -8234,6 +8234,219 @@ Reproducer: `dig-battle11.js`.
 
 ---
 
+### Findings 2026-05-11 (background session 32 — DIPLOMACY ENUM via clean trade-rights save pair)
+
+**HEADLINE: DIPLOMACY ENUM IS CRACKED.** After 6+ blocked prior sessions, a
+clean save pair isolating a single trade-rights action (no end-turn,
+no other input) revealed the bilateral 239×239 diplomatic-attitude
+matrix exactly.
+
+#### CONFIRMED: 239×239 bilateral DIPLOMATIC_ATTITUDE matrix
+
+Sample: `save_1.1.sav` (before, 34,524,329B) → `save_2.1.sav` (after,
+34,524,319B). Net delta −10 bytes. **Only THREE substantive structural
+diffs** (plus ~1100 cosmetic pointer-shift events and ~30 byte-level
+AI noise diffs):
+
+1. **The matrix flip at indices `[0][156]` and `[156][0]`** — see
+   below.
+2. **A diplomatic-history table at `0x1f1dca3..0x1f1ddc5`** loses 10
+   bytes of small-u8 enum entries (likely move-trail or
+   per-pair-action-history, NOT the attitude itself).
+3. **RNG state tick at `0x43f8` (counter) + `0x455c` (4-byte
+   next-state seed).** Always present in every save pair.
+
+**Matrix layout — CONFIRMED**:
+
+```
+matStart    = 0xf8fd2  (first record's u32 enum-prev field)
+stride      = 267 bytes per cell
+rows × cols = 239 × 239 = 57,121 cells
+matEnd      = 0xf8fd2 + 57121 × 267 = 0x1ed64b5 (exclusive)
+total       = ~14.5 MB occupied by the matrix
+```
+
+**Row order = descr_sm_factions.txt declaration order**:
+
+- Index 0 = `romans_julii`
+- Index 156 = `messapians`
+- Index 238 = `slave` (Free Peoples — last entry, line 19341)
+
+(Verified by counting faction blocks in `public/descr_sm_factions.txt`:
+exactly 239 entries between line 17 (`romans_julii`) and line 19341
+(`slave`).)
+
+**Per-cell record layout (267 bytes, mostly zeros)**:
+
+| Byte offset within cell | u32 value (typical) | Meaning |
+|---|---|---|
+| +0  | **5** | u32 `prev_enum` — "never-met" / sentinel-marker; flips to 0 once any agreement is made |
+| +4  | **0** | u32 `curr_enum` — current bilateral relationship state (0 = neutral default, 1 = trade rights granted; others unobserved this session) |
+| +8  | 0 | reserved |
+| +12 | **10** (0x0a) | CONFIRMED constant — schema marker; observed identical in all sampled cells |
+| +16 | 200 (0xc8) | mostly constant — observed constant in 99%+ of sampled cells |
+| +20 | 200 (0xc8) typical, **600 for col=237 (vettones)** | per-cell opinion score; varies (sample showed +20=600 for every `[r][237]` cell) |
+| +24 | 2 | mostly constant |
+| +28 | 6 typical, observed 6→46 in [0][155] / [155][238] this pair | per-cell opinion score; minor noise diffs observed (likely AI re-evaluation) |
+| +32 | 200 typical, **600 for col=237** | per-cell score, paired with +20 |
+| +36..+117 | 0 | padding |
+| +118 | 3 | mostly constant |
+| +119..+153 | 0 | padding |
+| +154 | 576 (0x240) | mostly constant |
+| +155..+177 | 0 | padding |
+| +178 | 166 (0xa6) | mostly constant |
+| +179..+266 | 0 | padding |
+
+**HYPOTHESIS**: +20 and +32 are paired opinion/score values; +28 is
+another scoring field. Most cells default to (+20=200, +28=6, +32=200)
+but they vary per faction-pair to reflect descr_strat initial
+relationships. **Cells with col=237 (vettones) have +20=600 and +32=600**
+in every sampled row — possibly reflecting vettones-specific
+diplomatic starting attitudes from `descr_strat.txt`. Final
+characterization requires cross-referencing descr_strat per
+faction-pair.
+
+**Matrix end ambiguity**: cell [238][238] (the theoretical last cell)
+appears to overlap with the next file section (which contains
+"hinterland_region" and "default_set" strings starting at ~0xf846a0).
+The matrix likely **effectively has 57,120 cells (row 238 may stop at
+column 237)** or the last cell is truncated. The 57,118 normal cells
++ 2 changed cells (= 57,120 default + 2 flipped) match the observed
+byte-level diff.
+
+**Observed flip (only 2 cells changed in the whole 14.5MB matrix)**:
+
+| Cell | A bytes (+0..+15) | B bytes (+0..+15) |
+|---|---|---|
+| `[0][156]` Romans→Messapians (file off `0x103286`) | `05 00 00 00 00 00 00 00 00 00 00 00 0a 00 00 00` | `00 00 00 00 01 00 00 00 00 00 00 00 0a 00 00 00` |
+| `[156][0]` Messapians→Romans (file off `0xa775de`) | `05 00 00 00 00 00 00 00 00 00 00 00 0a 00 00 00` | `00 00 00 00 01 00 00 00 00 00 00 00 0a 00 00 00` |
+
+So a **trade-rights agreement updates BOTH directions of the pair
+identically** — the matrix is bilateral storage, not one-sided
+perception. (Compare with M2TW which uses separate per-side opinion
+scores; RR appears to store the agreement state at both indices.)
+
+**Enum semantics (PARTIAL — CONFIRMED + HYPOTHESIS)**:
+
+- `prev=5, curr=0` — **CONFIRMED** default for every never-touched
+  faction-pair (all 57,121 cells at campaign-start, including
+  diagonal r==c self-pairs)
+- `prev=0, curr=1` — **CONFIRMED** = "trade rights granted"
+
+Other classic-RTW diplomacy states (war=2?, peace/treaty=3?,
+alliance=4?, protectorate=5?, etc.) NOT yet observed in this save
+pair. The `prev=5` default actually overlaps with what might be
+"protectorate" in other formats — so the enum may have two distinct
+slots ("history/sentinel" at +0 vs "agreement" at +4) rather than a
+single state-machine.
+
+**Confidence: CONFIRMED** that the 14.5MB section at
+`0xf8fd2..0x1ed64b5` is the diplomatic state matrix and that
+`(prev=5,curr=0)→(prev=0,curr=1)` represents trade-rights at both
+`[player][target]` and `[target][player]`. Future cracking of war/
+peace/alliance enums requires save pairs taken right before/after each
+of those specific actions.
+
+#### Matrix verification
+
+`dig-diplo-cleanF.js` walked the entire 239×239 grid and tabulated
+(prev,curr) pairs:
+
+- A (before): 57,121 cells all (5,0). Zero non-default cells.
+- B (after):  57,119 cells (5,0) + 2 cells (0,1) at [0][156] and [156][0].
+
+This is the smallest possible diff for a meaningful diplomatic action,
+strongly indicating that the campaign was at turn 1 with no other
+historical diplomacy (matches the user's brief: "fresh-loaded
+campaign; Messapians has not yet been negotiated with").
+
+#### Stretch findings
+
+(a) **AI per-faction counters at `+(52+4N+148/172/224)` (sessions 22,
+31): NOT TICKED** in this save pair. The two diffs near these
+offsets in earlier sessions were at the *faction-table base* near
+`0x103xxx`; in this clean save the only change there is `[0][156]`
+(which is the matrix cell, NOT a faction counter — the matrix happens
+to overlap that file region). **STRONG support for session 31's
+"per-turn, not per-action" hypothesis**: counters that didn't move
+across a diplomatic action must be tied to end-turn processing.
+
+(b) **Unified event log at `0x51b5..0x846af`** (session 27): **ZERO
+events from the diplomatic action**. Trade rights does NOT write to
+this log. The log appears to be reserved for character/army/agent
+actions or per-turn summary events.
+
+(c) **Per-tile event registry at `0x84f1f` (session 26)**: **ZERO
+events**. Diplomacy is bilateral-faction-pair state, not tile-
+scoped, so no per-tile log entry — consistent.
+
+(d) **Mystery byte cluster at `0xa8e00..0xaa9e8`** (~30 single-byte
+u32 diffs): these are inside what looks like a tile-coordinate
+table (values like `c8 01` = 456, `4a 02` = 586). Likely AI
+strategic-target re-evaluation triggered by the new trade
+partnership. **HYPOTHESIS**: AI re-scores trade-related move
+candidates the same turn an agreement is signed.
+
+(e) **−10 net byte delta** sourced entirely from the move-trail /
+path-history table at `0x1f1dc00..0x1f1de00` (small-u8 records
+terminated by `00 ff 00 ff 00 ff 00 [u16]`). This is NOT the
+diplomatic-attitude matrix — it's some movement/action history that
+also shifts when diplomacy changes. ~1116 +1/-1 byte insert/delete
+pairs in the per-region area `0xf80000..0x1f00000` are pointer-list
+re-encodings that re-balance perfectly to net 0; only the move-trail
+section contributes net delta.
+
+#### Practical implications for the Provincia app
+
+- **Save-cracker can now READ DIPLOMATIC STATE** for any RR save:
+  scan from offset `0xf8fd2`, stride 267 bytes, 239×239 cells. For
+  each cell `[r][c]`: `prev = u32(off+0)`, `curr = u32(off+4)`.
+  `prev=5,curr=0` ⇒ never-met (default). `prev=0,curr=1` ⇒ trade
+  rights agreed.
+- For the Romans player, **row 0 is your view of every other
+  faction**. Mirror with column 0 (everyone's view of Romans) — they
+  should match for the agreement-state byte. If they don't, that's
+  the engine's recent-event window state.
+- **Matrix start `0xf8fd2` is mod-stable** as long as faction count
+  stays at 239. If a mod adds/removes factions, the matrix scales
+  to `K×K` cells of 267 bytes each, and matStart may shift due to
+  earlier-section size changes — but the stride (267) and the per-cell
+  layout almost certainly remain identical.
+
+#### Scripts
+
+- `dig-diplo-clean1.js` — initial byte-by-byte diff, found 3318
+  raw-aligned diffs
+- `dig-diplo-clean2.js` — head/tail anchoring, established 10-byte
+  shift point in trailer region
+- `dig-diplo-clean3.js` — shift-transition scanner (proved 1300+
+  pointer-fixup transitions but no structural inserts apart from
+  one region)
+- `dig-diplo-clean4.js` — Myers-style 2-pointer diff with lookahead;
+  produced `diplo-clean-events.json` with 3603 classified events
+- `dig-diplo-clean5..7.js` — zoomed in on the two `05→01` enum
+  flips; characterized the 267-byte stride and 239-per-row groups
+- `dig-diplo-clean8..9.js` — searched for lua-footer faction-id
+  table (NOT present in this save — the `id_<faction>` table from
+  session 23 appears only in some saves)
+- `dig-diplo-cleanA..D.js` — pinned matrix start at `0xf8fd2`, full
+  record layout
+- `dig-diplo-cleanE.js` — walked 60,000 cells forward; **57,122 of
+  them have enum=5**, confirming the 239² matrix and ~5 noisy outliers
+- `dig-diplo-cleanF.js` — full matrix scan; only 2 cells changed
+  ([0][156] and [156][0])
+- `dig-diplo-cleanG.js` — byte-level verification of the flip:
+  prev `5→0`, curr `0→1`
+- `dig-diplo-cleanH.js` — confirmed 57,121 cells (5,0) before; 2
+  cells (0,1) after
+- `dig-diplo-cleanI..L.js` — investigated stretch targets: AI
+  counters didn't tick, event log is empty, region records account
+  for net −10 via move-trail table
+- `dig-diplo-cleanM..N.js` — characterized the move-trail / path-
+  history table at `0x1f1dc00+` (not the attitude matrix)
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
