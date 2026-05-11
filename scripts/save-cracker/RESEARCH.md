@@ -9187,6 +9187,140 @@ expose the meaning of the +20/+28/+32 fields via single-cell diffs.
 
 ---
 
+### Findings 2026-05-12 (background session 34b — Uria building damage re-check)
+
+**HEADLINE: Re-checked session 34's claim that exterminate doesn't damage
+Uria's buildings. CONFIRMED for the Uria corpus, with two corrections:
+(1) session 34's brief used wrong HP offset (`cstring+0x28` = always 0 in
+all samples); the parser's actual rule `record_start + name.length + 32`
+(= post-hash + 23) reads HP = 100 cleanly. (2) Uria has 2 chains in ALL
+4 saves (save_9, _10, _11, _12), not 3 — `governmentD` from descr_strat
+is absent in every snapshot, so its absence in save_12.1 is NOT
+extermination damage.**
+
+#### What was checked
+
+Brief asked: enumerate every chain record in Uria across save_11.1 and
+save_12.1, dump HP at parser-correct offset, also probe alternative
+offsets and check descr_strat for missing chains. Expanded corpus to
+save_9.1 (pre-capture, romans_julii) and save_10.1 (enslave) for
+baseline.
+
+| Save | Action | Uria marker | core_building size | hinterland_region size | parser HP (both chains) | session17_hp(cstr+0x28) |
+|---|---|---|---|---|---|---|
+| save_9.1 | pre-capture | 0x1264861 | 2898 | 316 | **100, 100** | 0, 0 |
+| save_10.1 | enslave (fresh) | 0x1264861 | 2898 | 316 | **100, 100** | 0, 0 |
+| save_11.1 | +1 turn (post-enslave) | 0x12693c6 | **3208** | 316 | **100, 100** | 0, 0 |
+| save_12.1 | exterminate (fresh) | 0x1264861 | 2898 | 316 | **100, 100** | 0, 0 |
+
+#### CORRECTED: session 34 used the wrong HP offset
+
+Session 34's brief said "HP is at +0x28 from each chain record's cstring
+start". The parser in `src/buildingParser.js` actually uses:
+`healthAbs = recordStart + name.length + 32` where `recordStart` is the
+u16-length-prefix byte (NOT the cstring start). For chain `core_building`
+(name.length 13) this is `cstring_start + 13 + 30 = cstring_start + 43`,
+NOT `cstring_start + 40`. For chain `hinterland_region` (name.length 17)
+it is `cstring_start + 47`.
+
+At the parser's offset: **HP = 100 for every Uria chain in every save**.
+At session 34's claimed offset (`cstring + 0x28 = cstring + 40`): the
+byte is **0 in every save** (it sits inside zero padding between the
+post-hash region and the `9c 00 00 00 64 00 00 00` marker pair).
+
+The "post-hash" region context window (40 bytes from `cstring + name + 1`,
+i.e. start of 4-byte hash) is identical between save_11.1 and save_12.1:
+
+```
+<4 hash bytes> 00*19 9c 00 00 00 64 00 00 00 00*9
+```
+
+The two 4-byte integers `0x9c = 156` and `0x64 = 100` appear in the same
+byte positions in all 4 saves and don't change between
+occupy/enslave/exterminate — `0x64 = 100` is the HP byte the parser
+reads; `0x9c = 156` is likely a level/type echo (constant).
+
+Alternative HP offsets tested (cstring + 0x20, +0x24, +0x2C, +0x30, +0x34,
++0x38, +0x3C, +0x40): **ALL zero in every save**. No alternative offset
+reveals damage that the parser-correct offset misses.
+
+#### CONFIRMED: Exterminate does NOT damage Uria's chain HP in this mod
+
+Across 4 saves spanning pre-capture, enslave, +1 turn, and exterminate,
+both chains read HP = 100 at the parser's correct offset. Session 34's
+conclusion — "Exterminate's effect appears to be POPULATION-only, not
+buildings" — **holds** for Uria. The user's expectation from vanilla
+RTW mechanics ("exterminate SHOULD damage buildings") is **not observed
+in the RIS imperial mod's save format for this 1500-pop town**.
+
+Caveats limiting the strength of this finding:
+
+1. **Sample size = 1 settlement**. Uria has only `core_building` +
+   `hinterland_region` — no `defenses`, no `walls`, no `market`, no
+   `temple`. Vanilla RTW's extermination might damage specific chain
+   categories (walls, defenses, military buildings) that simply aren't
+   present in Uria. A re-test on a larger captured settlement with
+   defenses + a temple + a market would be more conclusive.
+2. **Session 17's HP rule was indirect**. Session 17 cited
+   `defenses` chain HP = 88 for Brundisium in save_11.1 (occupied after
+   assault). That HP=88 should be verified at the parser's offset to
+   double-check the rule. If session 17 also used `cstring + 0x28`, the
+   "HP=88" value may itself be a misread — and the assault-damage
+   discriminator may live elsewhere.
+
+#### REFUTED: governmentD is "missing due to extermination"
+
+descr_strat lists `governmentD/gov4` as one of Uria's 3 starting
+buildings (faction_creator: messapians). However, `governmentD` is
+absent in **all four saves** — including save_9.1 (pre-capture, owned
+by romans_julii). This is consistent with RTW's behaviour of
+*replacing* the faction-creator's government chain with the conquering
+faction's chain on capture, then keeping ONLY that chain represented
+implicitly (or storing it elsewhere). The absence in save_12.1 is NOT
+an extermination side-effect.
+
+#### Size-delta side-channel: core_building grows 2898 → 3208 across turns
+
+Between save_10.1 (fresh enslave) and save_11.1 (+1 turn), the
+`core_building` record grows by 310 bytes (2898 → 3208). The
+`hinterland_region` record stays at 316 bytes. The fresh-exterminate
+save_12.1 sits at 2898 again. So the size delta tracks **turns since
+conquest event**, not the chosen post-conquest action — likely a
+per-turn appended sub-record (festival queue, governor build orders,
+or population-trend cache). **Not an extermination signal.**
+
+#### Practical implications for Provincia
+
+- The brief's "HP at cstring + 0x28" rule is wrong. Use the parser's
+  rule: `recordStart + name.length + 32` (or equivalently
+  `cstring + name.length + 30`). Session 34's "HP=100 in save_12.1"
+  observation is correct, but the offset cited in its brief is not.
+- Don't rely on Uria as the canonical building-damage test case — it
+  lacks the chains where extermination damage would most likely surface
+  (walls, market, temple). A future probe should pick a settlement with
+  ≥ 5 chains including defenses.
+
+#### Confidence summary
+
+- **CONFIRMED**: parser HP offset (`recordStart + name.length + 32`)
+  reads HP = 100 for both Uria chains in all 4 saves.
+- **CONFIRMED**: Uria's chain count is 2 in every snapshot; no chain
+  vanishes between save_10.1 (enslave) and save_12.1 (exterminate).
+- **REFUTED**: session 34's brief claim that HP lives at
+  `cstring + 0x28` — that byte is always 0 padding.
+- **STRONG**: extermination does not damage Uria's buildings (HP and
+  chain count both unchanged vs enslave). Limited by Uria's small
+  chain set.
+
+#### Reproducer scripts
+
+- `dig-uria-buildings.js` — enumerate all chain records in Uria for
+  save_9/10/11/12, dump HP at both parser offset and session 17's
+  claimed offset, plus a 40-byte post-hash context window for each
+  chain; cross-check descr_strat starting buildings.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
