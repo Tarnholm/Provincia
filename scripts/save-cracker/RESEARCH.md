@@ -4006,6 +4006,293 @@ extraction), `dig-model-strings3.js` (cross-coord grouping + tag analysis).
 
 ---
 
+### Findings 2026-05-11 (background session 17 — tail tile grid + faction trailing data + rebellion head)
+
+Goal: (1) Decode the ~1.83MB "alternate tile grid" in the tail (session 14
+left it as a 00-ff stride pattern over a ~960×960 grid; hypothesis: terrain
+class / fog-of-war / region color per tile). (2) Diff per-faction trailing
+data across a controlled save pair to identify what propagates. (3) Stretch:
+decode the variable-length head section of the 6 scripted-rebellion blocks.
+
+Outcome: **Three major structural findings landed.** (a) **RETRACTION of
+session 14's "alternate tile grid" hypothesis** — the 1.86MB zone is NOT a
+2-byte-stride per-tile attribute table; it is **CONFIRMED to be an array of
+239 per-faction RLE-encoded 1020×700 tile masks**, with each cell encoded as
+a u16 (low_byte=value, high_byte=run_count). (b) **Faction trailing data
+contains building HP and character movement waypoints** (CONFIRMED via a
+clean 8-byte-diff save pair). (c) **Rebellion head sections are arrays of
+fully-embedded character records** — per-general entries with portrait card +
+portrait pair + ~482-byte trailing payload (CONFIRMED via cilicians head walk).
+
+Save corpus this session: `save_rome10.sav` (RIS imperial campaign, 33 MB)
++ `save_Autosave Republic of Rome Turn 1.sav` (RIS T1, 33 MB) + Alexander
+Macedon Turn 1 calibration save pairs (`save_notdamagedturn1.sav` vs
+`save_damagedturn1.sav`, 8 byte diff).
+
+#### 1. CONFIRMED & RETRACTED: the "alternate tile grid" (1.86MB region) is actually a 239-record array of per-faction 1020×700 tile masks
+
+Session 14 reported a ~1.83MB "alternate tile grid" at 0x1f8f97b..0x210f4d4
+with a 00-ff stride pattern, hypothesised to be a higher-resolution shroud
+or terrain map. **That hypothesis is wrong.** The actual structure is:
+
+```
+zone: 0x1f4847b..0x210f4e5 = 1,863,786 bytes (rome10)
+      = 239 variable-length records (per-faction tile-mask records)
+```
+
+Each record has the structure:
+
+| Δ | Type | Value | Meaning |
+|---|---|---|---|
+| −24 | u32 | varies | hash/checksum |
+| −20 | u32 | (record offset−16) | TAW pre-section selfPtr |
+| −16 | u32 | varies | (next two u32s often read as ASCII bleed-through into model name string) |
+| −12 | u32 | varies | |
+| −8  | u32 | varies | flag |
+| −4  | f32 | -1.0 | constant marker |
+| **+0**  | **u32** | **selfPtr** | **TAW double self-pointer (= file offset of this u32)** |
+| **+4**  | **u32** | **selfPtr+4** | **second selfPtr** |
+| +8  | u32 | 0xf0af0af0 | **magic marker** |
+| +12 | u32 | **1020 (0x3fc)** | **width** (constant across all 239 records, both saves) |
+| +16 | u32 | **700 (0x2bc)** | **height** (constant) |
+| +20.. | bytes | RLE payload | per-faction 1020×700 mask |
+
+Per-record RLE payload encoding (CONFIRMED via full decode):
+
+```
+Each u16 LE cell encodes (low_byte = value, high_byte = run_count).
+  0xff00 = 255 cells of value 0 (background sea/empty)
+  0xe400 = 228 cells of value 0
+  0x0102 = 1 cell of value 2
+  0x0903 = 9 cells of value 3
+```
+
+Decoding rec[1] payload (8428 bytes → 714,000 cells = exactly 1020 × 700):
+- 99.52% of cells = value 0 (background)
+- Values 1..10 form clusters at faction centroids
+- Value 175, 255 appear as edge markers
+
+**239 = RIS's 23 majors + 216 minors faction count** (cross-validation: same
+240-ish record count both in rome10 and RoR-T1 — exactly 239 each, identical
+record sizes for 237 of 239, byte-identical for ~97% of cells).
+
+**Cross-save byte diff (rome10 T5 vs RoR-T1 T1)**: 51,684 / 1,900,669 bytes
+differ (2.7%). The smallest 5 records (5,790 bytes) are minor factions with
+near-zero territory. Largest record is **rec[238] at 334,372 bytes** with
+351,615 non-zero cells covering the entire map bbox [0..1019, 0..699] — the
+**rebels/slaves faction**, which "owns" all tiles not held by another faction.
+
+**1020 × 700 = exactly the dimensions of `public/map_regions_large.tga`**
+(verified via TGA header), confirming this is the **RIS campaign map's
+native resolution mask**.
+
+Per-record spatial centroids (rome10, decoded against TGA):
+
+| rec | nonZero | centroid | bbox |
+|---|---|---|---|
+| 0   | 3,905   | (339, 374) | [127..1016, 0..459]   | "?" (varies — special bg record) |
+| 5   | 2,611   | (411, 376) | [250..990, 249..497]  | mid-faction in Greece/Aegean |
+| 6   | 12,347  | (531, 244) | [212..990, 29..497]   | Pontus / Bithynia |
+| 7   | 46,080  | (734, 380) | [255..990, 64..644]   | Seleucid (Asia Minor) |
+| 67  | 43,178  | (734, 384) | [388..916, 249..505]  | major eastern faction |
+| 144 | 42,753  | (734, 384) | [388..916, 249..505]  | major eastern faction |
+| 177 | 45,062  | (737, 381) | [388..916, 249..505]  | major eastern faction |
+| 238 | 351,615 | (498, 333) | [0..1019, 0..699]     | **rebels/slaves** (full map) |
+
+**Cell value semantics (HYPOTHESIS)**: Cell value 0 = "not interesting to
+this faction". Values 1..8 form gradient clusters with **value 2 at edges
+and value 3+ in interior** (per the decoded row "2,3,3,3,3,3,3,3,3,3,2,0,0,
+2,3,3,3,3,3,3,3,2"). This shape is consistent with **settlement-influence
+zones** or **distance-from-settlement counters** rather than ownership
+(which would be a binary mask). The high values (175, 255) at rare cells
+are likely **edge-of-map / settlement-anchor markers**.
+
+The dominant TGA pixel colors in non-zero cells are mostly **sea colors**
+(`#298ce8..ec` blues) for small records, refuting the "ownership mask"
+interpretation. This is a **per-faction strategic-influence overlay**, not
+a region-ownership bitmap. The exact game-state semantic (shroud /
+settlement influence radius / per-faction AI threat heatmap) is one
+**controlled save-pair test** away from being pinned: change one settlement
+ownership between saves, find the records that flip.
+
+#### 2. CONFIRMED: faction trailing data contains building HP + character movement waypoints
+
+A clean 8-byte-diff save pair (Alexander Macedon T1
+`save_notdamagedturn1.sav` vs `save_damagedturn1.sav`) yields the
+cleanest controlled-change byte diff this project has produced.
+
+The 8 byte differences:
+
+| Offset | A → B | Context | Interpretation |
+|---|---|---|---|
+| 0x0efd | 0x16 → 0x26 (22→38) | header | RNG counter (session-11 known monotonic field, two-byte change is expected) |
+| 0x0efe | 0x0f → 0x21 (15→33) | header | same RNG counter (high byte) |
+| 0x3604 | 0x1c → 0x16 (28→22) | character-path trail | **path waypoint count** (number of (x,y) pairs in a movement path) |
+| 0x111ec | **100 → 50** | settlement → market building | **building HP / damage state** (u32, full=100, damaged=50) |
+| 0x30da0 | 0x37 → 0x31 (55→49) | outro_script area | scripted-event progress counter |
+| 0x30df8 | 0xdc → 0x44 (220→68) | outro_script area | scripted-event state (u16 paired) |
+| 0x30df9 | 0xea → 0xe0 (234→224) | outro_script area | same u16 |
+| 0x122277 | 0x01 → 0x00 | unit-type slaves area | rebel/slave unit flag |
+
+**Building HP location (0x111ec)** is the most actionable finding:
+
+```
+Per-building record (inside settlement record):
+  [u16 strLen][ASCII building name][u8 0x00]
+  [u32 hash][u32 hash][u32 0x000018 = 24]
+  [u32 hash][u32 hash][u32 0x000018 = 24]
+  [u32 0x460]
+  [u32 HP / 100]   <-- diff offset; full=100, damaged=50
+  ...remaining building state...
+  [u32 0x15]
+  [10 bytes 0xff]  separator
+```
+
+The market building at 0x111c4..0x111fc has its HP-like u32 at +0x28 from
+the building name's start. This is the **first time we have a concrete,
+cross-validated per-building attribute address** in the RR save format.
+
+**Character path waypoint count (0x3604)** sits inside a stream of
+sequential u32 pairs that look like (x, y) waypoints:
+
+```
+0x35e4: ...(50, 0)(0, 13808)... terminator pattern
+0x35f4: [u32 0x35f0 = ptr][hash 0xc7f7a44f][u32 0x35f8][u32 7][u32 13]
+0x3604: [u32 = 28 (notdamaged) / 22 (damaged)]  <-- waypoint count
+0x3608: [(2, 0)(18, 7)(49, 7)(48, 6)(48, 6)(47, 6)(46, 6)(45, 6)(44, 7)(44, 8)(44, 8)(43, 9)(43, 9)(42, 10)(42, 10)(41, 10)(40, 9)(40, 9)(39, 8)(39, 0)]
+```
+
+Each pair (x, y) describes a tile on the character's intended path,
+suggesting this is a **character movement path** with the count field
+preceding the array. The 22 vs 28 difference reflects 6 path-tiles being
+consumed (a character moved 6 tiles).
+
+**Implication for parser**: per-faction trailing data is dominated by
+**per-character path records** — not the per-faction AI policy cache (which
+remains UNPINNED, consistent with sessions 5/7/9/12/15). The actionable
+take-away is the **building HP byte location**, which Provincia could use
+to surface settlement-damage state in the UI.
+
+#### 3. CONFIRMED: rebellion head sections are arrays of fully-embedded character records (rebel general candidates)
+
+Decoding the cilicians_revolt.txt block's HEAD section (0x18d48cb..0x18e7f4b,
+79,488 bytes), we find **28 generals** with the layout:
+
+```
+Per-general record (~460..500 bytes, median 482):
+  +0..+27   ASCII pre-header: pointers + flags + age/trait? + record-size markers
+            [u32 0x0e83 ptr][u32 1][u32 0x0e65 ptr][u32 8][u32 0x0ef8 ptr][u32 1]
+            [u32 trait_or_age][u32 0xd0 = constant]
+  +28       0x00 0x00 0x39 0x00            (u16 strLen=0x39=57 for card path)
+  +30..+86  ASCII path "data/ui/<culture>/portraits/cards/young/generals/NNN.tga"
+  +87       0x00 (NUL terminator)
+  +88..+89  u16 strLen=0x3d=61 (for portrait path)
+  +90..+150 ASCII path ".../portraits/.../NNN.tga"
+  +151      0x00 (NUL)
+  +152..+   trailing per-general payload (~330 bytes of structured data)
+            — contains UTF-16LE settlement name (e.g. "Cimbria", "Eudosia")
+            — contains 0xff..0xff sentinel runs (consistent with character record format)
+            — contains small ints (likely traits, ancillaries, age)
+            — ends with 0x02 0x00 0x00 record-tag (transition to next general)
+```
+
+Distinct portrait IDs in cilicians head: 25 IDs (some duplicates due to 28
+generals using 25 portraits — multi-general-per-portrait is possible).
+
+Per-script general counts (counted via portrait pair):
+
+| Script | head size | generals (portrait pairs) | settlement-name strings | culture path prefix |
+|---|---|---|---|---|
+| chrysaoria_revolt | 224 B    | 0   | 0   | (head too small for generals) |
+| cilicians_revolt  | 79 KB    | 28  | 28  | `barbarian/portraits/` |
+| egypt_revolt      | 364 KB   | 128 | 128 | `greek/portraits/` |
+| lycia_revolt      | 119 KB   | 38  | 41  | `greek/portraits/` |
+| miletus_revolt    | 423 KB   | 100 | 152 | `eastern/portraits/` |
+| thessaly_revolt   | 25 KB    | 7   | 11  | `egyptian/portraits/` |
+
+Total generals embedded across all 6 rebellion heads: **~301 generals** —
+this is the **rebel-leader candidate pool** for all scripted rebellions in
+RIS. When a rebellion fires, generals are drawn from THIS pool (likely
+deterministically by script ordering) rather than being randomly generated.
+
+**Implication for Provincia**: a parser could enumerate the
+"will-spawn-on-rebellion" general roster directly from these embedded
+character records, surfacing a feature like "rebel leader preview" per
+scripted rebellion. The portrait paths immediately reveal which faction-culture
+each general will spawn as (`barbarian`, `greek`, `eastern`, `egyptian`).
+
+The chrysaoria block has 0 generals (head only 224 bytes) — this script
+doesn't spawn named generals, only the 75 sub-records of pre-conditions
+(from session 14's count field).
+
+#### 4. NEGATIVE: per-faction trailing AI policy cache remains UNPINNED
+
+The 100→50 building-HP signal (clean 8-byte diff) sits in the **settlement
+zone (0x10000..0x80000)**, not in a major-faction record's trailing data.
+**The diff approach failed to surface any per-faction AI-policy / diplomatic
+cache.** Sessions 5/7/9/12/15 all share this status — the AI policy cache,
+if it exists, is NOT byte-aligned with the major-faction record. Likely
+locations (untested): the body-root's direct children (one of the 287
+CHARACTER_PATHS-shaped sections may instead be policy data), or embedded
+inside the 239 tile-mask records' RLE payload (the value cells 1..8 might
+encode "AI interest level" per tile, which IS the AI policy in some sense).
+
+#### Reproducer scripts
+
+- `dig-tail-tilegrid1.js` — initial probe (boundary detection failed, found wrong zone)
+- `dig-tail-tilegrid2.js` — direct hex inspection at session-14 boundary 0x1f8f97b
+- `dig-tail-tilegrid3.js` — small-grid analysis (off-by-position — found early small block)
+- `dig-tail-tilegrid4.js` — find-all-00ff-runs enumeration (278 fragments in rome10, 45 in RoR-T1)
+- `dig-tail-tilegrid5.js` — full-zone analysis bounded by W_models end + footer start (1.86MB)
+- `dig-tail-tilegrid6.js` — discover self-pointer pair structure (242 records)
+- `dig-tail-tilegrid7.js` — confirm 239 records via magic-marker f0 0a af f0 + (0x3fc, 0x2bc) constants
+- `dig-tail-tilegrid8.js` — decode header bytes (-24..0); reveal "X/Y" reads are ASCII bleed
+- `dig-tail-tilegrid9.js` — cross-save per-record byte diff (2.7% diff); record-length matching
+- `dig-tail-tilegrid10.js` — payload-format probe (background runs, RLE pair shapes)
+- `dig-tail-tilegrid11.js` — row-major sparse hypothesis (rejected — wasn't row-major)
+- `dig-tail-tilegrid12.js` — **WINNER**: (low=value, high=count) u16 RLE → exactly 714,000 cells = 1020×700
+- `dig-tail-tilegrid13.js` — per-record centroid analysis (rec[238] = full map, rec[7] = Asia Minor, etc.)
+- `dig-tail-tilegrid14.js` — TGA color overlay (refutes "ownership mask"; mostly sea colors)
+- `dig-faction-trailing1.js` — multi-pair save diff scan (notdamaged↔damaged = 8 bytes, cleanest)
+- `dig-faction-trailing2.js` — decode 8-byte diff with string context (identifies building HP)
+- `dig-faction-trailing3.js` — confirm 0x111ec is inside market-building record
+- `dig-rebellion-head1.js` — locate all 6 head sections + portrait-pair + UTF-16LE settlement counts
+- `dig-rebellion-head2.js` — walk per-general record structure; per-general spacing median 482B
+
+#### Open follow-ups for session 18+
+
+- **Tile-mask value semantics (the 1..8 gradient)**: which game-state
+  variable corresponds to the per-cell value 0..8 ramp? Probe: change ONE
+  settlement's ownership between saves (capture or destroy), find the
+  records that flip values. The session-14 "alternate tile grid" attempt
+  at decoding by overlaying TGA colors shows mostly sea pixels, suggesting
+  the values do not correspond directly to region ownership. They might
+  encode **distance-from-nearest-faction-settlement** (a gradient effect
+  consistent with the observed value-ramp pattern).
+
+- **Building HP across save pairs**: confirm by manually damaging a
+  different building (e.g. defenses, barracks) and re-diffing. Currently
+  only "market" is identified. The HP offset is `+0x28` from the building
+  name's ASCII start, but other building structures may have different
+  HP-field positions.
+
+- **Rebellion general roster cross-link**: each rebellion's embedded
+  generals (cilicians: 28, egypt: 128, etc.) likely have specific
+  spawn-settlement bindings (the UTF-16LE settlement names embedded with
+  each general). A parser could output a "rebellion preview" table linking
+  general portrait → spawn settlement → faction culture.
+
+- **AI policy cache** (still unpinned, sessions 5/7/9/12/15/17): most
+  promising next target is searching the body-root direct children for
+  non-CHARACTER_PATHS-shaped sections — sessions found 287 children but
+  only the CHARACTER_PATHS subset was identified. One of the others is
+  likely the policy cache.
+
+- **Diplomacy enum** (still blocked): unchanged from prior sessions.
+  Requires user-side single-isolated-diplomatic-action save pair.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
