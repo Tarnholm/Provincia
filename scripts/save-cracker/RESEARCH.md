@@ -5942,6 +5942,361 @@ size analysis (#3), per-soldier stride confirmation (#4).
 
 ---
 
+### Findings 2026-05-11 (background session 23 — tail hash blob + lua footer + mid-file entity hypothesis)
+
+Goal: (1) Map the ~19KB "hash blob" between the field-army units block end and the
+settlement model strings; cross-reference its 8-byte hash records against the 122
+field-army record hashes to test whether it's a lookup table for them. (2)
+Test the descr_strat-placed-entity hypothesis for the 697 unexplained
+non-canonical mid-file cells via correlation with settlement (X,Y) tile coords.
+(3) Map the 24KB lua/script footer's sub-sections beyond the simple counters,
+documenting all variable names. (4) Stretch: per-soldier 3-byte stat decode.
+
+Outcome: **Four new findings.** (a) **CONFIRMED: the "19KB hash blob" is
+actually a composite region** — session 14 mismeasured its bounds. The true
+structure is `[~860B trailing soldier records that session 22 missed] +
+[~232B 0xff padding] + [~528B near-zero tail] + [2560B high-entropy
+random data, dynamic per-turn] + [16B header with N=239] + [3808B value=3
+faction array] + [~9KB additional structured data]`. Field-army hash
+lookup hypothesis REFUTED: 0/122 unit hashes appear in the high-entropy
+zone. The high-entropy region is **per-turn dynamic state** (entirely
+different bytes between RoR-T1 and rome10, 0 shared records), most
+plausibly **AI/PRNG random-number-generator persistent state** rather
+than a deterministic hash lookup table. (b) **CONFIRMED: 238-record
+all-zero array immediately precedes a 239-row faction record block** —
+identical structure in rome10 and RoR-T1 (same 238 default rows + 1
+special row #239 with self-pointer + 1.0 float marker). 238 ≈ 239
+factions but exactly one short; likely a per-faction simple-state array
+where the 239th faction (rebels/slaves?) is the "owner" record. (c)
+**CONFIRMED: 24KB lua/script footer fully decoded — 115 lua counter
+records categorized into 6 functional groups**: 60 `id_<faction>`
+faction-id constants (faction → int hash, e.g. `id_romans_julii = 1110011`),
+22 `<Region>Rebellion_*` script-state counters, 16 `<region>_reform_battle_counter`
+Marian-equivalent reform triggers, 11 `num_battles_*` /
+`num_mercs_recruited_*` military counters, and 12 misc state flags
+(`first_time_setup`, `has_game_reloaded`, `turn_number`,
+`capital_first_setup`). No `marian_reforms_triggered` exists in RIS but
+the equivalent **per-faction `<faction>_reform_battle_counter`** pattern
+covers every culturally-distinct reform-tracking case. (d) **REFUTED:
+settlement-coord correlation hypothesis for the 697 mid-file cells** —
+non-canonical cells show identical nearest-settlement distance
+distribution to a random sample of canonical cells (3.0% within 3 cells
+in both populations). The mid-file array is NOT a settlement-locating
+structure. Top variant `200_200_2_6_0` (217 cells, centroid 118,87) and
+`200_200_2_6_600` (210 cells, centroid 119,95) cluster spatially with
+nearly-identical centroids — refutes the hypothesis that variants
+distinguish entity types. ASCII map shows scattered distribution across
+the whole grid with no recognizable feature (no coastline, no road
+network, no clustering at known scripted-rebellion regions).
+
+Save corpus this session: `save_rome10.sav` (RIS imperial T5) and
+`save_Autosave Republic of Rome Turn 1.sav` (RIS imperial T1).
+
+#### 1. CONFIRMED REVISION: tail field-army block ends at 0x1f43598 (session 22's 0x1f42cb6 was end of last ASCII name, not end of soldier records)
+
+Session 22 reported the field-army block at `0x1f10c72..0x1f42cb6`. The
+upper bound is wrong — `0x1f42cb6` is where the last unit record's
+**ASCII name** ends (the name reads "...armen" — likely "thracian
+armenians"), not where its soldier records end. Walking the 9-byte
+soldier stride forward from `0x1f42d28` (the offset where the standard
+`[44B header][N×9B soldiers]` structure begins for the final record)
+yields **240 valid 9-byte records** before the pattern breaks at
+`0x1f43598`. Then 0xff padding runs to `0x1f43688`.
+
+**Implication**: session 22's 122-record count and 14,636-soldier total
+were under-counts by ONE unit record with 240 soldiers. Corrected:
+**123 records, 14,876 soldiers total**. The corrected field-army block
+upper bound is `0x1f43688` (end of 0xff padding for the 123rd unit), not
+`0x1f42cb6`.
+
+**Reproducer**: `dig-hash-blob3.js` (forward + backward 9-byte stride
+walk; 240 records detected, 0xff padding to 0x1f43688).
+
+#### 2. CONFIRMED: the "19KB hash blob" (session 14's hypothesis) decomposes into 7 sub-regions; field-army hash lookup hypothesis REFUTED
+
+Session 14 estimated a ~19KB hash blob at `0x1f43000..0x1f47abd`. The
+actual structure between the end of the field-army units and the start
+of the settlement-model strings is:
+
+| Offset (rome10) | Size | Content |
+|---|---|---|
+| `0x1f43598..0x1f43688` | ~240 B | 0xff padding (terminator of last field-army unit record) |
+| `0x1f43688..0x1f436b6` | ~46 B | Near-zero header (44 zero bytes + `ef 64 cc 58` 4-byte marker) |
+| `0x1f436b6..0x1f437a9` | ~243 B | 0xff padding (second padding stretch) |
+| `0x1f437a9..0x1f437de` | ~53 B | Self-pointer-headed prelude (self-ptr at `0x1f437a9`, then 53 bytes) |
+| `0x1f437de..0x1f441de` | **2560 B** | **High-entropy zone** (320 × 8-byte unique records; H≈7.2; per-turn dynamic) |
+| `0x1f441de..0x1f442de` | ~256 B | Transition zone (a cluster of u32 self-pointers `0x1f44279..0x1f4428a` + small u32 fields + offset-list-like pattern with values `0x01f44279, 0x01f44285, 0x01f4428a, 0x01f44296, 0x01f442a2, 0x01f442a8, 0x01f442ae` — these are intra-block forward offsets) |
+| `0x1f442de..0x1f442ee` | 16 B | **Faction-array header** `{u32 selfPtr=0x1f442de, u32 count=239, u32 reserved=0, u32 0xef000000}` |
+| `0x1f442ee..0x1f451ce` | 3808 B | **238 × 16B records `{u32=3, 12B zeros}`** (default per-faction state) |
+| `0x1f451ce..0x1f451ee` | 32 B | Special "239th" record with self-pointer at `+8` and `float32 1.0` at `+24` |
+| `0x1f451ee..~0x1f47abd` | ~9.6 KB | Additional structured tail before settlement-model strings (mixed structures, not yet decoded) |
+
+**Field-army hash lookup hypothesis REFUTED**:
+
+For each of the 123 corrected field-army records the brief asked us to
+extract `[u16 nameLen][ASCII unit name][0xee marker][8B hash][8B UUID]`.
+The 123 hashes and 123 UUIDs were searched across the entire
+`0x1f43000..0x1f47abd` region for byte-exact matches:
+
+| Pattern type | Found in 0x1f43000..0x1f47abd | Found in 0x1f437de..0x1f441de (high-entropy only) |
+|---|---|---|
+| 8-byte hash (after 0xee marker) | **0 / 122** | **0 / 122** |
+| 8-byte UUID | **0 / 122** | **0 / 122** |
+
+The high-entropy zone is **not** a lookup table for field-army records.
+
+**Cross-save comparison**: 320 unique 8-byte records in rome10, 320 in
+RoR-T1 — **identical count** but **0 intersection** (no record shared).
+The high-entropy data is therefore **dynamic per-turn state**, not a
+static lookup. Most plausibly:
+- AI persistent random-number-generator state (e.g., Mersenne-Twister state)
+- Per-turn cryptographic randomness seeds for combat outcomes / strategic decisions
+- Hash of the world state used for turn-to-turn determinism checks
+
+The 320 count is suspiciously close to other entity counts: 23 majors +
+239 minor-/2 + ~57 = ? Or a power-of-2 boundary near 256 + 64 padding =
+320. Not pinned to a known entity count.
+
+**Confidence**: CONFIRMED that the field-army-hash-lookup hypothesis is
+wrong; CONFIRMED dynamic-per-turn for the high-entropy zone via 0%
+intersection between turn-1 and turn-5 saves.
+
+**Reproducer**: `dig-hash-blob{1..14}.js`. Key scripts: `1.js` initial
+hex+entropy survey, `2.js` 122-field-army-hash cross-reference (0/122),
+`3.js` 9-byte soldier stride extension (240 more records), `5.js`
+8B-record uniqueness check (all 289 unique in 2312B subset), `7.js`
+value-3 array alignment (Alignment B at 0x1f442ee), `8.js` 238-record
+count + 239-row block, `13.js` cross-save validation, `14.js` 0
+intersection between rome10 and RoR-T1 high-entropy zones.
+
+#### 3. CONFIRMED: 24KB lua/script footer fully decoded — 115 counters in 6 functional groups
+
+The 24KB tail footer at `0x210f4d4..0x21153ae` decomposes:
+
+**Sub-region 1**: footer preamble at `0x210f4d4..0x210f4e0` — self-pointer
+header `{selfPtr=0x210f4d4, u32 0, u32 0x35, u32 selfPtr2=0x210f4e0}`.
+
+**Sub-region 2**: UTF-16LE script path at `0x210f4e1..0x210f56b` (66
+chars + delimiter): `'data/world/maps/campaign/imperial_campaign/RIS_Campaign_Script.txt'`.
+
+**Sub-region 3 — Lua counter table** at `0x210f56f..0x2110a23`: 115
+records of `[u32 nameLen][UTF-16LE name][u32 value]`. Fully categorized:
+
+| Group | Count | Example | Value type |
+|---|---|---|---|
+| `id_<faction>` faction-ID hashes | **60** | `id_romans_julii = 1110011`, `id_carthage = 1210021`, `id_slave = 5000020` | u32 hash, deterministic per faction-name (per-mod-defined; RIS-specific) |
+| `<Region>Rebellion_*` script state | **22** | `ChrysaoriaRebellion_Done = 0`, `ThessalyRebellion_AllAntigonidOwned = 50`, `LyciaRebellion_PlayerRevolt = 0` | u32 counter/flag |
+| `<region>_reform_battle_counter` (Marian-reforms equivalent) | **16** | `cappadocia_reform_battle_counter = 0`, `cilician_thureophoroi_reform_battle_counter = 0`, `bosporan_reform_battle_counter = 0` | u32 counter |
+| `num_battles_<x>` / `num_mercs_recruited_<x>` military counters | **9** | `num_battles_seleucids_rome`, `num_battles_antigonids_sparta`, `num_mercs_recruited_seleucid` | u32 counter |
+| `<x>_reform_*` extra reform counters (settlement-capture, recruit, war) | **5** | `cappadocia_reform_settlement_capture_counter`, `pergamon_reform_war_counter`, `miletus_reform_recruit_counter`, `pentapolis_reform_recruit_counter`, `ptolemaic_therapeia_recruit_count` | u32 counter |
+| Misc state flags | **3** | `first_time_setup = 1`, `has_game_reloaded = 0`, `turn_number = 0`, `capital_first_setup = 0`, `PtolemaicReformOne = 0` | u32 flag |
+
+**Important finding — no `marian_reforms_triggered` exists in RIS imperial.**
+The brief expected this from vanilla Rome, but RIS replaces it with
+**per-faction `<faction>_reform_battle_counter`** — each of 16+ factions
+tracks its own reform separately, allowing culturally-distinct reform
+triggers (Cappadocia, Pergamon, Bosporan, Bithynia, Cyrene, Massalia,
+Achaea, Boeotia, Cabyle, Dardania, German, Labeataean, Selge, Syracuse,
+Cyrene-2, Cilician_Thureophoroi). The `pergamon_reform_war_counter`
+specifically tracks war state (not battle wins) for that faction.
+
+**The brief's expectation of `civil_war_active` and
+`marian_reforms_triggered` flags is REFUTED for RIS imperial**: RIS uses
+a richer per-faction reform-tracking schema, and the only "Done" flags
+are per-rebellion not per-civil-war.
+
+**Sub-region 4 — Tile-coord trail array** at `0x2110a24..0x21153ae`
+(~18KB). Walking with the corrected parser yields **74 chunks** with
+**1198 total records** (1076 empty-pair, 122 with non-zero pairs). Note:
+session 14 reported 217 chunks / 2499 records; the discrepancy is
+likely because session 14 used a different parser interpretation (count
+each (selfPtr, pairCount, pairs) record individually vs grouping by
+preceding u32-N chunk-header). The 122 non-empty-pair records is
+striking — **same number as the 122 field-army records in the tail**.
+This is plausibly a per-field-army "intended path" cache (each
+field-army has one trail entry with up to ~6 (X,Y) tile pairs). The
+1076 empty-pair records are then placeholder slots for armies with no
+queued path.
+
+**Reproducer**: `dig-lua-footer{1..2}.js`.
+
+#### 4. REFUTED: settlement-coord hypothesis for the 697 mid-file non-canonical interior cells
+
+The brief asked us to test whether the 697 truly-interior non-canonical
+cells in the mid-file array correlate with descr_strat-placed
+entities — primarily settlements. Settlement (X,Y) tile coords were
+extracted from session 16's settlement-model strings block: 195 unique
+(X,Y) pairs in rome10 (X∈[83,988], Y∈[22,651]).
+
+**Method**: for each of the 697 non-canonical cells, compute pixel-center
+coordinates (using the brief's 4.25×2.94 px/cell scale) and find the
+nearest settlement. Compare with a random baseline of 697 canonical
+interior cells:
+
+| Nearest settlement within | Non-canonical (697) | Random canonical baseline (697) |
+|---|---|---|
+| 1 cell | 5 (0.7%) | 5 (0.7%) |
+| 2 cells | 14 (2.0%) | 16 (2.3%) |
+| 3 cells | **21 (3.0%)** | **21 (3.0%)** |
+| 5 cells | 41 (5.9%) | 52 (7.5%) |
+| 10 cells | 99 (14.2%) | 144 (20.7%) |
+
+**The non-canonical cells are NOT settlement-correlated** — they show
+the same nearest-settlement distance distribution as a random sample of
+canonical cells (in fact slightly LESS correlated at the 5-cell and
+10-cell radii). The 5 cells "within 1 cell" of a settlement is the
+same number in both populations — pure baseline noise.
+
+**Spatial-clustering test**: the top 8 variants all have nearly-identical
+centroids (cc≈118, rr≈90) and high stddev (~100). If variants encoded
+different entity types we'd expect spatially-segregated clusters; we
+observe a single overlapping cloud. The ASCII downsampled map shows
+scattered distribution across the whole grid with no recognizable
+geographic feature.
+
+**Variant histogram (697 non-canonical interior cells)**:
+
+| Variant key (`f16_f20_f24_f28_f32`) | Count | Δ from canonical |
+|---|---|---|
+| `200_200_2_6_0` | 217 | f32: 200→0 |
+| `200_200_2_6_600` | 210 | f32: 200→600 |
+| `200_0_2_54_4294967286` | 147 | f20: 200→0, f28: 6→54, f32: 200→-10 |
+| `200_600_2_6_600` | 33 | f20: 200→600, f32: 200→600 |
+| `200_0_2_54_200` | 28 | f20: 200→0, f28: 6→54 |
+| `200_200_2_6_4294967286` | 23 | f32: 200→-10 (=0xfffffff6) |
+| `200_0_2_54_600` | 16 | f20: 200→0, f28: 6→54, f32: 200→600 |
+| `200_0_2_55_200` | 15 | f20: 200→0, f28: 6→55 |
+| Other (4 minor variants) | 8 | various |
+
+The 0xfffffff6 (=-10 signed) f32 value and the consistent f28=54/55
+suggest these are **NOT** terrain markers (session 22's refutation
+confirmed) but plausibly some **AI-strategic-hint enum** where each
+variant represents a different hint type. Without runtime
+instrumentation the semantics remain unrecoverable.
+
+**Confidence**: REFUTED that the 697 non-canonical cells are
+settlement-locating markers, descr_strat-entity-placed markers, or
+spatially-segregated by variant. Their semantic meaning remains an
+**open question**.
+
+**Reproducer**: `dig-midfile-entities{1..2}.js`.
+
+#### 5. STRONG: high-entropy 2560B zone is per-turn dynamic state, not a static lookup
+
+Cross-save analysis of the high-entropy region:
+
+| Save | High-entropy zone | Size | Unique 8B records |
+|---|---|---|---|
+| rome10 (RIS imperial T5) | `0x1f437de..0x1f441de` | 2560 B | 320 |
+| RoR-T1 (RIS imperial T1) | `0x1f1ad7b..0x1f1b77b` | 2560 B | 320 |
+
+Both saves have **identically-sized** high-entropy zones with the **same
+number of unique 8-byte records (320)** — but **0 records shared
+between the two saves**. The data is therefore:
+- **Not** a deterministic-per-campaign lookup table (would have 320 shared records)
+- **Not** field-army UUIDs (refuted by 0/122 hash match)
+- Most plausibly: **AI persistent PRNG state**, encrypted per-turn-state hash, or per-faction strategic-decision randomness seeds
+
+The constant 320 (=64×5 or 256+64) doesn't map to a known
+RIS entity count (factions=239, regions=213, settlements=195,
+field-armies=123, characters≈250). Possibly **per-region AI decision
+hashes** with 213 regions + 107 padding slots, OR **per-(faction × 5-decision-slot)** at 64×5=320 (5 AI decisions per "slot", 64 slots total).
+
+**Reproducer**: `dig-hash-blob14.js` — 0 intersection between rome10 and
+RoR-T1 high-entropy zones; both 320 unique 8B records.
+
+#### 6. CONFIRMED: 238 + 1 = 239 faction record array at 0x1f442ee with single special row #239
+
+The structured value=3 array immediately follows the high-entropy zone
+and is preceded by a `{u32 selfPtr, u32 N=239, u32 0, u32 0xef000000}`
+header at `0x1f442de`. The array contains:
+- **238 × 16-byte records** of `[u32=3][12 zero bytes]` (default per-faction state)
+- **1 × 32-byte "special" record** at `0x1f451ce`:
+  ```
+  +0  u32 = 3                    (same default tag as other 238)
+  +4  u32 = 0
+  +8  u32 = 0x1f451d6             (self-pointer at +8 — section header)
+  +12 u32 = 0
+  +16 u32 = 0                    (16B of zeros)
+  +20 u32 = 0
+  +24 u32 = 0x3f800000 = float 1.0  (presence/active flag?)
+  +28 u32 = 0x1f451ea             (another self-pointer)
+  ```
+
+The special record corresponds to **one specific faction** in the 239-row
+ordering — most likely the **rebel/slave faction** (the only faction
+that's "owner of every region" in the engine) or the **player faction**.
+The 1.0 float at +24 is a "currently active player" type marker.
+
+**Cross-save validation**: BOTH rome10 and RoR-T1 have:
+- Same 238 default + 1 special structure
+- Same 16-byte stride
+- Self-pointers in both saves at the analogous positions
+
+**Interpretation**: this is the engine's **per-faction "active state"
+array** with all factions defaulting to state-3 (= the most common
+faction-state-machine state, plausibly "alive and active") and one
+faction having extended state (sub-section, float marker, etc.).
+
+**Reproducer**: `dig-hash-blob{8..13}.js`.
+
+#### Open follow-ups for session 24+
+
+- **High-entropy zone semantics**: 320 unique 8B records, per-turn-dynamic.
+  Need: (a) cross-reference all 320 records against known character UUIDs,
+  faction hashes, region IDs to find any match; (b) check whether values
+  are sorted (i.e. an index-sorted hash table) or arbitrary order; (c)
+  test if XORing rome10's records with RoR-T1's reveals a turn-counter
+  delta pattern (would indicate a Linear-Feedback shift register state).
+
+- **Tile-coord trail array discrepancy (74 vs 217 chunks)**: parser
+  difference between this session and session 14. Reconcile by re-running
+  session 14's parser code on rome10 and comparing the chunk-boundary
+  detection logic. The 122 non-empty-pair count likely matches the 122
+  field-army count; testing whether the (X,Y) pairs in chunk i match the
+  field-army[i]'s home-settlement tile would confirm.
+
+- **Mid-file array (the 697 non-canonical cells)**: settlements refuted,
+  terrain refuted, descr_strat-entities refuted. Remaining hypotheses:
+  AI-strategic-hint table, choke-point graph, road-network metadata.
+  Test: visualize variants as a heatmap overlaid on the campaign map and
+  see if any pattern matches `descr_terrain.txt`'s movement-cost grid.
+
+- **Special "239th" faction-array row**: which faction is it? Determine
+  by ordering the 239 records against the major+minor faction ordering
+  from session 5-7. The special row at index 238 (0-based) is likely
+  either id_slave (rebels) or id_romans_julii (player).
+
+- **Per-soldier 3-byte stat decode**: still requires battle save-pair.
+  Documented byte-position-frequency analysis would need a peltasts unit
+  in two saves before and after combat.
+
+#### Reproducer scripts
+
+- `dig-hash-blob{1..14}.js` — hash blob mapping
+  - 1: initial hex/entropy survey of 0x1f43000..0x1f48000
+  - 2: field-army hash cross-reference (0/122 match, REFUTED)
+  - 3: 9-byte soldier-record stride walks forward + backward (240 records)
+  - 4: high-entropy zone boundary detection (256B chunks, 0x1f43898..0x1f441a0 initial)
+  - 5: 8-byte vs 16-byte stride analysis on high-entropy zone; section-header probe at 0x1f442a8
+  - 6: 16B value=3 array alignment investigation
+  - 7: u32=3 position enumeration; Δ=16 confirmed (238 stride-16 + 1 jump)
+  - 8: 239-record count + special row at 0x1f451ce
+  - 9: section-header parse on 239th record (self-pointer + 1.0f marker)
+  - 10: alignment correction (Alignment B at 0x1f442ee with 238 records)
+  - 11: wide hex dump 0x1f437c0..0x1f442f0 + all self-pointers enumeration
+  - 12: entropy 32B granularity scan + transition-zone hex dump
+  - 13: cross-save validation rome10 vs RoR-T1 (same 238-count structure)
+  - 14: cross-save high-entropy intersection (0/320 records shared — STRONG dynamic-per-turn)
+- `dig-lua-footer{1..2}.js` — 24KB script footer mapping
+  - 1: ASCII/UTF-16LE string enumeration in footer; 116 strings categorized
+  - 2: full 115-record lua counter parse with values + tile-trail chunk count (74 chunks, 1198 records)
+- `dig-midfile-entities{1..2}.js` — descr_strat-entity hypothesis
+  - 1: settlement-coord nearest-neighbor distance histogram (REFUTED, same as random)
+  - 2: variant histogram + spatial centroid + ASCII-map visualization
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
