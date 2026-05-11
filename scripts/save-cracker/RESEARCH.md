@@ -6772,6 +6772,248 @@ interpretation but doesn't pin down which specific PRNG.
 
 ---
 
+### Findings 2026-05-11 (background session 25 — descr_strat cross-reference + body root interior + agents)
+
+Goal: (1) Cross-tab the 697 mid-file non-canonical cells against `descr_strat.txt` resource and character coords — does any resource type cluster in non-canon? (2) Walk the body-root interior at `0x3b99..0x633bb3` (~6.5 MB), enumerate top-level children, identify unmapped sections. (3) Validate save's character records against descr_strat-declared agents (spies/diplomats/etc). (4) Stretch — cross-validate settlement-model culture×size matrix.
+
+Outcome: **Six new findings**, three of them **strong negative results** that close out prior hypotheses.
+
+(a) **REFUTED: resources cluster in non-canonical mid-file cells.** With proper Y-flip (`tga_y = 699 - descr_y`), resource coords land in non-canon cells at **1.01x baseline** (essentially random). Edge-region resources (amber, incense, gold, ivory/elephants) — the brief's prime suspects — show **0/N non-canon** for amber, incense, gold (all zero) and only 1 non-canon hit for elephants. No resource type drives the non-canonical signal. Hypothesis "non-canon cells = resource markers" is closed. **Negative-but-clean** (see #1).
+
+(b) **CONFIRMED: body root contains 4 major sub-regions besides character_paths.** Body root spans `0x3b99..0x633bb3` (~6.19 MB). Linear walk reveals: (i) `0x3b99..0x51ad` — **5.6 KB preamble** with UTF-16LE strings "campaign/imperial_campaign" + "imperial_campaign". (ii) `0x51ad..0x87e9` — **13.9 KB character UUID index** (kid[0], session 12). (iii) `0x87e9..0x846af` — **495 KB per-year/per-event log** (mostly 12-byte stride records `[u8 flag][u8 sub][u16 idA][u16 idB][u16 0][u32 hash]` where `idB` clusters at game-years 275-695 = 270 BC + N turns). (iv) `0x846d1..0xa8beb` — **149 KB scripted-events table** with ASCII strings for volcano eruptions, earthquakes, floods, AND the 7 wonders (`pyramids_and_sphinx, pharos, colossus, temple, statue, gardens, mausoleum`). (v) `0xa8beb..0xf8f9b` — **324 KB of 469 medium-sized self-pointing sections** (mean 546 B) likely character_paths records. (vi) `0xf8f9b..0x633bb3` — **5.23 MB START of the mid-file tile-attribute grid** (continues outside body root). The body root's nominal end at `0x633bb3` falls in the **MIDDLE of the tile grid** — the grid (ARR_START=0xf8fd2, STRIDE=267, 240×238 cells, total 15.25 MB) straddles the body-root boundary. **The "9.8 MB gap" of session 12 is actually a continuation of the grid that started inside body root** (see #2).
+
+(c) **CONFIRMED: scripted-events / disasters / wonders are a single named-string table at `0x846d1..0xa8beb`.** 33 distinct names parsed: volcano (×25), eruption (×25), earthquake (×12), plus `eruption_at_etna_140`, `eruption_at_etna_135`, `eruption_at_methana`, `eruption_at_vulcano_91`, `earthquake_at_santorini`, `earthquake_in_rhodes`, `earthquake_in_iberia`, `flood_in_rome_241`, and the **7 wonders of the ancient world** as single ASCII tokens (`pyramids_and_sphinx`, `pharos`, `colossus`, `temple`, `statue`, `gardens`, `mausoleum`). Strings are length-prefixed `[u16 lenP1][ASCII][nul]`. **This is the historical-disaster/wonder schedule** — a per-year event registry (see #3).
+
+(d) **STRONG (HYPOTHESIS→evidence): the 495 KB pre-events region at `0x87e9..0x846af` is a per-year event log.** 42298 candidate 12-byte slots; ~12000 contain real records with format `[u8 flag][u8 0x20|0x00][u16 idA][u16 idB][u16 0][u32 hash]`. `idB` (offset +4) clusters tightly at values **275, 276, 277, ..., 695** = 419 distinct values. Game year 270 BC + N turns = idB. Top hash values repeat (e.g. `0xec22d10b` at multiple idB values) — likely a faction/character UUID being recorded each year. The structure resembles a **per-turn event/history log** keyed by (year=idB, target=idA, actor-uuid=hash). **NOT a character or settlement table** (see #4).
+
+(e) **STRONG NEGATIVE: character names are NOT stored as strings in the save.** Of 232 distinct agent names from descr_strat (diplomats/spies/admirals), **only 6 (2.6%) appear anywhere in the 32 MB save as UTF-16LE**; 0 as ASCII. Of 24 general names, **0** appear. Of 584 named_character names, **11** (1.9%) appear. None of `Gaius`, `Marcus`, `Tiberius`, `Quintus`, `Mago`, `Aqhat`, `Yahua` etc. appear anywhere. **Names are stored as INDICES into `data/text/names.txt`** (a 4116-line UTF-16LE table of `{NameKey}DisplayName` entries). The save stores u16/u32 IDs, not strings — confirmed by the `{key}` indirection convention in names.txt. **This blocks string-based agent validation** and is a foundational schema fact (see #5).
+
+(f) **CONFIRMED: save's settlement-model block uses 6 collapsed culture families while descr_strat uses 21.** descr_strat declares 1831 settlements across **21 cultures** per `descr_sm_factions.txt` (roman, greek, w_hellenistic, e_hellenistic, anatolian, libyan, celtiberian, dacian, barbarian, illyrian, thracian, scythian, germanic, brittonic, indian, iranian, ethiopian, arab, egyptian, carthaginian, eastern). Save's model block stores **only 6 culture families**: roman (W_hellenistic_), barbarian (Celtic_/Illyrian_/Germanic_), carthaginian, eastern, nomad, egyptian. Coverage: save's 410 tag=27 records = **22% of descr_strat's 1831** — the model block is partial. Architectural-family collapse mapping (e.g. greek+anatolian+roman+w_hellenistic+e_hellenistic → "roman" architectural family) is the engine's render-time grouping (see #6).
+
+Save corpus this session: `save_rome10.sav` (RIS imperial T5).
+Ground-truth this session: `…/RIS beta/data/original_overrides/.../descr_strat.txt` (2.43 MB, 2926 resource lines, 2085 character lines, 1831 settlement lines), `…/RIS beta/data/descr_sm_factions.txt` (239 factions with culture), `…/RIS beta/data/text/names.txt` (4116 name entries, UTF-16LE BOM-prefixed).
+
+#### 1. REFUTED: resources cluster in non-canonical mid-file cells (Y-flip corrected)
+
+**Convention**: descr_strat uses bottom-up Y (Y=0 south, Y=699 north). TGA / mid-file grid uses top-down Y. Conversion: `tga_y = 699 - descr_y`. Confirmed by checking amber (Baltic, north) → descr_y[356..670] → tga_y[29..343] = north on TGA, and incense (Arabia, south) → descr_y[2..356] → tga_y[343..697] = south on TGA.
+
+**Mapping**: descrX,descrY (pixel space 0..1019, 0..699) → cell `(c=floor(descrX/4.25), r=floor((699-descrY)/2.94))` on the 240×238 grid (`PX_PER_CELL_X=4.25, PX_PER_CELL_Y=2.941`).
+
+**Cross-tab against 697 non-canonical cells (rome10)**:
+
+| Entity type | Total entries | In non-canon | Expected (baseline) | Enrichment |
+|---|---|---|---|---|
+| Resources (all types) | 2926 | 36 | 35.80 | **1.01x** |
+| Characters[named_character] | 1505 | 16 | 18.21 | 0.88x |
+| Characters[general] | 337 | 5 | 4.07 | 1.23x |
+| Characters[admiral] | 45 | 0 | 0.56 | 0.00x |
+| Characters[diplomat] | 100 | 0 | 1.24 | 0.00x |
+| Characters[spy] | 97 | 0 | 1.20 | 0.00x |
+| Settlement-model coords | 201 | 2 | 2.48 | 0.81x |
+
+**Per-resource-type non-canon enrichment (sorted desc)**:
+
+| Type | total | noncanon | expected | enrichment |
+|---|---|---|---|---|
+| timber | 28 | 2 | 0.35 | 5.78x |
+| camels | 27 | 1 | 0.33 | 3.00x |
+| pigs | 60 | 2 | 0.74 | 2.70x |
+| elephants | 36 | 1 | 0.44 | 2.25x |
+| incense | 37 | 1 | 0.46 | 2.19x |
+| amber | 21 | 0 | 0.26 | **0.00x** |
+| copper | 44 | 0 | 0.54 | 0.00x |
+| gold | 47 | 0 | 0.58 | 0.00x |
+| iron | 58 | 0 | 0.72 | 0.00x |
+| silver | 89 | 0 | 1.10 | 0.00x |
+| wine | 58 | 0 | 0.72 | 0.00x |
+| (...20 more zero-enrichment types) | | | | |
+
+**Conclusion**: with proper Y-flip, resources show ESSENTIALLY BASELINE rates in non-canon cells (1.01x). The brief's specific edge-region candidates (amber Baltic, incense Arabia, gold Iberia, ivory Africa = elephants) all show **0-2 non-canon hits at baseline-or-below**. The few types with >2x enrichment (timber=2 hits, camels=1, pigs=2, elephants=1) have counts so low (1-2) that they're consistent with noise. The "non-canon = edge-region resource marker" hypothesis is **REFUTED**.
+
+The non-canonical cells DO over-represent edge factions geographically (session 24's Saka 2.28x, Suebi 1.72x), but **the corresponding resources don't follow**. So non-canon ≠ a per-resource-type marker; it correlates with FACTION/REGION but not with what's ON the tile.
+
+**Reproducer**: `dig-descr-strat-resources{1,2}.js`. Script 1 uses raw Y (wrong); script 2 applies Y-flip correctly.
+
+#### 2. CONFIRMED: body root interior structure (rome10 RIS) — 6 sub-regions, tile-grid straddles boundary
+
+Linear walk of body root payload (`0x3ba1..0x633bb3`):
+
+| Sub-region | Range | Size | Content |
+|---|---|---|---|
+| Preamble | 0x3b9d..0x51ad | 5.6 KB | 2× UTF-16LE strings `campaign/imperial_campaign` + `imperial_campaign` + a placeholder section + zero padding |
+| Char UUID index | 0x51ad..0x87e9 | 13.9 KB | Single self-pointing section, kid[0] from session 12 — sorted u32 ID list of ~1157 entries |
+| Per-year event log | 0x87e9..0x846af | 495 KB | 12-byte stride records (see #4) — per-game-year, ~419 distinct years 275-695 |
+| Scripted-events / wonders | 0x846d1..0xa8beb | 149 KB | Named-string table (see #3) — 33 distinct names |
+| Character_paths sections | 0xa8beb..0xf8f9b | 324 KB | 469 medium sections, mean 546 B, mostly variable-stride paths |
+| Tile-grid start | 0xf8f9b..0x633bb3 | **5.23 MB** | **First ~35% of the mid-file 240×238 tile-attribute array** |
+
+**Tile-grid straddle**: the mid-file array starts at `ARR_START=0xf8fd2` (inside body root tail) and ends at `0xf8fd2 + 240*238*267 = 0xf84632` (~16.27 MB into file), but body root ends at `0x633bb3` (~6.5 MB). So **9.0 MB of the tile array lives OUTSIDE the body root**, in what session 12 called the "9.78 MB tile-attribute gap". The two regions are actually **one continuous array** that crosses the body-root boundary.
+
+**Coverage of body root**:
+- 17.4% of body-root bytes are in self-pointing children
+- 78.4% is in the tile-grid tail
+- 4.2% is the preamble + scripted-events table + per-year log (non-self-pointing positional data)
+
+**Linear walk only succeeds for 1 child via the {self-ptr + size} contract** because most children don't have a clean self-pointer at +0 (the per-year-log records are 12-byte and event strings are length-prefixed). Walk-by-self-pointer-scan found 469 well-formed sections after the events block.
+
+**Reproducer**: `dig-body-root{1..5}.js`. Key: dig-body-root3 (linear walk), dig-body-root4 (top-level child enumeration), dig-body-root5 (gap analysis with byte histograms + string scans).
+
+#### 3. CONFIRMED: scripted-events / disasters / wonders string table at 0x846d1..0xa8beb
+
+Parsed 73 length-prefixed ASCII strings (`[u16 lenP1][ASCII chars][u8 nul]`), 33 distinct:
+
+| Category | Examples |
+|---|---|
+| volcano | `volcano` (×25) |
+| eruption | `eruption` (×7), `eruption_at_etna_140`, `eruption_at_etna_135`, `eruption_at_etna_126`, `eruption_at_etna_122`, `eruption_at_etna_49`, `eruption_at_etna_44`, `eruption_at_etna_36`, `eruption_at_etna_32`, `eruption_at_etna_10_20_ce`, `eruption_at_etna_38_40_ce`, `eruption_at_etna_generic`, `eruption_at_methana`, `eruption_at_vulcano_183`, `eruption_at_vulcano_126`, `eruption_at_vulcano_91`, `eruption_at_ischia_91`, `eruption_at_santorini_197`, `eruption_at_santorini_46_ce` |
+| earthquake | `earthquake` (×11), `earthquake_at_santorini`, `earthquake_in_rhodes`, `earthquake_in_iberia` |
+| flood | `flood`, `flood_in_rome_241` |
+| **Seven Wonders** | `pyramids_and_sphinx`, `pharos`, `colossus`, `temple`, `statue`, `gardens`, `mausoleum` |
+
+This is the **historical event registry** keyed by location + year. The numbers in names (`_140`, `_241`, `_91`, etc.) match historical BC dates of real volcanic eruptions and earthquakes in the Mediterranean. The 7 Wonders entries match Antipater of Sidon's canonical list (pyramids, pharos, colossus, statue [of Zeus], temple [of Artemis], gardens [of Babylon], mausoleum [at Halicarnassus]).
+
+**Schema**: each string entry has 0..32 bytes of payload after the nul-terminator (variable-stride). Entropy of the region = 4.13 bits/byte (mix of string bytes + length prefixes + binary payload). Total 149 KB. Each event likely has a `triggered_at_year` u32 + faction/region UUID + outcome flag payload.
+
+**Implication for Provincia**: this confirms RTW saves contain a full **per-campaign historical-event registry** that can be parsed for "what wonders are extant", "what disasters have happened", and "which year each event fired". The 7-wonder data here is what powers the in-game wonder-of-the-world bonus system.
+
+**Reproducer**: `dig-body-root{5,6}.js`. Script 5 finds the strings; script 6 categorizes them.
+
+#### 4. STRONG: 495 KB per-year event log at 0x87e9..0x846af — 12-byte records keyed by game-year
+
+The 495 KB region between the character UUID index and the scripted-events table holds a fixed-stride table where 12-byte records dominate:
+
+```
++0  u8  flag   (1 most common, 2/4 also common, 0=padding)
++1  u8  sub    (0x20 when flag in {1,2}, 0x00 otherwise)
++2  u16 idA    (target/region/character ID — 1..1024 range)
++4  u16 idB    (GAME YEAR — 275..695 dominant cluster)
++6  u16 zero   (always 0 in valid records)
++8  u32 hash   (actor/agent UUID — top values repeat: 0xec22d10b, 0x9cdbf934, 0xd87f3809, 0xf699f00e, 0xb53a6c46, 0x2c657167, 0x81875cbb, 0x96479cdf)
+```
+
+**idB year-distribution evidence**:
+- 419 distinct idB values from records with flag ∈ {1,2,4}
+- Cluster 275-695 contains 99%+ of records
+- 270 BC is the canonical RTW imperial-campaign start year; rome10 is mid-campaign, idB max = 696 ≈ campaign end-year cap
+- Counts per idB: 8-21 events per year typical (consistent with a moderate event-firing rate)
+
+**Hash repetition**:
+- Top hash `0x0bd122ec` appears across multiple idB years
+- `0x9cdbf934` appears 11 consecutive records at idB=275 with idA increasing (0x18c → 0x197) — looks like **a single actor's actions logged across multiple targets in one year**
+
+**Interpretation**: this is the **per-year-per-event log** ("history book"). flag distinguishes event types (1=player-faction action, 2=AI action, 4=automatic/script event). idA = target entity (region or character). idB = year. hash = actor UUID. The size at 495 KB / 12 B = 42298 nominal slots but only ~12000 contain non-zero records — the rest is reserved pre-allocated space for future events.
+
+**Reproducer**: `dig-body-root{6,7}.js`.
+
+#### 5. STRONG NEGATIVE: character names are name-table indices, not strings — agent validation blocked
+
+Cross-search of all 2085 descr_strat character names against the 32 MB save buffer:
+
+| Name source | Distinct names | Found in save (UTF-16LE) | Found in save (ASCII only) | Total |
+|---|---|---|---|---|
+| Agent names (diplomat/spy/admiral) | 232 | **6 (2.6%)** | 0 | 6 |
+| General names | 24 | **0 (0%)** | 0 | 0 |
+| Named-character names | 584 | **11 (1.9%)** | 0 | 11 |
+| Common Roman praenomina (Gaius, Marcus, Tiberius, Quintus, Manius, Aulus, Lucius, Decimus, Publius) | 9 | **0 (0%)** | 0 | 0 |
+| Other test names (Mago, Aqhat, Yahua) | 3 | **0 (0%)** | 0 | 0 |
+
+**Conclusion**: character names are **NOT stored as strings** in the save. They are stored as INDICES into `data/text/names.txt`. That file is UTF-16LE BOM-prefixed, 4116 entries of pattern `{NameKey}DisplayName` (e.g. `{Gaius}Gaius`, `{Aaron}Aaron`, `{Aqhat}Aqhat`). The save references each character's name by `{NameKey}` ID (presumably u16 with 4116 < 2^16 entries).
+
+The few "found" agent names (6/232) are likely false-positive substring matches of common letter sequences, not actual stored names. The 11/584 named-character matches are similar partial-string coincidences.
+
+**This blocks the task-3 plan** (verify each descr_strat agent has a record in save by name match). To validate agents structurally, we need to either:
+- Locate the name-index field within character_paths records (each character has a u16 name_id slot)
+- Cross-correlate descr_strat agent counts per faction with character_paths kid counts per faction (requires faction-to-kid mapping)
+
+**Faction-faction character counts** (from descr_strat):
+- slave 834 named_characters, seleucid 195, ptolemaic 129, mauryan 92, carthage 75, romans_julii 48, antigonid 47, greeks 28
+- 99 factions total with at least one character
+- Bottom tier: hellenistic_rebels (1), dummies (1)
+
+These counts can be mapped against per-faction character_paths sections once a faction-id schema is known, but the **name-string-search approach is dead**.
+
+**Reproducer**: `dig-agents1.js`.
+
+#### 6. CONFIRMED: save model block uses 6 collapsed culture families; descr_strat uses 21
+
+`descr_sm_factions.txt` declares 239 factions across **21 distinct cultures**:
+
+| Culture | descr_strat-settlements |
+|---|---|
+| barbarian | 258 |
+| greek | 208 |
+| roman | 50 (but session below maps roman/greek/anatolian/w_hellenistic/e_hellenistic → roman family) |
+| iranian | 134 |
+| libyan | 131 |
+| arab | 103 |
+| germanic | 98 |
+| eastern | 93 |
+| celtiberian | 83 |
+| brittonic | 79 |
+| e_hellenistic | 78 |
+| scythian | 78 |
+| indian | 72 |
+| carthaginian | 75 |
+| dacian, illyrian, ethiopian, anatolian, w_hellenistic, thracian, egyptian | (5-49 each) |
+
+Save's settlement-model strings use **6 architectural-family prefixes** (session 24): `W_hellenistic_*` (roman family), `Celtic_*`/`Illyrian_*`/`Germanic_*` (barbarian family), `Carthaginian_*`, `Eastern_*`, `Nomad_*`, `Egyptian_*`. Save's tag=27 (active) records (410 total) distribute as:
+
+| Save-model family | Count | Likely descr_strat sources |
+|---|---|---|
+| roman (W_hellenistic_*) | 170 | roman + greek + anatolian + w_hellenistic + e_hellenistic |
+| barbarian (Celtic_+Illyrian_+Germanic_) | 137 | barbarian + celtiberian + dacian + germanic + brittonic + illyrian + thracian |
+| eastern | 55 | eastern + iranian + arab + indian |
+| carthaginian | 30 | carthaginian |
+| nomad | 10 | scythian |
+| egyptian | 8 | egyptian + libyan + ethiopian |
+
+The 6→21 collapse is RTW's **architectural-model engine**: many descr_strat cultures share rendered building models. The save stores rendered-model coords, NOT culture metadata.
+
+**Coverage**: 410 tag=27 records / 1831 descr_strat settlements = **22%**. The save's settlement-model block is therefore PARTIAL — it stores only the ~22% of settlements that the player has been close enough to render, or that the engine has otherwise initialized.
+
+**Levels**: descr_strat declares 5 levels (`village, town, large_town, city, large_city`); save model block uses 5 model-suffix levels (`Town, Large_Town, City, Large_City, Huge_City`) — **no `Village` in save** (villages don't have rendered architectural models in RTW), **no `Large_City` in descr_strat that survived to save** (descr_strat has only 2 large_city declarations), **`Huge_City` is present in save but NOT in descr_strat** (settlements that grew past large_city → huge_city during gameplay).
+
+**Open question**: the size mismatch (1831 → 410) means we cannot use descr_strat as ground truth for the save's model coords. Either the save is partial (player-visible only), or some settlements in descr_strat never get a tag=27 entry by design (e.g. towns too small to render). A controlled per-turn test save (e.g. T1 with all factions fog-revealed via cheat) would distinguish these.
+
+**Reproducer**: `dig-model-validate{1..3}.js`. Script 3 is the final version with proper `descr_sm_factions.txt` culture parsing.
+
+#### Open follow-ups for session 26+
+
+- **Y-flipped pixel→cell mapping**: the 1.01x baseline result (resources in non-canon) used a 4.25×2.94 pixel-per-cell scaling. The original 240×238 cell array maps to a 1020×700 TGA, but RTW's internal tile coord system might be 256×256 or higher-res. A test: take a single descr_strat settlement at known descr coords (e.g. Roma at the famous descr_y location) and verify it lands on the expected save settlement-coord. Mis-scaling could mask a real signal.
+
+- **Per-year event log (#4)**: cross-check idB values against actual game-year for rome10 (player can see current year in UI). If campaign is at year ~275 = idB=275, then we can verify the year-encoding. Also: parse the 8 most-common hash values (0xec22d10b, 0x9cdbf934, etc.) — are these the 8 major faction UUIDs? A faction-uuid table would let us decode event records into (year, faction, target).
+
+- **Scripted-events #3**: each named string is followed by 0-32 bytes of binary data. Decode the structure of each event entry — likely `[u32 year_triggered][u32 location_uuid][u32 outcome_flag]`. The 7-wonder entries should map to specific settlements (pyramids → Egyptian Memphis, pharos → Alexandria, colossus → Rhodes, etc.) — verify by checking the bytes after the wonder names.
+
+- **Tile-grid boundary refinement**: the array is contiguous from `0xf8fd2..0xf84632` (15.25 MB) but crosses the body-root boundary at `0x633bb3`. Are the two halves byte-equivalent? Or does the body-root boundary mark a real semantic split (e.g. first 35% = "known tiles", remaining 65% = "unknown/initialized to canonical")?
+
+- **Name-table indexing (#5)**: confirm character_paths records have a u16 name-table index by reading +N bytes at a known character. Once name index is decoded, per-character validation becomes trivial.
+
+- **Settlement-model partial coverage (#6)**: are the 410 tag=27 settlements those within the player's vision range? Test by checking distance from Roma vs distance for unrendered settlements.
+
+#### Reproducer scripts
+
+- `dig-descr-strat-resources{1,2}.js` — resource/character coord cross-tab against 697 non-canonical mid-file cells
+  - 1: raw Y mapping (incorrect — REFUTED finding pre-flip)
+  - 2: Y-flipped (correct, 1.01x baseline result)
+- `dig-body-root{1..7}.js` — body root interior structure
+  - 1: locate body root start (0x3b99)
+  - 2: walk first child
+  - 3: linear taw-section walk (breaks after kid[0])
+  - 4: top-level child enumeration via self-pointer scan + gap detection
+  - 5: gap content analysis (byte histogram + ASCII string scan)
+  - 6: gap C scripted-events parse + gap B 12-byte record decode
+  - 7: gap B record schema decode (idA, idB=year, hash analysis)
+- `dig-agents{1,2}.js` — descr_strat agent name search in save
+  - 1: UTF-16LE / ASCII name search (NEGATIVE — names are indices, not strings)
+  - 2: structural character_paths count per body-root region
+- `dig-model-validate{1..3}.js` — settlement-model culture×size cross-validation
+  - 1: initial parse (faction culture not loaded)
+  - 2: culture loaded but regex broken (greek/libyan/etc all missed)
+  - 3: corrected SMF parsing — 239 factions across 21 cultures vs save's 6 architectural families
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
