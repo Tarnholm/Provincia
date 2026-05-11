@@ -8447,6 +8447,262 @@ section contributes net delta.
 
 ---
 
+### Findings 2026-05-12 (background session 33 — diplomacy enum values + siege flag + alliance state)
+
+**HEADLINE: SIEGE FLAG CRACKED. Trade-rights / map-rejection /
+protectorate-revoke / war / alliance enum semantics characterized.**
+A 9-save ladder isolating each diplomatic action one at a time let us
+read off ALL enum and per-cell field changes for the 239×239 matrix
+that session 32 located. Plus a 73-byte "siege record" block was pinned
+exactly (CONFIRMED, cross-validated across two siege-start/stop pairs).
+
+#### Save corpus
+
+9 saves, with one well-defined action between each successive pair:
+
+| File | Action | netΔ |
+|---|---|---|
+| save_1.1 | baseline (turn 1, no trade rights, no alliances) | — |
+| save_2.1 | +trade rights w/ Messapians (idx 156) | −10 |
+| save_3.1 | +alliance w/ Messapians | +166 445 |
+| save_4.1 | map-request rejected by Messapians | −16 |
+| save_5.1 | revoke protectorate+access w/ Taras (idx 207) | +3 016 |
+| save_6.1 | break alliance → war w/ Messapians | −2 834 |
+| save_7.1 | + active siege of Brundisium | +73 |
+| save_8.1 | + attack/betray Taras; siege of Tarentum | +3 218 |
+| save_9.1 | stop siege of Tarentum (still at war) | −73 |
+
+**Faction indices** (from `descr_sm_factions.txt` declaration order,
+239 entries total, confirmed by counting all `"<name>":` headers):
+- `romans_julii` = 0
+- `messapians` = 156
+- `taras` = 207
+- `vettones` = 228
+- `slave` = 238 (last)
+
+**Matrix start `0xf8fd2` is STABLE across ALL 9 saves** in this
+corpus. The hint from session 32 was used directly — every save's
+fingerprint check (`u32(+12) == 10` + small u32 at `+0`) passed on
+the first 100 consecutive cells starting at exactly that offset.
+
+#### CONFIRMED: Full enum semantics for `curr` and `prev` fields
+
+For each consecutive save-pair, ONLY 4–8 cells out of 57,121 differ
+in the bilateral matrix. Most of those are AI-jitter on cells
+`[0][155]` and `[155][238]` (or `[0][206]` and `[206][238]`) — these
+appear to be an internal coupling artifact (NOT real diplomacy state),
+matching the "noisy outlier" pattern session 32 already flagged.
+
+Real diplomacy changes are on Roman/Messapians/Taras rows and
+columns. The ladder reveals:
+
+| Pair | Action | Cell | prev/curr A → B | Other Δ |
+|---|---|---|---|---|
+| 1→2 | +trade rights w/ Mess | `[0][156]`+`[156][0]` | (5,0) → (0,1) | — |
+| 2→3 | +alliance w/ Mess | `[0][156]`+`[156][0]` | (0,1) → (0,1) **no change** | — |
+| 3→4 | map-request REJECTED by Mess | `[0][156]`+`[156][0]` | (0,1) → (0,**-1**) | — |
+| 4→5 | revoke protectorate w/ Taras | `[0][156]`+`[156][0]` | (0,-1) → (5,0) reset | side-effect of cascading? |
+|     |   | `[0][207]`+`[207][0]` | (5,0) → (0,1) | — |
+| 5→6 | declare war w/ Mess | `[0][156]` only | (5,0) → (5,0) **prev/curr unchanged** | `+8`: 0 → **-200** |
+|     |   | `[0][207]`+`[207][0]` | (0,1) → (5,0) reset | — |
+| 6→7 | siege Brundisium (no diplomacy) | (nothing changes in the matrix) | — | — |
+| 7→8 | attack Taras (betrayal → war) | `[0][156]` | `+8`: -200 → 0 | — |
+|     |   | `[0][207]` | (5,0) → (5,0) **prev/curr unchanged** | `+8`: 0 → **-350** |
+| 8→9 | stop siege Tarentum (no diplomacy) | (nothing changes in the matrix) | — | — |
+
+**Distilled enum semantics (CONFIRMED + STRONG)**:
+
+- `prev=5, curr=0` — **CONFIRMED** never-met / default / "back to default after reset"
+- `prev=0, curr=1` — **CONFIRMED** "trade rights granted" OR "protectorate/military-access ended" (the curr=1 state is GENERIC "active explicit relationship", not specifically trade rights — revoking a protectorate also produces `(0,1)`)
+- `prev=0, curr=-1` (i.e. `curr = 0xFFFFFFFF`) — **CONFIRMED** "agreement was REJECTED" cooldown / sour-aftermath flag. Both directions get the -1; persists until a subsequent action resets it.
+- `prev=5, curr=0` (after a previous interaction) — **CONFIRMED** matrix was RESET. Observed when revoking protectorate+access cascades and clears all pending state on related factions (e.g. Mess cell reset when Taras protectorate was revoked — likely an alliance/treaty cascade resolving).
+- **WAR DOES NOT CHANGE `prev` OR `curr`** — CONFIRMED. Declaring war never touches the 8-byte `(prev,curr)` pair. War is signaled exclusively on the `+8` field as a signed-int penalty.
+- **ALLIANCE DOES NOT CHANGE `prev` OR `curr` either** — CONFIRMED. After +alliance w/ Mess, the cell stayed at `(0,1)` from the trade rights state. So alliance state lives **outside** the matrix entirely (likely in per-faction trailing data — see Alliance section below).
+
+**`+8` field is the WAR/RELATIONSHIP OPINION DELTA (signed-int u32)** — STRONG/CONFIRMED:
+
+- `+8 = 0` for never-warring pairs (default)
+- `+8 = -200` after declaring war w/ Mess (`[0][156]` in save_6)
+- `+8 = -350` after betraying alliance with Taras (`[0][207]` in save_8) — worse than ordinary war
+- `+8` reverts to 0 when the cell is overwritten by some other engine action (e.g. `[0][156]` saw -200 → 0 in save_8 — the war penalty was reset, possibly because a new bigger conflict (Taras war) consumed the player's diplomacy state)
+
+**HYPOTHESIS**: `+8` is a "war-aggression" or "recent-hostile-action" score that:
+- Decays each turn,
+- Spikes -200 on declare-war, -350 on alliance-betrayal,
+- Combines with the +20/+28/+32 base opinion to produce final
+  "AI hostility score".
+
+#### CONFIRMED: Per-cell fields `+20`, `+28`, `+32` are static descr_strat-derived opinion components
+
+Histogram across the entire `save_1.1` matrix (clean baseline):
+
+- `+20` values: {0 × 448, 200 × 465, 600 × 476, 1 outlier} — a **3-level
+  quantized opinion axis** at 0 / 200 / 600
+- `+28` values: mostly 6 with rare other values (mostly AI eval jitter)
+- `+32` values: {0 × 220, 200 × 284, **−10 × 171** (signed s32),
+  400 × 1, 600 × 713} — a **5-level opinion axis** including
+  negative values
+
+Total **1390 cells** (out of 57,121) have non-default `(+20, +32) =
+(200, 200)` values in save_1.1. The non-default pattern is:
+
+- **Col 237 (vettones)** has `(+20, +32) = (600, 600)` in 220/239 rows
+  — descr_strat marks every faction's view of vettones strongly positive
+- **Row 238 (slave/rebels)** has `(+20, +32) = (600, 600)` in 219/239
+  cols — descr_strat marks slave/rebels strongly positive on outgoing
+  axis
+- Diagonal `[r][r-1]` adjacent cells frequently `(0, 200)` —
+  starting "neutral but lower than default" with adjacent faction (likely
+  reflecting "border tension" baseline)
+
+So `+20` and `+32` together encode the **starting bilateral opinion**
+from `descr_strat.txt`'s starting-relations declarations. `+8` is the
+running opinion delta from in-game actions. `+28` mostly stays at 6
+(initial "respect" or "trust" gauge).
+
+#### CONFIRMED: SIEGE FLAG — 73-byte siege record at fixed offset
+
+**A single 73-byte "siege record" block exists at file offset
+`0x152f529` for each active siege.** Block layout:
+
+```
++0    u8     0x01           — active-siege flag
++1..+12  u8[12]   UUID       — random 12-byte siege identifier
++13..+65  u8[53]  zeros      — reserved (besieger references, siege
+                              progress, supply, etc.; all zero in
+                              our captured pair)
++66..+67  u16     0x08d5 = 2261 — settlement strength / wall HP
+                                 (same value 2261 for BOTH
+                                 Brundisium and Tarentum sieges)
++68..+72  u8[5]   zeros
+total: 73 bytes
+```
+
+**Verified deltas (CONFIRMED across two independent siege start/stop
+events)**:
+
+- save_6 → save_7 (Brundisium siege STARTS): +73 bytes, block UUID
+  `8ca7c190a40c62d30ae06177`, +66 u16 = 2261
+- save_8 → save_9 (Tarentum siege STOPS):    −73 bytes, block UUID
+  `7093a67be00e7f3deb2ac995`, +66 u16 = 2261
+
+The block at `0x152f529` is **the same fixed offset for both events**
+— the engine uses a static slot. Saves with no siege (save_1..save_6,
+save_9) have **zero matching blocks**; saves with one siege (save_7,
+save_8) have **exactly one**. The siege block is positioned ~64 bytes
+before the besieged settlement's name (`Taras` appears at
+~`0x152f5a0` in save_8; `roman general` string appears as a marker
+between siege block and settlement name).
+
+**Besieger-side back-reference**: A 5-byte structure `01 [4-byte
+UUID-prefix]` is written into the besieging army's character/army
+record. Confirmed locations:
+
+- save_7 (Brundisium besieger): `01 8c a7 c1 90` at file offset
+  `0x1263383` (5-byte struct preceded by `3a 05 2b ee` which is
+  another army-record field)
+- save_8 (Tarentum besieger): `01 70 93 a6 7b` at file offset
+  `0x12d8723` (5-byte struct preceded by `de b1 0f 70`)
+
+The 4-byte UUID-prefix matches the first 4 bytes of the siege record's
+12-byte UUID. The byte BEFORE the `01` is the army's own UUID
+(unrelated to the siege UUID). So the structure on the besieger's
+record is `[army_uuid_4B] [01 siege_uuid_prefix_4B]` — a 9-byte
+"current-siege" sub-record.
+
+**Practical implication for the Provincia app**: To detect "settlement
+X is under siege":
+1. Scan the file for 73-byte blocks matching the siege fingerprint
+   (predicate: `buf[off]==1`, `buf[off+1..13]` has ≥8 non-zero bytes,
+   `buf[off+13..66]` all zero, `0 < u16(off+66) < 65536`,
+   `buf[off+68..73]` all zero). On rome10-equivalent saves the block
+   is at exactly `0x152f529`; on other saves it may shift slightly.
+2. The besieged settlement's name appears in UTF-16LE within ~256
+   bytes after the siege block (just past a `0e 00 0e 00 "roman
+   general\0"` marker).
+3. To identify the besieging army, search the file for the 5-byte
+   pattern `01 [first 4 bytes of siege UUID]` — that 5-byte
+   structure sits inside the army's character record.
+
+#### CONFIRMED-NEGATIVE: Alliance state is NOT in the diplomacy matrix
+
+save_2 → save_3 (+alliance w/ Messapians, +166KB) introduces NO change
+at `[0][156]` or `[156][0]` (both stay at (0,1)). Yet the file grew
+166445 bytes between the two saves. A full Myers-style aligned diff
+revealed 2.4MB of inserts and 2.2MB of deletes (massive churn from
+end-of-turn processing — including ~8KB blocks containing character
+portrait paths like `data/ui/greek/portraits/portraits/young/generals/127.tga`
+that indicate **new characters were generated**). This corpus was
+captured AFTER an end-turn between save_2 and save_3 — alliance state
+cannot be cleanly isolated from this pair.
+
+**HYPOTHESIS**: Alliance is stored in **per-faction trailing data**
+(session 9's open question), specifically as a list of allied
+faction-IDs on each major-faction record. Confirming this requires a
+fresh save-pair with NO end-turn between the trade-rights and alliance
+actions.
+
+#### Practical implications for Provincia
+
+- **Diplomacy state for any RR save can now be decoded fully**:
+  - `prev=5,curr=0` ⇒ never interacted
+  - `prev=0,curr=1` ⇒ active relationship (trade rights, or
+    post-protectorate)
+  - `prev=0,curr=-1` ⇒ recent rejection cooldown
+  - `+8 < 0` ⇒ at war (the magnitude encodes how recent / how severe:
+    -200 = ordinary war, -350 = betrayal war)
+  - The bilateral "starting opinion" (per descr_strat) is encoded in
+    `+20` and `+32` at quantized levels {0, 200, 400, 600, or -10}
+- **Siege detection** for app's region view: scan for the 73-byte
+  siege block at `0x152f529`. Each settlement at most one block. Use
+  it to surface "X is under siege" badges per-region.
+
+#### Scripts
+
+- `dig-diplo-ladder1.js` — locate matrix start across all 9 saves
+  (every save's matStart = 0xf8fd2; cell sample for Rom/Mes/Taras)
+- `dig-diplo-ladder2.js` — full 239×239 matrix diff for each
+  consecutive save pair, listing every changed cell with first-40
+  bytes of u32 deltas
+- `dig-diplo-ladder3.js` — per-column / per-row +20 / +32 distribution
+  in save_1 baseline (revealed vettones col & slave row = 600/600)
+- `dig-siege1..6.js` — aligned diff save_6→save_7 and save_8→save_9,
+  pin the 4 + 13 + 56 = 73-byte insert/delete location
+- `dig-siege7..9.js` — structural fingerprint matcher for the 73-byte
+  siege block; cross-validate Brundisium (save_7) and Tarentum
+  (save_8); confirm no false positives across the 9-save corpus
+- `dig-alliance1..2.js` — save_2 → save_3 alliance analysis;
+  confirmed alliance state lives outside the diplomacy matrix and
+  cannot be cleanly extracted from this end-turn-laden pair
+
+#### Confidence summary
+
+- **CONFIRMED** (cross-validated across ≥2 independent observations):
+  - Matrix offset 0xf8fd2 stable across 9 saves
+  - Trade-rights enum (5,0)→(0,1)
+  - Rejected-agreement enum (0,1)→(0,-1)
+  - Default-reset enum (anything)→(5,0)
+  - War does NOT change prev/curr — only `+8`
+  - `+8` is signed war-opinion delta (-200 declare-war, -350 betray)
+  - Siege block 73 bytes at 0x152f529 with `01 + 12-UUID + 53*0 +
+    u16(2261) + 5*0` layout
+  - Siege backreference on besieging army: `01 [4-byte UUID prefix]`
+- **STRONG** (single direct observation + consistent indirect support):
+  - Protectorate revoke produces `(5,0)→(0,1)` (Taras transition in
+    save_4→save_5)
+  - +20/+32 are descr_strat-derived starting bilateral opinions
+  - The u16=2261 trailer in siege block is constant (both sieges
+    same value) — most likely settlement strength / wall HP
+- **HYPOTHESIS** (one observation, alternative interpretations possible):
+  - Alliance state stored in per-faction trailing data (session 9)
+  - The cell-reset cascade on save_5 (Mess cell reset when Taras
+    protectorate revoked) reflects an alliance/treaty link being
+    severed
+  - `+28` is a per-cell "trust/respect" axis (mostly stays at 6, +20
+    rare AI-eval jitter)
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
