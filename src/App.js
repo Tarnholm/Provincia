@@ -5336,13 +5336,16 @@ function App() {
       ctx.globalAlpha = 1;
     }
 
-    // Heights overlay — elevation gradient (sea-level → green → red peak)
-    // sampled from map_heights.tga. Layers independently of Geography.
+    // Heights overlay — hillshaded relief, drawn with soft-light blend so
+    // flat-ground neutral grey leaves the base map unchanged while slopes
+    // shade it up or down. Reads as a proper topo relief instead of a flat
+    // colour tint.
     if (showHeightsOverlay && heightsOverlayCanvas) {
-      ctx.globalAlpha = 0.55;
+      ctx.save();
+      ctx.globalCompositeOperation = "soft-light";
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(heightsOverlayCanvas, 0, 0);
-      ctx.globalAlpha = 1;
+      ctx.restore();
     }
 
     // Settlement tier — recolor black city pixels by tier
@@ -5555,9 +5558,13 @@ function App() {
     return () => { cancelled = true; };
   }, [showHeightsOverlay, heightsPixels, mapCampaign, loadCampaignData]);
 
-  // Pre-bake the heights overlay canvas. Elevation gradient:
-  // sea (0)→ green → yellow → orange → red (peaks). Heights TGA is
-  // grayscale (R channel = elevation 0..255; range 0..170 in RIS).
+  // Pre-bake the heights overlay as a grayscale hillshade canvas. Computes
+  // per-pixel slope from a 4-neighbour elevation kernel, then maps it to a
+  // brightness value relative to a fixed NW light source. Renders at the
+  // canvas with composite mode "soft-light" so it shades the underlying
+  // colorMode (faction, geography, etc.) instead of replacing it — mid-grey
+  // pixels (flat ground) leave the base map unchanged; brighter pixels lift
+  // it, darker pixels deepen it. Produces a clean relief-map effect.
   useEffect(() => {
     if (!heightsPixels || !heightsSize.width || !imgSize.width) {
       setHeightsOverlayCanvas(null);
@@ -5569,50 +5576,38 @@ function App() {
     const scaleX = hW / W, scaleY = hH / H;
     const pxData = pixelDataRef.current;
     const out = new Uint8ClampedArray(W * H * 4);
-    // Stretch the observed range 0..170 across the full gradient for
-    // contrast (otherwise everything looks low).
-    const MAX_ELEV = 170;
-    // 5-stop gradient — sea-level green → yellow → orange → red → white peak.
-    const stops = [
-      { t: 0.00, c: [80, 180, 90] },
-      { t: 0.30, c: [220, 200, 80] },
-      { t: 0.60, c: [220, 140, 60] },
-      { t: 0.85, c: [200, 60, 60] },
-      { t: 1.00, c: [240, 220, 220] },
-    ];
-    const grad = new Uint8Array(256 * 3);
-    for (let i = 0; i < 256; i++) {
-      const t = Math.min(1, i / MAX_ELEV);
-      let s0 = stops[0], s1 = stops[stops.length - 1];
-      for (let k = 0; k < stops.length - 1; k++) {
-        if (t >= stops[k].t && t <= stops[k + 1].t) { s0 = stops[k]; s1 = stops[k + 1]; break; }
-      }
-      const f = s1.t === s0.t ? 0 : (t - s0.t) / (s1.t - s0.t);
-      grad[i * 3] = Math.round(s0.c[0] + (s1.c[0] - s0.c[0]) * f);
-      grad[i * 3 + 1] = Math.round(s0.c[1] + (s1.c[1] - s0.c[1]) * f);
-      grad[i * 3 + 2] = Math.round(s0.c[2] + (s1.c[2] - s0.c[2]) * f);
-    }
+    // Z-factor: how strongly slope translates to brightness contrast.
+    // Tuned for the observed 0..170 elevation range — strong enough that
+    // hills read, mild enough that subtle slopes stay subtle.
+    const Z = 9;
+    const sampleZ = (tx, ty) => {
+      const cx = Math.min(hW - 1, Math.max(0, tx));
+      const cy = Math.min(hH - 1, Math.max(0, ty));
+      return hData[(cy * hW + cx) * 4];
+    };
     for (let py = 0; py < H; py++) {
-      const hy = Math.min(hH - 1, Math.floor(py * scaleY));
-      const rowOff = hy * hW * 4;
+      const hy = Math.floor(py * scaleY);
       const outRow = py * W * 4;
       for (let px = 0; px < W; px++) {
-        const hx = Math.min(hW - 1, Math.floor(px * scaleX));
-        const hi = rowOff + hx * 4;
-        const elev = hData[hi];
+        const hx = Math.floor(px * scaleX);
         const oi = outRow + px * 4;
         if (pxData) {
           const ri = oi;
           const br = pxData[ri], bg = pxData[ri + 1], bb = pxData[ri + 2];
           if (!regions[`${br},${bg},${bb}`]) { out[oi + 3] = 0; continue; }
         }
-        // Sea-level zero stays as the gradient's first colour (light green)
-        // — but mostly land has elev>0 anyway.
-        const gi = elev * 3;
-        out[oi] = grad[gi];
-        out[oi + 1] = grad[gi + 1];
-        out[oi + 2] = grad[gi + 2];
-        out[oi + 3] = 255;
+        const zR = sampleZ(hx + 1, hy);
+        const zL = sampleZ(hx - 1, hy);
+        const zD = sampleZ(hx, hy + 1);
+        const zU = sampleZ(hx, hy - 1);
+        const dx = (zR - zL) * 0.5;
+        const dy = (zD - zU) * 0.5;
+        // Light from NW: surfaces whose elevation decreases toward SE
+        // (negative dx + dy) face the light → bright; positive → dark.
+        // Centre at 128 so flat ground = neutral grey = soft-light no-op.
+        let shade = 128 + (-(dx + dy)) * Z;
+        if (shade < 0) shade = 0; else if (shade > 255) shade = 255;
+        out[oi] = shade; out[oi + 1] = shade; out[oi + 2] = shade; out[oi + 3] = 255;
       }
     }
     const off = document.createElement("canvas");
@@ -7619,7 +7614,7 @@ function App() {
             title="Tint every land tile by its ground type (forest, mountain, swamp, etc.) on top of whatever map mode is active. Forest tiles enable passive ambushes."
             style={{ ...btnStyle(showGeographyOverlay), minWidth: 0 }}>Terrain</button>
           <button className="map-mode-btn" onClick={() => setShowHeightsOverlay(prev => !prev)}
-            title="Elevation gradient — green (sea level) → yellow → orange → red (peaks). Sampled from the mod's map_heights.tga. Layers on top of any map mode."
+            title="Hillshaded relief — fake NW light source over the mod's map_heights.tga. Mountains gain shadows, plains stay flat. Soft-light blend so it shades whatever map mode is active without replacing the colours."
             style={{ ...btnStyle(showHeightsOverlay), minWidth: 0 }}>Heights</button>
           <button className="map-mode-btn" onClick={() => setShowResourcesOverlay(prev => !prev)}
             title="Show resource icons on the map without switching out of the current color mode."

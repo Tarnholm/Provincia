@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.329",
+    date: "2026-05-12",
+    items: [
+      { type: "improvement", text: "Heights overlay is now a hillshaded relief instead of a flat colour gradient. Computes per-pixel slope from a 4-neighbour elevation kernel and shades each tile relative to a fixed NW light source. Drawn with soft-light composite blend so flat ground is neutral and slopes lift/deepen the underlying map colours — mountains gain shadows, plains stay flat. Reads as a proper topo relief instead of the wash of green that 97% of the map became under the old gradient (since elevation distribution was heavily skewed low)." },
+    ],
+  },
+  {
     version: "0.9.328",
     date: "2026-05-12",
     items: [
