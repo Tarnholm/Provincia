@@ -8080,7 +8080,11 @@ function App() {
     const panelStyle = {
       background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
       borderRadius: 10, padding: "8px 12px", color: "#f6f6f6",
-      fontSize: "0.75rem", minWidth: 160, maxWidth: Math.min(220, canvasSize.width * 0.3),
+      fontSize: "0.75rem",
+      // Sidebar parent is a fixed-width column; every legend / filter panel
+      // expands to fill it so the stack of panels reads as a uniform list
+      // rather than ragged-right rectangles of different widths.
+      width: "100%", boxSizing: "border-box",
       border: "1px solid rgba(255,255,255,0.08)",
       boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
     };
@@ -9044,7 +9048,7 @@ function App() {
     const sPanelStyle = {
       background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
       borderRadius: 10, padding: "8px 12px", color: "#f6f6f6",
-      fontSize: "0.75rem", minWidth: 160, maxWidth: Math.min(220, canvasSize.width * 0.3),
+      fontSize: "0.75rem", width: "100%", boxSizing: "border-box",
       border: "1px solid rgba(255,255,255,0.08)",
       boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
     };

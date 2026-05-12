@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.326",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "Sidebar legend panels all render at the same width now. Geography / Faction Legend / Settlement Tier / Hidden Resource / etc. used a clamped maxWidth that disagreed with Resources' `width: 100%`, so two panels could sit one above the other at different widths (Geography ~190px, Resources ~240px). Standardised on `width: 100%` of the fixed 240px sidebar column." },
+    ],
+  },
+  {
     version: "0.9.325",
     date: "2026-05-12",
     items: [
