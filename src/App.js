@@ -69,6 +69,7 @@ const DEFAULT_CAMPAIGNS = {
     populationFile: "population_classic.json",
     armiesFile: "armies_classic.json",
     groundTypesFile: "map_ground_types_classic.tga",
+    heightsFile: "map_heights_classic.tga",
   },
   imperial: {
     key: "imperial",
@@ -84,6 +85,7 @@ const DEFAULT_CAMPAIGNS = {
     populationFile: "population_large.json",
     armiesFile: "armies_large.json",
     groundTypesFile: "map_ground_types_large.tga",
+    heightsFile: "map_heights_large.tga",
   },
 };
 
@@ -1263,6 +1265,19 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem("showResourcesOverlay", showResourcesOverlay ? "1" : "0"); } catch {}
   }, [showResourcesOverlay]);
+  // Heights elevation overlay — independent toggle that paints a rainbow
+  // gradient (sea-level → green → yellow → red peaks) sampled from the
+  // mod's map_heights.tga. Layers on top of any colorMode.
+  const [showHeightsOverlay, setShowHeightsOverlay] = useState(() => {
+    try { return localStorage.getItem("showHeightsOverlay") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showHeightsOverlay", showHeightsOverlay ? "1" : "0"); } catch {}
+  }, [showHeightsOverlay]);
+  const [heightsPixels, setHeightsPixels] = useState(null);
+  const [heightsSize, setHeightsSize] = useState({ width: 0, height: 0 });
+  const heightsLoadingRef = useRef(false);
+  const [heightsOverlayCanvas, setHeightsOverlayCanvas] = useState(null);
   // Persist the Armies-overlay toggle. Defaults to ON — the user's main
   // reason to be in Live mode is seeing where everyone's stacks are; the
   // overlay was off-by-default which buried the feature behind a toggle
@@ -5321,6 +5336,15 @@ function App() {
       ctx.globalAlpha = 1;
     }
 
+    // Heights overlay — elevation gradient (sea-level → green → red peak)
+    // sampled from map_heights.tga. Layers independently of Geography.
+    if (showHeightsOverlay && heightsOverlayCanvas) {
+      ctx.globalAlpha = 0.55;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(heightsOverlayCanvas, 0, 0);
+      ctx.globalAlpha = 1;
+    }
+
     // Settlement tier — recolor black city pixels by tier
     if (showSettlementTier && cityPixels.length > 0 && Object.keys(settlementTierMap).length > 0) {
       const TIER_COLORS = {
@@ -5392,6 +5416,8 @@ function App() {
     showSettlementTier,
     showGeographyOverlay,
     geographyOverlayCanvas,
+    showHeightsOverlay,
+    heightsOverlayCanvas,
     showResourcesOverlay,
     showLabels,
     cityPixels,
@@ -5500,6 +5526,100 @@ function App() {
     })();
     return () => { cancelled = true; };
   }, [colorMode, showGeographyOverlay, groundTypesPixels, mapCampaign, loadCampaignData]);
+
+  // Lazy-load map_heights.tga when the Heights overlay is activated.
+  useEffect(() => {
+    if (!showHeightsOverlay) return;
+    if (heightsPixels) return;
+    if (heightsLoadingRef.current) return;
+    const campaign = CAMPAIGNS[mapCampaign];
+    if (!campaign?.heightsFile) return;
+    heightsLoadingRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await loadCampaignData(campaign.heightsFile);
+        if (cancelled) return;
+        const buffer = r.binary || r.data;
+        if (!buffer) throw new Error("no binary data");
+        const decoded = await decodeTgaAsync(buffer);
+        if (cancelled) return;
+        setHeightsPixels(decoded.data);
+        setHeightsSize({ width: decoded.width, height: decoded.height });
+      } catch (e) {
+        console.warn("[heights] failed to load heights TGA:", e.message);
+      } finally {
+        heightsLoadingRef.current = false;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [showHeightsOverlay, heightsPixels, mapCampaign, loadCampaignData]);
+
+  // Pre-bake the heights overlay canvas. Elevation gradient:
+  // sea (0)→ green → yellow → orange → red (peaks). Heights TGA is
+  // grayscale (R channel = elevation 0..255; range 0..170 in RIS).
+  useEffect(() => {
+    if (!heightsPixels || !heightsSize.width || !imgSize.width) {
+      setHeightsOverlayCanvas(null);
+      return;
+    }
+    const W = imgSize.width, H = imgSize.height;
+    const hW = heightsSize.width, hH = heightsSize.height;
+    const hData = heightsPixels;
+    const scaleX = hW / W, scaleY = hH / H;
+    const pxData = pixelDataRef.current;
+    const out = new Uint8ClampedArray(W * H * 4);
+    // Stretch the observed range 0..170 across the full gradient for
+    // contrast (otherwise everything looks low).
+    const MAX_ELEV = 170;
+    // 5-stop gradient — sea-level green → yellow → orange → red → white peak.
+    const stops = [
+      { t: 0.00, c: [80, 180, 90] },
+      { t: 0.30, c: [220, 200, 80] },
+      { t: 0.60, c: [220, 140, 60] },
+      { t: 0.85, c: [200, 60, 60] },
+      { t: 1.00, c: [240, 220, 220] },
+    ];
+    const grad = new Uint8Array(256 * 3);
+    for (let i = 0; i < 256; i++) {
+      const t = Math.min(1, i / MAX_ELEV);
+      let s0 = stops[0], s1 = stops[stops.length - 1];
+      for (let k = 0; k < stops.length - 1; k++) {
+        if (t >= stops[k].t && t <= stops[k + 1].t) { s0 = stops[k]; s1 = stops[k + 1]; break; }
+      }
+      const f = s1.t === s0.t ? 0 : (t - s0.t) / (s1.t - s0.t);
+      grad[i * 3] = Math.round(s0.c[0] + (s1.c[0] - s0.c[0]) * f);
+      grad[i * 3 + 1] = Math.round(s0.c[1] + (s1.c[1] - s0.c[1]) * f);
+      grad[i * 3 + 2] = Math.round(s0.c[2] + (s1.c[2] - s0.c[2]) * f);
+    }
+    for (let py = 0; py < H; py++) {
+      const hy = Math.min(hH - 1, Math.floor(py * scaleY));
+      const rowOff = hy * hW * 4;
+      const outRow = py * W * 4;
+      for (let px = 0; px < W; px++) {
+        const hx = Math.min(hW - 1, Math.floor(px * scaleX));
+        const hi = rowOff + hx * 4;
+        const elev = hData[hi];
+        const oi = outRow + px * 4;
+        if (pxData) {
+          const ri = oi;
+          const br = pxData[ri], bg = pxData[ri + 1], bb = pxData[ri + 2];
+          if (!regions[`${br},${bg},${bb}`]) { out[oi + 3] = 0; continue; }
+        }
+        // Sea-level zero stays as the gradient's first colour (light green)
+        // — but mostly land has elev>0 anyway.
+        const gi = elev * 3;
+        out[oi] = grad[gi];
+        out[oi + 1] = grad[gi + 1];
+        out[oi + 2] = grad[gi + 2];
+        out[oi + 3] = 255;
+      }
+    }
+    const off = document.createElement("canvas");
+    off.width = W; off.height = H;
+    off.getContext("2d").putImageData(new ImageData(out, W, H), 0, 0);
+    setHeightsOverlayCanvas(off);
+  }, [heightsPixels, heightsSize, imgSize, regions]);
 
   // Pre-bake a translucent geography canvas once the TGA loads. This lets
   // the overlay layer composite cheaply each frame instead of re-sampling
@@ -7498,6 +7618,9 @@ function App() {
           <button className="map-mode-btn" onClick={() => setShowGeographyOverlay(prev => !prev)}
             title="Tint every land tile by its ground type (forest, mountain, swamp, etc.) on top of whatever map mode is active. Forest tiles enable passive ambushes."
             style={{ ...btnStyle(showGeographyOverlay), minWidth: 0 }}>Terrain</button>
+          <button className="map-mode-btn" onClick={() => setShowHeightsOverlay(prev => !prev)}
+            title="Elevation gradient — green (sea level) → yellow → orange → red (peaks). Sampled from the mod's map_heights.tga. Layers on top of any map mode."
+            style={{ ...btnStyle(showHeightsOverlay), minWidth: 0 }}>Heights</button>
           <button className="map-mode-btn" onClick={() => setShowResourcesOverlay(prev => !prev)}
             title="Show resource icons on the map without switching out of the current color mode."
             style={{ ...btnStyle(showResourcesOverlay), minWidth: 0 }}>Resources</button>
@@ -9016,8 +9139,8 @@ function App() {
         : n === "Swamp" ? 2 : 3;
       items.sort((a, b) => priority(a.name) - priority(b.name) || a.name.localeCompare(b.name));
       return (
-        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #5ed87a" }}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#5ed87a", ...collapseToggle }} onClick={onCollapseClick}>
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto" }}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
             Geography <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
           </div>
           {!legendCollapsed && (

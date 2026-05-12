@@ -463,6 +463,11 @@ function run() {
     if (groundPath) copyRaw(groundPath, `map_ground_types_${c.suffix}.tga`);
     else warn(`map_ground_types.tga missing for ${c.suffix}`);
 
+    // Heights layer (elevation, grayscale R-channel). Independent overlay.
+    const heightsPath = findSource(c, "map_heights.tga");
+    if (heightsPath) copyRaw(heightsPath, `map_heights_${c.suffix}.tga`);
+    else warn(`map_heights.tga missing for ${c.suffix}`);
+
     // Parse regions
     const regionsText = fs.readFileSync(regionsPath, "utf8");
     const regions = parseDescrRegions(regionsText);

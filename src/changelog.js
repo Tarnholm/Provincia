@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.328",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "New Heights view-mode overlay — elevation gradient (sea-level green → yellow → orange → red peaks) sampled from the mod's `map_heights.tga`. Independent toggle in the view-options bar, stacks with any colorMode and any other overlay. Bundled per-campaign, lazy-loaded on first activation." },
+      { type: "fix", text: "Geography sidebar no longer has a green left border — matches the visual style of every other legend panel." },
+    ],
+  },
+  {
     version: "0.9.327",
     date: "2026-05-12",
     items: [
