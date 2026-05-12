@@ -1250,6 +1250,27 @@ function App() {
     try { localStorage.setItem("borderMode", borderMode); } catch {}
   }, [borderMode]);
   const [showSettlementTier, setShowSettlementTier] = useState(false);
+  // Map paintbrush (dev-mode pixel editor for map_regions.tga). When on,
+  // plain click paints the clicked pixel with the current brush region's
+  // RGB; alt-click acts as an eyedropper that sets the brush from the
+  // clicked region. Edits are kept in pixelEditsRef and mirrored onto
+  // pixelDataRef + the offscreen canvas immediately. editsTick bumps to
+  // invalidate the coloredOffscreen useMemo so the recolor reflows.
+  const [paintMode, setPaintMode] = useState(false);
+  const [paintBrushRgb, setPaintBrushRgb] = useState(null); // "r,g,b" or null
+  const [paintBrushSize, setPaintBrushSize] = useState(1); // 1, 3, 5
+  const pixelEditsRef = useRef(new Map()); // "x,y" → "r,g,b"
+  const [editsTick, setEditsTick] = useState(0);
+  // Add-region modal state. When `showAddRegion` is non-null, the dialog
+  // is rendered and the user fills name / faction / etc. Any submit
+  // creates a brand-new region entry, makes it the active brush, and (on
+  // export) writes the updated regions_large.json alongside the TGA.
+  const [showAddRegion, setShowAddRegion] = useState(false);
+  const [addRegionForm, setAddRegionForm] = useState({
+    name: "", city: "", faction: "", tags: "", rgb: "",
+  });
+  // Regions added via the in-app editor (need to be persisted to JSON on save).
+  const addedRegionKeysRef = useRef(new Set());
   const [showGeographyOverlay, setShowGeographyOverlay] = useState(() => {
     try { return localStorage.getItem("showGeographyOverlay") === "1"; } catch { return false; }
   });
@@ -4858,7 +4879,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize]);
+  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -5749,7 +5770,7 @@ function App() {
     schedule(() => {
       setCultureBorderPath(prerenderCultureBorderPath(regions, offscreen, imgSize));
     });
-  }, [regions, offscreen, imgSize]);
+  }, [regions, offscreen, imgSize, editsTick]);
 
   // Precompute faction border path for Borders toggle
   useEffect(() => {
@@ -5809,7 +5830,7 @@ function App() {
       if (currentOffscreen !== offscreen) return;
       setDevBorderPath(prerenderGroupBorderPath(regions, currentOffscreen, imgSize, classify));
     }, 0);
-  }, [colorMode, regions, offscreen, imgSize]);
+  }, [colorMode, regions, offscreen, imgSize, editsTick]);
 
   // Layout sizing
   useEffect(() => {
@@ -6082,6 +6103,38 @@ function App() {
 
     const x = Math.floor((e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale);
     const y = Math.floor((e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale);
+
+    // Paint mode (dev-only): plain click paints with current brush, alt-click
+    // eyedrops the clicked pixel's region into the brush.
+    if (paintMode && devMode && x >= 0 && y >= 0 && x < imgSize.width && y < imgSize.height) {
+      const data = pixelDataRef.current;
+      const i0 = (y * imgSize.width + x) * 4;
+      const clickedRgb = `${data[i0]},${data[i0+1]},${data[i0+2]}`;
+      if (e.altKey) {
+        if (regions[clickedRgb]) setPaintBrushRgb(clickedRgb);
+        return;
+      }
+      if (!paintBrushRgb) return; // no brush set yet
+      const [tr, tg, tb] = paintBrushRgb.split(",").map(Number);
+      const r = Math.max(0, Math.floor((paintBrushSize - 1) / 2));
+      // Paint the pixel(s) + mirror onto offscreen canvas.
+      const offCtx = offscreen?.getContext?.("2d");
+      const oneImg = offCtx ? new ImageData(1, 1) : null;
+      if (oneImg) { oneImg.data[0] = tr; oneImg.data[1] = tg; oneImg.data[2] = tb; oneImg.data[3] = 255; }
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          const px = x + dx, py = y + dy;
+          if (px < 0 || py < 0 || px >= imgSize.width || py >= imgSize.height) continue;
+          const i = (py * imgSize.width + px) * 4;
+          data[i] = tr; data[i+1] = tg; data[i+2] = tb;
+          pixelEditsRef.current.set(`${px},${py}`, paintBrushRgb);
+          if (offCtx && oneImg) offCtx.putImageData(oneImg, px, py);
+        }
+      }
+      setEditsTick(t => t + 1);
+      return;
+    }
+
     if (x >= 0 && y >= 0 && x < imgSize.width && y < imgSize.height) {
       const data = pixelDataRef.current;
       const i = (y * imgSize.width + x) * 4;
@@ -6106,6 +6159,53 @@ function App() {
     }
     handleMouseMove(e);
   }
+  // Export the currently-edited region map as an uncompressed 24-bit TGA
+  // (Targa type 2, BGR bottom-up — matches RTW's on-disk format). Reads
+  // the current state of pixelDataRef (which paint clicks have already
+  // mutated) and writes both campaign_data/map_regions_<suffix>.tga AND
+  // public/build/map_regions_<suffix>.tga in dev so the next reload picks
+  // it up.
+  async function exportPaintedTga() {
+    if (!pixelDataRef.current || !imgSize.width) return;
+    const W = imgSize.width, H = imgSize.height;
+    const data = pixelDataRef.current;
+    // TGA header (18 bytes) + pixel payload (BGR, bottom-up). Build as a
+    // single Uint8Array — Buffer isn't reliably available in the renderer.
+    const tga = new Uint8Array(18 + W * H * 3);
+    tga[2] = 2;                              // image type = uncompressed RGB
+    tga[12] = W & 0xff; tga[13] = (W >> 8) & 0xff;
+    tga[14] = H & 0xff; tga[15] = (H >> 8) & 0xff;
+    tga[16] = 24;                            // bpp
+    tga[17] = 0;                             // image descriptor (0 = bottom-up)
+    for (let y = 0; y < H; y++) {
+      const srcRow = y * W * 4;
+      const dstRow = 18 + (H - 1 - y) * W * 3;
+      for (let x = 0; x < W; x++) {
+        const si = srcRow + x * 4;
+        const di = dstRow + x * 3;
+        tga[di]     = data[si + 2]; // B
+        tga[di + 1] = data[si + 1]; // G
+        tga[di + 2] = data[si];     // R
+      }
+    }
+    const fileName = CAMPAIGNS[mapCampaign]?.mapFile || "map_regions_large.tga";
+    if (window.electronAPI?.writeBinaryFile) {
+      const ok = await window.electronAPI.writeBinaryFile(fileName, tga);
+      pushToast(ok
+        ? `Saved ${pixelEditsRef.current.size} edits to ${fileName}`
+        : `Failed to write ${fileName}`,
+        ok ? "info" : "error");
+    } else {
+      const blob = new Blob([tga], { type: "image/x-tga" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      pushToast(`Downloaded ${fileName}`, "info");
+    }
+  }
+
   function handleContextMenu(e) {
     if (!devMode || !pixelDataRef.current) return;
     e.preventDefault();
@@ -7127,6 +7227,15 @@ function App() {
                 className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
                 disabled={colorMode === m.key} style={btnStyle(colorMode === m.key)}>{m.label}</button>
             ))}
+            <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
+            <button className="map-mode-btn"
+              onClick={() => setPaintMode(prev => !prev)}
+              title={paintMode
+                ? "Paint mode ON: click paints a pixel with the current brush region. Alt-click eyedrops a region into the brush."
+                : "Toggle map-paint mode (dev only). Lets you repaint pixels of map_regions.tga to reassign them to other regions."}
+              style={{ ...btnStyle(paintMode), minWidth: 0 }}>
+              {paintMode ? "Paint ON" : "Paint"}
+            </button>
           </>)}
         </div>
         {/* Bottom-right stack: mute at top, optional dev-controls in middle,
@@ -9429,6 +9538,79 @@ function App() {
                       context sits at the top of the sidebar. Army Types
                       always at the bottom — same ordering regardless of
                       map mode. */}
+                  {devMode && paintMode && (
+                    <div style={{
+                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+                      borderRadius: 10, padding: "8px 12px", color: "#f6f6f6",
+                      fontSize: "0.75rem", width: "100%", boxSizing: "border-box",
+                      flexShrink: 0,
+                      border: "1px solid #e8a030",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+                    }}>
+                      <div style={{ fontWeight: 700, marginBottom: 4, color: "#e8a030" }}>
+                        Map Paint
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, fontSize: "0.7rem" }}>
+                        <span style={{ color: "#aaa" }}>Brush:</span>
+                        {paintBrushRgb ? (() => {
+                          const [r,g,b] = paintBrushRgb.split(",").map(Number);
+                          const reg = regions[paintBrushRgb];
+                          return (
+                            <>
+                              <div style={{ width: 14, height: 14, borderRadius: 3, background: `rgb(${r},${g},${b})`, border: "1px solid #555", flexShrink: 0 }} />
+                              <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {reg ? (reg.region + (reg.city ? ` (${reg.city})` : "")) : `unknown (${paintBrushRgb})`}
+                              </span>
+                            </>
+                          );
+                        })() : (
+                          <span style={{ color: "#aaa", fontStyle: "italic" }}>alt-click a region to pick</span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4, fontSize: "0.7rem" }}>
+                        <span style={{ color: "#aaa" }}>Size:</span>
+                        {[1, 3, 5].map(sz => (
+                          <button key={sz} onClick={() => setPaintBrushSize(sz)}
+                            style={{
+                              padding: "1px 6px", borderRadius: 3,
+                              background: paintBrushSize === sz ? "#dca64a" : "rgba(255,255,255,0.08)",
+                              color: paintBrushSize === sz ? "#222" : "#ccc",
+                              border: "1px solid #555", cursor: "pointer", fontSize: "0.7rem",
+                            }}>{sz}×{sz}</button>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: "0.66rem", color: "#aaa", marginBottom: 6, lineHeight: 1.3 }}>
+                        {pixelEditsRef.current.size} pixel{pixelEditsRef.current.size === 1 ? "" : "s"} edited
+                        <span style={{ display: "block", marginTop: 2 }}>
+                          Alt-click: eyedrop · Click: paint
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button onClick={() => {
+                          if (!confirm(`Reset ${pixelEditsRef.current.size} edits?`)) return;
+                          pixelEditsRef.current = new Map();
+                          // Don't try to undo on pixelDataRef — easier to ask user to reload mod.
+                          setEditsTick(t => t + 1);
+                        }}
+                          disabled={pixelEditsRef.current.size === 0}
+                          style={{
+                            flex: 1, padding: "3px 6px", borderRadius: 4,
+                            background: "rgba(180,40,40,0.6)", color: "#fff",
+                            border: "1px solid #855", cursor: pixelEditsRef.current.size === 0 ? "default" : "pointer",
+                            opacity: pixelEditsRef.current.size === 0 ? 0.5 : 1, fontSize: "0.7rem",
+                          }}>Reset</button>
+                        <button onClick={() => exportPaintedTga()}
+                          disabled={pixelEditsRef.current.size === 0}
+                          style={{
+                            flex: 1, padding: "3px 6px", borderRadius: 4,
+                            background: pixelEditsRef.current.size > 0 ? "#dca64a" : "rgba(255,255,255,0.08)",
+                            color: pixelEditsRef.current.size > 0 ? "#222" : "#888",
+                            border: "1px solid #855", cursor: pixelEditsRef.current.size === 0 ? "default" : "pointer",
+                            fontWeight: 600, fontSize: "0.7rem",
+                          }}>Save TGA</button>
+                      </div>
+                    </div>
+                  )}
                   {renderLegend()}
                   {renderSettlementLegend()}
                   {renderResourceFilter()}

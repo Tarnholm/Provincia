@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   readFile: (filePath) => ipcRenderer.invoke("read-file", filePath),
   readFileBinary: (filePath) => ipcRenderer.invoke("read-file-binary", filePath),
   saveFile: (name, content) => ipcRenderer.invoke("save-file", name, content),
+  writeBinaryFile: (name, dataBuf) => ipcRenderer.invoke("write-binary-file", name, dataBuf),
   copyFile: (src, destName) => ipcRenderer.invoke("copy-file", src, destName),
   readCampaignFile: (name) => ipcRenderer.invoke("read-campaign-file", name),
   getUserDataPath: () => ipcRenderer.invoke("get-user-data-path"),

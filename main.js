@@ -3109,6 +3109,25 @@ ipcMain.handle("save-file", async (_event, name, content) => {
   } catch { return false; }
 });
 
+// IPC: write a binary buffer (Uint8Array) to campaign_data + dev build/.
+// Used by the map-paint Save TGA flow to persist edited map_regions.tga.
+ipcMain.handle("write-binary-file", async (_event, name, dataBuf) => {
+  try {
+    const userDir = path.join(app.getPath("userData"), "campaign_data");
+    if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+    const buf = Buffer.isBuffer(dataBuf) ? dataBuf : Buffer.from(dataBuf);
+    fs.writeFileSync(path.join(userDir, name), buf);
+    fs.writeFileSync(path.join(userDir, ".version_stamp"), app.getVersion(), "utf8");
+    if (!app.isPackaged) {
+      try {
+        const buildDir = path.join(__dirname, "build");
+        fs.writeFileSync(path.join(buildDir, name), buf);
+      } catch {}
+    }
+    return true;
+  } catch (e) { console.warn("[write-binary-file]", e.message); return false; }
+});
+
 // IPC: copy a binary file to userData (and build/ for dev)
 ipcMain.handle("copy-file", async (_event, src, destName) => {
   try {

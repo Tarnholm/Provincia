@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.331",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "Dev-mode map paintbrush. Click a pixel to reassign it to the current brush region's RGB. Alt-click eyedrops the clicked region into the brush. Pick brush size 1×1, 3×3, or 5×5. Live preview as you paint — borders + colored overlay rebuild on each click. 'Save TGA' button writes the edited map_regions.tga back to campaign_data (and dev build/) for the next reload. Solves the 'stray pixels in foreign regions' class of mod bugs without leaving Provincia." },
+    ],
+  },
+  {
     version: "0.9.330",
     date: "2026-05-12",
     items: [
