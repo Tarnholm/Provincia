@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.325",
+    date: "2026-05-12",
+    items: [
+      { type: "improvement", text: "Resources sidebar (filter list with counts + 'All / None' toggles) now opens with the Resources overlay too, not just the dedicated Resources colorMode." },
+      { type: "improvement", text: "Hide the raw 'slaves' commodity for non-dev users — it was a settlement-economy tag that read confusingly as slave trafficking. The slave_trade building chain is unaffected and stays visible. Dev mode still sees it (needed for editing descr_strat)." },
+    ],
+  },
+  {
     version: "0.9.324",
     date: "2026-05-12",
     items: [

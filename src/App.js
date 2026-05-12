@@ -5130,7 +5130,9 @@ function App() {
       const ICON_PX = Math.min(22, Math.max(8, 6 + zoom * 3)); // scales with zoom: 8–22px
       const iconSz = ICON_PX / totalScale;
       const half = iconSz / 2;
-      const SKIP = new Set([]);
+      // Non-dev users don't see the bare "slaves" resource (slave_trade
+      // building chain still shows; this hides the raw economy commodity).
+      const SKIP = new Set(devMode ? [] : ["slaves"]);
       // Overlap prevention: track placed icon screen positions, skip if too close
       const placedIcons = [];
       const MIN_SPACING = ICON_PX * 0.7; // minimum screen-pixel gap between icons
@@ -5825,7 +5827,7 @@ function App() {
       // Resource icon hover detection — active in dedicated mode OR overlay
       if (colorMode === "resource" || showResourcesOverlay) {
         const ICON_PX = 20;
-        const SKIP = new Set([]);
+        const SKIP = new Set(devMode ? [] : ["slaves"]);
         let found = null;
         outer: for (const [regionName, entries] of Object.entries(resourcesData)) {
           if (!Array.isArray(entries)) continue;
@@ -5936,7 +5938,7 @@ function App() {
     // Resource mode: clicking an icon selects all regions with that resource type
     if (colorMode === "resource") {
       const ICON_PX = 20;
-      const SKIP = new Set([]);
+      const SKIP = new Set(devMode ? [] : ["slaves"]);
       const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
       for (const entries of Object.values(resourcesData)) {
         if (!Array.isArray(entries)) continue;
@@ -7890,8 +7892,11 @@ function App() {
   }
 
   function renderResourceFilter() {
-    if (colorMode !== "resource") return null;
-    const SKIP = new Set([]);
+    if (colorMode !== "resource" && !showResourcesOverlay) return null;
+    // Hide the bare "slaves" resource for non-dev users (it represents the
+    // raw "slaves as commodity" tag, not the slave_trade building chain
+    // which remains visible everywhere).
+    const SKIP = new Set(devMode ? [] : ["slaves"]);
     // Collect all resource types present in data, sorted
     const locationCounts = {};
     for (const entries of Object.values(resourcesData)) {
@@ -10278,7 +10283,11 @@ function App() {
                       resources={(() => {
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
-                        return resourcesData[r.region] || resourcesData[r.city] || null;
+                        const list = resourcesData[r.region] || resourcesData[r.city] || null;
+                        if (!list) return null;
+                        // Non-dev users don't see the raw "slaves" commodity.
+                        if (!devMode) return list.filter(x => x.type !== "slaves");
+                        return list;
                       })()}
                       resourceImages={resourceImages}
                       startingGarrison={(() => {
