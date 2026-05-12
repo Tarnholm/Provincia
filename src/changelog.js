@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.335",
+    date: "2026-05-12",
+    items: [
+      { type: "improvement", text: "Paint clicks bypass React state — pixel updates blit directly onto the visible canvas instead of triggering the full component re-render that was happening on every stroke. Drag-painting now feels native." },
+      { type: "fix", text: "Reset captures the colored-overlay value on first edit and replays both raw RGB AND recoloured RGB back into the canvases, painted directly onto the visible canvas for instant revert. No more 'reset did nothing' state." },
+      { type: "feature", text: "Brush hover preview — paint mode shows a yellow outline at the cursor sized exactly to the active brush (1×1 / 3×3 / 5×5), so you can see what pixels will be painted before clicking." },
+      { type: "feature", text: "New 'Region' map mode — alphabetical legend of every region in the campaign with its raw map_regions.tga RGB swatch. Click a row to zoom to + highlight that province (shift-click for multi-select). Mirrors the Victory mode UX but at region granularity." },
+    ],
+  },
+  {
     version: "0.9.334",
     date: "2026-05-12",
     items: [

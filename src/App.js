@@ -1270,6 +1270,10 @@ function App() {
   // without rerunning the expensive overlay-rebuild useEffect.
   const [paintRepaintTick, setPaintRepaintTick] = useState(0);
   const paintDebounceRef = useRef(null);
+  // Brush hover preview — screen-space position + tile-space coordinate of
+  // the pixel under the cursor. The preview div is rendered as a square
+  // outline whose side = brushSize × totalScale.
+  const [paintHover, setPaintHover] = useState(null); // { sx, sy, tx, ty } | null
   // Add-region modal state. When `showAddRegion` is non-null, the dialog
   // is rendered and the user fills name / faction / etc. Any submit
   // creates a brand-new region entry, makes it the active brush, and (on
@@ -4389,7 +4393,7 @@ function App() {
 
   // Build colored overlay canvas for culture/population/farm/religion/dev modes
   useEffect(() => {
-    const NON_OVERLAY = new Set(["resource", "victory"]);
+    const NON_OVERLAY = new Set(["resource", "victory", "region"]);
     if (NON_OVERLAY.has(colorMode) || !pixelDataRef.current || !offscreen) {
       setColoredOffscreen(null);
       setStripeOverlay(null);
@@ -5963,6 +5967,16 @@ function App() {
       const mouseScreenY = e.nativeEvent.offsetY;
       const x = Math.floor((mouseScreenX - baseOffsetX - offset.x) / totalScale);
       const y = Math.floor((mouseScreenY - baseOffsetY - offset.y) / totalScale);
+      // Update the paint-mode brush preview position (screen + tile coords).
+      if (paintMode) {
+        if (x >= 0 && y >= 0 && x < imgSize.width && y < imgSize.height) {
+          setPaintHover({ sx: x * totalScale + baseOffsetX + offset.x, sy: y * totalScale + baseOffsetY + offset.y, tx: x, ty: y, ts: totalScale });
+        } else {
+          setPaintHover(null);
+        }
+      } else if (paintHover !== null) {
+        setPaintHover(null);
+      }
       if (x >= 0 && y >= 0 && x < imgSize.width && y < imgSize.height) {
         const data = pixelDataRef.current;
         const i = (y * imgSize.width + x) * 4;
@@ -6119,7 +6133,10 @@ function App() {
     const y = Math.floor((e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale);
 
     // Paint mode (dev-only): plain click paints with current brush, alt-click
-    // eyedrops the clicked pixel's region into the brush.
+    // eyedrops the clicked pixel's region into the brush. Paint mutates the
+    // offscreen + colored overlay canvases AND blits directly onto the
+    // visible canvas — no React state change per click, so the lag of a
+    // full component re-render is gone.
     if (paintMode && devMode && x >= 0 && y >= 0 && x < imgSize.width && y < imgSize.height) {
       const data = pixelDataRef.current;
       const i0 = (y * imgSize.width + x) * 4;
@@ -6130,10 +6147,6 @@ function App() {
       }
       if (!paintBrushRgb) return;
       const [tr, tg, tb] = paintBrushRgb.split(",").map(Number);
-      // Resolve the brush's "displayed" colour for the current colorMode
-      // (faction primary etc.) so the live paint stroke matches the
-      // overlay's recolouring instead of flashing raw RGB and then
-      // jumping to faction-colour on the next rebuild.
       const brushReg = regions[paintBrushRgb];
       const fac = brushReg?.faction?.toLowerCase?.();
       const fc = fac && factionColors?.[fac]?.primary;
@@ -6141,10 +6154,13 @@ function App() {
       const r = Math.max(0, Math.floor((paintBrushSize - 1) / 2));
       const offCtx = offscreen?.getContext?.("2d");
       const colCtx = coloredOffscreen?.getContext?.("2d");
-      const baseImg = offCtx ? new ImageData(1, 1) : null;
-      const colImg = colCtx ? new ImageData(1, 1) : null;
-      if (baseImg) { baseImg.data[0] = tr; baseImg.data[1] = tg; baseImg.data[2] = tb; baseImg.data[3] = 255; }
-      if (colImg)  { colImg.data[0] = dr; colImg.data[1] = dg; colImg.data[2] = db; colImg.data[3] = 255; }
+      const visCanvas = canvasRef.current;
+      const vctx = visCanvas?.getContext?.("2d");
+      if (vctx) {
+        vctx.save();
+        vctx.setTransform(totalScale, 0, 0, totalScale, baseOffsetX + offset.x, baseOffsetY + offset.y);
+        vctx.fillStyle = `rgb(${dr},${dg},${db})`;
+      }
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           const px = x + dx, py = y + dy;
@@ -6152,22 +6168,27 @@ function App() {
           const i = (py * imgSize.width + px) * 4;
           const key = `${px},${py}`;
           const prev = pixelEditsRef.current.get(key);
-          const orig = prev ? prev.orig : `${data[i]},${data[i+1]},${data[i+2]}`;
+          const origBase = prev ? prev.orig : `${data[i]},${data[i+1]},${data[i+2]}`;
+          const origDisp = prev ? prev.origDisp : null;
+          // Capture coloredOffscreen pixel on first edit so Reset can put
+          // the exact recoloured value back, not just the raw RGB.
+          let capturedDisp = origDisp;
+          if (capturedDisp == null && colCtx) {
+            try {
+              const cur = colCtx.getImageData(px, py, 1, 1).data;
+              capturedDisp = `${cur[0]},${cur[1]},${cur[2]}`;
+            } catch { capturedDisp = origBase; }
+          }
           data[i] = tr; data[i+1] = tg; data[i+2] = tb;
-          pixelEditsRef.current.set(key, { orig, current: paintBrushRgb });
-          if (offCtx && baseImg) offCtx.putImageData(baseImg, px, py);
-          if (colCtx && colImg)  colCtx.putImageData(colImg, px, py);
+          pixelEditsRef.current.set(key, { orig: origBase, origDisp: capturedDisp, current: paintBrushRgb });
+          if (offCtx) { offCtx.fillStyle = `rgb(${tr},${tg},${tb})`; offCtx.fillRect(px, py, 1, 1); }
+          if (colCtx) { colCtx.fillStyle = `rgb(${dr},${dg},${db})`; colCtx.fillRect(px, py, 1, 1); }
+          if (vctx) vctx.fillRect(px, py, 1, 1);
         }
       }
-      // Force a re-paint of the main canvas without going through the
-      // ~100-200ms colored-overlay rebuild. The renderer reads
-      // coloredOffscreen via its useEffect deps; bumping a counter that's
-      // ONLY in the render deps (not the overlay-rebuild deps) gets us a
-      // cheap re-blit instead of a full pixel pass.
-      setPaintRepaintTick(t => t + 1);
-      // Debounce the full rebuild so it eventually catches up (faction
-      // colour mode, border paths, etc.) — but only after the user stops
-      // painting for ~400 ms.
+      if (vctx) vctx.restore();
+      // Debounce the full rebuild so it eventually reconciles faction
+      // colours + borders ~400 ms after the user stops painting.
       if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
       paintDebounceRef.current = setTimeout(() => {
         setEditsTick(t => t + 1);
@@ -7286,6 +7307,7 @@ function App() {
     const colorModes = [
       { key: "faction", label: "Faction" },
       { key: "victory", label: "Victory" },
+      { key: "region", label: "Region" },
       { key: "culture", label: "Culture" },
       { key: "religion", label: "Religion" },
       { key: "population", label: "Population" },
@@ -9328,6 +9350,75 @@ function App() {
       );
     }
 
+    if (colorMode === "region") {
+      // Region legend — alphabetical list of every region with its raw
+      // map_regions.tga RGB swatch. Click a row to highlight that province
+      // on the map (reuses the selectedProvinces machinery so multi-select
+      // with shift still works). Without a selection the map shows raw
+      // TGA colours (no coloredOffscreen overlay applied).
+      const lq = legendSearch.trim().toLowerCase();
+      const entries = Object.entries(regions)
+        .filter(([, r]) => r.region && (!lq || r.region.toLowerCase().includes(lq) || (r.city || "").toLowerCase().includes(lq)))
+        .sort(([, a], [, b]) => (a.region || "").localeCompare(b.region || ""));
+      const activeSet = new Set(selectedProvinces);
+      return (
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto" }}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
+            Regions <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#aaa" }}>({entries.length})</span>
+            <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: 6 }}>{collapseArrow}</span>
+            {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi</span>}
+          </div>
+          {!legendCollapsed && (
+            <input
+              type="text"
+              value={legendSearch}
+              onChange={(e) => setLegendSearch(e.target.value)}
+              className="legend-search-input"
+              placeholder="Search regions..."
+              style={{
+                width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
+                borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
+                color: "#eee", fontSize: "0.74rem", outline: "none",
+              }}
+            />
+          )}
+          <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 1 }}>
+            {entries.map(([rgb, r]) => {
+              const [pr, pg, pb] = rgb.split(",").map(Number);
+              const selected = activeSet.has(rgb);
+              const dimmed = activeSet.size > 0 && !selected;
+              return (
+                <div key={rgb} onClick={(e) => {
+                  if (e.shiftKey) {
+                    setSelectedProvinces(prev => prev.includes(rgb) ? prev.filter(k => k !== rgb) : [...prev, rgb]);
+                  } else {
+                    setSelectedProvinces(prev => prev.length === 1 && prev[0] === rgb ? [] : [rgb]);
+                    zoomToProvinces([rgb]);
+                  }
+                }} style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "2px 4px", borderRadius: 4, cursor: "pointer",
+                  background: selected ? "rgba(220,166,74,0.25)" : "transparent",
+                  opacity: dimmed ? 0.45 : 1,
+                  transition: "opacity 0.15s, background 0.15s",
+                }}>
+                  <div style={{
+                    width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                    background: `rgb(${pr},${pg},${pb})`,
+                    outline: selected ? "2px solid #dca64a" : "none",
+                  }} />
+                  <span style={{ flex: 1, fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {r.region.replace(/_/g, " ")}
+                    {r.city && r.city !== r.region && <span style={{ color: "#888" }}> · {r.city}</span>}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     if (colorMode === "geography") {
       // Static palette legend — geography is per-tile (not per-region), so
       // there's nothing to click-to-filter. Just a colour key the user can
@@ -9788,38 +9879,45 @@ function App() {
                           const n = pixelEditsRef.current.size;
                           if (n === 0) return;
                           if (!confirm(`Reset ${n} pixel edit${n === 1 ? "" : "s"}?`)) return;
-                          // Walk every edited pixel and restore its captured
-                          // original RGB into pixelDataRef + the offscreen +
-                          // colored overlay so the map snaps back.
+                          // Restore each edited pixel back to its captured
+                          // base RGB and recolored "display" RGB. Also draw
+                          // directly onto the visible canvas so the revert
+                          // is instantly visible without waiting for a
+                          // React-driven re-render.
+                          const { totalScale: ts, baseOffsetX: bx, baseOffsetY: by } = computeTransform();
                           const data = pixelDataRef.current;
                           const offCtx = offscreen?.getContext?.("2d");
                           const colCtx = coloredOffscreen?.getContext?.("2d");
+                          const visCanvas = canvasRef.current;
+                          const vctx = visCanvas?.getContext?.("2d");
                           const W = imgSize.width;
-                          const oneB = offCtx ? new ImageData(1, 1) : null;
-                          const oneC = colCtx ? new ImageData(1, 1) : null;
+                          if (vctx) {
+                            vctx.save();
+                            vctx.setTransform(ts, 0, 0, ts, bx + offset.x, by + offset.y);
+                          }
                           for (const [key, rec] of pixelEditsRef.current) {
                             const [pxs, pys] = key.split(",");
                             const px = +pxs, py = +pys;
                             const [or, og, ob] = rec.orig.split(",").map(Number);
+                            const [cr, cg, cb] = (rec.origDisp || rec.orig).split(",").map(Number);
                             if (data) {
                               const i = (py * W + px) * 4;
                               data[i] = or; data[i+1] = og; data[i+2] = ob;
                             }
-                            if (offCtx && oneB) {
-                              oneB.data[0] = or; oneB.data[1] = og; oneB.data[2] = ob; oneB.data[3] = 255;
-                              offCtx.putImageData(oneB, px, py);
-                            }
-                            if (colCtx && oneC) {
-                              // For colored overlay, we don't perfectly know the
-                              // original recolored value — restore the raw RGB
-                              // and let the debounced full rebuild reconcile.
-                              oneC.data[0] = or; oneC.data[1] = og; oneC.data[2] = ob; oneC.data[3] = 255;
-                              colCtx.putImageData(oneC, px, py);
-                            }
+                            if (offCtx) { offCtx.fillStyle = `rgb(${or},${og},${ob})`; offCtx.fillRect(px, py, 1, 1); }
+                            if (colCtx) { colCtx.fillStyle = `rgb(${cr},${cg},${cb})`; colCtx.fillRect(px, py, 1, 1); }
+                            if (vctx)   { vctx.fillStyle = `rgb(${cr},${cg},${cb})`; vctx.fillRect(px, py, 1, 1); }
                           }
+                          if (vctx) vctx.restore();
                           pixelEditsRef.current = new Map();
-                          setPaintRepaintTick(t => t + 1);
-                          setEditsTick(t => t + 1);
+                          // No state churn needed for the visible canvas — we
+                          // already drew the revert. editsTick still fires so
+                          // borders rebuild from the restored base pixels.
+                          if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
+                          paintDebounceRef.current = setTimeout(() => {
+                            setEditsTick(t => t + 1);
+                            paintDebounceRef.current = null;
+                          }, 400);
                         }}
                           disabled={pixelEditsRef.current.size === 0}
                           style={{
@@ -9943,6 +10041,28 @@ function App() {
                   }}
                   aria-label={`Interactive map (${variantLabel})`}
                 />
+
+                {/* Paint brush hover preview — outline rectangle showing
+                    the exact pixels that will be painted on click. */}
+                {paintMode && paintHover && (() => {
+                  const size = paintBrushSize * paintHover.ts;
+                  const half = (paintBrushSize - 1) / 2 * paintHover.ts;
+                  return (
+                    <div style={{
+                      position: "absolute",
+                      left: paintHover.sx - half,
+                      top: paintHover.sy - half,
+                      width: Math.max(2, size),
+                      height: Math.max(2, size),
+                      border: "2px solid #ffe066",
+                      boxShadow: "0 0 0 1px rgba(0,0,0,0.6) inset, 0 0 0 1px rgba(0,0,0,0.6)",
+                      pointerEvents: "none",
+                      zIndex: 4,
+                      borderRadius: 1,
+                      transition: "left 30ms linear, top 30ms linear",
+                    }} />
+                  );
+                })()}
 
                 {/* Army hover tooltip */}
                 {hoveredArmy && (() => {
