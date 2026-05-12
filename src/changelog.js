@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.330",
+    date: "2026-05-12",
+    items: [
+      { type: "improvement", text: "Heights hillshade is much smoother. (1) Overlay is now baked at the heights TGA's native ~2× resolution (≈2.86M pixels) instead of being pre-downsampled to the region-map's 1020×700. (2) Slope kernel switched from 4-neighbour differencing to a 3×3 Sobel — gives broader, smoother gradients. (3) drawImage uses imageSmoothingEnabled with quality 'high', so zooming in interpolates instead of showing blocky pixels." },
+    ],
+  },
+  {
     version: "0.9.329",
     date: "2026-05-12",
     items: [

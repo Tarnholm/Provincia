@@ -5336,15 +5336,20 @@ function App() {
       ctx.globalAlpha = 1;
     }
 
-    // Heights overlay — hillshaded relief, drawn with soft-light blend so
-    // flat-ground neutral grey leaves the base map unchanged while slopes
-    // shade it up or down. Reads as a proper topo relief instead of a flat
-    // colour tint.
+    // Heights overlay — hillshaded relief baked at the heights TGA's
+    // native (≈2×) resolution, drawn scaled down with smoothing onto the
+    // region-map domain so zoom levels stay soft. Soft-light blend means
+    // flat-ground neutral grey is a no-op for the base map.
     if (showHeightsOverlay && heightsOverlayCanvas) {
       ctx.save();
       ctx.globalCompositeOperation = "soft-light";
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(heightsOverlayCanvas, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(
+        heightsOverlayCanvas,
+        0, 0, heightsOverlayCanvas.width, heightsOverlayCanvas.height,
+        0, 0, imgSize.width, imgSize.height,
+      );
       ctx.restore();
     }
 
@@ -5558,13 +5563,12 @@ function App() {
     return () => { cancelled = true; };
   }, [showHeightsOverlay, heightsPixels, mapCampaign, loadCampaignData]);
 
-  // Pre-bake the heights overlay as a grayscale hillshade canvas. Computes
-  // per-pixel slope from a 4-neighbour elevation kernel, then maps it to a
-  // brightness value relative to a fixed NW light source. Renders at the
-  // canvas with composite mode "soft-light" so it shades the underlying
-  // colorMode (faction, geography, etc.) instead of replacing it — mid-grey
-  // pixels (flat ground) leave the base map unchanged; brighter pixels lift
-  // it, darker pixels deepen it. Produces a clean relief-map effect.
+  // Pre-bake the heights overlay as a grayscale hillshade canvas at the
+  // map_heights.tga's native resolution (~2x the region map). Computes slope
+  // with a 3×3 Sobel kernel for smoother gradients than naive 4-neighbour
+  // differencing, then maps to brightness relative to a fixed NW light
+  // source. The full-res canvas is then drawn scaled+smoothed at render
+  // time so zooming in stays soft instead of pixel-art-y.
   useEffect(() => {
     if (!heightsPixels || !heightsSize.width || !imgSize.width) {
       setHeightsOverlayCanvas(null);
@@ -5575,44 +5579,46 @@ function App() {
     const hData = heightsPixels;
     const scaleX = hW / W, scaleY = hH / H;
     const pxData = pixelDataRef.current;
-    const out = new Uint8ClampedArray(W * H * 4);
-    // Z-factor: how strongly slope translates to brightness contrast.
-    // Tuned for the observed 0..170 elevation range — strong enough that
-    // hills read, mild enough that subtle slopes stay subtle.
-    const Z = 9;
+    const out = new Uint8ClampedArray(hW * hH * 4);
+    // Z-factor — tuned for Sobel's broader 3×3 footprint (each sample
+    // contributes more, so we need a smaller multiplier than the
+    // 4-neighbour version's 9).
+    const Z = 3.5;
     const sampleZ = (tx, ty) => {
-      const cx = Math.min(hW - 1, Math.max(0, tx));
-      const cy = Math.min(hH - 1, Math.max(0, ty));
+      const cx = tx < 0 ? 0 : tx >= hW ? hW - 1 : tx;
+      const cy = ty < 0 ? 0 : ty >= hH ? hH - 1 : ty;
       return hData[(cy * hW + cx) * 4];
     };
-    for (let py = 0; py < H; py++) {
-      const hy = Math.floor(py * scaleY);
-      const outRow = py * W * 4;
-      for (let px = 0; px < W; px++) {
-        const hx = Math.floor(px * scaleX);
-        const oi = outRow + px * 4;
+    for (let hy = 0; hy < hH; hy++) {
+      // For each TGA pixel, map back to the region-map pixel that owns it.
+      // Region-map domain is 1020×700; heights TGA is 2041×1401 (~2×).
+      const ry = Math.min(H - 1, Math.floor(hy / scaleY));
+      const outRow = hy * hW * 4;
+      for (let hx = 0; hx < hW; hx++) {
+        const oi = outRow + hx * 4;
         if (pxData) {
-          const ri = oi;
+          const rx = Math.min(W - 1, Math.floor(hx / scaleX));
+          const ri = (ry * W + rx) * 4;
           const br = pxData[ri], bg = pxData[ri + 1], bb = pxData[ri + 2];
           if (!regions[`${br},${bg},${bb}`]) { out[oi + 3] = 0; continue; }
         }
-        const zR = sampleZ(hx + 1, hy);
-        const zL = sampleZ(hx - 1, hy);
-        const zD = sampleZ(hx, hy + 1);
-        const zU = sampleZ(hx, hy - 1);
-        const dx = (zR - zL) * 0.5;
-        const dy = (zD - zU) * 0.5;
-        // Light from NW: surfaces whose elevation decreases toward SE
-        // (negative dx + dy) face the light → bright; positive → dark.
-        // Centre at 128 so flat ground = neutral grey = soft-light no-op.
+        // Sobel 3×3 for both axes.
+        //   Gx = [ -1 0 +1 ; -2 0 +2 ; -1 0 +1 ] applied to elevation
+        //   Gy = [ -1 -2 -1 ; 0 0 0 ; +1 +2 +1 ]
+        const a = sampleZ(hx - 1, hy - 1), b = sampleZ(hx, hy - 1), c = sampleZ(hx + 1, hy - 1);
+        const d = sampleZ(hx - 1, hy),                              f = sampleZ(hx + 1, hy);
+        const g = sampleZ(hx - 1, hy + 1), h = sampleZ(hx, hy + 1), i = sampleZ(hx + 1, hy + 1);
+        const dx = (c + 2 * f + i) - (a + 2 * d + g);
+        const dy = (g + 2 * h + i) - (a + 2 * b + c);
+        // NW light: bright when surface drops toward SE (negative dx+dy).
         let shade = 128 + (-(dx + dy)) * Z;
         if (shade < 0) shade = 0; else if (shade > 255) shade = 255;
         out[oi] = shade; out[oi + 1] = shade; out[oi + 2] = shade; out[oi + 3] = 255;
       }
     }
     const off = document.createElement("canvas");
-    off.width = W; off.height = H;
-    off.getContext("2d").putImageData(new ImageData(out, W, H), 0, 0);
+    off.width = hW; off.height = hH;
+    off.getContext("2d").putImageData(new ImageData(out, hW, hH), 0, 0);
     setHeightsOverlayCanvas(off);
   }, [heightsPixels, heightsSize, imgSize, regions]);
 
