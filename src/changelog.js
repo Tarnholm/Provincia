@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.336",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "Ctrl-Z / Ctrl-Y (and Ctrl-Shift-Z) for map paint. Each paint click is recorded as a stroke entry — the BEFORE state of every pixel it touched. Undo replays that exact before-state onto the base + colored overlay + visible canvases. Redo reapplies the stroke. The Map Paint sidebar gains Undo / Redo buttons that show the stack depth." },
+    ],
+  },
+  {
     version: "0.9.335",
     date: "2026-05-12",
     items: [

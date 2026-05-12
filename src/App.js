@@ -1270,6 +1270,13 @@ function App() {
   // without rerunning the expensive overlay-rebuild useEffect.
   const [paintRepaintTick, setPaintRepaintTick] = useState(0);
   const paintDebounceRef = useRef(null);
+  // Undo / redo stacks for map paint. Each entry is either a "paint"
+  // stroke (one click) with the list of pixels it touched, or an
+  // "addRegion" entry with the new region's RGB key + payload. Stored
+  // in refs to avoid React re-renders when the history changes.
+  const paintHistoryRef = useRef([]);
+  const paintFutureRef = useRef([]);
+  const [paintHistTick, setPaintHistTick] = useState(0); // bumps to refresh undo/redo buttons
   // Brush hover preview — screen-space position + tile-space coordinate of
   // the pixel under the cursor. The preview div is rendered as a square
   // outline whose side = brushSize × totalScale.
@@ -6161,6 +6168,9 @@ function App() {
         vctx.setTransform(totalScale, 0, 0, totalScale, baseOffsetX + offset.x, baseOffsetY + offset.y);
         vctx.fillStyle = `rgb(${dr},${dg},${db})`;
       }
+      // Per-stroke history entry — records the BEFORE state of every
+      // pixel this click touched so Ctrl-Z can revert exactly this stroke.
+      const strokeEdits = [];
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           const px = x + dx, py = y + dy;
@@ -6179,6 +6189,11 @@ function App() {
               capturedDisp = `${cur[0]},${cur[1]},${cur[2]}`;
             } catch { capturedDisp = origBase; }
           }
+          // Record what this pixel looked like BEFORE this stroke (regardless
+          // of whether it was already edited or not — undo replays that).
+          const beforeBase = `${data[i]},${data[i+1]},${data[i+2]}`;
+          const beforeDisp = capturedDisp;
+          strokeEdits.push({ key, beforeBase, beforeDisp, newBase: paintBrushRgb, newDisp: `${dr},${dg},${db}`, wasNew: !prev });
           data[i] = tr; data[i+1] = tg; data[i+2] = tb;
           pixelEditsRef.current.set(key, { orig: origBase, origDisp: capturedDisp, current: paintBrushRgb });
           if (offCtx) { offCtx.fillStyle = `rgb(${tr},${tg},${tb})`; offCtx.fillRect(px, py, 1, 1); }
@@ -6187,6 +6202,11 @@ function App() {
         }
       }
       if (vctx) vctx.restore();
+      if (strokeEdits.length > 0) {
+        paintHistoryRef.current.push({ type: "paint", edits: strokeEdits });
+        paintFutureRef.current = []; // new action invalidates redo
+        setPaintHistTick(t => t + 1);
+      }
       // Debounce the full rebuild so it eventually reconciles faction
       // colours + borders ~400 ms after the user stops painting.
       if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
@@ -6221,6 +6241,97 @@ function App() {
     }
     handleMouseMove(e);
   }
+  // Apply a paint-stroke entry's "before" or "after" state. Used by both
+  // undo (target = "before") and redo (target = "after").
+  function applyStroke(entry, target) {
+    if (entry.type !== "paint") return;
+    const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
+    const W = imgSize.width;
+    const data = pixelDataRef.current;
+    const offCtx = offscreen?.getContext?.("2d");
+    const colCtx = coloredOffscreen?.getContext?.("2d");
+    const vctx = canvasRef.current?.getContext?.("2d");
+    if (vctx) {
+      vctx.save();
+      vctx.setTransform(totalScale, 0, 0, totalScale, baseOffsetX + offset.x, baseOffsetY + offset.y);
+    }
+    for (const e of entry.edits) {
+      const [pxs, pys] = e.key.split(",");
+      const px = +pxs, py = +pys;
+      const baseRgb = target === "before" ? e.beforeBase : e.newBase;
+      const dispRgb = target === "before" ? e.beforeDisp : e.newDisp;
+      const [br, bg_, bb_] = baseRgb.split(",").map(Number);
+      const [dr_, dg_, db_] = (dispRgb || baseRgb).split(",").map(Number);
+      if (data) {
+        const i = (py * W + px) * 4;
+        data[i] = br; data[i+1] = bg_; data[i+2] = bb_;
+      }
+      if (offCtx) { offCtx.fillStyle = `rgb(${br},${bg_},${bb_})`; offCtx.fillRect(px, py, 1, 1); }
+      if (colCtx) { colCtx.fillStyle = `rgb(${dr_},${dg_},${db_})`; colCtx.fillRect(px, py, 1, 1); }
+      if (vctx)   { vctx.fillStyle = `rgb(${dr_},${dg_},${db_})`; vctx.fillRect(px, py, 1, 1); }
+      // Sync pixelEditsRef so Reset / Save still know what's been changed.
+      if (target === "before") {
+        if (e.wasNew) pixelEditsRef.current.delete(e.key);
+        else pixelEditsRef.current.set(e.key, { orig: e.beforeBase, origDisp: e.beforeDisp, current: e.beforeBase });
+      } else {
+        const prev = pixelEditsRef.current.get(e.key);
+        const orig = prev ? prev.orig : e.beforeBase;
+        const origDisp = prev ? prev.origDisp : e.beforeDisp;
+        pixelEditsRef.current.set(e.key, { orig, origDisp, current: e.newBase });
+      }
+    }
+    if (vctx) vctx.restore();
+  }
+
+  const undoPaint = useCallback(() => {
+    if (paintHistoryRef.current.length === 0) return;
+    const entry = paintHistoryRef.current.pop();
+    applyStroke(entry, "before");
+    paintFutureRef.current.push(entry);
+    setPaintHistTick(t => t + 1);
+    if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
+    paintDebounceRef.current = setTimeout(() => {
+      setEditsTick(t => t + 1);
+      paintDebounceRef.current = null;
+    }, 400);
+  // applyStroke captures offscreen/etc. via closure; recreate on those deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offscreen, coloredOffscreen, imgSize, offset]);
+
+  const redoPaint = useCallback(() => {
+    if (paintFutureRef.current.length === 0) return;
+    const entry = paintFutureRef.current.pop();
+    applyStroke(entry, "after");
+    paintHistoryRef.current.push(entry);
+    setPaintHistTick(t => t + 1);
+    if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
+    paintDebounceRef.current = setTimeout(() => {
+      setEditsTick(t => t + 1);
+      paintDebounceRef.current = null;
+    }, 400);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offscreen, coloredOffscreen, imgSize, offset]);
+
+  // Global Ctrl-Z / Ctrl-Y handler that's only active in paint mode so it
+  // doesn't conflict with the browser's text-input undo elsewhere.
+  useEffect(() => {
+    if (!paintMode) return;
+    const onKey = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      // Allow input fields to do their own undo
+      const tag = (e.target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || e.target?.isContentEditable) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) {
+        e.preventDefault(); undoPaint();
+      } else if ((k === "y") || (k === "z" && e.shiftKey)) {
+        e.preventDefault(); redoPaint();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [paintMode, undoPaint, redoPaint]);
+
   // Pick a random RGB that is not currently used as a region key (and that
   // avoids reserved values: pure black = settlement pixel, pure white =
   // off-map/coast, pure blue 4,20,249 = sea/lake marker, plus the basic
@@ -9858,6 +9969,30 @@ function App() {
                         <span style={{ display: "block", marginTop: 2 }}>
                           Alt-click: eyedrop · Click: paint
                         </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+                        <button onClick={undoPaint}
+                          disabled={paintHistoryRef.current.length === 0}
+                          title="Undo last paint stroke (Ctrl-Z)"
+                          style={{
+                            flex: 1, padding: "3px 6px", borderRadius: 4,
+                            background: paintHistoryRef.current.length === 0 ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.12)",
+                            color: paintHistoryRef.current.length === 0 ? "#666" : "#eee",
+                            border: "1px solid #555",
+                            cursor: paintHistoryRef.current.length === 0 ? "default" : "pointer",
+                            fontSize: "0.7rem",
+                          }}>↶ Undo {paintHistoryRef.current.length > 0 && <span style={{ opacity: 0.6 }}>({paintHistoryRef.current.length})</span>}</button>
+                        <button onClick={redoPaint}
+                          disabled={paintFutureRef.current.length === 0}
+                          title="Redo (Ctrl-Y or Ctrl-Shift-Z)"
+                          style={{
+                            flex: 1, padding: "3px 6px", borderRadius: 4,
+                            background: paintFutureRef.current.length === 0 ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.12)",
+                            color: paintFutureRef.current.length === 0 ? "#666" : "#eee",
+                            border: "1px solid #555",
+                            cursor: paintFutureRef.current.length === 0 ? "default" : "pointer",
+                            fontSize: "0.7rem",
+                          }}>↷ Redo {paintFutureRef.current.length > 0 && <span style={{ opacity: 0.6 }}>({paintFutureRef.current.length})</span>}</button>
                       </div>
                       <button onClick={() => {
                         // Pick an unused random RGB to seed the form.
