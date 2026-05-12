@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.319",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "New Geography map mode — colours every tile by its actual ground type (Forest, Mountain, Swamp, Rocky, Sand, etc.) decoded from the mod's `map_ground_types.tga`. Forest = ambush spots, Mountain = impassable, Swamp = slow. 14 terrain types, full palette coverage verified across the Imperial campaign (no unknown colours). Bundled per-campaign and lazy-loaded the first time the mode is activated so boot stays fast (the TGA is ~8 MB)." },
+    ],
+  },
+  {
     version: "0.9.318",
     date: "2026-05-12",
     items: [

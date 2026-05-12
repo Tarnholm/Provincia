@@ -455,6 +455,14 @@ function run() {
     if (mapPath) copyRaw(mapPath, `map_regions_${c.suffix}.tga`);
     else warn(`map_regions.tga missing for ${c.suffix}`);
 
+    // Terrain layer — used by the Geography view mode to render per-tile
+    // ground types (forest, mountain, sand, etc.). 1020×700 in vanilla RTW;
+    // Remastered ships a 2x-supersampled (2041×1401) version too which we
+    // sample at 2× stride.
+    const groundPath = findSource(c, "map_ground_types.tga");
+    if (groundPath) copyRaw(groundPath, `map_ground_types_${c.suffix}.tga`);
+    else warn(`map_ground_types.tga missing for ${c.suffix}`);
+
     // Parse regions
     const regionsText = fs.readFileSync(regionsPath, "utf8");
     const regions = parseDescrRegions(regionsText);

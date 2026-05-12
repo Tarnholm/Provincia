@@ -68,6 +68,7 @@ const DEFAULT_CAMPAIGNS = {
     resourcesFile: "resources_classic.json",
     populationFile: "population_classic.json",
     armiesFile: "armies_classic.json",
+    groundTypesFile: "map_ground_types_classic.tga",
   },
   imperial: {
     key: "imperial",
@@ -82,6 +83,7 @@ const DEFAULT_CAMPAIGNS = {
     resourcesFile: "resources_large.json",
     populationFile: "population_large.json",
     armiesFile: "armies_large.json",
+    groundTypesFile: "map_ground_types_large.tga",
   },
 };
 
@@ -792,6 +794,28 @@ function getHiddenResources(tags) {
 
 const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource"]);
 
+// Per-tile geography palette. Decoded from RTW's map_ground_types.tga whose
+// pixels carry one of ~14 fixed RGB values. The map_ground_types raw colors
+// are mapped to short display names + UI-distinct overlay colors. The user
+// uses this to spot forest tiles (where armies passively ambush), mountains
+// (impassable, can't put a settlement), swamps, etc.
+const GROUND_TYPE_PALETTE = {
+  "0,0,0":         { name: "Plains",            color: [200, 215, 130] },
+  "64,0,0":        { name: "Fertile lowland",   color: [150, 200, 90] },
+  "196,0,0":       { name: "Highland",          color: [180, 150, 100] },
+  "0,128,128":     { name: "Mountain",          color: [230, 60, 60]   },
+  "101,124,0":     { name: "Shrubland",         color: [170, 180, 90]  },
+  "0,128,0":       { name: "Forest",            color: [40, 160, 60]   },
+  "128,128,64":    { name: "Sand desert",       color: [235, 215, 130] },
+  "128,0,0":       { name: "Rocky",             color: [140, 100, 80]  },
+  "98,65,65":      { name: "Rocky desert",      color: [180, 140, 110] },
+  "0,64,0":        { name: "Dense forest",      color: [25, 110, 35]   },
+  "196,128,128":   { name: "Open scrub",        color: [200, 180, 130] },
+  "0,255,128":     { name: "Swamp",             color: [180, 110, 200] },
+  "96,160,64":     { name: "Light forest",      color: [120, 200, 90]  },
+  "255,255,255":   { name: "Impassable",        color: [80, 80, 80]    },
+};
+
 // Parse "dorian 70 italic 30" → [{name:"dorian",pct:70},{name:"italic",pct:30}]
 function parseEthnicities(str) {
   if (!str) return [];
@@ -1355,6 +1379,13 @@ function App() {
   const [mapVariant, setMapVariant] = useState(
     () => localStorage.getItem("mapVariant") || MAP_VARIANTS.starting.key
   );
+  // Ground-types TGA pixels for the Geography overlay (lazy-loaded once on
+  // first activation). Stored at native TGA resolution (≈2x supersampled
+  // for Remastered Imperial campaign — 2041×1401 covering a 1020×700 region
+  // map). The overlay sampler does the downscale at render time.
+  const [groundTypesPixels, setGroundTypesPixels] = useState(null);
+  const [groundTypesSize, setGroundTypesSize] = useState({ width: 0, height: 0 });
+  const groundTypesLoadingRef = useRef(false);
   const [colorMode, setColorMode] = useState(
     () => localStorage.getItem("colorMode") || "faction"
   );
@@ -4727,8 +4758,68 @@ function App() {
         };
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => vary(getBase(r), pr, pg, pb)));
       }
+      // ── Geography (per-tile ground types from map_ground_types.tga) ───
+      else if (colorMode === "geography") {
+        if (!groundTypesPixels || !groundTypesSize.width) {
+          // TGA still loading — show the base map for now; we'll redraw
+          // when the load effect populates groundTypesPixels.
+          setColoredOffscreen(null);
+          return;
+        }
+        const gW = groundTypesSize.width, gH = groundTypesSize.height;
+        const gData = groundTypesPixels;
+        const scaleX = gW / W, scaleY = gH / H;
+        const d = new Uint8ClampedArray(W * H * 4);
+        // Cache palette lookups by packed RGB int — much faster than the
+        // string-keyed table when iterating 700K pixels.
+        const cache = new Int32Array(0x1000000).fill(-1);
+        const paletteRgb = [];
+        for (const [k, v] of Object.entries(GROUND_TYPE_PALETTE)) {
+          const [r, g, b] = k.split(",").map(Number);
+          paletteRgb.push({ key: (r << 16) | (g << 8) | b, color: v.color });
+        }
+        // Default: very translucent gray for water / off-palette pixels.
+        const FALLBACK = [60, 80, 120];
+        for (let i = 0; i < pxData.length; i += 4) {
+          const px = (i / 4) % W;
+          const py = Math.floor(i / 4 / W);
+          // Sample the ground_types TGA at the corresponding pixel.
+          const gx = Math.min(gW - 1, Math.floor(px * scaleX));
+          const gy = Math.min(gH - 1, Math.floor(py * scaleY));
+          const gi = (gy * gW + gx) * 4;
+          const gr = gData[gi], gg = gData[gi + 1], gb = gData[gi + 2];
+          const packed = (gr << 16) | (gg << 8) | gb;
+          let col = cache[packed];
+          if (col === -1) {
+            // Lookup palette entry
+            let found = null;
+            for (const entry of paletteRgb) {
+              if (entry.key === packed) { found = entry.color; break; }
+            }
+            const c = found || FALLBACK;
+            col = (c[0] << 16) | (c[1] << 8) | c[2];
+            cache[packed] = col;
+          }
+          // Preserve the underlying map's water/black pixels (they're not
+          // in the regions map). Only re-color identified region pixels.
+          const baseR = pxData[i], baseG = pxData[i + 1], baseB = pxData[i + 2];
+          const region = regions[`${baseR},${baseG},${baseB}`];
+          if (region) {
+            d[i] = (col >> 16) & 0xff;
+            d[i + 1] = (col >> 8) & 0xff;
+            d[i + 2] = col & 0xff;
+            d[i + 3] = 255;
+          } else {
+            d[i] = baseR; d[i + 1] = baseG; d[i + 2] = baseB; d[i + 3] = pxData[i + 3];
+          }
+        }
+        const off = document.createElement("canvas");
+        off.width = W; off.height = H;
+        off.getContext("2d").putImageData(new ImageData(d, W, H), 0, 0);
+        setColoredOffscreen(off);
+      }
     });
-  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData]);
+  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -5329,6 +5420,36 @@ function App() {
 
     return () => { cancelled = true; };
   }, [mapCampaign, loadCampaignData, PUBLIC_URL]);
+
+  // Lazy-load map_ground_types.tga the first time the Geography overlay is
+  // activated. The TGA is ≈8 MB on the Imperial campaign so we skip it on
+  // boot — the user only pays the cost when they actually open the mode.
+  useEffect(() => {
+    if (colorMode !== "geography") return;
+    if (groundTypesPixels) return;
+    if (groundTypesLoadingRef.current) return;
+    const campaign = CAMPAIGNS[mapCampaign];
+    if (!campaign?.groundTypesFile) return;
+    groundTypesLoadingRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await loadCampaignData(campaign.groundTypesFile);
+        if (cancelled) return;
+        const buffer = r.binary || r.data;
+        if (!buffer) throw new Error("no binary data");
+        const decoded = await decodeTgaAsync(buffer);
+        if (cancelled) return;
+        setGroundTypesPixels(decoded.data);
+        setGroundTypesSize({ width: decoded.width, height: decoded.height });
+      } catch (e) {
+        console.warn("[geography] failed to load ground types TGA:", e.message);
+      } finally {
+        groundTypesLoadingRef.current = false;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [colorMode, groundTypesPixels, mapCampaign, loadCampaignData]);
 
   // Factions starting order (used for both modes)
   useEffect(() => {
@@ -6743,6 +6864,7 @@ function App() {
       { key: "resource", label: "Resources" },
       { key: "homeland", label: "Homeland" },
       { key: "government", label: "Government" },
+      { key: "geography", label: "Geography" },
     ];
     const devColorModes = [
       { key: "terrain", label: "Terrain" },
@@ -8733,6 +8855,55 @@ function App() {
               );
             })}
           </div>
+        </div>
+      );
+    }
+
+    if (colorMode === "geography") {
+      // Static palette legend — geography is per-tile (not per-region), so
+      // there's nothing to click-to-filter. Just a colour key the user can
+      // glance at to interpret the map (forest = ambush spot, mountain = no
+      // settlement, etc.). Loading state shown until the TGA decodes.
+      const swatch = (col) => (
+        <div style={{
+          width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+          background: `rgb(${col[0]},${col[1]},${col[2]})`,
+        }} />
+      );
+      const items = Object.entries(GROUND_TYPE_PALETTE).map(([, v]) => v);
+      // Group visually: forest/ambush, impassable/mountain, then everything else.
+      const priority = (n) => n.startsWith("Forest") || n.includes("forest") ? 0
+        : n === "Mountain" || n === "Impassable" ? 1
+        : n === "Swamp" ? 2 : 3;
+      items.sort((a, b) => priority(a.name) - priority(b.name) || a.name.localeCompare(b.name));
+      return (
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #5ed87a" }}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#5ed87a", ...collapseToggle }} onClick={onCollapseClick}>
+            Geography <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (
+            <>
+              {!groundTypesPixels && (
+                <div style={{ color: "#aaa", fontSize: "0.7rem", fontStyle: "italic", marginBottom: 4 }}>
+                  Loading map_ground_types.tga…
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {items.map((it) => (
+                  <div key={it.name} style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "2px 4px", borderRadius: 4, fontSize: "0.72rem",
+                  }}>
+                    {swatch(it.color)}
+                    <span style={{ flex: 1 }}>{it.name}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#aaa", lineHeight: 1.3 }}>
+                Forest tiles enable passive ambushes. Mountains are impassable. Swamps slow movement.
+              </div>
+            </>
+          )}
         </div>
       );
     }
