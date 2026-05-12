@@ -6159,6 +6159,51 @@ function App() {
     }
     handleMouseMove(e);
   }
+  // Pick a random RGB that is not currently used as a region key (and that
+  // avoids reserved values: pure black = settlement pixel, pure white =
+  // off-map/coast, pure blue 4,20,249 = sea/lake marker, plus the basic
+  // primaries to keep the palette readable).
+  function pickUnusedRgb() {
+    const used = new Set(Object.keys(regions));
+    const reserved = ["0,0,0", "255,255,255", "4,20,249"];
+    for (const k of reserved) used.add(k);
+    for (let tries = 0; tries < 500; tries++) {
+      const r = Math.floor(20 + Math.random() * 220);
+      const g = Math.floor(20 + Math.random() * 220);
+      const b = Math.floor(20 + Math.random() * 220);
+      const key = `${r},${g},${b}`;
+      if (!used.has(key)) return key;
+    }
+    return "200,100,50";
+  }
+
+  // Submit handler for the Add-Region modal. Builds a region object,
+  // merges it into the regions map, and makes it the active brush so the
+  // user can immediately paint pixels for the new province.
+  function submitAddRegion() {
+    const f = addRegionForm;
+    const name = (f.name || "").trim();
+    if (!name) { pushToast("Region name required", "error"); return; }
+    if (!f.rgb || regions[f.rgb]) {
+      pushToast("Pick an unused RGB", "error"); return;
+    }
+    const faction = (f.faction || "").trim() || "slave";
+    const culture = factionCultures?.[faction.toLowerCase()] || null;
+    const region = {
+      region: name,
+      city: (f.city || "").trim() || name,
+      faction,
+      culture,
+      tags: (f.tags || "").trim(),
+      rgb: f.rgb,
+    };
+    setRegions(prev => ({ ...prev, [f.rgb]: region }));
+    addedRegionKeysRef.current.add(f.rgb);
+    setPaintBrushRgb(f.rgb);
+    setShowAddRegion(false);
+    pushToast(`New region "${name}" added — paint to assign pixels`, "info");
+  }
+
   // Export the currently-edited region map as an uncompressed 24-bit TGA
   // (Targa type 2, BGR bottom-up — matches RTW's on-disk format). Reads
   // the current state of pixelDataRef (which paint clicks have already
@@ -6188,13 +6233,12 @@ function App() {
         tga[di + 2] = data[si];     // R
       }
     }
-    const fileName = CAMPAIGNS[mapCampaign]?.mapFile || "map_regions_large.tga";
+    const camp = CAMPAIGNS[mapCampaign];
+    const fileName = camp?.mapFile || "map_regions_large.tga";
+    const regionsFile = camp?.regionsFile || "regions_large.json";
+    let tgaOk = true, jsonOk = true;
     if (window.electronAPI?.writeBinaryFile) {
-      const ok = await window.electronAPI.writeBinaryFile(fileName, tga);
-      pushToast(ok
-        ? `Saved ${pixelEditsRef.current.size} edits to ${fileName}`
-        : `Failed to write ${fileName}`,
-        ok ? "info" : "error");
+      tgaOk = await window.electronAPI.writeBinaryFile(fileName, tga);
     } else {
       const blob = new Blob([tga], { type: "image/x-tga" });
       const a = document.createElement("a");
@@ -6202,8 +6246,20 @@ function App() {
       a.download = fileName;
       a.click();
       URL.revokeObjectURL(a.href);
-      pushToast(`Downloaded ${fileName}`, "info");
     }
+    // Persist regions JSON if anything new was added via the editor.
+    if (addedRegionKeysRef.current.size > 0 && window.electronAPI?.saveFile) {
+      try {
+        jsonOk = await window.electronAPI.saveFile(regionsFile, JSON.stringify(regions, null, 2));
+      } catch { jsonOk = false; }
+    }
+    const editCount = pixelEditsRef.current.size;
+    const newRegions = addedRegionKeysRef.current.size;
+    const ok = tgaOk && jsonOk;
+    pushToast(ok
+      ? `Saved ${editCount} pixel edit${editCount === 1 ? "" : "s"}` + (newRegions > 0 ? ` + ${newRegions} new region${newRegions === 1 ? "" : "s"}` : "")
+      : `Save failed (TGA ${tgaOk ? "ok" : "fail"}, JSON ${jsonOk ? "ok" : "fail"})`,
+      ok ? "info" : "error");
   }
 
   function handleContextMenu(e) {
@@ -9390,6 +9446,92 @@ function App() {
           `}</style>
         </div>
       )}
+      {showAddRegion && (() => {
+        const inputStyle = {
+          padding: "4px 8px", borderRadius: 4,
+          background: "rgba(0,0,0,0.35)", color: "#eee",
+          border: "1px solid rgba(255,255,255,0.15)",
+          fontSize: "0.8rem", outline: "none", minWidth: 0,
+        };
+        return (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 10005,
+          background: "rgba(0,0,0,0.55)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={() => setShowAddRegion(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "rgba(22,24,28,0.98)", border: "1px solid #555",
+            borderRadius: 10, padding: 16, width: 360, color: "#eee",
+            boxShadow: "0 6px 30px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: 8, color: "#dca64a" }}>
+              Add new region
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: "8px 8px", fontSize: "0.8rem" }}>
+              <label style={{ alignSelf: "center" }}>Name:</label>
+              <input type="text" autoFocus value={addRegionForm.name}
+                onChange={(e) => setAddRegionForm({ ...addRegionForm, name: e.target.value })}
+                placeholder="e.g. Garamantia_Borealis"
+                style={inputStyle} />
+              <label style={{ alignSelf: "center" }}>City:</label>
+              <input type="text" value={addRegionForm.city}
+                onChange={(e) => setAddRegionForm({ ...addRegionForm, city: e.target.value })}
+                placeholder="(optional — defaults to region name)"
+                style={inputStyle} />
+              <label style={{ alignSelf: "center" }}>Faction:</label>
+              <select value={addRegionForm.faction}
+                onChange={(e) => setAddRegionForm({ ...addRegionForm, faction: e.target.value })}
+                style={inputStyle}>
+                <option value="">(default — slave / rebels)</option>
+                {Object.keys(factionRegionsMap || {}).sort().map(f => (
+                  <option key={f} value={f}>{f.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+              <label style={{ alignSelf: "center" }}>Tags:</label>
+              <input type="text" value={addRegionForm.tags}
+                onChange={(e) => setAddRegionForm({ ...addRegionForm, tags: e.target.value })}
+                placeholder="comma-separated, e.g. desert,Farm2"
+                style={inputStyle} />
+              <label style={{ alignSelf: "center" }}>RGB:</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {(() => {
+                  const [r,g,b] = (addRegionForm.rgb || "0,0,0").split(",").map(Number);
+                  return <div style={{ width: 22, height: 22, borderRadius: 4, background: `rgb(${r},${g},${b})`, border: "1px solid #555" }} />;
+                })()}
+                <input type="text" value={addRegionForm.rgb}
+                  onChange={(e) => setAddRegionForm({ ...addRegionForm, rgb: e.target.value })}
+                  style={{ ...inputStyle, width: 110, fontFamily: "monospace" }} />
+                <button onClick={() => setAddRegionForm({ ...addRegionForm, rgb: pickUnusedRgb() })}
+                  title="Pick another random unused RGB"
+                  style={{
+                    padding: "3px 8px", borderRadius: 4, fontSize: "0.7rem",
+                    background: "rgba(255,255,255,0.08)", color: "#ccd",
+                    border: "1px solid #555", cursor: "pointer",
+                  }}>↻</button>
+              </div>
+            </div>
+            <div style={{ marginTop: 14, display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowAddRegion(false)}
+                style={{
+                  padding: "5px 12px", borderRadius: 5,
+                  background: "rgba(255,255,255,0.08)", color: "#ccd",
+                  border: "1px solid #555", cursor: "pointer", fontSize: "0.78rem",
+                }}>Cancel</button>
+              <button onClick={submitAddRegion}
+                style={{
+                  padding: "5px 12px", borderRadius: 5,
+                  background: "#dca64a", color: "#222",
+                  border: "1px solid #855", cursor: "pointer", fontWeight: 700, fontSize: "0.78rem",
+                }}>Add region</button>
+            </div>
+            <div style={{ marginTop: 8, fontSize: "0.7rem", color: "#aaa", lineHeight: 1.4 }}>
+              The new region is added in-memory immediately and selected as the paint brush.
+              Hit <strong>Save</strong> in the Map Paint panel to persist both the TGA and updated regions JSON.
+            </div>
+          </div>
+        </div>
+        );
+      })()}
       {showFactionPicker && factions && factions.length > 0 && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 10004,
@@ -9585,6 +9727,21 @@ function App() {
                           Alt-click: eyedrop · Click: paint
                         </span>
                       </div>
+                      <button onClick={() => {
+                        // Pick an unused random RGB to seed the form.
+                        const rgb = pickUnusedRgb();
+                        setAddRegionForm({
+                          name: "", city: "", faction: "",
+                          tags: "", rgb,
+                        });
+                        setShowAddRegion(true);
+                      }}
+                        style={{
+                          width: "100%", padding: "3px 6px", marginBottom: 4, borderRadius: 4,
+                          background: "rgba(94,216,122,0.25)", color: "#cfe8d3",
+                          border: "1px solid #4a8f5a", cursor: "pointer",
+                          fontWeight: 600, fontSize: "0.7rem",
+                        }}>+ New region</button>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button onClick={() => {
                           if (!confirm(`Reset ${pixelEditsRef.current.size} edits?`)) return;
@@ -9600,14 +9757,15 @@ function App() {
                             opacity: pixelEditsRef.current.size === 0 ? 0.5 : 1, fontSize: "0.7rem",
                           }}>Reset</button>
                         <button onClick={() => exportPaintedTga()}
-                          disabled={pixelEditsRef.current.size === 0}
+                          disabled={pixelEditsRef.current.size === 0 && addedRegionKeysRef.current.size === 0}
                           style={{
                             flex: 1, padding: "3px 6px", borderRadius: 4,
-                            background: pixelEditsRef.current.size > 0 ? "#dca64a" : "rgba(255,255,255,0.08)",
-                            color: pixelEditsRef.current.size > 0 ? "#222" : "#888",
-                            border: "1px solid #855", cursor: pixelEditsRef.current.size === 0 ? "default" : "pointer",
+                            background: (pixelEditsRef.current.size > 0 || addedRegionKeysRef.current.size > 0) ? "#dca64a" : "rgba(255,255,255,0.08)",
+                            color: (pixelEditsRef.current.size > 0 || addedRegionKeysRef.current.size > 0) ? "#222" : "#888",
+                            border: "1px solid #855",
+                            cursor: (pixelEditsRef.current.size === 0 && addedRegionKeysRef.current.size === 0) ? "default" : "pointer",
                             fontWeight: 600, fontSize: "0.7rem",
-                          }}>Save TGA</button>
+                          }}>Save</button>
                       </div>
                     </div>
                   )}

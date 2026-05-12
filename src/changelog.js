@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.332",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "Dev-mode 'New region' modal in the Map Paint panel. Pick a name (and optional city/tags), a faction, and an unused RGB (auto-suggested, ↻ to roll another). The new region is added in-memory immediately and selected as the paint brush so you can start assigning pixels to it. The Save button now writes both the edited map_regions.tga AND the updated regions JSON when new regions exist." },
+    ],
+  },
+  {
     version: "0.9.331",
     date: "2026-05-12",
     items: [
