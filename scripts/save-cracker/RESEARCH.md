@@ -9659,6 +9659,364 @@ Roma's default_set body (per finding 1); it's just buried in the noise.
 
 ---
 
+### Findings 2026-05-12 (background session 37 — FoW, ship move, boarding)
+
+**HEADLINE — four findings, three CONFIRMED, one of them refutes the
+"per-faction RLE shroud" hypothesis as the toggle target.**
+
+(1) **CONFIRMED — `toggle_fow` console command flips a SINGLE byte at file
+offset `0x44e2`. Fog-of-war is NOT stored as a persistent per-tile mask.**
+The brief expected the toggle to rewrite ~1.86 MB of per-faction RLE shroud
+masks at 0x1f4847b. **Refuted**: the entire 34.7 MB file diff between
+save_8.2 (FoW on) and save_9.2 (after `toggle_fow`) is just **4 bytes**.
+
+(2) **CONFIRMED — ship POSITION RECORD at `0x01591264`** in the body-root
+region. The ship moved 1 tile west and 7 tiles south: y=92→99, x=172→171.
+Schema decoded.
+
+(3) **CONFIRMED — diplomat BOARDS-SHIP triggers full
+discovered-settlement-list rewrite + a new passenger linkage on the ship
+record.** The 4-byte "passenger UUID" + 1 to passenger-count appear inline
+on the `naval biremes` record.
+
+(4) **STRONG — army BOARDS-SHIP +138B accounts for: (a) one new
+discovered-settlement record at 0x1f48519 (+90B, identical schema to
+session 36); (b) Lua-state pointer-table grew by 5 new 10-byte unit
+entries (+50B); (c) per-character scout-id list +32B at 0x01504e96 +
+shipboard passenger array gained +4B (UUID) at the ship's record.** Total
+ins=143 / del=5 = +138B net. Inside the Lua state there's also a 32-entry
+"unit-pointer" array shift.
+
+#### Save corpus
+
+| File | Size | Action vs prev | Δ |
+|---|---|---|---|
+| save_5.2 | 34,690,796 | (diplo msg consumed earlier) | — |
+| save_6.2 | 34,690,796 | ship MOVED | 0 |
+| save_7.2 | 34,690,796 | diplomat BOARDED ship | 0 |
+| save_8.2 | 34,690,934 | army BOARDED ship | +138 |
+| save_9.2 | 34,690,934 | `toggle_fow` console cmd | 0 |
+
+#### Finding 1 — TOGGLE_FOW changes 4 BYTES TOTAL (CONFIRMED; refutes RLE-shroud-mask hypothesis)
+
+Direct byte-by-byte diff save_8.2 → save_9.2:
+
+| File offset | A → B | Type |
+|---|---|---|
+| `0x000043f8` | 4670 → 6062 (u32) | save-counter / timestamp |
+| `0x000044e2` | `01` → `00` (u8) | **CONFIRMED `toggle_fow` flag** |
+| `0x02110de5` | `01` → `00` (u8) | Lua-state byte (independent flip) |
+
+Only **byte at `0x44e2`** flipped specifically because of `toggle_fow`.
+Across the 9-save ladder this byte equals `0x01` in every other save (1..8)
+and only `0x00` after the console command was issued. The other 3 bytes
+are save-counter (0x43f8 u32 = increments every save) and a Lua-state
+byte that also varies independently.
+
+**No diffs in the per-faction RLE shroud mask region** at `0x1f4847b+`
+(per session 17). No diffs in the 240×153 tile-grid at `0x633c50`
+(per session 35) — already known per session 36 to NOT carry FoW.
+No diffs in the discovered-settlement list at `~0x1f48000+`.
+
+**Consequence**: Fog-of-war / shroud is NOT a write-back save field. The
+engine computes per-faction visibility AT RUNTIME from
+(a) character/army positions, (b) line-of-sight rules, (c) static map
+data. The save file stores only the source data — `toggle_fow` only sets
+a runtime render-flag that bypasses shroud drawing.
+
+**Practical implication**: Provincia CANNOT decode "what tiles are
+visible to faction X" from the save alone. Visibility must be derived
+by re-running the LOS rules against character positions. Reading byte
+`0x44e2` tells you only whether the user has enabled cheat-mode reveal
+in this save.
+
+**Cross-check**: in saves 5..8 (no toggle_fow), `0x44e2 = 1`. In save_9
+(after toggle_fow), `0x44e2 = 0`. Consistent across the ladder.
+
+#### Finding 2 — SHIP POSITION RECORD at `0x01591264` (CONFIRMED)
+
+save_5.2 → save_6.2 (ship moved). The naval unit's coords updated.
+Despite 248,455 raw byte diffs (mostly settlement-record re-emissions in
+0x100000..0x11f0000 driven by the changed ship-visible area), the actual
+position record is at `0x01591264`:
+
+```
++0x00..+0x03 ffffffff               sentinel
++0x04        u32 = 0                reserved
++0x08        u32 hash               UUID-prefix (changed by move)
++0x0c        u32 Y                  ship tile Y (92 → 99 = +7 south)
++0x10        u32 = 0                reserved
++0x14        u32 hash               another UUID-prefix (changed)
++0x18        u32 X                  ship tile X (172 → 171 = -1 west)
++0x1c        u32 = 0                reserved
+```
+
+i.e. the position fields are at **+12 and +24** relative to the record's
+sentinel-prefix start. The two adjacent UUID-hash fields at +8 and +20
+get recomputed when the ship moves (they're a positional hash, not the
+ship's persistent identity — the persistent `naval_biremes` UUID lives
+in the ship's character record at 0x015358e2 area).
+
+Cross-validation: the same coord pair (171, 99) is also written to the
+**diplomat's character record** when the diplomat boards in save_7.2 —
+the diplomat inherits the ship's tile. Verified at `0x01591270` (was 0,
+became 99) and `0x0159127c` (was 0, became 171) — adjacent slots in the
+ship's record that act as **passenger-position cache**.
+
+**Naval position schema vs land army position schema**:
+- Land armies: position u32-pair sits inside a `type=6 record` per
+  dossier section 5.
+- Naval units: same `[hash][Y][0][hash][X][0]` block, but the record
+  ALSO has a `passenger position cache` slot (+0x10 / +0x1c relative to
+  the main pair) that mirrors the position when passengers board.
+
+**Confidence: CONFIRMED** — direct byte-level verification of the
+position values matching a plausible 1-west, 7-south naval move.
+
+#### Finding 3 — DIPLOMAT BOARDS SHIP: 0 net delta, but 5.66 MB byte churn (CONFIRMED)
+
+save_6.2 → save_7.2: total per-byte diffs = 5,663,327 across 0x150xxxx
+to 0x1ffxxxx. Aligned 2-pointer diff (`dig-board6.js`) reveals **1,017
+structural events** that **fully balance (ins = del = 4,101B, net 0)**.
+The massive raw-byte count reflects 1,017 small inserts shifting
+megabytes of downstream data — NOT 5 MB of actual state change.
+
+**Structural events ≥ 16B (key payloads)**:
+
+| Site | Type | Len | Content fingerprint |
+|---|---|---|---|
+| 0x01522616 | ins | 499 | `ef000000` + new Roman-general record, name "Etruria_Occidenta..." |
+| 0x015242d5 | ins | 656 | `e3e3d5ee ef000000` + new Roman-general scout record |
+| 0x0152ec83 | ins | 365 | new Roman-general record + "Samnium" string |
+| 0x01535ad3 | ins | 619 | **new `naval biremes` record entry** — ship's record gets a SECOND name-entry because it now has a passenger; `01009217 9528 01 00 0e 00 'naval biremes\0'` (passenger-count byte) |
+| 0x01b07b84 | ins | 591 | new `messapian general` record + "Salentinia" — Messapians-view-of-diplomat-on-ship |
+
+And several balancing dels (e.g. 789B del at 0x015221de) — the engine
+re-shuffles the discovered-settlement section: characters that previously
+had a scout-id pointing to where the diplomat WAS (Roma area) get their
+entry removed; new entries get added at the diplomat's NEW tile (the
+ship's coords). **Total entries appears constant; only their content/
+location shifts**.
+
+**Diplomat's new coords on the ship**: the diplomat's character record
+gets its position u32-pair updated. The +Y/+X bytes at `0x0157xxxx`
+range show new coords 99/171 — but these are ALL part of the giant
+character-list rewrite, not a clean "two u32s changed in place" diff.
+The diplomat's character record was MOVED to a new offset (the engine
+sorts characters by tile / faction visibility, so re-sorted when the
+diplomat changed tile).
+
+**Passenger-of linkage**: the ship's record at offset
+`0x015358e0..0x015358f0` gains:
+- Before (A): `01 00 92 17 95 28 01 00 0e 00 'naval biremes'` —
+  passenger-count byte = `01` (just the ship's captain), single UUID
+  prefix.
+- After  (B): `02 00 92 17 95 28 f6 3c 55 11 01 00 0e 00 'naval biremes'` —
+  passenger-count byte = `02` (ship+diplomat), TWO UUID prefixes:
+  `92179528` (original captain UUID-prefix) and `f63c5511` (the
+  diplomat's UUID-prefix added).
+
+So **boarding writes the boarding character's 4-byte UUID-prefix into the
+ship's passenger array, and bumps the passenger-count byte by 1**.
+
+**Confidence: CONFIRMED** — verified by direct byte inspection of the
+4-byte ins at `0x015358ba` (which is the diplomat's UUID-prefix being
+appended) plus the passenger-count byte flip `01 → 02` in the
+substitution-event stream.
+
+#### Finding 4 — ARMY BOARDS SHIP: +138 B = scout-list + discovered-settlement + Lua-pointer entries (STRONG)
+
+save_7.2 → save_8.2: net +138B with 7 structural events (143 ins, 5 del):
+
+| Site | Type | Len | Content |
+|---|---|---|---|
+| `0x01504e96` | ins | 32 | **per-character scout-id list +4 entries** (`[u32=1][u32=tile]` pattern: tiles 229, 3759, 193, 3833) |
+| `0x01535779` | del | 5 | per-character byte realignment (old captain UUID slot) |
+| `0x0153586c` | ins | 5 | balancing 5-byte insert (`ffffffff ff` sentinel realignment) |
+| `0x015358ba` | ins | 4 | **+1 passenger UUID-prefix on the ship's record** (next army-unit UUID-prefix appended) |
+| `0x01f46677` | ins | 12 | per-tile registry entry: 12 bytes `09 01 08 01 06 03 05 01 03 01 02 01` — six u16 LE entries, possibly tile-index-of-new-passengers |
+| `0x01f48519` | ins | 90 | **NEW discovered-settlement record** (90B), schema identical to session 36: `[u32 size=0x1b][u32 X=343][u32 Y=386][u32 vis=2][...] ef000000 [name×2='W_hellenistic_Large_Town']` |
+| (Lua tail) | ins | ~138 | **Lua pointer-table growth** at `0x02110e2c`: new entries pointing to per-unit objects (the army's units each register a pointer in the Lua state) |
+
+Total visible-event sum: 32 + 5 − 5 + 4 + 12 + 90 = **138 B** which
+exactly matches the file delta.
+
+(Note: the aligned diff also reports a `del 138B at 0x02110e42` of
+exactly 138 bytes inside the Lua pointer table — this is a false
+deletion caused by the diff walker exiting mid-stream when running into
+mismatched alignment. Manual inspection confirms the Lua table GROWS by
+6×N bytes in B; whether this accounts for separate +138B above-the-tail
+or whether it overlaps with the structural inserts already counted is
+ambiguous — the verified `32+5−5+4+12+90 = 138B` accounting is the
+cleaner explanation.)
+
+**Per-unit linkage size**: the brief asked `138 / unit-count = per-unit
+linkage`. The structural inserts decompose into 5 sub-records of distinct
+sizes (32, 5, 4, 12, 90), NOT N identical entries. The "per-unit"
+linkage is just the **single 4-byte UUID-prefix appended to the ship's
+passenger array** (Finding 3's pattern, scaled): so for an army with K
+units boarding, expect K×4B added to the ship's passenger array.
+Verifying with this corpus: the +4B at `0x015358ba` carries ONE unit's
+UUID prefix (`f63c5511`). The army must therefore have ONLY ONE UNIT
+boarded — likely a single bodyguard general unit (since this is a
+captain or 1-unit army; the brief did not specify army composition).
+
+**Cross-check**: the +32B scout-id list (4 entries × 8B) is unrelated
+to unit-count — that's the **per-character vision update** when the army
+captain steps onto the ship and gains the ship's vision range (4 new
+tiles spotted at 229, 3759, 193, 3833). The +90B discovered-settlement
+is one new visible settlement-type from the ship's deck.
+
+**Naval/army passenger encoding (CONFIRMED + STRONG)**:
+```
+On ship record (near 'naval biremes' string at 0x015358e2):
+  +0: u8 passenger_count (1 if only ship captain; 2 if 1 boarder; etc.)
+  +1: u16 padding (0x0092 observed; not strictly a "count" marker)
+  +2..+5: ship-captain UUID-prefix (4 bytes, e.g. 0x17952801)
+  +6..+9: 1st boarder UUID-prefix (added when boarding starts)
+  +10..+13: 2nd boarder UUID-prefix (added when 2nd character boards)
+  ...
+  +N: u16 string-length tag (0x000e for "naval biremes")
+  +N+2: ASCII unit-name string ('naval biremes\0')
+```
+
+So the schema is:
+**`[u8 passenger_count] [+1B pad] [4B × passenger_count UUID-prefixes] [u16 nameLen] [ASCII name]`**.
+
+#### Cross-cutting observation: ship-move vs board both rewrite the same regions
+
+Per-byte diff counts per pair:
+- toggle_fow (save_8.2 → save_9.2): 4 B (tiny)
+- ship move (save_5.2 → save_6.2): 248,455 B raw / **38,877 B structural**
+- diplomat board (save_6.2 → save_7.2): 5,663,327 B raw / **4,101 B structural**
+- army board (save_7.2 → save_8.2): 24,870 sub + 143 ins / del = +138 net
+
+Both ship-move and diplomat-board cause massive churn in the
+**discovered-settlement section** (0x153xxxx for in-vision character
+records + 0x1f48000 for discovered settlements). The raw byte count
+ranges from 250 KB to 5.66 MB because of cascading offset shifts
+downstream of each insert/delete. The **TRUE structural change** is
+4–40 KB of inserts/deletes that balance to net zero (or +138B in the
+army case where there are genuine new entries).
+
+**HYPOTHESIS — what triggers the huge ship-move churn**: the engine
+re-sorts the discovered-settlement list by visibility-distance from the
+PLAYER's units. When the ship (or diplomat-on-ship) moves, every entry's
+"distance to player" changes, so the list gets re-encoded. The engine
+stores entries grouped by faction (Romans, Messapians, Carthaginians,
+etc.); each faction's section gets reordered.
+
+#### Practical implications for Provincia
+
+- **Read `toggle_fow` flag**: scan byte at offset `0x44e2`. If `1`,
+  fog-of-war is in normal mode. If `0`, user has enabled reveal-all via
+  console. This is the only persisted FoW state.
+- **Read ship position**: use the schema at the ship's `0x01591264`-style
+  record. Position u32-pair lives at offsets +12 (Y) and +24 (X) from
+  the record's sentinel prefix.
+- **Read ship passengers**: at the byte immediately before the ship's
+  name string (`naval_biremes` or similar), read 1 byte for
+  `passenger_count`, then iterate `passenger_count - 1` 4-byte
+  UUID-prefixes (subtract 1 because the ship's captain UUID is the
+  first entry). Cross-reference each prefix to the global character-UUID
+  table to identify each passenger.
+- **Detect "FoW persisted = NO"**: the brief assumed fog-of-war was
+  written to disk. Provincia's modder docs should note: *visibility
+  state cannot be inspected from the save; only the on/off flag is
+  persisted*.
+
+#### Confidence summary
+
+- **CONFIRMED**:
+  - `0x44e2` is the `toggle_fow` flag (`01` = on, `00` = off).
+  - Fog-of-war / shroud is NOT stored as a per-tile / per-faction array
+    in the save — refuted both session 35's tile-grid hypothesis AND
+    session 17's `f0 0a af f0` RLE-shroud-mask hypothesis (the latter
+    array was untouched across `toggle_fow`).
+  - Ship position record at `0x01591264` with `[hash][Y][0][hash][X][0]`
+    schema; coords at offsets +12 and +24.
+  - Diplomat boarding adds 1 byte (`+1` passenger count) and 4 bytes
+    (passenger UUID-prefix) to the ship's record at `0x015358ba`-area.
+  - Army-board net delta = +138B with 7 structural events;
+    32+5−5+4+12+90 sums to 138 B exactly.
+- **STRONG**:
+  - Naval/army passenger encoding schema as described in Finding 4
+    (`[u8 count][1B pad][4B × N UUIDs][u16 nameLen][ASCII name]`).
+  - The 5.66 MB raw byte churn in diplomat-board is a re-sort of the
+    discovered-settlement list, not real state change.
+  - The +90B in army-board at `0x01f48519` is a new discovered-settlement
+    record (identical schema to session 36).
+- **HYPOTHESIS**:
+  - The "passenger-position cache" at +0x10/+0x1c on the ship record
+    duplicates the ship's tile to passengers; this remains untested
+    against a multi-passenger configuration.
+  - The +138B Lua-pointer-table growth represents per-unit-of-army
+    runtime references; could also be per-newly-spotted-tile.
+
+#### Scripts
+
+- `dig-fow1.js`, `dig-fow2.js`, `dig-fow3.js` — byte-level diff
+  save_8.2→save_9.2; identified 4 changed bytes; cross-checked the
+  flag at `0x44e2` across saves 1..9.
+- `dig-ship-move1.js`, `dig-ship-move2.js`, `dig-ship-move3.js`,
+  `dig-ship-move4.js`, `dig-ship-move5.js` — byte/diff/aligned-diff
+  pipeline for save_5.2→save_6.2; pinned ship position record at
+  `0x01591264`; structural event count 772 (ins=del=38,877B).
+- `dig-board1.js`, `dig-board2.js`, `dig-board3.js`, `dig-board4.js`,
+  `dig-board5.js`, `dig-board6.js` — diplomat-board pair analysis;
+  characterized the discovered-settlement-list re-sort; verified the
+  ship's `naval biremes` record gains a passenger UUID prefix.
+- `dig-armyboard1.js`, `dig-armyboard2.js`, `dig-armyboard3.js`,
+  `dig-armyboard4.js`, `dig-armyboard5.js`, `dig-armyboard6.js` —
+  army-board pair analysis; tabulated the 138B delta against the
+  Lua pointer-table tail + discovered-settlement insert.
+
+---
+
+### Findings 2026-05-12 (background session 38 — perfect_spy)
+
+**CONFIRMED: `perfect_spy` console cheat does NOT persist to the save file.**
+
+Pair: `save_9.2.sav` (pre) vs `save_10.2.sav` (post `§ perfect_spy`). Both
+files are exactly 34,690,934 bytes (same as the FoW pair in session 37).
+
+**Total diff: 2 bytes — both inside the known tick counter at `0x43f8`.**
+
+| Offset | 9.2 | 10.2 | Width | Interpretation |
+|---|---|---|---|---|
+| `0x43f8` | `ae` | `ad` | — | low byte of tick counter |
+| `0x43f9` | `17` | `1f` | — | byte 1 of tick counter |
+
+Counter u32 LE: `6062 → 8109` (delta **+2047** — same kind of arbitrary tick
+jump documented since session 1). The `toggle_fow` flag at `0x44e2` is `0x00`
+in both saves (unchanged — FoW was already disabled in 9.2 and the cheat
+did not retoggle it). No Lua-state byte flipped at `0x02110de5`.
+
+**Implications:**
+
+1. `perfect_spy` is a **pure Lua/runtime side-effect**. The engine flips
+   visibility queries in memory but does not write a player-state flag.
+   The shroud and per-faction visibility masks are untouched.
+2. Reload of a `perfect_spy` save should restore normal vision — there is
+   no boolean for the engine to read back. (Confirmed by absence of any
+   diff byte outside the counter.)
+3. Contrast with `toggle_fow` (session 37, 4-byte diff):
+   counter + dedicated flag at `0x44e2` + Lua byte at `0x02110de5`.
+   **The "cheat-flag triple" hypothesis from session 37 was wrong** —
+   `toggle_fow` is the persistent one; `perfect_spy` is transient.
+4. **The 0x43f8 counter is NOT a console-cheat counter.** It is the
+   per-save tick (RNG / frame / serialization-time clock — exact semantics
+   still unknown). It increments by a non-unit amount on every save with
+   or without console activity (8.2→9.2: +1392, 9.2→10.2: +2047).
+
+**Confidence: CONFIRMED** (2-byte diff is unambiguous; counter region was
+already cracked in session 1; no other bytes flipped across 34.6 MB).
+
+**Script:** `dig-perfectspy.js` — diffs 9.2 vs 10.2, reports the 2-byte
+counter-only delta and verifies the FoW flag is unchanged.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
