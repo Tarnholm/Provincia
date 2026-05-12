@@ -1259,7 +1259,11 @@ function App() {
   const [paintMode, setPaintMode] = useState(false);
   const [paintBrushRgb, setPaintBrushRgb] = useState(null); // "r,g,b" or null
   const [paintBrushSize, setPaintBrushSize] = useState(1); // 1, 3, 5
-  const pixelEditsRef = useRef(new Map()); // "x,y" → "r,g,b"
+  // Map<"x,y", { orig: "r,g,b", current: "r,g,b" }>. `orig` is captured the
+  // first time a pixel is painted; `current` updates on every subsequent
+  // edit. Reset replays orig back into pixelDataRef + the offscreen +
+  // colored canvases so the map reverts.
+  const pixelEditsRef = useRef(new Map());
   const [editsTick, setEditsTick] = useState(0);
   // Cheap repaint tick — bumps on every paint stroke. Wired into the main
   // canvas render's deps so it re-blits the offscreen+coloredOffscreen
@@ -6146,8 +6150,11 @@ function App() {
           const px = x + dx, py = y + dy;
           if (px < 0 || py < 0 || px >= imgSize.width || py >= imgSize.height) continue;
           const i = (py * imgSize.width + px) * 4;
+          const key = `${px},${py}`;
+          const prev = pixelEditsRef.current.get(key);
+          const orig = prev ? prev.orig : `${data[i]},${data[i+1]},${data[i+2]}`;
           data[i] = tr; data[i+1] = tg; data[i+2] = tb;
-          pixelEditsRef.current.set(`${px},${py}`, paintBrushRgb);
+          pixelEditsRef.current.set(key, { orig, current: paintBrushRgb });
           if (offCtx && baseImg) offCtx.putImageData(baseImg, px, py);
           if (colCtx && colImg)  colCtx.putImageData(colImg, px, py);
         }
@@ -9778,9 +9785,40 @@ function App() {
                         }}>+ New region</button>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button onClick={() => {
-                          if (!confirm(`Reset ${pixelEditsRef.current.size} edits?`)) return;
+                          const n = pixelEditsRef.current.size;
+                          if (n === 0) return;
+                          if (!confirm(`Reset ${n} pixel edit${n === 1 ? "" : "s"}?`)) return;
+                          // Walk every edited pixel and restore its captured
+                          // original RGB into pixelDataRef + the offscreen +
+                          // colored overlay so the map snaps back.
+                          const data = pixelDataRef.current;
+                          const offCtx = offscreen?.getContext?.("2d");
+                          const colCtx = coloredOffscreen?.getContext?.("2d");
+                          const W = imgSize.width;
+                          const oneB = offCtx ? new ImageData(1, 1) : null;
+                          const oneC = colCtx ? new ImageData(1, 1) : null;
+                          for (const [key, rec] of pixelEditsRef.current) {
+                            const [pxs, pys] = key.split(",");
+                            const px = +pxs, py = +pys;
+                            const [or, og, ob] = rec.orig.split(",").map(Number);
+                            if (data) {
+                              const i = (py * W + px) * 4;
+                              data[i] = or; data[i+1] = og; data[i+2] = ob;
+                            }
+                            if (offCtx && oneB) {
+                              oneB.data[0] = or; oneB.data[1] = og; oneB.data[2] = ob; oneB.data[3] = 255;
+                              offCtx.putImageData(oneB, px, py);
+                            }
+                            if (colCtx && oneC) {
+                              // For colored overlay, we don't perfectly know the
+                              // original recolored value — restore the raw RGB
+                              // and let the debounced full rebuild reconcile.
+                              oneC.data[0] = or; oneC.data[1] = og; oneC.data[2] = ob; oneC.data[3] = 255;
+                              colCtx.putImageData(oneC, px, py);
+                            }
+                          }
                           pixelEditsRef.current = new Map();
-                          // Don't try to undo on pixelDataRef — easier to ask user to reload mod.
+                          setPaintRepaintTick(t => t + 1);
                           setEditsTick(t => t + 1);
                         }}
                           disabled={pixelEditsRef.current.size === 0}

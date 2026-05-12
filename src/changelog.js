@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.334",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "Map Paint Reset now actually reverts pixels. Was previously only clearing the edits-map (the in-place pixelDataRef + offscreen mutations stayed). Now each edit captures the original RGB on first paint, and Reset replays those originals back into the base + colored overlay canvases." },
+    ],
+  },
+  {
     version: "0.9.333",
     date: "2026-05-12",
     items: [
