@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.327",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "Sidebar legend panels no longer get squashed by adjacent expanded panels. In Faction colorMode + Resources overlay, the Factions list was being shrunk by flexbox to make room for the (uncapped) Resources panel, so part of the Factions list ended up visually hidden behind Resources. Added `flex-shrink: 0` to every sidebar panel so each keeps its natural size and the parent's scroll handles overflow instead." },
+    ],
+  },
+  {
     version: "0.9.326",
     date: "2026-05-12",
     items: [

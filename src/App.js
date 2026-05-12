@@ -7930,6 +7930,7 @@ function App() {
         background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
         borderRadius: 10, padding: "6px 8px",
         width: "100%", boxSizing: "border-box",
+        flexShrink: 0,
         color: "#f6f6f6", fontSize: "0.75rem",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: resourcePanelCollapsed ? 0 : 6, cursor: "pointer" }}
@@ -8085,6 +8086,12 @@ function App() {
       // expands to fill it so the stack of panels reads as a uniform list
       // rather than ragged-right rectangles of different widths.
       width: "100%", boxSizing: "border-box",
+      // The sidebar parent is a flex column with overflowY: auto. Without
+      // `flex-shrink: 0` here, expanded panels (e.g. the 200-faction list)
+      // get squashed by adjacent expanded panels (e.g. Resources overlay),
+      // hiding their content behind sibling panels. Lock natural size so
+      // the parent's scroll is the only thing that activates on overflow.
+      flexShrink: 0,
       border: "1px solid rgba(255,255,255,0.08)",
       boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
     };
@@ -9049,6 +9056,7 @@ function App() {
       background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
       borderRadius: 10, padding: "8px 12px", color: "#f6f6f6",
       fontSize: "0.75rem", width: "100%", boxSizing: "border-box",
+      flexShrink: 0,
       border: "1px solid rgba(255,255,255,0.08)",
       boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
     };
@@ -9305,6 +9313,7 @@ function App() {
                       background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
                       borderRadius: 10, padding: "8px 12px",
                       color: "#f6f6f6", fontSize: "0.75rem",
+                      flexShrink: 0,
                       border: "1px solid rgba(255,255,255,0.08)",
                       boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
                     }}>
