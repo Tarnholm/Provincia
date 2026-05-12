@@ -11,7 +11,8 @@
 "use strict";
 
 const { parentPort } = require("worker_threads");
-const { parseSettlements } = require("./buildingParser.js");
+const { parseSettlements, findAllSettlementMarkers } = require("./buildingParser.js");
+const { parseQueuesForSettlements } = require("./queueParser.js");
 
 parentPort.on("message", (payload) => {
   try {
@@ -27,7 +28,23 @@ parentPort.on("message", (payload) => {
       buildingsByCity[s.name] = s.buildings;
       if (s.queued && s.queued.length > 0) queuedByCity[s.name] = s.queued;
     }
-    parentPort.postMessage({ ok: true, buildingsByCity, queuedByCity });
+    // Session 36 queue parser — extracts construction queue chainId+turns and
+    // recruitment queue unit names. Reuses settlement markers we just scanned.
+    const markers = findAllSettlementMarkers(buf);
+    const liveQueues = parseQueuesForSettlements(buf, markers);
+    const recruitingByCity = {};
+    const buildingQueueByCity = {};
+    for (const [city, q] of liveQueues) {
+      if (q.recruiting.length > 0) recruitingByCity[city] = q.recruiting;
+      if (q.building.length > 0) buildingQueueByCity[city] = q.building;
+    }
+    parentPort.postMessage({
+      ok: true,
+      buildingsByCity,
+      queuedByCity,
+      recruitingByCity,
+      buildingQueueByCity,
+    });
   } catch (err) {
     parentPort.postMessage({ ok: false, error: err && err.message ? err.message : String(err) });
   }

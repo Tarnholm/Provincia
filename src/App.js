@@ -1479,6 +1479,10 @@ function App() {
   const [saveUnitsByRegion, setSaveUnitsByRegion] = useState(null); // { region: [unit, ...] } — from new unit parser
   const [builtBuildingsByCity, setBuiltBuildingsByCity] = useState(null); // { city: [chainName, ...] } — real built buildings from the save
   const [queuedBuildingsByCity, setQueuedBuildingsByCity] = useState(null); // { city: [chainName, ...] } — currently-queued chains, EDB-filtered
+  // Session-36 queue parser output: recruitment queue (inline ASCII unit name)
+  // and construction queue (chain_id + turns remaining).
+  const [recruitingByCity, setRecruitingByCity] = useState(null); // { city: [{unit}] }
+  const [buildingQueueByCity, setBuildingQueueByCity] = useState(null); // { city: [{chainId, turns, count}] }
   const [initialOwnerByCity, setInitialOwnerByCity] = useState(null); // { city: factionId } — turn-0 ownership from descr_strat
   const [currentOwnerByCity, setCurrentOwnerByCity] = useState(null); // { city: factionId } — current ownership decoded from save
   const [factionDisplayNames, setFactionDisplayNames] = useState(null); // { factionId: displayName } from mod text/expanded_bi.txt
@@ -3266,6 +3270,8 @@ function App() {
       if (data && data.navyDiag) console.log("[navy-diag]", data.navyDiag);
       if (data && data.builtBuildingsByCity) setBuiltBuildingsByCity(data.builtBuildingsByCity);
       if (data && data.queuedBuildingsByCity) setQueuedBuildingsByCity(data.queuedBuildingsByCity);
+      if (data && data.recruitingByCity) setRecruitingByCity(data.recruitingByCity);
+      if (data && data.buildingQueueByCity) setBuildingQueueByCity(data.buildingQueueByCity);
       if (data && data.initialOwnerByCity) setInitialOwnerByCity(data.initialOwnerByCity);
       if (data && data.currentOwnerByCity) setCurrentOwnerByCity(data.currentOwnerByCity);
       if (file) setLiveSaveFile(file);
@@ -3312,6 +3318,8 @@ function App() {
         if (d.liveArmies) setSaveLiveArmies(d.liveArmies);
         if (d.builtBuildingsByCity) setBuiltBuildingsByCity(d.builtBuildingsByCity);
         if (d.queuedBuildingsByCity) setQueuedBuildingsByCity(d.queuedBuildingsByCity);
+        if (d.recruitingByCity) setRecruitingByCity(d.recruitingByCity);
+        if (d.buildingQueueByCity) setBuildingQueueByCity(d.buildingQueueByCity);
         if (d.initialOwnerByCity) setInitialOwnerByCity(d.initialOwnerByCity);
         if (d.currentOwnerByCity) setCurrentOwnerByCity(d.currentOwnerByCity);
       }
@@ -5142,6 +5150,18 @@ function App() {
           ctx.lineWidth = Math.max(0.8 / totalScale, 0.25);
         }
         ctx.stroke();
+        // Boarded-ship indicator (session 37): naval marker gets an inner
+        // bright dot when the fleet has at least one boarded character or
+        // army unit. Distinct from an empty ship dot at a glance.
+        if (army.armyClass === "navy" && Array.isArray(army.passengerUuids) && army.passengerUuids.length > 0) {
+          ctx.beginPath();
+          ctx.arc(army.x + 0.5, mapY + 0.5, r * 0.4, 0, Math.PI * 2);
+          ctx.fillStyle = "#ffe066";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(40,30,0,0.9)";
+          ctx.lineWidth = Math.max(0.6 / totalScale, 0.2);
+          ctx.stroke();
+        }
         ctx.restore();
       }
     }
@@ -9179,6 +9199,12 @@ function App() {
                         with {hoveredArmy.army.passengers.map(p => (typeof p === 'string' ? p : (p.firstName || p.name || ''))).filter(Boolean).join(", ")}
                       </div>
                     ) : null}
+                    {hoveredArmy.army.armyClass === "navy" && Array.isArray(hoveredArmy.army.passengerUuids) && hoveredArmy.army.passengerUuids.length > 0 ? (
+                      <div style={{ color: "#ffe066", fontSize: "0.76rem", marginBottom: 4, paddingLeft: 6 }}
+                        title="Session 37: each boarded character/army-unit appends a 4-byte UUID-prefix to this ship's passenger array.">
+                        ⚓ carrying {hoveredArmy.army.passengerUuids.length} passenger{hoveredArmy.army.passengerUuids.length === 1 ? "" : "s"}
+                      </div>
+                    ) : null}
                     {hoveredArmy.army.traits && hoveredArmy.army.traits.length > 0 ? (() => {
                       const keyTraits = hoveredArmy.army.traits.filter(t =>
                         /^(Factionleader|Factionheir|GoodCommander|NaturalMilitarySkill|GoodAdministrator|GoodAttacker|GoodDefender|BattleScarred|Brave|Intelligent|Loyal)$/.test(t.name)
@@ -11013,6 +11039,16 @@ function App() {
                           if (!r || !r.city) return null;
                           return saveSizeByCity[r.city] || null;
                         } catch { return null; }
+                      })()}
+                      recruitingNow={(() => {
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !r.city || !recruitingByCity) return null;
+                        return recruitingByCity[r.city] || null;
+                      })()}
+                      buildingQueue={(() => {
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !r.city || !buildingQueueByCity) return null;
+                        return buildingQueueByCity[r.city] || null;
                       })()}
                     />
                   </div>

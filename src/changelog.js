@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.318",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "Recruitment queue surfaced in the region panel. Each settlement's `default_set` chain has an optional 35-byte recruit entry with the unit's name inline (e.g. \"roman leves\"); the recruitable card gets a green REC badge + outline when its unit is currently being trained there. Decoded from session 36 of the save cracker." },
+      { type: "feature", text: "Construction queue surfaced in the region panel. 53-byte building queue entry decoded from the same `default_set` body — shows `Building: chain #N — K turns` above the Buildings grid. Chain-ID → name resolution still TBD (no crackable mapping yet); 'chain #8000' for now until a corpus pins it." },
+      { type: "feature", text: "Boarded ships now visually distinct on the map. Naval markers gain a bright yellow inner dot when a fleet carries at least one boarded character or army unit (session 37 schema: each boarded UUID-prefix appended to the ship's passenger array, count u16 bumped). Hover tooltip reads `⚓ carrying N passengers`." },
+      { type: "improvement", text: "queueParser scans defensively: tight body bound via the next chain's preamble + chainId duplication check kills false positives across all 1,310 settlements in a 35 MB save. Tested clean across save_1.2..save_4.2 (no queue, BUILDING queue, RECRUIT queue, queue cleared) — only the genuinely-queued settlement matches." },
+    ],
+  },
+  {
     version: "0.9.317",
     date: "2026-05-12",
     items: [

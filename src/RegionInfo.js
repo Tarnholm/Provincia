@@ -215,7 +215,7 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -758,6 +758,30 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           </div>
           );
         })()}
+        {Array.isArray(buildingQueue) && buildingQueue.length > 0 && (
+          <div
+            title="Construction queue (decoded from save's default_set chain — session 36)"
+            style={{
+              marginBottom: 4,
+              padding: "3px 6px",
+              background: "rgba(60,200,80,0.10)",
+              border: "1px solid rgba(60,200,80,0.35)",
+              borderRadius: 3,
+              fontSize: "0.75rem",
+              lineHeight: 1.3,
+            }}
+          >
+            <span style={{ color: "#9fc78a", fontWeight: 700, marginRight: 4 }}>Building:</span>
+            {buildingQueue.map((q, i) => (
+              <span key={i} style={{ color: "#cde" }}>
+                {i > 0 ? ", " : ""}chain #{q.chainId}
+                {Number.isFinite(q.turns) && q.turns > 0 && q.turns < 1000
+                  ? ` — ${q.turns} turn${q.turns === 1 ? "" : "s"}`
+                  : ""}
+              </span>
+            ))}
+          </div>
+        )}
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
         {buildingItems.length > 0 ? (
           (() => {
@@ -865,60 +889,83 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         }}
       >
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#9fc78a" }}>Recruitable:</div>
-        {recruitable && recruitable.length > 0 ? (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(6, minmax(0, 52px))",
-            gridAutoRows: "min-content",
-            gap: 3,
-            justifyContent: "start",
-          }}>
-            {recruitable.map((u, i) => {
-              // Cross-link: this recruit lights up when user hovers a
-              // building card whose chain gates it.
-              const gatedSet = u.gatedBy || (recruitGatedBy?.[u.unit] ?? []);
-              const linkedFromBuilding = hoveredChain && gatedSet.includes(hoveredChain);
-              const linkedFromHr = hoveredHr && (u.hrGates || []).includes(hoveredHr);
-              const isHoveredHere = hoveredRecruit === u.unit;
-              // Upgrade-only units (`available === false`) are tinted pale —
-              // a 0.45 opacity grayscale-ish overlay so they read as "future
-              // potential" without dominating the currently-buildable ones.
-              const upgradeOnly = u.available === false;
-              return (
-                <div key={i}
-                  onMouseEnter={() => setHoveredRecruit(u.unit)}
-                  onMouseLeave={() => setHoveredRecruit((cur) => cur === u.unit ? null : cur)}
-                  onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
-                  title={
-                    u.unit.replace(/_/g, " ")
-                    + (upgradeOnly
-                      ? "\n" + (u.upgradeHint || "Needs building upgrade")
-                      : "")
-                  } style={{
-                  padding: 2,
-                  background: (linkedFromBuilding || linkedFromHr) ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.35)",
-                  borderRadius: 3,
-                  minWidth: 0,
-                  outline: (linkedFromBuilding || linkedFromHr || isHoveredHere) ? "2px solid #dca64a" : (upgradeOnly ? "1px dashed rgba(255,255,255,0.18)" : "none"),
-                  outlineOffset: -1,
-                  opacity: upgradeOnly ? 0.45 : 1,
-                  filter: upgradeOnly ? "grayscale(0.4)" : "none",
-                  transition: "background 150ms var(--ease-mac-out), opacity 150ms var(--ease-mac-out), filter 150ms var(--ease-mac-out)",
-                }}>
-                  {u.icon ? (
-                    <img src={u.icon} alt={u.unit}
-                      style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 2 }}
-                      onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                  ) : (
-                    <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 2 }} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>Nothing recruitable</span>
-        )}
+        {(() => {
+          // Build a normalised set of unit names currently in the recruit
+          // queue (session 36 schema). The save uses spaces ("roman leves")
+          // while EDU uses underscores ("roman_leves"), so we key on
+          // lowercase-collapsed-non-alphanum.
+          const recruitingSet = new Set();
+          if (Array.isArray(recruitingNow)) {
+            for (const r of recruitingNow) {
+              if (r && r.unit) recruitingSet.add(String(r.unit).toLowerCase().replace(/[^a-z0-9]/g, ""));
+            }
+          }
+          const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          return recruitable && recruitable.length > 0 ? (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(6, minmax(0, 52px))",
+              gridAutoRows: "min-content",
+              gap: 3,
+              justifyContent: "start",
+            }}>
+              {recruitable.map((u, i) => {
+                const gatedSet = u.gatedBy || (recruitGatedBy?.[u.unit] ?? []);
+                const linkedFromBuilding = hoveredChain && gatedSet.includes(hoveredChain);
+                const linkedFromHr = hoveredHr && (u.hrGates || []).includes(hoveredHr);
+                const isHoveredHere = hoveredRecruit === u.unit;
+                const upgradeOnly = u.available === false;
+                const isRecruiting = recruitingSet.has(norm(u.unit));
+                return (
+                  <div key={i}
+                    onMouseEnter={() => setHoveredRecruit(u.unit)}
+                    onMouseLeave={() => setHoveredRecruit((cur) => cur === u.unit ? null : cur)}
+                    onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
+                    title={
+                      u.unit.replace(/_/g, " ")
+                      + (isRecruiting ? "\nCurrently being recruited" : "")
+                      + (upgradeOnly
+                        ? "\n" + (u.upgradeHint || "Needs building upgrade")
+                        : "")
+                    } style={{
+                    position: "relative",
+                    padding: 2,
+                    background: isRecruiting ? "rgba(60,200,80,0.22)" : ((linkedFromBuilding || linkedFromHr) ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.35)"),
+                    borderRadius: 3,
+                    minWidth: 0,
+                    outline: isRecruiting
+                      ? "2px solid #5ed87a"
+                      : (linkedFromBuilding || linkedFromHr || isHoveredHere)
+                        ? "2px solid #dca64a"
+                        : (upgradeOnly ? "1px dashed rgba(255,255,255,0.18)" : "none"),
+                    outlineOffset: -1,
+                    opacity: upgradeOnly ? 0.45 : 1,
+                    filter: upgradeOnly ? "grayscale(0.4)" : "none",
+                    transition: "background 150ms var(--ease-mac-out), opacity 150ms var(--ease-mac-out), filter 150ms var(--ease-mac-out)",
+                  }}>
+                    {u.icon ? (
+                      <img src={u.icon} alt={u.unit}
+                        style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 2 }}
+                        onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                    ) : (
+                      <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 2 }} />
+                    )}
+                    {isRecruiting && (
+                      <div style={{
+                        position: "absolute", top: 2, right: 2,
+                        background: "rgba(60,200,80,0.85)", color: "#0b1b0e",
+                        fontSize: "0.55rem", fontWeight: 700,
+                        padding: "1px 3px", borderRadius: 2, lineHeight: 1,
+                      }}>REC</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>Nothing recruitable</span>
+          );
+        })()}
       </div>
 
       {/* Fifth column: garrison + field armies for this region */}

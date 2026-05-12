@@ -184,6 +184,29 @@ function findUnitRecords(buf) {
       const candidate = buf.readUInt32LE(i - 20);
       if (candidate && candidate !== 0xffffffff) fleetUuid = candidate;
     }
+    // Passenger array on naval records (session 37 of save-cracker).
+    // Schema: `[ship hash 4B][zeros 8B][u16 count][count × 4B passenger UUIDs]
+    //          [u16 trailer][u16 nameLen]`. The trailer u16 immediately before
+    // nameLen is fixed per ship-class (1, 2, or 3 observed) so we don't use
+    // it as a marker. Find K by walking backward from nameLen 4 bytes at a
+    // time, returning the first K where the u16 at `i - 4 - 4*K` equals K.
+    let passengerUuids = null;
+    if (/^naval\b/i.test(name) && i >= 4) {
+      for (let K = 0; K <= 16; K++) {
+        const co = i - 4 - 4 * K;
+        if (co < 0) break;
+        if (buf.readUInt16LE(co) !== K) continue;
+        if (K === 0) { passengerUuids = []; break; }
+        const arr = [];
+        let valid = true;
+        for (let u = 0; u < K; u++) {
+          const v = buf.readUInt32LE(co + 2 + 4 * u);
+          if (v === 0 || v === 0xffffffff) { valid = false; break; }
+          arr.push(v);
+        }
+        if (valid) { passengerUuids = arr; break; }
+      }
+    }
     records.push({
       offset: i,
       name,
@@ -196,6 +219,7 @@ function findUnitRecords(buf) {
       xp,
       weaponUpgrade,
       armourUpgrade,
+      passengerUuids,
     });
     i = regionEnd;
   }

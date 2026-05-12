@@ -36,7 +36,12 @@ function parseBuildingsInWorker(saveBuf) {
     catch (e) { reject(e); return; }
     worker.once("message", (msg) => {
       worker.terminate();
-      if (msg && msg.ok) resolve({ buildingsByCity: msg.buildingsByCity, queuedByCity: msg.queuedByCity });
+      if (msg && msg.ok) resolve({
+        buildingsByCity: msg.buildingsByCity,
+        queuedByCity: msg.queuedByCity,
+        recruitingByCity: msg.recruitingByCity || {},
+        buildingQueueByCity: msg.buildingQueueByCity || {},
+      });
       else reject(new Error(msg && msg.error ? msg.error : "worker failed"));
     });
     worker.once("error", (err) => { worker.terminate(); reject(err); });
@@ -1286,6 +1291,17 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       const factionLabel = factionFromMarker
         ? `${factionFromMarker.replace(/_/g, " ")} fleet`
         : "Fleet";
+      // Aggregate passenger UUID-prefixes from every ship in this fleet
+      // (session 37: each ship records its own boarded passengers in the
+      // 12-byte gap before its name string).
+      const passengerUuidsSet = new Set();
+      for (const u of fleetUnits) {
+        if (!Array.isArray(u.passengerUuids)) continue;
+        for (const pu of u.passengerUuids) {
+          if (pu) passengerUuidsSet.add(pu);
+        }
+      }
+      const passengerUuids = Array.from(passengerUuidsSet);
       liveArmies.push({
         faction: factionFromMarker || "unknown",
         character: factionLabel,
@@ -1308,6 +1324,7 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
           exp: 0,
         })),
         passengers: [],
+        passengerUuids,
         worldObjectUuid: fleetUuid,
         commanderUuid: fleetUuid,
         primaryUuid: null,
@@ -4454,6 +4471,8 @@ async function reparseLatestSave() {
       const bRes = (await buildingsP) || parseSettlementBuildings(saveBuf);
       newData.builtBuildingsByCity = bRes.buildingsByCity;
       newData.queuedBuildingsByCity = bRes.queuedByCity;
+      newData.recruitingByCity = bRes.recruitingByCity || {};
+      newData.buildingQueueByCity = bRes.buildingQueueByCity || {};
     } catch (e) { console.warn("[save-watch] building parse failed:", e.message); }
 
     if (modInitialOwnerByCity) newData.initialOwnerByCity = modInitialOwnerByCity;
@@ -4676,6 +4695,8 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
         const bRes = (await buildingsP) || parseSettlementBuildings(saveBuf);
         lastSaveData.builtBuildingsByCity = bRes.buildingsByCity;
         lastSaveData.queuedBuildingsByCity = bRes.queuedByCity;
+        lastSaveData.recruitingByCity = bRes.recruitingByCity || {};
+        lastSaveData.buildingQueueByCity = bRes.buildingQueueByCity || {};
       } catch (e) { console.warn("[save-watch] settlement buildings failed:", e.message); }
 
       if (lastSaveData && modInitialOwnerByCity && saveBuf) {
@@ -5042,6 +5063,8 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
         if (lastSaveData) {
           lastSaveData.builtBuildingsByCity = bRes.buildingsByCity;
           lastSaveData.queuedBuildingsByCity = bRes.queuedByCity;
+          lastSaveData.recruitingByCity = bRes.recruitingByCity || {};
+          lastSaveData.buildingQueueByCity = bRes.buildingQueueByCity || {};
         }
       } catch (e) { console.warn("[characters-init] building re-parse failed:", e.message); }
       if (lastSaveData && modInitialOwnerByCity) {
