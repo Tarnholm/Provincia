@@ -1261,6 +1261,11 @@ function App() {
   const [paintBrushSize, setPaintBrushSize] = useState(1); // 1, 3, 5
   const pixelEditsRef = useRef(new Map()); // "x,y" → "r,g,b"
   const [editsTick, setEditsTick] = useState(0);
+  // Cheap repaint tick — bumps on every paint stroke. Wired into the main
+  // canvas render's deps so it re-blits the offscreen+coloredOffscreen
+  // without rerunning the expensive overlay-rebuild useEffect.
+  const [paintRepaintTick, setPaintRepaintTick] = useState(0);
+  const paintDebounceRef = useRef(null);
   // Add-region modal state. When `showAddRegion` is non-null, the dialog
   // is rendered and the user fills name / faction / etc. Any submit
   // creates a brand-new region entry, makes it the active brush, and (on
@@ -5447,6 +5452,7 @@ function App() {
     geographyOverlayCanvas,
     showHeightsOverlay,
     heightsOverlayCanvas,
+    paintRepaintTick,
     showResourcesOverlay,
     showLabels,
     cityPixels,
@@ -5762,6 +5768,10 @@ function App() {
       if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(cb, { timeout: 2000 });
       else setTimeout(cb, 0);
     };
+    // Skip the heavy border-pixel scan while actively painting — wait for
+    // the user to stop. Borders look stale for a few frames during a paint
+    // stroke; they refresh once paintDebounceRef fires its rebuild.
+    if (paintMode && paintDebounceRef.current) return;
     schedule(() => {
       const result = prerenderBorderPaths(regions, offscreen, imgSize);
       setBorderPaths(result.borderPaths);
@@ -5770,7 +5780,7 @@ function App() {
     schedule(() => {
       setCultureBorderPath(prerenderCultureBorderPath(regions, offscreen, imgSize));
     });
-  }, [regions, offscreen, imgSize, editsTick]);
+  }, [regions, offscreen, imgSize, editsTick, paintMode]);
 
   // Precompute faction border path for Borders toggle
   useEffect(() => {
@@ -6114,13 +6124,23 @@ function App() {
         if (regions[clickedRgb]) setPaintBrushRgb(clickedRgb);
         return;
       }
-      if (!paintBrushRgb) return; // no brush set yet
+      if (!paintBrushRgb) return;
       const [tr, tg, tb] = paintBrushRgb.split(",").map(Number);
+      // Resolve the brush's "displayed" colour for the current colorMode
+      // (faction primary etc.) so the live paint stroke matches the
+      // overlay's recolouring instead of flashing raw RGB and then
+      // jumping to faction-colour on the next rebuild.
+      const brushReg = regions[paintBrushRgb];
+      const fac = brushReg?.faction?.toLowerCase?.();
+      const fc = fac && factionColors?.[fac]?.primary;
+      const [dr, dg, db] = (colorMode === "faction" && fc) ? fc : [tr, tg, tb];
       const r = Math.max(0, Math.floor((paintBrushSize - 1) / 2));
-      // Paint the pixel(s) + mirror onto offscreen canvas.
       const offCtx = offscreen?.getContext?.("2d");
-      const oneImg = offCtx ? new ImageData(1, 1) : null;
-      if (oneImg) { oneImg.data[0] = tr; oneImg.data[1] = tg; oneImg.data[2] = tb; oneImg.data[3] = 255; }
+      const colCtx = coloredOffscreen?.getContext?.("2d");
+      const baseImg = offCtx ? new ImageData(1, 1) : null;
+      const colImg = colCtx ? new ImageData(1, 1) : null;
+      if (baseImg) { baseImg.data[0] = tr; baseImg.data[1] = tg; baseImg.data[2] = tb; baseImg.data[3] = 255; }
+      if (colImg)  { colImg.data[0] = dr; colImg.data[1] = dg; colImg.data[2] = db; colImg.data[3] = 255; }
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           const px = x + dx, py = y + dy;
@@ -6128,10 +6148,24 @@ function App() {
           const i = (py * imgSize.width + px) * 4;
           data[i] = tr; data[i+1] = tg; data[i+2] = tb;
           pixelEditsRef.current.set(`${px},${py}`, paintBrushRgb);
-          if (offCtx && oneImg) offCtx.putImageData(oneImg, px, py);
+          if (offCtx && baseImg) offCtx.putImageData(baseImg, px, py);
+          if (colCtx && colImg)  colCtx.putImageData(colImg, px, py);
         }
       }
-      setEditsTick(t => t + 1);
+      // Force a re-paint of the main canvas without going through the
+      // ~100-200ms colored-overlay rebuild. The renderer reads
+      // coloredOffscreen via its useEffect deps; bumping a counter that's
+      // ONLY in the render deps (not the overlay-rebuild deps) gets us a
+      // cheap re-blit instead of a full pixel pass.
+      setPaintRepaintTick(t => t + 1);
+      // Debounce the full rebuild so it eventually catches up (faction
+      // colour mode, border paths, etc.) — but only after the user stops
+      // painting for ~400 ms.
+      if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
+      paintDebounceRef.current = setTimeout(() => {
+        setEditsTick(t => t + 1);
+        paintDebounceRef.current = null;
+      }, 400);
       return;
     }
 

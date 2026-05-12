@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.333",
+    date: "2026-05-12",
+    items: [
+      { type: "improvement", text: "Map paint is now responsive. Each click previously triggered a full ~100-200 ms recolouring of the 714k-pixel overlay AND a per-pixel border-paths rescan — so any drag-paint felt molasses-slow. Now: every paint stroke writes directly to the colored overlay canvas (using the brush's faction-colour in Faction mode, raw RGB otherwise) for instant feedback, the per-region border rebuild is skipped while painting, and the full rebuild is debounced to ~400 ms after the last click. Final state stays consistent — the debounced rebuild reconciles everything once you stop." },
+    ],
+  },
+  {
     version: "0.9.332",
     date: "2026-05-12",
     items: [
