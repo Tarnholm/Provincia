@@ -9321,6 +9321,344 @@ or population-trend cache). **Not an extermination signal.**
 
 ---
 
+### Findings 2026-05-12 (background session 36 — queue + recruit + diplomat move diffs)
+
+**HEADLINE — three findings, two CONFIRMED, one of them refutes session 35's
+fog-of-war hypothesis.**
+
+(1) **CONFIRMED — RECRUITMENT & CONSTRUCTION QUEUES live in the same per-settlement
+"default_set" chain entry, ~30 bytes before the `hinterland_region` chain string.**
+The queue is appended after a fixed 53-byte chain header. **Construction
+(building) queue entries are 53 bytes long with a chain-ID u32; recruitment
+(unit) queue entries are 35 bytes long with an inline ASCII unit-name string.**
+The save_2.2→save_3.2 −18 byte delta is exactly (53 − 35) = the size
+difference between a wall-building entry and a levies-unit entry — sole
+structural delta between the two saves.
+
+(2) **CONFIRMED — diplomat MOVE leaves the session 35 240×153 tile grid
+ESSENTIALLY UNCHANGED (only 9 noise bytes in the boundary record overlapping
+Roma).** Refutes the working hypothesis that the 6 variable fields at gap
+record offsets +20, +28, +32 encode per-tile fog-of-war / shroud. **They do
+NOT track tile visibility.**
+
+(3) **STRONG — fog-of-war reveal is encoded as VARIABLE-LENGTH
+"discovered settlement" records in a separate section at `~0x1f48000+`,
+NOT in the tile grid.** Each newly-spotted settlement adds a ~90-byte
+record carrying [u32 record-size, u32 X, u32 Y, u32 visibility-level,
+... u32 ef000000 marker, u16 nameLen, ASCII type-string (×2)]. Diplomat
+moving 2 tiles south added exactly one `W_hellenistic_Large_Town` record
+plus 4 per-character "scout-id" entries (+32B) in a list inside the
+diplomat's character record.
+
+#### Save corpus
+
+| File | Action vs save_1.2 baseline | netΔ |
+|---|---|---|
+| save_1.2 | baseline (turn 1, no queues, no movement) | — |
+| save_2.2 | + 1 stone wall queued in Roma | +166 482 B |
+| save_3.2 | + 1 levies (unit) queued in Roma | −18 vs save_2.2; +166 464 B vs save_1.2 |
+| save_4.2 | + diplomat moved 2 tiles south | +553 vs save_1.2 |
+
+**Important corpus note**: the user reloaded `save_1.2` each time before
+the next action (so save_2.2, save_3.2, save_4.2 are parallel branches
+from the same baseline, NOT sequential). This was confirmed by the fact
+that **save_4.2's default_set body is 53 bytes (= no queue), identical
+in structure to save_1.2's, with only the hash UUID at offset +4 differing**.
+
+#### Finding 1 — RECRUITMENT & CONSTRUCTION QUEUE LAYOUT (CONFIRMED)
+
+The "default_set" chain entry in Roma's settlement record (RIS imperial
+mod, save_1.2) sits at file offset `0xf8464e` (preceded by 12-char
+ASCIIZ string `default_set\0` at `0xf84644`). Its body extends from
+`0xf8465a` (4 bytes after the string terminator) up to immediately
+before the `[u32 size=0x0c][u32 self-ptr][u16 nameLen=0x12]` preamble
+of the `hinterland_region` chain at `0xf84693` (save_1.2 baseline).
+
+| Save | default_set body size | Content notes |
+|---|---|---|
+| save_1.2 baseline | **53 B** | no queue; trailing 22 zero bytes after the chain header |
+| save_2.2 wall queued | **106 B** | 53 B chain header + **53 B build-queue entry** |
+| save_3.2 levies queued | **88 B** | 53 B chain header + **35 B recruit-queue entry** |
+| save_4.2 (no queue active) | **53 B** | identical layout to save_1.2 (different hash UUID at +4) |
+
+**Chain header layout (53 bytes, common to all 4 saves at this offset
+modulo per-save random UUID and per-queue-state field overrides)**:
+
+```
++0..+3   u32  self_ptr            constant = 0xf8465a (points to the byte
+                                  after this u32 — the next field at +4)
++4..+7   u32  chain_uuid          random per-save UUID hash
++8..+11  fc fc fc fc              4-byte magic sentinel
++12..+15 u32  = 0x011d = 285      constant marker
++16..+19 u32  = 0x0194 = 404      constant marker
++20      u8   = 0x01              flag
++21..+24 u32  cached_cost         0 when no queue; 8000 for wall (save_2.2);
+                                  0 for unit-recruit (save_3.2)
++25..+28 zeros (4 B)
++29..+32 u32  cached_upkeep_or_2nd 0 when no queue; 0 for wall; 978 (=0x3d2)
+                                  for levies (likely per-turn pay/upkeep
+                                  cached here)
++33..+36 zeros (4 B)
++37..+40 u32  queue_count_a       0 / 0x01 (wall) / 0x00 (levies)
++41..+44 u32  queue_count_b       0x01 baseline; 0x00 wall; 0x01 levies
++45..+48 u32  chain_ref/UUID_lo   0 baseline; 0x16fc84ad wall (chain hash?);
+                                  0x00000001 levies
++49..+52 u32  chain_uuid (copy)   0 baseline; queue_uuid (wall); 0 (levies)
+```
+
+(Header fields +21..+52 are an **opportunistic cache** the engine
+overwrites with denormalised values from the queue entry; the canonical
+queue data is in the body that follows.)
+
+**Build-queue entry layout (53 bytes, observed for stone_wall in save_2.2)**:
+
+```
+Offset within entry (body+53..+105):
+ +0    02 00 00 00          u32 type tag = 2 (BUILDING)
+ +4    01 00 00 00          u32 entry count = 1
+ +8    40 1f 00 00          u32 chain_id = 0x1f40 = 8000  (stone_wall chain ID
+                            in the RIS imperial mod's expanded_bi.txt order)
+ +12   00 00 00 00          u32 zeros
+ +16   08 00 00 00          u32 = 8  (turns remaining? STRONG hypothesis)
+ +20..+33 zeros (14 B)
+ +34   01                   u8 flag (mirror of header +20)
+ +35..+36 zeros
+ +37   08 00 00 00          u32 = 8 (turns dup)
+ +41   40 1f 00 00          u32 chain_id (dup #2)
+ +45   01 00 00 00          u32 = 1 (count dup)
+ +49..+51 zeros
+ +52   01                   u8 trailer flag
+```
+
+Cross-check vs session 11's Alexander-mod construction queue (53-byte
+block, chain_id 800 for the Macedon wooden_wall→wooden_palisade upgrade):
+**both sessions' queue blocks are 53 bytes**, both have **chain_id u32
+appearing 3 times** within the block, both have a `+48`/`+16` "turns
+remaining" candidate. Session 11's chain_id was at +0/+40, here it's at
++8/+41 — slight schema variation between Alexander and RIS imperial
+mods, or the offsets shift because RIS uses a longer header preamble.
+
+**Recruit-queue entry layout (35 bytes, observed for roman levies in
+save_3.2)**:
+
+```
+Offset within entry (body+53..+87):
+ +0     [last byte of chain_uuid carryover]    actually:
+ +0..+3  9a 0c ba a0          u32 queue_uuid (matches header's chain_uuid)
+ +4     0c 00                 u16 nameLen = 12  (length of unit name string)
+ +6..+17 ASCII "roman leves\0" (12 bytes including null) — the MOD's
+        EDU unit-name string (CRITICAL: it appears mis-spelled as
+        "roman leves" not "roman levies" — that's how the RIS imperial
+        mod registers this unit in export_descr_unit.txt)
+ +18..+22 zeros (5 B)
+ +23    ff 00 00 02            u32 magic = 0x02000000ff (entry-type tag
+                                for "recruit unit"?)
+ +27    d2 03 a1 00            u32 = 0x00a103d2  (could be 41,938 — likely
+                                packed (cost_lo:16, cost_hi:8, count:8) =
+                                cost 0x03d2=978, recruit_count 0xa1=161?)
+                                OR: u16(+27)=0x03d2=978 cost + (+29)=0xa1
+                                 + zeros. **NOT YET DECODED definitively**.
+ +31..+34  00 00 00 01         u32 = 0x01000000 = 1  (entry-count)
+```
+
+The **inline ASCII string "roman leves"** is the smoking gun: this is the
+exact case-sensitive identifier in the RIS mod's `export_descr_unit.txt`
+for what UI labels "Roman Levies". The engine stores the unit's name as
+ASCIIZ inside the queue entry rather than as an index into the unit table
+— **this is different from the building queue's pure chain_id approach**.
+A consequence: the parser can extract queued units directly without an
+EDU lookup, but queued buildings require the mod's
+`export_descr_buildings.txt` index map (per session 11).
+
+#### Finding 2 — DIPLOMAT MOVE LEAVES 240×153 TILE GRID UNCHANGED (CONFIRMED, REFUTES SESSION 35 FOG-OF-WAR HYPOTHESIS)
+
+Direct save_1.2 → save_4.2 record-by-record comparison of the entire
+36,583-record tile-grid at `0x633c50..0xf84632` (per session 35 schema):
+
+- **Records with any byte changed: 1 of 36,583**
+- **Total bytes changed: 9 of 9,766,121 (0.00009%)**
+- **The single changed record is record #36,582** — the very last in the
+  array, whose 267-byte stride spans `0xf84632..0xf8473d` and overlaps
+  with the start of the settlement-zone tail (per session 35 sub-region
+  3 finding). The 9 changed bytes are inside the **settlement-record
+  boundary**, NOT inside the tile data.
+
+So **moving a diplomat 2 tiles south writes ZERO bytes to the 240×153
+tile-grid**. This conclusively rules out the session 35 hypothesis
+that the variable fields at record offsets `+20`, `+28`, `+32` encode
+fog-of-war / per-tile shroud / last-visited-turn. The 6 variable fields
+must encode some other per-cell static attribute (height map, region
+membership, climate zone, etc.) — not visibility.
+
+#### Finding 3 — DISCOVERED-SETTLEMENT LIST AT `~0x1f48000+` (STRONG)
+
+The +89-byte structural delta save_3.2→save_4.2 (equivalently +553 net
+save_1.2→save_4.2) decomposes into **two structural inserts and many
+1-byte AI cache hash recomputations**:
+
+| Site | A_off (save_3.2) | B_off (save_4.2) | Δ | Content |
+|---|---|---|---|---|
+| Roma queue removal | 0xf846b0 | 0xf846b0 | −35 | save_3.2's levies queue entry erased (save_4.2 reverted to no queue) |
+| Roma settlement-tail | 0xf8591c | 0xf858fa | −77 | settlement #2 record (~30KB after Roma) re-balances by 77 B |
+| Roma settlement-tail | 0xf85989 | 0xf8591a | +76 | (the other half of the above re-balance, net −1 from the pair) |
+| **Diplomat scout-id list (+32)** | 0x1504eb9 | 0x1504e96 | **+32** | 4 new entries of `[u32=1][u32=tileID]` (values: tileID 229, 3759, 193, 3833) inserted into a per-character list immediately before `data/ui/roman/portraits/cards/young/generals/284.tga` portrait string |
+| AI cache recomp | 0x16287a0 | 0x162879d | +44/−44 | hash recompute (no semantic change) |
+| Move-trail/path bytes | 0x1f4669x | various | +1/−1 small | move-trail update (per session 32 finding) |
+| **NEW discovered settlement (+90)** | n/a | **0x1f48540** | **+90** | New `W_hellenistic_Large_Town` record inserted into discovered-settlement list |
+| Re-shuffles of W_hellenistic / Celtic / etc. records | 0x1f4e145, 0x1f5b7d7, 0x1f63a0b, 0x1f598be | corresponding | ±50..±113 | existing discovered records reorder (net zero) |
+| Lua-state shift | 0x20e6ecc | 0x2110ccb | +78 / −14 | one Lua scripted-event string offset migrates within the Lua footer |
+| Faction trailing array | 0x20e9be2 | 0x21126bb | −64 | per-faction trailing data adjusts by 64 B |
+
+**Discovered-settlement record layout** (90 bytes, decoded from the
+save_4.2 insert at `0x1f48540`):
+
+```
+ +0..+3   u32  = 0x1b = 27       record_size (or fields-count tag)
+ +4..+7   u32  = 0x157 = 343     X coord (or some tile index)
+ +8..+11  u32  = 0x182 = 386     Y coord (or paired index)
+ +12..+15 u32  = 2               visibility_level (= 2 means "spotted")
+ +16..+19 u32  = 0               reserved
+ +20..+23 u32  = 0x9c = 156      faction_idx_visible_to (Messapians=156
+                                 OR settlement-type-idx; ambiguous)
+ +24..+35 u8[12] zeros           reserved
+ +36..+39 u32  = 0xef = constant ef000000 marker (same magic as
+                                 elsewhere; "record-class tag" per
+                                 session 34's settlement schema)
+ +40..+41 u16  = 0x19 = 25       nameLen (chars of the name string)
+ +42..+66 ASCII "W_hellenistic_Large_Town\0"  (25 chars including null)
+ +67..+68 u16  = 0x19 = 25       nameLen DUP
+ +69..+93 ASCII "W_hellenistic_Large_Town\0"  (25-char string DUP)
+```
+
+The `W_` prefix indicates **"world settlement-type-icon"** (per
+session 24's mid-file entity hypothesis). The settlement-type strings
+observed in this corpus include `W_hellenistic_City`, `W_hellenistic_Large_Town`,
+`Celtic_Large_Town` — these map to descr_strat's settlement-style
+categories crossed with culture. The duplication of the name string
+(once at +42, once at +69) is the **dual-buffer/cache pattern**
+observed elsewhere (session 32 noted treasury at +0/+48,
+settlement income at +683/+1127, etc.).
+
+**STRONG support that 0x1f48540 is the player's "discovered settlements"
+list** (vs. "known by enemy" list):
+- The 4 surrounding re-shuffles of W_hellenistic / Celtic records have
+  X coords in the 0xd1..0x82 range and Y coords 0xad..0xce — consistent
+  with **southern Italy / Greek-colony region** where a Roman diplomat
+  starting in Roma would head south.
+- Re-shuffles are pure reordering (same content, different position) =
+  list re-sorted by visibility-distance or similar.
+- The +32 byte per-character insert at 0x1504eb9 corresponds to **the
+  diplomat's character record** (just before a Roman general portrait
+  string). The 4 new `[1, tileID]` entries match a "list of tile-IDs
+  scouted this move" or similar.
+
+#### Cross-cutting observation: stone_wall save_1→save_2 (+166KB) is dominated by end-of-turn-style AI character generation
+
+The brief flagged save_1.2→save_2.2 as "noisy" (+166KB). The aligned diff
+confirms this catastrophically: **~150 newly-generated AI characters with
+freshly-allocated portrait paths** (`data/ui/barbarian/portraits/portraits/young/generals/118.tga`,
+`039.tga`, `068.tga`, ..., all 118 bytes each repeating across portraits
+of various young/old, roman/barbarian, generals/diplomats subfolders).
+
+This means **queuing a single stone wall triggered an in-place AI run**
+that generated new characters for opponent factions. Equivalently: the
+RIS imperial mod's save mechanics don't separate "queue an action" from
+"AI re-evaluates everything" — likely because the user clicked the
+Save button immediately after queuing, but the engine had already
+flushed the queue and run AI policy update.
+
+The **53-byte stone-wall queue entry** itself IS present in save_2.2 at
+Roma's default_set body (per finding 1); it's just buried in the noise.
+
+#### Practical implications for Provincia
+
+- **Read each settlement's construction OR recruitment queue**: scan
+  forward from the `default_set\0` ASCIIZ marker, skip the 53-byte chain
+  header, and check if more bytes remain before the next chain's
+  `[u32 size=0x0c][u32 self-ptr][u16 nameLen]` preamble. If yes, the
+  excess is a queue entry. Decode by `u32(+0)` of the entry:
+    - **`u32(+0) == 2`** ⇒ BUILDING queue (53 bytes). Chain ID at +8.
+      Turns-remaining at +16.
+    - Otherwise (typically the entry starts with the chain_uuid bytes
+      followed by `[u16 nameLen][ASCIIZ name]`) ⇒ RECRUITMENT queue
+      (variable length). Unit name is the inline ASCII string at +4.
+- **Recruitment queue's unit-name is INLINE ASCII** — Provincia does
+  NOT need to load `export_descr_unit.txt` to decode it. (Building
+  queue's chain ID still requires an index map per session 11.)
+- **Fog-of-war / discovered-settlement state IS readable**: scan
+  `~0x1f48000..0x1f64000` for variable-length records matching the
+  layout above (record-size u32 followed by X, Y, visibility, ...,
+  ef000000 marker, duplicated name string). Each record = one
+  discovered settlement-type tile.
+- **The session-35 6 variable fields are NOT fog-of-war**. Provincia
+  should not attempt to read them as visibility. Their true semantics
+  remain unknown; require a non-movement action that affects the tile
+  grid to crack (e.g. building a road or razing a tile).
+
+#### Confidence summary
+
+- **CONFIRMED**:
+  - Construction queue entry is **53 bytes** with chain_id and turns
+    fields (consistent with session 11's finding in Alexander mod,
+    cross-validated here against RIS imperial's stone_wall queue).
+  - Recruitment queue entry is **35 bytes** with **inline ASCII unit
+    name** (single observation but unambiguous: "roman leves" string
+    matches RIS mod's EDU exactly).
+  - Diplomat-move leaves the 240×153 tile grid at `0x633c50..0xf84632`
+    untouched (1 record, 9 bytes — all in the boundary record overlapping
+    settlement zone).
+  - Fog-of-war / settlement discovery is NOT in the tile grid.
+- **STRONG**:
+  - `0x1f48540` is the discovered-settlement list; new diplomat sight
+    inserts a 90-byte record with X, Y, visibility, settlement type
+    name (duplicated).
+  - `0x1504eb9` is the diplomat's per-character "scout list" (4 new
+    `[1, tileID]` entries added by the move).
+- **HYPOTHESIS**:
+  - 0x1f40 = 8000 at queue +8 is `stone_wall` chain ID (needs EDB
+    index map to verify against the RIS expanded_bi.txt).
+  - +16 in build queue = turns remaining (could also be entry-priority
+    or queue-slot).
+  - The session 35 6 variable fields encode static map metadata
+    (terrain, height, region-id) — likely target for future
+    "build road" or "raze tile" save pair.
+
+#### Reproducer scripts
+
+- `dig-recruit1.js` — size/prefix/suffix orientation across 4 saves
+- `dig-recruit5..7.js` — Roma settlement-marker locator (UTF-16LE)
+- `dig-recruit8.js` — Roma region byte-by-byte diff with shift-by-18
+  alignment; revealed the 17 Roma sub-records are pre-Roma queue churn
+- `dig-recruit9.js` — sample-based shift tracker pinning the −18 byte
+  delta to 0xf84700 area
+- `dig-recruitA.js` — full shift-transition map (time-at-shift histogram)
+- `dig-recruitB..H.js` — zoom into 0xf8465e divergence; decode the
+  "default_set" body across all 4 saves; confirm queue entry layout
+- `dig-recruitI.js` — u32-aligned comparison of all 3 bodies; isolate
+  varying fields
+- `dig-diplomat-move1..3.js` — find the +89B insert (initial probes
+  with 2-pointer aligner — hit "stuck" several times)
+- `dig-diplomat-move4.js` — full byte-by-byte aligned diff
+  save_3.2→save_4.2; recorded all events in `out-diplomat-events.json`
+- `dig-diplomat-move5.js` — summarise large vs small events; identify
+  6 structural inserts
+- `dig-diplomat-move6.js` — dump bytes around each structural site
+- `dig-diplomat-move7.js` — cross-check with save_1.2→save_4.2 (clean
+  diplomat-move from baseline, no queue noise); confirmed +90 byte
+  insert + character scout list updates
+- `dig-diplomat-move8.js` — locate per-character region (Roman portrait
+  proximity)
+- `dig-diplomat-move9.js` — record-by-record scan of session 35's
+  240×153 tile grid; **proved fog-of-war is NOT in the grid**
+- `dig-diplomat-moveA.js` — characterise ThessalyRebellion Lua string
+  position drift (just offset migration, not a new event)
+- `dig-queue-build1.js` — full aligned diff save_1.2→save_2.2 (+166KB);
+  catalogued ~150 character-portrait inserts (AI character generation),
+  confirming the +166KB is end-of-turn-style AI churn — queue entry
+  itself is just 53 B (the structural entry already found in finding 1)
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
