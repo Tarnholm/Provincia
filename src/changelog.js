@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.320",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "Terrain overlay toggle — Geography is now a layer you can stack on top of any colorMode (Faction + terrain, Culture + terrain, etc.) instead of only as a standalone mode. Translucent 55% tint so the underlying map mode still reads. Independent toggle button in the view-options bar; remembered across sessions. Same TGA + palette as the standalone Geography mode." },
+    ],
+  },
+  {
     version: "0.9.319",
     date: "2026-05-12",
     items: [

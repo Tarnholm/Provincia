@@ -1239,6 +1239,13 @@ function App() {
   const [devGrid, setDevGrid] = useState(false);
   const [devCultureBorders, setDevCultureBorders] = useState(false);
   const [showSettlementTier, setShowSettlementTier] = useState(false);
+  const [showGeographyOverlay, setShowGeographyOverlay] = useState(() => {
+    try { return localStorage.getItem("showGeographyOverlay") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showGeographyOverlay", showGeographyOverlay ? "1" : "0"); } catch {}
+  }, [showGeographyOverlay]);
+  const [geographyOverlayCanvas, setGeographyOverlayCanvas] = useState(null);
   // Persist the Armies-overlay toggle. Defaults to ON — the user's main
   // reason to be in Live mode is seeing where everyone's stacks are; the
   // overlay was off-by-default which buried the feature behind a toggle
@@ -5274,6 +5281,17 @@ function App() {
       ctx.restore();
     }
 
+    // Geography overlay — translucent terrain layer on top of the base
+    // map. Toggleable independently of colorMode so the user can see e.g.
+    // faction colours + forest tiles at the same time. Skipped when the
+    // user is already in Geography mode (the colored map IS the terrain).
+    if (showGeographyOverlay && geographyOverlayCanvas && colorMode !== "geography") {
+      ctx.globalAlpha = 0.55;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(geographyOverlayCanvas, 0, 0);
+      ctx.globalAlpha = 1;
+    }
+
     // Settlement tier — recolor black city pixels by tier
     if (showSettlementTier && cityPixels.length > 0 && Object.keys(settlementTierMap).length > 0) {
       const TIER_COLORS = {
@@ -5343,6 +5361,8 @@ function App() {
     devMode,
     devCultureBorders,
     showSettlementTier,
+    showGeographyOverlay,
+    geographyOverlayCanvas,
     showLabels,
     cityPixels,
     settlementTierMap,
@@ -5421,11 +5441,11 @@ function App() {
     return () => { cancelled = true; };
   }, [mapCampaign, loadCampaignData, PUBLIC_URL]);
 
-  // Lazy-load map_ground_types.tga the first time the Geography overlay is
-  // activated. The TGA is ≈8 MB on the Imperial campaign so we skip it on
-  // boot — the user only pays the cost when they actually open the mode.
+  // Lazy-load map_ground_types.tga the first time the Geography mode or
+  // overlay is activated. The TGA is ≈8 MB on the Imperial campaign so we
+  // skip it on boot — the user only pays the cost when they actually need it.
   useEffect(() => {
-    if (colorMode !== "geography") return;
+    if (colorMode !== "geography" && !showGeographyOverlay) return;
     if (groundTypesPixels) return;
     if (groundTypesLoadingRef.current) return;
     const campaign = CAMPAIGNS[mapCampaign];
@@ -5449,7 +5469,67 @@ function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [colorMode, groundTypesPixels, mapCampaign, loadCampaignData]);
+  }, [colorMode, showGeographyOverlay, groundTypesPixels, mapCampaign, loadCampaignData]);
+
+  // Pre-bake a translucent geography canvas once the TGA loads. This lets
+  // the overlay layer composite cheaply each frame instead of re-sampling
+  // 700K pixels on every redraw.
+  useEffect(() => {
+    if (!groundTypesPixels || !groundTypesSize.width || !imgSize.width) {
+      setGeographyOverlayCanvas(null);
+      return;
+    }
+    const W = imgSize.width, H = imgSize.height;
+    const gW = groundTypesSize.width, gH = groundTypesSize.height;
+    const gData = groundTypesPixels;
+    const scaleX = gW / W, scaleY = gH / H;
+    const paletteRgb = [];
+    for (const [k, v] of Object.entries(GROUND_TYPE_PALETTE)) {
+      const [r, g, b] = k.split(",").map(Number);
+      paletteRgb.push({ key: (r << 16) | (g << 8) | b, color: v.color });
+    }
+    const out = new Uint8ClampedArray(W * H * 4);
+    const pxData = pixelDataRef.current;
+    const cache = new Int32Array(0x1000000).fill(-1);
+    for (let py = 0; py < H; py++) {
+      const gy = Math.min(gH - 1, Math.floor(py * scaleY));
+      const rowOff = gy * gW * 4;
+      const outRow = py * W * 4;
+      for (let px = 0; px < W; px++) {
+        const gx = Math.min(gW - 1, Math.floor(px * scaleX));
+        const gi = rowOff + gx * 4;
+        const packed = (gData[gi] << 16) | (gData[gi + 1] << 8) | gData[gi + 2];
+        let col = cache[packed];
+        if (col === -1) {
+          let found = null;
+          for (const entry of paletteRgb) {
+            if (entry.key === packed) { found = entry.color; break; }
+          }
+          col = found ? ((found[0] << 16) | (found[1] << 8) | found[2]) : -2;
+          cache[packed] = col;
+        }
+        const oi = outRow + px * 4;
+        // Off-map / water pixels: stay fully transparent so the underlying
+        // base map shows through unchanged.
+        if (col === -2) { out[oi + 3] = 0; continue; }
+        // Region pixels only — leave water/ocean alone. Sampling pxData is
+        // optional but keeps the overlay confined to land.
+        if (pxData) {
+          const ri = oi;
+          const br = pxData[ri], bg = pxData[ri + 1], bb = pxData[ri + 2];
+          if (!regions[`${br},${bg},${bb}`]) { out[oi + 3] = 0; continue; }
+        }
+        out[oi] = (col >> 16) & 0xff;
+        out[oi + 1] = (col >> 8) & 0xff;
+        out[oi + 2] = col & 0xff;
+        out[oi + 3] = 255;
+      }
+    }
+    const off = document.createElement("canvas");
+    off.width = W; off.height = H;
+    off.getContext("2d").putImageData(new ImageData(out, W, H), 0, 0);
+    setGeographyOverlayCanvas(off);
+  }, [groundTypesPixels, groundTypesSize, imgSize, regions]);
 
   // Factions starting order (used for both modes)
   useEffect(() => {
@@ -7376,6 +7456,9 @@ function App() {
             style={{ ...btnStyle(showWealthPanel), minWidth: 0 }}>Wealth</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
+          <button className="map-mode-btn" onClick={() => setShowGeographyOverlay(prev => !prev)}
+            title="Tint every land tile by its ground type (forest, mountain, swamp, etc.) on top of whatever map mode is active. Forest tiles enable passive ambushes."
+            style={{ ...btnStyle(showGeographyOverlay), minWidth: 0 }}>Terrain</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
             style={{ ...btnStyle(showArmies), minWidth: 0 }}>Armies</button>
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
