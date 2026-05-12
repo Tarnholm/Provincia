@@ -1237,7 +1237,16 @@ function App() {
   const [collapsedHrGroups, setCollapsedHrGroups] = useState(new Set(["__all__"])); // hidden-resource groups, start all collapsed
   const [devFlatColors, setDevFlatColors] = useState(false);
   const [devGrid, setDevGrid] = useState(false);
-  const [devCultureBorders, setDevCultureBorders] = useState(false);
+  // Border view mode: "off" → no borders. "faction" → faction group
+  // boundaries (thick) plus internal province lines (thin). "region" →
+  // just the internal province lines (thin), no faction outline. Tri-state
+  // cycle modelled on the Labels button.
+  const [borderMode, setBorderMode] = useState(() => {
+    try { return localStorage.getItem("borderMode") || "off"; } catch { return "off"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("borderMode", borderMode); } catch {}
+  }, [borderMode]);
   const [showSettlementTier, setShowSettlementTier] = useState(false);
   const [showGeographyOverlay, setShowGeographyOverlay] = useState(() => {
     try { return localStorage.getItem("showGeographyOverlay") === "1"; } catch { return false; }
@@ -5053,21 +5062,21 @@ function App() {
       ctx.drawImage(dimOverlay, 0, 0);
     }
 
-    // Borders toggle: faction borders (black) + internal province borders (light)
-    // In culture mode, use culture-group borders instead of faction borders
-    if (devCultureBorders) {
+    // Border tri-state: "faction" draws province lines + thick group boundary;
+    // "region" draws only the per-province lines; "off" skips entirely.
+    if (borderMode !== "off") {
       ctx.save();
       ctx.lineJoin = "round";
-      // Thin lighter borders between individual provinces (internal)
       ctx.strokeStyle = "rgba(0,0,0,0.25)";
       ctx.lineWidth = 0.6 / totalScale;
       for (const path of Object.values(borderPaths)) ctx.stroke(path);
-      // Thick black border at group boundaries
-      const groupPath = colorMode === "culture" ? cultureBorderPath : factionBorderPath;
-      if (groupPath) {
-        ctx.strokeStyle = "rgba(0,0,0,0.9)";
-        ctx.lineWidth = 2 / totalScale;
-        ctx.stroke(groupPath);
+      if (borderMode === "faction") {
+        const groupPath = colorMode === "culture" ? cultureBorderPath : factionBorderPath;
+        if (groupPath) {
+          ctx.strokeStyle = "rgba(0,0,0,0.9)";
+          ctx.lineWidth = 2 / totalScale;
+          ctx.stroke(groupPath);
+        }
       }
       ctx.restore();
     }
@@ -5359,7 +5368,7 @@ function App() {
     devDragResource,
     devGrid,
     devMode,
-    devCultureBorders,
+    borderMode,
     showSettlementTier,
     showGeographyOverlay,
     geographyOverlayCanvas,
@@ -7444,8 +7453,16 @@ function App() {
             style={{ ...btnStyle(devFlatColors), minWidth: 0 }}>Flat</button>
           <button className="map-mode-btn" onClick={() => setDevGrid(prev => !prev)}
             style={{ ...btnStyle(devGrid), minWidth: 0 }}>Grid</button>
-          <button className="map-mode-btn" onClick={() => setDevCultureBorders(prev => !prev)}
-            style={{ ...btnStyle(devCultureBorders), minWidth: 0 }}>Borders</button>
+          <button className="map-mode-btn"
+            onClick={() => setBorderMode(prev => prev === "off" ? "faction" : prev === "faction" ? "region" : "off")}
+            title={borderMode === "off"
+              ? "Borders: off — click for faction-group borders"
+              : borderMode === "faction"
+                ? "Borders: faction-group outline + province lines — click for region-only"
+                : "Borders: per-region province lines only — click to turn off"}
+            style={{ ...btnStyle(borderMode !== "off"), minWidth: 0 }}>
+            {borderMode === "off" ? "Borders" : borderMode === "faction" ? "Faction Bdrs" : "Region Bdrs"}
+          </button>
           <button className="map-mode-btn" onClick={() => setPinFaction(prev => !prev)}
             title={pinFaction
               ? "Pin Faction is ON — non-selected regions are heavily greyed when a faction is selected"

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.321",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "Borders button is now tri-state — cycles off → Faction Bdrs (thin per-region lines + thick faction-group outline) → Region Bdrs (per-region lines only, no faction outline). Mirrors the Labels button's cycle behaviour. State persists across sessions." },
+    ],
+  },
+  {
     version: "0.9.320",
     date: "2026-05-12",
     items: [
