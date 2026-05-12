@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.322",
+    date: "2026-05-12",
+    items: [
+      { type: "feature", text: "Resources is now a toggleable view overlay — stack resource icons on top of any colorMode (Faction + Resources, Culture + Resources, Geography + Resources, etc.) instead of having to switch out of your current map mode. The dedicated 'Resources' colorMode is still there and unchanged; the new toggle button in the view-options bar shows the same icons without the side-panel/filter UI." },
+    ],
+  },
+  {
     version: "0.9.321",
     date: "2026-05-12",
     items: [

@@ -1255,6 +1255,14 @@ function App() {
     try { localStorage.setItem("showGeographyOverlay", showGeographyOverlay ? "1" : "0"); } catch {}
   }, [showGeographyOverlay]);
   const [geographyOverlayCanvas, setGeographyOverlayCanvas] = useState(null);
+  // Resources as an overlay (in addition to the standalone "resource" colorMode).
+  // When on, the resource icons render on top of any colorMode the user is in.
+  const [showResourcesOverlay, setShowResourcesOverlay] = useState(() => {
+    try { return localStorage.getItem("showResourcesOverlay") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showResourcesOverlay", showResourcesOverlay ? "1" : "0"); } catch {}
+  }, [showResourcesOverlay]);
   // Persist the Armies-overlay toggle. Defaults to ON — the user's main
   // reason to be in Live mode is seeing where everyone's stacks are; the
   // overlay was off-by-default which buried the feature behind a toggle
@@ -5107,8 +5115,12 @@ function App() {
     }
     ctx.restore();
 
-    // Draw resource icons at their actual map coordinates (resource mode only)
-    if (colorMode === "resource" && Object.keys(resourceImages).length > 0) {
+    // Draw resource icons at their actual map coordinates. Active in the
+    // dedicated "resource" colorMode AND whenever the Resources overlay
+    // toggle is on (so you can layer them on top of Faction / Culture /
+    // Geography / etc.).
+    const showResourceIcons = colorMode === "resource" || showResourcesOverlay;
+    if (showResourceIcons && Object.keys(resourceImages).length > 0) {
       const ICON_PX = Math.min(22, Math.max(8, 6 + zoom * 3)); // scales with zoom: 8–22px
       const iconSz = ICON_PX / totalScale;
       const half = iconSz / 2;
@@ -5372,6 +5384,7 @@ function App() {
     showSettlementTier,
     showGeographyOverlay,
     geographyOverlayCanvas,
+    showResourcesOverlay,
     showLabels,
     cityPixels,
     settlementTierMap,
@@ -5802,8 +5815,8 @@ function App() {
         else setRegionInfo(prev => prev === null ? prev : null);
       } else setRegionInfo(prev => prev === null ? prev : null);
 
-      // Resource icon hover detection
-      if (colorMode === "resource") {
+      // Resource icon hover detection — active in dedicated mode OR overlay
+      if (colorMode === "resource" || showResourcesOverlay) {
         const ICON_PX = 20;
         const SKIP = new Set([]);
         let found = null;
@@ -7476,6 +7489,9 @@ function App() {
           <button className="map-mode-btn" onClick={() => setShowGeographyOverlay(prev => !prev)}
             title="Tint every land tile by its ground type (forest, mountain, swamp, etc.) on top of whatever map mode is active. Forest tiles enable passive ambushes."
             style={{ ...btnStyle(showGeographyOverlay), minWidth: 0 }}>Terrain</button>
+          <button className="map-mode-btn" onClick={() => setShowResourcesOverlay(prev => !prev)}
+            title="Show resource icons on the map without switching out of the current color mode."
+            style={{ ...btnStyle(showResourcesOverlay), minWidth: 0 }}>Resources</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
             style={{ ...btnStyle(showArmies), minWidth: 0 }}>Armies</button>
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
