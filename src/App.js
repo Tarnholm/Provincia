@@ -5070,15 +5070,21 @@ function App() {
       ctx.drawImage(dimOverlay, 0, 0);
     }
 
-    // Border tri-state: "faction" draws province lines + thick group boundary;
-    // "region" draws only the per-province lines; "off" skips entirely.
+    // Border tri-state: "faction" draws thin internal province lines plus
+    // a thick group boundary on the faction outline; "region" draws every
+    // province border thick + dark (as if every region were its own faction);
+    // "off" skips entirely.
     if (borderMode !== "off") {
       ctx.save();
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "rgba(0,0,0,0.25)";
-      ctx.lineWidth = 0.6 / totalScale;
-      for (const path of Object.values(borderPaths)) ctx.stroke(path);
-      if (borderMode === "faction") {
+      if (borderMode === "region") {
+        ctx.strokeStyle = "rgba(0,0,0,0.9)";
+        ctx.lineWidth = 2 / totalScale;
+        for (const path of Object.values(borderPaths)) ctx.stroke(path);
+      } else {
+        ctx.strokeStyle = "rgba(0,0,0,0.25)";
+        ctx.lineWidth = 0.6 / totalScale;
+        for (const path of Object.values(borderPaths)) ctx.stroke(path);
         const groupPath = colorMode === "culture" ? cultureBorderPath : factionBorderPath;
         if (groupPath) {
           ctx.strokeStyle = "rgba(0,0,0,0.9)";
@@ -5727,8 +5733,9 @@ function App() {
   }, []);
 
   function handleMouseDown(e) {
-    // Dev mode + resource mode: check if clicking on a resource icon to drag it
-    if (devMode && colorMode === "resource" && e.button === 0) {
+    // Dev mode + (resource mode OR resources overlay): check if clicking
+    // on a resource icon to drag it.
+    if (devMode && (colorMode === "resource" || showResourcesOverlay) && e.button === 0) {
       const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
       const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
       const ICON_PX = 20;

@@ -8,6 +8,20 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.324",
+    date: "2026-05-12",
+    items: [
+      { type: "improvement", text: "Dev mode can drag resources while the Resources overlay is on — drag previously only worked inside the dedicated 'Resources' colorMode, so you couldn't move a resource without losing your active map mode (Faction, Culture, Geography, etc.)." },
+    ],
+  },
+  {
+    version: "0.9.323",
+    date: "2026-05-12",
+    items: [
+      { type: "fix", text: "Region Bdrs mode now renders province borders thick + black (same weight + alpha as the faction outline in Faction Bdrs mode), instead of using the thin light lines that were only meant for internal sub-faction divisions." },
+    ],
+  },
+  {
     version: "0.9.322",
     date: "2026-05-12",
     items: [
