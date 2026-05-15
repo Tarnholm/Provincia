@@ -87,6 +87,28 @@ function main() {
   // Two-save-no-input diffs land here; treat the bracketing range as known.
   claim(bm, 0x43f8, 0x44e2, claims, "Toggle_fow / RNG counter block");
 
+  // --- 3a. Post-fow 35-stride table (session 57) ----------------------------
+  // Framed-undecoded; sits between RNG counter block and the diplo event log.
+  claim(bm, 0x44e2, 0x2a25d, claims, "post-fow-35-stride-table");
+
+  // --- 3b. Diplo event log (session 57) — 1002 × 12 B ----------------------
+  claim(bm, 0x2a25d, 0x2d155, claims, "diplo-event-log");
+
+  // --- 3c. Diplo slot-table (session 56) — 12-byte slot table -------------
+  claim(bm, 0x2d4a9, 0x618f8, claims, "diplo-slot-table");
+
+  // --- 3d. Zone A — battle/message log slots (session 54) -----------------
+  claim(bm, 0x61c47, 0x846af, claims, "ZoneA-log-slots");
+
+  // --- 3e. Zone B — scripted-event registry (session 54) ------------------
+  claim(bm, 0x846af, 0xa8beb, claims, "ZoneB-scripted-events");
+
+  // --- 3f. CHARACTER_PATHS section (session 55) ---------------------------
+  claim(bm, 0xa8beb, 0xf8fd2, claims, "character-paths");
+
+  // --- 3g. Per-region mercenary pool table (session 58) -------------------
+  claim(bm, 0x14e5ac6, 0x1501615, claims, "merc-pool-table");
+
   // --- 4. Mid-file tile-grid matrix at 0xf8fd2 (CONFIRMED 57,120 × 267) -----
   // 240×238 × 267-byte stride. Crosses body-root boundary into the
   // "9.78 MB tile-attribute gap". One contiguous array per session 22/52.

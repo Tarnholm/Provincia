@@ -11664,6 +11664,42 @@ Coverage gain: ~0.33% of save now labelled (mercenary pool zone).
 
 ---
 
+### Findings 2026-05-15 (background session 59 — coverage refresh after sessions 54-58)
+
+Updated `cover.js` to claim the seven new fixed-offset zones decoded in sessions 54-58:
+- `post-fow-35-stride-table` 0x44e2..0x2a25d (155,003 B)
+- `diplo-event-log` 0x2a25d..0x2d155 (12,024 B)
+- `diplo-slot-table` 0x2d4a9..0x618f8 (214,095 B)
+- `ZoneA-log-slots` 0x61c47..0x846af (141,928 B)
+- `ZoneB-scripted-events` 0x846af..0xa8beb (148,796 B)
+- `character-paths` 0xa8beb..0xf8fd2 (328,679 B)
+- `merc-pool-table` 0x14e5ac6..0x1501615 (113,487 B)
+
+**Before**: 70.38% claimed / 29.62% unknown.
+**After**:  73.61% claimed / 26.39% unknown.
+**Gain**:   +3.23 percentage points (~1.11 MB freshly labelled), and the entire pre-tile-grid head region (0x44e2..0xf8fd2) is now fully covered.
+
+New top-10 largest UNKNOWN runs (next-session targets, all live in the post-tile-grid settlement zone):
+
+| # | start         | end           | bytes  | % file |
+|---|---------------|---------------|--------|--------|
+| 1 | 0x015b7114    | 0x015c2d47    | 48,179 | 0.14%  |
+| 2 | 0x01506dea    | 0x015102b5    | 38,091 | 0.11%  |
+| 3 | 0x016373ee    | 0x0163f1d3    | 32,229 | 0.09%  |
+| 4 | 0x01585c08    | 0x0158d753    | 31,563 | 0.09%  |
+| 5 | 0x01d0edb0    | 0x01d1576d    | 27,069 | 0.08%  |
+| 6 | 0x01f1a697    | 0x01f1fc14    | 21,885 | 0.06%  |
+| 7 | 0x01632150    | 0x0163709f    | 20,303 | 0.06%  |
+| 8 | 0x018be452    | 0x018c1c1d    | 14,283 | 0.04%  |
+| 9 | 0x01d000d6    | 0x01d0373b    | 13,925 | 0.04%  |
+| 10| 0x01cf5669    | 0x01cf8cbb    | 13,906 | 0.04%  |
+
+The previous monster unknowns (0x61c47..0xf8fd2 = 619 KB; 0x2d4a9..0x618f8 = 214 KB; 0x44e2..0x2d15a = 167 KB; 0x14e5ac6..0x1501615 = 113 KB) are all gone — every top-10 run is now under 50 KB. Remaining unknowns are scattered intra-settlement-zone gaps (per-settlement non-chain payload), exactly the next crack target.
+
+Files: `scripts/save-cracker/cover.js` (added seven `claim()` calls).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
