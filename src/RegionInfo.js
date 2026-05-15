@@ -319,10 +319,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         width: "100%",
         minHeight: "100%",
         display: "grid",
-        // UI reshuffle: narrower buildings column (5×82 + 4×4 gap = 426px)
-        // since RegionInfo is now in the right column instead of the wide
-        // bottom strip. Columns: info+tags | buildings | recruitable | armies.
-        gridTemplateColumns: "240px 430px minmax(220px, 1fr) minmax(240px, 1fr)",
+        // UI reshuffle: 2-row layout. Top row: region details + buildings.
+        // Bottom row: recruitable + armies stacked under them. Lets the
+        // narrow right column show all four sections without horizontal
+        // scrolling.
+        gridTemplateColumns: "240px 1fr 1fr",
+        gridTemplateAreas: '"info buildings buildings" "recruit recruit armies"',
         gap: 6,
         paddingBottom: 4,
         color: "#f7f7f7",
@@ -333,7 +335,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       }}
     >
       {/* Left: region details */}
-      <div style={{ paddingRight: 6, minWidth: 200, overflow: "hidden" }}>
+      <div style={{ gridArea: "info", paddingRight: 6, minWidth: 200, overflow: "hidden" }}>
         {region && (
           <div
             title="Double-click to copy region name"
@@ -713,6 +715,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Right: buildings + garrison */}
       <div
         style={{
+          gridArea: "buildings",
           borderLeft: "1px solid #8882",
           paddingLeft: 12,
           boxSizing: "border-box",
@@ -885,11 +888,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         )}
       </div>
 
-      {/* Fourth column: recruitable units in this settlement (from EDB) */}
+      {/* Recruitable column — now in the second grid row, below info+buildings */}
       <div
         style={{
-          borderLeft: "1px solid #8882",
-          paddingLeft: 12,
+          gridArea: "recruit",
+          borderTop: "1px solid #8882",
+          paddingTop: 6,
           boxSizing: "border-box",
           minWidth: 0,
           height: "100%",
@@ -976,10 +980,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         })()}
       </div>
 
-      {/* Fifth column: garrison + field armies for this region */}
+      {/* Armies column — also in the second grid row, beside recruitable */}
       <div
         style={{
+          gridArea: "armies",
+          borderTop: "1px solid #8882",
           borderLeft: "1px solid #8882",
+          paddingTop: 6,
           paddingLeft: 12,
           boxSizing: "border-box",
           minWidth: 0,

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.342",
+    date: "2026-05-15",
+    items: [
+      { type: "change", text: "Region panel inner layout switched from 4-column-strip to 2-row layout. Row 1: region details + buildings. Row 2: recruitable units + garrison/field armies (the 'unit bits' moved under everything else). Uses grid-template-areas so the layout is declarative. Recruit and armies now each get half the width instead of a tight side-column." },
+    ],
+  },
+  {
     version: "0.9.341",
     date: "2026-05-15",
     items: [
