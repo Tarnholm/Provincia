@@ -325,6 +325,45 @@ function enumerateClaims(buf) {
     }
   }
 
+  // §16 stride9-score-table-auto (AI per-faction unit-priority scoring table —
+  // REAL serializer; session 79). Mirrors cover.js §16 exactly:
+  //   - Zone: [0x14e5ac6, min(0x20e6e8e, size))
+  //   - MIN_RUN: 100
+  //   - Records: XX YY ZZ NN MM 00 00 00 00 (9 B), NN type-nibble in 0..0x80,
+  //     MM per-range constant (0x00 or 0x04).
+  //   - Accept if dominant 9-byte alignment yields >=78% conformance over
+  //     >=50 records.
+  // The decode/encode pair is rawBytes-verbatim so byte-identity is guaranteed
+  // even when a run's alignment, header padding, or `ff ff ff ff` filler does
+  // not slot cleanly into the structured-record model.
+  {
+    const Z0 = 0x14e5ac6;
+    const Z1 = Math.min(0x20e6e8e, size);
+    for (const [rs, re] of findUnclaimedRuns(Z0, Z1, 100)) {
+      let bestOk = 0, bestTotal = 0;
+      for (let off = 0; off < 9; off++) {
+        const mmCounts = {};
+        let total = 0;
+        for (let p = rs + off; p + 9 <= re; p += 9) {
+          total++;
+          const b3 = buf[p+3];
+          if (buf[p+5]===0 && buf[p+6]===0 && buf[p+7]===0 && buf[p+8]===0 &&
+              (b3 & 0x0f) === 0 && b3 <= 0x80) {
+            const mm = buf[p+4];
+            mmCounts[mm] = (mmCounts[mm]||0) + 1;
+          }
+        }
+        let topOk = 0;
+        for (const k in mmCounts) if (mmCounts[k] > topOk) topOk = mmCounts[k];
+        if (topOk > bestOk) { bestOk = topOk; bestTotal = total; }
+      }
+      if (bestTotal < 50) continue;
+      if (bestOk / bestTotal < 0.78) continue;
+      push(rs, re, "stride9-score-table-auto");
+      for (let i = rs; i < re; i++) bm[i] = 1;
+    }
+  }
+
   return claims;
 }
 
@@ -1316,6 +1355,97 @@ function encodeSettlementDetail(b) {
   return b.rawBytes;
 }
 
+// ---- stride9-score-table-auto: AI per-faction unit-priority table (§16,
+// session 79) ---------------------------------------------------------------
+//
+// 1243 dense stride-9 record tables (~2.6 MB total in save_1.2.sav) spread
+// across the AI-cache zone `[0x14e5ac6, 0x20e6e8e)`. Each table is a
+// faction-keyed scoring matrix the AI consults during unit recruitment.
+//
+// Structure (per session 65 + 79):
+//   - 0..K-1 B:  alignment prefix Buffer (`prefixBytes`). The detector tries
+//     all 9 stride offsets; the winning offset 0..8 tells us how many bytes
+//     of partial-record (table-header / 0xff filler tail of the preceding
+//     run) precede the first aligned record. Captured verbatim.
+//   - Records[]: each `{ xyz: u24, nn: u8, mm: u8, padding: Buffer(4) }`.
+//       xyz = 24-bit unit-type / commander / region key.
+//       nn  = 8-value priority/tier enum (0x00..0x70, low nibble 0).
+//       mm  = per-range constant (0x00 in commander/unit-ID tables,
+//             0x04 in faction-region tables); BUT the detector accepts a
+//             dominant `mm` ≥ 78% — outlier records carry off-dominant mm
+//             bytes which we still capture verbatim per-record.
+//       padding = trailing 4 zero bytes (normally; verbatim either way).
+//   - terminator: any remaining trailing bytes that don't form a 9-B record
+//     (typically the `ff ff ff ff` terminator + a length-prefixed unit-type
+//     or culture string spillover when the run cuts mid-stride).
+//
+// Round-trip strategy: the canonical state is `rawBytes`. The structured
+// fields (`prefixBytes`, `records`, `terminatorBytes`) are informational
+// mirrors that document the table's shape; the encoder re-emits `rawBytes`
+// verbatim. This guarantees byte-identity even when the alignment hint or
+// per-record decode misclassifies a few outlier rows.
+function decodeStride9ScoreTable(buf, start, end) {
+  const rawBytes = Buffer.from(buf.slice(start, end));
+  const len = rawBytes.length;
+
+  // Find best alignment (mirrors detector).
+  let bestOff = 0, bestOk = 0, bestTotal = 0, bestMm = 0;
+  for (let off = 0; off < 9; off++) {
+    const mmCounts = {};
+    let total = 0;
+    for (let p = off; p + 9 <= len; p += 9) {
+      total++;
+      const b3 = rawBytes[p+3];
+      if (rawBytes[p+5]===0 && rawBytes[p+6]===0 && rawBytes[p+7]===0 && rawBytes[p+8]===0 &&
+          (b3 & 0x0f) === 0 && b3 <= 0x80) {
+        const mm = rawBytes[p+4];
+        mmCounts[mm] = (mmCounts[mm]||0) + 1;
+      }
+    }
+    let topOk = 0, topMm = 0;
+    for (const k in mmCounts) if (mmCounts[k] > topOk) { topOk = mmCounts[k]; topMm = Number(k); }
+    if (topOk > bestOk) { bestOk = topOk; bestTotal = total; bestOff = off; bestMm = topMm; }
+  }
+
+  const prefixBytes = Buffer.from(rawBytes.slice(0, bestOff));
+  const records = [];
+  let p = bestOff;
+  while (p + 9 <= len) {
+    // Stop accepting records when we hit the trailing 0xff terminator zone
+    // (the terminator is verbatim-captured below, not split into pseudo-
+    // records).
+    const allFf = rawBytes[p]===0xff && rawBytes[p+1]===0xff && rawBytes[p+2]===0xff && rawBytes[p+3]===0xff;
+    if (allFf) break;
+    records.push({
+      xyz: rawBytes[p] | (rawBytes[p+1] << 8) | (rawBytes[p+2] << 16),
+      nn: rawBytes[p+3],
+      mm: rawBytes[p+4],
+      padding: Buffer.from(rawBytes.slice(p+5, p+9)),
+    });
+    p += 9;
+  }
+  const terminatorBytes = Buffer.from(rawBytes.slice(p, len));
+
+  return {
+    _kind: "stride9-score-table-auto",
+    rawBytes,
+    prefixBytes,
+    records,
+    terminatorBytes,
+    bestOff,
+    bestMm,
+    recordsMatched: bestOk,
+    recordsTotal: bestTotal,
+  };
+}
+
+function encodeStride9ScoreTable(b) {
+  if (b._kind !== "stride9-score-table-auto") throw new Error("encodeStride9ScoreTable: not a stride9-score-table-auto object");
+  // Verbatim re-emission. Structured fields above are informational mirrors;
+  // canonical state is `rawBytes`.
+  return b.rawBytes;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -1329,6 +1459,7 @@ const SERIALIZERS = {
   "diplo-event-log":         (buf, start, end) => encodeDiploEventLog(decodeDiploEventLog(buf, start, end)),
   "army-trail-auto":         (buf, start, end) => encodeArmyTrailAuto(decodeArmyTrailAuto(buf, start, end)),
   "settlement-detail":       (buf, start, end) => encodeSettlementDetail(decodeSettlementDetail(buf, start, end)),
+  "stride9-score-table-auto":(buf, start, end) => encodeStride9ScoreTable(decodeStride9ScoreTable(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };

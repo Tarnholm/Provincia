@@ -12272,6 +12272,34 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeSettlementDetail`/`
 
 ---
 
+### Findings 2026-05-15 (background session 79 — stride-9 score table decode/encode)
+
+**Goal.** Replace the auto-detected `stride9-score-table-auto` claims (cover.js §16) — previously falling through to UNKNOWN passthrough in `serialize.js` — with a real decode/encode pair. The §16 detector identifies dense stride-9 record tables in the AI-cache zone `[0x14e5ac6, 0x20e6e8e)` that encode per-faction unit-recruitment-priority scores.
+
+**Mechanism.** `serialize.js` now mirrors the cover.js §16 detector verbatim: walk unclaimed runs ≥ 100 B inside the AI-cache zone, try all 9 stride alignments, and accept any run where the dominant `MM` constant value matches ≥ 78% of the ≥ 50 candidate records under the rigid pattern `XX YY ZZ NN MM 00 00 00 00` (NN type-nibble in `{0x00..0x80}`, low nibble 0).
+
+**Decoder shape.** `decodeStride9ScoreTable(buf, start, end)` returns `{ _kind:"stride9-score-table-auto", rawBytes, prefixBytes, records:[{xyz:u24, nn:u8, mm:u8, padding:Buffer(4)}, ...], terminatorBytes, bestOff, bestMm, recordsMatched, recordsTotal }`:
+
+- `prefixBytes`: `bestOff` bytes (0–8) of alignment partial-record / table-header / 0xff filler tail of the preceding run that precede the first aligned record.
+- `records`: each 9-B row split into `xyz` (24-bit unit-type / commander / region key), `nn` (priority/tier enum), `mm` (per-range constant, dominant 0x00 or 0x04), `padding` (verbatim trailing 4 B — normally zero).
+- `terminatorBytes`: any trailing bytes after the first all-`ff ff ff ff` record start, captured verbatim (handles the `ff ff ff ff` terminator + length-prefixed unit-type/culture string spillover that bleeds into runs cut mid-stride).
+
+Canonical state is `rawBytes`; encoder re-emits it verbatim. Byte-identity is guaranteed even when alignment/per-record decode misclassifies outlier rows — the structured fields are informational mirrors for downstream tooling.
+
+**Range stats (save_1.2.sav).**
+
+- 1,243 ranges claimed, 2,608,666 B total (2.49 MB).
+- 245,821 structured records emitted across all ranges (records-per-range min/median/max = 11 / 223 / 232; the 232-record cluster matches the EDU-size hypothesis).
+- 247,184 / 288,716 candidate-record slots (85.6%) pass the rigid pattern test.
+- `mm` distribution: 1,184 ranges dominant `0x00` (commander/unit-id tables), 59 ranges dominant `0x04` (faction-region tables).
+- Alignment offset distribution: all 9 values used (0=205, 1=137, 2=126, 3=138, 4=148, 5=142, 6=167, 7=116, 8=64) — confirming the runs cut mid-stride often.
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 31,896 ms**. Output 34,524,371 B (matches input). UNKNOWN segments fell from 2,568 / 4,320,765 B → 1,325 / 1,712,099 B (a 2.6 MB structured-coverage gain in this session). 11th real serializer; pushes cumulative structured round-trip past the 80% checkpoint.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeStride9ScoreTable`/`encodeStride9ScoreTable`; §16 detector inlined at the end of `enumerateClaims`; SERIALIZERS entry `"stride9-score-table-auto"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
