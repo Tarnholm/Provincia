@@ -6962,12 +6962,17 @@ function App() {
             Deselect
           </button>
         </div>
-        <div style={{ padding: "0 8px 4px 8px" }}>
+        <div style={{ padding: "0 8px 4px 8px", position: "relative" }}>
+          {/* Unified search: filters the visible faction grid AND shows a
+              province/settlement dropdown for jump-to-and-select. Replaces
+              the old separate province search that lived in the bottom-
+              strip right column. */}
           <input
             type="text"
-            placeholder="Search faction..."
-            value={factionSearch}
-            onChange={(e) => setFactionSearch(e.target.value)}
+            ref={searchInputRef}
+            placeholder="Search... (Ctrl+F)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: "100%", boxSizing: "border-box", padding: "3px 8px",
               borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
@@ -6975,6 +6980,7 @@ function App() {
               outline: "none",
             }}
           />
+          {renderProvinceDropdown && renderProvinceDropdown()}
         </div>
         <div
           style={{
@@ -6987,8 +6993,13 @@ function App() {
           }}
         >
           {list.filter(f => {
-            // Search filter
-            if (factionSearch && !f.toLowerCase().includes(factionSearch.toLowerCase())) return false;
+            // Search filter (unified search bar — same query that drives
+            // the province dropdown). Matches faction id or display name.
+            if (searchQuery) {
+              const q = searchQuery.toLowerCase();
+              const display = (factionDisplayNames && factionDisplayNames[f]) || f;
+              if (!f.toLowerCase().includes(q) && !display.toLowerCase().includes(q)) return false;
+            }
             // Hide eliminated factions: in Live mode, drop factions
             // that hold zero regions per the live factionRegionsMap.
             // (The map is updated on every capture event so dead
@@ -7105,16 +7116,6 @@ function App() {
 
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
-          <button
-            style={{ fontSize: "0.85rem", padding: "2px 8px", borderRadius: 7, border: "1px solid #bbb",
-              cursor: selectedProvinces.length ? "pointer" : "not-allowed",
-              opacity: selectedProvinces.length ? 1 : 0.7, fontWeight: 500 }}
-            onClick={() => { setSelectedProvinces([]); setSelectedFaction(null); }}
-            disabled={selectedProvinces.length === 0}
-          >Deselect All</button>
-        </div>
-
         {victoryMeta && (
           <div style={{ marginBottom: 8, fontSize: "0.95rem" }}>
             Goal: hold {victoryMeta.hold_regions?.length || 0} regions, conquer at least{" "}
@@ -7123,19 +7124,17 @@ function App() {
         )}
 
         {items.length ? (
-          // 2-row horizontal grid: items flow column-by-column with exactly
-          // 2 rows; long lists scroll horizontally. Halves the vertical
-          // footprint vs the old single-column <ul> while keeping each
-          // entry's drag handle + label intact.
+          // Wrapping flex: items flow left→right and wrap to new rows when
+          // they run out of horizontal space. Vertical overflow scrolls
+          // (scrollbar hidden globally via App.css). Compact whitespace
+          // keeps the panel tall enough to show several wrapped rows.
           <ul style={{
-            margin: 0, padding: 0, fontSize: "0.85rem", listStyle: "none",
-            display: "grid",
-            gridTemplateRows: "auto auto",
-            gridAutoFlow: "column",
-            gridAutoColumns: "minmax(140px, max-content)",
+            margin: 0, padding: 0, fontSize: "0.82rem", listStyle: "none",
+            display: "flex", flexWrap: "wrap", alignContent: "flex-start",
             gap: 4,
-            overflowX: "auto",
-            overflowY: "hidden",
+            maxHeight: "100%",
+            overflowY: "auto",
+            overflowX: "hidden",
           }}>
             {items.map(({ rgbKey, displayName }, idx) => (
               <li
@@ -7149,15 +7148,17 @@ function App() {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  padding: "3px 6px",
-                  borderRadius: 6,
+                  padding: "2px 6px",
+                  borderRadius: 5,
                   background: "rgba(255,255,255,0.05)",
                   cursor: devDragResource ? "grabbing" : "grab",
                   whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  maxWidth: "100%",
                 }}
               >
-                <span style={{ color: "#aaa", fontVariantNumeric: "tabular-nums", fontSize: "0.78rem" }}>{idx + 1}.</span>
-                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{displayName}</span>
+                <span style={{ color: "#aaa", fontVariantNumeric: "tabular-nums", fontSize: "0.76rem" }}>{idx + 1}.</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{displayName}</span>
               </li>
             ))}
           </ul>
@@ -7183,7 +7184,75 @@ function App() {
     }
   }
 
+  // Province-results dropdown anchored to whichever search input is
+  // mounted (now the unified one in the factions panel). Returns null when
+  // there's no query / no matches. Extracted from the old renderSearch so
+  // the factions-panel input can render the same dropdown.
+  function renderProvinceDropdown() {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return null;
+    const allMatches = Object.entries(regions)
+      .filter(([, v]) => v.region?.toLowerCase().includes(q) || v.city?.toLowerCase().includes(q));
+    const results = allMatches
+      .slice(0, 8)
+      .map(([key, v]) => ({ key, label: v.region && v.city ? `${v.region} (${v.city})` : v.region || v.city || key }));
+    if (results.length === 0) return null;
+    const overflow = Math.max(0, allMatches.length - results.length);
+    const inputEl = searchInputRef.current;
+    const rect = inputEl ? inputEl.getBoundingClientRect() : null;
+    if (!rect) return null;
+    const highlight = (label) => {
+      const lower = label.toLowerCase();
+      const parts = [];
+      let last = 0;
+      for (let i = 0; i < label.length; ) {
+        const found = lower.indexOf(q, i);
+        if (found === -1) break;
+        if (found > last) parts.push({ text: label.slice(last, found), hit: false });
+        parts.push({ text: label.slice(found, found + q.length), hit: true });
+        last = found + q.length;
+        i = last;
+      }
+      if (last < label.length) parts.push({ text: label.slice(last), hit: false });
+      if (parts.length === 0) return label;
+      return parts.map((p, i) => p.hit
+        ? <mark key={i} style={{ background: "rgba(220,166,74,0.4)", color: "#fff", padding: 0, borderRadius: 2 }}>{p.text}</mark>
+        : <span key={i}>{p.text}</span>);
+    };
+    return createPortal((
+      <div className="popover-pop-in" style={{
+        position: "fixed",
+        top: rect.bottom + 2, left: rect.left, width: rect.width,
+        zIndex: 9999,
+        background: "rgba(30,30,30,0.97)", borderRadius: 7,
+        border: "1px solid #666",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+        overflow: "hidden",
+      }}>
+        {results.map((r) => (
+          <div key={r.key}
+            onClick={() => handleSearchSelect(r)}
+            style={{ padding: "6px 10px", cursor: "pointer", fontSize: "0.88rem", color: "#eee", borderBottom: "1px solid #3335" }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+          >
+            {highlight(r.label)}
+          </div>
+        ))}
+        {overflow > 0 && (
+          <div style={{ padding: "5px 10px", fontSize: "0.78rem", color: "#aaa", fontStyle: "italic", background: "rgba(0,0,0,0.25)" }}>
+            +{overflow} more — refine search
+          </div>
+        )}
+      </div>
+    ), document.body);
+  }
+
   function renderSearch() {
+    // Deprecated — unified search lives in the factions panel now.
+    // Kept as a no-op for any legacy callers.
+    return null;
+    // eslint-disable-next-line no-unreachable
     const q = searchQuery.trim().toLowerCase();
     const allMatches = q.length > 0
       ? Object.entries(regions)
@@ -10689,31 +10758,19 @@ function App() {
               </CustomScrollArea>
 
               <div style={{ display: "flex", flexDirection: "column", gap: PANELS_GAP, height: "100%", overflow: "hidden" }}>
-                {/* Search bar + Recent regions share one row to save
-                    vertical space. Search keeps a fixed width on the left
-                    so its input stays usable; recent flexes to fill the
-                    remaining space and scrolls horizontally if it overflows. */}
-                <div style={{ display: "flex", gap: PANELS_GAP, alignItems: "stretch", flexShrink: 0 }}>
-                  <div className="panel" style={{ padding: "8px 10px", flex: "0 0 220px", minWidth: 0 }}>
-                    {renderSearch()}
-                  </div>
+                {/* Top row: Recent regions + Summary toggle inline.
+                    The dedicated province search box was removed in
+                    0.9.357 — search is now the unified bar above the
+                    factions panel. */}
+                {(recentRegions.length > 0 || selectedProvinces.length > 0) && (
+                <div className="panel" style={{ padding: "6px 10px", flexShrink: 0, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                   {recentRegions.length > 0 && (
-                    <div className="panel" style={{ padding: "6px 10px", flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-                      <div style={{
-                        fontWeight: 700, fontSize: "0.7rem", color: "#dca64a",
-                        display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                      }}>
-                        <span>↶ Recent</span>
-                        <span
-                          onClick={() => setRecentRegions([])}
-                          title="Clear recent regions"
-                          style={{ fontSize: "0.65rem", fontWeight: 400, opacity: 0.7, cursor: "pointer" }}
-                        >clear</span>
-                      </div>
+                    <>
+                      <span style={{ fontWeight: 700, fontSize: "0.7rem", color: "#dca64a", flexShrink: 0 }}>↶ Recent</span>
                       <div className="resource-panel-scroll" style={{
                         display: "flex", flexWrap: "nowrap", gap: 3,
                         overflowX: "auto", overflowY: "hidden",
-                        scrollbarWidth: "none",
+                        scrollbarWidth: "none", flex: 1, minWidth: 0,
                       }}>
                         {recentRegions.map(key => {
                           const r = regions[key];
@@ -10739,9 +10796,27 @@ function App() {
                           );
                         })}
                       </div>
-                    </div>
+                      <span
+                        onClick={() => setRecentRegions([])}
+                        title="Clear recent regions"
+                        style={{ fontSize: "0.65rem", fontWeight: 400, opacity: 0.7, cursor: "pointer", flexShrink: 0 }}
+                      >clear</span>
+                    </>
+                  )}
+                  {selectedProvinces.length > 0 && (
+                    <button
+                      onClick={() => setShowFactionSummary((s) => !s)}
+                      style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
+                        border: "1px solid #888", cursor: "pointer", flexShrink: 0,
+                        background: showFactionSummary ? "#dca64a" : "transparent",
+                        color: showFactionSummary ? "#221" : "inherit" }}
+                      title="Toggle faction summary"
+                    >
+                      {showFactionSummary ? "Summary ON" : "Summary"}
+                    </button>
                   )}
                 </div>
+                )}
 
                 {/* Pinned regions */}
                 {pinnedRegions.length > 0 && (
@@ -10779,10 +10854,19 @@ function App() {
                   trackWidth={SCROLLBAR_GUTTER} railWidth={4} thumbWidth={16}
                   thumbMin={THUMB_MIN_PX} ariaLabel="Selected provinces"
                 >
-                  <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                     <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
                       {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}
                     </span>
+                    <button
+                      style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: 6, border: "1px solid #bbb",
+                        cursor: selectedProvinces.length ? "pointer" : "not-allowed",
+                        opacity: selectedProvinces.length ? 1 : 0.5, fontWeight: 500,
+                        background: "transparent", color: "inherit", flexShrink: 0 }}
+                      onClick={() => { setSelectedProvinces([]); setSelectedFaction(null); }}
+                      disabled={selectedProvinces.length === 0}
+                      title="Clear all selected provinces"
+                    >Deselect All</button>
                     {devMode && isVictoryMode && mapCampaign === "imperial" && (
                       <div style={{ display: "flex", gap: 4 }}>
                         {!portedVictory && (
@@ -10810,19 +10894,9 @@ function App() {
                   {showFactionSummary && selectedProvinces.length > 0
                     ? renderFactionSummary()
                     : renderSelectedProvincesList()}
-                  {selectedProvinces.length > 0 && (
+                  {devMode && selectedProvinces.length > 0 && (
                     <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                       <button
-                        onClick={() => setShowFactionSummary((s) => !s)}
-                        style={{ flex: 1, fontSize: "0.8rem", padding: "3px 10px", borderRadius: 6,
-                          border: "1px solid #888", cursor: "pointer",
-                          background: showFactionSummary ? "#dca64a" : "transparent",
-                          color: showFactionSummary ? "#221" : "inherit" }}
-                        title="Toggle faction summary"
-                      >
-                        {showFactionSummary ? "Hide Summary" : "Summary"}
-                      </button>
-                      {devMode && <button
                         onClick={() => {
                           const names = selectedProvinces
                             .map(k => regions[k]?.city || regions[k]?.region)
@@ -10839,7 +10913,7 @@ function App() {
                         title="Copy selected province names to clipboard"
                       >
                         Copy List
-                      </button>}
+                      </button>
                     </div>
                   )}
                 </CustomScrollArea>

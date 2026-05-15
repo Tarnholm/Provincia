@@ -98,6 +98,33 @@ export function saveWidgetPos(id, pos) {
   try { localStorage.setItem(`widget.${id}`, JSON.stringify(pos)); } catch {}
 }
 
+// One-time layout migration. Bump LAYOUT_VERSION whenever default
+// positions change in a way we want to push to existing users; the next
+// app launch overwrites their stored widget.* keys with the new defaults
+// IF their layoutVersion is older. Their old layout is sacrificed; this
+// is a sledgehammer migration meant for "we cleaned up the canonical
+// grid, everyone should be on it now".
+const LAYOUT_VERSION = 2;
+const CANONICAL_V2 = {
+  "region.info":        { x: 0.5696, y: 0.0056, w: 0.2243, h: 0.3057 },
+  "region.recruit":     { x: 0.7974, y: 0.0056, w: 0.1991, h: 0.3057 },
+  "region.characters":  { x: 0.5696, y: 0.3148, w: 0.2243, h: 0.1390 },
+  "region.unitQueue":   { x: 0.7974, y: 0.3148, w: 0.0978, h: 0.1390 },
+  "region.queue":       { x: 0.8987, y: 0.3148, w: 0.0978, h: 0.1390 },
+  "region.buildings":   { x: 0.5696, y: 0.4573, w: 0.2243, h: 0.5392 },
+  "region.garrison":    { x: 0.7974, y: 0.4573, w: 0.1991, h: 0.1304 },
+  "region.fieldArmies": { x: 0.7974, y: 0.5912, w: 0.1991, h: 0.4053 },
+};
+try {
+  const stored = parseInt(localStorage.getItem("widget.layoutVersion") || "0", 10);
+  if (stored < LAYOUT_VERSION) {
+    for (const [id, pos] of Object.entries(CANONICAL_V2)) {
+      localStorage.setItem(`widget.${id}`, JSON.stringify(pos));
+    }
+    localStorage.setItem("widget.layoutVersion", String(LAYOUT_VERSION));
+  }
+} catch {}
+
 // Clear all widget overrides — wired into the ↺ Reset button.
 export function resetAllWidgets() {
   try {

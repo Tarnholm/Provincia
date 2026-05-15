@@ -8,6 +8,18 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.357",
+    date: "2026-05-16",
+    items: [
+      { type: "change", text: "Unified search bar. The dedicated province search in the bottom strip was removed; the factions panel's search input is now the global search — placeholder `Search... (Ctrl+F)`, filters faction list AND surfaces a province-results dropdown for jump-to-and-select. Same input, both behaviours, one less control to find." },
+      { type: "change", text: "Summary toggle moved up to the Recent regions row in the bottom-strip right column. Was buried below the selected list before. Recent regions row now also serves as a quick toolbar (Recent chips + clear + Summary button)." },
+      { type: "change", text: "Deselect All button moved up to the Selected Provinces header (same row as the title), not in a separate row above the list. Compact." },
+      { type: "fix", text: "Selected provinces list no longer overflows horizontally — switched from a 2-row horizontal-scroll grid to a wrapping flex layout. Items wrap to new rows when they run out of horizontal space; vertical overflow scrolls with the scrollbar hidden globally." },
+      { type: "improvement", text: "Layout defaults snapped to a canonical grid based on the user's saved positions. Every widget on the left half shares x=0.5696 / w=0.2243, every widget on the right half shares x=0.7974 / w=0.1991, with row anchors at y=0.0056 / 0.3148 / 0.4573 and GAP_FRAC between rows. A one-time migration overwrites stale localStorage on first launch of 0.9.357 (LAYOUT_VERSION bumped to 2) so existing users get the cleaned grid automatically." },
+      { type: "change", text: "Character entries in the Characters widget always show ⚔ command/influence/management/loyalty stats after age. Previously the whole block was hidden when stats were undecoded; now it falls back to `?` for missing fields so the row layout stays consistent." },
+    ],
+  },
+  {
     version: "0.9.356",
     date: "2026-05-16",
     items: [

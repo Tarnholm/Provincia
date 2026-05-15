@@ -479,9 +479,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
   return (
     <>
-      {/* Region info — Movable widget */}
+      {/* Region info — Movable widget. Default positions in 0.9.357+
+          mirror the user's snapped-to-grid layout: left half of the right
+          column shares x=0.5696 / w=0.2243; right half shares x=0.7974 /
+          w=0.1991. Row anchors are y=0.0056 / 0.3148 / 0.4573 with a
+          common GAP_FRAC≈0.0035 between rows. */}
       <Movable id="region.info" title="Region info" designMode={designMode}
-        defaultPct={{ x: 0.704, y: 0.008, w: 0.085, h: 0.30 }}>
+        defaultPct={{ x: 0.5696, y: 0.0056, w: 0.2243, h: 0.3057 }}>
       <div className={panelInnerClass} style={panelInner}>
         {region && (
           <div
@@ -862,7 +866,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Characters — Movable widget extracted from buildings */}
       <Movable id="region.characters" title="Characters" designMode={designMode}
-        defaultPct={{ x: 0.704, y: 0.318, w: 0.18, h: 0.10 }}>
+        defaultPct={{ x: 0.5696, y: 0.3148, w: 0.2243, h: 0.1390 }}>
       <div className={panelInnerClass} style={panelInner}>
         {characters && characters.length > 0 && (() => {
           const isStarting = characters[0]?._source === "starting";
@@ -896,12 +900,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   >
                     {sym ? sym + " " : ""}{fullName}
                     <span style={{ color: "#999", fontVariantNumeric: "tabular-nums", marginLeft: 6 }}>· age {c.age != null ? c.age : "?"}</span>
-                    {Number.isFinite(c.command) && (
-                      <span style={{ color: "#9bb1c8", fontVariantNumeric: "tabular-nums", marginLeft: 6, fontSize: "0.66rem" }}
-                        title={`Command ${c.command} · Influence ${c.influence ?? "?"} · Management ${c.management ?? "?"} · Loyalty ${c.loyalty ?? "?"} (save-cracker session 91)`}>
-                        ⚔ {c.command}/{c.influence ?? "?"}/{c.management ?? "?"}/{c.loyalty ?? "?"}
-                      </span>
-                    )}
+                    {/* Stats always shown after age — render ? for any
+                        missing field rather than hiding the whole block,
+                        so the layout doesn't shift between characters
+                        with/without decoded stats. */}
+                    <span style={{ color: "#9bb1c8", fontVariantNumeric: "tabular-nums", marginLeft: 6, fontSize: "0.66rem" }}
+                      title={`Command ${c.command ?? "?"} · Influence ${c.influence ?? "?"} · Management ${c.management ?? "?"} · Loyalty ${c.loyalty ?? "?"} (save-cracker session 91)`}>
+                      ⚔ {c.command ?? "?"}/{c.influence ?? "?"}/{c.management ?? "?"}/{c.loyalty ?? "?"}
+                    </span>
                     {status && <span style={{ color: "#c66", marginLeft: 4 }}>{status}</span>}
                   </div>
                 );
@@ -915,7 +921,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Building queue — Movable widget extracted from buildings */}
       <Movable id="region.queue" title="Build queue" designMode={designMode}
-        defaultPct={{ x: 0.886, y: 0.318, w: 0.11, h: 0.05 }}>
+        defaultPct={{ x: 0.8987, y: 0.3148, w: 0.0978, h: 0.1390 }}>
       <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
           <div
@@ -949,7 +955,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Unit queue — Movable widget. Lists units currently being
           recruited in this settlement (recruitingNow from save). */}
       <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
-        defaultPct={{ x: 0.886, y: 0.378, w: 0.11, h: 0.05 }}>
+        defaultPct={{ x: 0.7974, y: 0.3148, w: 0.0978, h: 0.1390 }}>
       <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
           <div
@@ -981,7 +987,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode}
-        defaultPct={{ x: 0.704, y: 0.418, w: 0.293, h: 0.30 }}>
+        defaultPct={{ x: 0.5696, y: 0.4573, w: 0.2243, h: 0.5392 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
         {buildingItems.length > 0 ? (
@@ -1100,7 +1106,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Recruitable — Movable widget */}
       <Movable id="region.recruit" title="Recruitable" designMode={designMode}
-        defaultPct={{ x: 0.798, y: 0.008, w: 0.20, h: 0.30 }}>
+        defaultPct={{ x: 0.7974, y: 0.0056, w: 0.1991, h: 0.3057 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#9fc78a" }}>Recruitable:</div>
         {(() => {
@@ -1190,7 +1196,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode}
-        defaultPct={{ x: 0.704, y: 0.728, w: 0.145, h: 0.26 }}>
+        defaultPct={{ x: 0.7974, y: 0.4573, w: 0.1991, h: 0.1304 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
           display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
@@ -1308,7 +1314,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
-        defaultPct={{ x: 0.852, y: 0.728, w: 0.145, h: 0.26 }}>
+        defaultPct={{ x: 0.7974, y: 0.5912, w: 0.1991, h: 0.4053 }}>
       <div className={panelInnerClass} style={panelInner}>
         {(() => {
           // Group armies by faction so the user can see at a glance who
