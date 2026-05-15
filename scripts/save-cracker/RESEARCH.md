@@ -11577,6 +11577,71 @@ Files: `scripts/save-cracker/dig-gap214-1.js`, `dig-gap214-2.js`,
 
 ---
 
+### Findings 2026-05-15 (background session 57 — 167KB post-fow region)
+
+**Target**: 0x44e2..0x2d15a (167,032 B = 163.1 KB), the #3 unclaimed range
+per cover.js. Sits between the toggle_fow byte at 0x44e2 and the 214 KB
+sparse slot table at 0x2d4a9 (decoded session 56).
+
+**Two-region structure** (CONFIRMED by stride autocorrelation + record-start
+alignment scan):
+
+1. **Head region** `0x44e2..~0x2a25d` (~155 KB). Mixed contents:
+   * First ~140 B looks like a settings/header block with floats
+     (`d2 53 fb 3f` ≈ 1.965, `e0 ed 2f 40` ≈ 2.749, ...).
+   * From 0x4564 a strict periodic pattern with `1e 00 00 00` appearing
+     every 35 bytes (confirmed deltas: 35,35,35,...,35 for 51 occurrences
+     in first 8 KB). Likely a 35-byte-strided table; 0x1e=30 may be a
+     length-prefix or sentinel byte at fixed offset within each row.
+   * Repeating 4-char ASCII shards (`oVBn`) at evenly spaced offsets in
+     0x5fad..0x6145 region — appears like packed UUID-bearing rows.
+   * No internal taw self-pointers (1 spurious hit). No faction strings.
+   * Entropy 5.65 bits/B — structured binary, not random/compressed.
+
+2. **Tail region** `0x2a25d..0x2d155` (12,024 B = exactly **1,002 records
+   × 12 bytes**, perfectly aligned at offset+11 of 12). CONFIRMED.
+
+   Record layout (CONFIRMED via 1001/1001 monotonic seq check):
+   ```
+   off  size  field
+   +0   u8    type byte: 0x01 (892×) "event" or 0x04 (110×) "separator"
+   +1   u8    flag, always 0x20 for type=0x01, 0x00 for type=0x04
+   +2   u16   sub-id (373 unique values, range 0..888) — entity ref
+   +4   u16   turn counter — STRICTLY MONOTONIC NON-DECREASING
+                    range 0x020d..0x0244 (525..580 → 55-turn span)
+   +6   u16   zero padding (always 0x0000)
+   +8   u32   cookie / target-uuid (82 unique values, ~111 nulls)
+   ```
+
+   **Cookie cross-reference** (STRONG): all top 6 cookies appear elsewhere
+   in the save starting at byte 0x33xxx — *inside the 214 KB slot table*
+   from session 56. The 12-byte records reference entities/relations
+   defined later in the slot table. This is a **per-turn event log**
+   keyed by (turn, sub-entity) pointing at relation slots.
+
+   Best label: **"per-turn relation event log"** — a chronological
+   12-byte-record stream emitted as the diplomacy/slot state changes
+   each turn, with monotonic turn counter and 4-byte references into
+   the slot table.
+
+**Coverage gain**: tail region (12,024 B = 0.035%) is now framed-decoded.
+Head region (155 KB / 0.45%) is now framed-undecoded (35-byte stride
+table identified but row semantics unresolved). Combined ~0.5% lift.
+
+Confidence: tail = **STRONG** (record layout fully confirmed, semantics
+inferred from cookie cross-ref). Head = **HYPOTHESIS** (stride
+confirmed, content unknown).
+
+Hypothesis-space resolution: rejects #1 battle log (no casualty
+floats), #5 Lua state (no text). Best fit is #4 event history limited
+to the diplomacy/slot subsystem — the tail records ARE a 55-turn
+event history. Head region is unrelated and remains the next dig
+target.
+
+Files: `scripts/save-cracker/dig-gap167-1.js`, `dig-gap167-2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
