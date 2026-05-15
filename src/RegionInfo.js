@@ -319,8 +319,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         width: "100%",
         minHeight: "100%",
         display: "grid",
-        // info+tags | buildings (fixed 10×82 + 9×4 gap = 856px) | recruitable | garrison+field armies
-        gridTemplateColumns: "240px 860px minmax(260px, 1fr) minmax(280px, 1fr)",
+        // UI reshuffle: narrower buildings column (5×82 + 4×4 gap = 426px)
+        // since RegionInfo is now in the right column instead of the wide
+        // bottom strip. Columns: info+tags | buildings | recruitable | armies.
+        gridTemplateColumns: "240px 430px minmax(220px, 1fr) minmax(240px, 1fr)",
         gap: 6,
         paddingBottom: 4,
         color: "#f7f7f7",
@@ -798,10 +800,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(10, 82px)",
-              // Match each card's minHeight (118px) so partial rows still
-              // reserve the same space — keeps the grid height consistent
-              // regardless of how many cards fit in the last row.
+              // UI reshuffle: 5×4 grid (was 10×2). RegionInfo lives in the
+              // right column now, narrower than the old wide-bottom strip
+              // and taller, so vertical stacking suits better.
+              gridTemplateColumns: "repeat(5, 82px)",
               gridAutoRows: "118px",
               gap: 4,
               justifyContent: "start",

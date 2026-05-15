@@ -10513,15 +10513,17 @@ function App() {
             </div>
 
             {/* RIGHT COLUMN */}
-            {/* UI reshuffle 2026-05-15: factions + selected provinces moved
-                from the right column to a bottom strip; RegionInfo moves to
-                the right column. Swap is structural — internal grids stay
-                the same so they reflow to the new container dimensions. */}
+            {/* UI reshuffle 2026-05-15 (v2): factions + selected provinces
+                live in a bottom strip that ONLY covers the area under the
+                map (not the full screen width). RegionInfo's container
+                separately stretches to fill the right column + the
+                bottom-right corner (L-shape) so it gets all the remaining
+                space. */}
             <div
               style={{
                 position: "fixed",
                 left: MAP_PADDING,
-                right: MAP_PADDING,
+                width: canvasSize.width,
                 bottom: MAP_PADDING,
                 height: REGIONINFO_HEIGHT,
                 display: "grid",
@@ -10696,18 +10698,18 @@ function App() {
               </div>
             </div>
 
-            {/* REGION INFO PANEL — UI reshuffle 2026-05-15: now occupies
-                the right column where factions used to sit. Width = the
-                previously-computed rightColWidth, height = canvasSize.height
-                (matches map height). Internal grid scrolls horizontally if
-                it exceeds the new narrower width. */}
+            {/* REGION INFO PANEL — UI reshuffle 2026-05-15 (v2): L-shape
+                covering the entire right column + the bottom-right corner.
+                top..bottom stretches the full viewport height; left starts
+                just past the map. Width = whatever's left after the map.
+                Internal grid still scrolls horizontally if needed. */}
             <div
               style={{
-                position: "absolute",
+                position: "fixed",
                 top: MAP_PADDING,
                 left: MAP_PADDING + canvasSize.width + PANELS_GAP,
-                width: rightColWidth,
-                height: canvasSize.height,
+                right: MAP_PADDING,
+                bottom: MAP_PADDING,
                 overflowX: "auto",
                 zIndex: welcomeHighlight === "region-info" ? 10001 : 2,
               }}

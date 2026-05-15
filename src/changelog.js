@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.341",
+    date: "2026-05-15",
+    items: [
+      { type: "change", text: "UI reshuffle v2 — RegionInfo now occupies an L-shape (entire right column + bottom-right corner). The bottom strip (factions + selected provinces) shrinks to just the width under the map, leaving the bottom-right free for RegionInfo to extend into. Buildings grid switched from 10×2 to 5×4 to suit the narrower-taller column. Inner RegionInfo column widths tightened (240 / 430 / 220+ / 240+ instead of 240 / 860 / 260+ / 280+)." },
+    ],
+  },
+  {
     version: "0.9.340",
     date: "2026-05-15",
     items: [
