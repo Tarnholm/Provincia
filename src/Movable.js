@@ -13,10 +13,21 @@
 // Why position:fixed: lets each widget escape its parent grid/flex flow and
 // be placed anywhere on the viewport. Container components render Movables
 // as fragments — the Movable itself owns its absolute placement.
+//
+// Snap-to-align: each Movable registers its live position in a
+// module-scope Map. While dragging or resizing, the active widget consults
+// the Map and snaps to within SNAP_FRAC of any other widget's edges or
+// centerlines (left/right/center on x; top/bottom/center on y). Snap is
+// silent — no visual guide line for now, just the magnetic feel.
 
 import React, { useEffect, useRef, useState } from "react";
 
-const MIN_FRAC = 0.02; // 2% of viewport is the floor for w/h
+const MIN_FRAC = 0.02;        // 2% of viewport is the floor for w/h
+const SNAP_FRAC = 0.0055;     // ≈ 6 px at 1080p — about 1 mm; tight enough not to fight you
+
+// Module-scope registry of live widget positions. Mutated directly so updates
+// from any Movable are immediately visible to the next drag-snap pass.
+const widgetRegistry = new Map();
 
 export function loadWidgetPos(id, fallback) {
   try {
@@ -47,7 +58,61 @@ export function resetAllWidgets() {
 export function useWidgetPos(id, defaultPct) {
   const [pos, setPos] = useState(() => loadWidgetPos(id, defaultPct));
   useEffect(() => { saveWidgetPos(id, pos); }, [id, pos]);
+  // Keep the module-scope registry in sync so snap-to-align can see this
+  // widget's live position. Cleanup on unmount removes the entry.
+  useEffect(() => {
+    widgetRegistry.set(id, pos);
+    return () => { widgetRegistry.delete(id); };
+  }, [id, pos]);
   return [pos, setPos];
+}
+
+// Compute snapped pos by checking edges/centers against every other widget
+// in the registry. `lock` controls which dimensions are allowed to change
+// (drag locks size; resize locks the opposite edge).
+function snapAlign(myId, np, lock = {}) {
+  const targetsX = [];   // values we want our x-edges to match
+  const targetsY = [];
+  for (const [oid, o] of widgetRegistry) {
+    if (oid === myId) continue;
+    targetsX.push(o.x, o.x + o.w, o.x + o.w / 2);
+    targetsY.push(o.y, o.y + o.h, o.y + o.h / 2);
+  }
+  const myLeft = np.x;
+  const myRight = np.x + np.w;
+  const myCenterX = np.x + np.w / 2;
+  const myTop = np.y;
+  const myBottom = np.y + np.h;
+  const myCenterY = np.y + np.h / 2;
+
+  let dx = 0;
+  let dxAbs = SNAP_FRAC;
+  for (const t of targetsX) {
+    for (const me of [myLeft, myRight, myCenterX]) {
+      const diff = t - me;
+      if (Math.abs(diff) < dxAbs) { dx = diff; dxAbs = Math.abs(diff); }
+    }
+  }
+  let dy = 0;
+  let dyAbs = SNAP_FRAC;
+  for (const t of targetsY) {
+    for (const me of [myTop, myBottom, myCenterY]) {
+      const diff = t - me;
+      if (Math.abs(diff) < dyAbs) { dy = diff; dyAbs = Math.abs(diff); }
+    }
+  }
+
+  const out = { ...np };
+  // Apply x adjustment. If lock.x is "right" we resized the east edge so
+  // adjust width; if lock.x is "left" we resized west so adjust both x and
+  // width inversely; otherwise (drag) shift x.
+  if (lock.x === "right") out.w = Math.max(MIN_FRAC, np.w + dx);
+  else if (lock.x === "left") { out.x = np.x + dx; out.w = Math.max(MIN_FRAC, np.w - dx); }
+  else out.x = np.x + dx;
+  if (lock.y === "bottom") out.h = Math.max(MIN_FRAC, np.h + dy);
+  else if (lock.y === "top") { out.y = np.y + dy; out.h = Math.max(MIN_FRAC, np.h - dy); }
+  else out.y = np.y + dy;
+  return out;
 }
 
 export function Movable({
@@ -87,9 +152,13 @@ export function Movable({
     function onMove(ev) {
       const dx = (ev.clientX - startX) / vp.w;
       const dy = (ev.clientY - startY) / vp.h;
-      const nx = Math.max(0, Math.min(1 - startPos.w, startPos.x + dx));
-      const ny = Math.max(0, Math.min(1 - startPos.h, startPos.y + dy));
-      setPos({ ...startPos, x: nx, y: ny });
+      let np = {
+        x: Math.max(0, Math.min(1 - startPos.w, startPos.x + dx)),
+        y: Math.max(0, Math.min(1 - startPos.h, startPos.y + dy)),
+        w: startPos.w, h: startPos.h,
+      };
+      np = snapAlign(id, np);
+      setPos(np);
     }
     function onUp() {
       window.removeEventListener("mousemove", onMove);
@@ -110,23 +179,28 @@ export function Movable({
       const dx = (ev.clientX - startX) / vp.w;
       const dy = (ev.clientY - startY) / vp.h;
       const np = { ...startPos };
+      const lock = {};
       if (corner.includes("e")) {
         np.w = Math.max(MIN_FRAC, Math.min(1 - startPos.x, startPos.w + dx));
+        lock.x = "right";
       }
       if (corner.includes("s")) {
         np.h = Math.max(MIN_FRAC, Math.min(1 - startPos.y, startPos.h + dy));
+        lock.y = "bottom";
       }
       if (corner.includes("w")) {
         const newW = Math.max(MIN_FRAC, startPos.w - dx);
         const newX = Math.max(0, startPos.x + dx);
         if (newX + newW <= 1) { np.x = newX; np.w = newW; }
+        lock.x = "left";
       }
       if (corner.includes("n")) {
         const newH = Math.max(MIN_FRAC, startPos.h - dy);
         const newY = Math.max(0, startPos.y + dy);
         if (newY + newH <= 1) { np.y = newY; np.h = newH; }
+        lock.y = "top";
       }
-      setPos(np);
+      setPos(snapAlign(id, np, lock));
     }
     function onUp() {
       window.removeEventListener("mousemove", onMove);
@@ -153,35 +227,41 @@ export function Movable({
       {children}
       {designMode && (
         <>
-          {/* Drag header — short strip at top of widget, click-and-drag */}
+          {/* Thin drag bar at the top — 6 px tall, semi-transparent so the
+              widget content beneath is still visible. Click anywhere on
+              the bar to drag the widget. */}
           <div
             onMouseDown={startDrag}
-            title={title ? `Drag to move "${title}"` : `Drag to move`}
+            title={title ? `Drag "${title}"` : `Drag`}
             style={{
               position: "absolute",
               left: 0, top: 0, right: 0,
-              height: 12,
-              background: "repeating-linear-gradient(45deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 4px, rgba(0,0,0,0.55) 4px, rgba(0,0,0,0.55) 8px)",
+              height: 6,
+              background: "rgba(220,166,74,0.55)",
               cursor: "move",
               zIndex: 100,
             }}
           />
-          {/* Widget id label centered in the header */}
-          <div style={{
-            position: "absolute",
-            left: 0, top: 0, right: 0,
-            height: 12, pointerEvents: "none",
-            fontSize: "0.62rem", lineHeight: "12px",
-            color: "#221", fontWeight: 700,
-            textAlign: "center",
-            zIndex: 101,
-            textShadow: "0 0 2px rgba(255,220,160,0.8)",
-          }}>{title || id}</div>
-          {/* Edge resize handles (4) — thinner than corners but full edge */}
+          {/* Widget title label tucked into the top-right corner so it
+              identifies the widget without covering the panel header. */}
+          {title && (
+            <div style={{
+              position: "absolute",
+              top: 7, right: 14,
+              pointerEvents: "none",
+              fontSize: "0.6rem", lineHeight: 1,
+              color: "rgba(220,166,74,0.9)",
+              fontWeight: 700,
+              textShadow: "0 0 4px rgba(0,0,0,0.85)",
+              zIndex: 101,
+            }}>{title}</div>
+          )}
+          {/* Edge resize handles — invisible hit zones with cursor only */}
           <div onMouseDown={startResize("e")} style={edgeStyle("e")} />
           <div onMouseDown={startResize("w")} style={edgeStyle("w")} />
           <div onMouseDown={startResize("s")} style={edgeStyle("s")} />
-          {/* Corner resize handles (4) */}
+          {/* Compact 8×8 corner handles in subtle gold — small enough to
+              not obscure content but visible enough to grab. */}
           {["nw","ne","sw","se"].map((c) => (
             <div key={c} onMouseDown={startResize(c)} title={`Resize ${c.toUpperCase()}`} style={cornerStyle(c)} />
           ))}
@@ -194,9 +274,9 @@ export function Movable({
 function cornerStyle(c) {
   const base = {
     position: "absolute",
-    width: 12, height: 12,
-    background: "#dca64a",
-    border: "1px solid #221",
+    width: 8, height: 8,
+    background: "rgba(220,166,74,0.85)",
+    border: "1px solid rgba(34,34,17,0.7)",
     cursor: `${c}-resize`,
     zIndex: 102,
   };
@@ -211,8 +291,8 @@ function edgeStyle(edge) {
     background: "transparent",
     zIndex: 99,
   };
-  if (edge === "e") return { ...base, top: 12, bottom: 12, right: 0, width: 6, cursor: "ew-resize" };
-  if (edge === "w") return { ...base, top: 12, bottom: 12, left: 0, width: 6, cursor: "ew-resize" };
-  if (edge === "s") return { ...base, left: 12, right: 12, bottom: 0, height: 6, cursor: "ns-resize" };
+  if (edge === "e") return { ...base, top: 8, bottom: 8, right: 0, width: 5, cursor: "ew-resize" };
+  if (edge === "w") return { ...base, top: 8, bottom: 8, left: 0, width: 5, cursor: "ew-resize" };
+  if (edge === "s") return { ...base, left: 8, right: 8, bottom: 0, height: 5, cursor: "ns-resize" };
   return base;
 }

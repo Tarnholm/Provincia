@@ -216,6 +216,28 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
+// Pick (cols, rows) for an N-slot grid that best fits a container's aspect
+// while keeping each cell roughly `targetCardAspect` (width/height). Returns
+// the smallest grid with cols × rows ≥ N. Used by the buildings widget so a
+// wide widget gets 10×2, a tall one 2×10, and a square one 4×5/5×4.
+function adaptiveGrid(boxEl, total, targetCardAspect) {
+  if (!boxEl) return { cols: Math.ceil(Math.sqrt(total)), rows: Math.ceil(total / Math.ceil(Math.sqrt(total))) };
+  const r = boxEl.getBoundingClientRect();
+  const W = Math.max(1, r.width);
+  const H = Math.max(1, r.height);
+  const aspect = W / H;
+  // Solve: cols / rows ≈ aspect / targetCardAspect, with cols*rows >= total.
+  let best = { cols: total, rows: 1, score: Infinity };
+  for (let cols = 1; cols <= total; cols++) {
+    const rows = Math.ceil(total / cols);
+    if (cols * rows < total) continue;
+    const cellAspect = (W / cols) / (H / rows);
+    const score = Math.abs(Math.log(cellAspect / targetCardAspect));
+    if (score < best.score) best = { cols, rows, score };
+  }
+  return { cols: best.cols, rows: best.rows };
+}
+
 // Design-mode splitter overlays. Three handles inside the RegionInfo panel:
 //  • vertical between info|recruit in row 1
 //  • horizontal between row 1 (info+recruit) and row 2 (buildings)
@@ -335,6 +357,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // recruit gated on that HR. Builds on the existing recruit/building
   // cross-link.
   const [hoveredHr, setHoveredHr] = useState(null);
+  // Buildings widget — adaptive grid that always reserves 20 slots but
+  // picks cols/rows from the container's aspect so cards stay square-ish.
+  // We track the container ref + a re-render trigger driven by a
+  // ResizeObserver so the grid recomputes when the user drags the widget
+  // wider/taller.
+  const buildingsBoxRef = useRef(null);
+  const [, setBuildingsTick] = useState(0);
+  useEffect(() => {
+    if (!buildingsBoxRef.current) return;
+    const ro = new ResizeObserver(() => setBuildingsTick((t) => t + 1));
+    ro.observe(buildingsBoxRef.current);
+    return () => ro.disconnect();
+  }, []);
   const hoverReadout = (u) => {
     if (!u) return null;
     const chevrons = u.xp || 0;
@@ -431,21 +466,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     rowsTemplate = "auto auto auto";
   }
 
-  // Freeform-widget styling — each Movable section gets a "panel" feel so
-  // the user can see/grab each chunk individually. Outside design mode the
-  // header strip is hidden but the panel padding stays so content sits in
-  // a readable card.
+  // Widget inner panel — uses the global `.panel` class so widgets get the
+  // same cream/light look as the factions panel (and so the light-mode
+  // contrast observer in App.js auto-darkens any bright text inside).
+  // Only flex/overflow tweaks come from inline style.
+  const panelInnerClass = "panel panel-tight";
   const panelInner = {
     width: "100%", height: "100%", boxSizing: "border-box",
     display: "flex", flexDirection: "column",
-    padding: 6, paddingTop: designMode ? 16 : 6,
-    background: "rgba(20,20,20,0.55)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 6,
     overflow: "auto",
-    color: "#f7f7f7",
-    fontSize: "0.82rem",
-    lineHeight: 1.25,
   };
 
   return (
@@ -453,7 +482,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Region info — Movable widget */}
       <Movable id="region.info" title="Region info" designMode={designMode}
         defaultPct={{ x: 0.704, y: 0.008, w: 0.085, h: 0.30 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         {region && (
           <div
             title="Double-click to copy region name"
@@ -834,7 +863,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Characters — Movable widget extracted from buildings */}
       <Movable id="region.characters" title="Characters" designMode={designMode}
         defaultPct={{ x: 0.704, y: 0.318, w: 0.18, h: 0.10 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         {characters && characters.length > 0 && (() => {
           const isStarting = characters[0]?._source === "starting";
           return (
@@ -887,7 +916,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Building queue — Movable widget extracted from buildings */}
       <Movable id="region.queue" title="Build queue" designMode={designMode}
         defaultPct={{ x: 0.886, y: 0.318, w: 0.11, h: 0.05 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
           <div
             title="Construction queue (decoded from save's default_set chain — session 36)"
@@ -921,7 +950,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           recruited in this settlement (recruitingNow from save). */}
       <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
         defaultPct={{ x: 0.886, y: 0.378, w: 0.11, h: 0.05 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
           <div
             title="Recruitment queue (decoded from save's recruit chain — session 36)"
@@ -953,23 +982,26 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode}
         defaultPct={{ x: 0.704, y: 0.418, w: 0.293, h: 0.30 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
         {buildingItems.length > 0 ? (
           (() => {
-            // Fixed 10×2 = 20-slot grid. The column always reserves space
-            // for a full stack so the layout doesn't shift as settlements
-            // fill up or get compared side-by-side.
+            // Adaptive 20-slot grid. Compute cols/rows that best fit the
+            // widget's current aspect ratio while always reserving room for
+            // 20 cards (cols × rows ≥ 20). Empty slots render as faint
+            // dashed placeholders so the layout doesn't reshuffle when
+            // adding/removing buildings.
+            const { cols: bcols, rows: brows } = adaptiveGrid(buildingsBoxRef.current, 20, 1.0);
+            const total = bcols * brows;
+            const padded = buildingItems.slice(0, 20);
+            const emptyCount = Math.max(0, total - padded.length);
             return (
           <div
+            ref={buildingsBoxRef}
             style={{
               display: "grid",
-              // 10×2 grid (max 20 buildings per settlement). Both columns
-              // AND rows are 1fr so the cards scale to fill the widget —
-              // resize the Buildings widget wider/taller and the icons
-              // grow with it, the same way the faction-icon panel does.
-              gridTemplateColumns: "repeat(10, 1fr)",
-              gridTemplateRows: "repeat(2, 1fr)",
+              gridTemplateColumns: `repeat(${bcols}, 1fr)`,
+              gridTemplateRows: `repeat(${brows}, 1fr)`,
               gap: 4,
               flex: 1,
               minHeight: 0,
@@ -1046,6 +1078,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               </div>
               );
             })}
+            {/* Empty-slot placeholders so the 20-slot grid keeps a stable
+                shape as the user adds/removes buildings. Faint dashed
+                outline, no fill. */}
+            {Array.from({ length: emptyCount }).map((_, i) => (
+              <div key={`empty-${i}`} style={{
+                width: "100%", height: "100%",
+                border: "1px dashed rgba(128,128,128,0.25)",
+                borderRadius: 4,
+                boxSizing: "border-box",
+              }} />
+            ))}
           </div>
             );
           })()
@@ -1058,7 +1101,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Recruitable — Movable widget */}
       <Movable id="region.recruit" title="Recruitable" designMode={designMode}
         defaultPct={{ x: 0.798, y: 0.008, w: 0.20, h: 0.30 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#9fc78a" }}>Recruitable:</div>
         {(() => {
           // Build a normalised set of unit names currently in the recruit
@@ -1148,7 +1191,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode}
         defaultPct={{ x: 0.704, y: 0.728, w: 0.145, h: 0.26 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
           display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
           <span>Garrison:</span>
@@ -1266,7 +1309,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
         defaultPct={{ x: 0.852, y: 0.728, w: 0.145, h: 0.26 }}>
-      <div style={panelInner}>
+      <div className={panelInnerClass} style={panelInner}>
         {(() => {
           // Group armies by faction so the user can see at a glance who
           // owns each foreign stack. Multiple Roman armies passing through

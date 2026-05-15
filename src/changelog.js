@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.349",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Movable widgets now snap-to-align while dragging or resizing — edges and center-lines magnetically lock to other widgets' edges/centers within ~6 px. Silent for now (no guide line), just a magnetic feel that makes it easy to line panels up." },
+      { type: "improvement", text: "Drag/resize chrome trimmed back so widget content stays visible while moving things around. Yellow striped header (12 px) replaced with a 6 px semi-transparent golden bar; corner handles shrank from 12 px to 8 px; the title moved to a small label tucked into the top-right corner instead of the center of the header." },
+      { type: "improvement", text: "Widget panels now use the global `.panel` style (cream, like the factions panel) instead of the dark `rgba(20,20,20,0.55)` background. The existing light-mode contrast observer in App.js automatically darkens any bright text inside, so the widgets read like the rest of the panels." },
+      { type: "improvement", text: "Buildings widget no longer hard-codes 10×2. Layout adapts to the widget's aspect ratio (10×2 when wide, 4×5 when square, 2×10 when tall, etc.) while always reserving 20 slots — empty slots render as faint dashed placeholders so the grid shape doesn't jump as buildings come and go. Uses a ResizeObserver on the grid container to recompute on every resize." },
+    ],
+  },
+  {
     version: "0.9.348",
     date: "2026-05-16",
     items: [
