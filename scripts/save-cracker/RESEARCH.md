@@ -12454,6 +12454,30 @@ Files: `scripts/save-cracker/dig-12bslot-s85-1.js`, `dig-12bslot-s85-2.js`, `dig
 
 ---
 
+### Findings 2026-05-15 (background session 86 — settlement-detail body fields)
+
+**Goal**: pin u32 offsets for editable per-settlement fields (population, treasury, happiness, garrison) inside the 6-9 KB settlement-detail rawBytes (session 78 left this body opaque).
+
+**Method**: parse `descr_regions.txt` to map region→settlement-name, then `descr_strat.txt` for region→starting-population. Walk the 1,309 settlement-detail blobs; for each one, scan its body for u32 LE values matching the starting-pop of the *next* marker's settlement (associated by file order). Histogram the relative-to-FC-magic offset where matches land.
+
+**Findings**:
+
+1. **Settlement-marker name = settlement name, not region name (CONFIRMED).** Markers say `Rome`, `Arretium`, `Sena_Gallica` — i.e. the `descr_regions.txt` settlement line, not the descr_strat `region` token. To look up by region you must join through descr_regions. 1304 / 1310 markers matched a known settlement.
+
+2. **Detail-blob association = NEXT marker, not prev (STRONG).** Pairing detail-blob to `setts[i+1].name` (i.e. the marker that *follows* the blob) gives 1303 / 1309 blobs with at least one u32 hit against descr_strat starting-pop, vs only 276 / 1309 for prev-association. Conclusion: the body between marker[i].blockEnd and marker[i+1].offset is the settlement-detail record belonging to marker[i+1] — the FC-magic'd body precedes its name.
+
+3. **Two candidate population offsets at FC+1904 and FC+3364 (HYPOTHESIS).** Top histogram peaks (545 hits each, identical count — likely two correlated u32s, possibly cached/current population pair, or population + last-turn-population). Lesser peaks at FC+2208/3668, FC+2230/3690 also paired. The constant +1460 offset gap (3364−1904, 3690−2230, 3668−2208) suggests **two parallel records** of the same logical fields ~1460 B apart inside each blob.
+
+4. **save_1.2.sav populations have evolved away from descr_strat (BLOCKING).** Spot-checks at FC+1904 in Rome's blob show `0xffffffff` (sentinel) or `0`; in Volaterrae's blob also `0`. The save is mid-campaign so populations no longer match turn-0 descr_strat values. The 545-hit signal is mostly coincidental matches (zeros, sentinels) — the candidate offsets cannot be confirmed without a turn-0 save.
+
+**Confidence**: STRONG for findings 1-2; HYPOTHESIS for offsets in finding 3. **BLOCKING** prerequisite: re-run against a turn-0 save (`save_1turnstart` per RESEARCH.md provenance list) to lock the actual population offset.
+
+**Recommendation for next session**: run dig-settlefields-s86-2.js against `save_1turnstart` (turn-0 RIS imperial save) where population values still equal descr_strat. The +1460 stride suggests population is the first of a 2-record dual-buffer; once located, treasury/happiness/garrison should be nearby relative offsets in the same body.
+
+Files: `scripts/save-cracker/dig-settlefields-s86-1.js` (proved name-mapping issue), `dig-settlefields-s86-2.js` (region→settlement join, association scan).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
