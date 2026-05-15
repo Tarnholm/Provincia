@@ -11256,6 +11256,131 @@ complete.
 
 ---
 
+### Findings 2026-05-15 (background session 52 — tile-grid turn diff)
+
+**Goal**: turn-diff the 240×238 tile-grid (session 18/35 territory) between
+`save_1.2.sav` (T1) and Turn 2 Start.sav (T2). Test session 43's hypothesis
+that the 6 variable fields hold engine-internal AI / pathfinding state that
+updates per turn.
+
+#### Setup correction (CONFIRMED)
+
+- T1 grid: **0xf8fd2, 57120 records × 267 bytes** (240×238). Session 35's
+  cited start `0x633c50` was record 20538 of this same grid — the grid is
+  larger than session 35 documented. Session 18's 57,120-record figure is
+  authoritative.
+- T2 grid: **0xf913d, 57120 records × 267 bytes** (same shape). +363 bytes
+  later than T1, consistent with body-region growth between turns.
+
+#### CONFIRMED: 6 u32 fields are global "version constants" that increment per turn
+
+Out of 67 u32 fields per record, **6 offsets change in 56,882 / 57,120 = 99.58%
+of cells** with a single uniform transition each:
+
+| Offset | T1 const | T2 const | Per-turn shift |
+|---|---|---|---|
+| +0 | 5 | 6 | +1 |
+| +12 | 10 | 11 | +1 |
+| +68 | 3 | 2 | −1 |
+| +76 | 0 | 1 | +1 |
+| +84 | 576 | 577 | +1 |
+| +92 | 0 | −1 (0xFFFFFFFF) | flip |
+
+These are not per-cell state — they are a **global turn-stamp embedded in
+every record's header**. The engine touches every cell each turn to update
+these fields. **HYPOTHESIS**: these encode the game's `world version` /
+`map dirty count` (the +84 transition 576→577 looks like a counter increment).
+
+#### CONFIRMED: +32 dominant per-cell transition is a perfect anti-diagonal sweep
+
+`+32` changed in **28,491 cells (49.88%)**, dominated by `200 → 195`
+(27,888 cells). Mapping the 28,113 cells where +32 stayed at 200 to (col, row):
+
+| row | unchanged-region first col |
+|---|---|
+| 0 | 238 |
+| 24 | 214 |
+| 96 | 142 |
+| 144 | 94 |
+| 200 | 38 |
+| 232 | 6 |
+
+**The boundary fits `first_unchanged_col = 238 − row` exactly** — i.e. cells
+with `col + row < ~237` flipped 200→195, cells with `col + row ≥ 237` stayed
+at 200. This is the **anti-diagonal of the 240×238 grid**, NOT a real map
+feature.
+
+Most likely explanation (**HYPOTHESIS**): the engine writes cells in a
+**diagonal-sweep traversal order** (e.g. Manhattan-distance from the
+top-left corner) and writes only half the grid each turn — a **lazy /
+deferred update**. T2's saved state shows the cells reached by turn-2's
+sweep; the rest still hold T1's value. This pattern is consistent with an
+engine **cache regeneration that runs incrementally** to avoid touching all
+57k cells in a single tick.
+
+The −5 shift (200→195) is exactly aligned with the +84 version bump
+(576→577) — both suggest a single "version tick" that decrements the field
+by 5 per turn, OR the 195 is a different default that the new world version
+uses. Untested.
+
+#### Sparse per-cell change fields (likely real per-tile state)
+
+| Offset | T1 distinct | T2 distinct | # changed | Top transitions |
+|---|---|---|---|---|
+| +8 | 1 (=0) | 17 | 26 | 0→200 (10), 0→500 (2), 0→{various} |
+| +20 | 3 | 3 | 16 | 200→600 (all 16) |
+| +24 | 1 (=2) | 3 | 16 | 2→0 (8), 2→1 (8) |
+| +40 | 1 (=0) | 2 | 210 | 0→1 (all) — hot rows 6, 7, 37, 202 |
+| +44 | 1 (=0) | 2 | 492 | 0→1 (all) — **222/492 on row 237** |
+| +64 | 1 (=0) | 3 | 25 | 0→2 (14), 0→1 (11) |
+| +100..+260 | 0 | rand | 1 each | single cell takes pseudo-random u32 values |
+
+- **+20 (200→600, 16 cells)** scatter across the map at scattered (col, row).
+  All 16 cells ALSO changed at +32 (with diverse transitions: 200→220, 600→800,
+  200→1000, etc). These 16 cells look like **real per-turn AI-marked tiles**
+  — each cell has a small cluster of nearby field changes. Cell positions
+  (col, row): (155,0), (154,1), (153,2), (152,3) — a clean diagonal of 4
+  consecutive cells; (31,5), (187,6), (207,36), (2,131), (236,133),
+  (83,155), (84,155), (85,155), (86,155) — another clean row-cluster of 4;
+  (51,193), (0,237), (238,237). Two "stripes" of 4 cells imply **a 4-tile
+  agent (army?) moved**, leaving its prior trail flipped.
+- **+44's 222 changes on row 237** (bottom edge): row 237 is special —
+  edges always behave differently, consistent with the session 18 finding
+  that "rightmost column & bottom row are uniformly non-canonical".
+- **+100..+260** singleton at one cell with arbitrary u32 values is one
+  cell with packed inline data (e.g. an embedded structure pointer or
+  packed flags written in T2 but not T1).
+
+#### What's REFUTED / still HYPOTHESIS
+
+- **REFUTED**: "the 3 fields at +20/+28/+32 (session 35) are the only
+  variable ones". Actually **49 u32 offsets per record vary between T1 and
+  T2**, of which 6 are global counters and ~7 are sparse per-cell signals.
+- **STRONG HYPOTHESIS**: the +32 anti-diagonal pattern is an artifact of an
+  **incremental engine sweep** (lazy cache update), not real per-tile data.
+  No other engine sub-system I know in RTW touches exactly half the world
+  along a clean `col+row<K` boundary per turn.
+- **HYPOTHESIS**: the sparse +20/+24/+40/+44/+64/+8 changes are real
+  per-tile event markers — likely **"AI visited"** / **"army moved through"**
+  / **"sighted by faction"** flags. The 4-cell consecutive stripes at
+  rows 0 and 155 strongly suggest unit-trail tagging.
+
+#### Hard early-stop: 2 attempts used. Confidence summary
+
+| Claim | Confidence |
+|---|---|
+| Grid is 240×238 (not 240×153) at 0xf8fd2 | **CONFIRMED** |
+| 6 u32 offsets are global turn-stamp constants | **CONFIRMED** |
+| +32 200→195 split is a clean anti-diagonal `col+row<237` | **CONFIRMED** |
+| Anti-diagonal = lazy/incremental cache sweep | **STRONG HYPOTHESIS** |
+| Sparse +20/+40/+44 changes = unit-trail tags | **HYPOTHESIS** |
+| Field values encode pathfinding-cost / AI seeds | **UNTESTED** |
+
+Files: `scripts/save-cracker/dig-tilegrid-turn-diff-locate.js`,
+`dig-tilegrid-turn-diff1.js`, `dig-tilegrid-turn-diff2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
