@@ -12430,6 +12430,30 @@ Files: `scripts/save-cracker/dig-zonea1.js`, `dig-zonea2.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 85 — 12-byte slot table semantics)
+
+**Target.** `0x2d4a9..0x618f8` 12-byte sparse slot table (214 KB, 17,841 slots, 4,348 active). Session 56 confirmed structure; this session pins semantics by T1 vs T2 diff and tag cross-reference.
+
+**Findings.**
+
+1. **Turn churn (STRONG).** Between save_1.2 (T1) and "Turn 2 Start" (T2): 20,012 byte-diffs across the 214 KB range; **8,224 / 17,841 slots (46%) differ**, 3,876 activated, 3,963 deactivated. Active-count nearly stable (4,348 → 4,261). This is **runtime state, not a log**.
+
+2. **Tags are NOT entity identifiers (CONFIRMED).** T1's 7-tag dictionary `{e5e47935, 23e1f461, ebee119b, 8713173a, d6d62fd1, 16bdb00a, 4a2b35b3}` is **entirely replaced** in T2 by `{699a883c, 546b54b2, 03701a16, 3c5d9e06, …}`. Tag `0x8713173a` count: 71 in T1, **0 in T2**; tag `0x3c5d9e06` count: 0 in T1, **71 in T2** (perfect handoff). Zero hits on djb2/fnv1a/crc32 of faction-names or region-names. Tags are **per-turn-regenerated runtime hashes** (RNG-seeded session cookies), not stable UUIDs. This **rejects** session-56's "diplomacy matrix / treaty state" hypothesis.
+
+3. **Seq is a per-turn slot counter (CONFIRMED).** Small seqs (1..65,536) cluster around 600-650 in the dense head and increment linearly with slot index. T1 slot 0 seq=638, T2 slot 0 seq=633 — counter regenerates each turn, not monotonic across turns.
+
+4. **idx is bimodally clustered (STRONG).** kind=0x2001 idx values fall in two tight ranges: **0x11a..0x135 (282..309, 28 values)** and **0x394..0x3e0 (916..992, ~80 values)** — consistent with two adjacent entity-id stripes (e.g., region IDs and army/character IDs).
+
+5. **Session 57 cookies confirm cross-reference (CONFIRMED).** Cookies `0x7a55780e` and `0xe06cfa4a` from session 57's event log appear as slot tags at slots 2144-2145 in T1. The event log emits when slot tags rotate. The 7 tag dictionary values also appear in outside-gap 12-byte records at `0xc2b64..0xd7ce0` bracketed by self-offset pointers `[off-4][tag][off+4][count]` — same record schema as session 57's post-fow body.
+
+**Best label (HYPOTHESIS, STRONG).** Per-turn **AI decision / agenda cache** — transient prioritized work queue (kind = action type, idx = target entity id, seq = sequence counter, tag = per-turn RNG cookie). Rebuilt every turn, hence 46% churn and dictionary rotation. Rejects "diplomacy matrix" (session 56), "trade-route state", "treaty state", and any stable-UUID hypothesis.
+
+**Coverage status.** 214 KB stays "framed-undecoded" but with **semantics narrowed** from "diplomacy/relation matrix" to "per-turn AI cache". Decoder remains passthrough (state regenerates each turn — not worth modelling for round-trip).
+
+Files: `scripts/save-cracker/dig-12bslot-s85-1.js`, `dig-12bslot-s85-2.js`, `dig-12bslot-s85-3.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
