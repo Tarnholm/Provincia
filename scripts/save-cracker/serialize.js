@@ -417,11 +417,91 @@ function encodeFowCounterBlock(b) {
   return out;
 }
 
+// ---- Tile-grid matrix (0xf8fd2..0xf84632, 240×238 × 267 bytes) -------------
+//
+// One contiguous array of 57,120 cells × 267-byte stride. Crosses the
+// body-root boundary into the "9.78 MB tile-attribute gap". 42% of the save
+// by byte count and the single largest structured region.
+//
+// Per-cell layout (per session 52 turn-diff + sessions 18/22/35):
+//   +0    u32  global version constant (T1 = 5,  T2 = 6,   per-turn +1)
+//   +8    u32  per-cell event field    (T1 = 0,  sparse non-zero in T2)
+//   +12   u32  global version constant (T1 = 10, T2 = 11,  per-turn +1)
+//   +20   u32  `prev` relation/state field (T1 default = 200; 16 cells
+//              flip 200→600 in T2 — looks like AI-marked tiles)
+//   +32   u32  `curr` relation/state field — also the anti-diagonal lazy
+//              cache field (T1 = 200; T2 sweep flips to 195 in the
+//              `col+row<237` half of the grid)
+//   +68   u32  global version constant (T1 = 3,   T2 = 2,  per-turn −1)
+//   +76   u32  global version constant (T1 = 0,   T2 = 1,  per-turn +1)
+//   +84   u32  global version constant (T1 = 576, T2 = 577, per-turn +1)
+//   +92   u32  global version constant (T1 = 0,   T2 = 0xFFFFFFFF, flip)
+//
+// All bytes outside those nine u32 slots (the 231 remaining bytes per cell)
+// are preserved verbatim via a copy of the original 267-byte buffer; the
+// encoder overwrites the nine structured u32 slots in place. This keeps the
+// round-trip byte-identical for non-canonical cells (right edge, bottom row,
+// anti-diagonal sentinel, 1,389 truly-interior non-canonical cells, etc.)
+// without needing to model every byte yet.
+
+const TG_START   = 0xf8fd2;
+const TG_CELLS   = 240 * 238;        // 57,120
+const TG_STRIDE  = 267;
+const TG_END     = TG_START + TG_CELLS * TG_STRIDE;
+
+function decodeTileGridMatrix(buf, start, end) {
+  if (start !== TG_START || end !== TG_END) {
+    throw new Error(`decodeTileGridMatrix: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${TG_START.toString(16)}..0x${TG_END.toString(16)})`);
+  }
+  const cells = new Array(TG_CELLS);
+  for (let i = 0; i < TG_CELLS; i++) {
+    const base = start + i * TG_STRIDE;
+    cells[i] = {
+      v0:     buf.readUInt32LE(base + 0),
+      e8:     buf.readUInt32LE(base + 8),
+      v12:    buf.readUInt32LE(base + 12),
+      prev:   buf.readUInt32LE(base + 20),
+      curr:   buf.readUInt32LE(base + 32),
+      v68:    buf.readUInt32LE(base + 68),
+      v76:    buf.readUInt32LE(base + 76),
+      v84:    buf.readUInt32LE(base + 84),
+      v92:    buf.readUInt32LE(base + 92),
+      // Verbatim 267-byte copy; encoder rewrites only the nine u32 slots
+      // and keeps every other byte byte-identical.
+      opaque: Buffer.from(buf.slice(base, base + TG_STRIDE)),
+    };
+  }
+  return { _kind: "tile-grid-matrix", cells };
+}
+
+function encodeTileGridMatrix(g) {
+  if (g._kind !== "tile-grid-matrix") throw new Error("encodeTileGridMatrix: not a tile-grid-matrix object");
+  if (g.cells.length !== TG_CELLS) throw new Error(`encodeTileGridMatrix: expected ${TG_CELLS} cells, got ${g.cells.length}`);
+  const out = Buffer.alloc(TG_CELLS * TG_STRIDE);
+  for (let i = 0; i < TG_CELLS; i++) {
+    const c = g.cells[i];
+    if (c.opaque.length !== TG_STRIDE) throw new Error(`encodeTileGridMatrix: cell ${i} opaque length ${c.opaque.length} !== ${TG_STRIDE}`);
+    const base = i * TG_STRIDE;
+    c.opaque.copy(out, base);
+    out.writeUInt32LE(c.v0,   base + 0);
+    out.writeUInt32LE(c.e8,   base + 8);
+    out.writeUInt32LE(c.v12,  base + 12);
+    out.writeUInt32LE(c.prev, base + 20);
+    out.writeUInt32LE(c.curr, base + 32);
+    out.writeUInt32LE(c.v68,  base + 68);
+    out.writeUInt32LE(c.v76,  base + 76);
+    out.writeUInt32LE(c.v84,  base + 84);
+    out.writeUInt32LE(c.v92,  base + 92);
+  }
+  return out;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
   "HST":                     (buf, start, end) => encodeHST(decodeHST(buf, start, end)),
   "Toggle_fow/RNG counter":  (buf, start, end) => encodeFowCounterBlock(decodeFowCounterBlock(buf, start, end)),
+  "tile-grid-matrix":        (buf, start, end) => encodeTileGridMatrix(decodeTileGridMatrix(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };

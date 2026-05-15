@@ -12068,6 +12068,40 @@ Files: `scripts/save-cracker/serialize.js` (functions
 
 ---
 
+### Findings 2026-05-15 (background session 72 — diplomacy matrix decode/encode)
+
+**Goal**: replace the passthrough handler for the 240×238 tile-grid matrix at `0xf8fd2..0xf84632` (~14.55 MB, 42% of the save) in `serialize.js` with a structured decode/encode pair while keeping the round-trip byte-identical.
+
+#### Implementation
+
+- `decodeTileGridMatrix(buf, start, end)` — asserts range `[0xf8fd2..0xf84632)`, iterates **57,120 cells × 267-byte stride**, and extracts nine `u32` slots per cell:
+  - `v0`, `v12`, `v68`, `v76`, `v84`, `v92` — six global per-turn version constants (session 52: T1 = 5/10/3/0/576/0; T2 = 6/11/2/1/577/0xFFFFFFFF).
+  - `e8` — per-cell event field at `+8` (T1 = 0 in every cell; sparse non-zero in T2 — likely AI/event markers).
+  - `prev` — relation/state field at `+20` (T1 default = 200; 16 cells flip 200→600 in T2).
+  - `curr` — relation/state field at `+32`, also the **anti-diagonal lazy-cache field** (T1 = 200; T2 sweep flips to 195 in the `col+row<237` half).
+  - All other 231 bytes captured as a verbatim 267-byte `opaque` Buffer.
+- `encodeTileGridMatrix(g)` — copies each cell's `opaque` buffer to the output, then overwrites the nine `u32` slots in place. This preserves every byte the structured fields don't yet model — right-edge column, bottom row, anti-diagonal sentinel, the 1,389 truly-interior non-canonical cells, and the 697-cell mystery zone all round-trip cleanly without further modeling.
+- Wired into `SERIALIZERS["tile-grid-matrix"]`.
+
+#### Round-trip result
+
+```
+input size:  34524371 bytes (32.93 MB)
+claims:      14364
+segments:    12400 (4316 UNKNOWN, 8850620 bytes)
+output size: 34524371 bytes
+byte-identical: YES
+elapsed: 760 ms
+```
+
+This is the **largest structured decode/encode milestone shipped** so far — 42% of the save by byte count, 57,120 cells × 267 bytes = 15,251,040 bytes now flowing through a structured field model instead of `buf.slice` passthrough. The opaque-buffer-plus-overwrite pattern keeps the byte-identical invariant intact while making the nine session-52-confirmed fields available to future code (e.g. a diffing tool that wants to ignore the six global version counters when comparing two saves).
+
+Note: the task brief described the grid as 239×239 = 57,121 cells; the dossier (sessions 18/22/35/52) confirms it's actually 240×238 = 57,120, matching the existing cover.js `Tile-grid matrix (240×238 × 267-byte stride)` claim. The implementation follows the confirmed layout.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeTileGridMatrix`, `encodeTileGridMatrix`, constants `TG_START`/`TG_CELLS`/`TG_STRIDE`/`TG_END`; SERIALIZERS entry `"tile-grid-matrix"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
