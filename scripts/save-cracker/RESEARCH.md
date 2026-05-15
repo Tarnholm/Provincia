@@ -10269,6 +10269,201 @@ the standard character record (where leaders live) returned no hits.
 
 ---
 
+### Findings 2026-05-15 (background session 41 — family record layout)
+
+Cross-referenced 97 RIS wife records in `save_1.2.sav` and 92 in
+`save_Autosave Republic of Rome Turn 2 Start.sav` against descr_strat
+`relative`/`character_record` ground truth.
+
+#### Record start, end, and stride — CONFIRMED
+
+- Records are **fixed-stride 364 bytes** (72% of records) or 368 bytes
+  (10%); the rest are 462/470/472 (rare, ~6%).
+- **Record START = marker − 10**: the `f2 02 00 00` u32 (=754) and two
+  trailing zero bytes before every marker are part of the record header.
+  All 97 wife records share the same `00 00 00 00 f2 02 00 00 00 00` ten-
+  byte prefix before the `2e 05 00 00` marker.
+- **Record END = marker + 354** (start + 364). The next record's header
+  (`00 00 00 00 f2 02 00 00 00 00 2e 05 00 00`) begins at marker + 354.
+- Header semantics: `f2 02 00 00` (=754) is a record-type tag analogous to
+  the type-codes seen elsewhere; `2e 05 00 00` (=1326) is a sub-type tag
+  ("family character"). Both are emitted by the taw `pas` grammar for
+  every entry.
+
+```
+record_start =  marker - 10
+record_end   =  marker + 354    (354 + 10 = 364 stride)
+```
+
+#### Confirmed byte map (relative to marker)
+
+```
+marker-10 .. marker-7  u32   0x000002f2 (record-type tag)
+marker-6              u32   wifeFirstNameIdx  ◆ CONFIRMED session 39
+marker-1              byte  0x00 (padding, NOT alive flag — see retraction)
+marker+0..3           u32   0x0000052e (record-sub-type tag)
+marker+4..7           u32   0x00000000
+marker+8..15          8B    0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff (sentinel,
+                            mirrors LAYOUT_A 0xff slot in main char records)
+marker+16             byte  age = (242 − byte)  ◆ CONFIRMED 72% save_1.2,
+                            73% Turn-2 (misses are non-roman wives whose
+                            descr_strat age does not exist as
+                            `character_record age N`; encoding matches main
+                            character record convention exactly)
+marker+17..19         3B    0xff 0xff 0xff (sentinel continuation)
+marker+20             u32   flag, value 0 (≈50%) or 2 (≈50%) — purpose unknown
+marker+28             u32   0x00000002 constant (99%)
+marker+40             u32   husband.primaryUuid  ◆ CONFIRMED 100% (after
+                            disambiguation by name-collision filter; session
+                            39's 72.4% was a false-negative from naive
+                            firstName matching, not a layout miss)
+marker+60             u32   0xffffffff constant
+marker+68             u32   0x00000002 constant
+marker+80             u32   packed bitfield (e.g. 0x00010c81, 0x00010741) —
+                            HYPOTHESIS: encodes faction, gender, alive,
+                            never_a_leader, etc. as bit flags. Low byte
+                            always 0x01 or 0x41/0x81/0xc1 (low 2 bits set);
+                            byte +82 looks faction-related but only 26% of
+                            wives have it = expected faction id.
+marker+88             u32   0x00000032 (=50) constant — possibly a default
+                            authority/loyalty/popularity value
+marker+96..289        ~194B mostly zeros (placeholder for traits / ancillaries
+                            that wives don't have at turn 1)
+marker+294            u16   length-prefixed ASCII portrait path #1
+                            (e.g. "data/ui/roman/portraits/cards/old/
+                            generals/373.tga") — CONFIRMED in Turn-2 save
+                            where it extends beyond marker+354. Save_1.2
+                            has shorter strings here so the portrait block
+                            ends before the record boundary.
+marker+(294+len+2)    u16   length-prefixed ASCII portrait path #2 (small
+                            portrait), same format
+```
+
+The portrait-string layout matches the main `characterParser.js` format
+exactly, so wife records reuse the standard portrait subrecord.
+
+#### Wife's OWN primaryUuid — NEGATIVE (with retraction)
+
+`+36` is **NOT** the wife's own primaryUuid. Evidence:
+- 109 unique values across 361 records (would be 361 unique if it were a
+  UUID — wives are not deduplicated by name).
+- 42 nonzero `+36` values appear in 2+ records.
+- 166 cross-record links where one record's `+36` equals ANOTHER record's
+  `+40` (husband uuid). This means `+36` carries **the wife's father's
+  primaryUuid OR the wife's family-tree parent UUID**, not the wife
+  herself — i.e. wife's father / mother record is sharing one of its UUIDs
+  with the wife's record.
+- Test "wife's +36 value found anywhere in husband's record window
+  (0..250)": 0/97. So +36 has no relationship to the husband's
+  character record children/family array.
+
+Best interpretation: **wives do NOT have a standalone primaryUuid stored
+in the compact family record**. Their identity is implicit: they are
+addressed by (parent UUID @ +36, husband UUID @ +40, name @ −6). This
+matches the engine pattern where wives are non-leader characters that
+don't get their own slot in the main `character_record` UUID space.
+
+#### Wife's FATHER UUID — STRONG HYPOTHESIS at +36
+
+- 168/361 records (47%) have a nonzero `+36` u32.
+- The value passes the "is-a-real-uuid" test: 166 of those values appear
+  at `+40` of some other family record (i.e. they are someone's parent
+  pointer, which is how UUIDs in this table are reused).
+- Plausibility: in the engine, a wife's record cross-references her
+  family-of-origin so the marriage logic can detect incest / clan
+  conflict. `+36` is sized and positioned like a uuid (u32, 4 bytes
+  before +40 husband ptr).
+- Caveat: untested against a wife whose father is also a leader — the
+  descr_strat `relative` lines do NOT name wives' parents. To prove
+  CONFIRMED status, would need a turn-50+ save where one wife's
+  character_record father lives in the main char stream.
+
+#### Child / mother links — NEGATIVE on save_1.2's +358 hit
+
+- save_1.2 showed 52/63 wives with a u16 at `+358` matching a known
+  child's firstName-idx. RETRACTED: in the Turn-2 save the same `+358`
+  matches **0/59** of those same wives. The save_1.2 hit was a coincidence
+  — the portrait-path block at +294 happens to terminate near +356 in
+  save_1.2 (short paths), so the next u16 length-prefix at +358 looked
+  like a child name idx. In Turn-2 saves the portrait paths are LONGER,
+  shifting that offset. **Child name idxs are not stored at any fixed
+  offset in the wife record**; they live in the children's OWN
+  family-records.
+
+Verified by direct test: scanning the entire 380-byte window for known
+child name idxs (u16) of 95 (wife, child) pairs in save_1.2 hits +358
+55% — and no other offset hits more than 3%. In Turn-2 the same scan
+hits 0% at +358. **Confirms +358 is structural noise, not a child slot.**
+
+#### Faction id — NEGATIVE
+
+No fixed-offset u8/u16/u32 matches the playable-faction-list index for
+the husband's faction across wives. Best candidate (+82) hits 26% — at
+chance level given how many small ints exist in the record. The wife's
+faction is likely inherited at render-time from her husband (lookup via
+husband.primaryUuid @ +40 → husband.factionId).
+
+#### Trait block — NEGATIVE
+
+The +96..+289 region is all zeros across all 97 matched wives. No trait
+count, no trait records. Hypothesis: wives at turn 1 simply have no
+traits. Confirming on a later save (after the wife has acquired traits
+through marriage/childbirth events) would require a longer-running save
+than the corpus contains.
+
+#### Birth year / turn — NEGATIVE
+
+No s16 / u16 / u32 in the record decodes to "turn number" or "year"
+across wives of varying age. Age is stored as `242 − age` byte at +16,
+matching the main character-record convention. Engine likely computes
+birth year on the fly as `currentTurnYear − age`.
+
+#### Summary table
+
+| Field             | Offset | Type | Confidence  |
+|-------------------|--------|------|-------------|
+| record start tag  | -10    | u32 0x2f2 | CONFIRMED   |
+| firstName idx     | -6     | u32  | CONFIRMED (sess 39) |
+| sub-type tag      | +0     | u32 0x52e | CONFIRMED |
+| 8-byte 0xff sentinel | +8  | 8B   | CONFIRMED   |
+| age (242−age)     | +16    | u8   | CONFIRMED   |
+| husband uuid      | +40    | u32  | CONFIRMED   |
+| wife-self uuid    | —      | —    | NEGATIVE (not stored)  |
+| wife's father uuid | +36   | u32  | STRONG HYPOTHESIS  |
+| portrait path     | +294   | u16-prefixed ASCII | CONFIRMED |
+| record stride     | 364    | —    | CONFIRMED (72%; 368 alt) |
+| record end        | +354   | —    | CONFIRMED   |
+| traits, faction, child links | — | — | NEGATIVE (not present in this record; lookup via husband/children) |
+
+#### Reproducer scripts (session 41)
+
+- `dig-familyrec1.js` — bulk histogram of age @ +16, husband @ +40,
+  marker-stride; established record is 364B fixed-stride.
+- `dig-familyrec2.js` — column-entropy analysis revealing the stable
+  vs. variable byte columns; surfaced +358 child-name candidate that was
+  later retracted.
+- `dig-familyrec3.js` — wife-self-UUID test (+36 NEGATIVE),
+  +36-cross-link analysis pointing to "wife's father uuid".
+- `dig-familyrec4.js` — cross-save validation: portrait-path string
+  block at +294 visible only in Turn-2 save where it extends past +354,
+  retracting +358 child theory.
+
+#### Open follow-ups for session 42+
+
+- Prove `+36` is wife's father UUID by finding a wife whose father IS a
+  leader (his primaryUuid known) — requires a late-turn save where a
+  family-member wife appears after her father has been a faction leader.
+- Decode `+80` packed bitfield (likely gender, alive, faction, trait-
+  group flags).
+- Test whether the same record layout (with the SAME +40 = parent uuid
+  slot) is used for child records (non-leader sons/daughters). Session
+  39 noted gender=1 records also exist in this table — likely those use
+  +40 as fatherUuid, identical encoding.
+- Confirm portrait path is at +294 in all records (parser should length-
+  walk from +294 rather than seek to +358).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
