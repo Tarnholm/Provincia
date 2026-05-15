@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.340",
+    date: "2026-05-15",
+    items: [
+      { type: "change", text: "Major UI reshuffle. The faction icons + selected provinces + search + recent regions moved from the right column to a bottom strip; the Region panel (which kept growing — buildings, recruitable, garrison, characters, queues, etc.) is now in the right column where it has room to breathe. Revert path if it doesn't work for you: `git checkout pre-ui-reshuffle-v0.9.339` (tag pushed before the change)." },
+    ],
+  },
+  {
     version: "0.9.339",
     date: "2026-05-15",
     items: [
