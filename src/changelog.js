@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.356",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Forced gap now applies to the app window edges too. Movable widgets can't be pushed/resized into touching the screen border — same ~6.7 px aura they keep with each other and with the map." },
+      { type: "change", text: "Selected provinces list now flows in 2 horizontal rows with column auto-flow. Long lists scroll horizontally instead of stretching down the panel — much shorter vertical footprint, each entry's drag handle preserved." },
+      { type: "change", text: "Search bar and Recent regions now share one row at the top of the bottom-strip right column. Search keeps a fixed 220 px width on the left; Recent flexes to fill the rest with horizontal scroll. Saves a full row vs the old stacked layout." },
+    ],
+  },
+  {
     version: "0.9.355",
     date: "2026-05-16",
     items: [

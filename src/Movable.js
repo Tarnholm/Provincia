@@ -305,9 +305,11 @@ function snapAlign(myId, np, lock = {}, nosnap = false) {
       }
     }
   }
-  // Final viewport clamp.
-  out.x = Math.max(0, Math.min(1 - out.w, out.x));
-  out.y = Math.max(0, Math.min(1 - out.h, out.y));
+  // Final viewport clamp — keep at least GAP_FRAC from each window edge so
+  // widgets share the same air-gap with the screen border that they keep
+  // with each other and with the map.
+  out.x = Math.max(GAP_FRAC, Math.min(1 - out.w - GAP_FRAC, out.x));
+  out.y = Math.max(GAP_FRAC, Math.min(1 - out.h - GAP_FRAC, out.y));
   return { pos: out, guides };
 }
 

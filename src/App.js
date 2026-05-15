@@ -7123,7 +7123,20 @@ function App() {
         )}
 
         {items.length ? (
-          <ul style={{ margin: 0, paddingLeft: 0, fontSize: "0.95rem", listStyle: "none" }}>
+          // 2-row horizontal grid: items flow column-by-column with exactly
+          // 2 rows; long lists scroll horizontally. Halves the vertical
+          // footprint vs the old single-column <ul> while keeping each
+          // entry's drag handle + label intact.
+          <ul style={{
+            margin: 0, padding: 0, fontSize: "0.85rem", listStyle: "none",
+            display: "grid",
+            gridTemplateRows: "auto auto",
+            gridAutoFlow: "column",
+            gridAutoColumns: "minmax(140px, max-content)",
+            gap: 4,
+            overflowX: "auto",
+            overflowY: "hidden",
+          }}>
             {items.map(({ rgbKey, displayName }, idx) => (
               <li
                 key={rgbKey}
@@ -7135,16 +7148,16 @@ function App() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 8,
-                  marginBottom: 4,
-                  padding: "4px 6px",
+                  gap: 6,
+                  padding: "3px 6px",
                   borderRadius: 6,
                   background: "rgba(255,255,255,0.05)",
                   cursor: devDragResource ? "grabbing" : "grab",
+                  whiteSpace: "nowrap",
                 }}
               >
-                <span style={{ minWidth: 32, color: "#aaa", fontVariantNumeric: "tabular-nums" }}>{idx + 1}.</span>
-                <span style={{ flex: 1 }}>{displayName}</span>
+                <span style={{ color: "#aaa", fontVariantNumeric: "tabular-nums", fontSize: "0.78rem" }}>{idx + 1}.</span>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{displayName}</span>
               </li>
             ))}
           </ul>
@@ -10676,55 +10689,59 @@ function App() {
               </CustomScrollArea>
 
               <div style={{ display: "flex", flexDirection: "column", gap: PANELS_GAP, height: "100%", overflow: "hidden" }}>
-                {/* Search bar */}
-                <div className="panel" style={{ padding: "8px 10px", flexShrink: 0 }}>
-                  {renderSearch()}
-                </div>
-
-                {/* Recently-viewed regions backstack */}
-                {recentRegions.length > 0 && (
-                  <div className="panel" style={{ padding: "6px 10px", flexShrink: 0 }}>
-                    <div style={{
-                      fontWeight: 700, fontSize: "0.78rem", marginBottom: 4, color: "#dca64a",
-                      display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                    }}>
-                      <span>↶ Recent</span>
-                      <span
-                        onClick={() => setRecentRegions([])}
-                        title="Clear recent regions"
-                        style={{ fontSize: "0.7rem", fontWeight: 400, opacity: 0.7, cursor: "pointer" }}
-                      >clear</span>
-                    </div>
-                    <div className="resource-panel-scroll" style={{
-                      display: "flex", flexWrap: "nowrap", gap: 4,
-                      overflowX: "auto", overflowY: "hidden", paddingBottom: 2,
-                      scrollbarWidth: "none",
-                    }}>
-                      {recentRegions.map(key => {
-                        const r = regions[key];
-                        if (!r) return null;
-                        const label = r.city || r.region || key;
-                        const isLocked = lockedRegionInfo?.rgb === key;
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => jumpToPin({ key, label })}
-                            title={r.region && r.city ? `${r.region} (${r.city})` : label}
-                            style={{
-                              padding: "2px 8px", borderRadius: 5,
-                              border: isLocked ? "1px solid #dca64a" : "1px solid #555",
-                              background: isLocked ? "rgba(220,166,74,0.18)" : "rgba(255,255,255,0.06)",
-                              color: isLocked ? "#dca64a" : "#ddd",
-                              cursor: "pointer", fontSize: "0.74rem",
-                            }}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                {/* Search bar + Recent regions share one row to save
+                    vertical space. Search keeps a fixed width on the left
+                    so its input stays usable; recent flexes to fill the
+                    remaining space and scrolls horizontally if it overflows. */}
+                <div style={{ display: "flex", gap: PANELS_GAP, alignItems: "stretch", flexShrink: 0 }}>
+                  <div className="panel" style={{ padding: "8px 10px", flex: "0 0 220px", minWidth: 0 }}>
+                    {renderSearch()}
                   </div>
-                )}
+                  {recentRegions.length > 0 && (
+                    <div className="panel" style={{ padding: "6px 10px", flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+                      <div style={{
+                        fontWeight: 700, fontSize: "0.7rem", color: "#dca64a",
+                        display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                      }}>
+                        <span>↶ Recent</span>
+                        <span
+                          onClick={() => setRecentRegions([])}
+                          title="Clear recent regions"
+                          style={{ fontSize: "0.65rem", fontWeight: 400, opacity: 0.7, cursor: "pointer" }}
+                        >clear</span>
+                      </div>
+                      <div className="resource-panel-scroll" style={{
+                        display: "flex", flexWrap: "nowrap", gap: 3,
+                        overflowX: "auto", overflowY: "hidden",
+                        scrollbarWidth: "none",
+                      }}>
+                        {recentRegions.map(key => {
+                          const r = regions[key];
+                          if (!r) return null;
+                          const label = r.city || r.region || key;
+                          const isLocked = lockedRegionInfo?.rgb === key;
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => jumpToPin({ key, label })}
+                              title={r.region && r.city ? `${r.region} (${r.city})` : label}
+                              style={{
+                                padding: "1px 6px", borderRadius: 4,
+                                border: isLocked ? "1px solid #dca64a" : "1px solid #555",
+                                background: isLocked ? "rgba(220,166,74,0.18)" : "rgba(255,255,255,0.06)",
+                                color: isLocked ? "#dca64a" : "#ddd",
+                                cursor: "pointer", fontSize: "0.7rem",
+                                whiteSpace: "nowrap", flexShrink: 0,
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Pinned regions */}
                 {pinnedRegions.length > 0 && (
