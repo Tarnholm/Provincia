@@ -12016,6 +12016,58 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeHST`, `encodeHST`).
 
 ---
 
+### Findings 2026-05-15 (background session 71 — FoW counter+flag decode/encode)
+
+**Goal**: replace the passthrough handler for the `[0x43f8..0x44e2)` claim
+(234 bytes, named `"Toggle_fow/RNG counter"` in `serialize.js`'s
+`enumerateClaims`, called `"Toggle_fow / RNG counter block"` in `cover.js`)
+with a real structured decode/encode pair, keeping the round-trip on
+`save_1.2.sav` byte-identical.
+
+**Layout decoded** (from sessions 37 + 38):
+
+| Relative offset | Width | Field        | Notes |
+|---|---|---|---|
+| `+0x000` | u32 LE | `counter`    | Per-save tick / RNG-frame clock. Increments every save. 2-byte diffs seen on zero-input save-save (e.g. 614 → 470, 4670 → 6062, 3579 in current `save_1.2`). |
+| `+0x004` | 230 B  | `opaque`     | Engine state not yet field-mapped — captured verbatim as a `Buffer`. |
+
+The 234-byte segment is half-open `[0x43f8..0x44e2)`: the u8 `toggle_fow`
+flag at `0x44e2` itself sits in the NEXT segment
+(`post-fow-35-stride-table`, `[0x44e2..0x2a25d)`), so this decoder does
+NOT include it. The flag is documented in code comments for cross-reference
+but doesn't belong to this claim by its byte boundary. Resolving that
+boundary mismatch (moving the flag byte into this claim) would be a
+`cover.js` refactor across multiple ranges — deferred, same pattern as the
+session 70 HST prefix/trailer note.
+
+**Structural justification**: the same shape as `decodeHeader` /
+`decodeHST` — known primitive prefix + opaque tail. Round-trip is
+invertible because (a) `counter` is a fixed-width u32 LE, (b) `opaque` is
+captured and re-emitted byte-for-byte. No engine validation of these
+bytes (per session 37: the test-pair saves both load fine with the u32
+flipped; per session 38: this counter is NOT a cheat counter, just a tick).
+
+**Round-trip on `save_1.2.sav`**: byte-identical YES, 734 ms. No
+divergence anywhere in the file.
+
+**Coverage delta**: zero — the bytes were already claimed as passthrough.
+The win is in `serialize.js` now having a third real decode/encode pair
+(after `Header`, `HST`), letting downstream tooling mutate `.counter`
+without touching the opaque tail.
+
+**Future structural work**: the 230 opaque bytes hide whatever engine
+state sits between the tick counter at `0x43f8` and the `toggle_fow` flag
+at `0x44e2`. Session 36-era notes mention `0x455c` as another 4-byte
+field in the vicinity (per the RNG-state tick search hit at line ~8256),
+so the opaque blob is likely a small fixed-shape record of additional
+RNG/clock state. Mapping those bytes is a separate dig session.
+
+Files: `scripts/save-cracker/serialize.js` (functions
+`decodeFowCounterBlock`, `encodeFowCounterBlock`; SERIALIZERS entry
+`"Toggle_fow/RNG counter"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

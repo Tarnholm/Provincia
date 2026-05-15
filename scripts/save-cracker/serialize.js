@@ -383,10 +383,45 @@ function encodeHST(h) {
   return Buffer.concat(chunks);
 }
 
+// ---- Toggle_fow / RNG counter block (0x43f8..0x44e2, 234 bytes) ------------
+//
+// RESEARCH.md sessions 37 + 38:
+//   - 0x43f8: u32 LE per-save tick counter (RNG/frame/serialization clock).
+//     Increments every save; the 2-byte diff seen between two zero-input
+//     saves was purely this u32 (e.g. 614 → 470, 4670 → 6062, etc.).
+//   - 0x44e2: u8 toggle_fow cheat flag — 0x01 = FoW enabled (default),
+//     0x00 = disabled after the console command. This byte sits in the
+//     NEXT segment ("post-fow-35-stride-table" [0x44e2..0x2a25d)), so it
+//     is NOT included in this decoder's range. Mentioned here only because
+//     the surrounding ~234 bytes are the bracketing region named in cover.js
+//     after the two diff anchors.
+//
+// Between the u32 counter at +0 and the end of this segment lie ~230 bytes
+// of opaque engine state. No dossier maps those bytes to fields yet, so the
+// decoder captures them verbatim as a Buffer. Encoder re-emits the u32 and
+// the opaque tail in the same byte layout.
+function decodeFowCounterBlock(buf, start, end) {
+  if (start !== 0x43f8 || end !== 0x44e2) {
+    throw new Error(`decodeFowCounterBlock: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x43f8..0x44e2)`);
+  }
+  const counter = buf.readUInt32LE(start);          // per-save tick u32 LE
+  const opaque  = Buffer.from(buf.slice(start + 4, end));
+  return { _kind: "fow-counter-block", counter, opaque };
+}
+
+function encodeFowCounterBlock(b) {
+  if (b._kind !== "fow-counter-block") throw new Error("encodeFowCounterBlock: not a fow-counter-block object");
+  const out = Buffer.alloc(4 + b.opaque.length);
+  out.writeUInt32LE(b.counter, 0);
+  b.opaque.copy(out, 4);
+  return out;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
-  "Header": (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
-  "HST":    (buf, start, end) => encodeHST(decodeHST(buf, start, end)),
+  "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
+  "HST":                     (buf, start, end) => encodeHST(decodeHST(buf, start, end)),
+  "Toggle_fow/RNG counter":  (buf, start, end) => encodeFowCounterBlock(decodeFowCounterBlock(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };
