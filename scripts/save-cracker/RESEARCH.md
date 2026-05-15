@@ -10807,6 +10807,102 @@ Files: `scripts/save-cracker/dig-aipolicy-session45-1.js`,
 
 ---
 
+### Findings 2026-05-15 (background session 46 — per-faction tail bytes)
+
+Goal: decode the bytes AFTER the AI-policy array sentinel (`0x1e` at `+52+4N`)
+in a major faction record (`+44=6`). Three saves with controlled differences:
+`save_1.2` (T1 baseline), `save_2.2` (stone_wall queued in Roma), `save_3.2`
+(levies queued in Roma). Identified the same faction (Romans Julii) across all
+3 saves by **tail+36 = 10000** (stable starting-treasury fingerprint; the
+`+4` cookie is NOT stable, refuting an earlier assumption).
+
+**Layout of the post-sentinel tail** (offsets relative to first byte AFTER the
+sentinel `0x1e`, i.e. `base + 52 + 4N + 4`):
+
+| Δ | Type | Confidence | Meaning |
+|---|---|---|---|
+| `+0..+27` | zeros | **CONFIRMED** | Padding |
+| `+28` | `u32 = 100` | **CONFIRMED** | Class-tag echo (mirrors record `+8`) |
+| `+32` | u32=0 | CONFIRMED | Padding |
+| `+36` | `u32` | **CONFIRMED** | **Starting/displayed treasury** (10000 for Romans Julii in all 3 saves; record `+0` is the net treasury after queue spending, e.g. `9022` in s3 = `10000 - 978` for levies) |
+| `+40` | `u32 = 30 (0x1e)` | **CONFIRMED** | Second `0x1e` sentinel (different role from the post-policy-array one) |
+| `+44..+71` | zeros | CONFIRMED | Padding |
+| `+72` | `u32` | STRONG | Per-faction flag (0xef in s1+s2, 0x03 in s3 — diverges only when levies queued) |
+| `+76..+103` | zeros | CONFIRMED | Padding |
+| `+104` | `u32 = 0x00ef0000` | CONFIRMED | Constant 4-byte tag (same across all records and saves) |
+| `+124` | `u32 = 0x00030000` | CONFIRMED | Constant tag |
+| `+132..+171` | 40 bytes | STRONG | **Random-looking hash / PRNG block** (every byte differs across all 3 saves; matches `random_counter` / `random_pool` semantics from session 16) |
+| `+172` | `u32 = 0x01000000` | CONFIRMED | Constant tag |
+| `+180` | `u32 = 7` | CONFIRMED | Constant |
+| `+184` | `u32 = 1` | CONFIRMED | Constant |
+| `+188` | `u32 = 0x39240005` | CONFIRMED | Constant magic |
+| `+192..+207` | 16 B | **CONFIRMED structural** | First "stride-16" record header (count/flags) |
+| `+208..` | `Stride-16 record × M` | **CONFIRMED structural** | **Repeating 16-byte records** with header `u32 = 0x00010101` (`01 01 01 00`) and 3 trailing small-int u32s |
+| terminator | `u32 = 0x1e` (=30) | STRONG | Third `0x1e` sentinel marks end of stride-16 array (visible in s3 at tail+224; in s2 the stride breaks at tail+240 with `1e 00 00 00` again) |
+
+**Key structural discovery** — the **stride-16 record array starting at `+208`**:
+
+```
++208: 0x00010101   ← record-tag (constant per record)
++212:  768          ← u32 value (range ~200..1300)
++216:    2          ← u32 small-int
++220:    3          ← u32 small-int
++224: 0x00010101   ← next record tag
++228:  927
++232:    2
++236:    0
++240: 0x00010101
++244:  990
+...
+```
+
+s1 (T1, no actions) shows this stride clean to `tail+400+`. s2 (stone_wall
+queued) has the stride break earlier with `0x1e` and zeros following. s3
+(levies queued, smallest count) breaks earliest with `0x1e` at `tail+224`.
+
+**Cross-save record count** (M, stride-16 records before terminator):
+- s1.RJ (T1):              ≥12 records visible in dump (tail+208..+400 clean)
+- s2.RJ (stone_wall):      ~2 records (tail+240 = `0x1e` terminator)
+- s3.RJ (levies):          1 record (tail+224 = `0x1e` terminator)
+
+The record count **decreases** when a build/recruit action is queued. This
+hypothesis-fits a **per-settlement or per-build-slot status array** that gets
+consumed/marked as the queue is paid. The `+212` value (768/927/990/784/824)
+falls in the same 256..1300 range as the AI-policy-array values from session
+45 — possibly **the same value namespace** (settlement IDs or score buckets).
+
+**Confidence summary**:
+- **CONFIRMED**: treasury duplicate at `+36`, second `0x1e` sentinel at `+40`,
+  three constant tag u32s at `+104/+124/+172/+188`, stride-16 record format
+  with `0x00010101` header at `+208`.
+- **STRONG**: 40-byte PRNG/hash block at `+132..+171`; `0x1e` terminator for
+  the stride-16 array; record-count decreases with each queued action.
+- **HYPOTHESIS**: stride-16 array semantics — most plausible candidates are
+  (a) **per-settlement build slot status**, (b) **active AI commitments / open
+  orders** (decreases as orders consumed), or (c) **per-army order tokens**.
+
+**Implication for Provincia**: the post-sentinel tail has 7 newly-pinned
+constant fields and one decodable structural array. The treasury-echo at
+`+36` is the cleanest immediately usable field (stable across all faction
+records — could serve as a sanity-check for treasury parsing). The stride-16
+array is decodable; semantic ID space (settlement vs army vs order) is the
+remaining open question.
+
+Files: `scripts/save-cracker/dig-factail-session46-1.js`,
+`dig-factail-session46-2.js`, `dig-factail-session46-3.js`.
+
+#### Open follow-ups for session 47+
+
+- **Pin the stride-16 record semantic** by mod-test: cancel a queue item
+  and verify the array shrinks by 1. Recruit a unit and verify it grows by 1.
+- **Cross-reference `+212` value with settlement IDs** by listing Romans
+  Julii's settlements (Arretium, Capua, etc.) and seeing if their u32 IDs
+  match the values 768/927/990/784/824/...
+- **Test if `+36` = max-treasury** (could be income cap, or last-turn end
+  treasury): toggle income via mod and re-test.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
