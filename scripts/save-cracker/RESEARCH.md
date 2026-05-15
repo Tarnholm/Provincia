@@ -11165,6 +11165,97 @@ Files: `scripts/save-cracker/dig-startingwars1.js`,
 
 ---
 
+### Findings 2026-05-15 (background session 51 — wars as runtime-derived state)
+
+**Goal**: test whether RTW Remastered persists starting wars at all or whether
+the engine derives them at runtime from `core_attitudes >= threshold`.
+
+**Ground-truth parse of `imperial_campaign/descr_strat.txt`** (with leading
+whitespace, matching session 49's counts): 432 directed `faction_relationships`
+lines (255 ordered war declarations -> 238 unordered war pairs; 175 ordered
+ally -> 89 ally pairs; 2 neutral; values used = {199, 200, 250, 300, 600}
+plus 201–249/251–299 collapsed into "war"), 1109 `core_attitudes` lines
+(parser kept 1105 directed declarations -> 590 unordered pairs; attitude
+values used = {-10, 0, 400, 600}).
+
+**Directedness**: 515 unordered attitude-pairs are declared in BOTH
+directions, 75 in only ONE direction. 235/238 war pairs have BOTH directions
+declared (3 have only one direction). 78/89 ally pairs have both directions
+declared, 9 have one direction, 2 are undeclared.
+
+**Histogram of attitudes within each rel-class** (unordered, max-across-directions):
+
+| class    | n   | att=-10 | att=0 | att=400 | att=600 | none |
+|----------|-----|---------|-------|---------|---------|------|
+| WAR      | 238 |   0     |   0   |   0     | **238** |  0   |
+| ALLY     |  89 |  75     |   2   |   0     |   10    |  2   |
+| NEUTRAL  |   2 |   0     |   0   |   0     |    2    |  0   |
+| OTHER    | 263 |  17     | 117   |   1     |  128    |  0   |
+
+**Threshold sweep** (predict war iff attMax >= X, evaluated over all 592
+unordered declared pairs):
+
+| X    | TP  | FP  | FN | recall | precision | F1   |
+|------|-----|-----|----|--------|-----------|------|
+| -10  | 238 | 352 | 0  | 1.000  | 0.403     | 0.575|
+|  0   | 238 | 260 | 0  | 1.000  | 0.478     | 0.647|
+| 200  | 238 | 141 | 0  | 1.000  | 0.628     | 0.771|
+| 600  | 238 | 140 | 0  | 1.000  | 0.630     | 0.773|
+| 601  |   0 |   0 |238 | 0.000  | 0.000     | 0.000|
+
+**Refined rules** (attempt 2):
+
+| rule | TP  | FP  | FN | recall | precision | F1   |
+|------|-----|-----|----|--------|-----------|------|
+| R1: attMax>=600 AND no non-war rel-line | 238 | 128 | 0 | 1.000 | 0.650 | 0.788 |
+| R2: BOTH directed atts >= 600           | 235 | 100 | 3 | 0.987 | 0.701 | 0.820 |
+| R3: attMin >= 600                       | 238 | 135 | 0 | 1.000 | 0.638 | 0.779 |
+
+**Headline**: war-declaration is a **superset-constraint** on `core_attitudes`
+— every war pair has both factions at att=600 — but the **converse fails by
+~140 pairs**: 128 pairs with mutual att=600 are NOT declared war (e.g.
+`carthage<->arevaci`, `ptolemaic<->seleucid` declared ally despite att=600;
+Greek city-states like `acarnania<->aetolia`, `elis<->sparta`, `athens<->
+boeotia` all att=600 but allied). **No threshold + symmetry rule cleanly
+separates war from non-war using attitudes alone**.
+
+**Implication for session 50's open question**: starting wars **cannot** be
+runtime-reconstructed from `core_attitudes` alone — the `faction_
+relationships` line is the authoritative war discriminator and carries
+information not present in attitudes. Either (a) the engine re-reads
+descr_strat.txt at every save-load (consistent with RTW's known
+`start_pos.esf`/.txt behaviour where new descr_strat changes affect ongoing
+saves), or (b) wars ARE persisted in the save in a form session 50 didn't
+find (RLE TAILs remain the prime candidate). Session 49's observation that
+the 239x239 matrix is all-default at turn 1 is fully consistent with EITHER
+interpretation.
+
+**Confidence**:
+- **CONFIRMED**: `att >= 600` is necessary but NOT sufficient for war —
+  recall 1.0, precision 0.63 across all candidate thresholds. The
+  hypothesis "wars are derived purely from `core_attitudes >= X`" is
+  **REFUTED**.
+- **CONFIRMED**: every declared war has att=600 in at least one direction
+  (238/238); 235/238 have it in BOTH directions; the 3 single-direction
+  exceptions are `galatians<->pergamon`, `greeks<->illyrian_kingdom`,
+  `galatians<->odrysians` (likely modder oversight, not a rule).
+- **STRONG**: ~140 same-culture rival/ally pairs (Greek city-states,
+  Diadochi successors) carry att=600 mutually yet are declared ALLY or
+  not-declared-WAR, which is the precision gap. So the engine treats
+  `faction_relationships` as authoritative and `core_attitudes` as an
+  independent opinion field — they may correlate at start but the engine
+  does NOT compute one from the other.
+- **HYPOTHESIS**: starting wars are either (a) re-read from descr_strat at
+  load and not persisted, or (b) persist in RLE TAILs (session 50 H4).
+  This histogram cannot distinguish (a) from (b); only an experiment
+  (edit descr_strat post-save, observe whether ongoing wars change) can.
+
+Files: `scripts/save-cracker/dig-warsrt1.js`, `dig-warsrt2.js`.
+**Hard early-stop reached**: 2 attempts used, hypothesis refuted, histogram
+complete.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
