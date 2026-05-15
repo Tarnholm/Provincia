@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.347",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Freeform widget layout — iteration 1. The 4 RegionInfo sections (Region info, Recruitable, Buildings, Armies) plus Characters and Build Queue are now each independent Movable widgets. Toggle 📐 Layout to reveal each widget's golden drag-header (top edge) and 4 corner resize handles + side edges. Drag to move; corners/edges to resize. All positions store as percent-of-viewport so they stay proportional across window resizes and monitor switches. ↺ Reset clears every widget override + the older splitter overrides (reloads the page to snap back to defaults)." },
+      { type: "change", text: "RegionInfo's outer panel + CustomScrollArea wrapper removed — each section is its own floating widget now, so the surrounding 'big right-column panel' frame went away. Default positions are seeded from the old grid so the visual at first launch matches the previous layout." },
+      { type: "change", text: "Iteration 1 covers the RegionInfo sub-sections. Future iterations: bottom-strip pieces (factions / search / recent / pinned / selected provinces), top toolbar buttons, and individual buttons elsewhere." },
+    ],
+  },
+  {
     version: "0.9.346",
     date: "2026-05-16",
     items: [

@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import FactionIcon from "./FactionIcon";
+import { Movable } from "./Movable";
 
 const PUBLIC_URL = import.meta.env.BASE_URL || "./";
 
@@ -430,41 +431,28 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     rowsTemplate = "auto auto auto";
   }
 
+  // Freeform-widget styling — each Movable section gets a "panel" feel so
+  // the user can see/grab each chunk individually. Outside design mode the
+  // header strip is hidden but the panel padding stays so content sits in
+  // a readable card.
+  const panelInner = {
+    width: "100%", height: "100%", boxSizing: "border-box",
+    padding: 6, paddingTop: designMode ? 16 : 6,
+    background: "rgba(20,20,20,0.55)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 6,
+    overflow: "auto",
+    color: "#f7f7f7",
+    fontSize: "0.82rem",
+    lineHeight: 1.25,
+  };
+
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        minHeight: "100%",
-        display: "grid",
-        // UI reshuffle v3: 3-row layout. Top row: region details +
-        // recruitable side-by-side (the two narrower sections). Middle:
-        // buildings 10×2 spanning full width. Bottom: garrison + field
-        // armies spanning full width.
-        gridTemplateColumns: colsTemplate,
-        gridTemplateRows: rowsTemplate,
-        gridTemplateAreas: '"info recruit" "buildings buildings" "armies armies"',
-        gap: 6,
-        paddingBottom: 4,
-        color: "#f7f7f7",
-        fontSize: "0.82rem",
-        lineHeight: 1.25,
-        boxSizing: "border-box",
-        height: "100%",
-      }}
-    >
-      {designMode && (
-        <RegionInfoSplitters
-          infoColFrac={infoColFrac}
-          topRowFrac={topRowFrac}
-          buildFrac={buildFrac}
-          onSetInfoColPct={onSetInfoColPct}
-          onSetTopRowPct={onSetTopRowPct}
-          onSetBuildRowPct={onSetBuildRowPct}
-        />
-      )}
-      {/* Left: region details */}
-      <div style={{ gridArea: "info", paddingRight: 6, minWidth: 200, overflow: "hidden" }}>
+    <>
+      {/* Region info — Movable widget */}
+      <Movable id="region.info" title="Region info" designMode={designMode}
+        defaultPct={{ x: 0.704, y: 0.008, w: 0.085, h: 0.30 }}>
+      <div style={panelInner}>
         {region && (
           <div
             title="Double-click to copy region name"
@@ -840,18 +828,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           </div>
         )}
       </div>
+      </Movable>
 
-      {/* Buildings row — spans full width below info+recruit */}
-      <div
-        style={{
-          gridArea: "buildings",
-          borderTop: "1px solid #8882",
-          paddingTop: 6,
-          boxSizing: "border-box",
-          minWidth: 0,
-          height: "100%",
-        }}
-      >
+      {/* Characters — Movable widget extracted from buildings */}
+      <Movable id="region.characters" title="Characters" designMode={designMode}
+        defaultPct={{ x: 0.704, y: 0.318, w: 0.18, h: 0.10 }}>
+      <div style={panelInner}>
         {characters && characters.length > 0 && (() => {
           const isStarting = characters[0]?._source === "starting";
           return (
@@ -898,7 +880,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           </div>
           );
         })()}
-        {Array.isArray(buildingQueue) && buildingQueue.length > 0 && (
+      </div>
+      </Movable>
+
+      {/* Building queue — Movable widget extracted from buildings */}
+      <Movable id="region.queue" title="Build queue" designMode={designMode}
+        defaultPct={{ x: 0.886, y: 0.318, w: 0.11, h: 0.05 }}>
+      <div style={panelInner}>
+        {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
           <div
             title="Construction queue (decoded from save's default_set chain — session 36)"
             style={{
@@ -921,7 +910,16 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               </span>
             ))}
           </div>
+        ) : (
+          <span style={{ color: "#888", fontStyle: "italic", fontSize: "0.72rem" }}>No queue</span>
         )}
+      </div>
+      </Movable>
+
+      {/* Buildings grid — Movable widget */}
+      <Movable id="region.buildings" title="Buildings" designMode={designMode}
+        defaultPct={{ x: 0.704, y: 0.418, w: 0.293, h: 0.30 }}>
+      <div style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
         {buildingItems.length > 0 ? (
           (() => {
@@ -1017,19 +1015,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           <span style={{ color: "#bbb", fontStyle: "italic" }}>No buildings</span>
         )}
       </div>
+      </Movable>
 
-      {/* Recruitable section — shares row 1 with info (to its right) */}
-      <div
-        style={{
-          gridArea: "recruit",
-          borderLeft: "1px solid #8882",
-          paddingLeft: 12,
-          boxSizing: "border-box",
-          minWidth: 0,
-          height: "100%",
-          overflowY: "auto",
-        }}
-      >
+      {/* Recruitable — Movable widget */}
+      <Movable id="region.recruit" title="Recruitable" designMode={designMode}
+        defaultPct={{ x: 0.798, y: 0.008, w: 0.20, h: 0.30 }}>
+      <div style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#9fc78a" }}>Recruitable:</div>
         {(() => {
           // Build a normalised set of unit names currently in the recruit
@@ -1115,19 +1106,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           );
         })()}
       </div>
+      </Movable>
 
-      {/* Armies row — spans full width at the bottom */}
-      <div
-        style={{
-          gridArea: "armies",
-          borderTop: "1px solid #8882",
-          paddingTop: 6,
-          boxSizing: "border-box",
-          minWidth: 0,
-          height: "100%",
-          overflowY: "auto",
-        }}
-      >
+      {/* Armies — Movable widget */}
+      <Movable id="region.armies" title="Armies" designMode={designMode}
+        defaultPct={{ x: 0.704, y: 0.728, w: 0.293, h: 0.26 }}>
+      <div style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
           display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
           <span>Garrison:</span>
@@ -1377,6 +1361,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           );
         })()}
       </div>
-    </div>
+      </Movable>
+    </>
   );
 }

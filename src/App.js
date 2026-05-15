@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
+import { resetAllWidgets } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
@@ -7542,13 +7543,17 @@ function App() {
               border: "1px solid #888",
               fontSize: "0.78rem",
             }}>📐 {designMode ? "Layout ON" : "Layout"}</button>
-          {designMode && (bottomStripPct > 0 || rightColPct > 0 || factionColPct > 0 || riInfoColPct > 0 || riTopRowPct > 0 || riBuildRowPct > 0) && (
+          {designMode && (
             <button
               onClick={() => {
                 setBottomStripPct(0); setRightColPct(0); setFactionColPct(0);
                 setRiInfoColPct(0); setRiTopRowPct(0); setRiBuildRowPct(0);
+                resetAllWidgets();
+                // Movables read from localStorage on mount — force a reload
+                // so all widgets snap back to defaults immediately.
+                try { window.location.reload(); } catch {}
               }}
-              title="Reset layout to defaults"
+              title="Reset all layout overrides (clears every widget position/size) — reloads"
               style={{
                 ...btnStyle(false),
                 background: "rgba(180,40,40,0.6)",
@@ -10901,13 +10906,11 @@ function App() {
                 zIndex: welcomeHighlight === "region-info" ? 10001 : 2,
               }}
             >
-              <CustomScrollArea
-                className={"panel" + (welcomeHighlight === "region-info" ? " ws-ui-glow" : "")}
-                style={{ width: "100%", height: "100%" }}
-                skin={SCROLL_SKIN} railInset={{ top: 40, bottom: 40 }}
-                trackWidth={SCROLLBAR_GUTTER} railWidth={4} thumbWidth={16}
-                thumbMin={THUMB_MIN_PX} ariaLabel="Region information"
-              >
+              {/* RegionInfo no longer needs an outer panel/scroll wrapper —
+                  it returns position:fixed Movables that float independently.
+                  When no region is selected we just render a hint at the
+                  default region-info position; once a region is hovered/
+                  locked, the Movables render at their saved positions. */}
                 {(lockedRegionInfo || regionInfo) ? (
                   <div className="region-info">
                     <RegionInfo
@@ -12365,11 +12368,10 @@ function App() {
                     />
                   </div>
                 ) : (
-                  <div style={{ color: "#bbb", fontStyle: "italic" }}>
+                  <div style={{ color: "#bbb", fontStyle: "italic", padding: 12 }}>
                     Hover over a region to see details. Click to lock the panel.
                   </div>
                 )}
-              </CustomScrollArea>
             </div>
           </>
         )}
