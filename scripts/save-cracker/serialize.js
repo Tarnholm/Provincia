@@ -1223,6 +1223,99 @@ function encodeArmyTrailAuto(b) {
   return b.rawBytes;
 }
 
+// ---- settlement-detail: per-settlement detail blob (§9b, session 78) -----
+//
+// Sits between consecutive `settlement-marker` blocks in the settlement zone
+// `[0xf85f00..0x1f10c72)`. 1,309 records, ~5.6 MB total. Body composition
+// confirmed by sessions 63 + 78:
+//
+//   - 0-32 B name prefix: trailing UTF-16-LE bytes from the preceding
+//     settlement name spill into the start of this gap. Length varies.
+//   - Header magic `fc fc fc fc 64 00 00 00 00` 8-32 B into the blob, marking
+//     the canonical start of the settlement-detail metadata.
+//   - Body 6-9 KB: ASCII tokens (`default_set`, `hinterland_region`,
+//     `core_building`), faction-flag bitfield, region metadata, building
+//     chains, happiness/garrison/queue tail.
+//   - Terminator `ef 00 00 00` within the last 16 B of the blob.
+//
+// Body framing is variable (per-settlement name length, optional building
+// chains, queue depth, happiness modifier list) so round-trip safety is
+// preserved by capturing the whole blob as a verbatim `rawBytes` Buffer plus
+// opportunistically located header/body/terminator boundaries. The encoder
+// re-emits `rawBytes`, guaranteeing byte-identity across the 5.6 MB band.
+//
+// Structured fields populated when locatable; otherwise left undefined.
+//   - namePrefix:        Buffer of 0-32 B name-spill before the FC magic.
+//   - headerOffset:      Offset of `fc fc fc fc 64 00 00 00 00` magic.
+//   - terminatorOffset:  Offset of `ef 00 00 00` anchor (within last 16 B).
+//   - hasDefaultSet:     true if `default_set` token present near start.
+//   - hasHinterland:     true if `hinterland_region` token present.
+//   - hasCoreBuilding:   true if `core_building` token present.
+
+const SD_FC_MAGIC = Buffer.from([0xfc,0xfc,0xfc,0xfc,0x64,0x00,0x00,0x00,0x00]);
+const SD_TOK_DEF  = Buffer.from("default_set");
+const SD_TOK_HINT = Buffer.from("hinterland_region");
+const SD_TOK_CORE = Buffer.from("core_building");
+
+function decodeSettlementDetail(buf, start, end) {
+  const rawBytes = Buffer.from(buf.slice(start, end));
+  const len = rawBytes.length;
+
+  // ---- 1. header (FC magic) ----------------------------------------------
+  let headerOffset = -1;
+  {
+    const searchEnd = Math.min(64, len);
+    for (let p = 0; p + SD_FC_MAGIC.length <= searchEnd; p++) {
+      let match = true;
+      for (let k = 0; k < SD_FC_MAGIC.length; k++) {
+        if (rawBytes[p + k] !== SD_FC_MAGIC[k]) { match = false; break; }
+      }
+      if (match) { headerOffset = p; break; }
+    }
+  }
+  const namePrefix = headerOffset > 0
+    ? Buffer.from(rawBytes.slice(0, headerOffset))
+    : Buffer.alloc(0);
+
+  // ---- 2. ASCII token presence (informational) ---------------------------
+  const hasDefaultSet   = rawBytes.indexOf(SD_TOK_DEF,  0) >= 0
+                       && rawBytes.indexOf(SD_TOK_DEF,  0) < Math.min(len, 256);
+  const hasHinterland   = rawBytes.indexOf(SD_TOK_HINT, 0) >= 0
+                       && rawBytes.indexOf(SD_TOK_HINT, 0) < Math.min(len, 512);
+  const hasCoreBuilding = rawBytes.indexOf(SD_TOK_CORE, 0) >= 0
+                       && rawBytes.indexOf(SD_TOK_CORE, 0) < Math.min(len, 1024);
+
+  // ---- 3. terminator (ef 00 00 00) ---------------------------------------
+  let terminatorOffset = -1;
+  {
+    const termStart = Math.max(0, len - 16);
+    for (let p = termStart; p + 4 <= len; p++) {
+      if (rawBytes[p] === 0xef && rawBytes[p+1] === 0 && rawBytes[p+2] === 0 && rawBytes[p+3] === 0) {
+        terminatorOffset = p;
+        break;
+      }
+    }
+  }
+
+  return {
+    _kind: "settlement-detail",
+    rawBytes,
+    namePrefix,
+    headerOffset,
+    terminatorOffset,
+    hasDefaultSet,
+    hasHinterland,
+    hasCoreBuilding,
+  };
+}
+
+function encodeSettlementDetail(b) {
+  if (b._kind !== "settlement-detail") throw new Error("encodeSettlementDetail: not a settlement-detail object");
+  // Verbatim re-emission. Structured fields above are informational mirrors;
+  // canonical state is `rawBytes`.
+  return b.rawBytes;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -1235,6 +1328,7 @@ const SERIALIZERS = {
   "post-fow-35-stride-table":(buf, start, end) => encodePostFowStrideTable(decodePostFowStrideTable(buf, start, end)),
   "diplo-event-log":         (buf, start, end) => encodeDiploEventLog(decodeDiploEventLog(buf, start, end)),
   "army-trail-auto":         (buf, start, end) => encodeArmyTrailAuto(decodeArmyTrailAuto(buf, start, end)),
+  "settlement-detail":       (buf, start, end) => encodeSettlementDetail(decodeSettlementDetail(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };

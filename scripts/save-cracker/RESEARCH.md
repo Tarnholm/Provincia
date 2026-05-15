@@ -12251,6 +12251,27 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeArmyTrailAuto`/`enc
 
 ---
 
+### Findings 2026-05-15 (background session 78 — settlement-detail decode/encode)
+
+**Goal.** Promote §9b `settlement-detail` from auto-detected passthrough claim to a real decode/encode pair in `serialize.js`. Round-trip must remain byte-identical.
+
+**Records.** 1,309 settlement-detail blobs in the settlement zone `[0xf85f00..0x1f10c72)`. Each sits between consecutive settlement markers, 256 B–9 KB long, total **5,602,876 B (5.34 MB)**.
+
+**Decoder shape.** `decodeSettlementDetail(buf, start, end)` returns `{ _kind:"settlement-detail", rawBytes, namePrefix, headerOffset, terminatorOffset, hasDefaultSet, hasHinterland, hasCoreBuilding }`. Structured mirrors:
+
+- `namePrefix`: 0–32 B of UTF-16-LE name spill from the preceding settlement marker, captured by locating the `fc fc fc fc 64 00 00 00 00` magic in the first 64 B.
+- `headerOffset`: offset of the FC magic within the blob.
+- `terminatorOffset`: offset of `ef 00 00 00` anchor within the last 16 B.
+- `hasDefaultSet` / `hasHinterland` / `hasCoreBuilding`: presence flags for the three ASCII signature tokens used by the §9b detector (windows 256 / 512 / 1024 B from start).
+
+Body framing varies (settlement-name length, optional building chains, queue depth, happiness modifier list) so canonical state is `rawBytes`. Encoder re-emits `rawBytes` verbatim — byte-identity by construction.
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 31,856 ms**. Output 34,524,371 B (matches input). UNKNOWN segments unchanged at 2,568 / 4,320,765 B (already claimed by §9b detector before this session — the change converts that claim from passthrough to structured). Structured-coverage delta: **+5.34 MB** (settlement-detail), pushing cumulative structured round-trip past the 70% checkpoint.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeSettlementDetail`/`encodeSettlementDetail`; constants `SD_FC_MAGIC`/`SD_TOK_DEF`/`SD_TOK_HINT`/`SD_TOK_CORE`; SERIALIZERS entry `"settlement-detail"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
