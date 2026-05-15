@@ -12800,6 +12800,34 @@ Files: `scripts/save-cracker/serialize.js` (4-line guard deletion at lines 1162-
 
 ---
 
+### Findings 2026-05-15 (background session 92 — 89-slot head table semantics)
+
+**Target**: 89-row × 35-B table at `0x4556..0x5181`. Session 66 confirmed structure, deferred classification.
+
+**Method**: cross-decoded all 4 saves (save_1.2, save_2.2, save_3.2, Autosave Turn 2 Start). Compared row classes and content.
+
+**Key observations** (4/4 saves):
+- Identical census: **6 LIVE + 5 SPARSE + 78 ZERO** — *no growth across turns*. Pool is statically allocated, not runtime-accumulating. Rules out diplomats / event-log / runtime agent roster (all of which would grow).
+- **Row 0 = header**: `29 44 00 00 …` — byte +0 = `0x29 = 41`, byte +10 = `0x0c = 12`, byte +27 = `0x59 = 89` (slot-count self-ref, CONFIRMED). The `0x29`/`0x0c` are mod-constant (identical across all 4 saves); plausibly bound counts (cultures ≈ 12 in Provincia). u32 at +8 differs per save (`0xce0a6`/`0xcde50`/`0xc66b5`) — looks like a **rolling state hash or write counter**.
+- **Rows 1–2 = `00 ff ff … ff 1e` sentinels** (all 0xFF), byte-identical across all 4 saves. Classic RTW "unset slot" marker (all-bits-set = sentinel/invalid handle).
+- **Rows 80–82 = LIVE structured payload**: 32 dense bytes of high-entropy data per row, mutating slightly between saves (turn-to-turn state). Row 80 contains stable trailing bytes `… 7a 78 0a 37` across saves; row 81 byte +5 flips `f2`↔`f3`, byte +20 flips `11`↔`01`. Looks like packed flag/counter fields per slot.
+- **Rows 83–87 = SPARSE single-bit bitmaps**: row 84 has only `0x01` at +1, row 85 `0x30`, row 86 `0x40`, row 87 `0x80` — bit-position pattern. Each row = 32-byte (256-bit) bitmap with one bit toggled. Byte-identical across all 4 saves (set during init, never modified).
+- **Rows 3–79 = all zero** (78 rows reserved-empty).
+
+**Classification (STRONG)**: this is a **fixed-size slot pool of 89 entries × 32-byte payloads + 3-byte 0x0000001e trailer**. The "1e" sentinel at +31 marks slot-end (not slot-type). The 6 LIVE rows are *currently-allocated* slots; the 5 SPARSE rows are *bitmap-style* allocations (single-bit "this resource is enabled" markers); the 78 zero rows are *free-list*. Header (row 0) carries pool-cardinality (89), a mod-bound count (41, plausibly playable factions or NPC factions), a second mod-bound count (12, plausibly cultures), and a rolling-state u32.
+
+**Likely identity**: per-faction or per-culture **persistent script-state / faction-flags pool** — RTW's `CampaignScript` / `historic_event` faction-state table or `descr_strat`-derived persistent campaign flags. The bit-shift pattern in rows 84–87 is consistent with **enum-flag rows** (`FLAG_X = 1<<8`, `FLAG_Y = 1<<12`, etc.), and rows 80–82 with **per-faction packed-state** rows. The 89 capacity does not match any obvious entity count (factions=31, cultures=12, settlements=200) — it's an engine pool capacity, like `MAX_DIPLOMACY_STATES` or `MAX_CAMPAIGN_FLAGS`.
+
+**Eliminated**: not diplomats (no growth, no UUID-shaped fields, no name strings), not event log (rows 80–82 ASCII "]kb"/"4zx"/"MkB" are hash bytes, not text), not character/captured-general roster (no character UUIDs found in row content; no row count change across 4 saves spanning Turn 2).
+
+**Confidence**: STRONG that this is a **statically-sized persistent flag/state pool with mod-bound header**. HYPOTHESIS that the specific identity is *historic-event / campaign-script faction-flag pool*. Confirmation would require a save just after a script-triggered event (e.g. one of the live rows would flip a bit at a deterministic offset).
+
+**Cover-map upgrade**: re-label `postfow-89slot-table` semantic tag from "reserved/diplomats" → `postfow-script-state-pool` (89 × 35 B static).
+
+Files: `scripts/save-cracker/dig-89slot-s92.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
