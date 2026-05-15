@@ -11807,6 +11807,26 @@ Files: `scripts/save-cracker/dig-longtail1.js`, `dig-longtail2.js`, `dig-longtai
 
 ---
 
+### Findings 2026-05-15 (background session 64 — zero-pad ff-term family)
+
+**CONFIRMED**: the zero-padded `ff ff ff ff`-terminated runs in zone `[0x14e5ac6..0x1f1fc14)` are army-trail-blob trailers that session-62's detector missed. 1185 runs (≈ 2.38 MB) share an identical 26-byte tail signature at `(re-26..re)`:
+
+```
+64 00 00 00 64 00 00 00  00 00 00 00 00 00 00 00  00 00  <u32 hash>  ff ff ff ff
+```
+
+Two `i32(100)` (morale/discipline baseline) → 10 zero bytes → 4-byte per-unit hash → 4-byte `0xFFFFFFFF` record terminator. Body is 200 B–9 KB, zero/0xFF dominated, no ASCII tokens. They share the same head shape as army-trail blobs (`02 00 00 00 ... 01 00 00 00 32 00`) and the same per-army hash family (`2e 05 00 00 00 00 ?? fe ff ff`).
+
+Session 62 missed them because they have no portrait, no `_Town`/`_City` chain token, no `1e 00 00 00`+14-zero terminator, and tile-stride density below 6%. They are unit-summary tails that follow the primary army-trail body — one per unit not held in the main blob.
+
+**Detector added to `cover.js` §15** ("zero-ff-trailer-auto"): scan unclaimed runs ≥100 B in the army-trail zone whose final 26 bytes match the exact signature above. 1189 hits in `save_1.2.sav`, no false positives in the remaining unknowns.
+
+**Coverage**: 87.48% → **94.37%** (+6.89%, target ≥89% achieved). New top-10 unknowns all <7 KB and lie in pre-merc-pool gaps (`0x015c…`-`0x0160…`, all-0xFF padding) and a 6.4 KB pre-settlement gap at `0xf84632`.
+
+Files: `scripts/save-cracker/dig-zeroff1.js`, `dig-zeroff2.js`, `cover.js` (§15 added).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

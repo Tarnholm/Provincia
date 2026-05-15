@@ -500,6 +500,61 @@ function main() {
     console.log(`army-trail-auto: claimed ${trailClaimed} ranges (${trailBytes} bytes)`);
   }
 
+  // --- 15. Zero-pad ff-terminated trailer auto-detector (session 64) -------
+  // Session 64 CONFIRMED: 1185 unclaimed runs in the army-trail zone share an
+  // identical tail signature — they are army-trail blobs the session-62
+  // detector missed (no portrait, no chain-token, no `1e 00` terminator, low
+  // tile-stride density). All end with:
+  //   (re-26) 64 00 00 00 64 00 00 00  [10 zero bytes]  <u32 hash>  ff ff ff ff
+  // The `64 00 00 00 64 00 00 00` pair = two i32(100) (morale/discipline
+  // baseline) and the final u32 is the per-unit hash; the four-FF u32 is the
+  // record terminator. Body 200 B - 9 KB, zero/ff dominated, no ASCII.
+  // Bytes preceding the run are zeros (extends the prior army-trail blob's
+  // padding) — this is the trailing per-unit summary block for armies whose
+  // primary trail was already swallowed by the section-62 detector.
+  // Claim every unclaimed run in the army-trail zone whose last 26 bytes
+  // match this pattern.
+  {
+    const ZONE_START = 0x14e5ac6;
+    const ZONE_END   = Math.min(0x1f1fc14, size);
+    const MIN_RUN    = 100;
+    let zfClaimed = 0;
+    let zfBytes   = 0;
+
+    // Find unclaimed runs.
+    let runStart = -1;
+    const runs = [];
+    for (let i = ZONE_START; i <= ZONE_END; i++) {
+      const claimedHere = i < ZONE_END && bm[i];
+      if (!claimedHere && runStart < 0) runStart = i;
+      else if (claimedHere && runStart >= 0) {
+        if (i - runStart >= MIN_RUN) runs.push([runStart, i]);
+        runStart = -1;
+      }
+    }
+    if (runStart >= 0 && ZONE_END - runStart >= MIN_RUN) {
+      runs.push([runStart, ZONE_END]);
+    }
+
+    for (const [rs, re] of runs) {
+      if (re - rs < 26) continue;
+      const p = re - 26;
+      const ok =
+        buf[p]    === 0x64 && buf[p+1]  === 0 && buf[p+2]  === 0 && buf[p+3]  === 0 &&
+        buf[p+4]  === 0x64 && buf[p+5]  === 0 && buf[p+6]  === 0 && buf[p+7]  === 0 &&
+        buf[p+8]  === 0    && buf[p+9]  === 0 && buf[p+10] === 0 && buf[p+11] === 0 &&
+        buf[p+12] === 0    && buf[p+13] === 0 && buf[p+14] === 0 && buf[p+15] === 0 &&
+        buf[p+16] === 0    && buf[p+17] === 0 &&
+        buf[re-4] === 0xff && buf[re-3] === 0xff && buf[re-2] === 0xff && buf[re-1] === 0xff;
+      if (ok) {
+        claim(bm, rs, re, claims, "zero-ff-trailer-auto");
+        zfClaimed++;
+        zfBytes += re - rs;
+      }
+    }
+    console.log(`zero-ff-trailer-auto: claimed ${zfClaimed} ranges (${zfBytes} bytes)`);
+  }
+
   // ---------------------------------------------------------------------------
   // Walk the bitmap. Emit consecutive UNKNOWN runs >= MIN_RUN bytes.
   // ---------------------------------------------------------------------------
