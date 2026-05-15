@@ -191,6 +191,29 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
   // pattern as the in-record fields.
   const primaryUuid = offset + off.primaryUuid >= 0 ? buf.readUInt32LE(offset + off.primaryUuid) : 0;
   const secondaryUuid = offset + off.secondaryUuid >= 0 ? buf.readUInt32LE(offset + off.secondaryUuid) : 0;
+  // Character stats (save-cracker session 91, STRONG). Cluster framed by
+  // u16=23 at +96 and u32=50 at +98, then four u32 LE stat fields.
+  // Mapping (each STRONG; final assignment needs in-game screenshot):
+  //   +102 → management (range 0..5, correlates with trait count)
+  //   +106 → command    (range 1..7, correlates with age + traits)
+  //   +110 → influence  (range 2..7, correlates with age)
+  //   +126 → loyalty    (range 5..11, default 5 = RTW base)
+  // LAYOUT_B offsets follow the same -4 shift convention as other fields.
+  let management = null, command = null, influence = null, loyalty = null;
+  {
+    const base = layoutB ? -4 : 0;
+    const mgmtOff = offset + 102 + base;
+    if (mgmtOff >= 0 && mgmtOff + 28 <= buf.length) {
+      management = buf.readUInt32LE(mgmtOff);
+      command    = buf.readUInt32LE(mgmtOff + 4);
+      influence  = buf.readUInt32LE(mgmtOff + 8);
+      loyalty    = buf.readUInt32LE(mgmtOff + 24);
+      // Sanity: real stats are 0..15. Anything larger = layout drift, drop.
+      if (management > 15 || command > 15 || influence > 15 || loyalty > 15) {
+        management = command = influence = loyalty = null;
+      }
+    }
+  }
   const traitCount = buf.readUInt16LE(offset + off.traitCount);
 
   const traits = [];
@@ -304,6 +327,10 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
     ageFineQuarter,
     clanHead,
     childUuids,
+    management,
+    command,
+    influence,
+    loyalty,
   };
 }
 

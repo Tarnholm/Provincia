@@ -750,6 +750,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   >
                     {sym ? sym + " " : ""}{fullName}
                     <span style={{ color: "#999", fontVariantNumeric: "tabular-nums", marginLeft: 6 }}>· age {c.age != null ? c.age : "?"}</span>
+                    {Number.isFinite(c.command) && (
+                      <span style={{ color: "#9bb1c8", fontVariantNumeric: "tabular-nums", marginLeft: 6, fontSize: "0.66rem" }}
+                        title={`Command ${c.command} · Influence ${c.influence ?? "?"} · Management ${c.management ?? "?"} · Loyalty ${c.loyalty ?? "?"} (save-cracker session 91)`}>
+                        ⚔ {c.command}/{c.influence ?? "?"}/{c.management ?? "?"}/{c.loyalty ?? "?"}
+                      </span>
+                    )}
                     {status && <span style={{ color: "#c66", marginLeft: 4 }}>{status}</span>}
                   </div>
                 );

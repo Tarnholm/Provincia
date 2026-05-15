@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.339",
+    date: "2026-05-15",
+    items: [
+      { type: "feature", text: "Character rows in the Region panel now show command / influence / management / loyalty stats from the save (⚔ 7/6/4/5 format). Decoded from save-cracker session 91 — a 4-u32 cluster framed at character record +96 (u16=23) and +98 (u32=50), with the stats themselves at +102/+106/+110/+126. Falls back gracefully on LAYOUT_B characters and on saves where the cluster reads outside the 0..15 sanity range." },
+    ],
+  },
+  {
     version: "0.9.338",
     date: "2026-05-15",
     items: [
