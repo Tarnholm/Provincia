@@ -98,28 +98,45 @@ export function saveWidgetPos(id, pos) {
   try { localStorage.setItem(`widget.${id}`, JSON.stringify(pos)); } catch {}
 }
 
-// One-time layout migration. Bump LAYOUT_VERSION whenever default
-// positions change in a way we want to push to existing users; the next
-// app launch overwrites their stored widget.* keys with the new defaults
-// IF their layoutVersion is older. Their old layout is sacrificed; this
-// is a sledgehammer migration meant for "we cleaned up the canonical
-// grid, everyone should be on it now".
-const LAYOUT_VERSION = 2;
-const CANONICAL_V2 = {
-  "region.info":        { x: 0.5696, y: 0.0056, w: 0.2243, h: 0.3057 },
-  "region.recruit":     { x: 0.7974, y: 0.0056, w: 0.1991, h: 0.3057 },
-  "region.characters":  { x: 0.5696, y: 0.3148, w: 0.2243, h: 0.1390 },
-  "region.unitQueue":   { x: 0.7974, y: 0.3148, w: 0.0978, h: 0.1390 },
-  "region.queue":       { x: 0.8987, y: 0.3148, w: 0.0978, h: 0.1390 },
-  "region.buildings":   { x: 0.5696, y: 0.4573, w: 0.2243, h: 0.5392 },
-  "region.garrison":    { x: 0.7974, y: 0.4573, w: 0.1991, h: 0.1304 },
-  "region.fieldArmies": { x: 0.7974, y: 0.5912, w: 0.1991, h: 0.4053 },
+// One-time layout migration. Bump LAYOUT_VERSION whenever the canonical
+// grid changes. Migration overwrites widget.* AND the map-sizing splitter
+// keys so the map ends up narrow enough that the left-half widgets aren't
+// hidden behind it. Existing users get the new grid on next launch.
+const LAYOUT_VERSION = 3;
+// Bigger visible gap between horizontally-adjacent widgets (info|recruit,
+// unitQueue|queue, characters|queues, buildings|garrison) — ~10 px on a
+// 1920-wide viewport — plus a taller `region.info` so worst-case tags +
+// hidden resources + ethnicities don't push the widget into overflow.
+const CANONICAL_V3 = {
+  "region.info":        { x: 0.5720, y: 0.0080, w: 0.2150, h: 0.4000 },
+  "region.recruit":     { x: 0.7950, y: 0.0080, w: 0.2000, h: 0.4000 },
+  "region.characters":  { x: 0.5720, y: 0.4130, w: 0.2150, h: 0.1000 },
+  "region.unitQueue":   { x: 0.7950, y: 0.4130, w: 0.0975, h: 0.1000 },
+  "region.queue":       { x: 0.8975, y: 0.4130, w: 0.0975, h: 0.1000 },
+  "region.buildings":   { x: 0.5720, y: 0.5180, w: 0.2150, h: 0.4770 },
+  "region.garrison":    { x: 0.7950, y: 0.5180, w: 0.2000, h: 0.2000 },
+  "region.fieldArmies": { x: 0.7950, y: 0.7230, w: 0.2000, h: 0.2720 },
+};
+// Splitter overrides that put the map at the width the canonical widget
+// grid assumes. With rightColPct=0.428 the map ends near x≈0.566 leaving
+// the right column from x≈0.572 to x≈0.995 for the widgets — the same
+// shape the user fine-tuned to.
+const CANONICAL_V3_SPLITTERS = {
+  "layout.rightColPct": "0.428",
+  "layout.bottomStripPct": "0",
+  "layout.factionColPct": "0",
+  "layout.riInfoColPct": "0",
+  "layout.riTopRowPct": "0",
+  "layout.riBuildRowPct": "0",
 };
 try {
   const stored = parseInt(localStorage.getItem("widget.layoutVersion") || "0", 10);
   if (stored < LAYOUT_VERSION) {
-    for (const [id, pos] of Object.entries(CANONICAL_V2)) {
+    for (const [id, pos] of Object.entries(CANONICAL_V3)) {
       localStorage.setItem(`widget.${id}`, JSON.stringify(pos));
+    }
+    for (const [key, val] of Object.entries(CANONICAL_V3_SPLITTERS)) {
+      localStorage.setItem(key, val);
     }
     localStorage.setItem("widget.layoutVersion", String(LAYOUT_VERSION));
   }

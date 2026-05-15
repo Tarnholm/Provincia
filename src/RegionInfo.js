@@ -139,7 +139,9 @@ function categoriseTag(t) {
   if (IRRIGATION_TAG_SET.has(k)) return "Irrigation";
   if (/^base_port_level_\d+$/.test(k)) return "Port";
   if (/^rel_[a-z_]+_\d+$/.test(k)) return "Religion";
-  if (/^Farm\d+$/.test(t)) return "Fertility";
+  // Farm## is shown above as the "Fertility:" colour-graded line; skip
+  // the duplicate chip group here.
+  if (/^Farm\d+$/.test(t)) return null;
   if (k === "earthquake" || k === "rivertrade") return "Hazards & Trade";
   return "Hidden Resource";
 }
@@ -485,7 +487,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           w=0.1991. Row anchors are y=0.0056 / 0.3148 / 0.4573 with a
           common GAP_FRAC≈0.0035 between rows. */}
       <Movable id="region.info" title="Region info" designMode={designMode}
-        defaultPct={{ x: 0.5696, y: 0.0056, w: 0.2243, h: 0.3057 }}>
+        defaultPct={{ x: 0.5720, y: 0.0080, w: 0.2150, h: 0.4000 }}>
       <div className={panelInnerClass} style={panelInner}>
         {region && (
           <div
@@ -818,6 +820,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           const groups = {};
           for (const t of tagsList) {
             const cat = categoriseTag(t);
+            // null = explicitly suppressed (e.g. Fertility — already shown
+            // as a coloured line above the tag list).
+            if (cat == null) continue;
             if (!groups[cat]) groups[cat] = [];
             groups[cat].push(t);
           }
@@ -866,7 +871,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Characters — Movable widget extracted from buildings */}
       <Movable id="region.characters" title="Characters" designMode={designMode}
-        defaultPct={{ x: 0.5696, y: 0.3148, w: 0.2243, h: 0.1390 }}>
+        defaultPct={{ x: 0.5720, y: 0.4130, w: 0.2150, h: 0.1000 }}>
       <div className={panelInnerClass} style={panelInner}>
         {characters && characters.length > 0 && (() => {
           const isStarting = characters[0]?._source === "starting";
@@ -921,7 +926,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Building queue — Movable widget extracted from buildings */}
       <Movable id="region.queue" title="Build queue" designMode={designMode}
-        defaultPct={{ x: 0.8987, y: 0.3148, w: 0.0978, h: 0.1390 }}>
+        defaultPct={{ x: 0.8975, y: 0.4130, w: 0.0975, h: 0.1000 }}>
       <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
           <div
@@ -955,7 +960,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Unit queue — Movable widget. Lists units currently being
           recruited in this settlement (recruitingNow from save). */}
       <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
-        defaultPct={{ x: 0.7974, y: 0.3148, w: 0.0978, h: 0.1390 }}>
+        defaultPct={{ x: 0.7950, y: 0.4130, w: 0.0975, h: 0.1000 }}>
       <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
           <div
@@ -987,7 +992,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode}
-        defaultPct={{ x: 0.5696, y: 0.4573, w: 0.2243, h: 0.5392 }}>
+        defaultPct={{ x: 0.5720, y: 0.5180, w: 0.2150, h: 0.4770 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
         {buildingItems.length > 0 ? (
@@ -1106,7 +1111,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Recruitable — Movable widget */}
       <Movable id="region.recruit" title="Recruitable" designMode={designMode}
-        defaultPct={{ x: 0.7974, y: 0.0056, w: 0.1991, h: 0.3057 }}>
+        defaultPct={{ x: 0.7950, y: 0.0080, w: 0.2000, h: 0.4000 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#9fc78a" }}>Recruitable:</div>
         {(() => {
@@ -1196,7 +1201,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode}
-        defaultPct={{ x: 0.7974, y: 0.4573, w: 0.1991, h: 0.1304 }}>
+        defaultPct={{ x: 0.7950, y: 0.5180, w: 0.2000, h: 0.2000 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
           display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
@@ -1314,7 +1319,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
-        defaultPct={{ x: 0.7974, y: 0.5912, w: 0.1991, h: 0.4053 }}>
+        defaultPct={{ x: 0.7950, y: 0.7230, w: 0.2000, h: 0.2720 }}>
       <div className={panelInnerClass} style={panelInner}>
         {(() => {
           // Group armies by faction so the user can see at a glance who

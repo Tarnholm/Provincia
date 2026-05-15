@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.358",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "Left-side widgets (Region info / Characters / Buildings) couldn't be edited in design mode because the map canvas was sitting on top of them. Migration v3 now also writes `layout.rightColPct = 0.428` so the map is sized to leave room for the canonical widget grid — widgets at x≈0.572 onward are now fully past the map's right edge." },
+      { type: "improvement", text: "Visible horizontal spacing between adjacent widgets. Canonical defaults bumped from a 6.7 px (= GAP_FRAC) divider to ~10 px between info|recruit, characters|queues, buildings|garrison, and unitQueue|queue. The minimum forced gap from collision/clamp logic stays at 6.7 px — defaults just leave more breathing room." },
+      { type: "improvement", text: "Region info widget made taller in the canonical layout (h=0.40 instead of 0.33). Fits worst-case region data — many ethnicity chips, several tag-category rows, hidden-resource chips, plus population/happiness/tax/income lines — without forcing the user to scroll inside the widget. LAYOUT_VERSION bumped to 3, migration runs on next launch." },
+      { type: "change", text: "Removed the Fertility chip from the tag list — it was duplicating the colour-graded `Fertility:` line that already shows above the tag groups (Farm## token). One less redundant row in the Region info widget." },
+    ],
+  },
+  {
     version: "0.9.357",
     date: "2026-05-16",
     items: [
