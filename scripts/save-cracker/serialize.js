@@ -297,9 +297,96 @@ function encodeHeader(h) {
   return out;
 }
 
+// ---- HST (Header Strings Table, 0x3328..0x3bad, 2181 bytes) ----------------
+//
+// The HST is the schema-version manifest: 106 entries of
+//   [ASCIIZ name][u32 schema_version]
+// per RESEARCH.md "Header strings table".
+//
+// The cover.js segment boundary [0x3328..0x3bad) does NOT align with the
+// table boundaries:
+//   - The actual entry count (u32=106) sits at 0x3310, which is INSIDE the
+//     preceding Header segment and currently absorbed into header.tail.
+//   - First entry "WORLD_MAP" begins at 0x3314.
+//   - Segment-start 0x3328 falls inside the middle of entry [1]
+//     "DIPLOMATIC_ATTITUDE" (the byte at 0x3328 is the 'A' of "ATIC_...").
+//   - Entry [105] "POSITION" ends at 0x3b97, leaving 22 trailing bytes
+//     before 0x3bad:
+//       2 bytes  padding (0x0004)
+//       4 bytes  next-section self-pointer (0x3b99)
+//       4 bytes  next-section size (= 6488090, the body-root)
+//       12 bytes start of body-root payload
+//     These are owned by the cover.js "Body-root section header" claim that
+//     follows, but spill into our segment because of the boundary mismatch.
+//
+// Decoder strategy (chosen to keep the boundary at 0x3328..0x3bad invertible):
+//   1. prefixBytes: bytes from segment-start up to and including the NUL
+//      that terminates the partial first ASCIIZ + the following u32 version.
+//      Captured as raw Buffer so we don't need to know which entry it
+//      belongs to.
+//   2. entries: array of { name, version } pairs parsed normally until a
+//      zero-length name (or until we reach the trailing raw zone).
+//   3. trailerBytes: everything after the last full entry — currently
+//      22 bytes for save_1.2.sav, but kept as opaque Buffer so the field
+//      handles any save where the boundary mismatch is differently sized.
+//
+// Round-trip: prefixBytes + (name + NUL + u32 version per entry) + trailerBytes.
+
+function decodeHST(buf, start, end) {
+  if (start !== 0x3328 || end !== 0x3bad) {
+    throw new Error(`decodeHST: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x3328..0x3bad)`);
+  }
+
+  // 1. prefixBytes: scan to first NUL, then read 4-byte version.
+  let p = start;
+  while (p < end && buf[p] !== 0) p++;
+  if (p >= end) throw new Error("decodeHST: no NUL in prefix region");
+  p++;                                          // past NUL
+  if (p + 4 > end) throw new Error("decodeHST: prefix version truncated");
+  p += 4;                                       // past partial entry's u32 version
+  const prefixBytes = Buffer.from(buf.slice(start, p));
+
+  // 2. parse normal entries until trailing non-name byte appears.
+  const entries = [];
+  while (p < end) {
+    // peek: must start with an A-Z byte to be a real entry.
+    const b = buf[p];
+    if (!(b >= 0x41 && b <= 0x5a)) break;       // not [A-Z] -> trailer begins
+    let q = p;
+    while (q < end && buf[q] !== 0) q++;
+    if (q >= end) break;                        // no NUL in remainder
+    const name = buf.slice(p, q).toString("latin1");
+    if (q + 1 + 4 > end) break;                 // version would overrun
+    const version = buf.readUInt32LE(q + 1);
+    entries.push({ name, version });
+    p = q + 1 + 4;
+  }
+
+  // 3. opaque trailer bytes — preserved verbatim.
+  const trailerBytes = Buffer.from(buf.slice(p, end));
+
+  return { _kind: "hst", prefixBytes, entries, trailerBytes };
+}
+
+function encodeHST(h) {
+  if (h._kind !== "hst") throw new Error("encodeHST: not an hst object");
+  const chunks = [h.prefixBytes];
+  for (const e of h.entries) {
+    const nameBuf = Buffer.from(e.name, "latin1");
+    const entryBuf = Buffer.alloc(nameBuf.length + 1 + 4);
+    nameBuf.copy(entryBuf, 0);
+    entryBuf[nameBuf.length] = 0;
+    entryBuf.writeUInt32LE(e.version, nameBuf.length + 1);
+    chunks.push(entryBuf);
+  }
+  chunks.push(h.trailerBytes);
+  return Buffer.concat(chunks);
+}
+
 const SERIALIZERS = {
-  // First real decode/encode pair: header. Proves round-trip framework.
+  // Real decode/encode pairs.
   "Header": (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
+  "HST":    (buf, start, end) => encodeHST(decodeHST(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };

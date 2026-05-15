@@ -11962,6 +11962,60 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeHeader`, `encodeHea
 
 ---
 
+### Findings 2026-05-15 (background session 70 — HST decode/encode)
+
+Second real decode/encode pair, following session 69's header pair. The Header Strings Table at cover.js segment `[0x3328..0x3bad)` is now parsed into a structured object and re-emitted byte-identical.
+
+**Round-trip status: BYTE-IDENTICAL** on `save_1.2.sav` (Feral imperial save, 32.93 MB). Total claims=14364, segments=12400, 4316 UNKNOWN, 8.85 MB still un-claimed. Elapsed 752 ms. Header + HST are now both structured serializers; the rest is passthrough.
+
+#### True HST boundaries (versus cover.js segment boundary)
+
+The cover.js claim `push(0x3328, 0x3bad, "HST")` does NOT coincide with the actual HST start/end markers:
+
+| Anchor | Offset | Bytes |
+|---|---|---|
+| u32 count (=106) | `0x3310` | inside the preceding Header claim (absorbed into `header.tail`) |
+| First entry "WORLD_MAP\0\x03\0\0\0" | `0x3314` | also inside Header |
+| Mid-entry segment start | `0x3328` | falls in the middle of entry [1] `DIPLOMATIC_ATTITUDE` (byte 'A' of "ATIC_...") |
+| Last entry [105] "POSITION\0\x01\0\0\0" ends | `0x3b97` | true end of HST table |
+| 2-byte padding `04 00` | `0x3b97..0x3b99` | unexplained — possibly u16=4 marker |
+| Body-root section header | `0x3b99` | self-pointer 0x3b99, size 6,488,090 |
+| Cover.js HST claim end | `0x3bad` | spills 20 bytes into the body-root section payload |
+
+So the segment as cover.js partitions it contains: tail of entry [1], full entries [2..105], 2-byte padding, and the first 20 bytes of the body-root section.
+
+#### Decoder structure (kept invertible regardless of segment-boundary mismatch)
+
+```js
+{
+  _kind: "hst",
+  prefixBytes: Buffer(18),     // tail of partial first entry: "ATIC_ATTITUDE\0" + u32=6
+  entries: [                   // 104 fully-parsed ASCIIZ+u32 pairs
+    { name: "SENATE_SERVICE_HISTORY", version: 1 },
+    { name: "HELP_PLAYER_BUILDER",    version: 1 },
+    ...
+    { name: "POSITION",               version: 1 },
+  ],
+  trailerBytes: Buffer(22),    // 2-byte pad + 20 bytes of body-root section start
+}
+```
+
+Per the parser: 18-byte prefix + 104 entries + 22-byte trailer. Two entries of the 106-entry HST live outside this segment: WORLD_MAP is entirely inside the Header segment, and DIPLOMATIC_ATTITUDE is split across the boundary (entire entry would require touching both segments — keeping it as a raw prefix avoids that coupling).
+
+Entry-parse termination uses `[A-Z]` first-byte sniff: the trailer's first byte is `0x04`, which is not `[A-Z]`, so the entry loop cleanly stops without an explicit count.
+
+#### Implementation
+
+- `decodeHST(buf, start, end)` — asserts range `[0x3328..0x3bad)`, parses prefix bytes (scan to NUL + 4-byte version), loops entries until first non-`[A-Z]` byte, captures remaining bytes as trailer.
+- `encodeHST(h)` — concats `prefixBytes + (name + NUL + u32 version)* + trailerBytes`.
+- Wired into `SERIALIZERS["HST"]`.
+
+Future structural work (not done in this session): the 18-byte prefix and 22-byte trailer hide structure that belongs to neighboring claims; resolving cover.js boundaries to `[0x3310..0x3b99)` for HST and `[0x3b99..)` for body-root would let the HST object carry all 106 entries cleanly and let body-root own its own header. That's a cover.js refactor, not a serialize.js change, so left for a future session.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeHST`, `encodeHST`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
