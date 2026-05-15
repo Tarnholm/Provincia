@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.337",
+    date: "2026-05-15",
+    items: [
+      { type: "improvement", text: "Hidden Resource legend separates Homeland and Area of Recruitment groups. The 'Faction' bucket was a misnomer — it actually held homeland tokens (akragantine, tarentine, etc.), so it's now labelled 'Homeland'. AoR tokens (`*_aor`) sit in their own dedicated group above. Classification order swapped so a `*_aor` token can never be misbucketed as homeland." },
+    ],
+  },
+  {
     version: "0.9.336",
     date: "2026-05-12",
     items: [
