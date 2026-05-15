@@ -11700,6 +11700,31 @@ Files: `scripts/save-cracker/cover.js` (added seven `claim()` calls).
 
 ---
 
+### Findings 2026-05-15 (background session 60 — settlement-zone gap structures)
+
+**Verdict**: gaps #1-#5 and #7 in the post-tile-grid settlement zone are all instances of the **same structure — per-faction CHARACTER POOL** (alive generals + dead/exiled trait slots + portrait-path references). Gap #6 is structurally different (looks like AI/diplo data). **STRONG**.
+
+**Evidence**:
+- Each of gaps #1, #2, #3, #4, #5, #7 sits IMMEDIATELY BEFORE an army-unit record: their last byte is followed by `ef 00 00 00 00 00 00 00 <hash u32> 00..00 01 00 <u16 strlen> <unit name>`:
+  - gap #1 -> "greek slingers"   (faction: greek_cities)
+  - gap #2 -> "roman leves"      (faction: romans_*)
+  - gap #3 -> "greek slingers"   (different greek faction)
+  - gap #4 -> "agrian infantry"  (greek mercenary host)
+  - gap #5 -> "oscan spearmen"   (roman/samnite host)
+- Gaps contain ASCII portrait paths `data/ui/greek/portraits/cards/old/generals/NNN.tga` and `.../portraits/portraits/dead/NNN.tga` (5-10 hits per gap in #1/#2/#4/#7; absent in #3/#5 which are 66-70% 0xFF preallocated slot tables).
+- Gaps are made of nested taw self-pointer pairs: outer `{selfPtr, size=6}` followed by inner `{selfPtr, size≈300-560}` — 70-172 such headers per gap (e.g. gap #1: 136 taw hits, sample sizes 6,497,6,561,6,479,...). Inner record size matches per-character ~300-600 B trait/ancillary blob.
+- Repeating 211-byte zero stripes at stride 364 B in gap #1 = pre-allocated empty character slots (faction caps unused).
+- Histograms differ by population: #1/#2/#4 = 50-65% zeros (mostly living chars), #3/#5 = 65-70% 0xFF (mostly empty slot table).
+- Gap #6 (0x1f1a697..0x1f1fc14): only 5 taw hits, no portrait paths, hits on `carthaginian` ASCII, byte pattern `35 14 40 00 00 ... 01 b3 15 60 ...` repeats — looks like AI/diplo per-faction state, NOT character pool. Excluded from claim.
+
+**Interpretation**: between every faction's settlement block and its army block the engine emits a "character pool" payload that the existing parser doesn't claim. Each faction gets one. The 0xFF padding == slot-array preallocation (M2TWEOP/RTW reserve ~50-100 character slots per faction even if unused). Living-character records carry the portrait path used in scrolls and the campaign history book; dead/exiled records keep the "dead" portrait variant so the timeline still resolves portraits after death.
+
+**Claim plan**: claiming gaps #1, #2, #3, #4, #5, #7 as `per-faction-character-pool` adds ~177 KB (~0.51% of file). Combined with the ~14 KB / 13.9 KB / 13.9 KB next-tier gaps (#8/#9/#10 likely same structure too — same settlement zone), this pushes from 73.61% claimed toward ~74.5%. To hit 78% the remaining ~3.5% must come from systematically claiming every small same-shape gap across the zone via a generic scanner (outer-taw-size-6 + inner-taw clusters terminated by `ef ... 01 00 <len> <unit name>`) rather than hand-listing each gap.
+
+Files: `scripts/save-cracker/dig-settlegap1.js`, `dig-settlegap2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
