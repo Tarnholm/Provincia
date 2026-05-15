@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.348",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "New Unit queue Movable widget (id `region.unitQueue`). Shows units currently being recruited in the selected settlement, decoded from the save's recruit chain (session 36). Sits next to the Build queue widget by default." },
+      { type: "change", text: "Garrison and field armies are now separate Movable widgets (id `region.garrison` and `region.fieldArmies`) instead of sharing one Armies panel. Default positions split the old armies slot horizontally — garrison on the left half, field armies on the right." },
+      { type: "improvement", text: "Building, recruit, garrison, and field-army card grids now scale with their widget size. Columns switched from fixed-pixel caps (`minmax(0, 52px)` / `minmax(0, 28px)` / `maxWidth: 60`) to `1fr` — make a widget wider/taller and the icons grow to fill, the same way the faction-icon panel does. Cards keep their portrait aspect (164:224 for units) and building icons use `objectFit: contain` so they stay readable at any size." },
+      { type: "improvement", text: "RegionInfo panel inner box now flex-column with `flex: 1` on the grid bodies, so card grids fill remaining vertical space after the section header instead of collapsing to content height." },
+    ],
+  },
+  {
     version: "0.9.347",
     date: "2026-05-16",
     items: [

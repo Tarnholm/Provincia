@@ -437,6 +437,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // a readable card.
   const panelInner = {
     width: "100%", height: "100%", boxSizing: "border-box",
+    display: "flex", flexDirection: "column",
     padding: 6, paddingTop: designMode ? 16 : 6,
     background: "rgba(20,20,20,0.55)",
     border: "1px solid rgba(255,255,255,0.06)",
@@ -916,6 +917,39 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </div>
       </Movable>
 
+      {/* Unit queue — Movable widget. Lists units currently being
+          recruited in this settlement (recruitingNow from save). */}
+      <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
+        defaultPct={{ x: 0.886, y: 0.378, w: 0.11, h: 0.05 }}>
+      <div style={panelInner}>
+        {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
+          <div
+            title="Recruitment queue (decoded from save's recruit chain — session 36)"
+            style={{
+              padding: "3px 6px",
+              background: "rgba(60,200,80,0.10)",
+              border: "1px solid rgba(60,200,80,0.35)",
+              borderRadius: 3,
+              fontSize: "0.75rem",
+              lineHeight: 1.3,
+            }}
+          >
+            <span style={{ color: "#9fc78a", fontWeight: 700, marginRight: 4 }}>Recruiting:</span>
+            {recruitingNow.map((r, i) => (
+              <span key={i} style={{ color: "#cde" }}>
+                {i > 0 ? ", " : ""}{(r.unit || "?").replace(/_/g, " ")}
+                {Number.isFinite(r.turns) && r.turns > 0 && r.turns < 1000
+                  ? ` — ${r.turns} turn${r.turns === 1 ? "" : "s"}`
+                  : ""}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span style={{ color: "#888", fontStyle: "italic", fontSize: "0.72rem" }}>No queue</span>
+        )}
+      </div>
+      </Movable>
+
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode}
         defaultPct={{ x: 0.704, y: 0.418, w: 0.293, h: 0.30 }}>
@@ -930,13 +964,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           <div
             style={{
               display: "grid",
-              // 10×2 grid (max 20 buildings per settlement). Columns are
-              // flexible so the row always fits the panel width — at 1080p
-              // with normal layout each column lands near 82px; on narrower
-              // panels the cards shrink rather than spilling off the right.
-              gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
-              gridAutoRows: "118px",
+              // 10×2 grid (max 20 buildings per settlement). Both columns
+              // AND rows are 1fr so the cards scale to fill the widget —
+              // resize the Buildings widget wider/taller and the icons
+              // grow with it, the same way the faction-icon panel does.
+              gridTemplateColumns: "repeat(10, 1fr)",
+              gridTemplateRows: "repeat(2, 1fr)",
               gap: 4,
+              flex: 1,
+              minHeight: 0,
             }}
           >
             {buildingItems.map((b) => {
@@ -968,8 +1004,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 borderRadius: 4,
                 padding: "4px 3px",
                 minWidth: 0,
-                minHeight: 118,
+                minHeight: 0,
+                width: "100%", height: "100%",
                 boxSizing: "border-box",
+                overflow: "hidden",
                 transition: "background 150ms var(--ease-mac-out), border-color 150ms var(--ease-mac-out)",
                 border: b.queued
                   ? "2px solid #e89030"
@@ -977,7 +1015,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     ? "2px solid #dca64a"
                     : "2px solid transparent",
               }}>
-                <div style={{ position: "relative", width: "100%", maxWidth: 60, aspectRatio: "60 / 48", flexShrink: 0 }}>
+                <div style={{ position: "relative", width: "100%", flex: "1 1 0", minHeight: 0 }}>
                   {b.icon && (
                     <img
                       src={b.icon}
@@ -1037,15 +1075,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           return recruitable && recruitable.length > 0 ? (
             <div style={{
               display: "grid",
-              gridTemplateColumns: "repeat(6, minmax(0, 52px))",
+              // 6 columns, all 1fr → cards scale with widget width. Cards
+              // keep their portrait aspect (164:224) so taller widgets get
+              // larger icons. Extras scroll; the scrollbar is hidden globally.
+              gridTemplateColumns: "repeat(6, 1fr)",
               gridAutoRows: "min-content",
               gap: 3,
-              justifyContent: "start",
-              // Cap visible recruit list to ~4 rows; extras scroll. Card
-              // height ≈ 52 × (224/164) + 4 padding ≈ 75; 4 rows + 3 gaps
-              // ≈ 309px. Global CSS hides the scrollbar (App.css:81-82) so
-              // the scroll is invisible but still wheels.
-              maxHeight: 312,
+              flex: 1,
+              minHeight: 0,
               overflowY: "auto",
             }}>
               {recruitable.map((u, i) => {
@@ -1108,9 +1145,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </div>
       </Movable>
 
-      {/* Armies — Movable widget */}
-      <Movable id="region.armies" title="Armies" designMode={designMode}
-        defaultPct={{ x: 0.704, y: 0.728, w: 0.293, h: 0.26 }}>
+      {/* Garrison — Movable widget */}
+      <Movable id="region.garrison" title="Garrison" designMode={designMode}
+        defaultPct={{ x: 0.704, y: 0.728, w: 0.145, h: 0.26 }}>
       <div style={panelInner}>
         <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
           display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
@@ -1130,7 +1167,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         {garrison && garrison.length > 0 ? (
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(10, minmax(0, 28px))",
+            gridTemplateColumns: "repeat(10, 1fr)",
             gridAutoRows: "min-content",
             gap: 2,
             justifyContent: "start",
@@ -1223,6 +1260,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             No units stationed
           </span>
         )}
+      </div>
+      </Movable>
+
+      {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
+      <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
+        defaultPct={{ x: 0.852, y: 0.728, w: 0.145, h: 0.26 }}>
+      <div style={panelInner}>
         {(() => {
           // Group armies by faction so the user can see at a glance who
           // owns each foreign stack. Multiple Roman armies passing through
@@ -1254,7 +1298,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   </div>
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(10, minmax(0, 28px))",
+                    gridTemplateColumns: "repeat(10, 1fr)",
                     gap: 2,
                     justifyContent: "start",
                   }}>
