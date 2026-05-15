@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.338",
+    date: "2026-05-15",
+    items: [
+      { type: "fix", text: "Hidden Resource classifier uses the actual RIS naming conventions. `homeland_*` prefix → Homeland, `aor_*` prefix (or `_aor` suffix) → Area of Recruitment, everything else → Other. Previous heuristic looked for membership in homelandsData / ethnicSet / settlementSet and missed every real RIS homeland tag because the values in homelands.json are bare faction stems (akragantine, tarentine) while descr_regions uses the qualified `homeland_*` form." },
+    ],
+  },
+  {
     version: "0.9.337",
     date: "2026-05-15",
     items: [

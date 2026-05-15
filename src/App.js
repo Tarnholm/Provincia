@@ -2605,13 +2605,11 @@ function App() {
     }
     const classify = (name) => {
       const t = name.toLowerCase();
-      // AoR check first so a `*_aor` token never gets miscategorised as a
-      // homeland even if it happened to appear in homelandsData.
-      if (t.endsWith("_aor")) return "Area of Recruitment";
-      if (factionSet.has(t)) return "Homeland";
-      if (ethnicSet.has(t)) return "Ethnic";
-      if (settlementSet.has(t)) return "Settlement";
-      if (t.includes("merc")) return "Mercenary";
+      // Three buckets only: tokens that name themselves homeland_* go to
+      // Homeland, tokens that start with aor_ (or end in _aor) go to AoR,
+      // and everything else lands in Other.
+      if (t.startsWith("homeland_") || t === "homeland") return "Homeland";
+      if (t.startsWith("aor_") || t.endsWith("_aor")) return "Area of Recruitment";
       return "Other";
     };
     return Object.entries(counts)
@@ -9136,7 +9134,7 @@ function App() {
         : hiddenResourcesList;
       const SWATCH_HIT = [50, 180, 90];
       const SWATCH_MISS = [110, 110, 110];
-      const HR_GROUP_ORDER = ["Homeland", "Area of Recruitment", "Ethnic", "Settlement", "Mercenary", "Other"];
+      const HR_GROUP_ORDER = ["Homeland", "Area of Recruitment", "Other"];
       const grouped = {};
       for (const e of filtered) {
         if (!grouped[e.group]) grouped[e.group] = [];
