@@ -11033,6 +11033,58 @@ Files: `scripts/save-cracker/dig-aiarr1.js`, `dig-aiarr2.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 49 — descr_strat diplomacy validation)
+
+**HEADLINE**: At turn 1 the entire 239x239 matrix is identically `(prev=5,
+curr=0, +8=0)`. ALL 432 active `faction_relationships` lines and ALL 1109
+active `core_attitudes` lines in descr_strat.txt reference factions that
+exist in the 239-list (descr_sm_factions.txt) — zero unknown tokens. So the
+session 32-34 decode is **CONFIRMED bulletproof for the (prev,curr,+8)
+slots**: they encode in-game *events* (trade, war, alliance), not the
+static declarations. Declarations sit elsewhere.
+
+**Index correction**: `messapians = 157` (not 156 as session 32/33 stated).
+Other indices verified: `romans_julii=0`, `taras=207`, `vettones=228`,
+`slave=238`. The faction-name regex `[a-z_]+` in earlier scripts dropped
+`roman_rebels_1/2`, `seleucid_rebels2` so all later indices shifted by -3.
+**Re-audit any script that referenced specific indices above ~80**.
+
+**`+20/+32` partial-correlation with `core_attitudes`**:
+- Whole matrix (57121 cells) has 1390 cells with non-default `(+20,+32)`
+  buckets — matches session 33 count.
+- Cross-tab `core_attitudes` value vs cell `(+20,+32)`:
+  - `att=600` (warring) → `(200,200)` 465x, `(600,600)` 210x, mixed 38x
+  - `att=0`   (allied)  → `(200,200)` 207x, `(0,200)` 5x, other 8x
+  - `att=-10` (forced ally) → `(200,200)` 162x, `(0,-10)` 3x, other 9x
+- **No clean 1:1 mapping** between descr_strat `core_attitudes` numeric
+  value and the cell-quantized opinion. Session 33's "+20/+32 encode the
+  descr_strat starting bilateral opinion" is **WEAKER than thought** —
+  the cells DO carry some non-default signal but it's not a direct copy.
+  Likely the engine merges declared attitudes with cultural-default
+  attitudes and quantizes the result.
+
+**Confidence**:
+- **CONFIRMED**: `(prev,curr) = (5,0)` is the universal turn-1 default;
+  declarations do NOT preload `(prev,curr)`. War declared in descr_strat
+  (`faction_relationships >= 201`, 255 such pairs in RIS) shows zero
+  `+8 < 0` cells at turn 1, so `+8` is exclusively a runtime opinion
+  delta and not pre-populated from `descr_strat`. Where the
+  "starting war" state actually lives in the save is **STILL OPEN** —
+  candidates: (a) per-faction `enemies[]` list in faction trailing data,
+  (b) a separate compressed boolean matrix elsewhere, (c) inferred from
+  `+20/+32` opinion thresholds at engine-load.
+- **STRONG**: `+20`/`+32` are partially `descr_strat`-derived but the
+  mapping is non-injective and uses cultural-default fallbacks.
+- **HYPOTHESIS**: starting war/ally state for never-met-but-declared
+  pairs lives in a per-faction trailing list (session 9 unfinished).
+
+Files: `dig-diplovalid1.js`, `dig-diplovalid2.js`. The save analyzed:
+`save_1.2.sav` (RIS imperial turn 1, 34,524,371 B). One outlier cell at
+unknown index shows garbage `(+20, +32)` values — likely a cell straddling
+the matrix-end pad; cosmetic.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
