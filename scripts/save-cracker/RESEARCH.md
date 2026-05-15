@@ -11487,6 +11487,46 @@ Files: `scripts/save-cracker/dig-gap619-1.js` (overview), `dig-gap619-2.js`
 
 ---
 
+### Findings 2026-05-15 (background session 55 — Zone C taw records)
+
+**Confidence: CONFIRMED.** Zone C `0xa8beb..0xf8fd2` (321 KB) is the
+**per-character CHARACTER_PATHS section**, NOT per-faction AI policy. Session
+54's "1,705 taw self-pointer hits" were inflated by false positives caused by
+(x,y) tile-coord pairs whose low-u16-then-zero pattern occasionally yields a
+self-equal u32 inside the path stream.
+
+**Real layout.** Every record has a 16-byte frame: 8-byte header
+`[u32 selfptr_at_start][u32 group_size]` and 8-byte trailer
+`[u32 selfptr_at_end][u32 character_uuid_hash]`. Records are wall-to-wall
+(99.7% coverage: 327,782 / 328,679 B). Walking trailers yields exactly
+**1,703 records** with **1,703 unique hashes** — one record per character,
+keyed by the same actor-UUID hash session 26 found in the event log.
+
+**Per-record body (rec 0, hash 0x70dd9e56, 133 B):**
+```
++0..+7   [selfptr 0xa8beb][group_size 698]   chained-group length, not body
++8..+15  [u32 667][u32 68]                    unknown — last-pos or dest?
++16..+19 [u32 0]                              segment flag
++20..+23 [u32 8]                              waypoint_count for segment 1
++24..+87 8x (x,y) u32 pairs                   path waypoints, tile coords
++88..+91 [u32 4]                              waypoint_count for segment 2
++92..+123 4x (x,y) pairs + 1B terminator      second path segment
++124..+131 [selfptr 0xa8c68][hash 0x70dd9e56] trailer
+```
+
+**Stride histogram (1,703 records, sum 327,782 B):** min 53, median 157, max
+1,285. Top exact strides: 93(88x), 53(85x), 101(74x). Coarse buckets show
+80-95B and 96-111B dominate, consistent with the 1-2 segment paths of most
+characters (53B = empty path; longer strides = multi-segment movement plans).
+
+**Byte coverage.** Adds 321 KB / 1.0% to claimed coverage; takes Zone C from
+"labelled-undecoded" (session 54) to "decoded per-record framing + UUID
+binding". The full waypoint-segment decoder is the next-session refinement.
+
+Files: `scripts/save-cracker/dig-zonec1.js`, `dig-zonec2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
