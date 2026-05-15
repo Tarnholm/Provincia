@@ -36,6 +36,17 @@ const GAP_FRAC = 0.0035;      // ≈ 6.7 px at 1080p — forced gap between adja
 // from any Movable are immediately visible to the next drag-snap pass.
 const widgetRegistry = new Map();
 
+// Register a fixed (non-Movable) rect as a virtual widget so snap/guides/
+// collision treat it like every other panel — e.g. the map canvas and the
+// top toolbar are fixtures users want to align *to* but never drag. Callers
+// own the lifecycle (call register on mount/resize, unregister on unmount).
+export function registerFixedRect(id, rect) {
+  widgetRegistry.set(id, rect);
+}
+export function unregisterFixedRect(id) {
+  widgetRegistry.delete(id);
+}
+
 // Debounced "current layout" dumper. Calls log-message IPC after the user
 // finishes interacting (drag/resize end). Output is a single JSON line
 // labelled `WIDGET-LAYOUT` so it's grep-friendly in provincia.log.

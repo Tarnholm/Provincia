@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
-import { resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay } from "./Movable";
+import { resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
@@ -5900,6 +5900,23 @@ function App() {
   // history stack.
   const [undoStackDepth, setUndoStackDepth] = useState(0);
   useEffect(() => subscribeUndo((n) => setUndoStackDepth(n)), []);
+
+  // Register the non-Movable fixtures (map canvas, top toolbar, floating
+  // bottom-right buttons) as virtual rects in the widget registry so the
+  // Movable widgets collision-avoid them and snap-align to their edges.
+  // These re-register whenever the underlying size changes.
+  useEffect(() => {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    // Map canvas — its outer bounds at MAP_PADDING on the top-left, with
+    // computed canvasSize.
+    registerFixedRect("map.canvas", {
+      x: MAP_PADDING / vw,
+      y: MAP_PADDING / vh,
+      w: canvasSize.width / vw,
+      h: canvasSize.height / vh,
+    });
+    return () => unregisterFixedRect("map.canvas");
+  }, [canvasSize.width, canvasSize.height]);
 
   useEffect(() => {
     function handleResize() {

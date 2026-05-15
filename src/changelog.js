@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.355",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Forced gap now applies to the map too. The map canvas registers itself as a virtual widget in the snap/collision registry, so Movable widgets can't overlap it and keep the same ~6.7 px aura between their edges and the map. They also snap-align to the map's edges and center for free." },
+    ],
+  },
+  {
     version: "0.9.354",
     date: "2026-05-16",
     items: [
