@@ -10668,6 +10668,51 @@ grid does not redundantly mirror `descr_terrain`. Its 6 fields encode
 
 ---
 
+### Findings 2026-05-15 (background session 44 — trade routes)
+
+**Goal**: confirm/pin trade-route data structure in `save_1.2.sav` (RTW
+Remastered, 34,524,371 bytes). Session 8 had a STRONG-negative: routes not
+stored as `(settlement_a, settlement_b)` pairs.
+
+**Result: CONFIRMED negative — trade routes are NOT persisted in the save.**
+
+Evidence (`scripts/save-cracker/dig-trade-session44.js`):
+
+1. **No trade-route keyword anywhere in the body.** ASCII + UTF-16LE scan
+   of save_1.2.sav for `trade_route`, `tradeRoute`, `trade_routes`,
+   `TradeRoute`, `trade_graph`, `tradegraph`, `trade_link`, `trade_partner`,
+   `land_trade`, `sea_trade`, `trade_lane`: **0 hits** for all 11 tokens in
+   both encodings. Settlement sub-records (which session 3 enumerated) do
+   not include any trade-route-named entry — `hinterland_roads` is the
+   closest stored field and only indicates per-settlement road
+   infrastructure presence.
+
+2. **Generic substring `trade` (ASCII) — only 8 hits in 34 MB, all are
+   character trait/ancillary tokens**: `silk_trader` (6x), `incense_trader`
+   (1x), `ivory_trader` (1x). These are descr_traits/ancillaries strings
+   attached to characters, not route data.
+
+3. **`descr_strat.txt` (RIS imperial campaign) cross-reference**: the file
+   contains zero `trade_route` declarations. RTW's strat format does not
+   accept author-defined trade routes — `descr_strat` only declares
+   resources (`slave_trade` is a resource token, not a route). Routes are
+   ALWAYS engine-derived at runtime in classic RTW and Remastered.
+
+**Conclusion**: trade routes are a runtime-computed derivation from
+(a) ownership, (b) road-infrastructure flag (`hinterland_roads` sub-record
+presence per settlement — session 8 §1), (c) port-building flag
+(`port_buildings` sub-record), (d) diplomacy state (session 6). No
+`(origin_settlement, destination_settlement, route_type)` table exists in
+the save. Confidence: **CONFIRMED**.
+
+**Practical implication for Provincia**: replicating in-game trade-route
+income requires re-implementing the engine's adjacency computation client-side
+from those four inputs. There is no shortcut by reading a pre-baked graph.
+
+Files: `scripts/save-cracker/dig-trade-session44.js`
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
