@@ -12828,6 +12828,31 @@ Files: `scripts/save-cracker/dig-89slot-s92.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 93 — diplo event type semantics)
+
+**Target**: event-type enum in 12-byte diplo event log at `0x2a25d..0x2d155` (1,002 events, 892 type=0x01 + 110 type=0x04). Closes session 57 hypothesis.
+
+**Method**: grouped by type, decoded turn/cookie/sub-id distributions, intra-turn ordering, cross-ref top cookies vs file.
+
+**Key observations** (save_1.2.sav):
+- **Turn coverage**: 0x01 spans 55 turns (525..579). 0x04 spans 46 turns (527..580). **0x04 missing for first 2 turns (525-526)** and final turn 580 has 0x04-only. 0x01-only turns: 10. Per-turn 0x04 count is *not* fixed (1..8, mean 2.39).
+- **Intra-turn ordering rejects "marker" hypothesis**: 0x04 events appear at FIRST-of-turn 26x, LAST-of-turn 5x, **MID-of-turn 79x**. Turns 525-526 are pure 0x01 streams; from turn 527 onward 0x04 events are interleaved with 0x01 throughout the turn. Example turn 527: `4 1 1 4 1 1 4 1 1 4 1 1 1 4 4 1 1 ...` — clearly NOT a per-turn boundary marker.
+- **Adjacent 0x04 pairs**: gap=1 occurred 27x — 0x04 events sometimes burst consecutively (pattern `4 4`), inconsistent with "tick" semantics.
+- **Cookie overlap**: top cookies for the two types **share the dictionary** — `0x2e6b4f79`, `0xe06cfa4a`, `0xd00de783` appear in both top-8 lists. Both types reference the **same** slot-tag dictionary from session 85.
+- **Cookie nulls**: 83/892 = 9.3% null for 0x01; 28/110 = 25.5% null for 0x04. 0x04 events are *more likely* to lack a target slot.
+- **Sub-id range**: 0x01 has 329 unique sub-ids over 126..915; 0x04 has 94 unique sub-ids over 100..970. Overlapping range — same entity space.
+- **Flag byte invariance**: 0x01 always pairs with flag=0x20, 0x04 always with flag=0x00 (already known session 57). Pure type-byte correlation, no per-event flag toggling.
+
+**Classification (STRONG)**: 0x01 and 0x04 are **two action sub-classes within a single event stream**, not log/marker pair. They share the same cookie dictionary, same sub-id space, same flag-byte convention, and interleave freely within turns. The "marker" hypothesis is **REJECTED** (only 26/110 are first-of-turn; 110/55 ≠ 2/turn — actual range is 1..8/turn).
+
+**Best-fit semantics (HYPOTHESIS)**: 0x01 = "**relation update / ongoing event**" (flag 0x20 = "active/persistent" bit; 9% null cookies = self-events with no counterparty); 0x04 = "**relation termination / one-shot event**" (flag 0x00 = "inactive/finished" bit; 25% null cookies consistent with cancelled/expired records that lost their target slot). The 8x burst at turn 527 may be **end-of-turn cleanup** (multiple expired relations all closing simultaneously), supporting the "expiry/closure" reading for 0x04.
+
+**Eliminated**: not turn boundary marker (mid-of-turn dominant), not faction-id field (sub-id range 0..970 far exceeds 22 factions), not separate logs (same dictionary).
+
+Files: `scripts/save-cracker/dig-evtypes-s93.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
