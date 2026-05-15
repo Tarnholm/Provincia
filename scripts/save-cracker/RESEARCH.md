@@ -10903,6 +10903,52 @@ Files: `scripts/save-cracker/dig-factail-session46-1.js`,
 
 ---
 
+### Findings 2026-05-15 (background session 47 — stride-16 order array semantics)
+
+Goal: decode the stride-16 record array at faction-tail `+208..` (RJ baseline
+12 entries per session 46, drops to ~2/1 with queued actions). Format per
+session 46: `[u32=0x00010101][A:u32][B:u32][C:u32]`.
+
+**Corrected record counts** (session 46 only read 400 bytes; real array is
+larger):
+- s1.RJ (baseline): **33 genuine records**, terminator at `tail+208+528`.
+- s2.RJ (stone_wall queued): **1 genuine record**.
+- s3.RJ (levies queued): **0 genuine records**.
+
+**Terminator structure — NEW finding.** The array does NOT end at a plain
+`0x1e` u32. It ends with a **sentinel record** `[0x00010101][239][239][self-ptr]`
+where `self-ptr = record_offset + 12` (CONFIRMED in all 3 saves; s3:
+`0x1543bcc == 0x1543bc0+12`). This is the **taw section-end invariant**
+`{u32 offset==pos, u32 size}` from `reference_save_cracker.md`. The
+**239 (=0xEF)** mirrors the per-faction tag `0x00ef0000` at `tail+104` —
+likely a section-type ID for "AI scoring block". A `u32=0x1e` follows the
+sentinel as an outer-section terminator.
+
+**Field semantics — STRONG**:
+- `A`: **score / weight value**. Range across s1's 33 records: 651..1028
+  (median ~820). NOT a settlement ID (would be 0x0001xxxx). NOT a building
+  ID (stone_wall=8000 absent). Looks like an **AI evaluation score** —
+  consistent with the AI-policy 256..1300 range from session 45.
+- `B`: small enum. In s1: 27 records have B=2, 3 have B=0, 2 have B=1,
+  1 has B=4. Looks like a **priority class / action-type**.
+- `C`: small enum 0..4 (distribution: 0×6, 1×7, 2×10, 3×5, 4×5). Looks
+  like a **phase / turn-counter / sub-class**.
+
+**HYPOTHESIS (confidence: STRONG)**: the array is a **ranked AI action
+queue / scoring list**, not a settlement-status array. Each entry is a
+candidate AI action with `(score, class, phase)`. Player queue actions
+**consume nearly all entries** (33 → 1 → 0): when the AI commits to a
+human-influenced state, its candidate list collapses. This is consistent
+with the AI-policy retry/score-bucket subsystem from sessions 44-45.
+
+**Refuted (HYPOTHESIS)**: per-settlement build slot (RJ has 5 settlements,
+not 33); per-AI-task with settlement+task fields (A is not a UUID).
+
+Files: `scripts/save-cracker/dig-strideorder-session47-1.js`,
+`dig-strideorder-session47-2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
