@@ -12126,6 +12126,38 @@ Files: `scripts/save-cracker/cover.js` (new claims at 0x3bb5 and 0xf84632; new s
 
 ---
 
+### Findings 2026-05-15 (background session 74 — character-paths decode/encode)
+
+**Goal**: replace the passthrough handler for the `character-paths` section at `0xa8beb..0xf8fd2` (~321 KB, Zone C from session 55) with a real decode/encode pair in `serialize.js`. Round-trip must stay byte-identical.
+
+**Layout decoded** (per-record framing, confirms session 55):
+
+| Field | Width | Notes |
+|---|---|---|
+| `selfPtr` | u32 LE | == record absolute offset. Asserted on decode. |
+| `groupSize` | u32 LE | Per-record group/chain length (not body length). |
+| `body` | variable | Waypoint segments — captured verbatim as `Buffer`. |
+| `trailerSelfPtr` | u32 LE | == trailer absolute offset (= record end − 8). |
+| `characterUuidHash` | u32 LE | Same actor-UUID hash session 26 found in the event log. |
+
+The trailer is NOT byte-aligned to 4 from record start (rec 0 stride 133 → trailer at +125, NOT +124; session 55's waypoint dump showed a 1-byte segment-terminator at +124). Body is held as an opaque `Buffer` rather than parsing waypoint segments, which keeps round-trip byte-identical without modelling every byte of every record.
+
+**Trailer-scan algorithm**: byte-step from `p+8` forward; `q` is the trailer iff `u32LE(q) === q` AND (`q+8 === end` OR `u32LE(q+8) === q+8` — a self-equal candidate beginning the next record). The "next-record selfPtr" sniff disambiguates real trailers from incidental self-equal u32s inside the waypoint stream (tile coordinates whose low bytes happen to form a self-equal value). Without this disambiguation a naive aligned scan picks up false positives ~25% of the time.
+
+**Record count**: 1,703 — matches session 55 exactly. All 1,703 trailer hashes are unique. After the last record at `0xf8b21..0xf8cd6` (stride 437) the section has a 764-byte footer `0xf8cd6..0xf8fd2` captured verbatim as `tail`. The footer itself contains one more 16-byte-framed structure (selfPtr at 0xf8cd6, selfPtr at +509 = 0xf8ed3) whose trailer u32 is `0xc8` (200) instead of a 32-bit hash — auxiliary record, semantics unknown, kept inside the opaque tail rather than `records[]` so the per-record schema (`characterUuidHash`) stays meaningful. The remaining 247 bytes after that auxiliary frame are sparse small u32s + zero padding.
+
+**Sample (rec 0)**: `offset=0xa8beb groupSize=698 bodyLen=117 trailerSelfPtr=0xa8c68 hash=0x70dd9e56` — hash matches session 55's documented value.
+
+**Round-trip on `save_1.2.sav`**: byte-identical YES, 769 ms. No divergence anywhere in the file.
+
+**Coverage delta**: zero — bytes were already claimed as passthrough. The win is `serialize.js` now having a sixth real decode/encode pair (after `Header`, `HST`, `Toggle_fow/RNG counter`, `tile-grid-matrix`, and session 73's `ZoneB-scripted-events`), with 1,703 character-path records exposed as structured `{ offset, groupSize, body, trailerSelfPtr, characterUuidHash }` objects for downstream tooling.
+
+**Future work**: parse `body` waypoint segments per session 55's `[u32 wp_count][N × (x u32, y u32)]` shape (with the inter-segment 1-byte terminator). 53-B records have no waypoints; 1,285-B records carry many. The opaque-buffer-plus-overwrite pattern leaves room to swap in a structured `waypointGroups[]` field later without breaking the framing.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeCharacterPaths`, `encodeCharacterPaths`, constants `CP_START`/`CP_END`; SERIALIZERS entry `"character-paths"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

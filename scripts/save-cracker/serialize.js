@@ -496,11 +496,109 @@ function encodeTileGridMatrix(g) {
   return out;
 }
 
+// ---- character-paths section (0xa8beb..0xf8fd2, ~321 KB) -------------------
+//
+// Per session 55: the CHARACTER_PATHS section, one record per on-map
+// character. Each record has a 16-byte frame:
+//   +0..+3  u32 LE  selfPtr          (== record start absolute offset)
+//   +4..+7  u32 LE  groupSize        (per-record group/chain length; not body)
+//   +8..+(stride-9)   variable body  (waypoint segments — see session 55)
+//   +(stride-8)..+(stride-5) u32 LE  trailerSelfPtr  (== trailer absolute offset)
+//   +(stride-4)..+(stride-1) u32 LE  characterUuidHash (the actor-uuid hash
+//                                    session 26 found in the event log)
+//
+// 1,703 records walk wall-to-wall from 0xa8beb to 0xf8cd6. After the last
+// per-character record there is a single auxiliary record at 0xf8cd6 (stride
+// 517) whose +509 trailer carries a small u32 (0xc8 = 200) instead of a
+// character-UUID hash — same 16-byte framing, semantics unknown but kept
+// inside `records[]` so the framing invariant holds. The remaining 247 bytes
+// at 0xf8edb..0xf8fd2 are a small sparse footer (a few scattered small u32s
+// then zeros) — captured verbatim in `tail`.
+//
+// Trailer location is NOT byte-aligned to 4 from record start (e.g. rec 0
+// stride 133 places its trailer at +125, not +124 — there's a 1-byte
+// segment-terminator at +124 per session 55's waypoint dump). The encoder
+// preserves byte-identity by capturing each record's body as a raw Buffer
+// rather than trying to model every waypoint segment yet.
+//
+// Round-trip strategy: re-emit selfPtr (u32) + groupSize (u32) + body
+// (verbatim Buffer) + trailerSelfPtr (u32) + characterUuidHash (u32) for
+// each record, then the opaque tail.
+//
+// Trailer scan: at each candidate q >= p+8, q is the trailer iff
+//   (a) u32 LE @ q == q (self-equal), AND
+//   (b) the next position q+8 also has u32 LE @ (q+8) == (q+8), starting a
+//       new record — OR q+8 == END (last-record-of-zone case).
+// The "next record selfPtr" sniff disambiguates real trailers from incidental
+// self-equal u32s inside the waypoint stream (tile coords whose low bytes
+// happen to land on a self-equal value).
+
+const CP_START = 0xa8beb;
+const CP_END   = 0xf8fd2;
+
+function decodeCharacterPaths(buf, start, end) {
+  if (start !== CP_START || end !== CP_END) {
+    throw new Error(`decodeCharacterPaths: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${CP_START.toString(16)}..0x${CP_END.toString(16)})`);
+  }
+  const records = [];
+  let p = start;
+  while (p + 16 <= end) {
+    if (buf.readUInt32LE(p) !== p) break;          // not a record header — stop
+    // Scan forward byte-by-byte for the trailer.
+    let q = p + 8, trailerFound = -1;
+    while (q + 8 <= end) {
+      if (buf.readUInt32LE(q) === q) {
+        const next = q + 8;
+        if (next === end) { trailerFound = q; break; }
+        if (next + 4 <= end && buf.readUInt32LE(next) === next) {
+          trailerFound = q;
+          break;
+        }
+      }
+      q++;
+    }
+    if (trailerFound < 0) break;                   // section tail starts here
+    const groupSize = buf.readUInt32LE(p + 4);
+    const body = Buffer.from(buf.slice(p + 8, trailerFound));
+    const trailerSelfPtr = buf.readUInt32LE(trailerFound);
+    const characterUuidHash = buf.readUInt32LE(trailerFound + 4);
+    records.push({ offset: p, groupSize, body, trailerSelfPtr, characterUuidHash });
+    p = trailerFound + 8;
+  }
+  // Anything left between the last record's end and `end` is the section
+  // footer (sparse small u32s + zero padding for save_1.2.sav).
+  const tail = Buffer.from(buf.slice(p, end));
+  return { _kind: "character-paths", start, records, tail };
+}
+
+function encodeCharacterPaths(cp) {
+  if (cp._kind !== "character-paths") throw new Error("encodeCharacterPaths: not a character-paths object");
+  const chunks = [];
+  let cursor = cp.start;
+  for (const r of cp.records) {
+    if (r.offset !== cursor) {
+      throw new Error(`encodeCharacterPaths: record offset 0x${r.offset.toString(16)} doesn't match cursor 0x${cursor.toString(16)}`);
+    }
+    const trailerOff = r.offset + 8 + r.body.length;
+    const recBuf = Buffer.alloc(8 + r.body.length + 8);
+    recBuf.writeUInt32LE(r.offset, 0);             // selfPtr
+    recBuf.writeUInt32LE(r.groupSize, 4);
+    r.body.copy(recBuf, 8);
+    recBuf.writeUInt32LE(r.trailerSelfPtr, 8 + r.body.length);
+    recBuf.writeUInt32LE(r.characterUuidHash, 8 + r.body.length + 4);
+    chunks.push(recBuf);
+    cursor = trailerOff + 8;
+  }
+  chunks.push(cp.tail);
+  return Buffer.concat(chunks);
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
   "HST":                     (buf, start, end) => encodeHST(decodeHST(buf, start, end)),
   "Toggle_fow/RNG counter":  (buf, start, end) => encodeFowCounterBlock(decodeFowCounterBlock(buf, start, end)),
+  "character-paths":         (buf, start, end) => encodeCharacterPaths(decodeCharacterPaths(buf, start, end)),
   "tile-grid-matrix":        (buf, start, end) => encodeTileGridMatrix(decodeTileGridMatrix(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
