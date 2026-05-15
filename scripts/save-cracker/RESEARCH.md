@@ -12964,6 +12964,63 @@ Files: `scripts/save-cracker/dig-owner-s97-1.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 98 — stride-9 XYZ semantics)
+
+**Goal.** Pin what the `xyz:u24` field encodes in the §16 stride-9 score-table records (`XX YY ZZ NN MM 00 00 00 00`). Sessions 65/79 left it as "24-bit unit/commander/region key" — opaque.
+
+**Method.** Skipped the "same-terminator string" grouping (runs are bitmap-carved by cover.js §16, not anchored to a trailing string — most stride-9 runs sit mid-block with no nearby `ff ff ff ff` + length-prefixed name). Instead: scanned the AI zone `[0x14e5ac6, 0x20e6e8e)` for every chained stride-9 record (any alignment, where `p` and `p+9` both pass the rigid-pattern test), recovered 800,543 records in 6,004 chained runs (≥10 records each), and analysed the byte distribution of xyz.
+
+**Result: CONFIRMED — xyz is a packed `[HI:8][MID:8][LO:8]` triple, NOT a flat 24-bit ID.**
+
+**Per-byte semantics.**
+
+| Byte | Role | Evidence |
+|---|---|---|
+| `HI = (xyz>>16)&0xff` | Run-level **category / faction-zone key**. 254 distinct values seen but mass concentrated in two clusters: `{4,5,6,7}` (193k+78k+51k+13k records = 41% of MM=0 mass) and `{20,21,22,23}` = `{0x14..0x17}` (189k+77k+50k+12k = 41%). These look like consecutive-faction groups of 4 (RTW vanilla has 31 playable factions, packed as 8 culture-groups × ~4 factions each). MM=4 region tables exclusively use HI ≥ 4. HI=0 forms a third distinct flavor (1,439 fingerprint-`hi:0/lo:0` runs — likely commander/unit-id namespace where xyz is just a small index). |
+| `MID = (xyz>>8)&0xff` | **Entity index** (commander/unit/region) within the HI zone. 256 distinct values present overall, sparsely populated in any single run (~115 distinct / 239-record run → ~46% fill of the 0..255 space). 0/1451 length-239 runs are full permutations of 0..238, so MID is sparse positional — not a fixed-size dense table. |
+| `LO = xyz&0xff` | **Small enum** (~7 values total: 0..6, plus 255 sentinel). LO=0 dominates (62% of MM=0 records, 30% of MM=4). LO does NOT match NN (LO==NN in only 19% of records — slightly above the 11% baseline) — i.e. LO is a sub-category orthogonal to the NN priority tier. |
+
+**Run fingerprints (top 6 by run-count).**
+
+| (HI-set, LO-set) | Runs | Likely interpretation |
+|---|---|---|
+| `hi:0/lo:0` | 1,439 | "namespace-0" runs — global/no-faction context, MID = commander or unit index |
+| `hi:{20,21,22,23}/lo:0` | 897 | One culture-group (4 factions) × LO=0 sub-category |
+| `hi:{20,21,22,23}/lo:{0..6}` | 883 | Same group with 7-way LO sub-buckets |
+| `hi:{4,5,6,7}/lo:0` | 771 | Different culture-group (4 factions) × LO=0 |
+| `hi:{4,5,6,7}/lo:{0..6}` | 496 | Same group with 7-way LO |
+| `hi:{4,5,6,7}/lo:{0..3}` | 406 | Same group with 4-way LO |
+
+The consistent `{n, n+1, n+2, n+3}` HI-set (4-faction culture-group of consecutive bytes) is the clincher: **HI byte indexes the faction directly** with values `0..30`-ish, just offset/grouped. The `hi:0` cluster (no faction) is the commander/unit ID-only flavour.
+
+**MM byte re-interpreted.** Confirmed sessions 65/79: `MM=0` (24,437 runs, 99.6%) = "commander/unit-id" flavor; `MM=4` (103 runs, 0.4%) = "faction-region" flavor. MM=4 xyz is exclusively in `[0x40000, 0x174785]` — that's `HI ≥ 4`, confirming MM=4 means "non-zero-namespace HI". MM=4 LO uses 7 distinct values evenly (0..6), MM=4 MID is fully dense (256 distinct, all values present) — MM=4 is the **only flavor where xyz is truly globally varied across all 24 bits**; MM=0 is sparsely populated with HI concentrated in clusters.
+
+**Hash refutations.** djb2 / fnv1a / crc32 of 10,077 variants of 2,829 EDU `type`+`dictionary` names truncated to 24 bits matched 7/13,057 distinct xyz (0.05%) — exactly at the random-coincidence baseline (10,077 / 16,777,216 = 0.06%). Faction-name hashes also baseline. **xyz is NOT a name-hash.**
+
+**Other rejected hypotheses** (with evidence):
+
+- **Flat unit-index** (xyz < EDU.count): only 39 / 13,057 distinct xyz < 2048. REFUTED.
+- **Flat region-index** (xyz < 1310): 0 / 7,185 MM=4 xyz < 1310 (MM=4 starts at 0x40000). REFUTED.
+- **Position-encoded constant per row**: 0 / 5 positions in length-5 runs have a constant xyz across runs (0 / 23 for length-23). REFUTED.
+- **xyz = file offset**: sampled `xyz=0x1400..0x2800` point into header zone with zero-bytes — coincidental, REFUTED.
+- **LO byte == NN tier**: 19% match, ~11% baseline. WEAK; LO and NN are independent small enums.
+
+**xyz semantic summary (CONFIRMED).** The xyz field is `[faction-zone:u8][entity-index:u8][sub-enum:u8]` — a packed triple. The 24-bit value is a positional address into a 3-dimensional table the engine consults when scoring recruitment priority, NOT an opaque hash or a flat ID. The detector's "alignment offsets 0..8 all used" finding from session 79 is consistent: runs frequently get cut mid-record by adjacent claims, exposing arbitrary slices of the underlying 9-byte stride.
+
+**What the byte-fields PROBABLY are** (HYPOTHESIS, narrowing required):
+
+- HI ∈ {0, 4..7, 20..23, …}: **faction-id zone** (4-faction groups by culture; HI=0 = "no faction / global"). HI is essentially `(faction_culture_group << 2) | faction_within_culture` or similar. Sample dist matches expected RTW 8-culture × 4-faction layout.
+- MID 0..255: **per-faction unit-type index** or **per-faction commander-position index** depending on the run's role.
+- LO 0..6: **stance / sub-priority enum** (e.g. attack/defend/garrison/expand/raid/build/idle 7-way), orthogonal to NN's 8-tier ranking.
+
+Confirming the exact mapping (which faction is HI=4 vs HI=20, what MID indexes) requires a controlled mod-data probe: change one faction's recruitment list / culture and re-save; the xyz values that flip identify the bindings. That's a future-session task.
+
+**Confidence: CONFIRMED** that xyz is a packed 3-byte structure (not a flat key/hash/index). **HYPOTHESIS** for the specific bindings of each byte to faction/entity/sub-enum — strong correlation evidence (4-faction HI clusters; LO 7-value sparse) but not yet bound to a known table.
+
+Files: `scripts/save-cracker/dig-stride9xyz7.js` (global xyz distribution scan), `scripts/save-cracker/dig-stride9xyz8.js` (per-run byte-correlation, fingerprint histogram, NN/LO independence).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
