@@ -12578,6 +12578,94 @@ Files: `scripts/save-cracker/dig-aiarr-s87-1.js`, `dig-aiarr-s87-2.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 89 — mother→child linkage)
+
+Goal: close the last family-tree gap. Sessions 39+41 confirmed wives have
+no primary UUID and live in compact 364B records at marker+0x52e. How are
+children linked back to their mother?
+
+#### NEGATIVE: mother→child linkage NOT stored as an explicit pointer
+
+Tested 35 (mother, child) pairs derived directly from save data: each
+wife marker M has husband.primaryUuid at M+40; every character whose
+fatherUuid matches that husband is a child of THIS wife (RTW marriage
+is monogamous). Pool covers 27 distinct mothers + 35 distinct children
+across Roman, Greek, Carthaginian, Egyptian, Seleucid families in
+`save_1.2.sav`.
+
+Hypotheses tested + best-offset hit rate:
+
+| Hypothesis                                    | Best off | Hits   | %   |
+|-----------------------------------------------|----------|--------|-----|
+| H1: child record u16 == mother.firstName-idx   | child+412 | 1/35  | 3%  |
+| H1b: child record u32 == mother.firstName-idx  | child+412 | 1/35  | 3%  |
+| H2: wife record u32 == child.primaryUuid       | wife+311  | 4/35  | 11% |
+| H3: wife record u16 == child.firstName-idx     | wife+358  | 4/35  | 11% |
+| H4: child u32 == wife.marker+36 (her fatherUuid) | —        | 0/13  | 0%  |
+| H5: child u32 == wife marker file offset       | —        | 0/35  | 0%  |
+| postFather-slot == husbandUuid / wifeMarker / wifeNameIdx | A+50/B+46 | 0/35 | 0% |
+| child +18 clanHead == mother.firstName-idx     | +18       | 0/35  | 0%  |
+
+The 11% H2/H3 figures are at chance level: control test using
+random non-matching child UUIDs at wife+311 returns 1/35 (3%), so the
+real-pair signal (4/35) is ~4x baseline but far below the ≥70%
+threshold required to call any offset a discrete mother-link field.
+
+#### Sibling concordance check — no fixed mother slot
+
+Among 6 multi-child sibling groups (same mother), scanned every offset
+in child record `-100..+450` for a u32 SHARED across all siblings of
+the same mother AND varying between groups. Only +5 (lastName u32) and
++46 (fatherUuid u32) — both already known — passed. No mother-specific
+slot emerged. Concretely Thessalonike's three Greek sons share
+fatherUuid (+42 LAYOUT_B = 358202732) but their post-fatherUuid +46
+slots are `0 / 953338676 / 1218761072` — NOT a mother pointer, almost
+certainly stale childUuids[0] (their own future children) or randomized
+bits.
+
+#### Conclusion: H6 — mother is NOT tracked as a child-record field
+
+**Confidence: STRONG**. The engine resolves a child's mother
+indirectly: child.fatherUuid → husband's primaryUuid → wife record at
+marker M with M+40 == husbandUuid → wife.firstNameIdx at M-6. There is
+no direct child→mother pointer in either the child's character record
+or the wife's compact record. This matches the wife-has-no-primaryUuid
+finding (session 41): wives are not first-class entities in the save
+schema; they are dependent relations of the husband. Maternal-line
+traits in RTW (e.g. dowry-driven InfluentialFamily) must propagate at
+marriage time as TRAITS on father or children, not via a runtime
+mother lookup.
+
+#### Practical takeaway for the family-tree UI
+
+Lookup path for "child's mother" in the save:
+1. read child.fatherUuid (LAYOUT_A +46 / LAYOUT_B +42)
+2. find the wife marker M where buf.readUInt32LE(M+40) == fatherUuid
+3. mother name = nameLookup[buf.readUInt32LE(M-6)]
+
+If no such marker exists, the mother is dead / not in the wife table
+and the child is rendered as fatherless-mother in the engine's family
+view too.
+
+#### Reproducer scripts (session 89)
+
+- `dig-mother1.js` — descr_strat-driven GT, only 15 tuples resolved
+  due to name-match strictness.
+- `dig-mother2.js` — save-derived GT (broader, 35 pairs);
+  introduced sibling-concordance and post-fatherUuid slot checks.
+- `dig-mother3.js` — focused test of post-fatherUuid slot, control
+  test for wife+311 noise, pre-record byte scan for shared mother
+  pointer. Final NEGATIVE confirmation.
+
+#### Closes
+
+This is the last open question from sessions 39 + 41 family-tree
+strand. Family-tree UI in Provincia can rely on the indirect lookup
+(child.fatherUuid → wife.marker+40 → wife.firstName-idx) — no further
+parser changes needed.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
