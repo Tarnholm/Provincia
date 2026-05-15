@@ -5857,15 +5857,40 @@ function App() {
     }, 0);
   }, [colorMode, regions, offscreen, imgSize, editsTick]);
 
-  // Layout sizing
+  // Layout sizing — user can override two dimensions via Design Mode
+  // splitters. Stored as % of viewport so window resize keeps proportions.
+  const [bottomStripPct, setBottomStripPct] = useState(() => {
+    try { return parseFloat(localStorage.getItem("layout.bottomStripPct")) || 0; } catch { return 0; }
+  });
+  const [rightColPct, setRightColPct] = useState(() => {
+    try { return parseFloat(localStorage.getItem("layout.rightColPct")) || 0; } catch { return 0; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("layout.bottomStripPct", String(bottomStripPct)); } catch {}
+  }, [bottomStripPct]);
+  useEffect(() => {
+    try { localStorage.setItem("layout.rightColPct", String(rightColPct)); } catch {}
+  }, [rightColPct]);
+  const [designMode, setDesignMode] = useState(false);
+
   useEffect(() => {
     function handleResize() {
       const baselineSidebar = PANEL_WIDTH * 2 + PANELS_GAP;
+      // Right column width: user override (rightColPct > 0) wins, else baseline.
+      const overrideRightW = rightColPct > 0
+        ? Math.round(window.innerWidth * rightColPct)
+        : 0;
+      const effectiveSidebar = overrideRightW || baselineSidebar;
       const availableWidthForMap =
-        window.innerWidth - MAP_PADDING * 2 - baselineSidebar - PANELS_GAP - MAP_WIDTH_ADJUST;
+        window.innerWidth - MAP_PADDING * 2 - effectiveSidebar - PANELS_GAP - (overrideRightW ? 0 : MAP_WIDTH_ADJUST);
 
+      // Bottom strip height: user override (bottomStripPct > 0) wins, else REGIONINFO_HEIGHT.
+      const overrideBottomH = bottomStripPct > 0
+        ? Math.round(window.innerHeight * bottomStripPct)
+        : 0;
+      const effectiveBottom = overrideBottomH || REGIONINFO_HEIGHT;
       const availableHeightForMap =
-        window.innerHeight - MAP_PADDING * 2 - REGIONINFO_HEIGHT - MAP_PADDING;
+        window.innerHeight - MAP_PADDING * 2 - effectiveBottom - MAP_PADDING;
 
       const imgAspect = imgSize.width / imgSize.height;
       let mapW = availableWidthForMap;
@@ -5886,7 +5911,11 @@ function App() {
     window.addEventListener("resize", handleResize);
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
-  }, [imgSize.width, imgSize.height]);
+  }, [imgSize.width, imgSize.height, bottomStripPct, rightColPct]);
+
+  const effectiveBottomHeight = bottomStripPct > 0
+    ? Math.round((typeof window !== "undefined" ? window.innerHeight : 1000) * bottomStripPct)
+    : REGIONINFO_HEIGHT;
 
   // Measure top-left bar height dynamically so the legend panel can avoid overlapping it
   useEffect(() => {
@@ -7479,6 +7508,30 @@ function App() {
             onToggle={toggleAudioMuted}
             buttonStyle={btnStyle(false)}
           />
+          <button
+            onClick={() => setDesignMode((d) => !d)}
+            title={designMode
+              ? "Layout design mode is ON — drag the dotted handles between panels to resize. Click again to lock."
+              : "Toggle layout design mode — drag handles appear between map / right column / bottom strip"}
+            style={{
+              ...btnStyle(designMode),
+              background: designMode ? "rgba(220,166,74,0.85)" : "rgba(40,40,40,0.7)",
+              color: designMode ? "#221" : "#ccc",
+              border: "1px solid #888",
+              fontSize: "0.78rem",
+            }}>📐 {designMode ? "Layout ON" : "Layout"}</button>
+          {designMode && (bottomStripPct > 0 || rightColPct > 0) && (
+            <button
+              onClick={() => { setBottomStripPct(0); setRightColPct(0); }}
+              title="Reset layout to defaults"
+              style={{
+                ...btnStyle(false),
+                background: "rgba(180,40,40,0.6)",
+                color: "#fff",
+                border: "1px solid #855",
+                fontSize: "0.72rem",
+              }}>↺ Reset</button>
+          )}
           {devMode && (<>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
@@ -10177,6 +10230,74 @@ function App() {
                   aria-label={`Interactive map (${variantLabel})`}
                 />
 
+                {/* Layout design-mode splitter handles. Vertical splitter
+                    sits at the right edge of the map; dragging it shrinks/
+                    grows the map and inflates/deflates the right column.
+                    Horizontal splitter sits along the bottom edge of the
+                    map; dragging it changes the bottom-strip height. */}
+                {designMode && (
+                  <>
+                    <div
+                      title="Drag horizontally to resize the right column"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        const startX = e.clientX;
+                        const startRightWidth = window.innerWidth * (rightColPct > 0 ? rightColPct : rightColWidth / window.innerWidth);
+                        function onMove(ev) {
+                          const dx = startX - ev.clientX;
+                          const newW = Math.max(200, Math.min(window.innerWidth - 300, startRightWidth + dx));
+                          setRightColPct(newW / window.innerWidth);
+                        }
+                        function onUp() {
+                          window.removeEventListener("mousemove", onMove);
+                          window.removeEventListener("mouseup", onUp);
+                        }
+                        window.addEventListener("mousemove", onMove);
+                        window.addEventListener("mouseup", onUp);
+                      }}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: canvasSize.width,
+                        width: 8,
+                        height: canvasSize.height,
+                        cursor: "ew-resize",
+                        background: "repeating-linear-gradient(0deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)",
+                        zIndex: 5,
+                      }}
+                    />
+                    <div
+                      title="Drag vertically to resize the bottom strip"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        const startY = e.clientY;
+                        const startBottomH = effectiveBottomHeight;
+                        function onMove(ev) {
+                          const dy = startY - ev.clientY;
+                          const newH = Math.max(120, Math.min(window.innerHeight - 200, startBottomH + dy));
+                          setBottomStripPct(newH / window.innerHeight);
+                        }
+                        function onUp() {
+                          window.removeEventListener("mousemove", onMove);
+                          window.removeEventListener("mouseup", onUp);
+                        }
+                        window.addEventListener("mousemove", onMove);
+                        window.addEventListener("mouseup", onUp);
+                      }}
+                      style={{
+                        position: "absolute",
+                        top: canvasSize.height,
+                        left: 0,
+                        width: canvasSize.width,
+                        height: 8,
+                        cursor: "ns-resize",
+                        background: "repeating-linear-gradient(90deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)",
+                        zIndex: 5,
+                      }}
+                    />
+                  </>
+                )}
+
                 {/* Paint brush hover preview — outline rectangle showing
                     the exact pixels that will be painted on click. */}
                 {paintMode && paintHover && (() => {
@@ -10525,7 +10646,7 @@ function App() {
                 left: MAP_PADDING,
                 width: canvasSize.width,
                 bottom: MAP_PADDING,
-                height: REGIONINFO_HEIGHT,
+                height: effectiveBottomHeight,
                 display: "grid",
                 gridTemplateColumns: `${Math.max(0, Math.floor(factionPanelTargetWidth))}px 1fr`,
                 columnGap: PANELS_GAP,

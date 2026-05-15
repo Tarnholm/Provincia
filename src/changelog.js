@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.344",
+    date: "2026-05-15",
+    items: [
+      { type: "feature", text: "Live layout design mode. Click the 📐 Layout button (bottom-right, next to mute) to reveal two golden dotted splitter handles — one along the right edge of the map (drag horizontally to resize the right column / RegionInfo) and one along the bottom edge of the map (drag vertically to resize the bottom factions/selected strip). The map shrinks or grows to fill remaining space. Sizes persist across sessions via localStorage. ↺ Reset button appears once you've moved anything." },
+    ],
+  },
+  {
     version: "0.9.343",
     date: "2026-05-15",
     items: [
