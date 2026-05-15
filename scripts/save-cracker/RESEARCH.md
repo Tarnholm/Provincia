@@ -12300,6 +12300,37 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeStride9ScoreTable`/
 
 ---
 
+### Findings 2026-05-15 (background session 80 — zero-FF unit summary decode/encode)
+
+**Goal.** Promote cover.js §15 (zero-ff-trailer-auto) from passthrough to a real decode/encode pair in `serialize.js`. Session 64 had already CONFIRMED the rigid 26-byte tail signature on 1,185 per-unit army-trail SUMMARY blobs spanning ~2.38 MB; this session wires them into the serializer.
+
+**Tail signature** (verified at `(re-26)`):
+
+```
+64 00 00 00 64 00 00 00   ← morale (i32 100), discipline (i32 100)
+00 00 00 00 00 00 00 00   ← 10 reserved zero bytes
+00 00                      ← u16 padding (zeros in this save)
+<u32 unit-hash>            ← per-unit hash
+ff ff ff ff                ← record terminator
+```
+
+Body before the tail is opaque, 200 B – 9 KB, zero/FF-dominated, no ASCII — captured verbatim as `headBytes`.
+
+**Implementation.**
+- New `decodeZeroFfTrailer` / `encodeZeroFfTrailer` pair (rawBytes-verbatim, structured fields `morale` / `discipline` / `zeros1` / `padding` / `unitHash` / `terminator` exposed for inspection).
+- New §15 detector inlined in `enumerateClaims` between the §14 army-trail-auto and §16 stride9 detectors, mirroring cover.js §15 precedence exactly: zone `[0x14e5ac6, min(0x1f1fc14, size))`, MIN_RUN 100, 26-byte tail-pattern test only.
+- SERIALIZERS map gains `"zero-ff-trailer-auto"`.
+
+**Coverage.**
+- **1,189 blobs claimed**, **2,376,395 B** (2.27 MB) — matches the §15 census from session 64 plus a handful of runs that the cover.js bitmap order surfaced ahead of §16 in this save.
+- UNKNOWN segments dropped from 1,325 / 1,712,099 B → **490 / 258,689 B**, a ~1.46 MB further structured-coverage gain. Structured round-trip coverage now ≈ **99.25 %** of the 32.93 MB file by byte count.
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 31,918 ms**. Output 34,524,371 B (matches input). 12th real serializer; pushes cumulative structured coverage past the 85 % checkpoint and effectively to single-digit-MB UNKNOWN.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeZeroFfTrailer`/`encodeZeroFfTrailer`; §15 detector inlined in `enumerateClaims` between §14 and §16; SERIALIZERS entry `"zero-ff-trailer-auto"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

@@ -325,6 +325,40 @@ function enumerateClaims(buf) {
     }
   }
 
+  // §15 zero-ff-trailer-auto (per-unit army-trail SUMMARY blocks — REAL
+  // serializer; session 80). Mirrors cover.js §15 exactly:
+  //   - Zone: [0x14e5ac6, min(0x1f1fc14, size))
+  //   - MIN_RUN: 100
+  //   - Accept if the last 26 bytes match the rigid tail signature:
+  //       (re-26..re-18) 64 00 00 00 64 00 00 00  (two i32(100))
+  //       (re-18..re-8)  10 zero bytes
+  //       (re-8..re-6)   u16 padding (often 0 0, but not constrained)
+  //       (re-6..re-2)   u32 per-unit hash
+  //       (re-2..re)     ff ff ff ff terminator (last 4 only — note this is
+  //                      4 bytes but the tail block extends from re-26)
+  // The decode/encode pair is rawBytes-verbatim so byte-identity is
+  // guaranteed even though structured fields (morale, discipline, hash)
+  // are exposed for inspection.
+  {
+    const Z0 = 0x14e5ac6;
+    const Z1 = Math.min(0x1f1fc14, size);
+    for (const [rs, re] of findUnclaimedRuns(Z0, Z1, 100)) {
+      if (re - rs < 26) continue;
+      const p = re - 26;
+      const ok =
+        buf[p]    === 0x64 && buf[p+1]  === 0 && buf[p+2]  === 0 && buf[p+3]  === 0 &&
+        buf[p+4]  === 0x64 && buf[p+5]  === 0 && buf[p+6]  === 0 && buf[p+7]  === 0 &&
+        buf[p+8]  === 0    && buf[p+9]  === 0 && buf[p+10] === 0 && buf[p+11] === 0 &&
+        buf[p+12] === 0    && buf[p+13] === 0 && buf[p+14] === 0 && buf[p+15] === 0 &&
+        buf[p+16] === 0    && buf[p+17] === 0 &&
+        buf[re-4] === 0xff && buf[re-3] === 0xff && buf[re-2] === 0xff && buf[re-1] === 0xff;
+      if (ok) {
+        push(rs, re, "zero-ff-trailer-auto");
+        for (let i = rs; i < re; i++) bm[i] = 1;
+      }
+    }
+  }
+
   // §16 stride9-score-table-auto (AI per-faction unit-priority scoring table —
   // REAL serializer; session 79). Mirrors cover.js §16 exactly:
   //   - Zone: [0x14e5ac6, min(0x20e6e8e, size))
@@ -1446,6 +1480,52 @@ function encodeStride9ScoreTable(b) {
   return b.rawBytes;
 }
 
+// ---------------------------------------------------------------------------
+// §15 zero-FF trailer per-unit army-trail SUMMARY blocks (session 80).
+// Last 26 bytes carry the rigid tail signature:
+//   (re-26..re-18) 64 00 00 00 64 00 00 00   ← morale=100, discipline=100 (i32)
+//   (re-18..re-8 ) 10 zero bytes              ← reserved/zeros1
+//   (re-8..re-6  ) u16 padding
+//   (re-6..re-2  ) u32 per-unit hash
+//   (re-2..re    ) ff ff ff ff terminator
+// `headBytes` is everything before the 26-byte tail and is opaque.
+// rawBytes is the canonical state; structured fields are informational.
+// ---------------------------------------------------------------------------
+function decodeZeroFfTrailer(buf, start, end) {
+  const rawBytes = Buffer.from(buf.slice(start, end));
+  const len = rawBytes.length;
+  // Defensive: should never trigger since detector requires >= 26 + MIN_RUN.
+  if (len < 26) {
+    return { _kind: "zero-ff-trailer-auto", rawBytes };
+  }
+  const p = len - 26;
+  const headBytes  = Buffer.from(rawBytes.slice(0, p));
+  const morale     = rawBytes.readUInt32LE(p);
+  const discipline = rawBytes.readUInt32LE(p + 4);
+  const zeros1     = Buffer.from(rawBytes.slice(p + 8, p + 18));
+  const padding    = rawBytes.readUInt16LE(p + 18);
+  const unitHash   = rawBytes.readUInt32LE(p + 20);
+  const terminator = rawBytes.readUInt32LE(p + 22);
+  return {
+    _kind: "zero-ff-trailer-auto",
+    rawBytes,
+    headBytes,
+    morale,
+    discipline,
+    zeros1,
+    padding,
+    unitHash,
+    terminator,
+  };
+}
+
+function encodeZeroFfTrailer(b) {
+  if (b._kind !== "zero-ff-trailer-auto") throw new Error("encodeZeroFfTrailer: not a zero-ff-trailer-auto object");
+  // Verbatim re-emission. Structured fields above are informational mirrors;
+  // canonical state is `rawBytes`.
+  return b.rawBytes;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -1460,6 +1540,7 @@ const SERIALIZERS = {
   "army-trail-auto":         (buf, start, end) => encodeArmyTrailAuto(decodeArmyTrailAuto(buf, start, end)),
   "settlement-detail":       (buf, start, end) => encodeSettlementDetail(decodeSettlementDetail(buf, start, end)),
   "stride9-score-table-auto":(buf, start, end) => encodeStride9ScoreTable(decodeStride9ScoreTable(buf, start, end)),
+  "zero-ff-trailer-auto":    (buf, start, end) => encodeZeroFfTrailer(decodeZeroFfTrailer(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };
