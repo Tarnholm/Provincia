@@ -11827,6 +11827,24 @@ Files: `scripts/save-cracker/dig-zeroff1.js`, `dig-zeroff2.js`, `cover.js` (§15
 
 ---
 
+### Findings 2026-05-15 (background session 67 — re-serializer skeleton)
+
+**Built** `scripts/save-cracker/serialize.js`: parse-then-re-emit round-trip harness for the rebuild-saves goal. Reuses cover.js's claim enumeration (header, HST, tile-grid, characters, units, factions, settlements, building chains, settlement-detail, siege, RLE shroud-mask, lua-counters, mid-file framed-undecoded ranges, merc-pool, character-paths). Sorts claims by offset, merges overlaps (first-claim-wins, matching the cover.js bitmap's dedup), fills UNKNOWN gaps. Each segment runs through a `SERIALIZERS` dispatch table; everything currently uses default passthrough (`buf.slice(start, end)`). Output assembled by `Buffer.concat` in offset order, then byte-compared to input.
+
+**Round-trip result on `save_1.2.sav`**:
+- input size:        34,524,371 bytes (32.93 MB)
+- claims:            14,364
+- segments:          12,400 (4,316 UNKNOWN, 8.85 MB passthrough)
+- output size:       34,524,371 bytes
+- **byte-identical: YES**
+- elapsed:           727 ms (first attempt, no debugging required)
+
+The framework is now ready for real serializers: any section name added to the `SERIALIZERS` map replaces passthrough for that segment without touching the harness. Test loop is fast enough (sub-second) to validate per-section serializer correctness on every change. Next step is to pick a small, well-understood section (e.g. lua-counters footer or siege-block) and write a real `(buf, start, end) => Buffer` that emits from parsed state, proving the dispatch path works end-to-end.
+
+Files: `scripts/save-cracker/serialize.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
