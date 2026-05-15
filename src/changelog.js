@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.354",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Forced gap between Movable widgets. Each widget is treated as having a ~6.7 px aura on every side when checking collisions; pushes and resize clamps leave at least that much air between adjacent rects. Matches the existing MAP_PADDING / PANELS_GAP between the map and the top bar so widgets share that visual rhythm instead of butting up against each other." },
+    ],
+  },
+  {
     version: "0.9.353",
     date: "2026-05-16",
     items: [

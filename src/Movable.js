@@ -27,6 +27,10 @@ const SNAP_FRAC = 0.0055;     // ≈ 6 px at 1080p — narrow snap pull-in
 const GUIDE_FRAC = 0.014;     // ≈ 15 px at 1080p — wider band where the cyan
                               // guide line lights up before snap engages, so
                               // you can see alignment opportunities coming.
+const GAP_FRAC = 0.0035;      // ≈ 6.7 px at 1080p — forced gap between adjacent
+                              // widgets. Treated as an "aura" around each
+                              // other widget for collision; pushes always
+                              // leave at least this much air between rects.
 
 // Module-scope registry of live widget positions. Mutated directly so updates
 // from any Movable are immediately visible to the next drag-snap pass.
@@ -245,14 +249,15 @@ function snapAlign(myId, np, lock = {}, nosnap = false) {
     for (const f of guideYFracs) guides.push({ axis: "y", frac: f });
   }
 
-  // Collision avoidance: if `out` overlaps any other widget, push along
-  // the axis of smaller penetration so the rectangles end up edge-adjacent.
-  // For resize ops we can't move the opposite edge (it's locked), so we
-  // shrink instead.
+  // Collision avoidance: inflate each other widget's rect by GAP_FRAC on
+  // every side so the moving rect is pushed/clamped to leave a forced gap
+  // between adjacent panels (same feel as the existing MAP_PADDING /
+  // PANELS_GAP between the map and the top bar). For resize ops the
+  // moving edge can't push through, so we shrink instead.
   for (const [oid, o] of widgetRegistry) {
     if (oid === myId) continue;
-    const ox1 = o.x, ox2 = o.x + o.w;
-    const oy1 = o.y, oy2 = o.y + o.h;
+    const ox1 = o.x - GAP_FRAC, ox2 = o.x + o.w + GAP_FRAC;
+    const oy1 = o.y - GAP_FRAC, oy2 = o.y + o.h + GAP_FRAC;
     let x1 = out.x, x2 = out.x + out.w, y1 = out.y, y2 = out.y + out.h;
     const overlapX = Math.min(x2, ox2) - Math.max(x1, ox1);
     const overlapY = Math.min(y2, oy2) - Math.max(y1, oy1);
@@ -260,15 +265,12 @@ function snapAlign(myId, np, lock = {}, nosnap = false) {
       const pushAlongX = overlapX < overlapY;
       if (pushAlongX) {
         if (lock.x === "right") {
-          // east edge moving — clamp width
           out.w = Math.max(MIN_FRAC, ox1 - out.x);
         } else if (lock.x === "left") {
-          // west edge moving — clamp left
           const newX = ox2;
           out.w = Math.max(MIN_FRAC, x2 - newX);
           out.x = x2 - out.w;
         } else {
-          // drag — slide aside
           if (x1 + (x2 - x1) / 2 < ox1 + (ox2 - ox1) / 2) {
             out.x = Math.max(0, ox1 - out.w);
           } else {
