@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
-import { resetAllWidgets } from "./Movable";
+import { resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
@@ -5895,6 +5895,11 @@ function App() {
   useEffect(() => { try { localStorage.setItem("layout.riTopRowPct", String(riTopRowPct)); } catch {} }, [riTopRowPct]);
   useEffect(() => { try { localStorage.setItem("layout.riBuildRowPct", String(riBuildRowPct)); } catch {} }, [riBuildRowPct]);
   const [designMode, setDesignMode] = useState(false);
+  // Tracks undo-stack depth so the ↶ Undo button can disable/relabel itself
+  // when there's nothing to undo. Subscribes to Movable.js's module-level
+  // history stack.
+  const [undoStackDepth, setUndoStackDepth] = useState(0);
+  useEffect(() => subscribeUndo((n) => setUndoStackDepth(n)), []);
 
   useEffect(() => {
     function handleResize() {
@@ -7534,8 +7539,8 @@ function App() {
           <button
             onClick={() => setDesignMode((d) => !d)}
             title={designMode
-              ? "Layout design mode is ON — drag the dotted handles between panels to resize. Click again to lock."
-              : "Toggle layout design mode — drag handles appear between map / right column / bottom strip"}
+              ? "Layout design mode ON. Drag a widget body to move; grab the edges/corners to resize. Hold Shift to bypass snap-to-align. Cyan guide lines show alignments. Click again to lock."
+              : "Toggle layout design mode — widgets become draggable/resizable. Shift while dragging bypasses snap."}
             style={{
               ...btnStyle(designMode),
               background: designMode ? "rgba(220,166,74,0.85)" : "rgba(40,40,40,0.7)",
@@ -7545,7 +7550,24 @@ function App() {
             }}>📐 {designMode ? "Layout ON" : "Layout"}</button>
           {designMode && (
             <button
+              onClick={() => undoLayout()}
+              disabled={!canUndo()}
+              title={canUndo()
+                ? `Undo last layout change (history depth: ${undoStackDepth})`
+                : "No layout changes to undo"}
+              style={{
+                ...btnStyle(false),
+                background: canUndo() ? "rgba(60,140,210,0.65)" : "rgba(40,40,40,0.45)",
+                color: canUndo() ? "#fff" : "#999",
+                border: canUndo() ? "1px solid #58a" : "1px solid #555",
+                fontSize: "0.72rem",
+                cursor: canUndo() ? "pointer" : "default",
+              }}>↶ Undo</button>
+          )}
+          {designMode && (
+            <button
               onClick={() => {
+                if (!window.confirm("Reset every layout override (widget positions + splitters) to defaults? This cannot be undone.")) return;
                 setBottomStripPct(0); setRightColPct(0); setFactionColPct(0);
                 setRiInfoColPct(0); setRiTopRowPct(0); setRiBuildRowPct(0);
                 resetAllWidgets();
@@ -7553,7 +7575,7 @@ function App() {
                 // so all widgets snap back to defaults immediately.
                 try { window.location.reload(); } catch {}
               }}
-              title="Reset all layout overrides (clears every widget position/size) — reloads"
+              title="Reset all layout overrides (clears every widget position/size) — confirms first, then reloads"
               style={{
                 ...btnStyle(false),
                 background: "rgba(180,40,40,0.6)",
@@ -9714,6 +9736,9 @@ function App() {
         aria-hidden="true"
         style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}
       />
+      {/* Snap-alignment guide overlay — empty when nothing is being dragged,
+          renders 1 px cyan crosshair lines where the active widget aligns. */}
+      <GuideOverlay />
       {updateReady && (
         <UpdateBanner
           version={updateReady.version}

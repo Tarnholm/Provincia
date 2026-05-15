@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.352",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Movable widgets now refuse to overlap. As you drag or resize, any rectangle that would collide with another widget gets pushed along the shallower axis so panels end up edge-adjacent instead of stacked on top of each other. Resize ops shrink the moving edge instead of pushing through." },
+      { type: "feature", text: "Cyan snap-alignment guide lines appear while you drag/resize. A 1 px vertical or horizontal line lights up whenever your edge or centerline matches another widget's. Lines clear on mouseup." },
+      { type: "feature", text: "Hold Shift while dragging or resizing to bypass snap-to-align — useful when snap is fighting your placement. Collision avoidance still applies (you can't overlap regardless)." },
+      { type: "feature", text: "↶ Undo button next to ↺ Reset in design mode. Keeps a 30-step history of layout snapshots (one per drag/resize start); undoing rewinds every widget to its previous position/size in one go, no reload required." },
+      { type: "improvement", text: "Reset now asks for confirmation before wiping the layout (it reloads and is irreversible). Undo for everything else." },
+    ],
+  },
+  {
     version: "0.9.351",
     date: "2026-05-16",
     items: [

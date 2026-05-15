@@ -92,6 +92,11 @@ export function resetAllWidgets() {
   } catch {}
 }
 
+// External registry of Movable setters keyed by id. Lets undoLayout reach
+// into every Movable instance and apply a snapshot without each widget
+// having to subscribe to a context.
+const widgetSetters = new Map();
+
 // Hook: returns [pos, setPos] backed by localStorage. pos is always a
 // {x,y,w,h} object in viewport fractions.
 export function useWidgetPos(id, defaultPct) {
@@ -103,58 +108,180 @@ export function useWidgetPos(id, defaultPct) {
   // — gives the renderer ~1.5 s to populate the registry before dumping.
   useEffect(() => {
     widgetRegistry.set(id, pos);
+    widgetSetters.set(id, setPos);
     maybeLogBootLayout();
-    return () => { widgetRegistry.delete(id); };
+    return () => {
+      widgetRegistry.delete(id);
+      widgetSetters.delete(id);
+    };
   }, [id, pos]);
   return [pos, setPos];
 }
 
-// Compute snapped pos by checking edges/centers against every other widget
-// in the registry. `lock` controls which dimensions are allowed to change
-// (drag locks size; resize locks the opposite edge).
-function snapAlign(myId, np, lock = {}) {
-  const targetsX = [];   // values we want our x-edges to match
-  const targetsY = [];
+// ── Undo history ────────────────────────────────────────────────────────
+// Snapshot of every widget's pos pushed onto a stack on each drag/resize
+// start. Undo pops the latest and applies it through each Movable's setter
+// (no reload needed). 30-entry limit keeps memory bounded.
+
+const UNDO_LIMIT = 30;
+const _undoStack = [];
+const _undoSubscribers = new Set();
+
+function snapshotAll() {
+  const out = {};
+  for (const [id, p] of widgetRegistry) out[id] = { ...p };
+  return out;
+}
+
+export function pushUndoSnapshot() {
+  _undoStack.push(snapshotAll());
+  if (_undoStack.length > UNDO_LIMIT) _undoStack.shift();
+  notifyUndo();
+}
+
+export function undoLayout() {
+  if (_undoStack.length === 0) return false;
+  const snapshot = _undoStack.pop();
+  for (const [id, pos] of Object.entries(snapshot)) {
+    const setter = widgetSetters.get(id);
+    if (setter) setter(pos);
+  }
+  notifyUndo();
+  logCurrentLayout("undo");
+  return true;
+}
+
+export function canUndo() { return _undoStack.length > 0; }
+export function undoCount() { return _undoStack.length; }
+
+export function subscribeUndo(fn) {
+  _undoSubscribers.add(fn);
+  return () => _undoSubscribers.delete(fn);
+}
+
+function notifyUndo() {
+  for (const fn of _undoSubscribers) {
+    try { fn(_undoStack.length); } catch {}
+  }
+}
+
+// ── Guide line state ────────────────────────────────────────────────────
+// Active drag broadcasts a list of guides (vertical/horizontal lines where
+// the moving widget's edges/centers align with another widget's). The
+// GuideOverlay component subscribes and renders them.
+
+const _guideSubscribers = new Set();
+let _currentGuides = [];
+
+export function subscribeGuides(fn) {
+  _guideSubscribers.add(fn);
+  return () => _guideSubscribers.delete(fn);
+}
+function setGuides(guides) {
+  _currentGuides = guides;
+  for (const fn of _guideSubscribers) {
+    try { fn(guides); } catch {}
+  }
+}
+function clearGuides() { setGuides([]); }
+
+// ── Snap + collision ───────────────────────────────────────────────────
+// `nosnap` (e.g. Shift held) disables snap entirely. Returns { pos, guides }.
+
+function snapAlign(myId, np, lock = {}, nosnap = false) {
+  const guides = [];
+  let out = { ...np };
+
+  if (!nosnap) {
+    const targetsX = [];
+    const targetsY = [];
+    for (const [oid, o] of widgetRegistry) {
+      if (oid === myId) continue;
+      targetsX.push(o.x, o.x + o.w, o.x + o.w / 2);
+      targetsY.push(o.y, o.y + o.h, o.y + o.h / 2);
+    }
+    const myLeft = np.x, myRight = np.x + np.w, myCenterX = np.x + np.w / 2;
+    const myTop = np.y, myBottom = np.y + np.h, myCenterY = np.y + np.h / 2;
+    const myXs = [myLeft, myRight, myCenterX];
+    const myYs = [myTop, myBottom, myCenterY];
+
+    let dx = 0, dxAbs = SNAP_FRAC, snappedToX = null;
+    for (const t of targetsX) {
+      for (const me of myXs) {
+        const diff = t - me;
+        if (Math.abs(diff) < dxAbs) { dx = diff; dxAbs = Math.abs(diff); snappedToX = t; }
+      }
+    }
+    let dy = 0, dyAbs = SNAP_FRAC, snappedToY = null;
+    for (const t of targetsY) {
+      for (const me of myYs) {
+        const diff = t - me;
+        if (Math.abs(diff) < dyAbs) { dy = diff; dyAbs = Math.abs(diff); snappedToY = t; }
+      }
+    }
+
+    if (lock.x === "right") out.w = Math.max(MIN_FRAC, np.w + dx);
+    else if (lock.x === "left") { out.x = np.x + dx; out.w = Math.max(MIN_FRAC, np.w - dx); }
+    else out.x = np.x + dx;
+    if (lock.y === "bottom") out.h = Math.max(MIN_FRAC, np.h + dy);
+    else if (lock.y === "top") { out.y = np.y + dy; out.h = Math.max(MIN_FRAC, np.h - dy); }
+    else out.y = np.y + dy;
+
+    if (snappedToX != null) guides.push({ axis: "x", frac: snappedToX });
+    if (snappedToY != null) guides.push({ axis: "y", frac: snappedToY });
+  }
+
+  // Collision avoidance: if `out` overlaps any other widget, push along
+  // the axis of smaller penetration so the rectangles end up edge-adjacent.
+  // For resize ops we can't move the opposite edge (it's locked), so we
+  // shrink instead.
   for (const [oid, o] of widgetRegistry) {
     if (oid === myId) continue;
-    targetsX.push(o.x, o.x + o.w, o.x + o.w / 2);
-    targetsY.push(o.y, o.y + o.h, o.y + o.h / 2);
-  }
-  const myLeft = np.x;
-  const myRight = np.x + np.w;
-  const myCenterX = np.x + np.w / 2;
-  const myTop = np.y;
-  const myBottom = np.y + np.h;
-  const myCenterY = np.y + np.h / 2;
-
-  let dx = 0;
-  let dxAbs = SNAP_FRAC;
-  for (const t of targetsX) {
-    for (const me of [myLeft, myRight, myCenterX]) {
-      const diff = t - me;
-      if (Math.abs(diff) < dxAbs) { dx = diff; dxAbs = Math.abs(diff); }
+    const ox1 = o.x, ox2 = o.x + o.w;
+    const oy1 = o.y, oy2 = o.y + o.h;
+    let x1 = out.x, x2 = out.x + out.w, y1 = out.y, y2 = out.y + out.h;
+    const overlapX = Math.min(x2, ox2) - Math.max(x1, ox1);
+    const overlapY = Math.min(y2, oy2) - Math.max(y1, oy1);
+    if (overlapX > 0.0005 && overlapY > 0.0005) {
+      const pushAlongX = overlapX < overlapY;
+      if (pushAlongX) {
+        if (lock.x === "right") {
+          // east edge moving — clamp width
+          out.w = Math.max(MIN_FRAC, ox1 - out.x);
+        } else if (lock.x === "left") {
+          // west edge moving — clamp left
+          const newX = ox2;
+          out.w = Math.max(MIN_FRAC, x2 - newX);
+          out.x = x2 - out.w;
+        } else {
+          // drag — slide aside
+          if (x1 + (x2 - x1) / 2 < ox1 + (ox2 - ox1) / 2) {
+            out.x = Math.max(0, ox1 - out.w);
+          } else {
+            out.x = Math.min(1 - out.w, ox2);
+          }
+        }
+      } else {
+        if (lock.y === "bottom") {
+          out.h = Math.max(MIN_FRAC, oy1 - out.y);
+        } else if (lock.y === "top") {
+          const newY = oy2;
+          out.h = Math.max(MIN_FRAC, y2 - newY);
+          out.y = y2 - out.h;
+        } else {
+          if (y1 + (y2 - y1) / 2 < oy1 + (oy2 - oy1) / 2) {
+            out.y = Math.max(0, oy1 - out.h);
+          } else {
+            out.y = Math.min(1 - out.h, oy2);
+          }
+        }
+      }
     }
   }
-  let dy = 0;
-  let dyAbs = SNAP_FRAC;
-  for (const t of targetsY) {
-    for (const me of [myTop, myBottom, myCenterY]) {
-      const diff = t - me;
-      if (Math.abs(diff) < dyAbs) { dy = diff; dyAbs = Math.abs(diff); }
-    }
-  }
-
-  const out = { ...np };
-  // Apply x adjustment. If lock.x is "right" we resized the east edge so
-  // adjust width; if lock.x is "left" we resized west so adjust both x and
-  // width inversely; otherwise (drag) shift x.
-  if (lock.x === "right") out.w = Math.max(MIN_FRAC, np.w + dx);
-  else if (lock.x === "left") { out.x = np.x + dx; out.w = Math.max(MIN_FRAC, np.w - dx); }
-  else out.x = np.x + dx;
-  if (lock.y === "bottom") out.h = Math.max(MIN_FRAC, np.h + dy);
-  else if (lock.y === "top") { out.y = np.y + dy; out.h = Math.max(MIN_FRAC, np.h - dy); }
-  else out.y = np.y + dy;
-  return out;
+  // Final viewport clamp.
+  out.x = Math.max(0, Math.min(1 - out.w, out.x));
+  out.y = Math.max(0, Math.min(1 - out.h, out.y));
+  return { pos: out, guides };
 }
 
 export function Movable({
@@ -188,6 +315,7 @@ export function Movable({
     if (!designMode) return;
     e.preventDefault();
     e.stopPropagation();
+    pushUndoSnapshot();
     const startX = e.clientX;
     const startY = e.clientY;
     const startPos = { ...pos };
@@ -199,12 +327,14 @@ export function Movable({
         y: Math.max(0, Math.min(1 - startPos.h, startPos.y + dy)),
         w: startPos.w, h: startPos.h,
       };
-      np = snapAlign(id, np);
-      setPos(np);
+      const result = snapAlign(id, np, {}, ev.shiftKey);
+      setGuides(result.guides);
+      setPos(result.pos);
     }
     function onUp() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      clearGuides();
       logCurrentLayout("drag");
     }
     window.addEventListener("mousemove", onMove);
@@ -215,6 +345,7 @@ export function Movable({
     if (!designMode) return;
     e.preventDefault();
     e.stopPropagation();
+    pushUndoSnapshot();
     const startX = e.clientX;
     const startY = e.clientY;
     const startPos = { ...pos };
@@ -243,11 +374,14 @@ export function Movable({
         if (newY + newH <= 1) { np.y = newY; np.h = newH; }
         lock.y = "top";
       }
-      setPos(snapAlign(id, np, lock));
+      const result = snapAlign(id, np, lock, ev.shiftKey);
+      setGuides(result.guides);
+      setPos(result.pos);
     }
     function onUp() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      clearGuides();
       logCurrentLayout("resize");
     }
     window.addEventListener("mousemove", onMove);
@@ -339,3 +473,39 @@ export function Movable({
   );
 }
 
+// Renders the snap-alignment guide lines that flash up during an active
+// drag/resize. Subscribes to setGuides via the module-level pub/sub. Render
+// this ONCE near the root of the app (e.g. inside App's main wrapper) so
+// it sits above every Movable.
+export function GuideOverlay() {
+  const [guides, setLocal] = useState([]);
+  useEffect(() => subscribeGuides(setLocal), []);
+  if (!guides || guides.length === 0) return null;
+  return (
+    <>
+      {guides.map((g, i) => g.axis === "x" ? (
+        <div key={`gx-${i}`} style={{
+          position: "fixed",
+          left: `calc(${g.frac * 100}% - 0.5px)`,
+          top: 0, bottom: 0,
+          width: 1,
+          background: "rgba(80,200,255,0.85)",
+          boxShadow: "0 0 4px rgba(80,200,255,0.6)",
+          pointerEvents: "none",
+          zIndex: 10001,
+        }} />
+      ) : (
+        <div key={`gy-${i}`} style={{
+          position: "fixed",
+          top: `calc(${g.frac * 100}% - 0.5px)`,
+          left: 0, right: 0,
+          height: 1,
+          background: "rgba(80,200,255,0.85)",
+          boxShadow: "0 0 4px rgba(80,200,255,0.6)",
+          pointerEvents: "none",
+          zIndex: 10001,
+        }} />
+      ))}
+    </>
+  );
+}
