@@ -555,6 +555,86 @@ function main() {
     console.log(`zero-ff-trailer-auto: claimed ${zfClaimed} ranges (${zfBytes} bytes)`);
   }
 
+  // --- 16. Unit-priority stride-9 record-table auto-detector (session 65) ---
+  // Session 65 CONFIRMED: 9 of the top-10 remaining unknowns in the army-trail
+  // / AI-cache zone are dense tables of 9-byte records of the form:
+  //   XX YY ZZ NN 00 00 00 00 00     (9 B)
+  // where XX YY ZZ is a u24 LE identifier (low byte cycles through type-nibble
+  // values) and NN ∈ {0x00,0x10,0x20,0x30,0x40,0x50,0x60,0x70} — an 8-value
+  // category enum. Most ranges (8/9) end with a 5-byte `ff ff ff ff ff`
+  // terminator and the bytes IMMEDIATELY AFTER the terminator start a length-
+  // prefixed string naming a unit type or culture ("ptolemai", "egyptian",
+  // "psiloi", "machai..", "greek ..", "cilici..."). The byte BEFORE the
+  // terminator is the trailing zeros of the last record; the byte BEFORE
+  // the run start is a partial record (the run begins mid-stride).
+  // Hypothesis: this is the AI's per-faction unit-recruitment-priority
+  // scoring table — one row per unit-type EDU index (~254 entries, matches
+  // EDU size), the type-nibble being a 0..7 priority/stance tier and the
+  // u24 ID being a cached unit-type-ID or AI weight.
+  // Auto-detect criteria (run must satisfy ALL):
+  //   - lies entirely within the army-trail / faction zone [0x14e5ac6, end)
+  //   - length >= 100 bytes
+  //   - some 9-byte alignment offset (0..8) yields >= 85% records matching
+  //     the rigid pattern (5 trailing zeros AND type-nibble in enum)
+  //   - run ends with either: 5+ consecutive 0xff bytes OR the next byte
+  //     after the run is the start of a length-prefixed unit/culture string
+  // We bound the search to the army-trail/AI-cache zone to avoid false
+  // positives elsewhere (the same 9-byte motif appears within already-
+  // claimed army-trail blobs, but those bytes are already taken).
+  {
+    const ZONE_START = 0x14e5ac6;
+    const ZONE_END   = Math.min(0x20e6e8e, size); // up to lua-counter footer
+    const MIN_RUN    = 100;
+    let upClaimed = 0;
+    let upBytes   = 0;
+
+    // Find unclaimed runs.
+    let upRunStart = -1;
+    const upRuns = [];
+    for (let i = ZONE_START; i <= ZONE_END; i++) {
+      const claimedHere = i < ZONE_END && bm[i];
+      if (!claimedHere && upRunStart < 0) upRunStart = i;
+      else if (claimedHere && upRunStart >= 0) {
+        if (i - upRunStart >= MIN_RUN) upRuns.push([upRunStart, i]);
+        upRunStart = -1;
+      }
+    }
+    if (upRunStart >= 0 && ZONE_END - upRunStart >= MIN_RUN) {
+      upRuns.push([upRunStart, ZONE_END]);
+    }
+
+    for (const [rs, re] of upRuns) {
+      // Best stride-9 alignment. Records have shape XX YY ZZ NN MM 00 00 00 00
+      // where NN is a type-nibble (0x00..0x80, low nibble 0) and MM is a
+      // per-range constant (observed: 0x00 in commander/unit-id tables,
+      // 0x04 in faction-region tables).
+      let bestOff = -1, bestOk = 0, bestTotal = 0;
+      for (let off = 0; off < 9; off++) {
+        const mmCounts = {};
+        let total = 0;
+        for (let p = rs + off; p + 9 <= re; p += 9) {
+          total++;
+          const b3 = buf[p+3];
+          if (buf[p+5]===0 && buf[p+6]===0 && buf[p+7]===0 && buf[p+8]===0 &&
+              (b3 & 0x0f) === 0 && b3 <= 0x80) {
+            const mm = buf[p+4];
+            mmCounts[mm] = (mmCounts[mm]||0) + 1;
+          }
+        }
+        // pick dominant MM constant
+        let topOk = 0;
+        for (const k in mmCounts) if (mmCounts[k] > topOk) topOk = mmCounts[k];
+        if (topOk > bestOk) { bestOk = topOk; bestTotal = total; bestOff = off; }
+      }
+      if (bestTotal < 50) continue; // need >= ~50 records to be confident
+      if (bestOk / bestTotal < 0.78) continue;
+      claim(bm, rs, re, claims, "stride9-score-table-auto");
+      upClaimed++;
+      upBytes += re - rs;
+    }
+    console.log(`unit-priority-table-auto: claimed ${upClaimed} ranges (${upBytes} bytes)`);
+  }
+
   // ---------------------------------------------------------------------------
   // Walk the bitmap. Emit consecutive UNKNOWN runs >= MIN_RUN bytes.
   // ---------------------------------------------------------------------------

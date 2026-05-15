@@ -11899,6 +11899,27 @@ Files: `scripts/save-cracker/dig-35stride1.js`, `dig-35stride2.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 65 — final long-tail sweep)
+
+After sessions 62/63/64 reached 94.37%, the top-10 unknowns were dumped and 9 of 10 shared a single family. Records are **9 bytes**, layout `XX YY ZZ NN MM 00 00 00 00` where:
+
+- `XX YY ZZ` = u24 LE identifier (low byte cycles with NN/MM, looks like packed ID + sub-type)
+- `NN` = type/category enum, low nibble always 0, values seen `{0x00,0x10,0x20,0x30,0x40,0x50,0x60,0x70,0x80}` — an 8-tier priority/stance enum
+- `MM` = per-range constant; `0x00` for tables in the AI-cache zone preceding unit-type strings (ptolemai/egyptian/psiloi/cilici…), `0x04` for tables in a separate sub-zone (region-keyed variants)
+- Trailing 4 bytes are zero padding; many runs end with a 4–5-byte `0xff` terminator immediately before a length-prefixed unit-type or culture string
+
+Detector added to `cover.js` as **stride9-score-table-auto**: scan unclaimed runs in `[0x14e5ac6 .. 0x20e6e8e)`, find best of 9 alignments, require ≥50 records and ≥78% conformance with the rigid pattern (dominant MM value), then claim.
+
+Coverage progression: **94.37% → 98.58% → 98.94% → 99.25%** claimed. New detector contributed ~1.85 MB across 800+ ranges. Top unknowns are now all <2.7 KB and reside between army-trail blobs.
+
+Semantic guess: AI per-faction recruitment / unit-priority cache. One row per unit-type EDU index (~254 ≈ EDU count), NN tier is recruit-priority bucket, the row's u24 identifies the unit/region/commander key. Confirmation requires correlating row counts to vanilla EDU size and watching delta saves across an AI turn — out of scope for this session.
+
+Files: `scripts/save-cracker/dig-finalsweep1.js`..`dig-finalsweep5.js`, detector embedded in `cover.js` block 16.
+
+**Final state: 99.25% claimed, 0.75% unknown (~259 KB across 483 runs, none >6.5 KB).** Diminishing returns reached.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
