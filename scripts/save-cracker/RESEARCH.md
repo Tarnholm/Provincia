@@ -12935,6 +12935,35 @@ Files: `scripts/save-cracker/dig-settlefield-s96-1.js`, `scripts/save-cracker/di
 
 ---
 
+### Findings 2026-05-15 (background session 97 — settlement owner offset re-pin)
+
+**Retracts session 96's owner-offset regression report. The parser is NOT broken.**
+
+Ran `resolveCurrentOwners` against `save_1.2.sav` end-to-end via `src/saveOwnershipParser.js`:
+
+- `detectedOffset = -1944` (the existing RIS-imperial constant, unchanged)
+- `dictSize = 221` UUID-to-faction mappings
+- `unknownCount = 0`
+- 1310 / 1310 settlements resolved
+- Faction histogram is sensible: slave=505, seleucid=114, ptolemaic=84, carthage=41, antigonid=34, romans_julii=25, indians=15, bactria=12, epirus=9, bosporan=8, kush=8, ...
+
+UUID clusters at d=-1944 are textbook clean — each top-25 UUID maps to exactly one descr_strat faction (e.g. `0x65101d15→seleucid:114`, `0xc25419a6→carthage:41`, `0x298e834c→romans_julii:25`). Score 1225, beats every other offset in the [-3500, -100] scan.
+
+**Session 96's "d=-2206 with all-zero UUIDs" was a misread.** At d=-2206 the u32s have shape `0xXX000000` — non-zero values whose low 24 bits are zero (likely a small-int field times 16 or an enum + padding). Scoring 1005, it's a real but weaker correlation (factionId-like enum, not the UUID field). The "all zero" appearance comes from inspecting only the low bytes.
+
+**The d=-1878 (61 group-hits), d=-1177 (40), d=-2895 (37) candidates from session 96 are noise**: re-scored against descr_strat-consistency they place 17th, 200th+, 14th — far below d=-1944. Session 96's scoring metric (any u32 appearing >=5x) over-weights low-entropy enum fields and is not a reliable owner-detector.
+
+**Bonus finding — direct faction-UUID lookup at +28 in major-faction records (CONFIRMED, 23/23):**
+The 23-entry major-faction-record array (RESEARCH session ~50) carries the faction's owner UUID at byte offset **+28 from the record start**. Verified by cross-referencing every record's `u32(rec+28)` against the set of UUIDs seen at owner-offset d=-1944: 23/23 records hit. Sample: record [0] @0x1541d67 (Romans Julii, regions=35, treasury=10000) has `u32(rec+28) = 0x298e834c` — the same UUID owning Rome, Arretium, Sena Gallica, etc.
+
+This unlocks a **canonical, descr_strat-independent UUID→faction dictionary** for future parser revisions: walk the 23 faction records, map `u32(rec+28) → factionId` (factionId comes from the player-zero-then-descr_strat-order convention). No plurality voting needed — handy when settlements are heavily conquered and the plurality-vote heuristic gets fragile. Conservative path: keep the current parser as primary (it works) and use `+28` as cross-check / fallback only.
+
+**Confidence**: CONFIRMED parser correctness on save_1.2 (1310/1310 resolved, all clusters clean). CONFIRMED `+28 = factionUuid` in major-faction records (23/23). Session 96's regression report is RETRACTED.
+
+Files: `scripts/save-cracker/dig-owner-s97-1.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
