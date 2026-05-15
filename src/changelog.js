@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.350",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "App was crashing on startup in 0.9.349 — `ReferenceError: useEffect is not defined` from the buildings ResizeObserver effect. RegionInfo.js was using useEffect without importing it. Fixed the import." },
+      { type: "feature", text: "Widget layout is now logged to provincia.log. Every drag/resize end emits a single `WIDGET-LAYOUT (drag|resize) {…}` JSON line via the existing log-message IPC; a `(boot)` snapshot also fires 1.5 s after first widget mount so the log captures the active layout from the moment the app launches. Lets the dev pick up the user's saved layout from the log and bake it into the source as the new default." },
+    ],
+  },
+  {
     version: "0.9.349",
     date: "2026-05-16",
     items: [

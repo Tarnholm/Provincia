@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import FactionIcon from "./FactionIcon";
 import { Movable } from "./Movable";
 

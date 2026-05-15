@@ -29,6 +29,45 @@ const SNAP_FRAC = 0.0055;     // ≈ 6 px at 1080p — about 1 mm; tight enough 
 // from any Movable are immediately visible to the next drag-snap pass.
 const widgetRegistry = new Map();
 
+// Debounced "current layout" dumper. Calls log-message IPC after the user
+// finishes interacting (drag/resize end). Output is a single JSON line
+// labelled `WIDGET-LAYOUT` so it's grep-friendly in provincia.log.
+let _layoutLogTimer = null;
+let _layoutHasBootLogged = false;
+export function logCurrentLayout(reason = "change") {
+  if (_layoutLogTimer) clearTimeout(_layoutLogTimer);
+  _layoutLogTimer = setTimeout(() => {
+    _layoutLogTimer = null;
+    try {
+      const snapshot = {};
+      for (const [id, p] of widgetRegistry) {
+        // 4 decimals = ~0.5 px precision at 1080p, enough to be useful
+        // when pasting back into source code as new defaults.
+        snapshot[id] = {
+          x: +p.x.toFixed(4), y: +p.y.toFixed(4),
+          w: +p.w.toFixed(4), h: +p.h.toFixed(4),
+        };
+      }
+      const line = `WIDGET-LAYOUT (${reason}) ${JSON.stringify(snapshot)}`;
+      const api = (typeof window !== "undefined") ? window.electronAPI : null;
+      if (api && api.logMessage) api.logMessage("info", line);
+      else console.log("[layout]", line);
+    } catch (err) {
+      try { console.warn("layout log failed", err); } catch {}
+    }
+  }, 250);
+}
+
+// On first import, log the initial layout once after the registry has time
+// to populate from useWidgetPos mounts. Subsequent calls update the
+// snapshot. Using a microtask + tiny debounce avoids logging an empty
+// registry on the very first render.
+function maybeLogBootLayout() {
+  if (_layoutHasBootLogged) return;
+  _layoutHasBootLogged = true;
+  setTimeout(() => logCurrentLayout("boot"), 1500);
+}
+
 export function loadWidgetPos(id, fallback) {
   try {
     const raw = localStorage.getItem(`widget.${id}`);
@@ -59,9 +98,12 @@ export function useWidgetPos(id, defaultPct) {
   const [pos, setPos] = useState(() => loadWidgetPos(id, defaultPct));
   useEffect(() => { saveWidgetPos(id, pos); }, [id, pos]);
   // Keep the module-scope registry in sync so snap-to-align can see this
-  // widget's live position. Cleanup on unmount removes the entry.
+  // widget's live position. Cleanup on unmount removes the entry. Also
+  // schedule a one-shot boot-layout log the first time any widget mounts
+  // — gives the renderer ~1.5 s to populate the registry before dumping.
   useEffect(() => {
     widgetRegistry.set(id, pos);
+    maybeLogBootLayout();
     return () => { widgetRegistry.delete(id); };
   }, [id, pos]);
   return [pos, setPos];
@@ -163,6 +205,7 @@ export function Movable({
     function onUp() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      logCurrentLayout("drag");
     }
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
@@ -205,6 +248,7 @@ export function Movable({
     function onUp() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      logCurrentLayout("resize");
     }
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
