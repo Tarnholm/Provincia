@@ -12478,6 +12478,45 @@ Files: `scripts/save-cracker/dig-settlefields-s86-1.js` (proved name-mapping iss
 
 ---
 
+### Findings 2026-05-15 (background session 83 — corpus round-trip validation)
+
+**Goal.** Validate the rebuild-saves framework against the full save corpus (29 .sav files spanning RIS imperial conquest, RIS imperial build-queues/ship-moves, and vanilla Carthage / Republic-of-Rome autosaves). Up to this point, byte-identical round-trip was only confirmed on save_1.2.sav.
+
+**Method.** New driver `scripts/save-cracker/serialize-corpus.js` spawns `node serialize.js <path>` for every `*.sav` under the user's saves folder, parses the byte-identical / first-diff offset / blamed-segment lines from each child's stdout, then prints a per-file table plus per-failure context dump. Output is written to `scripts/save-cracker/out-corpus-83.txt`.
+
+**Results (29 saves, ~30-32 s each, ~15 min total).** PASS 17 / ERR 12 / FAIL 0.
+
+| File | Status | Detail |
+|---|---|---|
+| save_1.1, 1.2, 2.1, 3.1, 4.1, 4.2, 5.1, 5.2, 6.1, 6.2, 7.2, 8.2, 9.1, 9.2, 10.1, 10.2, 12.1 | PASS | byte-identical |
+| save_11.1, 13.1, 2.2, 3.2, 7.1, 8.1, Carthage Turn 1 End / Turn 2 Start / Turn 2, Republic of Rome Turn 1 End / Turn 2 Start / Turn 2 | ERR | `decodeMercPoolTable: unexpected range` |
+
+**Single root cause across all 12 ERRs.** `enumerateClaims` hardcodes `push(0x14e5ac6, 0x1501615, "merc-pool-table")` and `decodeMercPoolTable` asserts `start === 0x14e5ac6`. The actual merc-pool-table START varies by save:
+
+| Save | Actual start | Δ vs 0x14e5ac6 |
+|---|---|---|
+| save_7.1, 8.1, ROR Turn 1 End | 0x14e5aca | +4 B |
+| save_3.2 | 0x14e5ae9 | +35 B |
+| save_2.2 | 0x14e5afb | +53 B |
+| save_13.1 | 0x14e5c79 | +435 B |
+| save_11.1 | 0x14e5d4c | +646 B |
+| Carthage Turn 1 End | 0x14e5ed6 | +1.04 KB |
+| ROR Turn 2 | 0x14e6415 | +2.39 KB |
+| ROR Turn 2 Start | 0x14e65a3 | +2.71 KB |
+| Carthage Turn 2 Start / Turn 2 | 0x14e662e | +2.85 KB |
+
+The END (`0x1501615`) is stable. The first ~10 KB of the hardcoded claim is actually some other section's territory (likely §13 char-pool-auto or a UI-text blob whose end varies by faction/turn). The §13 auto-detector runs AFTER the hardcoded merc-pool claim is pushed, so it never gets to extend into that range — instead the merc-pool claim is later clipped/dedup'd by the §13 detector's bitmap-claim precedence, leaving a residual unclaimed gap that ends up assigned to merc-pool with the truncated start. The strict decoder then rejects it.
+
+**Why save_1.2 (and 16 others) PASS.** The 17 passing saves happen to have a merc-pool start at exactly `0x14e5ac6` — there is no upstream §13 / UI-blob that displaces the boundary on those particular turns. All passing saves are RIS-mod conquest turns where the pre-merc-pool section happens to align to the hardcoded constant.
+
+**Decision (substantial fix, deferred).** Per session-83 brief "If it's substantial, document the gap and leave for a future session." Proper fix: make `MP_START` dynamic. Cleanest approach is to relax the decoder's start guard (`start === MP_START`) into a heuristic `start <= MP_START && end === MP_END` (decoder already walks for region-name pstr16 headers — the pre-text zone absorbs the displacement automatically), and update `enumerateClaims` to push the actual unclaimed-gap span instead of the constant. Both halves are needed — relaxing only the decoder would still leave §13/§14 detectors operating against a wrong-boundary bitmap.
+
+**Framework verdict.** The corpus driver itself is working: it correctly identifies the failing saves, classifies the failure mode, and groups them by blamed section. The rebuild-saves framework is byte-identical-correct on the 17 saves where it doesn't trip the merc-pool boundary guard. Fixing the merc-pool start would, in expectation, push the pass rate to 29/29 — every other section serializer survives the corpus unchanged (no FAIL outcomes, only ERR crashes pinned to one specific decoder's overly strict precondition).
+
+Files: `scripts/save-cracker/serialize-corpus.js` (new corpus driver), `scripts/save-cracker/out-corpus-83.txt` (full run output, archived alongside RESEARCH.md). Followup target: `decodeMercPoolTable` start-boundary relaxation in `scripts/save-cracker/serialize.js` ≈ lines 87, 1159-1165.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

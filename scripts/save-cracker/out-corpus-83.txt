@@ -1,0 +1,359 @@
+Found 29 save files in C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves
+
+[ 1/29] save_1.1.sav ... PASS  32.92MB  32108ms
+[ 2/29] save_1.2.sav ... PASS  32.93MB  31960ms
+[ 3/29] save_10.1.sav ... PASS  33.08MB  31923ms
+[ 4/29] save_10.2.sav ... PASS  33.08MB  32006ms
+[ 5/29] save_11.1.sav ... ERR  33.74MB  29161ms
+[ 6/29] save_12.1.sav ... PASS  33.08MB  31963ms
+[ 7/29] save_13.1.sav ... ERR  33.63MB  29223ms
+[ 8/29] save_2.1.sav ... PASS  32.92MB  32059ms
+[ 9/29] save_2.2.sav ... ERR  33.08MB  31875ms
+[10/29] save_3.1.sav ... PASS  33.08MB  31988ms
+[11/29] save_3.2.sav ... ERR  33.08MB  31888ms
+[12/29] save_4.1.sav ... PASS  33.08MB  32004ms
+[13/29] save_4.2.sav ... PASS  33.08MB  31951ms
+[14/29] save_5.1.sav ... PASS  33.09MB  31995ms
+[15/29] save_5.2.sav ... PASS  33.08MB  32004ms
+[16/29] save_6.1.sav ... PASS  33.08MB  32377ms
+[17/29] save_6.2.sav ... PASS  33.08MB  32010ms
+[18/29] save_7.1.sav ... ERR  33.08MB  31888ms
+[19/29] save_7.2.sav ... PASS  33.08MB  31982ms
+[20/29] save_8.1.sav ... ERR  33.09MB  31872ms
+[21/29] save_8.2.sav ... PASS  33.08MB  31996ms
+[22/29] save_9.1.sav ... PASS  33.09MB  31995ms
+[23/29] save_9.2.sav ... PASS  33.08MB  32028ms
+[24/29] save_Autosave   Carthage   Turn 1 End.sav ... ERR  32.95MB  41244ms
+[25/29] save_Autosave   Carthage   Turn 2 Start.sav ... ERR  33.55MB  39236ms
+[26/29] save_Autosave   Carthage   Turn 2.sav ... ERR  33.55MB  39247ms
+[27/29] save_Autosave   Republic of Rome   Turn 1 End.sav ... ERR  33.08MB  31840ms
+[28/29] save_Autosave   Republic of Rome   Turn 2 Start.sav ... ERR  33.68MB  29550ms
+[29/29] save_Autosave   Republic of Rome   Turn 2.sav ... ERR  33.63MB  29293ms
+
+=== FAILURE CONTEXT (64 B around first diff offset) ===
+
+--- save_11.1.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      19845
+    segments:    13247 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5d4c..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_13.1.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      19239
+    segments:    12642 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5c79..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_2.2.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      18707
+    segments:    12427 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5afb..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_3.2.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      18706
+    segments:    12426 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5ae9..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_7.1.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      18708
+    segments:    12427 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5aca..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_8.1.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      18707
+    segments:    12427 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5aca..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_Autosave   Carthage   Turn 1 End.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      18691
+    segments:    12394 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5ed6..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_Autosave   Carthage   Turn 2 Start.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      19301
+    segments:    12683 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e662e..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_Autosave   Carthage   Turn 2.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      19301
+    segments:    12683 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e662e..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_Autosave   Republic of Rome   Turn 1 End.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      18706
+    segments:    12426 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e5aca..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_Autosave   Republic of Rome   Turn 2 Start.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      19279
+    segments:    12687 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e65a3..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+--- save_Autosave   Republic of Rome   Turn 2.sav ---
+  serialize.js did not complete (exit 1). Last output:
+    claims:      19227
+    segments:    12634 (0 UNKNOWN, 0 bytes)
+    C:\dev\Provincia\scripts\save-cracker\serialize.js:1164
+        throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+        ^
+    
+    Error: decodeMercPoolTable: unexpected range [0x14e6415..0x1501615); expected [0x14e5ac6..0x1501615)
+        at decodeMercPoolTable (C:\dev\Provincia\scripts\save-cracker\serialize.js:1164:11)
+        at merc-pool-table (C:\dev\Provincia\scripts\save-cracker\serialize.js:1765:71)
+        at serializeSegment (C:\dev\Provincia\scripts\save-cracker\serialize.js:1780:18)
+        at main (C:\dev\Provincia\scripts\save-cracker\serialize.js:1805:17)
+        at Object.<anonymous> (C:\dev\Provincia\scripts\save-cracker\serialize.js:1842:1)
+        at Module._compile (node:internal/modules/cjs/loader:1529:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+        at Module.load (node:internal/modules/cjs/loader:1275:32)
+        at Module._load (node:internal/modules/cjs/loader:1096:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    
+    Node.js v20.19.4
+    
+
+=== SUMMARY TABLE ===
+file                                                    size     status   firstDiff       segment
+------------------------------------------------------- -------- -------- --------------- ------------------------------
+save_1.1.sav                                            32.92MB  PASS     -               -
+save_1.2.sav                                            32.93MB  PASS     -               -
+save_10.1.sav                                           33.08MB  PASS     -               -
+save_10.2.sav                                           33.08MB  PASS     -               -
+save_11.1.sav                                           33.74MB  ERR      -               -
+save_12.1.sav                                           33.08MB  PASS     -               -
+save_13.1.sav                                           33.63MB  ERR      -               -
+save_2.1.sav                                            32.92MB  PASS     -               -
+save_2.2.sav                                            33.08MB  ERR      -               -
+save_3.1.sav                                            33.08MB  PASS     -               -
+save_3.2.sav                                            33.08MB  ERR      -               -
+save_4.1.sav                                            33.08MB  PASS     -               -
+save_4.2.sav                                            33.08MB  PASS     -               -
+save_5.1.sav                                            33.09MB  PASS     -               -
+save_5.2.sav                                            33.08MB  PASS     -               -
+save_6.1.sav                                            33.08MB  PASS     -               -
+save_6.2.sav                                            33.08MB  PASS     -               -
+save_7.1.sav                                            33.08MB  ERR      -               -
+save_7.2.sav                                            33.08MB  PASS     -               -
+save_8.1.sav                                            33.09MB  ERR      -               -
+save_8.2.sav                                            33.08MB  PASS     -               -
+save_9.1.sav                                            33.09MB  PASS     -               -
+save_9.2.sav                                            33.08MB  PASS     -               -
+save_Autosave   Carthage   Turn 1 End.sav               32.95MB  ERR      -               -
+save_Autosave   Carthage   Turn 2 Start.sav             33.55MB  ERR      -               -
+save_Autosave   Carthage   Turn 2.sav                   33.55MB  ERR      -               -
+save_Autosave   Republic of Rome   Turn 1 End.sav       33.08MB  ERR      -               -
+save_Autosave   Republic of Rome   Turn 2 Start.sav     33.68MB  ERR      -               -
+save_Autosave   Republic of Rome   Turn 2.sav           33.63MB  ERR      -               -
+
+Total: 29  PASS: 17  FAIL: 0  ERR: 12
+
+Failures grouped by blamed section:
+  (crash):  12
+    - save_11.1.sav
+    - save_13.1.sav
+    - save_2.2.sav
+    - save_3.2.sav
+    - save_7.1.sav
+    - save_8.1.sav
+    - save_Autosave   Carthage   Turn 1 End.sav
+    - save_Autosave   Carthage   Turn 2 Start.sav
+    - save_Autosave   Carthage   Turn 2.sav
+    - save_Autosave   Republic of Rome   Turn 1 End.sav
+    - save_Autosave   Republic of Rome   Turn 2 Start.sav
+    - save_Autosave   Republic of Rome   Turn 2.sav
