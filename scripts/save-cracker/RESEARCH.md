@@ -11527,6 +11527,56 @@ Files: `scripts/save-cracker/dig-zonec1.js`, `dig-zonec2.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 56 — 214KB pre-character preamble)
+
+**Target.** `0x2d4a9..0x618f8` = 214,095 B (second-largest unclaimed range per
+session-53 cover.js, sitting between the post-fow region and the first
+character record).
+
+**Structure (STRONG).** The range is a **fixed-stride 12-byte sparse slot
+table** with exactly `214,095 / 12 = 17,841 slots` (the trailing 75 B is
+padding). 17,841 = 3 x 5,947 — likely sized to `n_factions x n_slots` or a
+similar product. 4,348 slots (24%) are active; 13,493 (76%) are zero — a
+sparse table indexed by id, not a log.
+
+**Per-slot fields (HYPOTHESIS).**
+- `+0  u16 kind`  — kind=`0x2001` dominates active rows; also `0x0004`. 428 unique.
+- `+2  u16 idx`   — small id, range `0x011d..0x03cf` for the dense head (matches
+  region-id range), wider for tail. 513 unique.
+- `+4  u32 seq`   — small monotone counter at gap-start (638..650+) but file
+  order does NOT track seq order globally (1576 inc / 1341 dec / 1430 eq).
+  Not a log.
+- `+8  u32 tag`   — small dictionary in the dense head: `0xe5e47935`,
+  `0x23e1f461`, `0xebee119b`, `0x8713173a`, `0xd6d62fd1`, `0x16bdb00a`,
+  `0x4a2b35b3`. **None of these tags appear within 64 B of any `ff0aaff0`
+  faction-magic anywhere in the save**, so they are NOT character/faction
+  UUIDs.
+
+**Density profile.** First 4 KB is 38% nonzero; the remaining ~210 KB sits at
+2-6% nonzero. The "active" head (first ~50 records) carries clean monotonic
+sequences and the small 7-tag dictionary; everything after that fragments.
+This looks like the **head segment of a per-region/per-faction "active
+state-bit table"** (sized 17,841 slots = ~6,000 per major category x 3
+categories) — most likely the **diplomatic-relations / trade-route /
+treaty-state matrix** (kind=`0x2001` = "open trade", `0x0004` = "alliance",
+small idx = participant id, tag = relation-source-id).
+
+**ASCII / magic scan.** Zero `ff0aaff0`, `0a07`, `romans_julii`,
+`carthage`, `egypt`, `macedon`, `gauls` hits — confirms this is NOT a
+faction-reference table or string pool, ruling out hypothesis 2 and 5 from
+session 53's plan.
+
+**Byte coverage.** Labelling this range as "12-byte sparse slot table
+(diplomacy/relation matrix)" adds 214 KB / 0.62% to claimed coverage and
+takes it from "unknown" (#2 priority) to "framed-undecoded". Full slot
+semantics (decoding `kind`+`idx`+`tag` into a relation type + participants)
+is the next-session refinement.
+
+Files: `scripts/save-cracker/dig-gap214-1.js`, `dig-gap214-2.js`,
+`dig-gap214-3.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
