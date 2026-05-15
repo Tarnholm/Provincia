@@ -12380,6 +12380,56 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeMiscResidual`/`enco
 
 ---
 
+### Findings 2026-05-15 (background session 84 — ZoneA log slot semantics)
+
+**Confidence: STRONG** — ZoneA `0x61c47..0x846af` (141,928 B) is a
+**fixed-layout slot table whose CONTENTS are turn-state hashes/seeds** (not
+human-readable logs). Session 54's "60% zeros" was wrong — actual zero
+fraction is **94.7%** (~7,500 nonzero bytes/save).
+
+**Quantitative evidence** (probes: `dig-zonea1.js`, `dig-zonea2.js`):
+
+- **Slot layout is fixed within a turn.** Three turn-1 saves with different
+  RIS build queues (`save_1.2`, `save_2.2` stone_wall, `save_3.2` levies) all
+  have **2,648 nonzero islands, IoU 99.7%** on byte occupancy and 97.2%
+  byte-equal. The 22 differing slot positions per pair are within sampling
+  noise (build queues differ).
+- **Slot CONTENTS differ between saves.** At 473 byte-offsets occupied in
+  all 3 turn-1 saves, the u32 value is identical in **0** of them. Top-byte
+  entropy ~7.5 bits (out of 8) → full-entropy 32-bit hashes/seeds.
+- **Turn-over-turn layout changes wholesale.** T1_End vs T2_Start: occupancy
+  IoU = **0.5%** (only 79 bytes share nonzero positions; 7,454 vs 7,429
+  exclusive). Slot table is **rewritten every turn**, not appended.
+- **No taw self-pointer header** in the entire zone — this is NOT a section.
+  No stride-72 or stride-152 run of ≥3 (session 54's strides were
+  pair-counting artefacts). Top stride is 13 B (393 hits) — short slots.
+- **No ASCII templates / names** — 42 fragments in save_1.2 all look like
+  high-entropy byte collisions inside u32 hashes, not strings.
+
+**Hypothesis ranking** (was: H1 battle/message log):
+
+- **REJECTED — battle/message log.** Logs accumulate; ZoneA is rewritten
+  each turn (IoU 0.5%). Logs contain strings; ZoneA has none.
+- **REJECTED — per-character event ring.** No UUID-shaped values match
+  session 26's character hash set at any plausible offset.
+- **TOP H1 — AI/RNG state cache per faction or per scripted-counter.**
+  Wholesale per-turn rewrite, fixed slot offsets (one slot per AI subsystem
+  or counter), full-entropy u32 values = seed/hash state. Matches behaviour
+  of an AI working-memory or scripted-event RNG snapshot serialised at
+  turn-start.
+- **H2 — Faction diplomacy-cache digest.** Same shape (~23 factions × small
+  per-faction u32 hash set), per-turn refresh, but doesn't explain the 2,648
+  slots (113× per faction is high) unless multi-counter per faction.
+
+**Next session target.** Bind ZoneA to a faction-id index: at each of the
+473 stable-offset slots, see if successive 4-byte values cluster into
+~23 groups (one per faction). If yes → H2 wins; if not → H1 (global RNG /
+scripted-events state).
+
+Files: `scripts/save-cracker/dig-zonea1.js`, `dig-zonea2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
