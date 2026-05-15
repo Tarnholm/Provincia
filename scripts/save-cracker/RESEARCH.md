@@ -11443,6 +11443,50 @@ Files: `scripts/save-cracker/cover.js` (run: `node cover.js [savePath]`).
 
 ---
 
+### Findings 2026-05-15 (background session 54 — 619KB preamble gap)
+
+**Confidence: STRONG.** Decomposed the 619 KB unclaimed range `0x61c47..0xf8fd2`
+in `save_1.2.sav` into three structurally distinct zones:
+
+- **Zone A `0x61c47..0x846af` (~143 KB)** — sparse zero-dominated region. 60%
+  zeros overall, with hundreds of 215/219-byte zero runs between small data
+  islands. 909 record-like clusters with bimodal stride modes near 72/76 B and
+  152/178/206 B. Looks like a fixed-slot table of mostly-empty entries — likely
+  the **battle-log / message-log slot array** or the **per-character event
+  history ring**. Not the per-tile registry (wrong size: 240×238 tiles would
+  need >57 K entries).
+
+- **Zone B `0x846af..0xa8beb` (~145 KB)** — **scripted-event registry**.
+  Confirmed by visible asciiz event names: `historic`, `olympics`, then 25×
+  `volcano` / `eruption_at_etna_*`, 25× `eruption_at_*`, and 14× `earthquake`
+  records. Header at `0x846af` is a 34-byte taw section `{selfPtr, size=0x22}`
+  containing the category list ("historic", "olympics"). Each event record
+  starts with a length-prefixed asciiz pair (`category_len, category, name_len,
+  name`) followed by ~50-byte payload (turn fired, target region, etc.). This
+  is the same scripted-events table sessions 22 and 30 saw fragments of.
+
+- **Zone C `0xa8beb..0xf8fd2` (~321 KB)** — **dense taw record table**.
+  1,705 self-pointer headers, sizes 53..1285 B (median 157 B), payloads consume
+  78.7% of zone bytes (the rest is short interleaved gaps that look like
+  alignment/section-wrappers). Size distribution is broad — no single dominant
+  stride — but recurring sizes cluster around 134, 221, 232, 540, 567, 634,
+  644, 698, 713, 833, 862, 884, 895, 973, 1006, 1062, 1108 B with ~7-9 records
+  each. This profile matches the **per-faction AI policy/diplomacy state**
+  blocks (one block per faction, varying length by faction size). 1705 ÷ ~23
+  factions ≈ 74 records per faction, plausible for diplomacy-pair × AI-cache
+  fanout. Confirms session 38's "AI policy preamble" hypothesis was actually
+  this zone, not the EOF region.
+
+**Byte coverage impact**: claiming Zone B + Zone C as labelled-but-undecoded
+moves ~466 KB / 619 KB out of the top unknown — adds ~1.4% to overall coverage
+(70.38% -> ~71.8%). Full decoding of the size-bucketed records in Zone C is
+the next session's high-yield target.
+
+Files: `scripts/save-cracker/dig-gap619-1.js` (overview), `dig-gap619-2.js`
+(per-zone drill).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
