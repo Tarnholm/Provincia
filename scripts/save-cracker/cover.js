@@ -83,6 +83,13 @@ function main() {
   // 106 (asciiz_name, u32_version) pairs. Body root starts right after.
   claim(bm, 0x3328, 0x3bad, claims, "Header Strings Table (HST, 106 record types)");
 
+  // --- 2a. Pre-toggle_fow header-strings extension + flag table (session 68)
+  // The region [0x3bb5..0x43f8) is a 2115 B block of UTF-16 campaign-name
+  // strings followed by a 256-entry `01 00 00 00` flag/version table. Sits
+  // directly after the body-root section header. Confirmed all-or-mostly
+  // structured data — no longer treat as unknown.
+  claim(bm, 0x3bb5, 0x43f8, claims, "header-strings-extension + flag table");
+
   // --- 3. toggle_fow / RNG counter region [0x43f8..0x44e2) ------------------
   // Two-save-no-input diffs land here; treat the bracketing range as known.
   claim(bm, 0x43f8, 0x44e2, claims, "Toggle_fow / RNG counter block");
@@ -116,6 +123,15 @@ function main() {
   const GRID_BYTES = 240 * 238 * 267; // = 15_252_960
   const GRID_END   = GRID_START + GRID_BYTES; // = 0xf84632 (~16.27 MB)
   claim(bm, GRID_START, GRID_END, claims, "Tile-grid matrix (240×238 × 267-byte stride)");
+
+  // --- 4a. First settlement-detail record (session 68) ----------------------
+  // The settlement-marker scanner finds 1310 markers starting at 0xf85f5c,
+  // but the FIRST per-settlement detail record sits directly after the tile-
+  // grid matrix at 0xf84632..0xf85f5c (6442 B). Its head has the canonical
+  // `fc fc fc fc` magic (+48), `default_set` and `hinterland_region` tokens,
+  // and ends with the `ef 00 00 00` terminator at 0xf85f58. No preceding
+  // marker — the tile-grid end acts as the implicit marker for settlement-0.
+  claim(bm, 0xf84632, 0xf85f5c, claims, "Settlement-detail record (settlement-0)");
 
   // --- 5. Body root [0x3bad .. 0xf8fd2) -------------------------------------
   // The "body" is the section-grammar tree. The tile-grid array starts at
@@ -633,6 +649,69 @@ function main() {
       upBytes += re - rs;
     }
     console.log(`unit-priority-table-auto: claimed ${upClaimed} ranges (${upBytes} bytes)`);
+  }
+
+  // --- 17. Multi-stride record-table sweeper (session 68) -------------------
+  // Generalizes the session-65 stride-9 detector to also handle stride-7
+  // tables and runs that begin mid-stride or contain embedded FF-filler.
+  // Same idea: walk unclaimed runs inside the army-trail/AI-cache zone and
+  // claim any that look like dense stride-{7,9} record tables where each
+  // record's trailing 4 bytes are zeros.
+  //
+  // Concretely each record is `<S-4 bytes data>` + `<4 zero bytes>` for
+  // stride S ∈ {7, 9}. We find the alignment offset 0..S-1 with the highest
+  // match fraction among non-FF-filler records, and claim if >= 85% match.
+  // All-FF records are excluded from the denominator since the engine
+  // appears to pad these tables with 0xff sentinels between sub-blocks.
+  {
+    const ZONE_START = 0x14e5ac6;
+    const ZONE_END   = Math.min(0x20e6e8e, size);
+    const MIN_RUN    = 80;
+    let msClaimed = 0;
+    let msBytes   = 0;
+
+    let msRunStart = -1;
+    const msRuns = [];
+    for (let i = ZONE_START; i <= ZONE_END; i++) {
+      const claimedHere = i < ZONE_END && bm[i];
+      if (!claimedHere && msRunStart < 0) msRunStart = i;
+      else if (claimedHere && msRunStart >= 0) {
+        if (i - msRunStart >= MIN_RUN) msRuns.push([msRunStart, i]);
+        msRunStart = -1;
+      }
+    }
+    if (msRunStart >= 0 && ZONE_END - msRunStart >= MIN_RUN) {
+      msRuns.push([msRunStart, ZONE_END]);
+    }
+
+    for (const [rs, re] of msRuns) {
+      let bestPct = 0, bestS = 0;
+      for (const S of [7, 9]) {
+        for (let off = 0; off < S; off++) {
+          let total = 0, ok = 0, ffFill = 0;
+          for (let p = rs + off; p + S <= re; p += S) {
+            total++;
+            // FF filler record?
+            let allFF = true;
+            for (let k = 0; k < S; k++) if (buf[p + k] !== 0xff) { allFF = false; break; }
+            if (allFF) { ffFill++; continue; }
+            // Last 4 bytes zero?
+            let z = 0;
+            for (let k = S - 4; k < S; k++) if (buf[p + k] === 0) z++;
+            if (z === 4) ok++;
+          }
+          const dataRecs = total - ffFill;
+          if (dataRecs < 5) continue;
+          const pct = ok / dataRecs;
+          if (pct > bestPct) { bestPct = pct; bestS = S; }
+        }
+      }
+      if (bestPct < 0.85) continue;
+      claim(bm, rs, re, claims, "stride-table-auto");
+      msClaimed++;
+      msBytes += re - rs;
+    }
+    console.log(`stride-table-auto: claimed ${msClaimed} ranges (${msBytes} bytes)`);
   }
 
   // ---------------------------------------------------------------------------

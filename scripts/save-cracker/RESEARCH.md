@@ -12102,6 +12102,30 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeTileGridMatrix`, `e
 
 ---
 
+### Findings 2026-05-15 (background session 68 — last 0.75% sweep)
+
+**Goal.** Characterize and reduce the 483 remaining unknown runs (~259 KB, 0.75% of the file) that survived session 65. Per the task brief, look for a sixth structural family in the long tail and add detectors that catch consistent padding patterns without over-claiming.
+
+**Method.** Forked cover.js to emit all unknown runs as JSON, bucketed by size (100-200, 200-500, 500-1000, 1000-3000, 3000-6500, 6500+), dumped 5 examples per bucket with head/tail hex + zero/FF density classification, then scanned tail-signatures and inter-run strides.
+
+**Findings.**
+
+1. **Stride-7/9 record tables dominate the residual.** 388/483 of the remaining runs (≈90% by byte count, ≈218 KB) are dense little record tables sitting inside the army-trail / faction-array zone. Each record is `<S-4 bytes data><4 trailing zero bytes>` for stride S ∈ {7, 9}, typically run from 200 B to 1.9 KB, and many end with a long `ff ff ff ff …` filler. They are the **6th structural family** — a generalization of session 65's stride-9-score-table-auto that the v1 detector missed because it (a) required ≥50 records (these are usually 30-200), (b) required a single dominant MM constant in byte 4 (these tables vary), and (c) was confused by runs that begin mid-record or contain embedded all-FF "filler" sentinels separating sub-blocks within one record table.
+
+   The relaxed detector tries strides 7 and 9, all alignments 0..S-1, and counts the *non-FF* records matching the trailing-zero pattern. Claim if ≥85% match. Excluding all-FF records from the denominator is the key — without it the otherwise-perfect tables score 72-73% because the FF filler at the tail pollutes the count.
+
+2. **Two large special-case unknowns.**
+   - `0x3bb5..0x43f8` (2115 B) — a header-strings extension + 256-entry `01 00 00 00` flag/version table that sits between the body-root section header (`0x3bad..0x3bb5`) and the toggle_fow block (`0x43f8..`). UTF-16 strings like `imperial_campaign`, `imperial_campaign_long` followed by uniform 4-byte sentinel entries. Now claimed as `header-strings-extension + flag table`.
+   - `0xf84632..0xf85f5c` (6442 B) — the **first per-settlement detail record**. The settlement-marker scanner finds 1310 markers starting at 0xf85f5c, but settlement-0 has no preceding marker; its detail record sits directly after the tile-grid matrix end. Has the canonical `fc fc fc fc` magic at +48, `default_set` + `hinterland_region` tokens, and the `ef 00 00 00` terminator at re-4. Now claimed as `Settlement-detail record (settlement-0)`.
+
+3. **Zero/FF padding sweep yielded nothing.** Of 256 small runs (<500 B), only 1 was >95% zero and 2 were >95% FF. The mid-density runs all turned out to be stride tables once the detector was relaxed. The task brief's "padding sweeper" idea is correctly rejected — there is no significant pure-padding family hiding in the long tail.
+
+**Result.** Coverage went from 99.25% → **99.97%** (claimed 34 513 172 of 34 524 371 bytes). Unknown runs dropped from 483 to 28; unknown bytes from 258 689 to **11 199 (0.03%)**. The largest residual is now 943 B; the long tail is 28 runs all ≤1 KB, mostly stride-tables that just barely missed the 85% threshold or which contain sparse non-stride data interleaved with the records. Further improvement requires per-run inspection and is unlikely to yield meaningful insight relative to the existing structural understanding.
+
+Files: `scripts/save-cracker/cover.js` (new claims at 0x3bb5 and 0xf84632; new section 17 `stride-table-auto` detector after `unit-priority-table-auto`); investigation scripts `scripts/save-cracker/dig-last075-{1..8}.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
