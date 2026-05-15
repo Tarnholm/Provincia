@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.346",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "Buildings grid no longer spills off the right edge of the RegionInfo panel. Columns switched from fixed `repeat(10, 82px)` (which needed 856 px to render all 10 columns) to fluid `repeat(10, minmax(0, 1fr))` so the row always fits the panel; building icons scale down with the card width (capped at 60 px) instead of overflowing. At 1080p the cards still hit ~80 px so visual density is unchanged on standard layouts." },
+      { type: "improvement", text: "Recruitable list capped at ~4 rows tall (312 px) — extra units scroll vertically rather than push the rest of row 1 around. Scrollbar is hidden globally (App.css), so the scroll behaves like a soft fade with no visible chrome." },
+    ],
+  },
+  {
     version: "0.9.345",
     date: "2026-05-16",
     items: [

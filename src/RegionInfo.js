@@ -932,13 +932,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           <div
             style={{
               display: "grid",
-              // UI reshuffle v3: 10×2 grid (max 20 buildings per settlement,
-              // so this uses every slot). Buildings row now spans the full
-              // panel width.
-              gridTemplateColumns: "repeat(10, 82px)",
+              // 10×2 grid (max 20 buildings per settlement). Columns are
+              // flexible so the row always fits the panel width — at 1080p
+              // with normal layout each column lands near 82px; on narrower
+              // panels the cards shrink rather than spilling off the right.
+              gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
               gridAutoRows: "118px",
               gap: 4,
-              justifyContent: "start",
             }}
           >
             {buildingItems.map((b) => {
@@ -979,16 +979,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     ? "2px solid #dca64a"
                     : "2px solid transparent",
               }}>
-                <div style={{ position: "relative", width: 60, height: 48, flexShrink: 0 }}>
+                <div style={{ position: "relative", width: "100%", maxWidth: 60, aspectRatio: "60 / 48", flexShrink: 0 }}>
                   {b.icon && (
                     <img
                       src={b.icon}
                       alt={b.label}
-                      // Frame 60×48 keeps RTW's 156×124 aspect (≈1.26:1)
-                      // while leaving more vertical room in the 82px card
-                      // for a 4-line label (handles "Region Information",
-                      // "Governor's Palace", etc. without ellipsis).
-                      style={{ width: 60, height: 48, objectFit: "contain", display: "block" }}
+                      // 60×48 keeps RTW's 156×124 aspect (≈1.26:1). Width is
+                      // capped at 60 but allowed to shrink (width:100%) so
+                      // the icon never overflows when the column gets narrow
+                      // — buildings grid now uses fr columns to fit any
+                      // panel width.
+                      style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                   )}
@@ -1049,6 +1050,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               gridAutoRows: "min-content",
               gap: 3,
               justifyContent: "start",
+              // Cap visible recruit list to ~4 rows; extras scroll. Card
+              // height ≈ 52 × (224/164) + 4 padding ≈ 75; 4 rows + 3 gaps
+              // ≈ 309px. Global CSS hides the scrollbar (App.css:81-82) so
+              // the scroll is invisible but still wheels.
+              maxHeight: 312,
+              overflowY: "auto",
             }}>
               {recruitable.map((u, i) => {
                 const gatedSet = u.gatedBy || (recruitGatedBy?.[u.unit] ?? []);
