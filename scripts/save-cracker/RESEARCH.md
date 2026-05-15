@@ -10017,6 +10017,258 @@ counter-only delta and verifies the FoW flag is unchanged.
 
 ---
 
+### Findings 2026-05-15 (background session 40 — f0 0a af f0 RLE blocks)
+
+Goal: figure out what the 1.86MB block of 239 `f0 0a af f0`-prefixed
+records at `~0x1f4847b` actually holds. Session 17 hypothesised
+"per-faction RLE shroud / influence map" over the 1020×700 region image;
+session 37 refuted "shroud" by showing `toggle_fow` doesn't touch this
+zone. The real structure decomposes cleanly into TWO sub-objects per
+record.
+
+#### Structural decode (CONFIRMED)
+
+Each of the 239 records has the shape:
+
+```
+[24B selfPtr+hash header] [magic f0 0a af f0] [u32 W=1020] [u32 H=700]
+[RLE-encoded u16 stream of 714,000 cells (low=value, high=count)]  -- "MASK"
+[TAIL: variable-length list of {ffffffff sentinel, hash quad, u16 strLen, ASCII name}]
+```
+
+- **239 records confirmed** in all 8 corpus saves; `W=1020, H=700` stable
+  in every record across every save (1912/1912 records).
+- **Mask portion** is the session-17 RLE per-cell 0..255 gradient. Cell
+  counts unchanged from session 17 (714,000 cells = 1020×700).
+- **Tail portion is NEW.** RLE decoder consumes only `5,684..16,436`
+  bytes (typically ~6,000 for small factions, ~9,500 for the player rec
+  and ~13,000–16,000 for big factions). Everything between RLE-end and
+  the next record's `selfPtr` is a **list of discovered-settlement
+  entries** keyed by ASCII building/settlement-type tokens like
+  `Eastern_Town`, `Celtic_Large`, `Celtic_C`, `Carthaginian_Huge` —
+  the exact same `W_<culture>_<size>_<Town|City>` lexicon as the
+  global discovered-settlement section at `0x1f48000+` (session 36/37).
+- Tail length per record: **205/239 records have a 148-byte stub**
+  (faction has no discovered settlements / minor faction). **22 records
+  have non-stub tails (211..2861 B)**, indices `0, 4..19, 21, 27, 28,
+  33, 35` — these correspond to RIS's ~22 player-perspective-known
+  majors. Rec 0 = the player (Romans).
+
+#### Behavioural decode (CONFIRMED via 5 save-pair diffs)
+
+The mask and the tail respond to DIFFERENT events:
+
+| Save pair | Action | Mask diffs | Tail diffs | Records touched |
+|---|---|---|---|---|
+| `save_8.2 → save_9.2` | `toggle_fow` | **0** | **0** | **0** (full retraction of session 17 "shroud" hypothesis) |
+| `save_5.2 → save_6.2` | ship moves (172,92)→(171,99) | **100 cells in rec 0**, bbox X[328..343] Y[374..387] | 4 bytes | rec 0 ONLY |
+| `save_1.2 → save_2.2` | Roma queues stone_wall (T1 in-turn) | **0** | 37+18+...+13 bytes across 22 recs (~341 B total) | 23 recs (22 tail + 1 size change) |
+| `save_1.2 → save_3.2` | Roma queues levies | 0 | identical 22-rec tail-diff pattern | 23 |
+| `save_1.2 → save_4.2` | queue cleared back to baseline | 0 | identical 22-rec tail-diff pattern | 22 + 2 size-change |
+
+**Headline interpretations:**
+
+1. **Mask = per-faction character/army influence halo (CONFIRMED).** The
+   only mask diff in the entire corpus is rec 0 (player) on the ship-move
+   pair, and the 100 changed cells form a tight ~16×14 cluster at
+   centroid (335, 380.7) — exactly where the ship moved to in mask coords
+   (game tile 171,99 ≈ pixel 340,380 at the 6×/4× scale between game-tile
+   and 1020×700 region-map space). Value transitions are gradient shifts
+   (e.g. `0→2`, `5→6`, `7→6`, `8→7`) consistent with a **distance-from-
+   nearest-character** field, NOT ownership/shroud. So the mask is the
+   engine's pre-computed per-faction visibility / influence radius cache,
+   re-derived from character positions.
+2. **Tail = per-faction discovered-settlement cache (STRONG).** Each tail
+   entry has the schema
+   `[ff ff ff ff sentinel][u32 hash][u32 flag][u32 hash][u32 hash][u16 strLen][ASCII W_*]`,
+   identical to session 36/37's "discovered settlement record" at
+   `0x1f48000+`. The diff bytes on Roma's build-queue pair show
+   per-entry single-byte flag changes (e.g. `0x16 → 0x02`, `0x16 → 0x11`,
+   `0x16 → 0x08`) at the same offset within each entry — these are the
+   **per-faction view of Roma's current build-state**, updated whenever
+   the player queues/cancels a building. This is why all 22 majors'
+   tails flip simultaneously while the masks stay byte-identical: every
+   major faction has rendered/seen Roma at T1, so each one's cached
+   "what's at this settlement" entry gets re-emitted.
+3. **`toggle_fow` does NOT touch this zone at all (CONFIRMED).** Both
+   mask and tail are untouched by the FoW toggle. Session 17's
+   "RLE shroud mask" hypothesis is now fully retracted: the mask is
+   influence/distance, NOT visibility.
+
+#### Why session 17 thought it was "ownership-like"
+
+Session 17's `dig-tail-tilegrid14.js` saw mostly-sea TGA colors under
+the non-zero cells and rejected "ownership". Correct call. The
+gradient `2,3,3,...,3,3,2` row pattern they noted is the influence
+ramp around a character/settlement: edge=2, interior=3, peak near
+character=4..9. The high values (175, 255) are rare special-mark
+markers (likely settlement-anchor or character-anchor cells).
+
+#### Confidence
+
+- **CONFIRMED**: 239 records, W/H constants, two-section layout
+  (RLE mask + tail-list), `toggle_fow` doesn't touch this zone.
+- **CONFIRMED**: rec 0 = player faction; ship-move mutates ONLY rec 0
+  in a localized bbox at the ship's new tile.
+- **STRONG**: Mask cell values encode a per-faction **distance-from-
+  character / influence halo** (not ownership, not shroud).
+- **STRONG**: Tail = per-faction **discovered-settlement-state cache**,
+  mirroring the global section at `0x1f48000+`. Each entry's single
+  varying flag byte tracks "what's at this settlement right now"
+  (building queue, structure layout). 22 majors' tails change in
+  lock-step on a single Roma build-queue tweak.
+- **HYPOTHESIS**: per-entry `flag = 0x16` may mean "fresh / no
+  outstanding queue", and `flag ∈ {0x02, 0x08, 0x11}` codes some
+  combination of "build queued / construction in progress / damage
+  state". Untested across more building types.
+
+#### Practical implications for Provincia
+
+- Provincia CAN read the per-faction known-settlement list **separately
+  for each major faction** from this zone (vs. the global list at
+  0x1f48000 which is the union). Useful for "who knows about whose
+  settlements" UI.
+- Provincia CANNOT decode visibility/shroud from this mask — it's an
+  influence-distance field, and visibility is derived at runtime
+  (session 37 finding).
+- The 22-majors count means the parser can recover the **major-faction
+  ordering** by indexing into these records' non-stub-tail subset.
+
+#### Open follow-ups
+
+- Pin the `flag` byte semantics (0x16/0x02/0x08/0x11) by capturing
+  building-completion vs queue-cancel vs damage pairs separately.
+- Confirm rec 1, 2, 3 (small mask, stub tail) — are these rebel
+  sub-factions or sea/no-data placeholders? Session 17 noted rec 238 =
+  rebels (full-map mask). Recs 1–3 likely placeholders.
+- Locate which u32 in the 24B record-header is the **faction-id key**
+  so we can name each record's faction without relying on centroid
+  geography.
+
+#### Scripts
+
+- `dig-rle1.js` — enumerate 239 records via magic walk; compare record
+  counts and sizes across all 8 saves; per-pair byte-diff summary.
+- `dig-rle2.js` — decode rec 0 RLE across ship-move pair; 100 cells
+  changed at centroid (335, 381), bbox 16×14.
+- `dig-rle3.js` — classify byte diffs as header / payload per record;
+  isolated the 22 majors that diff on build-queue and the 1 rec on
+  ship-move.
+- `dig-rle4.js` — list of 23 changed records on build-queue pair;
+  faction-centroid table per session-17.
+- `dig-rle5.js` — locate where the RLE stream ENDS within each record;
+  surfaces the variable-length tail (148..2861 B) carrying ASCII
+  W_*_Town/City strings.
+- `dig-rle6.js` — full per-record summary: 205 stub-tail (148B) vs 22
+  non-stub (>250B) splits the 239 records cleanly into majors and
+  minors/empty.
+- `dig-rle7.js` — byte-level diff of rec 0's tail across build-queue
+  pair; identifies the per-entry single-flag-byte mutation pattern
+  (`0x16 → 0x02/0x08/0x11`).
+
+---
+
+### Findings 2026-05-15 (background session 39 — family tree pointers)
+
+Goal: pin parent / child / spouse pointer fields in character records so
+Provincia can render a family tree.
+
+Outcome:
+- **Parent (fatherUuid) and child UUIDs**: already CONFIRMED in sessions 4
+  + 13 (fatherUuid at record +46 LAYOUT_A / +42 LAYOUT_B; child UUIDs at
+  +54/+50 stride-4 slot array). Confirmed wired into
+  `src/characterParser.js`.
+- **Spouse (husbandUuid)**: CONFIRMED at husband.primaryUuid sitting in
+  the **wife's compact family-record at marker+40** with 72.4% accuracy
+  on save_1.2 layout `-6` records (zero false positives at other
+  offsets). Cross-validated on Republic Turn 2 Start (88/138 = 63.8%).
+- **Mother UUID**: still unpinned (no test path yet).
+
+#### 1. CONFIRMED: spouse pointer at compact family-record marker+40
+
+Wives are NOT in the standard character record stream (none of 22 known
+RIS Roman wives pass the parser's signature check). They live in a
+separate compact table at file positions ~21.5M-23M, identified by the
+constant 4-byte marker `2e 05 00 00` (= 0x00000052e). 275-361 markers
+per save; ~63% are wife records (the rest are sons/daughters/dead).
+
+Record layout (most common — layout `wifeOff=-6`, 186/215 records):
+```
+marker-6  u32  wifeFirstNameIdx (descr_names_lookup index)
+marker-1  byte  01 (alive flag)
+marker+0..3  4-byte marker  '2e 05 00 00'
+marker+40 u32  husbandPrimaryUuid  ◆ CONFIRMED session 39
+```
+
+Alternative layouts seen (less common, semantics differ):
+- wifeOff=-5: 23 records (none matched any husbandUuid — possibly child
+  or dead spouse)
+- wifeOff=-4: 5 records (same, 0% husband match)
+- wifeOff=-10: 1 record
+
+Decisive test (`dig-family19.js`, `dig-family20.js`): for 127 layout-
+`-6` records cross-referenced with descr_strat `relative` lines and
+parsed husband characters, husband.primaryUuid landed at exactly
+marker+40 in 92/127 = 72.4% cases AND nowhere else in the wife record
+window (marker-50..+200). The 27.6% miss is explained by wife-name
+collisions across factions (e.g., 23 distinct `Marcia` entries) where
+my naive firstName-only pairing matched the wrong husband — not by
+layout variance. Cross-save: save_1.2 92/145, Turn-2-Start 88/138,
+same offset.
+
+#### 2. STRONG: wife record is ~364-368 bytes
+
+Markers in 21.5M-23M zone show deltas of 364 or 368 (occasionally 462).
+Each record is fixed-stride; the table holds ALL `character_record`
+entries from descr_strat (wives + non-leader children).
+
+#### 3. HYPOTHESIS: marker+40 may store the GUARDIAN uuid, not strictly the husband
+
+The 72.4% hit rate is strong but the matched value is the husband's
+**primaryUuid** (per-session 32-bit ID). For children-records (which
+also live in this table), marker+40 should be the FATHER's primaryUuid.
+Not tested in this session — `dig-family16` showed that gender=1 family
+records include sons (Gaius/Gnaeus/Publius Ogulnius_Gallus), so the same
++40 field probably encodes the parental/guardian pointer regardless of
+relationship type. The "spouse vs father" distinction would need a
+gender field decoded from elsewhere in the compact record.
+
+#### 4. NEGATIVE: motherUuid not pinned
+
+The Rome corpus parser detects zero female characters in the main
+character-record stream, so reverse-search (child's record → mother's
+uuid) cannot be tested without first decoding wife records as
+first-class characters. The compact family table at marker+40 IS the
+mother pointer for child records living in that same table — but
+provoking the engine to render mother-of-leader-character via a u32 in
+the standard character record (where leaders live) returned no hits.
+
+#### Reproducer scripts
+- `dig-family12.js` — initial husband-pointer hunt by scanning for wife
+  name index near husband record. Too noisy due to small-uuid garbage.
+- `dig-family14.js` — wife-name occurrence dump revealed the compact
+  table at 22M with `2e 05 00 00` marker.
+- `dig-family15.js`, `dig-family16.js` — first attempt at decoding
+  compact wife records; alignment +0/+4/+9 wrong for non-clan wives.
+- `dig-family18.js` — decisive scan: family-record markers, wife name
+  idx at marker-6, husband.primaryUuid at marker+40 (74/112 = 66% in
+  save_1.2 with full-zone scan).
+- `dig-family19.js` — cross-save validation (save_1.2 + Republic T2
+  Start), confirms marker+40 is the only consistent offset.
+- `dig-family20.js` — per-layout breakdown: wifeOff=-6 gives 72.4% hits,
+  other layouts 0% (different record sub-types).
+
+#### Open follow-ups for session 40+
+- Decode wife-record layout fully (age, traits, portrait, primaryUuid
+  for the wife herself, dead-flag).
+- Verify marker+40 also holds fatherUuid for child records in the same
+  table (i.e., it's a generic "guardian" pointer, not spouse-specific).
+- Find the wife's "own primaryUuid" position in the compact record so
+  the husband's character record can be checked for a reverse pointer.
+- Investigate the wifeOff=-5/-4 sub-layouts (dead spouses? orphans?).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
