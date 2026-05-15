@@ -12202,6 +12202,33 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeMercPoolTable`, `en
 
 ---
 
+### Findings 2026-05-15 (background session 76 — diplo event subsystem decode/encode)
+
+**Goal.** Replace the passthrough handlers for the two contiguous diplomatic-event subsystem claims with real decode/encode pairs:
+
+- `post-fow-35-stride-table` at `[0x44e2..0x2a25d)`, 151,387 B (~148 KB)
+- `diplo-event-log` at `[0x2a25d..0x2d155)`, 12,024 B (~12 KB)
+
+Combined: 163,411 B (~160 KB) of newly structured coverage. 8th real decode/encode pair (counting the merc-pool-table from session 75); brings the SERIALIZERS table to 9 entries.
+
+**Internal layout (per sessions 57 + 66 + this session).**
+
+`post-fow-35-stride-table` splits into three subtables:
+
+- **prefix** `[0x44e2..0x4556)` = 116 B opaque leadin (~29 u32s).
+- **slotTable** `[0x4556..0x5181)` = 89 rows × 35 B fixed-stride slot table. Each row carries the byte sequence `1e 00 00 00` at +31 (confirmed **89/89** rows for `save_1.2.sav`). Row 0 holds the slot-count self-reference u32 0x59 = 89 at +24. 1 live + 11 sparse + 78 all-zero rows. Decoded into per-slot `{ slotCount, sentinel, row: Buffer(35) }` structs.
+- **bodyBytes** `[0x5181..0x2a25d)` = 151,772 B. Stride-12 event-record stream: `[u32 seq][u32 UUID-hash][u16 sentinel][u16 sub-id]`. Sentinel `0x2001` fires at +8 in **10,343 / 12,647** records (88% aligned). Remainder = leading zero-records, 47 trailing 0x020c/0x020d variant rows (the "tail-47" variant per session 57), and an 8-byte slack remainder (151,772 mod 12 = 8). Because the framing is positional and varies between saves, body is kept as a single opaque `Buffer` per the session-70 disputed-bytes pattern.
+
+`diplo-event-log` is 1,002 × 12-byte rows of layout `[u8 type][u8 flag][u16 subId][u16 turn][u16 0x0000][u32 cookie]`. For `save_1.2.sav`: **892 type-0x01 events + 110 type-0x04 separators = 1,002** (no other type bytes). Decoded into per-event structs.
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 764 ms**. Output 34,524,371 B (matches input).
+
+**Coverage delta.** Zero — both ranges were already claimed as passthrough. The win is the 7th + 8th real decode/encode pair, exposing `{ prefixBytes, slotTable[89], bodyBytes }` for the post-fow subsystem and `events[1002]` for the diplo-event-log to downstream tooling. Future work: model the 12-byte body's variant-framing (0x2001 / 0x2002 / 0x200c / 0x020c / 0x020d typedefs) into per-record structs and crack the 8-byte trailing slack remainder.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodePostFowStrideTable`/`encodePostFowStrideTable` + `decodeDiploEventLog`/`encodeDiploEventLog`; constants `PFOW_START`/`PFOW_END`/`PFOW_HEAD_START`/`PFOW_HEAD_END`/`PFOW_HEAD_ROWS`/`PFOW_HEAD_STRIDE` + `DEL_START`/`DEL_END`/`DEL_STRIDE`/`DEL_ROWS`; SERIALIZERS entries `"post-fow-35-stride-table"` + `"diplo-event-log"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

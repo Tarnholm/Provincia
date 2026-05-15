@@ -593,6 +593,136 @@ function encodeCharacterPaths(cp) {
   return Buffer.concat(chunks);
 }
 
+// ---- post-fow-35-stride-table (0x44e2..0x2a25d, ~151 KB) -------------------
+//
+// Per sessions 57 + 66 dossier the diplomatic-event subsystem splits into
+// three internal subtables:
+//
+//   - prefix (0x44e2..0x4556, 116 B): opaque ~29 u32 leadin captured as a
+//     raw Buffer.
+//   - head  (0x4556..0x5181, 3,115 B): 89-row × 35-byte slot table. Every
+//     row carries the byte sequence `1e 00 00 00` at +31 (confirmed 89/89
+//     for save_1.2.sav). Row 0 contains the literal u32 0x59 = 89, a
+//     slot-count self-reference. 1 live + 11 sparse + 78 all-zero rows.
+//   - body  (0x5181..0x2a25d, 151,772 B): stride-12 event records of layout
+//     `[u32 seq][u32 UUID-hash][u16 sentinel][u16 sub-id]`. The 0x2001
+//     sentinel fires at +8 in 10,343/12,647 records (~88%). The remaining
+//     12% are leading zero records, mid-stream variants (0x2002, 0x200c),
+//     and 47 trailing rows that use a 0x020c/0x020d variant first-byte
+//     framing. Body length (151,772) is NOT a multiple of 12 — it has an
+//     8-byte slack remainder after row 12,647.
+//
+// Because the body's record framing is positional and varies by save, the
+// decoder keeps body bytes as a single opaque Buffer (per the session-70
+// pattern). The head is decoded into 89 × 35-byte slot structs since its
+// shape is invariant.
+//
+// Round-trip is byte-identical by construction:
+//   encode = prefixBytes + ( slot.row verbatim Buffer ) × 89 + bodyBytes
+
+const PFOW_START = 0x44e2;
+const PFOW_END   = 0x2a25d;
+const PFOW_HEAD_START = 0x4556;
+const PFOW_HEAD_END   = 0x5181;
+const PFOW_HEAD_ROWS  = 89;
+const PFOW_HEAD_STRIDE = 35;
+
+function decodePostFowStrideTable(buf, start, end) {
+  if (start !== PFOW_START || end !== PFOW_END) {
+    throw new Error(`decodePostFowStrideTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${PFOW_START.toString(16)}..0x${PFOW_END.toString(16)})`);
+  }
+  const prefixBytes = Buffer.from(buf.slice(start, PFOW_HEAD_START));
+  const slotTable = new Array(PFOW_HEAD_ROWS);
+  for (let r = 0; r < PFOW_HEAD_ROWS; r++) {
+    const off = PFOW_HEAD_START + r * PFOW_HEAD_STRIDE;
+    slotTable[r] = {
+      // Slot-count self-reference at row 0 +24: u32 LE = 0x59 = 89.
+      slotCount: buf.readUInt32LE(off + 24),
+      // Tail sentinel at +31..+34 = `1e 00 00 00` for every row.
+      sentinel:  buf.readUInt32LE(off + 31),
+      // Full 35-byte row preserved verbatim — encoder re-emits this and
+      // ignores the parsed slotCount/sentinel fields above (which are
+      // informational mirrors of bytes already inside `row`).
+      row:       Buffer.from(buf.slice(off, off + PFOW_HEAD_STRIDE)),
+    };
+  }
+  const bodyBytes = Buffer.from(buf.slice(PFOW_HEAD_END, end));
+  return { _kind: "post-fow-35-stride-table", prefixBytes, slotTable, bodyBytes };
+}
+
+function encodePostFowStrideTable(t) {
+  if (t._kind !== "post-fow-35-stride-table") throw new Error("encodePostFowStrideTable: not a post-fow-35-stride-table object");
+  if (t.slotTable.length !== PFOW_HEAD_ROWS) throw new Error(`encodePostFowStrideTable: expected ${PFOW_HEAD_ROWS} slots, got ${t.slotTable.length}`);
+  const chunks = [t.prefixBytes];
+  for (let r = 0; r < PFOW_HEAD_ROWS; r++) {
+    const slot = t.slotTable[r];
+    if (slot.row.length !== PFOW_HEAD_STRIDE) throw new Error(`encodePostFowStrideTable: slot ${r} row length ${slot.row.length} !== ${PFOW_HEAD_STRIDE}`);
+    chunks.push(slot.row);
+  }
+  chunks.push(t.bodyBytes);
+  return Buffer.concat(chunks);
+}
+
+// ---- diplo-event-log (0x2a25d..0x2d155, ~12 KB) ----------------------------
+//
+// Per session 57: 1,002 × 12-byte tail event-log records. Layout per record:
+//   +0  u8   type   (0x01 = event, 0x04 = separator)
+//   +1  u8   flag
+//   +2  u16  sub-id
+//   +4  u16  turn
+//   +6  u16  0x0000 (constant zero pad)
+//   +8  u32  cookie / payload hash
+//
+// For save_1.2.sav: 892 type-0x01 events + 110 type-0x04 separators = 1,002.
+// No other type bytes occur, so the type field is decoded as-is and the
+// encoder re-emits the same byte stream.
+//
+// Round-trip is byte-identical by construction.
+
+const DEL_START = 0x2a25d;
+const DEL_END   = 0x2d155;
+const DEL_STRIDE = 12;
+const DEL_ROWS = (DEL_END - DEL_START) / DEL_STRIDE;  // 1002
+
+function decodeDiploEventLog(buf, start, end) {
+  if (start !== DEL_START || end !== DEL_END) {
+    throw new Error(`decodeDiploEventLog: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${DEL_START.toString(16)}..0x${DEL_END.toString(16)})`);
+  }
+  if ((end - start) % DEL_STRIDE !== 0) {
+    throw new Error(`decodeDiploEventLog: range not a multiple of ${DEL_STRIDE}`);
+  }
+  const rows = (end - start) / DEL_STRIDE;
+  const events = new Array(rows);
+  for (let i = 0; i < rows; i++) {
+    const off = start + i * DEL_STRIDE;
+    events[i] = {
+      type:   buf.readUInt8(off + 0),
+      flag:   buf.readUInt8(off + 1),
+      subId:  buf.readUInt16LE(off + 2),
+      turn:   buf.readUInt16LE(off + 4),
+      pad:    buf.readUInt16LE(off + 6),
+      cookie: buf.readUInt32LE(off + 8),
+    };
+  }
+  return { _kind: "diplo-event-log", events };
+}
+
+function encodeDiploEventLog(d) {
+  if (d._kind !== "diplo-event-log") throw new Error("encodeDiploEventLog: not a diplo-event-log object");
+  const out = Buffer.alloc(d.events.length * DEL_STRIDE);
+  for (let i = 0; i < d.events.length; i++) {
+    const e = d.events[i];
+    const off = i * DEL_STRIDE;
+    out.writeUInt8(e.type,        off + 0);
+    out.writeUInt8(e.flag,        off + 1);
+    out.writeUInt16LE(e.subId,    off + 2);
+    out.writeUInt16LE(e.turn,     off + 4);
+    out.writeUInt16LE(e.pad,      off + 6);
+    out.writeUInt32LE(e.cookie,   off + 8);
+  }
+  return out;
+}
+
 // ---- ZoneB scripted-events (0x846af..0xa8beb, ~145 KB) ---------------------
 //
 // Session 54 + session 73 dossier:
@@ -796,6 +926,8 @@ const SERIALIZERS = {
   "tile-grid-matrix":        (buf, start, end) => encodeTileGridMatrix(decodeTileGridMatrix(buf, start, end)),
   "ZoneB-scripted-events":   (buf, start, end) => encodeScriptedEvents(decodeScriptedEvents(buf, start, end)),
   "merc-pool-table":         (buf, start, end) => encodeMercPoolTable(decodeMercPoolTable(buf, start, end)),
+  "post-fow-35-stride-table":(buf, start, end) => encodePostFowStrideTable(decodePostFowStrideTable(buf, start, end)),
+  "diplo-event-log":         (buf, start, end) => encodeDiploEventLog(decodeDiploEventLog(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };
