@@ -11642,6 +11642,28 @@ Files: `scripts/save-cracker/dig-gap167-1.js`, `dig-gap167-2.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 58 — 113KB settlement-zone seam)
+
+**Range**: `0x14e5ac6 .. 0x1501615` (113 487 B, 0x1bb4f) in save_1.2.sav.
+Session 53 cover.js flagged as #4 unknown, labelled "settlement-zone -> unit-zone seam".
+
+**Verdict**: **CONFIRMED — per-region MERCENARY RECRUITMENT POOL state**.
+
+**Evidence**:
+- 622 distinct `merc <unit name>` ASCII strings (e.g. `merc achaian hoplites`, `merc galatian swordsmen`, `merc towered forest elephants`).
+- 104 lowercase region-token headers, each immediately followed by 4-8 merc unit strings within 80 bytes: `achaea`, `aegean`, `aetolia`, `africa`, `akarnania`, `alexandria`, `alps_rhaetia_noricum`, ... `thracian_coast`, `western_balkans`. Names match the `region` blocks in vanilla RTW `data/world/maps/campaign/imperial_campaign/descr_mercenaries.txt`.
+- Text zone spans `0x14f20ad .. 0x150137f` (~62 KB). Pre-text zone `0x14e5ac6 .. 0x14f20a0` (~50 KB) is a fixed-stride binary table dominated by a sentinel u32 `0xac fe 45 12` (1524 hits, 3.1% of pre-text bytes — same `0x1245feac` "no-character" sentinel observed in other RTW slot tables). Tail zone after the last string contains short 16-byte rows with shape `(u16 small, u16 pad, u32 small=2..5, u32 const=5, u32 hash-ish)` — per-pool replenish/cost counters.
+- No taw self-pointer pattern (0 hits): this is region-data, not a section header.
+
+**Interpretation**: mirrors `descr_mercenaries.txt` — each region has a binary pool record (recharge counter, current availability, per-unit cost/exp/armour/weapon overrides) plus the ASCII roster the engine matched at game start. The fixed-stride pre-text block is the per-pool state (1524 sentinel slots / 104 regions ~= 14.6 slots per region, consistent with ~8 unit entries plus shared bookkeeping). 113 KB / 104 regions ~= 1090 B per region — plausible for ~8 unit slots of ~100 B each plus header.
+
+**Rejections from hypothesis space**: not trade goods (no resource tokens), not recruitment templates (those live in descr_strat-derived buildings, no `merc ` prefix), not padding (text-heavy), not income breakdown (no faction tokens).
+
+Files: `scripts/save-cracker/dig-gap113-1.js`, `dig-gap113-2.js`.
+Coverage gain: ~0.33% of save now labelled (mercenary pool zone).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
