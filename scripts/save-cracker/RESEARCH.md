@@ -11725,6 +11725,34 @@ Files: `scripts/save-cracker/dig-settlegap1.js`, `dig-settlegap2.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 61 — char-pool auto-detector + coverage refresh)
+
+**Verdict**: shipped a generic per-faction character-pool auto-detector in `cover.js`. Coverage moved from 73.61% (session 59 baseline) to **74.29%**, an absolute gain of **+0.68%** / +234,962 bytes across **12 claimed ranges**. **STRONG**.
+
+**Detector**: walks every unclaimed run ≥ 5 KB inside the settlement zone (`0x14e5ac6 .. 0x1f10c72`) and applies three independent tests; claim if ANY passes:
+1. **Tail test**: within 100 bytes after the run, an `ef ... 01 00 <u16 len> <ascii unit name>` army-unit header appears (len 3-64, chars `[A-Za-z0-9_ -]`).
+2. **FF-histogram**: > 50% 0xFF bytes (empty preallocated slot table).
+3. **Portrait paths**: ≥ 3 occurrences of `data/ui/` (campaign-portrait references).
+
+**Auto-claims**: 12 ranges, sizes 7-48 KB, first at `[0x1506dea..0x15102b5)` (~9.3 KB, immediately precedes the unit array). The 48 KB winner is `[0x015b7114..0x015c2d47)` — previously the largest single unknown. Total: ~234 KB recovered.
+
+**False-positive guard worked**: top remaining ~10 KB unknowns (e.g. `0x1f1a697`, `0x18be452`, `0x1d000d6`) all failed every test (no portrait hits, < 5% FF, no `ef ... unit-name` tail; instead 16-byte hash + zero-padded record). Session 60 gap #6 was the same shape and was correctly excluded then; the detector now generalizes that exclusion. Claiming them as char-pool would have lied about coverage.
+
+**New top-5 remaining unknowns** (all suspected AI/diplo per-faction state — gap #6 family):
+| start | end | bytes | % |
+| --- | --- | --- | --- |
+| 0x01f1a697 | 0x01f1fc14 | 21,885 | 0.06% |
+| 0x018be452 | 0x018c1c1d | 14,283 | 0.04% |
+| 0x01d000d6 | 0x01d0373b | 13,925 | 0.04% |
+| 0x01cf5669 | 0x01cf8cbb | 13,906 | 0.04% |
+| 0x01a9372d | 0x01a96d0e | 13,793 | 0.04% |
+
+**Next**: the long tail is now 5,606 unknown runs ≥ 100 B totaling 8.88 MB (25.71%). The largest unknown shrank from 48 KB to 22 KB. To reach 78% the next push should target the gap-#6-family signature: `<16 B random-looking hash> 00 00 00 00 1e 00 00 00 <zeros>` — appears at the END of each such gap, suggesting per-faction AI cache/policy blobs.
+
+Files: `scripts/save-cracker/cover.js` (section 13 added).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

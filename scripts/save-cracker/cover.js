@@ -240,6 +240,98 @@ function main() {
     claim(bm, start, end, claims, "Lua persistent-counter footer");
   }
 
+  // --- 13. Per-faction character pool auto-detector (session 61) -----------
+  // Session 60 confirmed: between every faction's settlement block and its
+  // army block the engine emits a "character pool" payload. They look like:
+  //   - nested taw self-pointer pairs `{selfPtr, size=6}+{selfPtr, size~300-560}`
+  //     repeating 70-172 times,
+  //   - and/or contain ASCII portrait paths `data/ui/<culture>/portraits/...`,
+  //   - and/or are 66-70% 0xFF (empty slot table for low-pop factions),
+  //   - and ALWAYS end immediately before an army-unit header:
+  //     `ef 00 ... 01 00 <u16 len> <ascii unit name>`.
+  //
+  // Walk every UNCLAIMED run ≥ 5 KB inside the settlement zone (after the
+  // per-region merc-pool table, i.e. 0x14e5ac6+) and apply the three tests.
+  // If ANY passes, claim as char-pool-auto.
+  {
+    const ZONE_START = 0x14e5ac6;
+    const ZONE_END   = Math.min(0x1f10c72, size);
+    const MIN_GAP    = 5 * 1024;
+    const PORTRAIT   = Buffer.from("data/ui/");
+    let autoClaimed = 0;
+    let autoBytes   = 0;
+
+    // Find unclaimed runs inside the zone.
+    let runStart = -1;
+    const runs = [];
+    for (let i = ZONE_START; i <= ZONE_END; i++) {
+      const claimedHere = i < ZONE_END && bm[i];
+      if (!claimedHere && runStart < 0) runStart = i;
+      else if (claimedHere && runStart >= 0) {
+        if (i - runStart >= MIN_GAP) runs.push([runStart, i]);
+        runStart = -1;
+      }
+    }
+    if (runStart >= 0 && ZONE_END - runStart >= MIN_GAP) {
+      runs.push([runStart, ZONE_END]);
+    }
+
+    for (const [rs, re] of runs) {
+      // Test A: immediately followed (within 100 B) by an army-unit header.
+      //   pattern: any window where `ef 00 ... 01 00 <u16 len> <ascii>` is
+      //   the next thing. Scan [re..re+100) for byte `ef` then verify the
+      //   `01 00 <len> <ascii>` sub-pattern within the next 24 bytes.
+      let tailOk = false;
+      const searchEnd = Math.min(size - 4, re + 100);
+      for (let p = re; p < searchEnd; p++) {
+        if (buf[p] !== 0xef) continue;
+        // Look for `01 00 <u16 len>` in [p+1 .. p+22).
+        for (let q = p + 1; q < Math.min(p + 22, size - 4); q++) {
+          if (buf[q] === 0x01 && buf[q + 1] === 0x00) {
+            const len = buf.readUInt16LE(q + 2);
+            if (len >= 3 && len <= 64 && q + 4 + len <= size) {
+              // Verify ascii unit name (lowercase letters / digits / underscore / space).
+              let ok = true;
+              for (let k = 0; k < len; k++) {
+                const c = buf[q + 4 + k];
+                const isAlpha = (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a);
+                const isDigit = (c >= 0x30 && c <= 0x39);
+                if (!isAlpha && !isDigit && c !== 0x5f && c !== 0x20 && c !== 0x2d) { ok = false; break; }
+              }
+              if (ok) { tailOk = true; break; }
+            }
+          }
+        }
+        if (tailOk) break;
+      }
+
+      // Test B: byte histogram >= 50% 0xFF.
+      let ffCount = 0;
+      for (let i = rs; i < re; i++) if (buf[i] === 0xff) ffCount++;
+      const ffPct = ffCount / (re - rs);
+      const ffOk  = ffPct > 0.50;
+
+      // Test C: >= 3 occurrences of `data/ui/` portrait-path prefix.
+      let portraitHits = 0;
+      let p = rs;
+      while (p < re) {
+        const i = buf.indexOf(PORTRAIT, p);
+        if (i < 0 || i >= re) break;
+        portraitHits++;
+        p = i + PORTRAIT.length;
+        if (portraitHits >= 3) break;
+      }
+      const portraitOk = portraitHits >= 3;
+
+      if (tailOk || ffOk || portraitOk) {
+        claim(bm, rs, re, claims, "char-pool-auto");
+        autoClaimed++;
+        autoBytes += re - rs;
+      }
+    }
+    console.log(`char-pool-auto: claimed ${autoClaimed} ranges (${autoBytes} bytes)`);
+  }
+
   // ---------------------------------------------------------------------------
   // Walk the bitmap. Emit consecutive UNKNOWN runs >= MIN_RUN bytes.
   // ---------------------------------------------------------------------------
