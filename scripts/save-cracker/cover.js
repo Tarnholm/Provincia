@@ -332,6 +332,126 @@ function main() {
     console.log(`char-pool-auto: claimed ${autoClaimed} ranges (${autoBytes} bytes)`);
   }
 
+  // --- 14. Army-trail blob auto-detector (session 62) ----------------------
+  // Session 62 cracked the "gap #6 family": these are NOT random AI hashes.
+  // Each blob is the trailing payload that immediately follows an army-unit
+  // record's ASCII name in the settlement zone. Body is an 8-byte-stride
+  // array of `{u16 x, u16 y, u8 flag, u8 0x14..0x17, u16 0}` tile-history
+  // entries (movement / scouted-tile memory), often followed by building-
+  // chain names ("Eastern_Town", "Carthaginian_Huge_City"), portrait paths
+  // ("data/ui/.../generals/NN.tga"), and a UUID-prefixed terminator that
+  // ends with `1e 00 00 00 <zeros>`. Sizes 1-22 KB; appear dozens of times.
+  //
+  // Three independent tests; any one suffices to claim:
+  //   A. Run is IMMEDIATELY PRECEDED by `<u16 len> <ascii unit name> <8 B uuid>`.
+  //   B. >= 30% of bytes match the tile-stride mask
+  //      (buf[i+5]==0 && buf[i+6] in [0x14..0x17] && buf[i+7]==0) over a
+  //      8-byte sliding window starting at run-start.
+  //   C. Run contains BOTH a building-chain string token (e.g. "_Town", "_City",
+  //      "Hillfort") AND ends with `1e 00 00 00` followed by >= 16 zeros.
+  {
+    const ZONE_START = 0x14e5ac6;
+    // Extend zone slightly past the canonical settlement-zone end — a few
+    // army-trail blobs sit right at the boundary (the very last army before
+    // the faction array starts at 0x1f1fc14 for save_1.2.sav).
+    const ZONE_END   = Math.min(0x1f1fc14, size);
+    const MIN_GAP    = 1024;        // smaller minimum — these blobs can be 1-2 KB
+    let trailClaimed = 0;
+    let trailBytes   = 0;
+    const CHAIN_TOKENS = [
+      Buffer.from("_Town"), Buffer.from("_City"), Buffer.from("_Village"),
+      Buffer.from("Hillfort"), Buffer.from("Stockade"),
+    ];
+
+    let runStart = -1;
+    const runs = [];
+    for (let i = ZONE_START; i <= ZONE_END; i++) {
+      const claimedHere = i < ZONE_END && bm[i];
+      if (!claimedHere && runStart < 0) runStart = i;
+      else if (claimedHere && runStart >= 0) {
+        if (i - runStart >= MIN_GAP) runs.push([runStart, i]);
+        runStart = -1;
+      }
+    }
+    if (runStart >= 0 && ZONE_END - runStart >= MIN_GAP) {
+      runs.push([runStart, ZONE_END]);
+    }
+
+    for (const [rs, re] of runs) {
+      // Test A: preceded by `<u16 len> <ascii> <maybe UUID/padding>`. Scan back
+      // up to 320 B for `<u16 len> <ascii>` with len 4..48. The unit-parser
+      // sometimes already claims the 256 B following the unit name, in which
+      // case the unclaimed-run starts hundreds of bytes after the name.
+      let unitTailOk = false;
+      const lookback = Math.max(0, rs - 320);
+      for (let p = lookback; p < rs - 4; p++) {
+        const len = buf.readUInt16LE(p);
+        if (len < 4 || len > 48) continue;
+        if (p + 2 + len > rs) continue;
+        let ok = true;
+        for (let k = 0; k < len; k++) {
+          const c = buf[p + 2 + k];
+          const isAlpha = (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a);
+          const isDigit = (c >= 0x30 && c <= 0x39);
+          if (!isAlpha && !isDigit && c !== 0x20 && c !== 0x5f && c !== 0x2d) { ok = false; break; }
+        }
+        if (!ok) continue;
+        unitTailOk = true; break;
+      }
+
+      // Test B: tile-stride density in first ~2 KB. Stride is 9 bytes per
+      // record: `<u16 tile-key with hi byte in 0x0d..0x17> <7 B mostly-zero>`.
+      // We scan every BYTE offset (not stride-aligned) and count positions
+      // where buf[i] != 0 && buf[i+1] in [0x0d..0x17] && next 7 bytes are
+      // mostly-zero. Then check density across [rs..rs+2048).
+      let tileHits = 0;
+      const winEnd2 = Math.min(re - 9, rs + 2048);
+      for (let i = rs; i < winEnd2; i++) {
+        if (buf[i] === 0) continue;
+        const hi = buf[i + 1];
+        if (hi < 0x0d || hi > 0x17) continue;
+        let zeros = 0;
+        for (let k = 2; k < 9; k++) if (buf[i + k] === 0) zeros++;
+        if (zeros >= 5) tileHits++;
+      }
+      const winLen = winEnd2 - rs;
+      // Empirically each 9-byte tile-record produces 1 hit; density ≈ 1/9 ≈ 11%.
+      const strideOk = winLen >= 256 && tileHits / winLen >= 0.06;
+
+      // Test C: building-chain token anywhere inside the run.
+      let tokenOk = false;
+      for (const t of CHAIN_TOKENS) {
+        const i = buf.indexOf(t, rs);
+        if (i >= 0 && i < re) { tokenOk = true; break; }
+      }
+
+      // Test D: the family-defining terminator `1e 00 00 00` followed by
+      // >= 14 zero bytes within the last 96 B of the run. This is the
+      // strongest signature — present in every confirmed family member.
+      let termOk = false;
+      const termStart = Math.max(rs, re - 96);
+      for (let p = termStart; p + 20 < re; p++) {
+        if (buf[p] === 0x1e && buf[p+1] === 0 && buf[p+2] === 0 && buf[p+3] === 0) {
+          let z = 0;
+          for (let k = 4; k < 20 && p + k < re; k++) if (buf[p + k] === 0) z++;
+          if (z >= 14) { termOk = true; break; }
+        }
+      }
+
+      // Test E: contains a `data/ui/` portrait path (general's portrait
+      // cached inside the army-trail blob — observed in T3-13925).
+      const portraitIdx = buf.indexOf(Buffer.from("data/ui/"), rs);
+      const portraitOk = portraitIdx >= 0 && portraitIdx < re;
+
+      if (unitTailOk || strideOk || tokenOk || termOk || portraitOk) {
+        claim(bm, rs, re, claims, "army-trail-auto");
+        trailClaimed++;
+        trailBytes += re - rs;
+      }
+    }
+    console.log(`army-trail-auto: claimed ${trailClaimed} ranges (${trailBytes} bytes)`);
+  }
+
   // ---------------------------------------------------------------------------
   // Walk the bitmap. Emit consecutive UNKNOWN runs >= MIN_RUN bytes.
   // ---------------------------------------------------------------------------

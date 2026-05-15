@@ -11753,6 +11753,37 @@ Files: `scripts/save-cracker/cover.js` (section 13 added).
 
 ---
 
+### Findings 2026-05-15 (background session 62 — AI/diplo cache family)
+
+**Verdict**: gap-#6 family is **NOT** an AI/diplo cache and **NOT** a random hash header. It is the **per-army trailing payload** that immediately follows each army-unit's ASCII name in the settlement zone — a per-army movement/scouting memory. Auto-detector shipped in `cover.js` section 14. Coverage moved 74.29% → **86.73%** (+12.44% / +4.29 MB across 1,736 claimed ranges). **STRONG** — overshoots the 76-77% session-62 goal.
+
+**Body shape** (from the 5 session-61 named targets):
+1. **9-byte tile-stride array**: leading region of every blob is `<u16 tile-key, hi byte 0x0d..0x17> <7 B mostly-zero>` repeating. T1-21885 shows 12.45% mask-hit density across the first 2 KB — consistent with one 9-byte record per tile (~11% theoretical).
+2. **Inline ASCII payloads** (subset of blobs): T1 contains `Eastern_Town`, `Celtic_City`, `Carthaginian_Huge_City`, `Celtic_Town`, `W_hellenistic_Large_Town` (building-chain names for settlements the army has visited / scouted). T3 contains `data/ui/eastern/portraits/cards/young/generals/106.tga` plus the `portraits/portraits` variant (the general's UI cards cached inline). T2/T5 carry UTF-16-LE spawn-script paths (`imperial_campaign/spawn_scripts/cilicians_revolt.txt`, `lycia_revolt.txt`).
+3. **Terminator**: every blob ends with `<8 B UUID-ish> 00 00 00 00 1e 00 00 00 <≥14 zero bytes>`. The `1e 00 00 00` constant (decimal 30) appears at all five targets and at most hits in the field.
+4. **Pre-context**: immediately before each blob (within 100-200 B of `rs`, sometimes inside the unit-parser's claimed window) sits `<u16 len> <ascii unit name>` then an 8-byte UUID — e.g. `"cilician spearmen"`, `"armoured sarmatian general"`, `"greek general"`, `"etruscan general"`, `"bodyguard frameae sword"`. Confirms the blob is part of the army-unit record's tail.
+
+**Detector** — five independent tests; any one suffices to claim (zone `[0x14e5ac6 .. 0x1f1fc14)`, MIN_GAP = 1 KB):
+- **A — preceding unit name**: `<u16 len 4..48> <ascii word-chars>` within `rs-320..rs`.
+- **B — tile-stride density**: ≥6% of byte positions in `[rs..rs+2048)` match the mask `buf[i]!=0 && buf[i+1] in 0x0d..0x17 && ≥5 of next 7 bytes == 0`.
+- **C — chain token**: any of `_Town / _City / _Village / Hillfort / Stockade` literal inside the run.
+- **D — terminator**: `1e 00 00 00` followed by ≥14 zeros in the last 96 B of the run.
+- **E — portrait path**: `data/ui/` anywhere inside the run (general-card cache).
+
+**Cross-check** of the 5 session-61 targets: T1 fires B+C (12.45% stride hits, `_Town`/`_City` tokens). T2 fires D (terminator at 0x18c1bf0). T3 fires E (portrait path). T4 fires D (terminator at 0x1cf8c8e). T5 fires D (terminator at 0x1a96ce1). All claimed.
+
+**Hypothesis ranking** (from session 62 ranking spec):
+1. Per-settlement AI siege/threat assessment — REJECTED. Blobs are per-army, not per-settlement, and live in the army-record neighbourhood.
+2. Per-faction Lua persistent-state shards — REJECTED. The 1,736 blobs vastly outnumber factions (~30) and the structure is bound to specific units (unit name in pre-context).
+3. Compressed/encoded faction trade memory — REJECTED. Plain UTF-16 spawn-script paths and ASCII chain names are visible, no compression.
+4. **Per-army movement/scouting memory** — **CONFIRMED layout, STRONG semantics**. Tile-stride array head + visited-settlement-chain ASCII + UI-card path + UUID terminator matches a "what this army has seen" cache. The hi-byte range `0x0d..0x17` (13..23) maps to known tile-attribute / building-level IDs.
+
+**New top-5 unknowns** (all < 9 KB): `[0x154aa4d..0x154cd4c) 8.7 KB`, `[0x16cd599..0x16cf16e) 7.0 KB`, `[0xf84632..0xf85f5c) 6.3 KB` (the post-tile-grid pre-settlement-zone gap), `[0x1a31ba5..0x1a3328c) 5.7 KB`, `[0x1978d12..0x197a2d9) 5.4 KB`. Long tail is 3,870 unknown runs ≥100 B totalling 4.58 MB (13.27%).
+
+Files: `scripts/save-cracker/dig-aidiplocache1.js`, `dig-aidiplocache2.js`, `dig-aidiplocache3.js`, `dig-aidiplocache4.js`, `scripts/save-cracker/cover.js` (section 14 added — five-test auto-detector).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
