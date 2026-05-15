@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.345",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Live layout design mode now lets you resize the internal sections too, not just map vs panels. Toggle 📐 Layout and three extra golden dotted handles appear inside the RegionInfo panel (info|recruit vertical split + two horizontal splits between info-row / buildings / armies) plus one vertical handle in the bottom strip between the factions column and the selected-provinces column. Every override persists via localStorage and the ↺ Reset button now clears all six." },
+      { type: "fix", text: "App now opens at true 1080p by default — added `useContentSize: true` to the Electron BrowserWindow so width/height (1920×1080) refer to the renderer/content area, not the outer frame. Previously the actual canvas was a few rows shorter than 1080p on Windows because the title bar ate into the requested height." },
+    ],
+  },
+  {
     version: "0.9.344",
     date: "2026-05-15",
     items: [

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import FactionIcon from "./FactionIcon";
 
 const PUBLIC_URL = import.meta.env.BASE_URL || "./";
@@ -215,7 +215,104 @@ function resolveIcon(icon) {
   return tryOne(icon);
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue }) {
+// Design-mode splitter overlays. Three handles inside the RegionInfo panel:
+//  • vertical between info|recruit in row 1
+//  • horizontal between row 1 (info+recruit) and row 2 (buildings)
+//  • horizontal between row 2 (buildings) and row 3 (armies)
+// All drag math runs in fractions of the panel's own bounding box so the
+// stored % is invariant under window resize.
+function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct }) {
+  const ref = useRef(null);
+  const getRect = () => {
+    const el = ref.current;
+    if (!el || !el.parentElement) return null;
+    return el.parentElement.getBoundingClientRect();
+  };
+  const startVDrag = (e) => {
+    e.preventDefault();
+    const rect = getRect(); if (!rect) return;
+    function onMove(ev) {
+      const frac = Math.max(0.08, Math.min(0.75, (ev.clientX - rect.left) / rect.width));
+      onSetInfoColPct && onSetInfoColPct(frac);
+    }
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+  const startHDrag = (which) => (e) => {
+    e.preventDefault();
+    const rect = getRect(); if (!rect) return;
+    function onMove(ev) {
+      const frac = Math.max(0.08, Math.min(0.85, (ev.clientY - rect.top) / rect.height));
+      if (which === "top") {
+        const top = frac;
+        const curBuild = buildFrac != null ? buildFrac : 0.35;
+        const cap = Math.max(0.05, 1 - top - 0.1);
+        const newBuild = Math.min(curBuild, cap);
+        onSetTopRowPct && onSetTopRowPct(top);
+        if (newBuild !== curBuild) onSetBuildRowPct && onSetBuildRowPct(newBuild);
+      } else {
+        const top = topRowFrac != null ? topRowFrac : 0.35;
+        const mid = Math.max(0.05, frac - top);
+        onSetBuildRowPct && onSetBuildRowPct(mid);
+        if (topRowFrac == null) onSetTopRowPct && onSetTopRowPct(top);
+      }
+    }
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+  const stripeV = "repeating-linear-gradient(0deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)";
+  const stripeH = "repeating-linear-gradient(90deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)";
+  const leftPctForV = (infoColFrac != null ? infoColFrac : 240 / Math.max(800, (ref.current?.parentElement?.getBoundingClientRect().width || 800))) * 100;
+  const topPctForRow1 = (topRowFrac != null ? topRowFrac : 0.34) * 100;
+  const topPctForRow2 = ((topRowFrac != null ? topRowFrac : 0.34) + (buildFrac != null ? buildFrac : 0.33)) * 100;
+  return (
+    <div ref={ref} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 4 }}>
+      {/* Vertical splitter between info|recruit — only spans the top row */}
+      <div
+        title="Drag to resize the info column"
+        onMouseDown={startVDrag}
+        style={{
+          position: "absolute",
+          top: 0, height: `${topPctForRow1}%`,
+          left: `calc(${leftPctForV}% - 4px)`, width: 8,
+          cursor: "ew-resize", background: stripeV, pointerEvents: "auto",
+        }}
+      />
+      {/* Horizontal splitter between row 1 (info+recruit) and row 2 (buildings) */}
+      <div
+        title="Drag to resize info / recruit row vs buildings"
+        onMouseDown={startHDrag("top")}
+        style={{
+          position: "absolute",
+          top: `calc(${topPctForRow1}% - 4px)`, height: 8,
+          left: 0, right: 0,
+          cursor: "ns-resize", background: stripeH, pointerEvents: "auto",
+        }}
+      />
+      {/* Horizontal splitter between row 2 (buildings) and row 3 (armies) */}
+      <div
+        title="Drag to resize buildings row vs armies row"
+        onMouseDown={startHDrag("mid")}
+        style={{
+          position: "absolute",
+          top: `calc(${topPctForRow2}% - 4px)`, height: 8,
+          left: 0, right: 0,
+          cursor: "ns-resize", background: stripeH, pointerEvents: "auto",
+        }}
+      />
+    </div>
+  );
+}
+
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -312,6 +409,27 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </div>
     ) : null;
 
+  // Layout overrides — fractions of the panel. 0 means "use default".
+  const infoColFrac = infoColPct > 0 ? infoColPct : null;   // info|recruit split in row 1
+  const topRowFrac  = topRowPct  > 0 ? topRowPct  : null;   // row 1 height / panel
+  const buildFrac   = buildRowPct > 0 ? buildRowPct : null; // row 2 height / panel
+  const colsTemplate = infoColFrac
+    ? `${(infoColFrac * 100).toFixed(2)}fr ${((1 - infoColFrac) * 100).toFixed(2)}fr`
+    : "240px 1fr";
+  let rowsTemplate;
+  if (designMode || topRowFrac != null || buildFrac != null) {
+    // In design mode (even before the user has dragged anything) force
+    // fractional rows so the splitter overlays land on the same lines the
+    // grid actually renders. With "auto auto auto" rows the splitters would
+    // sit off the visible row gaps until first drag.
+    const top = topRowFrac != null ? topRowFrac : 0.34;
+    const mid = buildFrac  != null ? buildFrac  : 0.33;
+    const bot = Math.max(0.05, 1 - top - mid);
+    rowsTemplate = `${(top * 100).toFixed(2)}fr ${(mid * 100).toFixed(2)}fr ${(bot * 100).toFixed(2)}fr`;
+  } else {
+    rowsTemplate = "auto auto auto";
+  }
+
   return (
     <div
       style={{
@@ -323,7 +441,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         // recruitable side-by-side (the two narrower sections). Middle:
         // buildings 10×2 spanning full width. Bottom: garrison + field
         // armies spanning full width.
-        gridTemplateColumns: "240px 1fr",
+        gridTemplateColumns: colsTemplate,
+        gridTemplateRows: rowsTemplate,
         gridTemplateAreas: '"info recruit" "buildings buildings" "armies armies"',
         gap: 6,
         paddingBottom: 4,
@@ -334,6 +453,16 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         height: "100%",
       }}
     >
+      {designMode && (
+        <RegionInfoSplitters
+          infoColFrac={infoColFrac}
+          topRowFrac={topRowFrac}
+          buildFrac={buildFrac}
+          onSetInfoColPct={onSetInfoColPct}
+          onSetTopRowPct={onSetTopRowPct}
+          onSetBuildRowPct={onSetBuildRowPct}
+        />
+      )}
       {/* Left: region details */}
       <div style={{ gridArea: "info", paddingRight: 6, minWidth: 200, overflow: "hidden" }}>
         {region && (

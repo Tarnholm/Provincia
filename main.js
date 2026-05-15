@@ -1466,6 +1466,10 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1920,
     height: 1080,
+    // useContentSize: width/height refer to the renderer/content area, not
+    // the outer window (which would include title bar + frame). Without it
+    // the actual canvas the app sees is < 1080p on Windows.
+    useContentSize: true,
     minWidth: 1280,
     minHeight: 720,
     autoHideMenuBar: true,

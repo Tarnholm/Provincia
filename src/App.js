@@ -5871,6 +5871,28 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem("layout.rightColPct", String(rightColPct)); } catch {}
   }, [rightColPct]);
+  // Bottom strip: factions column width as a fraction of strip width (0 = auto).
+  const [factionColPct, setFactionColPct] = useState(() => {
+    try { return parseFloat(localStorage.getItem("layout.factionColPct")) || 0; } catch { return 0; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("layout.factionColPct", String(factionColPct)); } catch {}
+  }, [factionColPct]);
+  // RegionInfo internal splits — all stored as fractions of the panel's own
+  // box. 0 means "use default". Top-row contains info+recruit; middle is
+  // buildings; bottom is armies. infoColPct splits info|recruit within row 1.
+  const [riInfoColPct, setRiInfoColPct] = useState(() => {
+    try { return parseFloat(localStorage.getItem("layout.riInfoColPct")) || 0; } catch { return 0; }
+  });
+  const [riTopRowPct, setRiTopRowPct] = useState(() => {
+    try { return parseFloat(localStorage.getItem("layout.riTopRowPct")) || 0; } catch { return 0; }
+  });
+  const [riBuildRowPct, setRiBuildRowPct] = useState(() => {
+    try { return parseFloat(localStorage.getItem("layout.riBuildRowPct")) || 0; } catch { return 0; }
+  });
+  useEffect(() => { try { localStorage.setItem("layout.riInfoColPct", String(riInfoColPct)); } catch {} }, [riInfoColPct]);
+  useEffect(() => { try { localStorage.setItem("layout.riTopRowPct", String(riTopRowPct)); } catch {} }, [riTopRowPct]);
+  useEffect(() => { try { localStorage.setItem("layout.riBuildRowPct", String(riBuildRowPct)); } catch {} }, [riBuildRowPct]);
   const [designMode, setDesignMode] = useState(false);
 
   useEffect(() => {
@@ -7520,9 +7542,12 @@ function App() {
               border: "1px solid #888",
               fontSize: "0.78rem",
             }}>📐 {designMode ? "Layout ON" : "Layout"}</button>
-          {designMode && (bottomStripPct > 0 || rightColPct > 0) && (
+          {designMode && (bottomStripPct > 0 || rightColPct > 0 || factionColPct > 0 || riInfoColPct > 0 || riTopRowPct > 0 || riBuildRowPct > 0) && (
             <button
-              onClick={() => { setBottomStripPct(0); setRightColPct(0); }}
+              onClick={() => {
+                setBottomStripPct(0); setRightColPct(0); setFactionColPct(0);
+                setRiInfoColPct(0); setRiTopRowPct(0); setRiBuildRowPct(0);
+              }}
               title="Reset layout to defaults"
               style={{
                 ...btnStyle(false),
@@ -10648,12 +10673,53 @@ function App() {
                 bottom: MAP_PADDING,
                 height: effectiveBottomHeight,
                 display: "grid",
-                gridTemplateColumns: `${Math.max(0, Math.floor(factionPanelTargetWidth))}px 1fr`,
+                gridTemplateColumns: (() => {
+                  const overrideW = factionColPct > 0
+                    ? Math.round(canvasSize.width * factionColPct)
+                    : 0;
+                  const w = overrideW || Math.max(0, Math.floor(factionPanelTargetWidth));
+                  return `${w}px 1fr`;
+                })(),
                 columnGap: PANELS_GAP,
                 boxSizing: "border-box",
                 zIndex: welcomeHighlight === "factions" ? 10001 : 2,
               }}
             >
+              {designMode && (
+                <div
+                  title="Drag to resize the factions column"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const startX = e.clientX;
+                    const startW = factionColPct > 0
+                      ? canvasSize.width * factionColPct
+                      : factionPanelTargetWidth;
+                    function onMove(ev) {
+                      const dx = ev.clientX - startX;
+                      const newW = Math.max(60, Math.min(canvasSize.width - 200, startW + dx));
+                      setFactionColPct(newW / canvasSize.width);
+                    }
+                    function onUp() {
+                      window.removeEventListener("mousemove", onMove);
+                      window.removeEventListener("mouseup", onUp);
+                    }
+                    window.addEventListener("mousemove", onMove);
+                    window.addEventListener("mouseup", onUp);
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: (factionColPct > 0
+                      ? Math.round(canvasSize.width * factionColPct)
+                      : Math.max(0, Math.floor(factionPanelTargetWidth))) + PANELS_GAP / 2 - 4,
+                    width: 8,
+                    height: "100%",
+                    cursor: "ew-resize",
+                    background: "repeating-linear-gradient(0deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)",
+                    zIndex: 6,
+                  }}
+                />
+              )}
               <CustomScrollArea
                 className={"panel panel-tight factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 /* CSS mask fades out partial row at bottom */
@@ -12289,6 +12355,13 @@ function App() {
                         if (!r || !r.city || !buildingQueueByCity) return null;
                         return buildingQueueByCity[r.city] || null;
                       })()}
+                      designMode={designMode}
+                      infoColPct={riInfoColPct}
+                      topRowPct={riTopRowPct}
+                      buildRowPct={riBuildRowPct}
+                      onSetInfoColPct={setRiInfoColPct}
+                      onSetTopRowPct={setRiTopRowPct}
+                      onSetBuildRowPct={setRiBuildRowPct}
                     />
                   </div>
                 ) : (
