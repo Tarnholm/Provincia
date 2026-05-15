@@ -12877,6 +12877,36 @@ Files: `scripts/save-cracker/dig-settlebody-s94-1.js`, `scripts/save-cracker/dig
 
 ---
 
+### Findings 2026-05-15 (background session 95 — MASK halo with terrain weighting)
+
+**Target**: lift session 42's r²=0.70 fit for the per-faction MASK halo formula past 0.95 by adding terrain weighting from `map_ground_types_large.tga`.
+
+**Result: terrain weighting CANNOT explain the residual.** Best r²=**0.700** — bit-for-bit identical to session 42 across every variant tried.
+
+**Why it doesn't bite**: the 100 changed cells in save_5.2→save_6.2 sit in a **uniform-terrain bbox** (X[328..343] Y[374..387]). All 100 cells sample to a single terrain color in the TGA (Rocky / Fertile lowland depending on flip). With zero terrain variation among the targets, no `weight(terrain(cell))` formulation has any discriminating power.
+
+**Hypotheses tested (none beat 0.700)**:
+- **H1** cell-terrain modulation `pred = sum_i max(0, K-d) × W(cell)`: r²=0.699 (identical to baseline because all cells share one weight).
+- **H2** source-terrain modulation `pred = sum_i W(src_i) × max(0, K-d)`: r²=0.700.
+- **H3** ray-attenuated `pred = sum_i W_min_along_ray(c, src) × max(0, K-d)`: r²=0.700.
+- **H4** per-terrain optimal scale via least-squares regression: r²=0.643 (single terrain, no leverage).
+- **H5** independent per-type halo radii K_4 (ships) / K_5 (captains) / K_6 (generals): optimum still K=11 for all → r²=0.699.
+- **H6** type-filtered sources — t6-only r²=0.642, t4-only r²=0.038, t6+t4 r²=0.699. Confirms session 42's choice to include all types.
+- **H7** distance-from-bbox filter — Rmax=8 already saturates (16 sources, r²=0.699); far sources contribute nothing within K=11 anyway.
+- **H8** nonlinear contribution `pow(K-d, exp)` for exp∈{0.5..2.0}: optimum exp=1.0 → r²=0.699 (linear is optimal).
+
+**Type distribution surprise**: 867/913 sources in save_6 are type-6, 46 are type-4, 0 are type-5. Type-6 is NOT "general" exclusively — it's an over-broad category likely including settlements + generals. type-5 is empty in this save. This contradicts the implicit assumption of session 42's brief.
+
+**TGA orientation pinned (CONFIRMED)**: `map_ground_types_large.tga` (2041×1401, 24-bit BGR, imgDesc bit5=0) is sampled **without y-flip** in `src/App.js` — verified by sampling Roman ship at (337,381) gets `(196,0,0)`=Highland (coastal land), matching the `App.js` `GROUND_TYPE_PALETTE` convention. The TGA-spec "bottom-up" reading would land on `(64,0,0)`=Fertile lowland which is wrong for a coastal ship pixel.
+
+**Conclusion**: the residual 30% variance is **NOT terrain-driven**. To make progress, session 42's "open follow-ups" remain the right path: a save-pair with a SINGLE Roman character/army (no overlap) would expose the per-source halo shape directly. Until then the formula stays HYPOTHESIS at r²=0.70.
+
+**Confidence**: CONFIRMED (terrain weighting refuted as the missing factor). The session-42 formula `value(cell) ≈ min(8, floor(0.20 × SUM_i max(0, 11 - cheb_dist(cell, i))))` over all type-4/6 sources remains the best fit at r²=0.70.
+
+Files: `scripts/save-cracker/dig-mask-s95-1.js`, `scripts/save-cracker/dig-mask-s95-2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
