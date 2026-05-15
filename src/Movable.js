@@ -23,7 +23,10 @@
 import React, { useEffect, useRef, useState } from "react";
 
 const MIN_FRAC = 0.02;        // 2% of viewport is the floor for w/h
-const SNAP_FRAC = 0.0055;     // ≈ 6 px at 1080p — about 1 mm; tight enough not to fight you
+const SNAP_FRAC = 0.0055;     // ≈ 6 px at 1080p — narrow snap pull-in
+const GUIDE_FRAC = 0.014;     // ≈ 15 px at 1080p — wider band where the cyan
+                              // guide line lights up before snap engages, so
+                              // you can see alignment opportunities coming.
 
 // Module-scope registry of live widget positions. Mutated directly so updates
 // from any Movable are immediately visible to the next drag-snap pass.
@@ -205,18 +208,29 @@ function snapAlign(myId, np, lock = {}, nosnap = false) {
     const myXs = [myLeft, myRight, myCenterX];
     const myYs = [myTop, myBottom, myCenterY];
 
-    let dx = 0, dxAbs = SNAP_FRAC, snappedToX = null;
+    // Find the SINGLE nearest snap target on each axis (for snap pull-in),
+    // AND any other targets within GUIDE_FRAC to emit guide lines for them
+    // too. This way you can see both a horizontal AND a vertical guide
+    // simultaneously, and even multiple lines on the same axis if several
+    // edges happen to align.
+    let dx = 0, dxAbs = SNAP_FRAC;
+    const guideXFracs = new Set();
     for (const t of targetsX) {
       for (const me of myXs) {
         const diff = t - me;
-        if (Math.abs(diff) < dxAbs) { dx = diff; dxAbs = Math.abs(diff); snappedToX = t; }
+        const a = Math.abs(diff);
+        if (a < dxAbs) { dx = diff; dxAbs = a; }
+        if (a < GUIDE_FRAC) guideXFracs.add(+t.toFixed(5));
       }
     }
-    let dy = 0, dyAbs = SNAP_FRAC, snappedToY = null;
+    let dy = 0, dyAbs = SNAP_FRAC;
+    const guideYFracs = new Set();
     for (const t of targetsY) {
       for (const me of myYs) {
         const diff = t - me;
-        if (Math.abs(diff) < dyAbs) { dy = diff; dyAbs = Math.abs(diff); snappedToY = t; }
+        const a = Math.abs(diff);
+        if (a < dyAbs) { dy = diff; dyAbs = a; }
+        if (a < GUIDE_FRAC) guideYFracs.add(+t.toFixed(5));
       }
     }
 
@@ -227,8 +241,8 @@ function snapAlign(myId, np, lock = {}, nosnap = false) {
     else if (lock.y === "top") { out.y = np.y + dy; out.h = Math.max(MIN_FRAC, np.h - dy); }
     else out.y = np.y + dy;
 
-    if (snappedToX != null) guides.push({ axis: "x", frac: snappedToX });
-    if (snappedToY != null) guides.push({ axis: "y", frac: snappedToY });
+    for (const f of guideXFracs) guides.push({ axis: "x", frac: f });
+    for (const f of guideYFracs) guides.push({ axis: "y", frac: f });
   }
 
   // Collision avoidance: if `out` overlaps any other widget, push along
@@ -467,6 +481,21 @@ export function Movable({
               zIndex: 101,
             }}>{title}</div>
           )}
+          {/* Center crosshair — small subtle + at the geometric center of
+              each widget, visible whenever design mode is on. Lets you eye
+              up alignment to another widget's center before you start
+              dragging (and confirms when snap puts you on it). */}
+          <div style={{
+            position: "absolute",
+            left: "50%", top: "50%",
+            width: 14, height: 14,
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+            zIndex: 101,
+          }}>
+            <div style={{ position: "absolute", left: 0, right: 0, top: 6, height: 2, background: "rgba(80,200,255,0.85)", borderRadius: 1 }} />
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: 6, width: 2, background: "rgba(80,200,255,0.85)", borderRadius: 1 }} />
+          </div>
         </>
       )}
     </div>

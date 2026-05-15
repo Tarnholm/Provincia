@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.353",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "Removed the leftover yellow striped splitter handles around the map's right edge, the map's bottom edge, and between the factions / selected-provinces panels. Those were obsolete from before the Movable widget system but were still being rendered in design mode and overlapping widgets visually." },
+      { type: "improvement", text: "Cyan alignment guides now show on BOTH axes at once when applicable. Previously guides only fired for the single nearest snap target on each axis — and only within the tight 6 px snap pull-in. Now any alignment within ~15 px lights up a guide, so you see vertical AND horizontal guides simultaneously when you're aligned both ways. Multiple guides on the same axis also stack (e.g., your left edge aligns with one widget while your right edge aligns with another)." },
+      { type: "feature", text: "Center crosshair on every widget in design mode — small cyan + at each widget's geometric center, visible at all times (not just during drag). Lets you eye up center-to-center alignments before you start moving. Snap already targeted centers; this just makes them visible. Works on both axes — center-to-center on X (vertical line) and on Y (horizontal line)." },
+    ],
+  },
+  {
     version: "0.9.352",
     date: "2026-05-16",
     items: [

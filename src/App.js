@@ -10285,74 +10285,6 @@ function App() {
                   aria-label={`Interactive map (${variantLabel})`}
                 />
 
-                {/* Layout design-mode splitter handles. Vertical splitter
-                    sits at the right edge of the map; dragging it shrinks/
-                    grows the map and inflates/deflates the right column.
-                    Horizontal splitter sits along the bottom edge of the
-                    map; dragging it changes the bottom-strip height. */}
-                {designMode && (
-                  <>
-                    <div
-                      title="Drag horizontally to resize the right column"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        const startX = e.clientX;
-                        const startRightWidth = window.innerWidth * (rightColPct > 0 ? rightColPct : rightColWidth / window.innerWidth);
-                        function onMove(ev) {
-                          const dx = startX - ev.clientX;
-                          const newW = Math.max(200, Math.min(window.innerWidth - 300, startRightWidth + dx));
-                          setRightColPct(newW / window.innerWidth);
-                        }
-                        function onUp() {
-                          window.removeEventListener("mousemove", onMove);
-                          window.removeEventListener("mouseup", onUp);
-                        }
-                        window.addEventListener("mousemove", onMove);
-                        window.addEventListener("mouseup", onUp);
-                      }}
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: canvasSize.width,
-                        width: 8,
-                        height: canvasSize.height,
-                        cursor: "ew-resize",
-                        background: "repeating-linear-gradient(0deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)",
-                        zIndex: 5,
-                      }}
-                    />
-                    <div
-                      title="Drag vertically to resize the bottom strip"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        const startY = e.clientY;
-                        const startBottomH = effectiveBottomHeight;
-                        function onMove(ev) {
-                          const dy = startY - ev.clientY;
-                          const newH = Math.max(120, Math.min(window.innerHeight - 200, startBottomH + dy));
-                          setBottomStripPct(newH / window.innerHeight);
-                        }
-                        function onUp() {
-                          window.removeEventListener("mousemove", onMove);
-                          window.removeEventListener("mouseup", onUp);
-                        }
-                        window.addEventListener("mousemove", onMove);
-                        window.addEventListener("mouseup", onUp);
-                      }}
-                      style={{
-                        position: "absolute",
-                        top: canvasSize.height,
-                        left: 0,
-                        width: canvasSize.width,
-                        height: 8,
-                        cursor: "ns-resize",
-                        background: "repeating-linear-gradient(90deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)",
-                        zIndex: 5,
-                      }}
-                    />
-                  </>
-                )}
-
                 {/* Paint brush hover preview — outline rectangle showing
                     the exact pixels that will be painted on click. */}
                 {paintMode && paintHover && (() => {
@@ -10715,41 +10647,6 @@ function App() {
                 zIndex: welcomeHighlight === "factions" ? 10001 : 2,
               }}
             >
-              {designMode && (
-                <div
-                  title="Drag to resize the factions column"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    const startX = e.clientX;
-                    const startW = factionColPct > 0
-                      ? canvasSize.width * factionColPct
-                      : factionPanelTargetWidth;
-                    function onMove(ev) {
-                      const dx = ev.clientX - startX;
-                      const newW = Math.max(60, Math.min(canvasSize.width - 200, startW + dx));
-                      setFactionColPct(newW / canvasSize.width);
-                    }
-                    function onUp() {
-                      window.removeEventListener("mousemove", onMove);
-                      window.removeEventListener("mouseup", onUp);
-                    }
-                    window.addEventListener("mousemove", onMove);
-                    window.addEventListener("mouseup", onUp);
-                  }}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: (factionColPct > 0
-                      ? Math.round(canvasSize.width * factionColPct)
-                      : Math.max(0, Math.floor(factionPanelTargetWidth))) + PANELS_GAP / 2 - 4,
-                    width: 8,
-                    height: "100%",
-                    cursor: "ew-resize",
-                    background: "repeating-linear-gradient(0deg, rgba(220,166,74,0.85), rgba(220,166,74,0.85) 6px, rgba(0,0,0,0.5) 6px, rgba(0,0,0,0.5) 10px)",
-                    zIndex: 6,
-                  }}
-                />
-              )}
               <CustomScrollArea
                 className={"panel panel-tight factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 /* CSS mask fades out partial row at bottom */
