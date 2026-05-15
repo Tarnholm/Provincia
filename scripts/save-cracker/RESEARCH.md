@@ -11085,6 +11085,86 @@ the matrix-end pad; cosmetic.
 
 ---
 
+### Findings 2026-05-15 (background session 50 — starting wars location)
+
+**Goal**: pin where the 255 starting wars from `descr_strat.txt` are stored in
+`save_1.2.sav`, given session 49 confirmed the 239×239 bilateral matrix at
+`0xf8fd2` is all-default at turn 1.
+
+**Ground truth** (parser cross-validated against brief): 255 unique war pairs,
+175 ally pairs, 2 neutrals. `255 wars + 175 allies + 2 = 432` matches brief's
+"432 faction_relationships lines".
+
+**Hypothesis ranking by bit-Jaccard (FAILED ≥70% threshold)**:
+
+| H | Encoding | Best Jaccard | Location | Verdict |
+|---|---|---|---|---|
+| H1 | u32 enemy-id array in faction record trailing | **0.400** | major[0] @0x15b4918 vals=[218,1,219,2,238] | **REFUTED** |
+| H2 sq | 239×239 packed bitmap | 0.150 | 0xf82b1b (just before matrix) | **REFUTED** |
+| H2 sq32 | row-padded to 32B | 0.149 | 0xf82920 | **REFUTED** |
+| H2 sq30 | row-padded to 30B | 0.154 | 0xf82afc | **REFUTED** |
+| H2 tri | upper-triangular bitmap | 0.029 | 0xf83919 | **REFUTED** |
+| H3 | a*N+b u32 codes | 17/2048 (0.8%) in best 8KB chunk; 699 total in 34MB save (baseline ~1) | 0x20b8000 | **WEAK SIGNAL, REFUTED as primary location** |
+| H4 | f0 0a af f0 RLE TAILs | 239 TAILs (== faction count exactly), but only 3% of u32s in TAIL[0] are valid faction indices | distributed at 0x1f1c..0x20bc | **STRUCTURAL SUGGESTION — UNDECIDED** |
+
+**Critical caveat — byte-equality was a red herring**: attempt 1 showed
+"93.8% byte equality" for square bitmap at `0x2ecd0`. Attempt 2's bit-level
+breakdown revealed this is purely zero-zero agreement: 6698 bothZero,
+12 bothNonzero, 269 onlyNeedle, 162 onlyBuf. The actual bit overlap was
+5/476 (1.1%). **Lesson: always use bit-Jaccard or set-intersection on sparse
+bitmaps, never byte equality.**
+
+**Sanity checks (all clean)**:
+- Ally bitmap also fails: best Jaccard 0.014 (allySq), 0.022 (allyTri).
+- H2 hits cluster near `0xf82xxx` because that's the start padding of the big
+  bilateral matrix at `0xf8fd2` — adjacent bytes happen to have some 1-bits
+  by accident, not by encoding wars.
+
+**Major-faction record count anomaly**: `save_1.2.sav` only has **5** records
+matching the session-5 signature (`+8=100, +12=1, +44=6, +24/+40 self-ptrs`),
+not 23 as expected for RIS imperial. Region counts: 22, 31, 16, 32, 24.
+This is **suspect**: either (a) the signature has shifted for RIS imperial,
+(b) most RIS factions don't carry "major" status at T1 because they have
+no characters/armies yet, or (c) the save has a different layout for major
+records than the Sparta/rome corpora. Without 23 records, H1 is severely
+constrained — we can only look in 5 records for enemy lists.
+
+**H4 still a candidate**: 239 TAIL markers = 239 factions exactly. Inter-TAIL
+strides 5790..19045 (median 6004) hint at fixed-size per-faction trailing
+records. But the TAIL payload is RLE-encoded (session 40) and the raw u32
+stream contains only ~3% valid faction-index values — meaning **war state
+is NOT a flat u32 list inside TAIL**, but if encoded there it sits in
+RLE-compressed form. Decoding the RLE schema is the next step.
+
+**Confidence**:
+- **CONFIRMED**: starting wars are NOT in any 239×239 bitmap form at byte
+  alignment in this save (H2 fully refuted across 4 padding variants).
+- **STRONG**: starting wars are NOT raw u32 faction-index arrays in major
+  record trailing data (H1 best 0.40, only 5 records, none reach the
+  expected enemy count for any faction).
+- **STRONG**: starting wars are NOT encoded as a*N+b codes in any dense
+  contiguous u32 region (H3: 17/2048 hits is at chance baseline).
+- **HYPOTHESIS (UNTESTED)**: starting wars may live inside the 239 RLE
+  TAILs (one per faction) — TAIL count is a perfect match to faction
+  count. Decoding TAIL[0]'s RLE stream and checking which faction-indices
+  it references vs that faction's enemy set is the next step.
+- **HYPOTHESIS**: starting wars may be derived AT-RUNTIME from
+  `core_attitudes >= 600` thresholds (session 49's +20/+32 partial
+  correlation), with no separate persistent storage — the engine could
+  reconstruct war state each load. Worth testing by zeroing the +20/+32
+  fields and seeing if wars vanish in-game.
+- **REFUTED**: major-record-count-of-23 assumption (only 5 in `save_1.2`).
+
+**Hard early-stop reached**: 3 attempts used, no hypothesis hits ≥70% match.
+Top non-refuted candidates: (a) decode RLE TAILs (H4), (b) test runtime
+reconstruction from core_attitudes (no persistence). Both require new
+infrastructure beyond this session's scope.
+
+Files: `scripts/save-cracker/dig-startingwars1.js`,
+`dig-startingwars2.js`, `dig-startingwars3.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
