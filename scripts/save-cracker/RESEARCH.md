@@ -11381,6 +11381,68 @@ Files: `scripts/save-cracker/dig-tilegrid-turn-diff-locate.js`,
 
 ---
 
+### Findings 2026-05-15 (background session 53 — save coverage map)
+
+Built `scripts/save-cracker/cover.js`: a single tool that walks a `.sav` end-
+to-end, marks every byte CLAIMED-or-UNKNOWN in a Uint8Array bitmap, and emits
+a coverage report. Sections it claims (using fixed offsets from this dossier
+plus the live parsers in `src/`):
+
+- Header `[0x0..0x3328)` + HST `[0x3328..0x3bad)` + body-root header
+- toggle_fow/RNG block `[0x43f8..0x44e2)`
+- Tile-grid matrix `[0xf8fd2..0xf84632)` (240×238 × 267 stride = 15.25 MB)
+- Character records (`findCharacterRecords`, gap-capped at 800 B/record)
+- Unit records (`findUnitRecords`, gap-capped at 256 B/record)
+- Faction records `[0x1f1fc14..0x20eccd3)` (`findFactionRecords`, uses own `.size`)
+- Settlement markers + chain records inside `[0xf85f00..0x1f10c72)`
+- Siege block `[0x152f529..0x152f572)`
+- f0 0a af f0 RLE shroud-mask array (220 records found this save, gap-spanned)
+- Lua persistent-counter footer `[0x20e6e8e..0x20e8342)`
+
+**Result on `save_1.2.sav` (RIS imperial, 32.93 MB):**
+
+```
+  70.38% claimed, 29.62% unknown
+  claimed:  24,299,440 B
+  unknown:  10,224,931 B  (5622 runs of >=100 B)
+```
+
+**Top 10 largest UNKNOWN ranges — these are the priority targets for future
+sessions:**
+
+| Rank | Start         | End           | Bytes    | % of file | Likely identity (hypothesis) |
+|---|---|---|---|---|---|
+| 1 | `0x00061c47` | `0x000f8fd2` | 619,403 | 1.79% | gap between preamble & tile-grid array; entity index / pre-tile registry |
+| 2 | `0x0002d4a9` | `0x000618f8` | 214,095 | 0.62% | pre-character preamble (after HST, before first char record) |
+| 3 | `0x000044e2` | `0x0002d15a` | 167,032 | 0.48% | post-fow/preamble region (battle log? scripted events?) |
+| 4 | `0x014e5ac6` | `0x01501615` | 113,487 | 0.33% | end-of-settlement-zone / start-of-unit-zone gap |
+| 5 | `0x015b7114` | `0x015c2d47` | 48,179 | 0.14% | inside unit-zone — likely army-grouping records |
+| 6 | `0x01506dea` | `0x015102b5` | 38,091 | 0.11% | unit-zone preamble |
+| 7 | `0x016373ee` | `0x0163f1d3` | 32,229 | 0.09% | unit-zone interstitial |
+| 8 | `0x01585c08` | `0x0158d753` | 31,563 | 0.09% | unit-zone interstitial |
+| 9 | `0x01d0edb0` | `0x01d1576d` | 27,069 | 0.08% | post-unit zone — discovered-settlement / mission table area |
+| 10 | `0x01f1a697` | `0x01f1fc14` | 21,885 | 0.06% | gap immediately before faction-record array |
+
+Coverage caveats: character/unit/chain spans are gap-estimates, so a few KB
+of "claimed" within those groups is actually post-record padding we don't
+truly parse. Conversely, the settlement-zone non-chain payload (~5.3 MB) is
+counted as claimed via chain records only when chains are dense — sparse
+settlements (e.g. coastal forts) leave their payload as UNKNOWN here, which
+is correct: we don't decode that payload yet.
+
+**Priority follow-up (in coverage-impact order):**
+1. Range #1 (619 KB, `0x61c47..0xf8fd2`) — the largest single blind spot.
+   Sits between preamble end and tile-grid start. Likely holds the per-tile
+   registry (session 22) and entity-index sub-sections.
+2. Range #2 (214 KB, `0x2d4a9..0x618f8`) — pre-character preamble. Probably
+   character-UUID index + early scripted-event table per session 23.
+3. Range #3 (167 KB, `0x44e2..0x2d15a`) — post-fow block. Battle log
+   header? Faction reference table? Yet to be probed.
+
+Files: `scripts/save-cracker/cover.js` (run: `node cover.js [savePath]`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
