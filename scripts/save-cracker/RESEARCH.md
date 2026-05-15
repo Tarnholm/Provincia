@@ -11920,6 +11920,48 @@ Files: `scripts/save-cracker/dig-finalsweep1.js`..`dig-finalsweep5.js`, detector
 
 ---
 
+### Findings 2026-05-15 (background session 69 — header decode/encode serializer)
+
+First real `decode → mutate-in-place-able-struct → encode` pair shipped in `scripts/save-cracker/serialize.js`. Proves the rebuild-saves framework: a `SERIALIZERS[name]` entry can replace passthrough with a function that reconstructs bytes from a structured object, and the round-trip stays byte-identical.
+
+**Header span:** `[0x0000..0x3328)`, 13,096 bytes total.
+
+**Decoded structured fields** (offsets absolute):
+| Offset | Type | Field | Sample value (save_1.2.sav) |
+|---|---|---|---|
+| 0x00 | u16le | `magic` | `0x070a` |
+| 0x02 | u16le | `padFlag` | 0 |
+| 0x04 | u32le | `clock` | raw u32 (RESEARCH.md called it f32 1338.341; this save has a different value, treated opaque) |
+| 0x08..0x14 | 12B | `zeros1` | all zero — actual run is 12B, not the 16B claimed in earlier dump |
+| 0x14 | u32le | `dim1` | 1024 |
+| 0x18 | u32le | `dim2` | 1024 |
+| 0x1c | u16le | `w1c` | 4 |
+| 0x1e | u16le | `w1e` | 2 |
+| 0x20 | u32le | `w20` | 7 |
+| 0x24..0x34 | 16B | `guid` | `5eccc76a4bb6d3d33d3b0257491c376a` |
+| 0x34 | u16le | `w34` | 43653 |
+| 0x36 | u32le | `w36` | 2 |
+| 0x3a | u16le | `nameLen` | 17 (chars) |
+| 0x3c | UTF-16LE × nameLen | `campaignName` | `"imperial_campaign"` |
+| 0x3c + 2·nameLen .. 0x3328 | opaque | `tail` | 13,002 bytes captured verbatim |
+
+**Earlier doc-spec correction:** RESEARCH.md "Header layout" listed `0x0008  16B zeros` then `0x0014  u32 1024`. The actual zero run is **12 bytes** (0x08..0x14), not 16. The struct still re-emits byte-identical because `zeros1` is captured as a Buffer slice, not regenerated.
+
+**Round-trip result** (full file, 32.93 MB):
+```
+output size: 34524371 bytes
+byte-identical:    YES
+elapsed:           749 ms
+```
+
+The other ~99.25% of the file still goes through passthrough; only the Header segment is now actually parsed → re-emitted. The header `tail` Buffer covers the engine settings table (unit size, difficulty, season, year, HST-adjacent settings) that future sessions can split into structured fields without touching the harness.
+
+**Wired into SERIALIZERS as** `"Header"`, matching the claim name pushed in `enumerateClaims()` at line 77.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeHeader`, `encodeHeader`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

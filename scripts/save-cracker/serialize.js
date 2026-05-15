@@ -214,13 +214,94 @@ function buildSegments(claims, size) {
 // ---------------------------------------------------------------------------
 // Per-section serializer dispatch.
 //
-// Today: every entry is PASSTHROUGH. Future serializers replace specific
-// names with a real `(buf, start, end) => Buffer` that re-emits from parsed
+// Today: most entries are PASSTHROUGH. Real serializers replace specific
+// names with a `(buf, start, end) => Buffer` that re-emits from parsed
 // state. The harness above is unchanged.
 // ---------------------------------------------------------------------------
+
+// ---- Header (0x0000..0x3328, 13096 bytes) ----------------------------------
+//
+// RESEARCH.md "Header layout" describes the first ~0x60 bytes. Past the
+// campaign-name pstr16le the engine writes ~13KB of opaque settings (unit
+// size, battle difficulty, season, year, etc. — see "Confirmed concrete
+// fields" table). Those fields live at known relative offsets but we don't
+// yet model every byte, so the decoder captures the structured prefix and
+// the opaque tail as a raw Buffer. Encoder writes them back in order.
+//
+// Round-trip is invertible because:
+//   - magic, padFlag, clock, zeros1, dim1, dim2, w1c, w1e, w20 are fixed-
+//     width primitives.
+//   - guid is a 16-byte blob.
+//   - w34, w36, then a pstr16le campaign name (u16 length + UTF-16LE chars,
+//     no NUL terminator confirmed by hexdump).
+//   - everything after the campaign-name string is captured verbatim as
+//     `tail` and re-emitted byte-for-byte.
+function decodeHeader(buf, start, end) {
+  if (start !== 0 || end !== 0x3328) {
+    throw new Error(`decodeHeader: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0..0x3328)`);
+  }
+  const magic    = buf.readUInt16LE(start + 0x00);   // 0x070a
+  const padFlag  = buf.readUInt16LE(start + 0x02);   // 0
+  const clock    = buf.readUInt32LE(start + 0x04);   // float-bits / counter; keep raw u32
+  const zeros1   = buf.slice(start + 0x08, start + 0x14);  // 12 bytes of zeros
+  const dim1     = buf.readUInt32LE(start + 0x14);   // 1024
+  const dim2     = buf.readUInt32LE(start + 0x18);   // 1024
+  const w1c      = buf.readUInt16LE(start + 0x1c);   // 4
+  const w1e      = buf.readUInt16LE(start + 0x1e);   // 2
+  const w20      = buf.readUInt32LE(start + 0x20);   // 7
+  const guid     = buf.slice(start + 0x24, start + 0x34);  // 16-byte GUID
+  const w34      = buf.readUInt16LE(start + 0x34);   // 43653
+  const w36      = buf.readUInt32LE(start + 0x36);   // 2 (schema?)
+  const nameLen  = buf.readUInt16LE(start + 0x3a);   // pstr16le length in chars
+  const nameOff  = start + 0x3c;
+  const nameEnd  = nameOff + nameLen * 2;
+  if (nameEnd > end) throw new Error(`decodeHeader: campaign name overruns header`);
+  const campaignName = buf.slice(nameOff, nameEnd).toString("utf16le");
+  const tail = Buffer.from(buf.slice(nameEnd, end));  // opaque remainder
+
+  return {
+    _kind: "header",
+    magic, padFlag, clock,
+    zeros1,
+    dim1, dim2, w1c, w1e, w20,
+    guid,
+    w34, w36,
+    campaignName,
+    tail,
+  };
+}
+
+function encodeHeader(h) {
+  if (h._kind !== "header") throw new Error("encodeHeader: not a header object");
+  const nameBuf = Buffer.from(h.campaignName, "utf16le");
+  const nameLen = nameBuf.length / 2;
+  const fixedLen = 0x3c;             // bytes before the pstr16le payload
+  const out = Buffer.alloc(fixedLen + nameBuf.length + h.tail.length);
+
+  out.writeUInt16LE(h.magic,    0x00);
+  out.writeUInt16LE(h.padFlag,  0x02);
+  out.writeUInt32LE(h.clock,    0x04);
+  h.zeros1.copy(out, 0x08);                       // 12 bytes
+  out.writeUInt32LE(h.dim1,     0x14);
+  out.writeUInt32LE(h.dim2,     0x18);
+  out.writeUInt16LE(h.w1c,      0x1c);
+  out.writeUInt16LE(h.w1e,      0x1e);
+  out.writeUInt32LE(h.w20,      0x20);
+  h.guid.copy(out, 0x24);                          // 16 bytes
+  out.writeUInt16LE(h.w34,      0x34);
+  out.writeUInt32LE(h.w36,      0x36);
+  out.writeUInt16LE(nameLen,    0x3a);
+  nameBuf.copy(out, 0x3c);
+  h.tail.copy(out, 0x3c + nameBuf.length);
+
+  return out;
+}
+
 const SERIALIZERS = {
-  // Add real serializers here as they're written. Anything not listed falls
-  // through to the default passthrough.
+  // First real decode/encode pair: header. Proves round-trip framework.
+  "Header": (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
+  // Add more real serializers here as they're written. Anything not listed
+  // falls through to the default passthrough.
 };
 
 function serializeSegment(buf, seg) {
