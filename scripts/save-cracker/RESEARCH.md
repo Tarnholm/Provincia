@@ -12741,6 +12741,49 @@ File: `scripts/save-cracker/dig-prng40-s90-1.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 91 — character mood/loyalty/influence)
+
+Goal: locate u8/u16/u32 fields in character records holding RTW visible stats
+(command / management / influence / loyalty / mood). Save: save_1.2 turn 1
+(25 named LAYOUT_A alive Roman characters).
+
+Method: dig-mood1.js scanned bytes +0..+540 for variance + 0..10 range. Top
+candidates surfaced at +102, +106, +110, +126. dig-mood2.js dumped raw bytes
++96..+140 and computed correlations (age, traitCount).
+
+Hex dump pattern (LAYOUT_A, every example): two constant u16 prefixes at
++96=`17 00` (23) and +98=`32 00 00 00` (50, u32), then a 4-stat block of
+four u32 LE fields at **+102 / +106 / +110 / +126**, with zeros at +114..+125.
+
+Per-character values (LAYOUT_A, n=25):
+- **+102 u32** range 0..5, mean 2.16, r(age,val)=0.20, r(traits,val)=**0.68**
+- **+106 u32** range 1..7, mean 3.36, r(age,val)=**0.67**, r(traits,val)=**0.72**
+- **+110 u32** range 2..7, mean 3.08, r(age,val)=**0.63**, r(traits,val)=0.48
+- **+126 u32** range 5..11, mean 6.44, default mode = 5 (=RTW base loyalty)
+
+Strong-trait general Gnaeus Cornelius_Blasio (age 43, 21 traits incl.
+GoodCommander): +102=4, +106=7, +110=6, +126=5. 20-year-old heir with few
+traits: +102=1, +106=2, +110=2, +126=7.
+
+Hypothesis mapping (RTW stat order in interface is **Command / Management /
+Influence**, with **Loyalty** separate):
+- +102 = management (trait-driven, weak age correlation) — STRONG
+- +106 = command (strongest age+trait correlation, classic command stars) — STRONG
+- +110 = influence (trait-driven, max 7 fits the 10-cap) — STRONG
+- +126 = loyalty (default 5, varies 5..11; younger characters higher) — HYPOTHESIS
+
+Mood not yet pinned — likely lives elsewhere (mood is faction-leader-relative,
+not a per-character byte at this offset cluster). No candidate matched mood
+semantics in this scan.
+
+Scripts: `scripts/save-cracker/dig-mood1.js`, `dig-mood2.js`.
+Dumps: `mood-dig-1.json`, `mood-dig-2.json`.
+Confidence: STRONG on offset locations and stat-cluster boundary; HYPOTHESIS
+on which u32 = which stat (Command/Management/Influence labels are best-guess
+from age + trait correlations, need in-game screenshot to confirm).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
