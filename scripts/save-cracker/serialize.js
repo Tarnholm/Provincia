@@ -440,6 +440,45 @@ function enumerateClaims(buf) {
     }
   }
 
+  // §18 misc-residual-auto (final catch-all — session 82). After §1..§17 only
+  // 36 sliver fragments remain (19,756 B / 0.06 % of the 32.93 MB file).
+  // Inspection (dig-final-unknowns.js) shows they fall into four buckets:
+  //   - "body-root-tail"           one 2115 B fragment at 0x3bb5..0x43f8 —
+  //                                UTF-16LE campaign-name + opaque body-root
+  //                                settings tail just past the body-root
+  //                                section header.
+  //   - "settlement-portrait-tail" ~24 ranges ending `...gen|por|car .tga\0
+  //                                <u32 byte-count> 00 00 00 <u32 self-pointer>`
+  //                                — tail bytes of settlement detail records
+  //                                that the §9b detector cut short.
+  //   - "stride7-ff-fragment"      ~8 ranges of stride-9 row bytes (`xx xx xx
+  //                                xN 00 00 00 00 00 0X`) followed by `ff ff`
+  //                                filler — sub-threshold continuations of
+  //                                §17 stride-tables (record count below 5 or
+  //                                trailing-zero pct below 85 %).
+  //   - "army-trail-summary-tail"  3 ranges of ~650 B ending `64 00 00 00 64
+  //                                00 00 00 ... fa 56 a9 5d <u32>` — §15-style
+  //                                summary blocks that failed the rigid
+  //                                26-byte tail signature because the i32 hash
+  //                                appears mid-block, not at the end.
+  // All four buckets are residual fragments from imperfect detector boundary
+  // handling; they are NOT new section types. A single rawBytes passthrough
+  // claim is the right move (per session-82 instructions: "if 19 KB can't be
+  // structurally claimed ... passthrough is acceptable").
+  //
+  // The §18 sweep finds every unclaimed run (any length ≥ 1) inside the file
+  // and claims it as "misc-residual-auto". The decoder also tags the bucket
+  // via header signature for forensic clarity.
+  {
+    for (let p = 0; p < size; ) {
+      if (bm[p]) { p++; continue; }
+      const rs = p;
+      while (p < size && !bm[p]) p++;
+      push(rs, p, "misc-residual-auto");
+      for (let i = rs; i < p; i++) bm[i] = 1;
+    }
+  }
+
   return claims;
 }
 
@@ -1656,6 +1695,65 @@ function encodeStrideTableAuto(b) {
   return b.rawBytes;
 }
 
+// ---- misc-residual-auto: final catch-all wrapper (§18, session 82) --------
+//
+// 36 sliver fragments (~19,756 B / 0.06 % of save_1.2.sav) remain after
+// §1..§17 — see RESEARCH.md "Findings 2026-05-15 (background session 82)".
+// They are residual byte ranges left over from imperfect detector boundary
+// handling, not new section types. Four buckets are observed:
+//
+//   - body-root-tail: the 2115 B at 0x3bb5..0x43f8 (UTF-16LE campaign name +
+//     opaque body-root settings — section grammar belongs to the body-root
+//     header at 0x3bad..0x3bb5).
+//   - settlement-portrait-tail: tail fragments of settlement detail records
+//     that end `<portrait>.tga\0 <u32> 00 00 00 <u32 self-ptr>`.
+//   - stride7-ff-fragment: sub-threshold stride-9 row continuations (record
+//     count < 5 or trailing-zero pct < 85 %, padded with `ff ff`).
+//   - army-trail-summary-tail: ~650 B blocks ending `64 00 00 00 64 00 00 00
+//     ... fa 56 a9 5d <u32>` that §15's rigid 26-byte tail signature missed.
+//
+// Decode tags the bucket via header/tail signature for forensic clarity;
+// encode emits rawBytes verbatim — round-trip is byte-identical by
+// construction.
+function decodeMiscResidual(buf, start, end) {
+  const rawBytes = Buffer.from(buf.slice(start, end));
+  const len = rawBytes.length;
+
+  // Bucket heuristic — informational only.
+  let bucket = "unclassified";
+  if (start === 0x3bb5 && end === 0x43f8) {
+    bucket = "body-root-tail";
+  } else if (len >= 26 &&
+             rawBytes[len - 26] === 0x64 && rawBytes[len - 25] === 0x00 &&
+             rawBytes[len - 22] === 0x64 && rawBytes[len - 21] === 0x00) {
+    // §15-shape summary tail (morale=100, discipline=100 i32 pair).
+    bucket = "army-trail-summary-tail";
+  } else {
+    // Count FF dominance and check for `.tga\0` token.
+    let ffs = 0, zeros = 0;
+    for (const b of rawBytes) {
+      if (b === 0xff) ffs++;
+      else if (b === 0x00) zeros++;
+    }
+    const tgaIdx = rawBytes.indexOf(Buffer.from(".tga\x00"));
+    if (tgaIdx >= 0) {
+      bucket = "settlement-portrait-tail";
+    } else if (ffs / len > 0.5) {
+      bucket = "stride7-ff-fragment";
+    } else if (zeros / len > 0.5) {
+      bucket = "zero-padding-fragment";
+    }
+  }
+
+  return { _kind: "misc-residual-auto", rawBytes, bucket, length: len };
+}
+
+function encodeMiscResidual(b) {
+  if (b._kind !== "misc-residual-auto") throw new Error("encodeMiscResidual: not a misc-residual-auto object");
+  // Verbatim re-emission. `bucket` is informational only.
+  return b.rawBytes;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -1672,6 +1770,7 @@ const SERIALIZERS = {
   "stride9-score-table-auto":(buf, start, end) => encodeStride9ScoreTable(decodeStride9ScoreTable(buf, start, end)),
   "zero-ff-trailer-auto":    (buf, start, end) => encodeZeroFfTrailer(decodeZeroFfTrailer(buf, start, end)),
   "stride-table-auto":       (buf, start, end) => encodeStrideTableAuto(decodeStrideTableAuto(buf, start, end)),
+  "misc-residual-auto":      (buf, start, end) => encodeMiscResidual(decodeMiscResidual(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };

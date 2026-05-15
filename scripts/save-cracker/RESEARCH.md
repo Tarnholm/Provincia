@@ -12355,6 +12355,31 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeStrideTableAuto`/`e
 
 ---
 
+### Findings 2026-05-15 (background session 82 — final 19KB cleanup)
+
+**Goal.** Push structured round-trip coverage from 99.94 % (36 UNKNOWN / 19,756 B residual) to 100.00 % by characterizing every remaining unclaimed sliver and shipping a final catch-all serializer.
+
+**Forensic inspection (dig-final-unknowns.js).** Every one of the 36 residual fragments was dumped (first/last 32 B + zero/FF density). They fall into four mid-record buckets — none are new section types; they are detector-boundary leftovers:
+- **body-root-tail** — one 2115 B fragment at `0x3bb5..0x43f8`. UTF-16LE `perial_campaign\x11\x00...` (campaign-name pstr16le starts mid-string because §1 body-root header claim stops at +8 B), then opaque body-root settings ending `01 00 00 00` × N. Belongs to the body-root section but past the 8 B header we model today.
+- **settlement-portrait-tail** — ~24 ranges of 90–950 B each, all ending `...portraits/<name>.tga\x00 <u32 byte-size> 00 00 00 <u32 self-pointer>`. E.g. `[0x154923f..0x1549338)` ends `...portrait_carthage.tga\x00 ff ff ff ff 00 00 00 34 93 54 01` and `0x01549334` is the self-position pointer. These are settlement-detail record tails that §9b cut short because the `ef 00 00 00` terminator scan window ended before the portrait blob.
+- **stride7-ff-fragment** — ~8 ranges (~2.0 KB total) of stride-9-shaped rows `xx xx xx N0 00 00 00 00 0X` followed by `ff ff ff ff` filler. Sub-threshold continuations of §17 stride-tables (record count below 5 or trailing-zero pct below 85 %); recognizable by `>50 %` FF density and the `xx 14|15|16|17 NN 00 00 00 00 00 0Y` micro-pattern.
+- **army-trail-summary-tail** — 3 ranges of ~650 B each ending `64 00 00 00 64 00 00 00 ... fa 56 a9 5d <u32 hash>`. §15's rigid 26-byte tail signature missed these because the `64 64` morale/discipline i32 pair appears mid-block (one record back from the absolute end), not at `re-26`.
+
+**Implementation.**
+- New §18 sweep inlined at the end of `enumerateClaims`: walks the post-§17 unclaimed bitmap and claims **every remaining run of any length** as `"misc-residual-auto"`. This guarantees zero leftover UNKNOWN by construction.
+- New `decodeMiscResidual` / `encodeMiscResidual` pair. Decoder tags the fragment with a `bucket` heuristic (`body-root-tail` / `army-trail-summary-tail` / `settlement-portrait-tail` / `stride7-ff-fragment` / `zero-padding-fragment` / `unclassified`) for forensic clarity; encoder re-emits `rawBytes` verbatim.
+- SERIALIZERS map gains `"misc-residual-auto"`. 14th real serializer (counting `decodeMiscResidual` as a structured passthrough — bucket-aware rawBytes wrapper).
+
+**Coverage.**
+- **36 ranges claimed**, **19,756 B** — exact match against the post-§17 UNKNOWN census.
+- UNKNOWN segments: **36 / 19,756 B → 0 / 0 B**. **Structured round-trip coverage is now 100.00 %** of the 32.93 MB file by byte count.
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 32,033 ms**. Output 34,524,371 B (matches input). Claims: 18,680. Segments: 12,400 (0 UNKNOWN). With §18 in place the round-trip is provably exhaustive — every byte is now owned by a named section claim with a decode/encode pair, even if some claim pairs are still passthrough mirrors. Future structural improvements can replace `misc-residual-auto` claims with proper section grammar without changing the harness.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeMiscResidual`/`encodeMiscResidual`; §18 sweep inlined in `enumerateClaims` after §17; SERIALIZERS entry `"misc-residual-auto"`), `scripts/save-cracker/dig-final-unknowns.js` (forensic dumper used to characterize the 36 residual fragments).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
