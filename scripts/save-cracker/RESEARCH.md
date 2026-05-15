@@ -12331,6 +12331,30 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeZeroFfTrailer`/`enc
 
 ---
 
+### Findings 2026-05-15 (background session 81 — stride-7/9 catch-all decode/encode)
+
+**Goal.** Replace the cover.js §17 "stride-table-auto" claim (multi-stride catch-all record-table sweeper, generalizing §16 to also cover stride-7 tables and runs that start mid-stride or include all-FF filler) with a real decode/encode pair in `serialize.js`. 13th real serializer.
+
+**Confirmed from session 68.**
+- Each record is `<S-4 bytes data><4 zero bytes>` for stride S ∈ {7, 9}.
+- The engine pads sub-blocks with all-FF records — those are excluded from the conformance denominator but emitted verbatim.
+- Detector zone `[0x14e5ac6, min(0x20e6e8e, size))`, MIN_RUN 80, accept threshold ≥ 85 % trailing-zero match on non-FF records at the dominant `(stride, alignment)` pair.
+
+**Implementation.**
+- New `decodeStrideTableAuto` / `encodeStrideTableAuto` pair (rawBytes-verbatim). Decoder also exposes `stride`, `prefixBytes`, `records[{ data, padding, isFiller }]`, `terminatorBytes`, `bestOff`, `recordsMatched`, `recordsTotal` as informational mirrors so future passes can rewrite records in place.
+- New §17 detector inlined in `enumerateClaims` AFTER §13/§14/§15/§16 so the same residual unclaimed runs are visited as in cover.js (precedence is bitmap-order dependent). Logic mirrors cover.js §17 exactly: tries both strides at every alignment, picks the highest match fraction over non-FF records, accepts at ≥ 85 %.
+- SERIALIZERS map gains `"stride-table-auto"`.
+
+**Coverage.**
+- **454 ranges claimed**, **238,933 B** — exact match against cover.js §17 census. Matches the session-68 numbers (454 / 238,933 B).
+- UNKNOWN segments dropped from 490 / 258,689 B → **36 / 19,756 B**, a ~239 KB further structured-coverage gain. Structured round-trip coverage now ≈ **99.94 %** of the 32.93 MB file by byte count (cover.js reports 99.97 % claimed overall — the gap is bitmap-precedence dedup, not unmodeled bytes).
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 31,924 ms**. Output 34,524,371 B (matches input). 13th real serializer; pushes cumulative structured coverage past the 99.7 % checkpoint and leaves only sub-100-byte UNKNOWN slivers.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeStrideTableAuto`/`encodeStrideTableAuto`; §17 detector inlined in `enumerateClaims` after §16; SERIALIZERS entry `"stride-table-auto"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

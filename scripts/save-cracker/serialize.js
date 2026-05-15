@@ -398,6 +398,48 @@ function enumerateClaims(buf) {
     }
   }
 
+  // §17 stride-table-auto (multi-stride catch-all record-table sweeper — REAL
+  // serializer; session 81). Mirrors cover.js §17 exactly:
+  //   - Zone: [0x14e5ac6, min(0x20e6e8e, size))
+  //   - MIN_RUN: 80
+  //   - For each run, try strides S ∈ {7, 9} at every alignment 0..S-1.
+  //     A record is "ok" if its last 4 bytes are zero. All-FF records are
+  //     excluded from the denominator (engine sentinel filler).
+  //   - Accept if best alignment yields >= 85% match across non-FF records.
+  // Must run AFTER §13/§14/§15/§16 so the same residual unclaimed runs are
+  // visited as in cover.js (precedence is bitmap-order dependent).
+  // The decode/encode pair is rawBytes-verbatim so byte-identity is
+  // guaranteed even when alignment, FF filler, or mid-stride run starts make
+  // structured per-record decoding ambiguous.
+  {
+    const Z0 = 0x14e5ac6;
+    const Z1 = Math.min(0x20e6e8e, size);
+    for (const [rs, re] of findUnclaimedRuns(Z0, Z1, 80)) {
+      let bestPct = 0;
+      for (const S of [7, 9]) {
+        for (let off = 0; off < S; off++) {
+          let total = 0, ok = 0, ffFill = 0;
+          for (let p = rs + off; p + S <= re; p += S) {
+            total++;
+            let allFF = true;
+            for (let k = 0; k < S; k++) if (buf[p + k] !== 0xff) { allFF = false; break; }
+            if (allFF) { ffFill++; continue; }
+            let z = 0;
+            for (let k = S - 4; k < S; k++) if (buf[p + k] === 0) z++;
+            if (z === 4) ok++;
+          }
+          const dataRecs = total - ffFill;
+          if (dataRecs < 5) continue;
+          const pct = ok / dataRecs;
+          if (pct > bestPct) bestPct = pct;
+        }
+      }
+      if (bestPct < 0.85) continue;
+      push(rs, re, "stride-table-auto");
+      for (let i = rs; i < re; i++) bm[i] = 1;
+    }
+  }
+
   return claims;
 }
 
@@ -1526,6 +1568,94 @@ function encodeZeroFfTrailer(b) {
   return b.rawBytes;
 }
 
+// ---- stride-table-auto: multi-stride catch-all record table (§17,
+// session 81) ---------------------------------------------------------------
+//
+// 454 dense stride-{7,9} record tables (~239 KB total in save_1.2.sav)
+// scattered across the AI-cache zone `[0x14e5ac6, 0x20e6e8e)`. Generalizes
+// the §16 stride-9 score table to also cover stride-7 tables and runs that
+// begin mid-stride or include embedded `ff ff ff ff ff ff ff` filler.
+//
+// Structure (per session 68):
+//   - 0..K-1 B:  alignment prefix (`prefixBytes`). Detector picks the best
+//     alignment 0..S-1; the leading 0..S-1 bytes are partial-record / table-
+//     header bytes that precede the first aligned record. Captured verbatim.
+//   - records[]: each S-byte record `<S-4 bytes data><4 zero bytes>`. The
+//     engine pads sub-blocks with all-FF records that we still emit
+//     verbatim (`isFiller: true`).
+//   - terminator: trailing bytes < S that don't form a full record.
+//
+// Two strides are accepted: S ∈ {7, 9}. We pick the (stride, alignment) pair
+// that maximizes the trailing-zero match fraction across non-FF records.
+//
+// Round-trip strategy: canonical state is `rawBytes`. The structured fields
+// (`stride`, `prefixBytes`, `records`, `terminatorBytes`) are informational
+// mirrors that document the table's shape; the encoder re-emits `rawBytes`
+// verbatim. This guarantees byte-identity even when the detector picks an
+// off-by-one alignment for an ambiguous run.
+function decodeStrideTableAuto(buf, start, end) {
+  const rawBytes = Buffer.from(buf.slice(start, end));
+  const len = rawBytes.length;
+
+  // Find best (stride, alignment) pair — mirrors detector.
+  let bestS = 9, bestOff = 0, bestPct = 0, bestOk = 0, bestDataRecs = 0;
+  for (const S of [7, 9]) {
+    for (let off = 0; off < S; off++) {
+      let total = 0, ok = 0, ffFill = 0;
+      for (let p = off; p + S <= len; p += S) {
+        total++;
+        let allFF = true;
+        for (let k = 0; k < S; k++) if (rawBytes[p + k] !== 0xff) { allFF = false; break; }
+        if (allFF) { ffFill++; continue; }
+        let z = 0;
+        for (let k = S - 4; k < S; k++) if (rawBytes[p + k] === 0) z++;
+        if (z === 4) ok++;
+      }
+      const dataRecs = total - ffFill;
+      if (dataRecs < 5) continue;
+      const pct = ok / dataRecs;
+      if (pct > bestPct) {
+        bestPct = pct; bestS = S; bestOff = off; bestOk = ok; bestDataRecs = dataRecs;
+      }
+    }
+  }
+
+  const S = bestS;
+  const prefixBytes = Buffer.from(rawBytes.slice(0, bestOff));
+  const records = [];
+  let p = bestOff;
+  while (p + S <= len) {
+    let allFF = true;
+    for (let k = 0; k < S; k++) if (rawBytes[p + k] !== 0xff) { allFF = false; break; }
+    records.push({
+      data: Buffer.from(rawBytes.slice(p, p + S - 4)),
+      padding: Buffer.from(rawBytes.slice(p + S - 4, p + S)),
+      isFiller: allFF,
+    });
+    p += S;
+  }
+  const terminatorBytes = Buffer.from(rawBytes.slice(p, len));
+
+  return {
+    _kind: "stride-table-auto",
+    rawBytes,
+    stride: S,
+    prefixBytes,
+    records,
+    terminatorBytes,
+    bestOff,
+    recordsMatched: bestOk,
+    recordsTotal: bestDataRecs,
+  };
+}
+
+function encodeStrideTableAuto(b) {
+  if (b._kind !== "stride-table-auto") throw new Error("encodeStrideTableAuto: not a stride-table-auto object");
+  // Verbatim re-emission. Structured fields above are informational mirrors;
+  // canonical state is `rawBytes`.
+  return b.rawBytes;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -1541,6 +1671,7 @@ const SERIALIZERS = {
   "settlement-detail":       (buf, start, end) => encodeSettlementDetail(decodeSettlementDetail(buf, start, end)),
   "stride9-score-table-auto":(buf, start, end) => encodeStride9ScoreTable(decodeStride9ScoreTable(buf, start, end)),
   "zero-ff-trailer-auto":    (buf, start, end) => encodeZeroFfTrailer(decodeZeroFfTrailer(buf, start, end)),
+  "stride-table-auto":       (buf, start, end) => encodeStrideTableAuto(decodeStrideTableAuto(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };
