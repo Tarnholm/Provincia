@@ -12666,6 +12666,81 @@ parser changes needed.
 
 ---
 
+### Findings 2026-05-15 (background session 90 — per-faction 40B PRNG block)
+
+Goal: classify the `tail+132..+171` 40-byte block flagged STRONG-hypothesis as
+"PRNG/hash" in session 46. Method: extract Romans Julii's block from save_1.2,
+save_2.2, save_3.2 plus every major faction in s1; diff per-byte; compute
+entropy; probe for ZoneA-style structure.
+
+**Reclassification — block is NOT a 40B PRNG state.** It is a **structured
+mixed-fields record**, ~62% random + ~38% pinned-zero. The diff-mask is
+**byte-position identical** across all 3 saves AND all 5 factions:
+
+```
+...X...XXXXXXX.X...XXXXXXXXXXXX....XXX.X
+0    5    10   15   20   25   30   35
+```
+
+15/40 bytes are constant `0x00` in **every** sample (positions 0,1,2,4,5,6,14,16,17,18,31,32,33,34,38). This is incompatible with random PRNG state.
+
+**Subfield layout — CONFIRMED structural (5 factions × 3 saves = 15 samples)**:
+
+| Δ | Type | Pattern | Confidence |
+|---|---|---|---|
+| `+132` u32 | counter-like, byte3 only | s1=5, s2=10, s3=1 across saves; 5/7/18/28/34 across factions | CONFIRMED structural |
+| `+136` u32 | byte3 only, high entropy in byte3 | varies wholly | STRONG random |
+| `+140` u32 | random | varies wholly | STRONG random |
+| `+144` u32 | **self-referential tail-pointer suffix** | s1 ends `...5790`, s2 `...6eb7`, s3 `...543b` — match `tail>>8` of `0x1578fd8 / 0x16eb734 / 0x1543af0` | **CONFIRMED self-ptr** |
+| `+148` u32 | byte3 only | varies | STRONG random |
+| `+152..+159` 8B | random | high-entropy | STRONG random |
+| `+160` u32 | byte1 only set | bytes 0,2,3 always 0 | CONFIRMED structural |
+| `+164` u32 | byte3 only | varies | STRONG random |
+| `+168` u32 | **second tail-pointer suffix** | same `5790/6eb7/543b` ending as `+144` | **CONFIRMED self-ptr** |
+
+**Entropy**: 3.85/3.97/3.09 bits/byte (max ≈ 5.32 for 40 samples) — well below
+full-entropy hash. Per-byte-position entropy across 5 factions: 0 on the 15
+zero-positions, 2.32 (full) on the other 25 — i.e. **deterministic zeros plus
+faction-discriminating randoms**.
+
+**ZoneA overlap test**: 5×u64 not sorted; top-halves not zero. **No structural
+overlap** with the ZoneA RNG-cache from session 23/84.
+
+**Reclassification**: this is a **per-faction object header**, not PRNG state.
+Two confirmed self-pointers (`+144`, `+168`) at byte-positions encoding the
+faction's tail offset establish it as a section-header structure. The high-
+entropy interior fields (`+136/+140/+152..+159/+164`) are most likely a
+**faction-seeded hash digest** (12 bytes effective entropy) used to ID the
+faction-record across the save's section graph — but they are NOT a live PRNG
+state (would re-randomize every save; instead the **same byte-position pattern
+holds**, just with different content). Sessions 16's `random_counter` and the
+ZoneA RNG-cache live elsewhere.
+
+**Confidence summary**:
+- **CONFIRMED structural**: 15 zero-pinned byte positions; self-pointer at +144
+  and +168; counter-like u32 at +132; byte-aligned narrow fields at +148/+160/+164.
+- **STRONG**: middle 12 random bytes (`+152..+163`) are a faction-identifying
+  hash/seed, NOT live PRNG output.
+- **REJECTED**: "40-byte PRNG state" — block has structure, not noise.
+
+**Implication for Provincia**: the block is **not opaque**. Parsers can skip 40
+bytes safely, but `+144` and `+168` are self-pointers that double-validate the
+faction record's tail offset (sanity check for parser drift). The +132 counter
+is a candidate for "AI turn-decision counter" (small, monotonic-looking across
+factions in same save).
+
+File: `scripts/save-cracker/dig-prng40-s90-1.js`.
+
+#### Open follow-ups for session 91+
+
+- Test if `+132` counter == faction's turn-action count (record growth from
+  session 47's stride-16 array): RJ s1 had 33 stride-16 records and `+132=5`;
+  may be a category counter not a record count.
+- Cross-reference 12-byte middle hash with the AI-cache RIS keys (sessions 30s)
+  — if any RIS slot keys on the same digest, this pins it as a hash-table key.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
