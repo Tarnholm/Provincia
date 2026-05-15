@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.343",
+    date: "2026-05-15",
+    items: [
+      { type: "change", text: "Region panel now uses a 4-section 3-row layout: Row 1 = region info (240 px) + recruitable (rest of width). Row 2 = buildings 10×2 full width (max 20 slots, every slot reachable without scrolling if column fits). Row 3 = garrison + field armies full width. Lets each section breathe — recruit no longer cramped, buildings keep their classic 10-wide grid, armies stretch out." },
+    ],
+  },
+  {
     version: "0.9.342",
     date: "2026-05-15",
     items: [

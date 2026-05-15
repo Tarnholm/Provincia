@@ -319,12 +319,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         width: "100%",
         minHeight: "100%",
         display: "grid",
-        // UI reshuffle: 2-row layout. Top row: region details + buildings.
-        // Bottom row: recruitable + armies stacked under them. Lets the
-        // narrow right column show all four sections without horizontal
-        // scrolling.
-        gridTemplateColumns: "240px 1fr 1fr",
-        gridTemplateAreas: '"info buildings buildings" "recruit recruit armies"',
+        // UI reshuffle v3: 3-row layout. Top row: region details +
+        // recruitable side-by-side (the two narrower sections). Middle:
+        // buildings 10×2 spanning full width. Bottom: garrison + field
+        // armies spanning full width.
+        gridTemplateColumns: "240px 1fr",
+        gridTemplateAreas: '"info recruit" "buildings buildings" "armies armies"',
         gap: 6,
         paddingBottom: 4,
         color: "#f7f7f7",
@@ -712,12 +712,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         )}
       </div>
 
-      {/* Right: buildings + garrison */}
+      {/* Buildings row — spans full width below info+recruit */}
       <div
         style={{
           gridArea: "buildings",
-          borderLeft: "1px solid #8882",
-          paddingLeft: 12,
+          borderTop: "1px solid #8882",
+          paddingTop: 6,
           boxSizing: "border-box",
           minWidth: 0,
           height: "100%",
@@ -803,10 +803,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           <div
             style={{
               display: "grid",
-              // UI reshuffle: 5×4 grid (was 10×2). RegionInfo lives in the
-              // right column now, narrower than the old wide-bottom strip
-              // and taller, so vertical stacking suits better.
-              gridTemplateColumns: "repeat(5, 82px)",
+              // UI reshuffle v3: 10×2 grid (max 20 buildings per settlement,
+              // so this uses every slot). Buildings row now spans the full
+              // panel width.
+              gridTemplateColumns: "repeat(10, 82px)",
               gridAutoRows: "118px",
               gap: 4,
               justifyContent: "start",
@@ -888,12 +888,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         )}
       </div>
 
-      {/* Recruitable column — now in the second grid row, below info+buildings */}
+      {/* Recruitable section — shares row 1 with info (to its right) */}
       <div
         style={{
           gridArea: "recruit",
-          borderTop: "1px solid #8882",
-          paddingTop: 6,
+          borderLeft: "1px solid #8882",
+          paddingLeft: 12,
           boxSizing: "border-box",
           minWidth: 0,
           height: "100%",
@@ -980,14 +980,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         })()}
       </div>
 
-      {/* Armies column — also in the second grid row, beside recruitable */}
+      {/* Armies row — spans full width at the bottom */}
       <div
         style={{
           gridArea: "armies",
           borderTop: "1px solid #8882",
-          borderLeft: "1px solid #8882",
           paddingTop: 6,
-          paddingLeft: 12,
           boxSizing: "border-box",
           minWidth: 0,
           height: "100%",
