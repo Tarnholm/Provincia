@@ -12907,6 +12907,34 @@ Files: `scripts/save-cracker/dig-mask-s95-1.js`, `scripts/save-cracker/dig-mask-
 
 ---
 
+### Findings 2026-05-15 (background session 96 — settlement-body field semantics)
+
+**Closes session 94's open question. Hypothesis (per-settlement payload at +124/+128/+180/+204/+496/+516/+808) REFRAMED.**
+
+Cross-referenced the seven "577/577-unique u32" sites against eight known attributes (currentOwner UUID, owner faction index, descr_strat initial faction, region ordinal, mod-data population, marker offset, detailStart, fcIdx). **Zero exact matches** across all 7×8 = 56 (offset, attribute) pairs. Lo-byte and lo-16 match rates all stayed under 1%. The fields are NOT settlement attribute payload.
+
+**They are SELF-POINTERS / in-memory rebase fields.** For 573–576 of 577 records the delta `value(FC+off) − fcIdx == off`:
+- FC+180: 576/577 records satisfy `*(u32)=fcIdx+180`. Target hex preview at every pointee is `xx xx f8 00 12 00 68 69 6e 74 65 72` → `"\x12\x00hinter..."` = the `hinterland_region` chain header.
+- FC+496: 574/577 records satisfy `*(u32)=fcIdx+496`. Target preview is `... 0e 00 63 6f 72 65 5f 62` → `"\x0e\x00core_b..."` = the `core_building` chain header.
+- FC+808: 573/577 records satisfy `*(u32)=fcIdx+808`. Target preview is `... 0c 00 67 6f 76 65 72 6e` → `"\x0c\x00govern..."` = the governor/governor's-house chain header.
+- Stride is fixed: 496−180=**316**, 808−496=**312**, identical across all 10 sampled settlements. These three pointers reference back-to-back fixed-length sub-records (~310-byte chain entries written inline in the detail body).
+
+**FC+124 / FC+128**: also packed pointers + tag.
+- FC+128: hi-byte=`0xfc` for 576/577 records. Format `fc XX XX XX` — a tagged hash/handle, not a free u32. (Same `fc fc fc fc 64 00 00 00 00` magic prefix that opens each detail body.)
+- FC+124: low-24-bits sit just inside the record's own address; high byte varies — a 24-bit self-ptr + 8-bit type tag.
+
+**FC+204 / FC+516**: still random u32s, no pointer structure, no cross-occurrence in the file (avg 1.00–1.07 appearances). Best read as **per-instance hashes/UUIDs** for the sub-records pointed to by +180 / +496 (likely the `hinterland_region` and `core_building` 4-byte hashes session 86 documented at the start of each chain entry).
+
+**Impact for the editor**: these are NOT editable settlement attributes. They are layout metadata that the engine writes deterministically from chain content. Any structured settlement serializer that wants to edit settlement attributes (faction, population, happiness) must look ELSEWHERE — confirmed the +124..+808 cluster is purely pointer scaffolding. Conversely, **Provincia gains a robust way to LOCATE the in-body chain headers** without re-scanning: read FC+180 / +496 / +808 to jump straight to hinterland / core_building / governor entries.
+
+**Owner-offset re-detection regressed**: `resolveCurrentOwners` returned `d=-2206` with all-zero UUIDs on `save_1.2.sav` (not vanilla -454 nor RIS -1944). New top candidates by group-sharing entropy: **d=-1878 (61 group-hits)**, d=-1177 (40), d=-2895 (37). Worth a dedicated session if any uses this save.
+
+**Confidence**: CONFIRMED self-pointer semantics for +180/+496/+808 (>99% of records). CONFIRMED +128 is FC-tagged handle. STRONG for +124 as 24-bit self-ptr + tag. HYPOTHESIS for +204/+516 as chain-instance hashes.
+
+Files: `scripts/save-cracker/dig-settlefield-s96-1.js`, `scripts/save-cracker/dig-settlefield-s96-2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
