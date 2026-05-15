@@ -10949,6 +10949,90 @@ Files: `scripts/save-cracker/dig-strideorder-session47-1.js`,
 
 ---
 
+### Findings 2026-05-15 (background session 48 — AI u32 array values)
+
+Goal: pin the semantic class of the u32 values in the `+44=6` major-faction
+record's `+48` count-prefixed array (range 13..1306; structure CONFIRMED in
+session 45). Tested four hypotheses: settlement UUIDs, character UUIDs,
+region-compound packing, AI score buckets.
+
+**All four hypotheses refuted** (no class hit ≥80% match). Confidence: **STRONG
+that values are AI-evaluation scores, NOT entity IDs.**
+
+**Quantitative results** (T1 = `save_1.2`, T2 = T2 Start; Roman faction at R0):
+
+| Test | T1 R0 hit rate | T2 R0 hit rate | Verdict |
+|---|---|---|---|
+| Settlement-UUID low-16-bit match (`0x0001xxxx` pattern) | 10/22 = 45.5% | 12/30 = 40% | **REFUTED** |
+| Character-UUID low-16-bit match (`0x015xxxxx` pattern) | 5/22 = 22.7% | — | **REFUTED** |
+| Mod-6 distribution (region_id × 6 + slot) | non-uniform (mod 4: 8, mod 3: 1) | — | **REFUTED** |
+| Stride-16 A-value overlap (session 47 score array) | 0/22 | — | **REFUTED — distinct namespaces** |
+
+**Key positive observations**:
+
+1. **Cross-faction overlap is significant**: in T1 the 5 factions' arrays share
+   25-35 values pairwise (R0:24, R1:26, R3:35, R4:26 overlapping vs ~22-32
+   unique each). Value `1074` appears in **ALL 5 factions** at T1. Values are
+   therefore **global** to the AI evaluator (NOT per-faction names of owned
+   settlements).
+
+2. **T1 R0 vs T2 R0 set delta**: only **6 of 22** values are stable (436, 496,
+   698, 973, 1074, 1177); 16 dropped out and 24 new entered between turns. This
+   is a **volatile per-turn snapshot** — refutes "stable settlement list" and
+   strongly hypothesis-fits "current top-K AI evaluation results".
+
+3. **Raw u32 occurrences in body**: each array value appears 5-282× in the save
+   buffer; high-frequency values like `1074` (21 occurrences) show a recurring
+   ~9-byte stride pattern in body offsets `0x150xxxx..0x1ec0000` where the value
+   sits inside short records of form `... XX YY [v u32 LE] 00 00 00 00 ...` —
+   suggesting these scores **also appear in some larger evaluation/score table
+   elsewhere in the body** (not yet pinned).
+
+4. **Self-pointer probe**: each value's relative offset from its nearest
+   self-pointing section header varies (4, 48, 760, 948, 256, 168, ...) — **NOT
+   at a fixed record field**. Refutes "values are a field of one record type".
+
+5. **Sentinel verified**: post-array u32 = `0x1e` for all faction records in
+   both saves (CONFIRMED, matches session 45).
+
+**Refined HYPOTHESIS (STRONG)**: the +48 array is **per-faction top-K AI
+strategic evaluation scores** — each value is a score computed by the AI
+deliberation engine (matching session 47's STRONG finding that the stride-16
+A field 651..1028 is "AI evaluation score"). The two arrays (`+48` and
+post-tail stride-16) operate in the **same conceptual score range** but use
+**different score namespaces** (0 of 22 cross-match), e.g. `+48` could be
+"target priorities" while stride-16 is "candidate actions" — both ranked by
+the same scoring system but selecting different subjects.
+
+**What it is NOT (CONFIRMED)**:
+- NOT settlement UUIDs (would be 0x0001xxxx, low-16 match is 45.5% — at chance
+  given 2647 distinct low-16 values).
+- NOT character UUIDs (would be 0x015xxxxx, low-16 match is 22.7% — below chance).
+- NOT region IDs (RIS has ~199 regions; values exceed 1300).
+- NOT a stride-16-array shared namespace (0% overlap).
+- NOT diplomatic-matrix indices (would be ≤239 × 239 = 57k but distinct from
+  current value distribution).
+
+**Implication for Provincia**: the +48 array is **decoded structurally** but
+its semantic remains "AI scoring values, no entity binding". Without a known
+binding (which settlement / which faction / which order each score relates
+to), the values are NOT immediately useful in the UI — they're internal AI
+deliberation state. To pin the entity binding, a controlled experiment is
+needed: change ONE AI-visible thing between two saves (e.g. give Romans Julii
+one extra settlement, or change descr_strat denarii by 1k) and see which
+specific scores in the +48 array shift — that flip-pattern would identify the
+score's subject.
+
+**Hard early-stop reached**: 2 attempts used, no class confirmed ≥80%.
+Settlement-UUID and character-UUID hypotheses are both explicitly tested and
+**both refuted**. The remaining viable hypothesis is "AI score, subject
+unknown" which is unfalsifiable from value-set inspection alone — requires
+controlled diff.
+
+Files: `scripts/save-cracker/dig-aiarr1.js`, `dig-aiarr2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
