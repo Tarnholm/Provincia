@@ -12517,6 +12517,67 @@ Files: `scripts/save-cracker/serialize-corpus.js` (new corpus driver), `scripts/
 
 ---
 
+### Findings 2026-05-15 (background session 87 — AI u32 array → stride-9 cross-reference)
+
+**Goal.** Pin the value namespace of the +48 count-prefixed u32 array in the
+`+44=6` major-faction record (range 13..1306, structure CONFIRMED in sessions
+45/48). Working hypothesis: values are INDICES into the §16 stride-9 score
+table at `[0x14e5ac6, 0x20e6e8e)`, with `xyz:u24` being the cross-reference key.
+
+**Result: HYPOTHESIS REFUTED.** The stride-9 xyz namespace is NOT the source.
+
+**Quantitative evidence** (save_1.2, 5 majors, union = 81 distinct values):
+
+| Test | Match rate | Control (random 13..1306) | Verdict |
+|---|---|---|---|
+| Alignment-agnostic xyz scan (any aligned p+5..p+8=0, NN enum) | 58/81 = 71.6% | 740/1000 = 74.0% | REFUTED — match indistinguishable from random |
+| §16 run-locked (3,467 runs, 5.97 MB, ≥50 records, ≥78% pattern, dominant MM) | 23/81 = 28.4% | 230/1000 = 23.0% | REFUTED — only +5.4 pp above noise |
+
+The §16 table is so densely populated (24,793 distinct xyz values across
+properly aligned runs, 46,596 alignment-agnostic) that low ints in 13..1306
+hit at the **baseline rate of random ints in that range**. Both hits and
+misses are explained by density alone, not by a semantic binding.
+
+**Value 1074 deep dive** (the cross-faction-shared "smoking gun" from session 48):
+appears in 10 distinct §16 runs (out of 3,467) — every occurrence is a
+stride-9 row `32 04 00 00 00 00 00 00 00` (xyz=0x432=1074, NN=0, MM=0). All 10
+runs have **no readable pstr8/pstr16le terminator immediately after the run
+end** (no ptolemai / egyptian / psiloi / cilici / machai strings adjacent to
+ANY of the 10 1074-containing runs). The "stride-9 records bind to a
+terminator string" finding from session 65 does not apply to the runs where
+1074 lives — these runs are MM=0 (the commander/unit-id family, 1,184 of
+1,243 §16 ranges per session 79), and their terminators are not pstr8
+strings but rather adjacent stride-9 §16 records or already-claimed sections
+of other §-detectors.
+
+**NN-byte uniformity.** Of 240 §16 records whose xyz matches a union value,
+**all 240 have NN=0x00**. Session 65's 8-tier NN enum (0x00..0x70) is
+collapsed to a single tier for these matches — refutes "values index into a
+priority-tiered table".
+
+**R0 (Romans Julii) per-value table mapping** (22 values):
+- 4/22 found in MM=0 (commander/unit-id-family) §16 runs with no string terminator: 1078, 1205, 1303, 1074, 1079, 1177.
+- 16/22 NOT FOUND in any accepted §16 run. So even when run-locked, the +48 array doesn't index the §16 score table — 73% of its values aren't xyz values in any accepted §16 run.
+
+**Net conclusion (STRONG).** The +48 u32 array value namespace is **NOT** the
+§16 stride-9 score table's `xyz:u24` keyspace. Cross-faction overlap (1074 in
+all 5 majors) is not from a shared global-entity-table indexing scheme. The
+session-48 working hypothesis "indices into a global UNIT or BUILDING table
+via stride-9 xyz" is **REFUTED**. The values remain best-described as **AI
+evaluation scores in an opaque internal namespace** (session 48's STRONG
+hypothesis — neither entity IDs nor stride-9-table indices). Pinning their
+subject requires the controlled mod-test approach session 48 already
+recommended: toggle one AI-visible thing between two saves and see which
+score in the +48 array flips.
+
+**Confidence**: REFUTED (HYPOTHESIS → eliminated). Closes the cross-reference
+branch opened by session 48; remaining viable approach is differential mod
+testing only.
+
+Files: `scripts/save-cracker/dig-aiarr-s87-1.js`, `dig-aiarr-s87-2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
