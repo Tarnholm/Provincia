@@ -11845,6 +11845,60 @@ Files: `scripts/save-cracker/serialize.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 66 — 35-byte stride table)
+
+**Target**: 0x44e2..0x2a25d, the "post-fow-35-stride-table" frame from
+session 57. Session 57 said "35-byte stride for the whole 155 KB". That
+was wrong — the strict 35-stride only spans 89 rows (3,115 B at the
+head). Two-region decode:
+
+1. **Head subtable** `0x4556..0x5181` — **89 rows × 35 B = 3,115 B**.
+   CONFIRMED: 89/89 rows have `1e 00 00 00` at row offset +31..+34.
+   Live-row census: 1 live + 11 sparse + 78 all-zero. Classic
+   fixed-slot table. The lone live row 0 contains the literal
+   value `0x59 = 89` at byte +27, a slot-count self-reference.
+   STRONG: this is a **89-slot reserved table** (likely diplomats,
+   captured generals, or per-faction script-handle slots — exact
+   semantics still HYPOTHESIS).
+
+2. **Body** `0x5181..0x2a25d` — **151,772 B**. Stride autocorrelation:
+   `corr(12) = 0.6914` vs random baseline 0.10 (and corr(24)=0.62,
+   corr(48)=0.55 = harmonics). **CONFIRMED stride 12**, expected
+   count = 151,772 / 12 ≈ **12,648 records**.
+
+   **Body record layout** (STRONG, 151/200 rows aligned at row 0=0x52e9):
+   ```
+   off  size  field
+   +0   u32   u32a — small int, often turn or sequence index (40,41,41,42,...)
+   +4   u32   packed UUID / entity hash (e.g. 0x3e482a8d, 0xe491da21)
+   +8   u16   sentinel = 0x2001 ("01 20") — appears 10,343× in body
+   +10  u16   subtype/turn-low (0x29b, 0x29c, 0x29d... +1 per record)
+   ```
+   Sentinel hit rate: 10,343 `01 20` occurrences in body, 88% at
+   delta-12. The u16 at +10 is monotonically increasing per shared
+   u32b — looks like **per-entity event sequence numbers**.
+
+   Tail variant (last 47 rows, 0x29ffd..0x2a225): `0c 02 00 00` (u32=524)
+   prefix at delta-12 — same 12-byte stride, different record-type byte.
+
+   **Hypothesis (STRONG)**: this is a **per-character / per-entity
+   event log**, 12-byte records, ~12,648 events. Each record = (turn
+   or seq #, character UUID hash, type-tag 0x2001, sub-id). Consistent
+   with the session 57 tail block being a *diplomacy* event log — this
+   body is the **non-diplomacy event log** sister table (general
+   actions, agent missions, settlement triggers).
+
+**Upgrade**: cover.js `post-fow-35-stride-table` (155,003 B) goes from
+HYPOTHESIS → STRONG. Should be re-labelled into two adjacent frames:
+`postfow-89slot-table` (0x4556..0x5181, 3,115 B) and
+`postfow-12B-event-log` (0x5181..0x2a25d, 151,772 B, ~12,648 records).
+
+Coverage % unchanged (already claimed); the win is *semantic*.
+
+Files: `scripts/save-cracker/dig-35stride1.js`, `dig-35stride2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
