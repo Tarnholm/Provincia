@@ -10713,6 +10713,100 @@ Files: `scripts/save-cracker/dig-trade-session44.js`
 
 ---
 
+### Findings 2026-05-15 (background session 45 — AI policy state)
+
+Goal: pin per-faction AI policy / stance state in faction-record trailing data
+(+56+ region of `+44=6` major records), building on sessions 7, 18, 19. Used the
+RIS imperial corpus: `save_1.2.sav` (T1) vs `save_Autosave Republic of Rome Turn 2 Start.sav` (T2).
+
+Outcome: **One CONFIRMED structural finding.** The major faction record has a
+**u32-count-prefixed u32 array starting at +48** that grows per turn (16..32 entries
+per faction; CONFIRMED across all 5 T1 majors + 6 T2 majors). The array is followed
+by a **constant `0x1e` (=30) sentinel**, then zeros until ~+200. The semantic of
+the array values is **HYPOTHESIS** — not yet pinned to faction IDs, region IDs, or
+threat scores.
+
+**Layout** (revises session 5/7 doc which marked `+48 = N regions` and `+52..+56+ = region IDs`):
+
+| Δ | Type | Confidence | Meaning |
+|---|---|---|---|
+| `+48` | `u32` | **CONFIRMED** | Array length N (16..32 observed across 11 faction records) |
+| `+52..+52+4N` | `u32[N]` | **CONFIRMED structural** | Variable-length array; values in range **13..1306**, mostly 256..1300 |
+| `+52+4N` | `u32 = 30` | **CONFIRMED** | Sentinel `0x1e` (always 30 across all 11 records, both turns) |
+| `+52+4N+4 .. ` | zeros | CONFIRMED | Padding for ~30 u32s before next informative offset |
+
+**Per-faction array sizes (CONFIRMED)**:
+
+| Save | N values across majors (R0..) |
+|---|---|
+| T1 (save_1.2) | 22, 31, 16, 32, 24 (5 majors) |
+| T2 (T2 Start) | 30, 19, 28, 21, 24, 16 (6 majors) |
+
+Note that the major-record count itself changed (5→6) between turns, so positional
+R0=R0 cross-turn diff is unsafe — `findMajors()` doesn't guarantee the same faction
+appears at the same index across saves (a problem already flagged in
+`feedback_faction_treasury_index_caveat.md`).
+
+**Cross-turn diff on positionally-matched R0** (treasury 10000 → 23451):
+- 497,224 bytes diff inside the 698,888-byte R0 (most expected: family tree, army
+  data, etc. live in this region).
+- Inside the **+48..+180 AI-policy window**: count flipped 22→30, all 22 then 30
+  array values changed completely, and the 8 trailing zero u32s in T1 (+148..+180)
+  were partially overwritten by 8 new array entries in T2. So **the array grew
+  in-place by adding 8 new entries**.
+
+**What the values are NOT**:
+- NOT faction IDs (values 256..1306; faction count is ≤239 in RIS imperial).
+- NOT region IDs (RIS imperial has ~199 regions; values exceed 1300).
+- NOT character UUIDs (UUIDs in this engine are typically `0x015XXXXX`-range
+  self-pointers, not small ints).
+- NOT the session-18/19 AI cache (which lives at `0x51b5` and uses `(hash,key,Y)`
+  records).
+
+**HYPOTHESIS for the value semantic**: most plausible candidates given the 13..1306
+range are (a) **settlement / city UUIDs in a flat global ID space** (RIS imperial
+has hundreds of named settlements across all factions), (b) **AI strategic-score
+bucket indices** (each value = a score-cell in a 0..1300-cell priority grid), or
+(c) **tile cluster indices** (the 240×238 mid-file grid from session 18 has 57,120
+cells — too big — but a downsampled version could fit). **The session-18 12.5-pixel
+strategic grid (240×238 = 57,120 cells) is not the source** since values stay <1310.
+
+**What this is NOT (negative result for the original brief)**:
+- No clean "invasion target = faction id u32 or 0xff" was found in the +48..+200 window.
+- No 23-entry-fixed table of per-other-faction threat scores (counts vary 16..32,
+  not 23 = major-faction count).
+- No ally-of-convenience bitmap (no bitmask-shaped diffs in window).
+- The "target faction id" hypothesis from the brief is REFUTED at +48..+200 — every
+  value exceeds the faction count.
+
+**Implication for Provincia**: the array IS clearly per-faction AI state (varies by
+faction, varies by turn, sentinel-terminated), but **decoding it to a meaningful
+policy semantic requires a controlled experiment** — toggle one AI decision (e.g.
+declare war, attack a settlement) and re-diff. The current diff is too noisy
+(player did multiple actions T1→T2).
+
+Files: `scripts/save-cracker/dig-aipolicy-session45-1.js`,
+`dig-aipolicy-session45-2.js`
+
+#### Open follow-ups for session 46+
+
+- **Decode the +48-anchored array's value semantic** via controlled mod test:
+  build two saves identical except for one AI input (e.g. give Romans Julii one
+  more settlement, or declare war on one faction) and diff JUST the array values.
+  The value(s) that flip identify what 256..1306 encodes.
+- **Test the array across more turns** (T2 → T3, T5, T10) to see if it converges
+  to a stable size or grows unboundedly. Unbounded growth = AI plan log;
+  stable size = computed policy snapshot.
+- **Check minor records (+44=8)**: session 7 showed they have the same `+48`
+  field — verify if they ALSO carry this count+array+sentinel structure or if
+  it's major-only.
+- **Compare same-faction across two same-turn saves** (the session-7 stability
+  test for the bodyguard array): if the array is byte-identical in two save_X.Y
+  files of the same turn, then it's not a runtime cache but a per-turn computed
+  state — like the session-18 AI cache.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
