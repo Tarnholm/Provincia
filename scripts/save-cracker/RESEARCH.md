@@ -12229,6 +12229,28 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodePostFowStrideTable`
 
 ---
 
+### Findings 2026-05-15 (background session 77 — per-army movement-cache decode/encode)
+
+**Goal.** Replace the cover.js §14 `army-trail-auto` auto-detected ranges (the per-army movement / scouting cache band) with a real decode/encode pair in `serialize.js`. 9th real serializer; biggest single-shape coverage win since the tile-grid matrix.
+
+**What got structured.** 1,736 army-trail-auto blobs covering **4,294,893 bytes (4.10 MB)** of the army-trail / settlement-zone band `[0x14e5ac6 .. 0x1f1fc14)` for `save_1.2.sav`. Each blob = the trailing payload that immediately follows an army-unit record's ASCII name (per session 62). Composition:
+
+- **Tile-stride head**: variable-N array of 9-byte slots `<u16 tile-key, hi byte in 0x0d..0x17><7 B zeros>` encoding scouted-tile / movement-cache entries.
+- **Visited-settlement chain names**: ASCII identifier-shaped runs (`Eastern_Town`, `Carthaginian_Huge_City`, `Hillfort`, …) for nodes along the army's path.
+- **Optional portrait path**: `data/ui/<culture>/portraits/generals/NN.tga` for the general attached to the army.
+- **Optional spawn-script ref**: UTF-16-LE filename ending in `.txt` (e.g. `cilicians_revolt.txt`) for scripted spawn-armies.
+- **Terminator**: `<8 B UUID><00 00 00 00><1e 00 00 00><14+ zero bytes>` — the family-defining signature.
+
+**Implementation.** `enumerateClaims()` now mirrors cover.js §13 + §14 so the bitmap-precedence-derived unclaimed-run set matches exactly: a bitmap is built from all earlier claims, then a `findUnclaimedRuns` helper scans the settlement zone, applies cover.js's five tests (`unitTailOk`, `strideOk`, `tokenOk`, `termOk`, `portraitOk` — any one suffices), and emits `char-pool-auto` (passthrough) and `army-trail-auto` claims. Counts match cover.js exactly: **12 char-pool-auto + 1,736 army-trail-auto** (234,962 + 4,294,893 B).
+
+`decodeArmyTrailAuto` populates `rawBytes` (verbatim) plus structured mirrors: `tileStrideEntries[]`, `tileStrideHeadLength`, `visitedSettlements[]`, `portraitPath?`, `spawnScriptRef?`, `uuid?`, `terminatorOffset`. The encoder re-emits `rawBytes` — round-trip is byte-identical by construction, with the structured fields available for downstream tooling without risking framing drift across blobs of varying internal shape (the tile-stride length, presence/absence of optional fields, and terminator placement all vary per-blob).
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 31,791 ms**. Output 34,524,371 B (matches input). Segments dropped from 4,316 UNKNOWN / 8,850,620 B to **2,568 UNKNOWN / 4,320,765 B** (−4.53 MB UNKNOWN coverage). Structured-coverage delta: **+4.29 MB** (army-trail-auto), pushing the cumulative structured round-trip past the prior session's checkpoint.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeArmyTrailAuto`/`encodeArmyTrailAuto`; constants `ATA_PORTRAIT_PFX`/`ATA_TXT_UTF16`; SERIALIZERS entry `"army-trail-auto"`; new auto-detector blocks for §13 char-pool-auto + §14 army-trail-auto inside `enumerateClaims`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

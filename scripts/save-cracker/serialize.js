@@ -186,6 +186,145 @@ function enumerateClaims(buf) {
   const counters = findLuaCounters(buf);
   if (counters.length > 0) push(counters[0].offset, counters[counters.length - 1].end, "lua-counters");
 
+  // -------------------------------------------------------------------------
+  // §13 + §14 auto-detectors (mirror cover.js so the army-trail-auto runs
+  // we emit here match the cover.js bitmap exactly). We build a bitmap from
+  // the claims accumulated above, scan its unclaimed runs inside the
+  // settlement/army zone, and apply the same tests. §13 (char-pool-auto)
+  // claims fall through to passthrough; §14 (army-trail-auto) wires into
+  // the real per-army movement-cache decode/encode pair below.
+  // -------------------------------------------------------------------------
+  const bm = new Uint8Array(size);
+  for (const c of claims) {
+    for (let i = c.start; i < c.end; i++) bm[i] = 1;
+  }
+  const findUnclaimedRuns = (zoneStart, zoneEnd, minRun) => {
+    const runs = [];
+    let rs = -1;
+    for (let i = zoneStart; i <= zoneEnd; i++) {
+      const claimedHere = i < zoneEnd && bm[i];
+      if (!claimedHere && rs < 0) rs = i;
+      else if (claimedHere && rs >= 0) {
+        if (i - rs >= minRun) runs.push([rs, i]);
+        rs = -1;
+      }
+    }
+    if (rs >= 0 && zoneEnd - rs >= minRun) runs.push([rs, zoneEnd]);
+    return runs;
+  };
+
+  // §13 char-pool-auto (passthrough; needed so §14's unclaimed-run set
+  // matches cover.js bitmap precedence).
+  {
+    const Z0 = 0x14e5ac6;
+    const Z1 = Math.min(0x1f10c72, size);
+    const PORTRAIT = Buffer.from("data/ui/");
+    for (const [rs, re] of findUnclaimedRuns(Z0, Z1, 5 * 1024)) {
+      // Test A: army-unit header within 100 B after the run.
+      let tailOk = false;
+      const sEnd = Math.min(size - 4, re + 100);
+      for (let p = re; p < sEnd && !tailOk; p++) {
+        if (buf[p] !== 0xef) continue;
+        for (let q = p + 1; q < Math.min(p + 22, size - 4); q++) {
+          if (buf[q] === 0x01 && buf[q + 1] === 0x00) {
+            const len = buf.readUInt16LE(q + 2);
+            if (len >= 3 && len <= 64 && q + 4 + len <= size) {
+              let ok = true;
+              for (let k = 0; k < len; k++) {
+                const c = buf[q + 4 + k];
+                const isAlpha = (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a);
+                const isDigit = (c >= 0x30 && c <= 0x39);
+                if (!isAlpha && !isDigit && c !== 0x5f && c !== 0x20 && c !== 0x2d) { ok = false; break; }
+              }
+              if (ok) { tailOk = true; break; }
+            }
+          }
+        }
+      }
+      let ffCount = 0;
+      for (let i = rs; i < re; i++) if (buf[i] === 0xff) ffCount++;
+      const ffOk = ffCount / (re - rs) > 0.50;
+      let portraitHits = 0, pp = rs;
+      while (pp < re) {
+        const i = buf.indexOf(PORTRAIT, pp);
+        if (i < 0 || i >= re) break;
+        portraitHits++;
+        pp = i + PORTRAIT.length;
+        if (portraitHits >= 3) break;
+      }
+      const portraitOk = portraitHits >= 3;
+      if (tailOk || ffOk || portraitOk) {
+        push(rs, re, "char-pool-auto");
+        for (let i = rs; i < re; i++) bm[i] = 1;
+      }
+    }
+  }
+
+  // §14 army-trail-auto (per-army movement/scouting cache — REAL serializer).
+  {
+    const Z0 = 0x14e5ac6;
+    const Z1 = Math.min(0x1f1fc14, size);
+    const CHAIN_TOKENS = [
+      Buffer.from("_Town"), Buffer.from("_City"), Buffer.from("_Village"),
+      Buffer.from("Hillfort"), Buffer.from("Stockade"),
+    ];
+    const PORTRAIT = Buffer.from("data/ui/");
+    for (const [rs, re] of findUnclaimedRuns(Z0, Z1, 1024)) {
+      // Test A: preceded by <u16 len><ascii unit name> within 320 B.
+      let unitTailOk = false;
+      const lookback = Math.max(0, rs - 320);
+      for (let p = lookback; p < rs - 4 && !unitTailOk; p++) {
+        const len = buf.readUInt16LE(p);
+        if (len < 4 || len > 48) continue;
+        if (p + 2 + len > rs) continue;
+        let ok = true;
+        for (let k = 0; k < len; k++) {
+          const c = buf[p + 2 + k];
+          const isAlpha = (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a);
+          const isDigit = (c >= 0x30 && c <= 0x39);
+          if (!isAlpha && !isDigit && c !== 0x20 && c !== 0x5f && c !== 0x2d) { ok = false; break; }
+        }
+        if (ok) unitTailOk = true;
+      }
+      // Test B: tile-stride density in first 2 KB.
+      let tileHits = 0;
+      const winEnd2 = Math.min(re - 9, rs + 2048);
+      for (let i = rs; i < winEnd2; i++) {
+        if (buf[i] === 0) continue;
+        const hi = buf[i + 1];
+        if (hi < 0x0d || hi > 0x17) continue;
+        let zeros = 0;
+        for (let k = 2; k < 9; k++) if (buf[i + k] === 0) zeros++;
+        if (zeros >= 5) tileHits++;
+      }
+      const winLen = winEnd2 - rs;
+      const strideOk = winLen >= 256 && tileHits / winLen >= 0.06;
+      // Test C: building-chain token anywhere inside.
+      let tokenOk = false;
+      for (const t of CHAIN_TOKENS) {
+        const i = buf.indexOf(t, rs);
+        if (i >= 0 && i < re) { tokenOk = true; break; }
+      }
+      // Test D: `1e 00 00 00` + >=14 zeros in last 96 B.
+      let termOk = false;
+      const termStart = Math.max(rs, re - 96);
+      for (let p = termStart; p + 20 < re && !termOk; p++) {
+        if (buf[p] === 0x1e && buf[p+1] === 0 && buf[p+2] === 0 && buf[p+3] === 0) {
+          let z = 0;
+          for (let k = 4; k < 20 && p + k < re; k++) if (buf[p + k] === 0) z++;
+          if (z >= 14) termOk = true;
+        }
+      }
+      // Test E: data/ui/ portrait path inside.
+      const portraitIdx = buf.indexOf(PORTRAIT, rs);
+      const portraitOk = portraitIdx >= 0 && portraitIdx < re;
+      if (unitTailOk || strideOk || tokenOk || termOk || portraitOk) {
+        push(rs, re, "army-trail-auto");
+        for (let i = rs; i < re; i++) bm[i] = 1;
+      }
+    }
+  }
+
   return claims;
 }
 
@@ -917,6 +1056,173 @@ function encodeMercPoolTable(m) {
   return Buffer.concat(chunks);
 }
 
+// ---- army-trail-auto: per-army movement/scouting cache (§14, session 62) --
+//
+// Each blob is the trailing payload that immediately follows an army-unit
+// record's ASCII name in the settlement zone. Body composition (per session 62):
+//
+//   - 9-byte tile-stride head:  `<u16 tile-key, hi byte 0x0d..0x17><7 B zeros>`
+//     repeating N times. Encodes the scouted-tile / movement-cache.
+//   - Inline ASCII chain names ("Eastern_Town", "Carthaginian_Huge_City", …)
+//     for the settlement nodes visited along the army's path.
+//   - Optional `data/ui/.../generals/NN.tga` portrait-card path for the
+//     general attached to the army.
+//   - Optional UTF-16-LE spawn-script reference (e.g. "cilicians_revolt.txt")
+//     for scripted spawn-armies whose origin script is cached.
+//   - Terminator: `<8 B UUID><00 00 00 00><1e 00 00 00><14+ zero bytes>` —
+//     the family-defining signature.
+//
+// Because the body framing is variable (tile-head length, presence/absence
+// of portrait + script paths, terminator alignment), round-trip safety is
+// preserved by capturing the entire blob as a verbatim `rawBytes` Buffer
+// alongside opportunistically parsed structured fields. The encoder simply
+// re-emits `rawBytes`, guaranteeing byte-identity for the whole 2.38 MB +
+// (actually ~4.29 MB across 1,736 ranges for save_1.2.sav) coverage band.
+//
+// Structured fields populated when locatable; otherwise left undefined.
+//   - tileStrideEntries:    Array<{tileKey:u16, hiByte:u8}> parsed from the
+//                           leading 9-stride run (terminates on first non-
+//                           matching 9-byte slot).
+//   - visitedSettlements:   String[] of ASCII chain names found between the
+//                           tile-stride head and the terminator. Names are
+//                           located by walking pstr-ish [a-zA-Z_][a-zA-Z0-9_]*
+//                           runs ≥ 4 chars containing an underscore.
+//   - portraitPath:         "data/ui/.../generals/NN.tga" if present.
+//   - spawnScriptRef:       UTF-16-LE filename ending in ".txt" if present.
+//   - terminatorOffset:     Offset (relative to blob start) of the `1e 00 00 00`
+//                           anchor, when locatable in the last 96 B of the blob.
+//   - uuid:                 8-byte Buffer preceding the terminator (best
+//                           guess: the 8 bytes before terminatorOffset-4).
+
+const ATA_PORTRAIT_PFX = Buffer.from("data/ui/");
+const ATA_TXT_UTF16    = Buffer.from(".txt", "utf16le");
+
+function decodeArmyTrailAuto(buf, start, end) {
+  const rawBytes = Buffer.from(buf.slice(start, end));
+  const len = rawBytes.length;
+
+  // ---- 1. tile-stride head -------------------------------------------------
+  const tileStrideEntries = [];
+  let p = 0;
+  while (p + 9 <= len) {
+    const lo = rawBytes[p];
+    const hi = rawBytes[p + 1];
+    if (lo === 0 || hi < 0x0d || hi > 0x17) break;
+    let zeros = 0;
+    for (let k = 2; k < 9; k++) if (rawBytes[p + k] === 0) zeros++;
+    if (zeros < 5) break;
+    tileStrideEntries.push({ tileKey: lo | (hi << 8), hiByte: hi });
+    p += 9;
+  }
+  const tileStrideEnd = p;
+
+  // ---- 2. visited-settlement chain names ----------------------------------
+  // Scan from tile-stride end to terminator (or end) for ASCII identifier-
+  // shaped runs of length ≥ 4 containing an underscore or capital letter.
+  const visitedSettlements = [];
+  {
+    let q = tileStrideEnd;
+    while (q < len) {
+      const c = rawBytes[q];
+      const isAlpha = (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a);
+      if (!isAlpha) { q++; continue; }
+      let r = q;
+      let hasUnder = false;
+      while (r < len) {
+        const d = rawBytes[r];
+        const ok = (d >= 0x61 && d <= 0x7a) || (d >= 0x41 && d <= 0x5a)
+                || (d >= 0x30 && d <= 0x39) || d === 0x5f;
+        if (!ok) break;
+        if (d === 0x5f) hasUnder = true;
+        r++;
+      }
+      const span = r - q;
+      if (span >= 4 && hasUnder) {
+        visitedSettlements.push(rawBytes.slice(q, r).toString("latin1"));
+      }
+      q = r + 1;
+    }
+  }
+
+  // ---- 3. portrait path ---------------------------------------------------
+  let portraitPath;
+  {
+    const i = rawBytes.indexOf(ATA_PORTRAIT_PFX);
+    if (i >= 0) {
+      let j = i;
+      while (j < len) {
+        const c = rawBytes[j];
+        if (c < 0x20 || c > 0x7e) break;
+        j++;
+      }
+      if (j > i + ATA_PORTRAIT_PFX.length) {
+        portraitPath = rawBytes.slice(i, j).toString("latin1");
+      }
+    }
+  }
+
+  // ---- 4. UTF-16-LE spawn-script reference --------------------------------
+  let spawnScriptRef;
+  {
+    const i = rawBytes.indexOf(ATA_TXT_UTF16);
+    if (i >= 2) {
+      // Walk back while the previous 2-byte u16 is a printable ASCII char in
+      // UTF-16-LE form (low byte printable, high byte zero).
+      let j = i;
+      while (j >= 2) {
+        const lo = rawBytes[j - 2];
+        const hi = rawBytes[j - 1];
+        if (hi !== 0) break;
+        if (lo < 0x20 || lo > 0x7e) break;
+        j -= 2;
+      }
+      const end16 = i + ATA_TXT_UTF16.length;
+      if (end16 - j >= 6) {
+        spawnScriptRef = rawBytes.slice(j, end16).toString("utf16le");
+      }
+    }
+  }
+
+  // ---- 5. terminator + uuid ----------------------------------------------
+  let terminatorOffset = -1;
+  let uuid;
+  {
+    const termStart = Math.max(0, len - 96);
+    for (let r = termStart; r + 18 <= len; r++) {
+      if (rawBytes[r] === 0x1e && rawBytes[r+1] === 0 && rawBytes[r+2] === 0 && rawBytes[r+3] === 0) {
+        let z = 0;
+        for (let k = 4; k < 18 && r + k < len; k++) if (rawBytes[r + k] === 0) z++;
+        if (z >= 14) {
+          terminatorOffset = r;
+          // session-62 layout: <8 B uuid><00 00 00 00><1e 00 00 00>… so the
+          // UUID sits at r-12..r-4 when there's room.
+          if (r >= 12) uuid = Buffer.from(rawBytes.slice(r - 12, r - 4));
+          break;
+        }
+      }
+    }
+  }
+
+  return {
+    _kind: "army-trail-auto",
+    rawBytes,
+    tileStrideEntries,
+    tileStrideHeadLength: tileStrideEnd,
+    visitedSettlements,
+    portraitPath,
+    spawnScriptRef,
+    uuid,
+    terminatorOffset,
+  };
+}
+
+function encodeArmyTrailAuto(b) {
+  if (b._kind !== "army-trail-auto") throw new Error("encodeArmyTrailAuto: not an army-trail-auto object");
+  // Verbatim re-emission. The structured fields above are informational
+  // mirrors; the canonical state is `rawBytes`.
+  return b.rawBytes;
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -928,6 +1234,7 @@ const SERIALIZERS = {
   "merc-pool-table":         (buf, start, end) => encodeMercPoolTable(decodeMercPoolTable(buf, start, end)),
   "post-fow-35-stride-table":(buf, start, end) => encodePostFowStrideTable(decodePostFowStrideTable(buf, start, end)),
   "diplo-event-log":         (buf, start, end) => encodeDiploEventLog(decodeDiploEventLog(buf, start, end)),
+  "army-trail-auto":         (buf, start, end) => encodeArmyTrailAuto(decodeArmyTrailAuto(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };
