@@ -271,72 +271,71 @@ export function Movable({
       {children}
       {designMode && (
         <>
-          {/* Thin drag bar at the top — 6 px tall, semi-transparent so the
-              widget content beneath is still visible. Click anywhere on
-              the bar to drag the widget. */}
+          {/* Invisible interaction overlay — covers the whole widget. No
+              visible chrome (no yellow header, no corner squares). Cursor
+              changes to indicate drag vs resize based on where the mouse
+              sits inside the widget; mousedown picks the right handler.
+              The widget content underneath is fully visible while you
+              move things around. */}
           <div
-            onMouseDown={startDrag}
-            title={title ? `Drag "${title}"` : `Drag`}
+            onMouseDown={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const lx = e.clientX - rect.left;
+              const ly = e.clientY - rect.top;
+              const EDGE = 10;
+              const onL = lx <= EDGE, onR = lx >= rect.width - EDGE;
+              const onT = ly <= EDGE, onB = ly >= rect.height - EDGE;
+              let corner = "";
+              if (onT) corner += "n";
+              if (onB) corner += "s";
+              if (onL) corner += "w";
+              if (onR) corner += "e";
+              if (corner) startResize(corner)(e);
+              else startDrag(e);
+            }}
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const lx = e.clientX - rect.left;
+              const ly = e.clientY - rect.top;
+              const EDGE = 10;
+              const onL = lx <= EDGE, onR = lx >= rect.width - EDGE;
+              const onT = ly <= EDGE, onB = ly >= rect.height - EDGE;
+              let cur = "move";
+              if (onT && onL) cur = "nw-resize";
+              else if (onT && onR) cur = "ne-resize";
+              else if (onB && onL) cur = "sw-resize";
+              else if (onB && onR) cur = "se-resize";
+              else if (onT || onB) cur = "ns-resize";
+              else if (onL || onR) cur = "ew-resize";
+              if (e.currentTarget.style.cursor !== cur) e.currentTarget.style.cursor = cur;
+            }}
+            title={title ? `${title} — drag to move, drag edges to resize` : "Drag to move, edges to resize"}
             style={{
               position: "absolute",
-              left: 0, top: 0, right: 0,
-              height: 6,
-              background: "rgba(220,166,74,0.55)",
+              inset: 0,
+              background: "transparent",
               cursor: "move",
               zIndex: 100,
             }}
           />
-          {/* Widget title label tucked into the top-right corner so it
-              identifies the widget without covering the panel header. */}
+          {/* Tiny widget-id chip — top-right corner, transparent, just so
+              you can identify widgets when they overlap during design.
+              Pointer-events: none so it doesn't intercept drags. */}
           {title && (
             <div style={{
               position: "absolute",
-              top: 7, right: 14,
+              top: 2, right: 4,
               pointerEvents: "none",
-              fontSize: "0.6rem", lineHeight: 1,
-              color: "rgba(220,166,74,0.9)",
+              fontSize: "0.55rem", lineHeight: 1,
+              color: "rgba(220,166,74,0.7)",
               fontWeight: 700,
-              textShadow: "0 0 4px rgba(0,0,0,0.85)",
+              textShadow: "0 0 3px rgba(0,0,0,0.85)",
               zIndex: 101,
             }}>{title}</div>
           )}
-          {/* Edge resize handles — invisible hit zones with cursor only */}
-          <div onMouseDown={startResize("e")} style={edgeStyle("e")} />
-          <div onMouseDown={startResize("w")} style={edgeStyle("w")} />
-          <div onMouseDown={startResize("s")} style={edgeStyle("s")} />
-          {/* Compact 8×8 corner handles in subtle gold — small enough to
-              not obscure content but visible enough to grab. */}
-          {["nw","ne","sw","se"].map((c) => (
-            <div key={c} onMouseDown={startResize(c)} title={`Resize ${c.toUpperCase()}`} style={cornerStyle(c)} />
-          ))}
         </>
       )}
     </div>
   );
 }
 
-function cornerStyle(c) {
-  const base = {
-    position: "absolute",
-    width: 8, height: 8,
-    background: "rgba(220,166,74,0.85)",
-    border: "1px solid rgba(34,34,17,0.7)",
-    cursor: `${c}-resize`,
-    zIndex: 102,
-  };
-  if (c.includes("n")) base.top = 0; else base.bottom = 0;
-  if (c.includes("w")) base.left = 0; else base.right = 0;
-  return base;
-}
-
-function edgeStyle(edge) {
-  const base = {
-    position: "absolute",
-    background: "transparent",
-    zIndex: 99,
-  };
-  if (edge === "e") return { ...base, top: 8, bottom: 8, right: 0, width: 5, cursor: "ew-resize" };
-  if (edge === "w") return { ...base, top: 8, bottom: 8, left: 0, width: 5, cursor: "ew-resize" };
-  if (edge === "s") return { ...base, left: 8, right: 8, bottom: 0, height: 5, cursor: "ns-resize" };
-  return base;
-}

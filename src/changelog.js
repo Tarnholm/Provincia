@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.351",
+    date: "2026-05-16",
+    items: [
+      { type: "change", text: "Design-mode chrome removed entirely — no more yellow header bar, no corner squares. The whole widget surface is now an invisible drag overlay; cursor changes (move / nw-resize / ew-resize / etc.) tell you what'll happen based on where the mouse sits. Inner 10 px = resize, everything else = drag. Widget content stays fully visible while you move things around. Only chrome left in design mode: a tiny semi-transparent widget-id label in the top-right corner, so overlapping widgets are still identifiable." },
+    ],
+  },
+  {
     version: "0.9.350",
     date: "2026-05-16",
     items: [
