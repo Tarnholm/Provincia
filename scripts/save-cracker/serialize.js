@@ -1160,9 +1160,13 @@ const MP_START = 0x14e5ac6;
 const MP_END   = 0x1501615;
 
 function decodeMercPoolTable(buf, start, end) {
-  if (start !== MP_START || end !== MP_END) {
-    throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
-  }
+  // Session 88: relaxed the strict [MP_START..MP_END) guard. Upstream §13/§14
+  // detectors clip the merc-pool claim's start offset depending on the save
+  // (observed Δ ranges from +4 B to +2.85 KB; end at 0x1501615 is stable on
+  // save_1.2 but may also vary). MP_START/MP_END are kept as documentation
+  // anchors only — the decoder now derives the actual range purely from the
+  // `start`/`end` parameters and uses the pstr16 shape detector to locate the
+  // first region header within the given range.
   // Walk forward, recognizing pstr16 region-name headers by shape.
   const headers = [];
   let p = start;

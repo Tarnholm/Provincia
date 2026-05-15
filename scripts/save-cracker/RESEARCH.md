@@ -12784,6 +12784,22 @@ from age + trait correlations, need in-game screenshot to confirm).
 
 ---
 
+### Findings 2026-05-15 (background session 88 — merc-pool dynamic start fix)
+
+**Goal.** Close the session-83 followup: relax `decodeMercPoolTable`'s strict `start === MP_START` guard so the 12 ERR saves round-trip cleanly, without regressing the 17 PASS saves.
+
+**Fix.** `scripts/save-cracker/serialize.js` lines 1162-1170. Deleted the four-line guard that threw on `start !== 0x14e5ac6 || end !== 0x1501615`. The decoder body was already correct: it walks forward from `start` byte-by-byte looking for pstr16 region-name headers (shape: `[u16 lenP1 5..32][lenP1-1 bytes of [a-z_]][NUL]`), and `preTextBytes = buf.slice(start, headers[0].off)` absorbs whatever preamble exists between the parameter `start` and the first detected header. The encoder symmetrically writes `preTextBytes + headers + bodies` so the byte range from `start` through `end` round-trips verbatim regardless of which Δ-clipped start the upstream §13/§14 detectors hand it.
+
+**Why this works without touching enumerateClaims.** The hardcoded `push(0x14e5ac6, 0x1501615, "merc-pool-table")` in `enumerateClaims` (line 87) is consulted before the §13/§14 auto-detectors, but those detectors run later, claim their own ranges, and the bitmap-claim precedence logic clips the merc-pool span to whatever residual unclaimed gap remains. The decoder receives that already-clipped `[start, end)` and now handles any start in `[0x14e5ac6, 0x14e662e]` (the observed Δ range +0..+2.85 KB). Encoder writes the full span back, so byte-identity holds.
+
+**Results.** Corpus round-trip **29/29 PASS, 0 FAIL, 0 ERR** — counting the one save_5.2 corpus slot that was killed mid-run by an unrelated manual `Stop-Process` (it re-ran clean standalone in 31959 ms with `byte-identical: YES`). Mechanical corpus output was 28 PASS / 1 ERR (crash, save_5.2 killed externally at 12918 ms vs ~32000 ms typical). Pre-fix baseline was 17 PASS / 12 ERR (all merc-pool guard crashes). Manually re-verified three representative Δ-spread saves end-to-end: save_1.2 (Δ=0, baseline) PASS; save_11.1 (Δ=+646 B) PASS; save_Autosave Carthage Turn 2 Start (Δ=+2.85 KB, largest observed) PASS — all byte-identical.
+
+**Confidence.** HIGH. The decoder change is mechanically minimal (4-line guard deletion + 8-line comment), the encoder was untouched, and the byte-identity invariant on every passing save (including the 17 previously-PASS saves) demonstrates the change is a strict relaxation: identical behavior when `start == MP_START`, correct behavior when `start > MP_START`. No regressions possible by construction since the removed assertion was the only difference vs the prior code path.
+
+Files: `scripts/save-cracker/serialize.js` (4-line guard deletion at lines 1162-1170, replaced with explanatory comment), `scripts/save-cracker/RESEARCH.md` (this entry).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
