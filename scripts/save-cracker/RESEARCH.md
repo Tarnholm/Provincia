@@ -12853,6 +12853,30 @@ Files: `scripts/save-cracker/dig-evtypes-s93.js`.
 
 ---
 
+### Findings 2026-05-15 (background session 94 — settlement-body dual-buffer fields)
+
+**Closes session 86's open question. Hypothesis REFUTED.**
+
+Re-tested the +1460 dual-buffer hypothesis at FC+1904 / FC+3364 against 577 settlement-detail blobs in `save_1.2.sav` using built-chain 4-byte hashes (from `buildingParser`) as stable, turn-independent fingerprints.
+
+**Attempt 1**: Scan every u32 in every detail body and count u32 == any of THIS settlement's built-chain hashes. Result: **0 hits across 1303 settlements** (avg 4.82 hashes each). Chain hashes are NOT stored as raw u32 inside detail bodies — they live exclusively in the chain-record area (before each marker).
+
+**Attempt 2**: Directly dump u32 distributions at FC+1904 and FC+3364.
+- **FC+1904 is a sentinel**, not a payload: **543/577 = `0xFFFFFFFF`**, 31 = `0`, 3 outliers. Session 86's "545-hit peak" was the count of settlements holding the `0xFFFFFFFF` sentinel, NOT a dual-buffered value.
+- **FC+3364 is a small enum / packed flags**: 298 = `0`, 82 = `0xFFFFFFFF`, then sparse {`0x01000000`, `0x02000000`, `0x83886081`, `2`, `3`}. Looks like a per-settlement state byte at offset +3367 with the rest zero.
+- **Stride +1460 carries no signal**: 0 high-uniqueness offsets correlate with their `+1460` partner. The 545-hit symmetry session 86 saw was *both* sites independently holding the same `0xFFFFFFFF` sentinel, not a cached/current pairing.
+- No correlation between v1/v2 and `builtN` (0/577 and 9/577).
+
+**True per-settlement payload offsets** (from FC; 577/577 unique u32s, CONFIRMED present, semantics unknown): **+124, +128, +180, +204, +496, +516, +808**. These are the real field targets for future settlement-body decoding sessions. Secondary partial-uniqueness fields: +136 (385u), +840 (362u), +1132 (340u), +1464 (327u), +1756 (405u), +2068 (287u).
+
+**Coverage update**: re-tag FC+1904 as `settlement-sentinel-ff` (NOT a field) and FC+3364 as `settlement-state-byte` (low-value enum, not a u32 field). Drop the dual-buffer hypothesis from the settlement-detail model.
+
+**Confidence**: CONFIRMED dual-buffer hypothesis is wrong; CONFIRMED real payload sits at +124..+808 cluster.
+
+Files: `scripts/save-cracker/dig-settlebody-s94-1.js`, `scripts/save-cracker/dig-settlebody-s94-2.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
