@@ -12158,6 +12158,30 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeCharacterPaths`, `e
 
 ---
 
+### Findings 2026-05-15 (background session 73 — scripted-events decode/encode)
+
+**Target.** `ZoneB-scripted-events` at `0x846af..0xa8beb` (148,796 B / ~145 KB). Session 54 identified this as the scripted-event registry but left it as a passthrough segment in `serialize.js`. This session promotes it to the **5th real decode/encode pair** alongside `Header`, `HST`, `Toggle_fow/RNG counter`, `tile-grid-matrix`, and `character-paths`.
+
+**Layout (CONFIRMED in `save_1.2.sav`):**
+1. **Section header** (8 B): `[u32 selfPtr=0x846af][u32 size=0x22]`.
+2. **34 named-event records** — each `[u16 catLenP1][ASCIIZ category][u16 nameLenP1][ASCIIZ name][opaque payload]`.
+   - rec[0] `historic`/`olympics` with **25-B payload** (the section preamble disguised as a record).
+   - rec[1..32] 32 `volcano`/`earthquake` events with **33-B payloads** (i32 BC year + u32 cat + u32 flag + u32 X + u32 Y + 3×u32 zero + 5 zero bytes).
+   - rec[33] `flood`/`flood_in_rome_241` with 33-B payload.
+   - Category distribution: `historic`×1, `volcano`×25, `earthquake`×7, `flood`×1.
+   - Sample names: `eruption_at_etna_140`, `eruption_at_vulcano_183`, `eruption_at_santorini_46_ce`, `earthquake_in_rhodes`, `earthquake_in_iberia`.
+3. **Trailer** (`0x84f1d..0xa8beb`, 146,638 B) captured verbatim as a single Buffer. Contains the 5,633 fixed-size 26-B per-tile event records (already decoded in sessions 22/26/30) followed by the 180-B wonders block (`pyramids_and_sphinx`, `pharos`, `colossus`, `temple`, `statue`, `gardens`, `mausoleum`).
+
+**Decoder strategy.** Walk the pstr16+pstr16 pair stream from the section start until pairs stop appearing. Locate the named/tail boundary by scanning for the first window where `0xffffffff` sits at offset +22 of two consecutive 26-B candidates after the last named pair's strings-end (the per-tile-record terminator pattern). Each record's payload runs from its strings-end to the next pair's offset (or to `tailStart` for the last). Captures every byte verbatim.
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 773 ms**, output size 34,524,371 B (matches input). 34 records decoded.
+
+**Coverage delta.** Zero — bytes were already claimed as passthrough. The win is the 5th real decode/encode pair (~145 KB of structured records) exposing scripted-event category/name pairs as `{ category, name, payload: Buffer }` objects for downstream tooling. Future work: decode the 33-B payload fields (year/cat/X/Y) into named slots, then promote the 26-B tail-records and wonder section out of `trailerBytes` into their own structured arrays.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeScriptedEvents`, `encodeScriptedEvents`, `readPstr16ScriptedEvent`, constants `SE_START`/`SE_END`; SERIALIZERS entry `"ZoneB-scripted-events"`). Reproducers: `dig-scripted-events-s73-{1..6}.js`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

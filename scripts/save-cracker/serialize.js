@@ -593,6 +593,120 @@ function encodeCharacterPaths(cp) {
   return Buffer.concat(chunks);
 }
 
+// ---- ZoneB scripted-events (0x846af..0xa8beb, ~145 KB) ---------------------
+//
+// Session 54 + session 73 dossier:
+//   - 8-byte section header [u32 selfPtr=0x846af][u32 size=0x22].
+//   - 34 named scripted-event records, each:
+//       [u16 catLenP1][ASCIIZ category]
+//       [u16 nameLenP1][ASCIIZ name]
+//       [opaque payload]
+//     The first record is the "historic"/"olympics" header pair with a 25-byte
+//     payload; the remaining 33 records (volcano/earthquake/flood entries) have
+//     33-byte payloads. We don't model the payload bytes — they hold the BC
+//     year (i32), tile (X,Y), category-id flags, and trailing zeros, but the
+//     decoder keeps them as opaque Buffers because round-trip identity only
+//     requires verbatim preservation.
+//   - Trailer (~146 KB): 5,633 fixed-size 26-byte per-tile event records
+//     (decoded in sessions 22/26/30: u32 iter, u32 cat, u32 X, u32 Y, u32 hash,
+//     u32 0xffffffff terminator + 2-byte next-rec preamble), followed by a
+//     180-byte wonders section (preamble + 7 wonder records + 10B trailer).
+//     The trailer is captured verbatim as a single Buffer.
+//
+// Decoder strategy: walk the pstr16+pstr16 pair stream from the section start
+// until pairs stop appearing. Locate the boundary between the named-records
+// section and the 26B-tail by scanning for the first occurrence of
+// `ff ff ff ff` at offset +22 of two consecutive 26-byte windows after the
+// last named pair's strings end. Capture every byte verbatim — round-trip
+// is byte-identical.
+
+const SE_START = 0x846af;
+const SE_END   = 0xa8beb;
+
+function readPstr16ScriptedEvent(buf, o, hardEnd) {
+  if (o + 2 > hardEnd) return null;
+  const lenP1 = buf.readUInt16LE(o);
+  if (lenP1 < 2 || lenP1 > 128) return null;
+  if (o + 2 + lenP1 > hardEnd) return null;
+  for (let j = 0; j < lenP1 - 1; j++) {
+    const c = buf[o + 2 + j];
+    if (c < 0x20 || c > 0x7e) return null;
+  }
+  if (buf[o + 2 + lenP1 - 1] !== 0) return null;
+  return { str: buf.slice(o + 2, o + 2 + lenP1 - 1).toString("latin1"), totalLen: 2 + lenP1 };
+}
+
+function decodeScriptedEvents(buf, start, end) {
+  if (start !== SE_START || end !== SE_END) {
+    throw new Error(`decodeScriptedEvents: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${SE_START.toString(16)}..0x${SE_END.toString(16)})`);
+  }
+
+  // Walk pstr16+pstr16 pair offsets across the region.
+  const pairs = [];
+  for (let o = start; o < end - 4; o++) {
+    const r1 = readPstr16ScriptedEvent(buf, o, end);
+    if (!r1) continue;
+    const r2 = readPstr16ScriptedEvent(buf, o + r1.totalLen, end);
+    if (!r2) continue;
+    pairs.push({ off: o, cat: r1.str, name: r2.str, catTotal: r1.totalLen, nameTotal: r2.totalLen });
+    o += r1.totalLen + r2.totalLen - 1;
+  }
+  if (pairs.length === 0) throw new Error("decodeScriptedEvents: no string pairs found");
+
+  // Header bytes precede the first pair (section selfPtr + size).
+  const headerBytes = Buffer.from(buf.slice(start, pairs[0].off));
+
+  // Locate the start of the 26-byte tail by finding two consecutive windows
+  // with 0xffffffff at relative offset +22 (the per-tile-event record's
+  // 4-byte terminator that sits at body-end of every tail record).
+  const lastPair = pairs[pairs.length - 1];
+  const lastStringsEnd = lastPair.off + lastPair.catTotal + lastPair.nameTotal;
+  let tailStart = -1;
+  for (let p = lastStringsEnd; p + 52 <= end; p++) {
+    if (buf[p + 22] === 0xff && buf[p + 23] === 0xff && buf[p + 24] === 0xff && buf[p + 25] === 0xff &&
+        buf[p + 48] === 0xff && buf[p + 49] === 0xff && buf[p + 50] === 0xff && buf[p + 51] === 0xff) {
+      tailStart = p;
+      break;
+    }
+  }
+  if (tailStart < 0) throw new Error("decodeScriptedEvents: could not locate tail-records section");
+
+  // Each record's payload spans from its strings-end to the next pair's offset
+  // (or to tailStart for the final pair).
+  const records = [];
+  for (let i = 0; i < pairs.length; i++) {
+    const p = pairs[i];
+    const stringsEnd = p.off + p.catTotal + p.nameTotal;
+    const payloadEnd = i + 1 < pairs.length ? pairs[i + 1].off : tailStart;
+    records.push({
+      category: p.cat,
+      name:     p.name,
+      payload:  Buffer.from(buf.slice(stringsEnd, payloadEnd)),
+    });
+  }
+
+  const trailerBytes = Buffer.from(buf.slice(tailStart, end));
+  return { _kind: "scripted-events", headerBytes, records, trailerBytes };
+}
+
+function encodeScriptedEvents(s) {
+  if (s._kind !== "scripted-events") throw new Error("encodeScriptedEvents: not a scripted-events object");
+  const chunks = [s.headerBytes];
+  for (const r of s.records) {
+    const catBuf  = Buffer.from(r.category + "\0", "latin1");
+    const nameBuf = Buffer.from(r.name + "\0", "latin1");
+    const catRec  = Buffer.alloc(2 + catBuf.length);
+    catRec.writeUInt16LE(catBuf.length, 0);
+    catBuf.copy(catRec, 2);
+    const nameRec = Buffer.alloc(2 + nameBuf.length);
+    nameRec.writeUInt16LE(nameBuf.length, 0);
+    nameBuf.copy(nameRec, 2);
+    chunks.push(catRec, nameRec, r.payload);
+  }
+  chunks.push(s.trailerBytes);
+  return Buffer.concat(chunks);
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -600,6 +714,7 @@ const SERIALIZERS = {
   "Toggle_fow/RNG counter":  (buf, start, end) => encodeFowCounterBlock(decodeFowCounterBlock(buf, start, end)),
   "character-paths":         (buf, start, end) => encodeCharacterPaths(decodeCharacterPaths(buf, start, end)),
   "tile-grid-matrix":        (buf, start, end) => encodeTileGridMatrix(decodeTileGridMatrix(buf, start, end)),
+  "ZoneB-scripted-events":   (buf, start, end) => encodeScriptedEvents(decodeScriptedEvents(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };
