@@ -11784,6 +11784,29 @@ Files: `scripts/save-cracker/dig-aidiplocache1.js`, `dig-aidiplocache2.js`, `dig
 
 ---
 
+### Findings 2026-05-15 (background session 63 — long-tail family hunt)
+
+**Goal**: find a third structural family in the long-tail unknowns to lift coverage past 90%. **Outcome (STRONG)**: settlement-detail record family identified and auto-detected; coverage **86.73% → 87.48%** (+0.75 pp, +260 KB net new). The bigger value is structural: 1,310 previously-anonymous runs are now classified as one named family.
+
+**Family: "Settlement-detail record"** — sandwiched between every consecutive pair of settle markers in the zone `[0xf85f00..0x1f10c72)`. 1,309 / 1,310 inter-marker gaps match (CONFIRMED). Signature (5 independent clues, ≥3 required to claim):
+1. `fc fc fc fc 64 00 00 00 00` magic within first 64 B (after UTF-16 settlement-name tail bytes bleeding in from the marker). Hit rate 1309/1310.
+2. ASCII `default_set` within first 256 B. Hit 1310/1310.
+3. ASCII `hinterland_region` within first 512 B. Hit 1295/1310.
+4. ASCII `core_building` within first 1024 B. Hit 1304/1310.
+5. Terminator `ef 00 00 00` in last 16 B. Hit 1310/1310.
+
+Body 6-9 KB typical; structure is: name-tail UTF-16 spill → FC magic + `64 00 00 00 00` → faction-flag bitfield (~12 B) → region metadata (`default_set`/`hinterland_region`) → `core_building` list → building-chain records (separately claimed by section 9's chain scanner, which is why net new bytes are only +260 KB) → happiness/garrison/queue tail → `ef 00 00 00`.
+
+**Lead-byte signatures looked heterogeneous but weren't.** The "random" 8-byte sigs in dig-longtail1 output (`75 00 6d 00`, `61 00 75 00`, `73 00 69 00`, etc.) are all UTF-16 trailing chars of the SETTLEMENT NAME (e.g. `"...um\0"`, `"...aua\0"`, `"...sia-"`) running off the end of the marker into the start of the detail record. The real record header is always `fc fc fc fc 64 00 00 00 00` 8-32 bytes in.
+
+**New top unknowns post-detector** (~9 KB max): a different family — runs sitting OUTSIDE the settle-marker arc, in the merc-pool / army-trail zone `[0x154aa4d..0x1c91ea0]`. These have signature `00 00 ...zeros... ff ff ff ff` with sparse `2e 05 00 00 00 00 00 00` markers — likely faction-mask / fog-overlay residue, not a settlement-shape family. Deferred.
+
+**Confidence**: CONFIRMED for the settlement-detail family. The 5-of-5 pass rate at 98.8% (1294/1310) and any-3-of-5 at 100% across every gap is decisive. The signature is robust because it triangulates magic bytes + 3 stable ASCII tokens + a terminator.
+
+Files: `scripts/save-cracker/dig-longtail1.js`, `dig-longtail2.js`, `dig-longtail3.js`, `scripts/save-cracker/cover.js` (section 9b added — settlement-detail record auto-detector), `scripts/save-cracker/out-longtail-top20.json`.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

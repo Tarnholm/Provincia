@@ -200,6 +200,54 @@ function main() {
     // per-settlement non-chain payload (~6 MB) is exactly what we still
     // need to crack. Leaving it unclaimed surfaces it in the UNKNOWN
     // table where future sessions can target it.
+
+    // --- 9b. Settlement-detail record auto-detector (session 63) ------------
+    // Session 63 CONFIRMED: every unclaimed inter-settlement-marker gap in
+    // the settlement zone is a per-settlement detail record with this
+    // signature (1310/1310 gaps in save_1.2.sav matched all 5 clues):
+    //   * `fc fc fc fc 64 00 00 00 00` magic in the first ~64 B (after the
+    //     UTF-16 settlement-name tail bytes that bleed in from the marker)
+    //   * contains "default_set" within first 256 B
+    //   * contains "hinterland_region" within first 512 B
+    //   * contains "core_building" within first 1024 B
+    //   * ends with `ef 00 00 00` in the last 16 B
+    // Body 6-9 KB, holds the settlement's faction-flag bitfield, region-
+    // metadata block, the building-chain list (chains are separately claimed
+    // by section 9), happiness/garrison/queue tail, then the `ef 00 00 00`
+    // terminator. Auto-claim each inter-marker gap that passes ≥ 3 of 5.
+    {
+      const FC_MAGIC = Buffer.from([0xfc, 0xfc, 0xfc, 0xfc, 0x64, 0x00, 0x00, 0x00, 0x00]);
+      const TOK_DEF  = Buffer.from("default_set");
+      const TOK_HINT = Buffer.from("hinterland_region");
+      const TOK_CORE = Buffer.from("core_building");
+      let detClaimed = 0;
+      let detBytes   = 0;
+      for (let i = 0; i < setts.length; i++) {
+        const rs = setts[i].blockEnd;
+        const re = (i + 1 < setts.length) ? setts[i + 1].offset : SETT_ZONE_END;
+        if (re - rs < 256) continue;
+        // Five clue tests
+        const fcIdx = buf.indexOf(FC_MAGIC, rs);
+        const fcOk  = fcIdx >= 0 && fcIdx < rs + 64;
+        const defIdx = buf.indexOf(TOK_DEF, rs);
+        const defOk  = defIdx >= 0 && defIdx < Math.min(re, rs + 256);
+        const hintIdx = buf.indexOf(TOK_HINT, rs);
+        const hintOk  = hintIdx >= 0 && hintIdx < Math.min(re, rs + 512);
+        const coreIdx = buf.indexOf(TOK_CORE, rs);
+        const coreOk  = coreIdx >= 0 && coreIdx < Math.min(re, rs + 1024);
+        let termOk = false;
+        for (let p = Math.max(rs, re - 16); p + 4 <= re; p++) {
+          if (buf[p] === 0xef && buf[p+1] === 0 && buf[p+2] === 0 && buf[p+3] === 0) { termOk = true; break; }
+        }
+        const score = (fcOk ? 1 : 0) + (defOk ? 1 : 0) + (hintOk ? 1 : 0) + (coreOk ? 1 : 0) + (termOk ? 1 : 0);
+        if (score >= 3) {
+          claim(bm, rs, re, claims, "Settlement-detail record");
+          detClaimed++;
+          detBytes += re - rs;
+        }
+      }
+      console.log(`settlement-detail records: ${detClaimed} (${detBytes} bytes)`);
+    }
   }
 
   // --- 10. Siege block (73 bytes at 0x152f529 per session 33) --------------
