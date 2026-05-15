@@ -10464,6 +10464,123 @@ birth year on the fly as `currentTurnYear − age`.
 
 ---
 
+### Findings 2026-05-15 (background session 42 — MASK halo formula)
+
+Goal: pin the per-faction halo MASK formula. Session 40 confirmed each
+of 239 records has a 1020x700 RLE-encoded value-mask with small ints
+(0..9), and that a Roman ship move localized 100 cell changes in a
+16x14 bbox in faction-0's mask. This session tests whether the mask
+value = floor(distance-from-nearest-friendly-character).
+
+#### Key empirical findings (CONFIRMED)
+
+1. **World-object (x,y) u32 fields ARE in mask-pixel space (1020x700)
+   directly.** The "ship moved (172,92) -> (171,99)" in the original
+   brief was a different coord encoding (probably descr_strat tile
+   coords). In `save_5.2`, the Roman ship is a type-4 record at u32
+   (333, 380); in `save_6.2`, a NEW type-4 (different uuid) is at
+   (337, 381). This sits exactly inside the mask-diff bbox X[328..343]
+   Y[374..387], centroid (335, 380.7).
+
+2. **Type-4/5/6 record uuids are NOT stable across turns / save-pairs.**
+   The ship's type-4 record gets re-emitted with a fresh uuid each save
+   (45 of 46 naval records have new uuids between A and B). Position-
+   based identity is more reliable than uuid for cross-save matching.
+
+3. **The halo is NOT max(K - dist_from_nearest_friendly).** Best fit
+   with that hypothesis (single-source OR multi-source MAX): r^2 = 0.43
+   regardless of metric (Chebyshev / Manhattan / Euclidean) or scale K.
+
+#### Best fit (HYPOTHESIS, r² = 0.70)
+
+The halo behaves like a **stacked/summed influence field**, NOT a
+nearest-character distance:
+
+```
+value(cell) ≈ min(8, floor(0.20 × SUM_{i in Romans} max(0, 11 - cheb_dist(cell, i))))
+```
+
+- Best metric: **Chebyshev** (king-move) over u32 (x,y).
+- Best per-source halo radius K = **11 mask-pixels**.
+- Saturation cap = **8** (matches observed max value in changed cells).
+- Linear scale ≈ 0.20 (per-source contribution density).
+- R² = **0.70** against save_6's vb (B-side observed values).
+- R² = **0.71** against save_5's va using A-side positions
+  (symmetric — same formula holds on both sides of the move).
+
+Naive `max(0, K - cheb_dist_to_nearest_friendly)` caps at r² = 0.43.
+Naive `count_within_R` caps at r² = 0.55. Gaussian-weighted SUM caps at
+r² = 0.68. SUM_i max(0, 11 - cheb_d) with Chebyshev is the cleanest
+single-knob fit.
+
+#### What didn't fit (NEGATIVE)
+
+- **Single-source max**: r² = 0.43 (no K or metric breaks 0.45).
+- **Manhattan/Euclidean SUM**: r² = 0.55-0.65 (worse than Chebyshev).
+- **Anisotropic distance (2:1, 4:1 X:Y)**: r² ≤ 0.44.
+- **clamp-min distance directly**: r² = 0.43 (mirror of max hypothesis).
+- **1/(d+1) inverse-distance**: r² = 0.50.
+- **sqrt/log saturating transforms of SUM**: didn't break 0.70.
+
+#### Mechanism interpretation
+
+Multiple Roman characters' Chebyshev-11 halos OVERLAP and the engine
+sums them, then clips at ~8. This matches an **AI strategic-importance
+heatmap** — cells "more interior to the Roman position cluster" get
+higher values because more Romans contribute to that cell.
+
+This is consistent with session 40's interpretation ("influence halo")
+but refines it: not a per-character distance field, but a per-cell
+**SUM of overlapping halos** with cap.
+
+Open: the residual 30% R² gap means the true formula has some extra
+component — terrain weighting, settlement bonuses, or a different
+source set (perhaps the engine only uses a SUBSET of characters, such
+as those with line-of-sight, or boosts type-6 generals more than
+type-5 captains and type-4 ships). Hard early-stop hit at 3 attempts;
+leaving HYPOTHESIS.
+
+#### Scripts
+
+- `dig-mask-halo1.js` — extract 100 changed cells, find centroid
+  (335, 380.7); naive distance-from-centroid test (r² = 0.13).
+- `dig-mask-halo2.js` — pin world-object coord space = mask-pixel
+  space (1020x700); locate type-4 ship at u32 (333, 380) in save_5.
+- `dig-mask-halo3.js` — uuid not stable across save-pair; identify
+  new ship by NEW type-4 uuid in save_6 at (337, 381).
+- `dig-mask-halo4.js` — multi-source MAX hypothesis sweep, all
+  K/metric combos cap at r² = 0.44.
+- `dig-mask-halo5.js` — single-source variants, count-in-radius
+  (r² = 0.55), SUM(max(0, K - d)) (r² = 0.64 at K=10 Chebyshev).
+- `dig-mask-halo6.js` — SUM sweep, peak at K=11 Chebyshev r² = 0.69;
+  A-side symmetric r² = 0.71.
+- `dig-mask-halo7.js` — saturation/transform sweep; best 0.20x +
+  cap-8 transform → r² = 0.70.
+
+#### Confidence
+
+- **CONFIRMED**: World-object (x,y) coords are mask-pixel space.
+- **CONFIRMED**: Mask value at any cell is NOT a simple
+  distance-from-nearest-friendly (single-source max caps at r² 0.43).
+- **HYPOTHESIS**: Mask value ≈ saturated SUM of Chebyshev-11 halos
+  over Roman characters/armies (r² 0.70). True formula likely adds
+  a terrain/settlement term or a character-type weighting that
+  accounts for the 30% residual.
+
+#### Open follow-ups
+
+- Capture a save-pair with a SINGLE Roman character/army (T0 fresh
+  start), removing the overlap ambiguity. The single-source mask in
+  isolation will reveal the exact per-source halo shape.
+- Test a turn-pair where a NEW Roman general is recruited (one new
+  source added). The delta mask should equal exactly one halo
+  contribution, revealing the per-source formula.
+- Look for a u32 field in the mask record header (24 bytes pre-magic)
+  that names the faction-id — would let us label rec 0..238 by
+  faction without geographic centroid inference.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
