@@ -10581,6 +10581,93 @@ leaving HYPOTHESIS.
 
 ---
 
+### Findings 2026-05-15 (background session 43 — tile-grid 6 fields)
+
+**HEADLINE — NEGATIVE: the 6 variable fields in the 240×153 tile-grid at
+`0x633c50` do NOT encode `map_ground_types`, `map_heights`, `map_regions`,
+`map_climates`, or `map_features`.** No correlation > 0.4 against any of the
+5 bundled static map TGAs (tried both Y-orientations). Maximum purity score
+of 0.978 was a baseline artefact (97.8% of cells are default-valued, so
+*any* sparse map looks "correlated"). Pearson r ≈ 0.000 on all 30 pairings.
+
+#### Method (per spec)
+
+Extracted the 3 known variable u32 fields (`+20`, `+28`, `+32`; session 35
+schema) for all 36,583 records. Sampled each TGA at `(col·TGAW/240, row·TGAH/153)`
+both normal and Y-flipped. For each (field, map) pair, computed (a) Pearson r
+on raw u32 values, (b) categorical purity = (sum of dominant-bucket counts) /
+(total cells), and (c) KL divergence between non-default-cell map distribution
+vs default-cell map distribution.
+
+#### Key falsifying evidence (most diagnostic test)
+
+If non-default field cells encoded ANY static map property, those cells
+should disproportionately fall on region/terrain boundaries OR on rare
+ground-type cells. They don't:
+
+| Field | Non-def cells | Region-boundary rate (non-def) | Region-boundary rate (default) | Lift |
+|---|---|---|---|---|
+| F20 (+20) | 647 | 28.1% | 33.8% | **0.83×** |
+| F28 (+28) | 262 | 30.9% | 33.7% | **0.92×** |
+| F32 (+32) | 711 | 29.3% | 33.8% | **0.87×** |
+| F20 | 647 | ground-boundary 82.2% | 79.8% | 1.03× |
+| F32 | 711 | ground-boundary 79.0% | 79.9% | 0.99× |
+| F20/F28/F32 | — | mean height-range within block | — | 0.93–1.10× |
+
+Non-default cells **avoid** region boundaries (lift < 1.0×) — the *opposite*
+of what a terrain-derivative cache would do. All other lifts are within noise.
+
+#### Spatial geometry refutes terrain hypothesis
+
+- F28=54 stripe at col 101 (153 of 250 cells): the underlying TGA col 101
+  in `map_regions.tga` spans 45 distinct region colors across all rows.
+  A vertical line crossing 45 regions cannot be a terrain feature.
+- F28=55 NE→SW diagonal (11 cells, per session 35): does not coincide with
+  any coastline, river, or elevation contour in the 5 TGAs.
+- F20/F32 non-default cells are scattered randomly across the map's
+  interior (visual overlay in `dig-tilegrid-fields3.js`) — no clustering
+  along coasts (which would be the case for a sea/land mask) or along
+  height bands.
+
+#### Top non-default → map value frequencies (all unremarkable)
+
+Best raw signal was F20=600 vs `map_climates` Y-flipped: KL=0.226 —
+non-default cells lean toward climate `0xed1c24` (red, 74 cells) and
+`0x39b54a` (green, 67 cells) but with no concentration > 25% of any single
+non-default value. Far below the > 0.7 correlation early-stop threshold.
+
+#### What the fields likely DO encode (HYPOTHESIS, unverified)
+
+Given (a) defaults dominate at 97.6%, (b) non-default cells avoid region
+boundaries, (c) F28=54 stacks on a single column (col 101), and (d) the
+F28=55 cells form a clean diagonal: these look like **engine-internal
+campaign-map markers** — possibly:
+- Pathfinding waypoint anchors or movement-cost overrides (col-101 stripe
+  = a constant-cost vertical corridor?)
+- Strategic-AI region-of-interest seeds (sparse positional landmarks)
+- Engine-cache invalidation tags (a "this cell needs recompute" flag set
+  during the game's preprocessing pass)
+
+None of these are testable against bundled static maps. Future probe should
+generate per-turn diffs of this gap region — if these fields update during
+play, they're cache state; if static across all saves, they're a derived
+constant from `descr_strat.txt` / `map.rwm`.
+
+#### Scripts produced
+
+- `dig-tilegrid-fields1.js` — initial Pearson + purity sweep (top purity 0.978 was a default-density artefact)
+- `dig-tilegrid-fields2.js` — non-default-cell focused KL divergence; max KL = 1.46 (F28 × regions, noise-level)
+- `dig-tilegrid-fields3.js` — boundary-lift test (decisive negative: lift 0.83–0.92×, opposite of terrain hypothesis)
+
+#### Impact
+
+Session 35's "terrain attribute cache" hypothesis (height-band / type enum /
+trade-route waypoints) is **REFUTED** by direct cross-reference. The 240×153
+grid does not redundantly mirror `descr_terrain`. Its 6 fields encode
+*engine-private* state, not a static map.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
