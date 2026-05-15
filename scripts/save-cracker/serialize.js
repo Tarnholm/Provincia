@@ -707,6 +707,86 @@ function encodeScriptedEvents(s) {
   return Buffer.concat(chunks);
 }
 
+// ---- merc-pool-table (0x14e5ac6..0x1501615, ~113 KB) -----------------------
+//
+// Per session 58 + session 75:
+//   - ~50 KB binary "pool-state" pre-text zone holds the per-region pool slot
+//     records (fixed-stride state with 1,524 hits of the `ac fe 45 12`
+//     "empty-slot" sentinel — ~14.6 slots/region across 104 regions). The
+//     stride and inner layout are not yet modeled, so the decoder captures
+//     this zone verbatim as a single `preTextBytes` Buffer.
+//   - Text zone (~62 KB) holds 104 per-region records. Each record opens with
+//     a pstr16-ish header [u16 lenP1][ASCIIZ region_name] using region names
+//     from descr_mercenaries.txt (achaea .. western_balkans). The body that
+//     follows contains zero or more `merc <unit_name>` ASCIIZ entries (623
+//     across all regions) plus per-slot binary state (count, weight, hash,
+//     0xff-fill padding) and ends at the next region's pstr16 header. The
+//     final region's body extends to the section's end byte (encompassing the
+//     16-byte per-pool counter rows in the tail).
+//
+// Decoder strategy: walk forward from `start` byte-by-byte looking for a
+// valid pstr16 region-name header. A header is recognized purely by shape —
+// [u16 lenP1 in 5..32] + [(lenP1-1) bytes of [a-z_] ] + [NUL] — so the
+// decoder requires no descr_mercenaries.txt lookup. Each region's body spans
+// from its header to the next header (or to `end` for the last region). The
+// pool-state pre-text zone (everything before the first header) is captured
+// verbatim. Round-trip is byte-identical by construction: encoder writes
+// preTextBytes, then for each region: [u16 lenP1][name bytes][NUL][body].
+
+const MP_START = 0x14e5ac6;
+const MP_END   = 0x1501615;
+
+function decodeMercPoolTable(buf, start, end) {
+  if (start !== MP_START || end !== MP_END) {
+    throw new Error(`decodeMercPoolTable: unexpected range [0x${start.toString(16)}..0x${end.toString(16)}); expected [0x${MP_START.toString(16)}..0x${MP_END.toString(16)})`);
+  }
+  // Walk forward, recognizing pstr16 region-name headers by shape.
+  const headers = [];
+  let p = start;
+  while (p + 2 < end) {
+    const lenP1 = buf.readUInt16LE(p);
+    if (lenP1 < 5 || lenP1 > 32 || p + 2 + lenP1 > end) { p++; continue; }
+    let ok = true;
+    for (let j = 0; j < lenP1 - 1; j++) {
+      const c = buf[p + 2 + j];
+      if (!((c >= 0x61 && c <= 0x7a) || c === 0x5f)) { ok = false; break; }
+    }
+    if (!ok || buf[p + 2 + lenP1 - 1] !== 0) { p++; continue; }
+    const name = buf.slice(p + 2, p + 2 + lenP1 - 1).toString("latin1");
+    headers.push({ off: p, name, lenP1 });
+    p += 2 + lenP1;                     // skip past header
+  }
+  if (headers.length === 0) throw new Error("decodeMercPoolTable: no region headers found");
+
+  const preTextBytes = Buffer.from(buf.slice(start, headers[0].off));
+  const regions = [];
+  for (let i = 0; i < headers.length; i++) {
+    const h = headers[i];
+    const bodyStart = h.off + 2 + h.lenP1;
+    const recEnd = (i + 1 < headers.length) ? headers[i + 1].off : end;
+    regions.push({
+      name: h.name,
+      body: Buffer.from(buf.slice(bodyStart, recEnd)),
+    });
+  }
+  return { _kind: "merc-pool-table", preTextBytes, regions };
+}
+
+function encodeMercPoolTable(m) {
+  if (m._kind !== "merc-pool-table") throw new Error("encodeMercPoolTable: not a merc-pool-table object");
+  const chunks = [m.preTextBytes];
+  for (const r of m.regions) {
+    const nameBuf = Buffer.from(r.name, "latin1");
+    const lenP1 = nameBuf.length + 1;
+    const hdr = Buffer.alloc(2 + lenP1);
+    hdr.writeUInt16LE(lenP1, 0);
+    nameBuf.copy(hdr, 2);
+    hdr[2 + nameBuf.length] = 0;
+    chunks.push(hdr, r.body);
+  }
+  return Buffer.concat(chunks);
+}
+
 const SERIALIZERS = {
   // Real decode/encode pairs.
   "Header":                  (buf, start, end) => encodeHeader(decodeHeader(buf, start, end)),
@@ -715,6 +795,7 @@ const SERIALIZERS = {
   "character-paths":         (buf, start, end) => encodeCharacterPaths(decodeCharacterPaths(buf, start, end)),
   "tile-grid-matrix":        (buf, start, end) => encodeTileGridMatrix(decodeTileGridMatrix(buf, start, end)),
   "ZoneB-scripted-events":   (buf, start, end) => encodeScriptedEvents(decodeScriptedEvents(buf, start, end)),
+  "merc-pool-table":         (buf, start, end) => encodeMercPoolTable(decodeMercPoolTable(buf, start, end)),
   // Add more real serializers here as they're written. Anything not listed
   // falls through to the default passthrough.
 };

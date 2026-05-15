@@ -12182,6 +12182,26 @@ Files: `scripts/save-cracker/serialize.js` (functions `decodeScriptedEvents`, `e
 
 ---
 
+### Findings 2026-05-15 (background session 75 — merc pool decode/encode)
+
+**8th real decode/encode pair** — replaced the passthrough handler for the per-region MERCENARY POOL table at `0x14e5ac6..0x1501615` (~113 KB) with `decodeMercPoolTable`/`encodeMercPoolTable` in `serialize.js`. Round-trip remains **byte-identical**.
+
+**Section anatomy** (confirmed via independent walk of save_1.2.sav, no descr_mercenaries.txt dependency):
+
+1. **Pool-state pre-text zone** (`0x14e5ac6..0x14f209e`, 50,648 B) — fixed-stride binary per-pool slot records carrying the 1,524 `ac fe 45 12` (0x1245feac) empty-slot sentinel hits across 104 regions (~14.6 slots/region). Stride and inner field layout not yet modeled; captured verbatim as `preTextBytes`.
+2. **104 per-region records** (`0x14f209e..0x1501615`, 62,839 B). Each record opens with a pstr16-ish header `[u16 lenP1][ASCIIZ region_name]` (lenP1 = nameLen+1 includes the NUL). Names span `achaea` (0x14f209e) → `western_balkans` (0x15010d6) alphabetically. Each body holds zero or more `merc <unit>` ASCIIZ entries plus per-slot binary state (count, weight u32, 0x3f800000 = 1.0f, hash, `0xff`-fill padding). Final region's body extends to `MP_END` and includes the 16-byte per-pool counter rows in the tail.
+3. **Unit-string text totals**: 622 `merc <name>` ASCIIZ strings (matches session 58); 623 raw `"merc "` occurrences (one extra appears inside another field's bytes).
+
+**Decoder strategy.** Walk forward byte-by-byte recognizing region-name headers purely by shape — `[u16 lenP1 in 5..32]` + `(lenP1-1)` bytes of `[a-z_]` + `NUL`. No mod-data lookup needed. Each region body spans header-to-next-header (or header-to-`end` for the last region). 104/104 headers found and cross-validated against descr_mercenaries.txt's 105 pool names (the one unmatched name `alps_rhaetia_noricum` does appear as a pstr16 inside another region's body — substring, not a section anchor — so the shape walk correctly treats it as part of that body).
+
+**Round-trip.** `node scripts/save-cracker/serialize.js` → **byte-identical YES, 762 ms**, output size 34,524,371 B (matches input). 104 regions decoded, 622 unit strings preserved.
+
+**Coverage delta.** Zero — bytes were already claimed as passthrough. The win is the 8th real decode/encode pair (~113 KB structured) exposing per-region `{ name, body: Buffer }` records for downstream tooling. Future work: model the 50,648-B pool-state pre-text zone (likely fixed-stride 16-byte slot records around the `ac fe 45 12` sentinel) and decode per-region bodies into `{ slots[], unitStrings[], counters[] }`.
+
+Files: `scripts/save-cracker/serialize.js` (functions `decodeMercPoolTable`, `encodeMercPoolTable`, constants `MP_START`/`MP_END`; SERIALIZERS entry `"merc-pool-table"`).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
