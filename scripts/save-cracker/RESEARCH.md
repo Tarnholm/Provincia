@@ -14896,12 +14896,29 @@ This means the canonical way to resolve a major-record's faction NAME is still v
 * `scripts/save-cracker/dig-meta-decode-{1,2,3,4,5}.js` — incremental decode of the companion-metadata record (fixed-offset comparisons → class-string-end-anchored comparisons → side-by-side raw-byte dumps → faction-id hypothesis → u16-at-+0x16 verification)
 * `scripts/save-cracker/dig-major-faction-tag-{1,2,3}.js` — major-record faction-tag discovery, character-UUID cross-check, file-wide occurrence analysis
 
+#### Follow-up tests (same session)
+
+* **Pre-marker zone for leader UUIDs**: scanned the 148-byte pre-marker zone of every major record for u32 values matching a known character UUID — **0/23 hits** in halo_oneman, 0/23 in save_10_fresh. The leader's character UUID is NOT in the major-record's pre-marker zone. (`dig-major-leader-1.js`)
+
+* **factionTag stability across saves**: factionTag values are NOT global descr_strat-derived constants — each campaign instance generates fresh per-faction UUIDs. They ARE stable across saves of the same campaign instance: halo_oneman/halo_moved share `major[0]=0x19d5d7eb`, athens_t22{e,mid,s} share `major[0]=0x5020e5de`, save_mp_{before,after} share factionTags, etc. Notable: **the file-order of major records can CHANGE between saves of the same campaign** (ror_t1e major[1]=0x25678849 becomes ror_t2s major[0] after one faction was eliminated). The `MAJOR_FACTIONS` hardcoded list assumption is more brittle than memory `project_faction_treasury_index_caveat` warned. (`dig-major-leader-2.js`)
+
+* **Faction-name strings near factionTag occurrences**: scanned ±256 bytes around each major's first occurrence — found ASCII strings only for major[3] and major[4], and those were the 7 wonders (`pyramids_and_sphinx`, `pharos`, `colossus`, `temple`, `statue`, `gardens`, `mausoleum`) — i.e., those two majors OWN wonders. No faction-name string found near any of the 23 factionTag occurrences. (`dig-major-leader-3.js`)
+
+* **Packed faction-list array hunt**: scanned the entire save for runs of 3+ consecutive factionTag u32s and for any back-to-back factionTag pair — **0 runs found, 0 pairs found**. The 985 occurrences of factionTags throughout the save are all isolated (one factionTag per record-context, never adjacent to another). **There is no `[factionTag0, factionTag1, ..., factionTag22]` array anywhere in the save.** (`dig-major-leader-4.js`)
+
+#### Conclusive: no clean factionTag → faction-name mapping exists in the save
+
+The save stores enough information to identify each faction *implicitly* (via region list, factionTag, treasury, etc.) but has no explicit `{factionTag: u32, name: string}` table. Resolution paths:
+
+* (a) **Region-list fingerprint** against descr_strat T0 per-faction regions — works on first save of a campaign, then *cache* the resulting factionTag → faction-name map for use on later saves of the same campaign instance.
+* (b) **Leader-character fingerprint** — would need to find the leader UUID inside the major record first, then look up the character by UUID and match the name against descr_strat. Leader UUID location is still unknown.
+* (c) **descr_strat order + player-first assumption** (current Provincia approach) — brittle, breaks when factions are eliminated (file-order shifts).
+
 #### Next steps
 
-1. **Pin player-faction identification**: the special header-zone entry at `0x3c2a` strongly suggests major[0]'s factionTag is the player. Verify by loading multiple saves with different player factions and checking which major's factionTag has the header-zone entry.
-2. **Find faction-leader UUID inside major records**: scan for character-UUID patterns inside each major record's body (e.g., u32@+88, u32@+92, etc.). If the leader-UUID is present, it can be cross-referenced with a parsed character → name to label the faction.
-3. **Replace `MAJOR_FACTIONS` hardcoded list** (`App.js:13776`): use a more robust mapping based on this session's findings + region-list fingerprint match against descr_strat T0 regions. Removes the brittle "trust descr_strat order" assumption flagged in `project_faction_treasury_index_caveat`.
-4. **Surface diplomatic-relation counts in UI** (per-major basis): even without partner-faction resolution, the session-109 B/C enums can drive a "per-faction diplomacy summary" panel (e.g., "Carthage has 8 active wars, 2 alliances, 14 peace") — useful interim feature.
+1. **Implement region-list fingerprint matching**: at first save load of a campaign, match each major's region list against descr_strat's per-faction T0 regions to derive `factionTag → faction-name`. Cache the map keyed by major[0].factionTag (the campaign instance handle). On subsequent saves of the same campaign, look up the cached map directly.
+2. **Find leader UUID location**: scan major-record body OUTSIDE the pre-marker zone (try +60..+92, the 80-byte region between the +52 region-list and the +(92+4N) turn-start treasury snapshot). The body has unexplored fields here.
+3. **Surface diplomatic-relation counts in UI** (per-major basis): even without partner-faction resolution, the session-109 B/C enums can drive a "per-faction diplomacy summary" panel. With the region-list fingerprint mapping in place, the panel can show faction NAMES instead of indices.
 
 ---
 
