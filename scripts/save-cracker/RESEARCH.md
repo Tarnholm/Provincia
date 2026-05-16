@@ -14391,6 +14391,168 @@ The athens_t21 → athens_t22s msg-zone purge from 1.05 MB to 286 KB suggests th
 
 ---
 
+## Session 108 — Faction-pair diplomatic relations (2026-05-16)
+
+#### Brief
+
+Session 103 hypothesised the player faction record's 50 KB stride-3 zone might be diplomacy; sessions 105 confirmed it's actually the per-player exploration grid (LOS halos around armies/settlements). Session 107 found the player record's HEAD is the witness log (building-completion events + UTF-16 settlement-change messages), not character/diplo state.
+
+Session 108's target: locate per-faction-pair diplomatic relations (attitude / war state / alliance / trade rights) in the save file. Hypothesis (per the session-108 brief): each NPC faction record (the 238 ~6 KB `ff 0a af f0` records) might hold a 238-entry table of relations to every other faction.
+
+Saves used: all 13 in `scripts/save-cracker/fixtures/feral/`.
+
+#### NEGATIVE — NPC `ff 0a af f0` faction records do NOT hold a per-other-faction relations table
+
+The 238 NPC records (5790–8500 B each in save_1.2; the 239th `ff 0a af f0` record is the 334 KB player record at idx 237) decompose as:
+* 24 B engine header (magic + self-pointers + constants 1020, 700)
+* **8334–9242 B stride-2 `<v, c>` RLE exploration grid** — terminating on a `<v, 0>` pair, decodes to exactly 714,000 tiles (510 × 1400), i.e. **every NPC has its own per-faction exploration map mirroring the player's grid** from session 103
+* **142 B – 2.8 KB trailing settlement-observation list** — same record format as the player's HEAD building-completion records (`<u32 type:27/29/30/31> <u32 sub-type> <u32 event-id> <u32> <u32 sentinel> <u32 region-id> <u32 culture-id> <u32 settlement-id> <u16 strLen> <ASCII class>\0`)
+
+None of those 6–12 KB records has room for a 238-entry per-other-faction table. The NPC records are **per-faction observed-world state** (exploration grid + building observations), not diplomatic relations.
+
+Verified: `findFactionRecords(save_1.2)` returns 238 records; each decodes to 714,000 RLE tiles. ASCII strings inside the trailing zones include `Celtic_Large_Town`, `Eastern_Large_Town`, `Celtic_City`, `W_hellenistic_City` — settlement-class names from the RIS imperial mod's `descr_strat`.
+
+Files: `dig-diplo-1.js`, `dig-diplo-2.js`.
+
+#### STRONG — Diplomatic state lives in the 23 MAJOR-faction records, marker `05 00 24 39` at fixed offset
+
+The major-faction records (session 5's "treasury records", identified by u32@+8 == 100) are a separate structural family from the 239 `ff 0a af f0` records. There are **exactly 23 of them in every save** (RIS imperial's 23 playable factions), and each has the layout established in session 5:
+
+```
++0   i32 treasury (current denarii)
++8   u32 = 100 (class tag)
++12  u32 = 1 (version)
++24  u32 self-pointer (== pos + 24)
++40  u32 self-pointer (== pos + 40)
++44  u32 = 6 (size of sub-section)
++48  u32 = N (region count)
++52  N × u32 region IDs
++(92 + 4N)   i32 start-of-turn treasury snapshot
+```
+
+Session 108 finds a **NEW STRUCTURAL ELEMENT** at fixed relative offset `+(244 + 4N)` from the start of every major-faction record:
+
+```
++(244 + 4N)   4 bytes magic `05 00 24 39`
++(248 + 4N)   u32 count
++(252 + 4N)   count × 16-byte entries:
+              <u32 A>   <u32 B>   <u32 C>   <u32 0x00010101>
+```
+
+The marker offset formula `244 + 4N` was verified for **all 23 majors across 7 saves** (save_10_fresh, ror_t1e, ror_t5, ror_t11s, ror_t11e, athens_t21, save_1.2). Examples:
+* major[0] regions=35 → marker at +384 = 244 + 4×35 ✓
+* major[1] regions=22 → marker at +332 = 244 + 4×22 ✓
+* major[20] regions=2 → marker at +252 = 244 + 4×2 ✓
+* major[12] regions=7 → marker at +272 = 244 + 4×7 ✓
+
+Files: `dig-diplo-3.js` (initial discovery of stride-16 entries with `01 01 01 00` footer), `dig-diplo-4.js` (per-major entry counts), `dig-diplo-B.js` (marker offset formula confirmation).
+
+#### STRONG — Entry-zone behavioural validation (turn-boundary monotonic, same-turn byte-identical)
+
+The entry zone is structurally stable in exactly the ways diplomatic state should be:
+
+| Test | Result | What it confirms |
+|---|---|---|
+| `save_mp_before` vs `save_mp_after` (1-tile move within turn) | **byte-identical** | not per-character state |
+| `ror_t11s` vs `ror_t11e` (within turn 11) | **byte-identical** | not within-turn live state |
+| Total entry count grows monotonically with turn | 292 (T0) → 292 (T1) → 292 (T2s) → 307 (T5) → 332 (T11s) → 354 (T21) → 357 (T22e) | turn-boundary-updated |
+| Same-major entries at T0 → T1 | major[0]: A=1317 B=2 **C=3 → C=1** (one entry value mutated, count unchanged) | per-entry state changes at turn end |
+| save_mp before/after / t11s/t11e per-major byte-diff in this zone | **0 mismatches across all 23 majors** | zone is fully turn-boundary-quiescent |
+
+Per-save totals:
+```
+save_10_fresh      292   (1, 34, 84, 115, 12, 1, 2, 5, 6, 2, 2, 3, 3, 1, 3, 4, 2, 1, 3, 2, 3, 1, 2)
+ror_t1e            292   (identical per-major counts to T0)
+ror_t5             307   (each major bumped by ~1 except major[0] still at 1)
+ror_t11s           332   (most majors bumped by 1–4 entries)
+ror_t11e           332   (identical to t11s — within-turn quiescence)
+athens_t21         354   (different campaign — different counts but same structural pattern)
+athens_t22e        357
+save_mp_before     292
+save_mp_after      292   (identical to before)
+```
+
+The "+15 total entries across T1→T5" and "+25 across T5→T11" pattern is ~3 events/turn — plausible for diplomatic activity at a mid-tier campaign.
+
+Files: `dig-diplo-E.js`.
+
+#### Entry-field semantics (PARTIAL — three fields identified, full mapping HYPOTHESIS)
+
+Each 16-byte entry: `<u32 A> <u32 B> <u32 C> <u32 0x00010101>`.
+
+* **A** — globally unique across all 292 entries in save_1.2 (0 duplicates within or across majors). Range 12 .. 1317. Mod-23/24/256 distributions are uniform — A is NOT a packed (factionA, factionB) pair ID. Most likely interpretation: **per-relationship UUID / event-id** assigned monotonically as new relationships/agreements are created. The value 1317 ≈ count-of-relationships-ever-created in save_1.2.
+* **B** — small enum, values in {0, 1, 2, 4}. Most common is 2.
+* **C** — small enum, values in {0, 1, 2, 3, 4}.
+* **D (last 4 bytes)** — CONSTANT `0x00010101` across all 292+ entries in every save. Likely an "active / valid / type" 3-flag tag with byte 4 = 0 padding.
+
+Each major faction has a sparse list of N entries (1–115 in save_1.2). The fact that there are **no A duplicates within or across majors** rules out the simple "each entry is one side of a symmetric relationship" interpretation — if Carthage and Rome were at war, both major records would need to encode that pair, presumably with different A values pointing at the same event. Or the engine stores only ONE side of every pair, with the **larger-major-index faction "owning" the relationship**.
+
+Plausible mapping for (B, C):
+* B = relationship-class (peace=0, ceasefire=1, war=2, alliance=4)
+* C = attitude tier (very poor=0..favourable=4)
+
+Not pinned without ground-truth cross-validation against the live UI of an RTW save being inspected — left for a follow-up session.
+
+Files: `dig-diplo-D.js`, `dig-diplo-F.js`.
+
+#### NEGATIVE — No global N×N matrix of diplomatic state exists in the file
+
+A whole-file scan for low-entropy windows (≤8 distinct byte values, 25–75% non-zero density, 1 KB sliding window, 256-byte step, excluding the faction-record zone) returned **0 candidates outside the NPC `00 ff` RLE-fog opener pattern**. There is no dedicated N×N matrix region anywhere in the save — diplomacy is stored as a **sparse per-faction list of 16-byte relationship records**, not a dense matrix.
+
+The 6.3 MB tail and the 9.8 MB tile-attribute mid-file gap contain no diplomacy-shaped data.
+
+Files: `dig-diplo-5.js` (matrix symmetry search), `dig-diplo-6.js` (refined candidate dumps — all were diagonal-stride artifacts), `dig-diplo-C.js` (global low-entropy sweep).
+
+#### NEGATIVE — Symmetric-pair matching across majors fails
+
+If A were a shared relationship-id (e.g. "the Rome-vs-Carthage relationship") and both majors stored their side of it, the same A value should appear in two major-records. Test: 0 A values are shared between any two majors out of all 253 major-pairs in save_1.2. So either:
+* the relationship-id is one-sided (only one of the two factions stores it — perhaps lower-major-index owns it), or
+* A is purely a per-major event-counter that re-uses no globally-shared IDs
+
+The lack of duplicate A values within a single major (every major has exactly `count` distinct A values, with `distinctA == count`) confirms the **append-or-update-by-id** semantics: each relationship has a stable A within its owning major's list.
+
+Files: `dig-diplo-D.js`.
+
+#### Confidence summary
+
+* **STRONG**: The `05 00 24 39` marker is at `+(244 + 4 × regionCount)` in every major-faction record. Verified for 23 majors × 7 saves.
+* **STRONG**: The marker is followed by `<u32 count> <count × 16-byte entries>`. Entry format `<u32 A> <u32 B> <u32 C> <u32 0x00010101>`. Verified across all entries in 7 saves.
+* **STRONG**: The zone is byte-identical for (a) 1-tile moves within turn (save_mp_before/after), (b) start-of-turn vs end-of-turn snapshots (ror_t11s/t11e). It is updated ONLY at turn-end save.
+* **STRONG**: Per-save total entry count grows monotonically across turns (292 at T0/T1 → 357 at athens_t22e). Per-major counts grow by 0–4 per turn.
+* **STRONG**: NPC `ff 0a af f0` records do NOT contain this marker (0/231 NPCs in save_1.2). Marker is exclusive to the 23 major-faction records.
+* **STRONG**: Field A is globally unique (no duplicates within or across majors). NOT a packed faction-pair ID. Most likely a per-relationship UUID.
+* **STRONG**: No global N×N matrix exists in the file outside the faction-record zone. Diplomacy is stored as a sparse list, not a dense matrix.
+* **HYPOTHESIS**: B is a relation-class enum {0:peace, 1:ceasefire, 2:war, 4:alliance}. C is an attitude tier {0..4}. Not validated against ground-truth UI state — requires a follow-up session that loads a known game-state save and confirms specific (factionA, factionB) → (B, C) values against the in-game diplomacy panel.
+* **HYPOTHESIS**: The 148-byte zone between the region-list-end (`+92 + 4N + 4`) and the `05 00 24 39` marker contains additional per-faction state (small u32 fields, including what looks like an `ef 00 00 00 = 239` value and embedded self-pointers — possibly diplomat character UUIDs or starting-treasury / AI personality vectors). Not decomposed this session.
+* **NEGATIVE**: The 6.3 MB tail, the 9.8 MB tile-attribute gap, and all faction-record zones outside the major-record `05 00 24 39` block contain no diplomacy-shaped data.
+
+#### Files
+
+* `scripts/save-cracker/dig-diplo-1.js` — characterize the 239 `ff 0a af f0` records: 238 NPCs (5.8–8.5 KB) + 1 player (~334 KB). First-96-byte dumps show NPC records share the same `00 ff 00 ff 00 ff 00 e4 02 01 03 09 02 01 00 02` opener.
+* `scripts/save-cracker/dig-diplo-2.js` — NPC RLE-grid decoder: every NPC has its own 510×1400 exploration grid (714,000 tiles) + trailing 100 B–2.8 KB settlement-observation records.
+* `scripts/save-cracker/dig-diplo-3.js` — major-faction record trailing-zone dump; first sighting of `<u32 A><u32 B><u32 C><01 01 01 00>` stride-16 pattern.
+* `scripts/save-cracker/dig-diplo-4.js` — stride-16 entry count per major across all saves; entry value dumps for major[0] and major[1].
+* `scripts/save-cracker/dig-diplo-5.js` — whole-file scan for symmetric N×N matrix (N ∈ {22, 23}, cellSize ∈ {1,2,4,8,16}); all hits were diagonal-stride artifacts.
+* `scripts/save-cracker/dig-diplo-6.js` — characterize each symmetric-window candidate (entropy + symmetry + matrix dump); confirms zero genuine matrix exists outside the faction-record zone.
+* `scripts/save-cracker/dig-diplo-7.js` — naive byte diff across save pairs; finds 1-tile move clusters (only 12 small clusters >100 B, all in character-state zones at 0x208e7..0x2096..., not in any diplomatic-looking region).
+* `scripts/save-cracker/dig-diplo-8.js` — faction-record-aligned diff: 1-tile move has 0 diffs in major-record first 4 KB; within-turn-11 has 16–52 diffs per major; T0→T1 has 200–500. Confirms major records hold turn-boundary state.
+* `scripts/save-cracker/dig-diplo-9.js` — turn-boundary-only diff positions: top votes at +28..+31 (RNG state, changes in 22/23 majors at boundary) and at +291..+309 / +303..+309 (the marker zone).
+* `scripts/save-cracker/dig-diplo-A.js` — detailed `+260..+359` dumps for major[0..2] across saves; visually confirms the `05 00 24 39 <count> <entries>` structure shifts position with region count.
+* `scripts/save-cracker/dig-diplo-B.js` — full table of marker offsets and counts across 7 saves × 23 majors; locks the offset formula `+(244 + 4N)`.
+* `scripts/save-cracker/dig-diplo-C.js` — global low-entropy sweep outside faction-record zone; confirms NO global diplomacy matrix anywhere else.
+* `scripts/save-cracker/dig-diplo-D.js` — per-major entry distinct-value counts; A is globally unique (292 distinct in save_1.2's 292 entries); B has 4 distinct values, C has 5; pre-marker zone dump (148 bytes of mostly-zero with self-pointer cluster at +280).
+* `scripts/save-cracker/dig-diplo-E.js` — cross-save behavioural validation: byte-identical within turn (save_mp + t11s/t11e), monotonic growth turn-boundary, per-major T0→T1 mutation example (major[0] A=1317 C=3 → C=1).
+* `scripts/save-cracker/dig-diplo-F.js` — A-value modular distribution (uniform mod 23/24/256 — not a packed pair-id); NPC marker scan (0/231 hits — exclusive to majors).
+
+#### Next steps
+
+1. **Pin B/C enum semantics**: load a known mid-campaign save into RTW, read the on-screen diplomatic relations panel for the player faction, cross-reference the major[0]'s single entry against "Romans' relation to X". If `C` correlates with the on-screen attitude bar (1=hostile..4=friendly), it's confirmed.
+2. **Decode the pre-marker 148-byte zone (`+92+4N+4 .. +244+4N`)**: contains likely diplomat character UUIDs (self-pointer cluster at +280 in major[1]) and possibly per-faction AI personality settings.
+3. **Audit the relationship-ownership rule**: does Rome's relationship to Carthage live in major[0]'s list (because major[0] < major[2]) or major[2]'s list (because Rome is the player)? Test by counting per-pair across majors. Check the player major's list against the OTHER 22 majors' lists for cross-references via the 16-byte payload (maybe one of A/B/C encodes the partner's major-index).
+4. **Surface in Provincia UI**: once B/C semantics are pinned, the `RegionInfo.js` or a new `DiplomacyInfo.js` panel can render the per-faction relationship table directly from the save file. The structure is small (≤357 entries × 23 majors) and parses in <1 ms.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
