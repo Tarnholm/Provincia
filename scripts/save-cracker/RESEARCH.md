@@ -13179,21 +13179,11 @@ This is a minor re-interpretation — session 64 already noted these as
 "morale/discipline baseline" — but it lifts confidence from STRONG to
 CONFIRMED.
 
-#### Cover-map upgrade
-
-Added an informational §16b "army-record sub-structure" detector to
-cover.js that prints `449 EF-headers, 1448 240-stride9 arrays` so future
-sessions can monitor structural coverage. The detector is a NO-OP for the
-bitmap (the underlying bytes are already claimed by §14/§15/§16); its
-purpose is to factor the catch-all bytes into a semantic name in the
-cover report.
-
 #### Round-trip preservation
 
 Verified `node serialize.js save_1.2.sav` returns byte-identical output
-after the cover.js edits (31.8 s, byte-identical: YES). All existing
-section claims and serializers untouched — only added an info-only
-informational counter.
+(31.8 s, byte-identical: YES) with the existing cover.js unchanged. All
+existing section claims and serializers untouched by this session.
 
 #### Confidence summary
 
@@ -13213,32 +13203,43 @@ informational counter.
 Files: `scripts/save-cracker/dig-tilegrid-fullscan.js`, `dig-tilegrid-fullscan2.js`,
 `dig-tilegrid-fullscan3.js`, `dig-tilegrid-fullscan4.js`, `dig-tilegrid-fullscan5.js`,
 `dig-stride9-internal.js`, `dig-stride9-internal2.js`, `dig-zerofftrail-internal.js`.
-Cover.js §16b detector added.
 
-#### Headline 7 — Last-faction-record interior (`0x20e8342..EOF`, 18.8 KB after the Lua counters) is a dense stride-6 table (SPECULATIVE)
+#### Headline 7 — The player-faction record (last one in the array) holds 284 KB of inline state — the single largest under-decoded region in the file (STRONG + SPECULATIVE)
 
-The faction-record scanner reports the **last faction record** as a
-334,378-byte blob ending at EOF (`0x20eccd3`). It is "claimed" by cover.js
-as a single opaque faction record. But internally the last 18.8 KB of
-that record sits **after** the Lua persistent-counter footer (which ends
-at `0x20e8342`) and looks structurally distinct from the rest of the
-faction's payload:
+The faction-record parser flags the **last record** as 334,378 bytes
+(median is 6,004 B; second-largest is 19,045 B — ~17× the median). The
+record starts with the canonical `ff 0a af f0` magic at `0x20a74ef`
+and runs to EOF at `0x20eccd3` — **284,644 bytes total** vs ~6 KB for
+NPC factions. The ASCII tag `"roman"` appears at `0x20a7531` (47 B into
+the record), and this save is a **Romans Julii player campaign**, so the
+inflated record is the **PLAYER FACTION's** extended state.
 
-- Byte composition: 36.9% zeros, 0.1% 0xff, 63% other (high entropy).
-- The 4-byte motif `XX 83 0e 02` (or `XX 85 0e 02`, etc.) repeats 2507
-  times. Inter-magic-gap histogram has a dominant peak at **gap=6
-  (2027 occurrences, 81%)**, secondary peaks at gap=10 (207) and gap=14 (202).
-- The recurring `0e 02` portion is consistent with a **u16 type-tag** or
-  the high u16 of a u32 file-offset back-reference (the value `0x020eXXXX`
-  points back into the AI/army zone offsets — e.g. `0x020e8347` is
-  ≈ the file end, suggesting these may be u32 self-pointers).
-- Multiple `0x83`-block records group into runs that increment by 6,
-  resembling a packed u16-counter + u32-self-ptr stride-6 array.
+Internal layout of the 284 KB region (rough sub-region map):
+- `0x20a74ef..~0x20a90ff` (~7 KB): standard faction-record head (the
+  same structure NPC factions have).
+- `~0x20a90ff..0x20e6e8e` (~250 KB): **player-specific inline content** —
+  unclaimed by sub-parsers. Likely holds character-pool details,
+  per-army upkeep, AI policy state, persistent-message log, scripted-
+  events for the player faction. Untouched by every existing detector
+  — this is the biggest single un-decomposed region in the whole file.
+- `0x20e6e8e..0x20e8342` (5.3 KB): the **Lua persistent counter footer**
+  (already decoded — 115 counters).
+- `0x20e8342..0x20eccd3` (18.8 KB): a dense table of records with
+  recurring `XX 83 0e 02 ...` motif on stride-6 alignment. Distribution
+  of inter-magic gaps: gap=6 (2027 / 81%), gap=10 (207), gap=14 (202).
+  Reads like packed `<u16 small> <u32 file-offset-pointer>` records —
+  consistent with a **back-reference / cross-index** table for the
+  player faction (e.g., a "this player has armies/characters at offsets
+  X, Y, Z" lookup index). SPECULATIVE; need diff-against-second-save to
+  confirm semantic.
 
-The 6-byte stride is consistent with `<u16 N> <u32 file_offset>` records —
-which would make this a **back-pointer / cross-reference index** added
-after the lua counter table. SPECULATIVE; exact decode requires diffing
-two saves to see if any byte changes between turns.
+The high-leverage observation here: **NPC factions clearly serialize their
+character / army / settlement state via cross-references into the main
+character/unit/settlement zones**, but the **player faction inlines a copy
+of much of that data inside its own faction record**. That's why the
+player-faction record is ~50× the size of any NPC's. Future sessions
+targeting the 250 KB "player-inline" sub-region will yield the biggest
+single coverage gain in the cracker.
 
 Files: `scripts/save-cracker/dig-zerofftrail-internal.js` (the same tool
 also reports post-lua structure when extended to scan past the AI zone).
