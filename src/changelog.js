@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.360",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Every widget with a header now has a FIXED header and a SCROLLING body — Recruitable, Buildings, Characters, Garrison, Field armies, and the Factions panel. Previously the header scrolled with the content; now the title and any header buttons stay put while the inner list/grid scrolls inside the widget." },
+      { type: "fix", text: "Section titles (`Buildings:`, `Recruitable:`, etc.) were being clipped by the panel's 12 px rounded corners. Panel-tight 2 px padding replaced with proper 14 px horizontal header padding; titles now sit safely past the curve." },
+      { type: "change", text: "Search widget chrome removed — just the input now, no surrounding cream panel + extra padding. Looks like a single bar at the top of the bottom strip." },
+      { type: "improvement", text: "Canonical layout v5 snapped to the user's hand-tuned 2026-05-16 positions: region.info trimmed to h=0.329 to make room for the taller region.characters (h=0.155) between info and buildings; queue/unitQueue widened to match characters height. Bottom-strip widget rows aligned on y=0.700 (search/recent) and y=0.753 (factions/selected) with ~13 px vertical and ~15 px horizontal gaps. Migration runs on next launch (LAYOUT_VERSION=5)." },
+    ],
+  },
+  {
     version: "0.9.359",
     date: "2026-05-16",
     items: [

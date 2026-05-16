@@ -471,12 +471,28 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // Widget inner panel — uses the global `.panel` class so widgets get the
   // same cream/light look as the factions panel (and so the light-mode
   // contrast observer in App.js auto-darkens any bright text inside).
-  // Only flex/overflow tweaks come from inline style.
-  const panelInnerClass = "panel panel-tight";
+  // Padding is overridden to 0 because each widget renders its own header
+  // (flex-shrink: 0) + body (flex: 1, overflow: auto) and they manage
+  // padding individually — that lets the header stay fixed while only
+  // the body scrolls.
+  const panelInnerClass = "panel";
   const panelInner = {
     width: "100%", height: "100%", boxSizing: "border-box",
     display: "flex", flexDirection: "column",
+    padding: 0,        // override .panel default 12 px
+    overflow: "hidden",
+  };
+  // Reusable header/body styles. Horizontal padding is 14 px so titles
+  // and buttons clear the panel's 12 px corner radius without being cut.
+  const widgetHeader = {
+    flexShrink: 0,
+    padding: "8px 14px 4px 14px",
+  };
+  const widgetBody = {
+    flex: 1, minHeight: 0,
+    padding: "0 14px 8px 14px",
     overflow: "auto",
+    display: "flex", flexDirection: "column",
   };
 
   return (
@@ -487,7 +503,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           w=0.1991. Row anchors are y=0.0056 / 0.3148 / 0.4573 with a
           common GAP_FRAC≈0.0035 between rows. */}
       <Movable id="region.info" title="Region info" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.0080, w: 0.2150, h: 0.4000 }}>
+        defaultPct={{ x: 0.5720, y: 0.0080, w: 0.2150, h: 0.3290 }}>
       <div className={panelInnerClass} style={panelInner}>
         {region && (
           <div
@@ -871,23 +887,27 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Characters — Movable widget extracted from buildings */}
       <Movable id="region.characters" title="Characters" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.4130, w: 0.2150, h: 0.1000 }}>
+        defaultPct={{ x: 0.5720, y: 0.3500, w: 0.2150, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
-        {characters && characters.length > 0 && (() => {
-          const isStarting = characters[0]?._source === "starting";
-          return (
-          <div style={{ marginBottom: 4 }}>
-            <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#fd8" }}>
-              Characters:
+        <div style={widgetHeader}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8" }}>
+            Characters:
+            {characters && characters.length > 0 && (
               <span
-                title={isStarting
+                title={characters[0]?._source === "starting"
                   ? "Starting roster from descr_strat — turn-1 traits, ancillaries, age. Load a save to switch to live values."
                   : (saveFile ? `As of: ${saveFile}` : "From save file")}
                 style={{ fontSize: "0.65rem", color: "#a98", marginLeft: 6, fontWeight: 400, cursor: "help" }}>
-                {isStarting ? "(starting)" : "(live)"}
+                {characters[0]?._source === "starting" ? "(starting)" : "(live)"}
               </span>
-            </div>
-            <div style={{ maxHeight: 80, overflowY: "auto", fontSize: "0.72rem" }}>
+            )}
+          </div>
+        </div>
+        <div style={widgetBody}>
+        {characters && characters.length > 0 ? (() => {
+          return (
+          <div style={{ fontSize: "0.72rem" }}>
+            <div>
               {characters.map((c, i) => {
                 const sym = c.isLeader ? "👑" : c.isHeir ? "★" : c.gender === "female" ? "♀" : "";
                 const status = c.isDead ? " (dead)" : "";
@@ -920,13 +940,16 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             </div>
           </div>
           );
-        })()}
+        })() : (
+          <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>No characters</span>
+        )}
+        </div>
       </div>
       </Movable>
 
       {/* Building queue — Movable widget extracted from buildings */}
       <Movable id="region.queue" title="Build queue" designMode={designMode}
-        defaultPct={{ x: 0.8975, y: 0.4130, w: 0.0975, h: 0.1000 }}>
+        defaultPct={{ x: 0.8975, y: 0.3500, w: 0.0975, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
           <div
@@ -960,7 +983,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Unit queue — Movable widget. Lists units currently being
           recruited in this settlement (recruitingNow from save). */}
       <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.4130, w: 0.0975, h: 0.1000 }}>
+        defaultPct={{ x: 0.7950, y: 0.3500, w: 0.0975, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
           <div
@@ -994,7 +1017,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.buildings" title="Buildings" designMode={designMode}
         defaultPct={{ x: 0.5720, y: 0.5180, w: 0.2150, h: 0.4770 }}>
       <div className={panelInnerClass} style={panelInner}>
-        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3 }}>Buildings:</div>
+        <div style={widgetHeader}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Buildings:</div>
+        </div>
+        <div style={widgetBody}>
         {buildingItems.length > 0 ? (
           (() => {
             // Adaptive 20-slot grid. Compute cols/rows that best fit the
@@ -1106,14 +1132,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         ) : (
           <span style={{ color: "#bbb", fontStyle: "italic" }}>No buildings</span>
         )}
+        </div>
       </div>
       </Movable>
 
       {/* Recruitable — Movable widget */}
       <Movable id="region.recruit" title="Recruitable" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.0080, w: 0.2000, h: 0.4000 }}>
+        defaultPct={{ x: 0.7950, y: 0.0080, w: 0.2000, h: 0.3290 }}>
       <div className={panelInnerClass} style={panelInner}>
-        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#9fc78a" }}>Recruitable:</div>
+        <div style={widgetHeader}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#9fc78a" }}>Recruitable:</div>
+        </div>
+        <div style={widgetBody}>
         {(() => {
           // Build a normalised set of unit names currently in the recruit
           // queue (session 36 schema). The save uses spaces ("roman leves")
@@ -1196,18 +1226,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>Nothing recruitable</span>
           );
         })()}
+        </div>
       </div>
       </Movable>
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.5180, w: 0.2000, h: 0.2000 }}>
+        defaultPct={{ x: 0.7950, y: 0.5180, w: 0.2000, h: 0.1820 }}>
       <div className={panelInnerClass} style={panelInner}>
-        <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 3, color: "#8cf",
-          display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-          <span>Garrison:</span>
-          {hoveredUnit && <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a" }}>{hoverReadout(hoveredUnit)}</span>}
+        <div style={widgetHeader}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf",
+            display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+            <span>Garrison:</span>
+            {hoveredUnit && <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a" }}>{hoverReadout(hoveredUnit)}</span>}
+          </div>
         </div>
+        <div style={widgetBody}>
         {garrisonCommander && (
           <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
             {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}
@@ -1314,13 +1348,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             No units stationed
           </span>
         )}
+        </div>
       </div>
       </Movable>
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.7230, w: 0.2000, h: 0.2720 }}>
+        defaultPct={{ x: 0.7950, y: 0.7130, w: 0.2000, h: 0.2820 }}>
       <div className={panelInnerClass} style={panelInner}>
+        <div style={widgetHeader}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6" }}>Field armies:</div>
+        </div>
+        <div style={widgetBody}>
         {(() => {
           // Group armies by faction so the user can see at a glance who
           // owns each foreign stack. Multiple Roman armies passing through
@@ -1450,14 +1489,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 </>
               )}
               {own.length === 0 && others.length === 0 && (
-                <>
-                  <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: 8, marginBottom: 3, color: "#fc6" }}>Field armies:</div>
-                  <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>None</span>
-                </>
+                <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>None</span>
               )}
             </>
           );
         })()}
+        </div>
       </div>
       </Movable>
     </>

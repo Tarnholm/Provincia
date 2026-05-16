@@ -6774,13 +6774,14 @@ function App() {
     // Always use starting-order faction list for both modes
     const list = factions;
     return (
-      <div style={{ padding: 0, margin: 0 }}>
+      <div style={{ padding: 0, margin: 0, height: "100%", display: "flex", flexDirection: "column" }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             marginBottom: 4,
+            flexShrink: 0,
             // Bumped horizontal padding from 8 → 14 so the title clears
             // the panel's 12 px border-radius corner curve. Top padding
             // reduced (was 6 → 3) so the header sits closer to the top
@@ -6977,6 +6978,12 @@ function App() {
             rowGap: Math.max(ICON_GAP, 6),
             justifyContent: "center",
             padding: "4px 4px",
+            // Fixed header (above) + scrolling icon grid (here) so the
+            // Factions title + Deselect button stay put while the grid
+            // scrolls inside the widget.
+            flex: 1,
+            minHeight: 0,
+            overflow: "auto",
           }}
         >
           {list.filter(f => {
@@ -10722,7 +10729,10 @@ function App() {
             <Movable id="bottom.search" title="Search" designMode={designMode}
               defaultPct={{ x: 0.005, y: 0.708, w: 0.18, h: 0.030 }}
               zIndex={2}>
-              <div className="panel" style={{ width: "100%", height: "100%", padding: "4px 8px", boxSizing: "border-box", position: "relative" }}>
+              {/* Search widget is just the input — no surrounding panel
+                  chrome (no cream background, no extra padding). Input
+                  fills the widget edge-to-edge. */}
+              <div style={{ width: "100%", height: "100%", position: "relative" }}>
                 <input
                   type="text"
                   ref={searchInputRef}
@@ -10730,9 +10740,9 @@ function App() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    width: "100%", height: "100%", boxSizing: "border-box", padding: "3px 8px",
-                    borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
-                    background: "rgba(0,0,0,0.3)", color: "inherit", fontSize: "0.8rem",
+                    width: "100%", height: "100%", boxSizing: "border-box", padding: "3px 10px",
+                    borderRadius: 8, border: "1px solid rgba(255,255,255,0.18)",
+                    background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.82rem",
                     outline: "none",
                   }}
                 />
@@ -10743,8 +10753,8 @@ function App() {
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
               defaultPct={{ x: 0.005, y: 0.745, w: 0.18, h: 0.250 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
-              <div className={"panel panel-tight factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
-                style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "auto", padding: "4px 0" }}>
+              <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
+                style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>
                 {renderFactionSelector()}
               </div>
             </Movable>
