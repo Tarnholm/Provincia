@@ -8,6 +8,18 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.362",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Map grows larger. Bottom-strip reserved height trimmed (REGIONINFO_HEIGHT 320 → 270) so the canvas claims the extra vertical room. At 1920×1080 the map gets ~50 extra pixels of height to work with." },
+      { type: "improvement", text: "Uniform 5 px gaps between widgets on both axes — matches the tight factions↔selected horizontal gap. Region info column vertical gaps shrank from ~14 px to ~5 px so the left side feels as tight as the bottom strip." },
+      { type: "improvement", text: "Buildings widget no longer shrinks cards aggressively. Grid uses `auto-fill, minmax(60px, 1fr)` with fixed 80 px rows; cards stay readable, and the widget scrolls vertically when the 20-slot grid can't fit at the minimum size. Empty slot placeholders preserved." },
+      { type: "fix", text: "Garrison widget now reserves a stable 10×2 = 20-slot grid (max stationed units in a settlement). Empty slots render as faint dashed placeholders below the actual units." },
+      { type: "improvement", text: "Factions legend on the map sidebar now has a fixed header + scrolling body (matching the bottom-strip Factions widget). Title and search input stay put while the faction list scrolls." },
+      { type: "feature", text: "Smooth iOS-style transition when Movable widgets snap-to-align, get pushed by collision, undo, or migrate. Uses `cubic-bezier(0.16, 1, 0.3, 1)` over 240 ms; transitions disable during active drag so mouse-follow stays instant. LAYOUT_VERSION bumped to 7." },
+    ],
+  },
+  {
     version: "0.9.361",
     date: "2026-05-16",
     items: [

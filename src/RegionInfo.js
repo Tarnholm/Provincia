@@ -889,7 +889,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Characters — Movable widget extracted from buildings */}
       <Movable id="region.characters" title="Characters" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.3500, w: 0.2150, h: 0.1550 }}>
+        defaultPct={{ x: 0.5720, y: 0.3420, w: 0.2150, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8" }}>
@@ -951,7 +951,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Building queue — Movable widget extracted from buildings */}
       <Movable id="region.queue" title="Build queue" designMode={designMode}
-        defaultPct={{ x: 0.8975, y: 0.3500, w: 0.0975, h: 0.1550 }}>
+        defaultPct={{ x: 0.8975, y: 0.3420, w: 0.0975, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
@@ -987,7 +987,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Unit queue — Movable widget. Lists units currently being
           recruited in this settlement (recruitingNow from save). */}
       <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.3500, w: 0.0975, h: 0.1550 }}>
+        defaultPct={{ x: 0.7950, y: 0.3420, w: 0.0975, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
@@ -1021,7 +1021,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.5180, w: 0.2150, h: 0.4770 }}>
+        defaultPct={{ x: 0.5720, y: 0.5020, w: 0.2150, h: 0.2430 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Buildings:</div>
@@ -1029,25 +1029,24 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         <div style={widgetBody}>
         {buildingItems.length > 0 ? (
           (() => {
-            // Adaptive 20-slot grid. Compute cols/rows that best fit the
-            // widget's current aspect ratio while always reserving room for
-            // 20 cards (cols × rows ≥ 20). Empty slots render as faint
-            // dashed placeholders so the layout doesn't reshuffle when
-            // adding/removing buildings.
-            const { cols: bcols, rows: brows } = adaptiveGrid(buildingsBoxRef.current, 20, 1.0);
-            const total = bcols * brows;
+            // 20-slot grid with a minimum card size of 60×80 — cards
+            // reflow into more rows when the widget is narrow and the
+            // container scrolls vertically once 20 cards no longer fit.
+            // Prevents the cards from shrinking past readable.
             const padded = buildingItems.slice(0, 20);
-            const emptyCount = Math.max(0, total - padded.length);
+            const emptyCount = Math.max(0, 20 - padded.length);
             return (
           <div
             ref={buildingsBoxRef}
             style={{
               display: "grid",
-              gridTemplateColumns: `repeat(${bcols}, 1fr)`,
-              gridTemplateRows: `repeat(${brows}, 1fr)`,
+              gridTemplateColumns: "repeat(auto-fill, minmax(60px, 1fr))",
+              gridAutoRows: "80px",
               gap: 4,
               flex: 1,
               minHeight: 0,
+              overflowY: "auto",
+              alignContent: "start",
             }}
           >
             {buildingItems.map((b) => {
@@ -1238,7 +1237,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.5180, w: 0.2000, h: 0.1820 }}>
+        defaultPct={{ x: 0.7950, y: 0.5020, w: 0.2000, h: 0.1960 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf",
@@ -1261,10 +1260,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         {garrison && garrison.length > 0 ? (
           <div style={{
             display: "grid",
+            // Settlements can hold at most 20 units (10×2). Reserve all
+            // 20 slots so the grid keeps a stable shape; empty slots
+            // render as faint dashed placeholders below the real units.
             gridTemplateColumns: "repeat(10, 1fr)",
-            gridAutoRows: "min-content",
+            gridTemplateRows: "repeat(2, 1fr)",
             gap: 2,
-            justifyContent: "start",
+            flex: 1,
+            minHeight: 0,
           }}>
             {garrison.map((u, i) => {
               const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
@@ -1348,6 +1351,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 </div>
               );
             })}
+            {/* Fill out to 20 slots so the 10×2 grid stays a stable shape
+                as garrison size changes. Empty cells render as faint
+                dashed placeholders. */}
+            {Array.from({ length: Math.max(0, 20 - garrison.length) }).map((_, i) => (
+              <div key={`empty-${i}`} style={{
+                width: "100%", height: "100%",
+                border: "1px dashed rgba(128,128,128,0.25)",
+                borderRadius: 3,
+                boxSizing: "border-box",
+              }} />
+            ))}
           </div>
         ) : (
           <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>
@@ -1360,7 +1374,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.7130, w: 0.2000, h: 0.2820 }}>
+        defaultPct={{ x: 0.7950, y: 0.7030, w: 0.2000, h: 0.2920 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6" }}>Field armies:</div>

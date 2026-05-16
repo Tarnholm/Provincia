@@ -102,7 +102,7 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 6;
+const LAYOUT_VERSION = 7;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -110,21 +110,22 @@ const LAYOUT_VERSION = 6;
 // shorter (h=0.329) to leave room for `region.characters` between info
 // and buildings.
 const CANONICAL_V4 = {
+  // Uniform 5-px (≈0.005 viewport-frac) gaps on BOTH axes — matches the
+  // factions↔selected horizontal gap on the bottom strip. Bottom strip
+  // shrunk to 0.245 viewport-h (270 px at 1080p) so the map claims more
+  // vertical space.
   "region.info":        { x: 0.5720, y: 0.0080, w: 0.2150, h: 0.3290 },
   "region.recruit":     { x: 0.7950, y: 0.0080, w: 0.2000, h: 0.3290 },
-  "region.characters":  { x: 0.5720, y: 0.3500, w: 0.2150, h: 0.1550 },
-  "region.unitQueue":   { x: 0.7950, y: 0.3500, w: 0.0975, h: 0.1550 },
-  "region.queue":       { x: 0.8975, y: 0.3500, w: 0.0975, h: 0.1550 },
-  "region.buildings":   { x: 0.5720, y: 0.5180, w: 0.2150, h: 0.4770 },
-  "region.garrison":    { x: 0.7950, y: 0.5180, w: 0.2000, h: 0.1820 },
-  "region.fieldArmies": { x: 0.7950, y: 0.7130, w: 0.2000, h: 0.2820 },
-  // Bottom-strip widgets. Search bar above factions; selected provinces
-  // (with recent regions + Summary merged in as its top row) on the right.
-  // Pinned regions (conditional) stays its own Movable so it can be
-  // moved independently when present.
-  "bottom.search":      { x: 0.0050, y: 0.7000, w: 0.2050, h: 0.0400 },
-  "bottom.factions":    { x: 0.0050, y: 0.7440, w: 0.2050, h: 0.2510 },
-  "bottom.selected":    { x: 0.2150, y: 0.7000, w: 0.3510, h: 0.2950 },
+  "region.characters":  { x: 0.5720, y: 0.3420, w: 0.2150, h: 0.1550 },
+  "region.unitQueue":   { x: 0.7950, y: 0.3420, w: 0.0975, h: 0.1550 },
+  "region.queue":       { x: 0.8975, y: 0.3420, w: 0.0975, h: 0.1550 },
+  "region.buildings":   { x: 0.5720, y: 0.5020, w: 0.2150, h: 0.2430 },
+  "region.garrison":    { x: 0.7950, y: 0.5020, w: 0.2000, h: 0.1960 },
+  "region.fieldArmies": { x: 0.7950, y: 0.7030, w: 0.2000, h: 0.2920 },
+  // Bottom-strip widgets — tighter packing, 5-px gaps throughout.
+  "bottom.search":      { x: 0.0050, y: 0.7550, w: 0.2050, h: 0.0400 },
+  "bottom.factions":    { x: 0.0050, y: 0.8000, w: 0.2050, h: 0.1950 },
+  "bottom.selected":    { x: 0.2150, y: 0.7550, w: 0.3510, h: 0.2400 },
   // Note: bottom.pinned is intentionally omitted from canonical — its
   // Movable only renders when pinnedRegions is non-empty, so most users
   // won't see it. JSX default position handles the first-time render.
@@ -382,6 +383,11 @@ export function Movable({
   zIndex = 2,
 }) {
   const [pos, setPos] = useWidgetPos(id, defaultPct);
+  // `isDragging` toggles position transitions off during active drag/
+  // resize (mouse-follow needs to be instant) and back on for snap-into-
+  // place, undo, and migration applies — those get a smooth ease so the
+  // layout feels responsive instead of teleporting.
+  const [isDragging, setIsDragging] = useState(false);
   // Track viewport size so drag math + render position stay in sync when
   // the window is resized (multi-monitor, fullscreen, etc.).
   const [vp, setVp] = useState(() => ({
@@ -404,6 +410,7 @@ export function Movable({
     e.preventDefault();
     e.stopPropagation();
     pushUndoSnapshot();
+    setIsDragging(true);
     const startX = e.clientX;
     const startY = e.clientY;
     const startPos = { ...pos };
@@ -423,6 +430,7 @@ export function Movable({
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       clearGuides();
+      setIsDragging(false);
       logCurrentLayout("drag");
     }
     window.addEventListener("mousemove", onMove);
@@ -434,6 +442,7 @@ export function Movable({
     e.preventDefault();
     e.stopPropagation();
     pushUndoSnapshot();
+    setIsDragging(true);
     const startX = e.clientX;
     const startY = e.clientY;
     const startPos = { ...pos };
@@ -470,6 +479,7 @@ export function Movable({
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       clearGuides();
+      setIsDragging(false);
       logCurrentLayout("resize");
     }
     window.addEventListener("mousemove", onMove);
@@ -486,6 +496,12 @@ export function Movable({
         height,
         boxSizing: "border-box",
         zIndex,
+        // Smooth transition for snap/undo/migration position changes,
+        // disabled during active drag so mouse-follow stays instant.
+        // Spring-y curve gives the iOS / macOS settle-into-place feel.
+        transition: isDragging
+          ? "none"
+          : "left 240ms cubic-bezier(0.16, 1, 0.3, 1), top 240ms cubic-bezier(0.16, 1, 0.3, 1), width 240ms cubic-bezier(0.16, 1, 0.3, 1), height 240ms cubic-bezier(0.16, 1, 0.3, 1)",
         ...(style || {}),
       }}
       data-widget={id}

@@ -31,7 +31,11 @@ const PANEL_WIDTH = 220;
 // Shrinks the map canvas horizontally to free space for the right sidebar
 // (Resources panel, Factions tiles, search). Tuned for 1920px default.
 const MAP_WIDTH_ADJUST = 120;
-const REGIONINFO_HEIGHT = 320;
+// Reserved bottom-strip height when no override is set. Trimmed in 0.9.362
+// (was 320) since widgets float independently of the strip now; the
+// canvas can claim the extra height for the map. Widgets at default
+// canonical positions still fit inside this area.
+const REGIONINFO_HEIGHT = 270;
 const ICON_SIZE = 72;
 const ICON_GAP = 3;
 const ICON_SIDE_PAD = 0;
@@ -9603,27 +9607,29 @@ function App() {
       };
 
       return (
-        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto" }}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
-            Factions <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
-            {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi-select</span>}
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
+              Factions <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+              {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi-select</span>}
+            </div>
+            {!legendCollapsed && (
+              <input
+                type="text"
+                value={legendSearch}
+                onChange={(e) => setLegendSearch(e.target.value)}
+                className="legend-search-input"
+                placeholder="Search factions..."
+                style={{
+                  width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
+                  borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
+                  color: "#eee", fontSize: "0.74rem", outline: "none",
+                  transition: "border-color 0.15s, box-shadow 0.15s",
+                }}
+              />
+            )}
           </div>
-          {!legendCollapsed && (
-            <input
-              type="text"
-              value={legendSearch}
-              onChange={(e) => setLegendSearch(e.target.value)}
-              className="legend-search-input"
-              placeholder="Search factions..."
-              style={{
-                width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
-                borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
-                color: "#eee", fontSize: "0.74rem", outline: "none",
-                transition: "border-color 0.15s, box-shadow 0.15s",
-              }}
-            />
-          )}
-          <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
             {filtered.map(([factionName, { color, count }]) => {
               const selected = activeSet?.has(factionName);
               const dimmed = activeSet && activeSet.size > 0 && !selected;
@@ -10727,7 +10733,7 @@ function App() {
                 in design mode. Headers/buttons stay put; only inner
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
-              defaultPct={{ x: 0.005, y: 0.708, w: 0.18, h: 0.030 }}
+              defaultPct={{ x: 0.005, y: 0.755, w: 0.205, h: 0.040 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
                   chrome (no cream background, no extra padding). Input
@@ -10751,7 +10757,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
-              defaultPct={{ x: 0.005, y: 0.744, w: 0.205, h: 0.251 }}
+              defaultPct={{ x: 0.005, y: 0.800, w: 0.205, h: 0.195 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>
@@ -10794,7 +10800,7 @@ function App() {
             )}
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
-              defaultPct={{ x: 0.215, y: 0.700, w: 0.351, h: 0.295 }}>
+              defaultPct={{ x: 0.215, y: 0.755, w: 0.351, h: 0.240 }}>
               {/* Three sections in this widget:
                     1) Recent regions chips + Summary toggle (fixed row)
                     2) "Selected Provinces:" title + Deselect All (fixed row)
