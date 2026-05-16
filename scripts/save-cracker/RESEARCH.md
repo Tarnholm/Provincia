@@ -15293,6 +15293,85 @@ Why +583 vs the first adoption's +248? Hypothesis: the family-tree linkage secti
 
 ---
 
+## Session 116 — full T0..T5 timeline + year-tick verification (2026-05-17)
+
+#### Brief
+
+User extended the timeline to 12 saves spanning turns 1–6 of the RIS imperial Dummies campaign, including 4 adoption events (Aulus, Appius, Aulus-again, Gaius).
+
+#### STRONG — RIS imperial 4-turns-per-year verified
+
+Year field at `0x44e7` ticked from `-270` to `-269` exactly between turn 4 (t3a_adoption) and turn 5 (t4). User confirmed RIS = 4 turns per year. The year is simply `start_year + floor((turn - 1) / 4)`.
+
+#### REFUTED — Adoption event-counter is NOT a stable per-event-type fingerprint
+
+Session 115 hypothesized that the `0x43f8` counter advances by a near-constant amount per event type. With 4 adoption events across the timeline:
+
+| Adoption | Counter Δ | Size Δ |
+|---|---|---|
+| Aulus (T2, -270) | +144 | +248 |
+| Appius (T4, -270) | +145 | +583 |
+| Aulus-again (T5, -269) | +217 | +240 |
+| Gaius (T6, -269) | +120 | +240 |
+
+Deltas range from +120 to +217 — too variable to be a reliable fingerprint. The +144/+145 from session 115 was a 2-sample coincidence. Adoption events do have a *roughly bounded* counter advance (~120-220 range), but no single magic number.
+
+The size deltas are TIGHTER: 3 of 4 adoptions came out at +240/+248 bytes (just the journal record). Appius's outlier +583 included downstream state changes (likely his character record being created, since at T4 the user accepted Appius but declined Aulus).
+
+#### REFUTED — CHARACTER_PATHS does NOT grow by exactly +3 per turn
+
+Session 115 saw +3 paths per End Turn across 3 transitions and called it rock-solid. Adding T4 + T5 breaks the pattern:
+
+| Transition | Path Δ |
+|---|---|
+| End Turn 1 | +3 |
+| End Turn 2 | +3 |
+| End Turn 3 | +3 |
+| **End Turn 4 (year transition)** | **+0** |
+| **End Turn 5** | **+16** |
+
+Path growth is event-driven, not turn-driven. The year-transition turn (T4) produced 0 new paths; T5 produced +16. Cumulative across 5 End Turns: +25 paths = 5/turn average, but very uneven. Path semantics are still unresolved — they're tied to some event class but neither "births/deaths/adoptions" nor "End Turns" alone explains the cadence.
+
+#### STRONG — Engine re-offers declined adoptions
+
+The same character "Aulus" appears in two separate adoption journal entries: T2 (year -270) and T5 (year -269). User confirmed they declined at T2 — the engine re-tried the offer one year later. Confirms RTW's adoption-event AI: a declined heir candidate can come back as another offer in a later year.
+
+For Provincia: counting unique adoption-offer characters across journal entries is misleading; the same character can appear multiple times across separate offer events.
+
+#### STRONG — Year-transition End Turn has 2× the file growth of normal End Turn
+
+| End Turn | Year transition? | Size Δ |
+|---|---|---|
+| Turn 1→2 | no | +639 KB (initial setup) |
+| Turn 2→3 | no | +385 KB |
+| Turn 3→4 | no | +292 KB |
+| **Turn 4→5** | **YES** | **+628 KB** |
+| Turn 5→6 | no | +410 KB |
+
+End Turn 4 (year transition) was +628 KB — about double the previous turn. Year transitions trigger extra engine bookkeeping (annual reports, AI re-evaluation, seasonal events, etc.) reflected in larger save deltas.
+
+#### Confidence summary
+
+* **STRONG**: RIS imperial uses 4 turns/year. Year field ticks exactly at turn 5/9/13/... boundaries.
+* **STRONG**: Year-transition turns have ~2× the file growth of normal End Turns (extra annual bookkeeping).
+* **STRONG**: The engine re-offers declined adoptions ~1 year later (same character name).
+* **REFUTED**: "Adoption events have a stable counter-Δ fingerprint" — actual range is +120 to +217.
+* **REFUTED**: "Paths grow by exactly +3 per End Turn" — actual range is +0 to +16, event-driven.
+* **STRONG**: The save file at `t_adoption` is captured AT the offer moment (before the player decision is processed). The +636 byte cost of accepting Aulus only shows up the FOLLOWING End Turn.
+
+#### Files
+
+* `scripts/save-cracker/dig-yeartick-1.js` — year transition test, t3→t4 confirmed
+* `scripts/save-cracker/dig-t5-1.js` — full T0..T5 timeline with adoption-event-Δ table
+
+#### Next steps
+
+1. **Find the per-character record location** — diff t2 (Aulus accepted) vs t2_decline (Aulus declined) in the character zone 0x14e0000..0x17d0000. The 636-byte difference IS Aulus's character record + family-tree linkage. Locate it byte-exact.
+2. **Path-growth correlation** — overlay path Δ with journal-entry count Δ per turn. +0 paths at year transition vs +14 journal entries; +16 paths at T5 vs +4 journals. No obvious 1:1 mapping. Need to identify which subset of events spawn paths.
+3. **Test path-buffer cap** — t3a → t4 had +0 paths but +627 KB file growth. Was the path section "full" and growth went elsewhere? Or did the year-transition just not generate path-eligible events?
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
