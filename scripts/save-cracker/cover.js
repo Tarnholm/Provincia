@@ -193,6 +193,17 @@ function main() {
   const settsAll = findAllSettlementMarkers(buf);
   const setts = settsAll.filter(s => s.offset >= SETT_ZONE_START && s.offset < SETT_ZONE_END);
   console.log(`settlements (markers in zone): ${setts.length} (raw scan: ${settsAll.length})`);
+  // Marker-relative editable fields (session 100, 2026-05-16):
+  //   marker − 2269   u8   tax level enum {0..3}
+  //   marker − 2207   u8   settlement level enum {0..5}
+  //   marker − 1944   u32  owner faction UUID
+  //   marker − 1940   u32  governor character UUID
+  //   marker − 1494   u32  live population
+  //   marker − 34     u32  population snapshot (mirror, mostly equal in T0)
+  //   marker − 30     f32  public-order / happiness score (range 0..360)
+  //   marker − 1190   f32  happiness previous-turn snapshot (mirror)
+  //   marker − 1490..−1430  f32 modifier-cluster (≥10 active line items)
+  // See RESEARCH.md "Findings 2026-05-16 (session 100)" for evidence.
   if (setts.length > 0) {
     // Claim each settlement's own marker block.
     for (const s of setts) {
@@ -649,6 +660,90 @@ function main() {
       upBytes += re - rs;
     }
     console.log(`unit-priority-table-auto: claimed ${upClaimed} ranges (${upBytes} bytes)`);
+  }
+
+  // --- 16b. Army-record-blob structural decomposition (session 99) ---------
+  // The army-trail-auto, zero-ff-trailer-auto and stride9-score-table-auto
+  // detectors collectively claim ~8.4 MB of the AI zone but treat each blob
+  // as opaque. Session 99 cracked the underlying record structure:
+  //
+  // Each "army record" consists of:
+  //   1. EF-header (24 B): `ef 00 00 00 00 00 00 00 <u32 uuid> 00*12`
+  //   2. unit-name (4+N B): `01 00 <u16 lenP1> <ascii-name-with-nul>`
+  //   3. 8-byte cookie (the army's identity hash)
+  //   4. settlement-binding: `<u16 settlementNameLen> <UTF-16 settlementName> ffffffff`
+  //   5. Embedded 240-record stride-9 tables (one or more) — each preceded
+  //      by a 48-byte prefix `[u32 0x00400001] [zeros] [u32 0x00400001] [zeros] [u8 count]`
+  //      and followed by `[u8 tier 0..6] [ff ff ff ff]`. Count is encoded
+  //      as both a `u8` byte (the byte right before the array start) and
+  //      sometimes a `u32` higher in the prefix.
+  //   6. Per-army summary tail: `... 64 00 00 00 64 00 00 00 [10 zero bytes]
+  //      <u32 unit-hash> [ff ff ff ff]` — the `64 00 00 00 = 100` pair is
+  //      morale/discipline baseline (session 64 already identified this
+  //      tail signature, mis-classified as a separate "trailer").
+  //
+  // Cross-counts in save_1.2.sav:
+  //   - 449 EF-headers with ASCII unit-name (= army records)
+  //   - 4032 stride-9 record-tables (avg ~9 per army)
+  //   - 1448 zero-ff-trailers (avg ~3.2 per army) — these are NOT independent
+  //     records but **partitions inside each army record**.
+  //   - 1448 stride-9 arrays of EXACTLY 240 records, each preceded by a `0xf0`
+  //     count byte (= 240). 240 = tile-grid column count; the 240-record
+  //     arrays likely hold per-grid-column movement / pathfinding scoring.
+  //
+  // The detector below is informational only — these blobs are already
+  // claimed by sections 14/15/16 above. We add a no-op claim listing the
+  // observed sub-structure so the cover report can attribute the bytes
+  // to "army-record-blob" semantically.
+  {
+    const ZONE_START = 0x14e5ac6;
+    const ZONE_END   = Math.min(0x1f1fc14, size);
+    let armyCount = 0;
+    let stride9_240Count = 0;
+    let efHeaderBytes = 0;
+    // Count EF-headers with ASCII unit names.
+    for (let i = ZONE_START; i < ZONE_END - 30; i++) {
+      if (buf[i] !== 0xef) continue;
+      if (buf[i+1] || buf[i+2] || buf[i+3] || buf[i+4] || buf[i+5] || buf[i+6] || buf[i+7]) continue;
+      // Look for `01 00 <u16 lenP1> <ascii or trailing-NUL>` within +8..+36
+      for (let p = i + 8; p < i + 36 && p + 4 <= ZONE_END; p++) {
+        if (buf[p] !== 0x01 || buf[p+1] !== 0) continue;
+        const lenP1 = buf.readUInt16LE(p + 2);
+        if (lenP1 < 3 || lenP1 > 48) continue;
+        if (p + 4 + lenP1 > ZONE_END) continue;
+        const realLen = (buf[p + 4 + lenP1 - 1] === 0) ? lenP1 - 1 : lenP1;
+        let ok = realLen >= 3;
+        for (let k = 0; k < realLen; k++) {
+          const c = buf[p + 4 + k];
+          const isAlpha = (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a);
+          const isDigit = c >= 0x30 && c <= 0x39;
+          if (!isAlpha && !isDigit && c !== 0x5f && c !== 0x20 && c !== 0x2d) { ok = false; break; }
+        }
+        if (ok) {
+          armyCount++;
+          efHeaderBytes += (p + 4 + lenP1) - i;
+          i = p + 4 + lenP1 - 1; // -1 because the outer loop will i++
+          break;
+        }
+      }
+    }
+    // Count stride-9 arrays preceded by a byte == array length.
+    function isStride9(p) {
+      if (p + 9 > size) return false;
+      if (buf[p+5] || buf[p+6] || buf[p+7] || buf[p+8]) return false;
+      const b3 = buf[p+3];
+      return (b3 & 0x0f) === 0 && b3 <= 0x80;
+    }
+    let p = ZONE_START;
+    while (p < ZONE_END - 9) {
+      if (isStride9(p)) {
+        let q = p, count = 0;
+        while (q + 9 <= ZONE_END && isStride9(q)) { count++; q += 9; }
+        if (count === 240 && p > 0 && buf[p-1] === 240) stride9_240Count++;
+        p = q;
+      } else p++;
+    }
+    console.log(`army-record sub-structure: ${armyCount} EF-headers (${efHeaderBytes} hdr-bytes), ${stride9_240Count} 240-stride9 arrays`);
   }
 
   // --- 17. Multi-stride record-table sweeper (session 68) -------------------

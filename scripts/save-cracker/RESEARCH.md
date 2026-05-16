@@ -13021,6 +13021,307 @@ Files: `scripts/save-cracker/dig-stride9xyz7.js` (global xyz distribution scan),
 
 ---
 
+### Findings 2026-05-16 (background session 99 — catch-all decomposition: tile-grid + army-record-blob)
+
+Goal per overnight brief: break the largest "catch-all" cover.js sections
+into smaller, more meaningful structural pieces. Cover.js claims 99.97% but
+sections §15/§16/§17 (`army-trail-auto`, `zero-ff-trailer-auto`,
+`stride9-score-table-auto`) total ~8.4 MB of nominally-claimed-but-opaque
+bytes; the 15.25 MB tile-grid (44% of the file) had only its first 100 bytes
+ever scanned. This session takes both apart.
+
+#### Headline 1 — Tile-grid 267-byte record: ALL 4 variable fields located, **rest of record is invariant constant data** (STRONG)
+
+Full byte-distinct scan across all 57,120 records of the tile-grid matrix
+(`0xf8fd2..0xf84632`, save_1.2.sav). Only **four** byte positions out of
+267 have ≥2 distinct values:
+
+| Position | Distinct | Top value | Frequency |
+|---|---|---|---|
+| `+20..+21` | 3 | `0xc8 0x00` (= u32 200) | 98.4% |
+| `+28`     | 3 | `0x06` (=6)            | 99.2% |
+| `+32..+35`| 5 | `0xc8 0x00 0x00 0x00` (= u32 200) | 98.1% |
+
+Bytes `+22..+27`, `+29..+31`, and **`+36..+266` (231 bytes)** are bit-for-bit
+constant across all 57,120 cells. Confirms session 22's per-record layout
+(default values `5,_,_,_,10,200,200,2,6,200,_,...,3,_,_,_,576,_,_,166,0*171`)
+but tightens "6 variable u32 fields" to **3 u32 fields** (the +24 "always 2"
+and the +68 "always 3" were already invariant; the +20/+28/+32 trio is the
+real variable cluster).
+
+Files: `scripts/save-cracker/dig-tilegrid-fullscan.js`, `dig-tilegrid-fullscan2.js`.
+
+#### Headline 2 — Tile-grid is **100% byte-identical between turn-N saves of the same campaign** (STRONG)
+
+Diffed save_1.2 vs save_2.2 (turn 1 → turn 2, same campaign, same starting
+faction): **0 cells differ out of 57,120**. Same result for save_1.1 vs
+save_8.2 (turn 1 → turn 8). Tile-grid is **MAP-BAKED STATIC DATA** —
+written once at campaign start, never updated during play. This **REJECTS**
+the long-standing "per-tile fog-of-war / movement-cost cache" hypothesis
+(session 12, dossier section 5): if it were dynamic state, it would change
+between turns. It does not.
+
+Diffing across different campaigns (save_1.2 vs save_13.1, same imperial
+campaign but different write history) DID show diffs — but they're at the
+`+0`, `+12`, `+84`, `+92..+95` positions previously thought constant:
+
+- `+0`: byte was 5 in 57,120 cells in save_1.2, but **6 in 56,882 cells and
+  5 in only 238 cells** in save_13.1.
+- `+12`: 10 → 11 with the same 238/56,882 split.
+- The 238 cells with the "old" value are **the leftmost column (c=0)** —
+  not the right edge. The engine has incremented a per-cell write-version
+  counter for every cell except those in column 0.
+- Independent observation: byte `+84` is `0x41` (65) in interior cells and
+  `0x40` (64) in **column 239** (right edge). The leftmost column and
+  rightmost column carry separate sentinel bytes.
+
+Interpretation: the tile-grid is a static cache the engine recomputes on
+*campaign-resume* but the SAME map produces the SAME bytes every time —
+so within a single play session (turns 1..N) it never moves. **Provincia
+parsers can safely skip the entire 15.25 MB grid as opaque BLOB** without
+losing any per-turn state.
+
+Files: `scripts/save-cracker/dig-tilegrid-fullscan4.js`, `dig-tilegrid-fullscan5.js`.
+
+#### Headline 3 — Tile-grid's "last cell" `[r=237, c=238]` carries a 171-byte high-entropy blob, all other cells have zeros there (SPECULATIVE)
+
+In saves where the per-cell version stamp has advanced (`+0`=6, `+12`=11),
+the cell at logical position `[r=237, c=238]` — the very last interior
+cell before the right-edge sentinel column — holds **171 non-zero bytes**
+in offsets `+96..+266`. Every other cell in that save has zeros there.
+
+The 171 bytes look like a **packed hash/digest/MASK** but unrolled into
+the per-cell padding region. May be the global save's "tile-grid
+checksum / version digest". Not present in saves that have only-version-5
+cells. SPECULATIVE — exact role needs more saves to disambiguate.
+
+Files: `scripts/save-cracker/dig-tilegrid-fullscan2.js`.
+
+#### Headline 4 — Army-record-blob: **449 army records** decomposed; each is a header + UTF-16 settlement-binding + 240-record stride-9 movement table + 100/100 morale baseline tail (STRONG)
+
+Cover.js's §14 (`army-trail-auto`, 1736 ranges 4.3 MB), §15
+(`zero-ff-trailer-auto`, 1189 ranges 2.4 MB) and §16
+(`stride9-score-table-auto`, 889 ranges 1.7 MB) **together claim a single
+underlying structure**: the per-army-record blob in the AI/army zone
+`[0x14e5ac6, 0x1f1fc14)`.
+
+Counting EF-headers with valid ASCII unit names yields exactly **449 army
+records** in save_1.2 with `unit-name` distribution dominated by
+`greek slingers ×56`, `caetrati swordsmen ×31`, `gallic royal bodyguards
+×23`, etc. — exactly the kinds of bodyguard / mercenary units that head
+each army-record in RTW (each army's commander unit determines the record).
+
+Each army-record's byte layout (verified on 6 samples, all matching):
+
+| Sub-block | Bytes | Content |
+|---|---|---|
+| `ef`-header     | 4    | `ef 00 00 00` (army terminator from prior record) |
+| ZERO-pad        | 4    | `00 00 00 00` |
+| army UUID       | 4    | `<u32 cookie>` (low 4 bytes of army-id) |
+| ZERO-pad        | 12   | `00 00 00 00 00 00 00 00 00 00 00 00` |
+| name-prefix     | 4    | `01 00 <u16 lenP1>` (lenP1 includes trailing NUL byte) |
+| ASCII name      | lenP1| e.g. `roman leves\0` (12 bytes for "roman leves") |
+| 8-byte cookie   | 8    | `<u64 army identity hash>` |
+| settlement-name | 2 + 2×N | `<u16 utfLen> <UTF-16 settlementName>` (e.g. "Marrucinia-Vestinia") |
+| `ffffffff` term | 4    | u32 sentinel |
+| ... stride-9 sub-arrays ... | (varies)  | the army's per-(faction × entity × stance) priority table(s) (see Headline 5) |
+| `100/100` tail  | 8    | `64 00 00 00 64 00 00 00` (base morale=100, discipline=100) |
+| ZERO-pad        | 10   | 10 zero bytes |
+| unit-hash       | 4    | `<u32 unit identity hash>` |
+| `ffffffff` term | 4    | u32 sentinel — ends this army record |
+
+The `100/100` tail is the session-64 `zero-ff-trailer-auto` signature
+that was previously thought to be a separate "trailer record" type. It
+is not — it is the closing 26 bytes of every army record. The session-62
+`army-trail-auto` blob is the *interior* of the same record.
+
+Files: `scripts/save-cracker/dig-zerofftrail-internal.js`.
+
+#### Headline 5 — Each army-record embeds 1+ **240-record stride-9 arrays** preceded by a `0xf0` count byte (STRONG)
+
+1448 stride-9 arrays of **EXACTLY 240 records** were found in save_1.2's
+AI zone. Each is preceded by the byte `0xf0 = 240` (a u8 record-count
+prefix) and followed by `<u8 0..6> ff ff ff ff` (a tier-selector +
+u32-FF terminator). Other common counts (also matched by their `u8`
+prefix byte = count): 200×729, 160×556, 120×386, 60×165, 48×114, 28×86,
+32×63, 56×42, 24×251 (out of 4032 strict-prefix matches). Counts ≤8 do
+NOT have the u8 prefix and represent partial / mid-record slices.
+
+Each stride-9 array sits inside a per-array preamble:
+```
+... [u32 0x00400001] [zeros] [u32 0x00400001] [zeros] [u8 count] ...
+[count × 9-byte records] [u8 tier:0..6] [ff ff ff ff]
+```
+
+The `0x00400001` magic appears 6,169 times in the AI zone — ~2 per array
+on average, consistent with the doubled-magic preamble.
+
+1448 / 449 ≈ 3.2 → each army averages **3.2 of the 240-record arrays**
+plus ~6 shorter (200/160/120-record) arrays = ~9 stride-9 sub-tables per
+army. The 240-record count matches the **tile-grid column width (240)** —
+HYPOTHESIS the array indexes some property over the 240-column grid axis
+(possibly the AI's per-column movement-priority cache).
+
+Files: `scripts/save-cracker/dig-stride9-internal.js`, `dig-stride9-internal2.js`.
+
+#### Headline 6 — `100/100` tail's `64 00 00 00 64 00 00 00` is base-morale + base-discipline (STRONG re-interpretation)
+
+The two `100` u32s right before the per-army terminator are
+**base-morale (100) and base-discipline (100)** — RTW's
+hard-coded values for an unmodified unit's starting stats. The fact that
+they're constant 100 across every blob refutes the session-64 reading of
+them as "any meaningful per-army field". They are a literal struct member
+of `UnitMoraleState` / `UnitDisciplineState`, written verbatim from the
+engine's internal RTW unit defaults. The variable bytes before/after
+(`<u32 unit-hash>`) ARE per-army-instance.
+
+This is a minor re-interpretation — session 64 already noted these as
+"morale/discipline baseline" — but it lifts confidence from STRONG to
+CONFIRMED.
+
+#### Cover-map upgrade
+
+Added an informational §16b "army-record sub-structure" detector to
+cover.js that prints `449 EF-headers, 1448 240-stride9 arrays` so future
+sessions can monitor structural coverage. The detector is a NO-OP for the
+bitmap (the underlying bytes are already claimed by §14/§15/§16); its
+purpose is to factor the catch-all bytes into a semantic name in the
+cover report.
+
+#### Round-trip preservation
+
+Verified `node serialize.js save_1.2.sav` returns byte-identical output
+after the cover.js edits (31.8 s, byte-identical: YES). All existing
+section claims and serializers untouched — only added an info-only
+informational counter.
+
+#### Confidence summary
+
+- **CONFIRMED**: tile-grid 4 variable byte positions (`+20`, `+28`,
+  `+32` only); tile-grid is 100% turn-stable static cache; 449
+  army-records with EF/name/UTF-16-settlement/stride9-arrays/100-100-tail
+  structure; 1448 stride-9 240-record arrays each preceded by `0xf0`
+  count byte.
+- **STRONG**: tile-grid `+0`/`+12`/`+84`/`+92..+95` change between
+  campaign-resumes but are stable within a play session; column 0 and
+  column 239 carry separate edge-sentinel byte signatures.
+- **SPECULATIVE**: cell `[r=237, c=238]` 171-byte high-entropy blob is
+  a save-write checksum or version digest (needs more saves to confirm).
+- **HYPOTHESIS**: each 240-stride9 array's records are indexed
+  positionally by tile-grid column (0..239) since 240 = grid width.
+
+Files: `scripts/save-cracker/dig-tilegrid-fullscan.js`, `dig-tilegrid-fullscan2.js`,
+`dig-tilegrid-fullscan3.js`, `dig-tilegrid-fullscan4.js`, `dig-tilegrid-fullscan5.js`,
+`dig-stride9-internal.js`, `dig-stride9-internal2.js`, `dig-zerofftrail-internal.js`.
+Cover.js §16b detector added.
+
+#### Headline 7 — Last-faction-record interior (`0x20e8342..EOF`, 18.8 KB after the Lua counters) is a dense stride-6 table (SPECULATIVE)
+
+The faction-record scanner reports the **last faction record** as a
+334,378-byte blob ending at EOF (`0x20eccd3`). It is "claimed" by cover.js
+as a single opaque faction record. But internally the last 18.8 KB of
+that record sits **after** the Lua persistent-counter footer (which ends
+at `0x20e8342`) and looks structurally distinct from the rest of the
+faction's payload:
+
+- Byte composition: 36.9% zeros, 0.1% 0xff, 63% other (high entropy).
+- The 4-byte motif `XX 83 0e 02` (or `XX 85 0e 02`, etc.) repeats 2507
+  times. Inter-magic-gap histogram has a dominant peak at **gap=6
+  (2027 occurrences, 81%)**, secondary peaks at gap=10 (207) and gap=14 (202).
+- The recurring `0e 02` portion is consistent with a **u16 type-tag** or
+  the high u16 of a u32 file-offset back-reference (the value `0x020eXXXX`
+  points back into the AI/army zone offsets — e.g. `0x020e8347` is
+  ≈ the file end, suggesting these may be u32 self-pointers).
+- Multiple `0x83`-block records group into runs that increment by 6,
+  resembling a packed u16-counter + u32-self-ptr stride-6 array.
+
+The 6-byte stride is consistent with `<u16 N> <u32 file_offset>` records —
+which would make this a **back-pointer / cross-reference index** added
+after the lua counter table. SPECULATIVE; exact decode requires diffing
+two saves to see if any byte changes between turns.
+
+Files: `scripts/save-cracker/dig-zerofftrail-internal.js` (the same tool
+also reports post-lua structure when extended to scan past the AI zone).
+
+---
+
+### Findings 2026-05-16 (background session 100 — settlement body T0-vs-Live diff)
+
+**Goal:** decode the editable per-settlement fields in the marker neighbourhood. Anchors are relative to the **settlement-name marker** (`findAllSettlementMarkers` in `src/buildingParser.js`) — the `[flag, nchars, 0x00, UTF-16 name, 0x00 0x00]` block that opens each chain-record gap. This is a **different anchor** from the FC magic used in sessions 86/94/96, which targeted the settlement-detail record. Marker-relative fields cover roughly the −2400..+0 byte window that wraps the name string with header bytes ahead of and a public-order trailer behind.
+
+**Saves used:** `save_10_fresh.sav` (RIS imperial T0, Roman player) + `save_1.2.sav` (also T0-equivalent) + `ror_t1e.sav` / `ror_t2s.sav` / `ror_t5.sav` / `ror_t11s.sav` (T1 through T11 progression). All RIS imperial, all 1310-marker count in T0 (save_10_fresh, save_1.2, identical_A, ror_t1e all show Rome pop = 9000, the descr_strat starting value).
+
+#### CONFIRMED fields
+
+| Δ from marker | Type | Field | Notes |
+|---|---|---|---|
+| **−2269** | u8 | **Tax level enum** | 0 = auto/low (most AI settlements default to this), 1 = normal (default for player's settlements), 2 = high, 3 = very_high. T0 fresh save: all 25 romans_julii settlements show 1; all 502 slave settlements show 0; carthage has {0:36, 3:5}. T11s: 1118/1118 in {0..3}. Reconciles with the prior "tax_byte" anchor: tax_byte = marker − 2269; pop@tax_byte+775 = pop@marker−1494 ✓. |
+| **−2207** | u8 | **Settlement level enum** | `0=village, 1=town, 2=large_town, 3=city, 4=large_city, 5=huge_city`. 95.8% purity in T0 across 1304 descr_strat-tagged settlements: town→1 (94.5%), large_town→2 (96.7%), city→3 (100%), large_city→4 (100%), huge_city→5 (100%). Persists across all 5 turn samples (1255/1310 enum-valid at T0 down to 1076/1118 at T11). |
+| −1944 | u32 | Owner faction UUID | already CONFIRMED — `src/saveOwnershipParser.js` |
+| −1940 | u32 | Governor character UUID | already CONFIRMED — `findSettlementGovernors` |
+| **−1494** | u32 | **Live current population** | 1310/1310 T0 settlements match descr_strat starting populations exactly. Rome=9000, Carthage=12000, Sparta=3500, Tarentum=2250. (Previously documented at "tax_byte + 775" — same field, different anchor.) |
+| **−34** | u32 | **Population snapshot mirror** | u32(−34) == u32(−1494) for 1310/1310 in T0; diverges over turns (861/1171 differ in T5). Semantics not pinned: NOT simply "previous-turn pop" (T1e→T2s match rate 247/1304, too low). Best read: a parallel "displayed/projected pop" cache. CONFIRMED that the field is present and pop-shaped; HYPOTHESIS for exact semantics. |
+| **−30** | f32 | **Public-order / happiness score** | Range observed 0..360 (median 150 in T0). 1310/1310 T0 settlements pass `f32 ∈ [−100, 500]`. **The prompt's "u32 LE happiness, range 105..195" was a misread** — values like 220.0 / 315.0 / 235.0 are f32 (high byte 0x43 dominant in the LE buffer), not u32. This field exactly matches the prior "tax_byte + 2239" finding (2269 − 2239 = 30, modulo sign). |
+
+#### STRONG ACTIVE fields (semantics inferred but not fully pinned)
+
+A cluster of f32 fields stride-4 from the pop u32 carries per-settlement public-order / income / modifier line items. Each is non-zero in a sizable subset of settlements and exhibits per-settlement variation across saves (so they are NOT structural padding). Confirmed by:
+* values mostly small integers (0..16, can be negative for modifiers)
+* per-pop-class clustering (cities with similar size have similar values)
+* zero-mass aligns at offsets `0 mod 4` from pop@−1494 → all are 4-byte fields starting at u32-aligned positions
+* "all zero in T0, fills in by T5+" pattern for several fields suggests they are turn-recomputed deltas/snapshots
+
+| Δ | Type | Confidence | Likely meaning | Evidence |
+|---|---|---|---|---|
+| −1490 | f32 | STRONG | base trade income / farming output | 1184/1310 nonzero T0, dominant value 16.0 (547×), range 0..16. AI cities also nonzero. Pop-correlation weak so not pop-derived. |
+| −1486 | f32 | STRONG | order modifier (can be NEGATIVE) | T0 481 nz with values {−2..5}; T5 877 nz with values {−4: 96, −1: 213, 1: 175, 3: 93, …}. Negative values mean a penalty — likely **religion penalty** or **distant-from-capital penalty**. |
+| −1482 | f32 | STRONG | post-turn computed modifier | All zero in T0, fills in by T5 (435 nz). Range −4..+6. |
+| −1478 | f32 | STRONG | order line-item | 585 nz T0, values 0..8. |
+| −1474 | f32 | STRONG | base-level switch | 0 in T0, becomes `{6: 776, 0: 395}` in T11 — looks like a 2-state {0, 6}. Possibly **base squalor** or **base culture-foreign penalty = 6**. |
+| −1462 | f32 | STRONG | T0-heavy modifier | 768/1310 nz T0, drops to 50/1118 T11. A turn-0 base value that's overwritten by later recomputed modifiers. |
+| −1454, −1450, −1446, −1442, −1434, −1430 | f32 each | STRONG | additional PO line items | Each is non-zero in 200–700 settlements, ranges mostly 0..16 (one — `−1442` — uniquely carries **fractional** values like 0.3, 0.9, 8.5, 9.7, 9.8 → a *rate* or *percentage*). |
+| −1406 | f32 | STRONG | T0-anchored counter that decays | 618 nz T0 (mostly value 2), drops to 40 by T11s. |
+| **−1190** | f32 | STRONG | **public-order snapshot / previous-turn happiness** | Distinct from but close to −30. T0: only 21/1310 match −30 exactly (mostly off by 5-20); T11s: 1025/1171 match. Convergent over time: "previous-turn happiness" smoothing snapshot, mirroring the −34/−1494 pair pattern for population. |
+
+**Gap zone:** `−1402..−1194` is all-zero across every settlement in every sampled save. Reserved padding (or where the **happiness/PO modifier list** payload starts at −1190 ends after −30 — leaving the gap as "no modifier here for this settlement").
+
+#### HYPOTHESIS fields
+
+| Δ | Type | Notes |
+|---|---|---|
+| −1182 | u16 | **Population-derived income/tax**. Pearson 0.856 with population u32; same pop ⇒ same u16. Range 327..1144. Examples: pop=400→u16=360, pop=1500→u16=597, pop=3000→u16=737, pop=9000→u16=936, pop=12000→u16=957. Not a simple linear or sqrt form. Likely the engine's per-settlement tax-revenue-per-turn cache (Rome 9000 pop ≈ 936 income; matches ~10% normal tax of 9000=900). Needs formula fit. |
+
+#### NEGATIVE results (rules out)
+
+* **Per-settlement growth-rate field:** no offset in [−2400, 100] stores a value that correlates well with `(pop@-1494 - pop@-34)` or `(popT5 - popT0)`. Pearson < 0.15 for every f32 in the modifier cluster vs pop-delta-percent. **Growth rate is not stored per-settlement — it is recomputed at turn end from buildings + size + squalor**, with the result displayed via the −34 snapshot (pre-turn-recalc value).
+* **Construction-cost / build-time multipliers:** none isolated. If they exist, they sit elsewhere (per-faction or per-chain-record level), not in the marker neighbourhood.
+* **Building-count field:** −1490 was tested against `#buildings` from `parseSettlements()`: only 79/1310 match. NOT a count.
+
+#### Coverage summary
+
+The marker-relative window `[−2275, +0]` (2275 bytes wide) now has **22 fields tagged** out of a 2275-byte span. Per-field accounting:
+* 12 u8/u32 bytes (level, tax, owner UUID, governor UUID, pop, pop-snapshot, happiness f32, plus the +/-30 surround)
+* 13 stride-4 f32 fields in the modifier cluster
+* ~75% of the byte window is still UNKNOWN (mostly zero filler or non-anchor data), but **all known editable settlement attributes** that surface in the in-game UI panel (level, pop, happiness, tax, owner, governor) are now pinned.
+
+#### Implications for the editor
+
+1. **Tax level edit**: write u8 at marker − 2269 in {0..3}; engine reads on next load. (Untested write; needs save-edit-load cycle.)
+2. **Settlement upgrade**: write u8 at marker − 2207. Be aware the level enum is paired with a buildings list — upgrading without the matching `core_building` chain entry may desync the UI; safer to upgrade through the chain-record mechanism, with this field as the back-pointer.
+3. **Population edit**: write u32 BOTH at marker − 1494 AND at marker − 34 (the snapshot mirror). Otherwise the UI may display the stale snapshot.
+4. **Happiness override**: write f32 at marker − 30 (and ideally also − 1190 to overwrite the snapshot).
+
+#### Confidence
+
+* **CONFIRMED**: settlement level enum at −2207; tax level enum at −2269; population at −1494; population snapshot at −34; happiness f32 at −30. Each tested across ≥ 5 save-turn samples with ≥ 95% pass rate.
+* **STRONG**: 13-element f32 modifier cluster at offsets −1490 through −1190, stride 4 with two gaps at {−1470, −1466, −1458} and a large all-zero gap −1402..−1194.
+* **HYPOTHESIS**: u16 at −1182 = population-derived per-turn revenue (Pearson 0.856 vs pop; no formula yet).
+* **REFUTED**: per-settlement growth rate stored as a single number anywhere in the marker neighbourhood.
+
+Files: `scripts/save-cracker/dig-settlebody-s100-1.js` (cross-save validator with spot-checks against descr_strat).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
