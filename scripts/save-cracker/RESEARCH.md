@@ -14688,6 +14688,110 @@ Not pinned without ground-truth from the UI. Likely route for a future session: 
 
 ---
 
+## Session 110 — character position record (1-tile-move diff) (2026-05-16)
+
+#### Brief
+
+User provided a pair of "halo" saves (`save_halo_oneman.sav..sav` and `save_halo_moved.sav..sav`, ~35.99 MB each, off by 2 bytes) where the *only* gameplay action between the two was: Gnaeus Cornelius Scipio moved one tile south on an otherwise empty test campaign. Goal: byte-diff to find the exact bytes that encode a character's position, MP, and turn-action flag.
+
+Fixtures: `C:\Users\vtarn\Downloads\save_halo_{oneman,moved}.sav..sav` (literal double extension).
+
+#### STRONG — Character position record at file offset 0x01510e10 (this save)
+
+Section header at `0x01510e00`:
+
+```
++0x00  u32 self-ptr   (= 0x01510e00)
++0x04  u32 self-ptr   (= 0x01510e04)        ← nested-section start
++0x08  u32 = 6                              ← record size? class tag?
++0x0c  u32 = 0xf6971a2c                     ← character UUID
++0x10  u32 self-ptr   (= 0x01510e10)        ← position sub-section start
+```
+
+Position sub-section body (offsets from 0x01510e10), with values before → after the 1-tile-south move:
+
+| +off | type | A (oneman) | B (moved) | Δ | role |
+|---|---|---|---|---|---|
+| 0x00 | u32 | 0x01510e10 | same | 0 | self-pointer |
+| 0x04 | u32 | **287** | **288** | +1 | tile X |
+| 0x08 | u32 | **400** | **399** | -1 | tile Y (**south = Y decreasing**, Y-up convention) |
+| 0x0c | u32 | 0x00017fff | 0x00016000 | low-u16 32767→24576 | sub-tile fixed-point (13-bit fractional: 4.0→3.0) |
+| 0x10 | u32 | 0x003f8000 | same | 0 | scale constant (`1.0` if read as f32 at byte +0x0f) |
+| 0x14..0x1b | zeros | | | | padding |
+| 0x1c | i32 | -256 | same | 0 | constant flag/default |
+| 0x20 | u32 | 255 | same | 0 | constant |
+| 0x28 | u32 | **2560** | **0** | -2560 | "can-act this turn" flag word (0x0A00 = bits 9,11 set when fresh; cleared after acting) |
+| 0x30 | u32 | 0xffffff00 | same | 0 | constant |
+| 0x36 | f32 (unaligned) | **248.0** | **232.21** | -15.79 | **movement points remaining** (~16 units = 1 tile cost) |
+
+The f32 at +0x36 sits mid-u32 (bytes 0x46..0x49), so this is a packed struct — RTW records are not pure u32-aligned.
+
+The "+1 X / -1 Y" pattern is consistent with either a literal SE step or RTW's pathing taking a diagonal route on a one-tile move (the user-facing "one tile south" matched the Y-1 component). f32 MP delta of -15.79 ≈ 1 tile cost (one tile = ~16 MP units in RIS imperial).
+
+Files: `dig-halo-move-1.js`, `dig-halo-move-2.js`, `dig-halo-move-3.js`.
+
+#### STRONG — Companion character-metadata record at 0x01536440
+
+Same UUID `0xf6971a2c` appears 0x25640 bytes later at file offset `0x01536444`:
+
+```
+0x01536444  u32 = 0xef (= 239)             ← record type
+0x01536448  u32 = 0xf6971a2c               ← character UUID (matches position record)
+0x01536450  pstr16 ASCIIZ "roman general"  ← class name (14 chars)
+0x01536462  ...UUIDs / floats...
+0x0153647d  pstr16 UTF-16 "Latium"         ← starting region (Italy — confirms Roman)
+```
+
+Two separate sections holding character state, joined by UUID. The position record carries tactical state (where + MP + flags); the metadata record carries class + region + faction UUID. This is the same "head + tail" pattern session 102/103 saw for the player faction record.
+
+#### STRONG — File shrinkage source: per-NPC exploration RLE around 0x02083b40
+
+File got 2 bytes shorter (35,990,303 → 35,990,301). Source pinpointed to scattered RLE-symbol changes at `0x02083b40..0x02083ddd` (12 small clusters, net delta = -2 bytes; sum of `lenB - lenA` across them = -2 exactly).
+
+This is one NPC's 510×1400-tile exploration RLE (the session-108 grid) getting re-encoded because Gnaeus's LOS halo shifted south by one tile row — newly-visible tiles updated some NPC's grid (the player's own grid lives in the player record around 0x0224XXXX; the 0x02083 zone is likely a different faction's NPC ff-record that shares LOS via espionage or shared map). The byte-savings come from a slightly more-compact run-length encoding after the halo shift.
+
+This refines the existing project memory `project_visibility_not_in_save.md`: current FoW is global+transient (correct), but per-faction **exploration history** IS stored as 510×1400 RLE grids inside the `ff 0a af f0` NPC records — and those grids update when a character's LOS changes.
+
+#### STRONG (NEGATIVE) — The "NPC tail" cluster cascade is structural, not data
+
+The ~250 single-byte and stride-16 small clusters at `0x02087764..0x020bXXXX` and the 19-KB hot zone at `0x0224e1d7..0x02252b16` are NOT real data changes. They are **section-grammar self-pointers** all shifting by -2 because the file got 2 bytes shorter at `0x02083XXX`. Verified by reading `u32@cluster_offset` in A and B: every one is a self-pointer where `A.u32 == offset` and `B.u32 == offset - 2` (or equivalent for the 19 KB stride-6 record array).
+
+These would be a false-positive distraction if treated as semantic diffs. Any future 1-byte-precision diff tool must classify self-pointer shifts as structural before reporting clusters.
+
+#### STRONG — Site 0x000043f8 is an event-log pointer, not position
+
+The only diff in the body+character_paths region (0x000043f8, 2 bytes) was tempting as a coord change. But:
+- u32 LE @ 0x000043f8 = 0x0004e143 → 0x0004e691 (Δ = +1358 file-bytes)
+- Immediately after (0x000043fc) is a UTF-16 path string `Q:\Feral\Users\Default\AppData\Local\Mods\My Mods\RIS/data/world/...`
+
+The value is a forward file offset; +1358 bytes is a plausible event-log advance after a player command (one move generates ~1 KB of journal/event records).
+
+#### Files
+
+* `scripts/save-cracker/dig-halo-move-1.js` — naive byte-by-byte walking diff with 64-byte resync window; outputs `out-halo-move-clusters.json` (274 clusters classified by file zone).
+* `scripts/save-cracker/dig-halo-move-2.js` — drill into the 4 candidate sites (0x000043f8, 0x0224e1d7, NPC self-pointer cascade, 0x02083XXX RLE zone).
+* `scripts/save-cracker/dig-halo-move-3.js` — field-by-field decode of section 0x01510e10; locates companion metadata at 0x01536440 with matching UUID and "Latium" region tag.
+
+#### Confidence summary
+
+* **STRONG**: A character's position is stored as `(u32 tile_X, u32 tile_Y, u32 sub-tile_fixed_point)` at offsets +4/+8/+0xc of a self-pointing section. South = Y-1.
+* **STRONG**: Movement points remaining are a packed f32 at +0x36 of the position section (unaligned to u32 grid).
+* **STRONG**: A 4-byte "can-act this turn" flag word at +0x28 (0x0A00 fresh → 0 after action).
+* **STRONG**: Character UUID at +0x0c of the OUTER section header links to a companion metadata record (class name + region + faction UUID) elsewhere in the settlement+factions zone.
+* **STRONG**: Per-faction exploration history is stored as RLE in NPC ff-records; a single move can update it and change the file size by ±a few bytes.
+* **STRONG (NEGATIVE)**: Most byte-level diffs after a single tile move are STRUCTURAL section-pointer shifts, not data. Any save-diff tool must filter these.
+* **HYPOTHESIS**: The "1 tile south" with both X+1 AND Y-1 either reflects a true diagonal move or a multi-step path; can be tested with a pure-orthogonal-move sample (strictly south where X stays constant).
+
+#### Next steps
+
+1. **Generalize the position-record finder**: scan a fresh save for any section starting with `{u32 self, u32 self+4, u32=6, u32 uuid, u32 self+0x10}` shape. Build a `findCharacters(buf)` API returning `[{ uuid, pos: {x, y, subFP}, mpRem, canAct }]`.
+2. **Pure-orthogonal-move test**: ask user for a save pair where Gnaeus moves *strictly* one tile south (X unchanged), to nail down whether X+1 was diagonal-step or movement-counter.
+3. **Validate against a many-character save**: most saves have 100s of characters. Confirm `findCharacters` returns the expected count and that positions match descr_strat T0 declarations.
+4. **Surface in Provincia UI**: add an overlay showing each character's exact tile + MP remaining on the strategic map — useful for save-state inspection / scenario authoring.
+5. **Update `project_visibility_not_in_save` memory**: clarify the distinction between current-FoW (not stored) and per-faction-exploration-history (stored as RLE in NPC ff-records, updates on LOS-changing moves).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

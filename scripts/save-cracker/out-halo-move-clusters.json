@@ -1,0 +1,2754 @@
+{
+ "paths": {
+  "a": "C:\\Users\\vtarn\\Downloads\\save_halo_oneman.sav..sav",
+  "b": "C:\\Users\\vtarn\\Downloads\\save_halo_moved.sav..sav"
+ },
+ "sizes": {
+  "a": 35990303,
+  "b": 35990301,
+  "delta": -2
+ },
+ "clusterCount": 274,
+ "clusters": [
+  {
+   "aStart": 17400,
+   "aEnd": 17402,
+   "bStart": 17400,
+   "bEnd": 17402,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 1,
+   "section": "body+char_paths"
+  },
+  {
+   "aStart": 22089236,
+   "aEnd": 22089289,
+   "bStart": 22089236,
+   "bEnd": 22089289,
+   "lenA": 8,
+   "lenB": 8,
+   "spans": 5,
+   "section": "settlement+factions"
+  },
+  {
+   "aStart": 22242338,
+   "aEnd": 22242339,
+   "bStart": 22242338,
+   "bEnd": 22242339,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "settlement+factions"
+  },
+  {
+   "aStart": 22242451,
+   "aEnd": 22242454,
+   "bStart": 22242451,
+   "bEnd": 22242454,
+   "lenA": 3,
+   "lenB": 3,
+   "spans": 1,
+   "section": "settlement+factions"
+  },
+  {
+   "aStart": 34093938,
+   "aEnd": 34093940,
+   "bStart": 34093938,
+   "bEnd": 34093942,
+   "lenA": 2,
+   "lenB": 4,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34093981,
+   "aEnd": 34093988,
+   "bStart": 34093983,
+   "bEnd": 34093990,
+   "lenA": 4,
+   "lenB": 4,
+   "spans": 3,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094041,
+   "aEnd": 34094046,
+   "bStart": 34094043,
+   "bEnd": 34094048,
+   "lenA": 3,
+   "lenB": 3,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094117,
+   "aEnd": 34094120,
+   "bStart": 34094119,
+   "bEnd": 34094122,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094172,
+   "aEnd": 34094186,
+   "bStart": 34094174,
+   "bEnd": 34094190,
+   "lenA": 12,
+   "lenB": 14,
+   "spans": 3,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094233,
+   "aEnd": 34094244,
+   "bStart": 34094237,
+   "bEnd": 34094248,
+   "lenA": 10,
+   "lenB": 10,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094325,
+   "aEnd": 34094338,
+   "bStart": 34094329,
+   "bEnd": 34094338,
+   "lenA": 12,
+   "lenB": 8,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094371,
+   "aEnd": 34094382,
+   "bStart": 34094371,
+   "bEnd": 34094384,
+   "lenA": 10,
+   "lenB": 12,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094417,
+   "aEnd": 34094428,
+   "bStart": 34094419,
+   "bEnd": 34094424,
+   "lenA": 10,
+   "lenB": 4,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094464,
+   "aEnd": 34094472,
+   "bStart": 34094460,
+   "bEnd": 34094470,
+   "lenA": 7,
+   "lenB": 9,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094508,
+   "aEnd": 34094518,
+   "bStart": 34094506,
+   "bEnd": 34094518,
+   "lenA": 9,
+   "lenB": 11,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34094557,
+   "aEnd": 34094560,
+   "bStart": 34094557,
+   "bEnd": 34094558,
+   "lenA": 3,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34100788,
+   "aEnd": 34100817,
+   "bStart": 34100786,
+   "bEnd": 34100815,
+   "lenA": 3,
+   "lenB": 3,
+   "spans": 3,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34109284,
+   "aEnd": 34109289,
+   "bStart": 34109282,
+   "bEnd": 34109287,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34117756,
+   "aEnd": 34117761,
+   "bStart": 34117754,
+   "bEnd": 34117759,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34126228,
+   "aEnd": 34126233,
+   "bStart": 34126226,
+   "bEnd": 34126231,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34137044,
+   "aEnd": 34137049,
+   "bStart": 34137042,
+   "bEnd": 34137047,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34147712,
+   "aEnd": 34147717,
+   "bStart": 34147710,
+   "bEnd": 34147715,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34163221,
+   "aEnd": 34163226,
+   "bStart": 34163219,
+   "bEnd": 34163224,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34182266,
+   "aEnd": 34182271,
+   "bStart": 34182264,
+   "bEnd": 34182269,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34191156,
+   "aEnd": 34191161,
+   "bStart": 34191154,
+   "bEnd": 34191159,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34198931,
+   "aEnd": 34198936,
+   "bStart": 34198929,
+   "bEnd": 34198934,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34207212,
+   "aEnd": 34207217,
+   "bStart": 34207210,
+   "bEnd": 34207215,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34215302,
+   "aEnd": 34215307,
+   "bStart": 34215300,
+   "bEnd": 34215305,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34224283,
+   "aEnd": 34224288,
+   "bStart": 34224281,
+   "bEnd": 34224286,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34231868,
+   "aEnd": 34231873,
+   "bStart": 34231866,
+   "bEnd": 34231871,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34240226,
+   "aEnd": 34240231,
+   "bStart": 34240224,
+   "bEnd": 34240229,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34246504,
+   "aEnd": 34246509,
+   "bStart": 34246502,
+   "bEnd": 34246507,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34253768,
+   "aEnd": 34253773,
+   "bStart": 34253766,
+   "bEnd": 34253771,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34261461,
+   "aEnd": 34261466,
+   "bStart": 34261459,
+   "bEnd": 34261464,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34269254,
+   "aEnd": 34269259,
+   "bStart": 34269252,
+   "bEnd": 34269257,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34277896,
+   "aEnd": 34277901,
+   "bStart": 34277894,
+   "bEnd": 34277899,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34283916,
+   "aEnd": 34283921,
+   "bStart": 34283914,
+   "bEnd": 34283919,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34291727,
+   "aEnd": 34291732,
+   "bStart": 34291725,
+   "bEnd": 34291730,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34297667,
+   "aEnd": 34297672,
+   "bStart": 34297665,
+   "bEnd": 34297670,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34303689,
+   "aEnd": 34303694,
+   "bStart": 34303687,
+   "bEnd": 34303692,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34310213,
+   "aEnd": 34310218,
+   "bStart": 34310211,
+   "bEnd": 34310216,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34316095,
+   "aEnd": 34316100,
+   "bStart": 34316093,
+   "bEnd": 34316098,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34329785,
+   "aEnd": 34329790,
+   "bStart": 34329783,
+   "bEnd": 34329788,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34339058,
+   "aEnd": 34339063,
+   "bStart": 34339056,
+   "bEnd": 34339061,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34346705,
+   "aEnd": 34346710,
+   "bStart": 34346703,
+   "bEnd": 34346708,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34354398,
+   "aEnd": 34354403,
+   "bStart": 34354396,
+   "bEnd": 34354401,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34360406,
+   "aEnd": 34360411,
+   "bStart": 34360404,
+   "bEnd": 34360409,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34366302,
+   "aEnd": 34366307,
+   "bStart": 34366300,
+   "bEnd": 34366305,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34372208,
+   "aEnd": 34372213,
+   "bStart": 34372206,
+   "bEnd": 34372211,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34380087,
+   "aEnd": 34380092,
+   "bStart": 34380085,
+   "bEnd": 34380090,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34386049,
+   "aEnd": 34386054,
+   "bStart": 34386047,
+   "bEnd": 34386052,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34393347,
+   "aEnd": 34393352,
+   "bStart": 34393345,
+   "bEnd": 34393350,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34399339,
+   "aEnd": 34399344,
+   "bStart": 34399337,
+   "bEnd": 34399342,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34405489,
+   "aEnd": 34405494,
+   "bStart": 34405487,
+   "bEnd": 34405492,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34411709,
+   "aEnd": 34411714,
+   "bStart": 34411707,
+   "bEnd": 34411712,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34417721,
+   "aEnd": 34417726,
+   "bStart": 34417719,
+   "bEnd": 34417724,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34423603,
+   "aEnd": 34423608,
+   "bStart": 34423601,
+   "bEnd": 34423606,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34429559,
+   "aEnd": 34429564,
+   "bStart": 34429557,
+   "bEnd": 34429562,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34435471,
+   "aEnd": 34435476,
+   "bStart": 34435469,
+   "bEnd": 34435474,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34441625,
+   "aEnd": 34441630,
+   "bStart": 34441623,
+   "bEnd": 34441628,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34447505,
+   "aEnd": 34447510,
+   "bStart": 34447503,
+   "bEnd": 34447508,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34453441,
+   "aEnd": 34453446,
+   "bStart": 34453439,
+   "bEnd": 34453444,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34459445,
+   "aEnd": 34459450,
+   "bStart": 34459443,
+   "bEnd": 34459448,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34465455,
+   "aEnd": 34465460,
+   "bStart": 34465453,
+   "bEnd": 34465458,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34471507,
+   "aEnd": 34471512,
+   "bStart": 34471505,
+   "bEnd": 34471510,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34477559,
+   "aEnd": 34477564,
+   "bStart": 34477557,
+   "bEnd": 34477562,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34483951,
+   "aEnd": 34483956,
+   "bStart": 34483949,
+   "bEnd": 34483954,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34489817,
+   "aEnd": 34489822,
+   "bStart": 34489815,
+   "bEnd": 34489820,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34495979,
+   "aEnd": 34495984,
+   "bStart": 34495977,
+   "bEnd": 34495982,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34503411,
+   "aEnd": 34503416,
+   "bStart": 34503409,
+   "bEnd": 34503414,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34509391,
+   "aEnd": 34509396,
+   "bStart": 34509389,
+   "bEnd": 34509394,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34515487,
+   "aEnd": 34515492,
+   "bStart": 34515485,
+   "bEnd": 34515490,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34521401,
+   "aEnd": 34521406,
+   "bStart": 34521399,
+   "bEnd": 34521404,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34527307,
+   "aEnd": 34527312,
+   "bStart": 34527305,
+   "bEnd": 34527310,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34533275,
+   "aEnd": 34533280,
+   "bStart": 34533273,
+   "bEnd": 34533278,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34539237,
+   "aEnd": 34539242,
+   "bStart": 34539235,
+   "bEnd": 34539240,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34545205,
+   "aEnd": 34545210,
+   "bStart": 34545203,
+   "bEnd": 34545208,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34551477,
+   "aEnd": 34551482,
+   "bStart": 34551475,
+   "bEnd": 34551480,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34558897,
+   "aEnd": 34558902,
+   "bStart": 34558895,
+   "bEnd": 34558900,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34564813,
+   "aEnd": 34564818,
+   "bStart": 34564811,
+   "bEnd": 34564816,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34570801,
+   "aEnd": 34570806,
+   "bStart": 34570799,
+   "bEnd": 34570804,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34576755,
+   "aEnd": 34576760,
+   "bStart": 34576753,
+   "bEnd": 34576758,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34582705,
+   "aEnd": 34582710,
+   "bStart": 34582703,
+   "bEnd": 34582708,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34588645,
+   "aEnd": 34588650,
+   "bStart": 34588643,
+   "bEnd": 34588648,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34602533,
+   "aEnd": 34602538,
+   "bStart": 34602531,
+   "bEnd": 34602536,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34608529,
+   "aEnd": 34608534,
+   "bStart": 34608527,
+   "bEnd": 34608532,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34614555,
+   "aEnd": 34614560,
+   "bStart": 34614553,
+   "bEnd": 34614558,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34620563,
+   "aEnd": 34620568,
+   "bStart": 34620561,
+   "bEnd": 34620566,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34626475,
+   "aEnd": 34626480,
+   "bStart": 34626473,
+   "bEnd": 34626478,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34632419,
+   "aEnd": 34632424,
+   "bStart": 34632417,
+   "bEnd": 34632422,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34638625,
+   "aEnd": 34638630,
+   "bStart": 34638623,
+   "bEnd": 34638628,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34644415,
+   "aEnd": 34644420,
+   "bStart": 34644413,
+   "bEnd": 34644418,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34650205,
+   "aEnd": 34650210,
+   "bStart": 34650203,
+   "bEnd": 34650208,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34656167,
+   "aEnd": 34656172,
+   "bStart": 34656165,
+   "bEnd": 34656170,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34662123,
+   "aEnd": 34662128,
+   "bStart": 34662121,
+   "bEnd": 34662126,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34668063,
+   "aEnd": 34668068,
+   "bStart": 34668061,
+   "bEnd": 34668066,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34674021,
+   "aEnd": 34674026,
+   "bStart": 34674019,
+   "bEnd": 34674024,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34679811,
+   "aEnd": 34679816,
+   "bStart": 34679809,
+   "bEnd": 34679814,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34685761,
+   "aEnd": 34685766,
+   "bStart": 34685759,
+   "bEnd": 34685764,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34691685,
+   "aEnd": 34691690,
+   "bStart": 34691683,
+   "bEnd": 34691688,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34697643,
+   "aEnd": 34697648,
+   "bStart": 34697641,
+   "bEnd": 34697646,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34704341,
+   "aEnd": 34704346,
+   "bStart": 34704339,
+   "bEnd": 34704344,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34710303,
+   "aEnd": 34710308,
+   "bStart": 34710301,
+   "bEnd": 34710306,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34716285,
+   "aEnd": 34716290,
+   "bStart": 34716283,
+   "bEnd": 34716288,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34722387,
+   "aEnd": 34722392,
+   "bStart": 34722385,
+   "bEnd": 34722390,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34728387,
+   "aEnd": 34728392,
+   "bStart": 34728385,
+   "bEnd": 34728390,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34734331,
+   "aEnd": 34734336,
+   "bStart": 34734329,
+   "bEnd": 34734334,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34740363,
+   "aEnd": 34740368,
+   "bStart": 34740361,
+   "bEnd": 34740366,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34746373,
+   "aEnd": 34746378,
+   "bStart": 34746371,
+   "bEnd": 34746376,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34752315,
+   "aEnd": 34752320,
+   "bStart": 34752313,
+   "bEnd": 34752318,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34758229,
+   "aEnd": 34758234,
+   "bStart": 34758227,
+   "bEnd": 34758232,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34764019,
+   "aEnd": 34764024,
+   "bStart": 34764017,
+   "bEnd": 34764022,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34769987,
+   "aEnd": 34769992,
+   "bStart": 34769985,
+   "bEnd": 34769990,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34776071,
+   "aEnd": 34776076,
+   "bStart": 34776069,
+   "bEnd": 34776074,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34782439,
+   "aEnd": 34782444,
+   "bStart": 34782437,
+   "bEnd": 34782442,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34788499,
+   "aEnd": 34788504,
+   "bStart": 34788497,
+   "bEnd": 34788502,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34794433,
+   "aEnd": 34794438,
+   "bStart": 34794431,
+   "bEnd": 34794436,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34803313,
+   "aEnd": 34803318,
+   "bStart": 34803311,
+   "bEnd": 34803316,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34809459,
+   "aEnd": 34809464,
+   "bStart": 34809457,
+   "bEnd": 34809462,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34815467,
+   "aEnd": 34815472,
+   "bStart": 34815465,
+   "bEnd": 34815470,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34822143,
+   "aEnd": 34822148,
+   "bStart": 34822141,
+   "bEnd": 34822146,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34827933,
+   "aEnd": 34827938,
+   "bStart": 34827931,
+   "bEnd": 34827936,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34834365,
+   "aEnd": 34834370,
+   "bStart": 34834363,
+   "bEnd": 34834368,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34840155,
+   "aEnd": 34840160,
+   "bStart": 34840153,
+   "bEnd": 34840158,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34846329,
+   "aEnd": 34846334,
+   "bStart": 34846327,
+   "bEnd": 34846332,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34852239,
+   "aEnd": 34852244,
+   "bStart": 34852237,
+   "bEnd": 34852242,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34858029,
+   "aEnd": 34858034,
+   "bStart": 34858027,
+   "bEnd": 34858032,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34864417,
+   "aEnd": 34864422,
+   "bStart": 34864415,
+   "bEnd": 34864420,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34870207,
+   "aEnd": 34870212,
+   "bStart": 34870205,
+   "bEnd": 34870210,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34876211,
+   "aEnd": 34876216,
+   "bStart": 34876209,
+   "bEnd": 34876214,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34882145,
+   "aEnd": 34882150,
+   "bStart": 34882143,
+   "bEnd": 34882148,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34888187,
+   "aEnd": 34888192,
+   "bStart": 34888185,
+   "bEnd": 34888190,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34894075,
+   "aEnd": 34894080,
+   "bStart": 34894073,
+   "bEnd": 34894078,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34900335,
+   "aEnd": 34900340,
+   "bStart": 34900333,
+   "bEnd": 34900338,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34906313,
+   "aEnd": 34906318,
+   "bStart": 34906311,
+   "bEnd": 34906316,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34912299,
+   "aEnd": 34912304,
+   "bStart": 34912297,
+   "bEnd": 34912302,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34918285,
+   "aEnd": 34918290,
+   "bStart": 34918283,
+   "bEnd": 34918288,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34924203,
+   "aEnd": 34924208,
+   "bStart": 34924201,
+   "bEnd": 34924206,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34930149,
+   "aEnd": 34930154,
+   "bStart": 34930147,
+   "bEnd": 34930152,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34936121,
+   "aEnd": 34936126,
+   "bStart": 34936119,
+   "bEnd": 34936124,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34942017,
+   "aEnd": 34942022,
+   "bStart": 34942015,
+   "bEnd": 34942020,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34948167,
+   "aEnd": 34948172,
+   "bStart": 34948165,
+   "bEnd": 34948170,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34954961,
+   "aEnd": 34954966,
+   "bStart": 34954959,
+   "bEnd": 34954964,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34960853,
+   "aEnd": 34960858,
+   "bStart": 34960851,
+   "bEnd": 34960856,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34966797,
+   "aEnd": 34966802,
+   "bStart": 34966795,
+   "bEnd": 34966800,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34972951,
+   "aEnd": 34972956,
+   "bStart": 34972949,
+   "bEnd": 34972954,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34978741,
+   "aEnd": 34978746,
+   "bStart": 34978739,
+   "bEnd": 34978744,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34984755,
+   "aEnd": 34984760,
+   "bStart": 34984753,
+   "bEnd": 34984758,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34990771,
+   "aEnd": 34990776,
+   "bStart": 34990769,
+   "bEnd": 34990774,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 34996759,
+   "aEnd": 34996764,
+   "bStart": 34996757,
+   "bEnd": 34996762,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35003365,
+   "aEnd": 35003370,
+   "bStart": 35003363,
+   "bEnd": 35003368,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35009399,
+   "aEnd": 35009404,
+   "bStart": 35009397,
+   "bEnd": 35009402,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35015373,
+   "aEnd": 35015378,
+   "bStart": 35015371,
+   "bEnd": 35015376,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35021253,
+   "aEnd": 35021258,
+   "bStart": 35021251,
+   "bEnd": 35021256,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35027187,
+   "aEnd": 35027192,
+   "bStart": 35027185,
+   "bEnd": 35027190,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35033381,
+   "aEnd": 35033386,
+   "bStart": 35033379,
+   "bEnd": 35033384,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35039495,
+   "aEnd": 35039500,
+   "bStart": 35039493,
+   "bEnd": 35039498,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35046931,
+   "aEnd": 35046936,
+   "bStart": 35046929,
+   "bEnd": 35046934,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35053091,
+   "aEnd": 35053096,
+   "bStart": 35053089,
+   "bEnd": 35053094,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35058881,
+   "aEnd": 35058886,
+   "bStart": 35058879,
+   "bEnd": 35058884,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35064671,
+   "aEnd": 35064676,
+   "bStart": 35064669,
+   "bEnd": 35064674,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35078429,
+   "aEnd": 35078434,
+   "bStart": 35078427,
+   "bEnd": 35078432,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35084437,
+   "aEnd": 35084442,
+   "bStart": 35084435,
+   "bEnd": 35084440,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35090359,
+   "aEnd": 35090364,
+   "bStart": 35090357,
+   "bEnd": 35090362,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35096149,
+   "aEnd": 35096154,
+   "bStart": 35096147,
+   "bEnd": 35096152,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35102051,
+   "aEnd": 35102056,
+   "bStart": 35102049,
+   "bEnd": 35102054,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35107923,
+   "aEnd": 35107928,
+   "bStart": 35107921,
+   "bEnd": 35107926,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35114141,
+   "aEnd": 35114146,
+   "bStart": 35114139,
+   "bEnd": 35114144,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35120365,
+   "aEnd": 35120370,
+   "bStart": 35120363,
+   "bEnd": 35120368,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35126365,
+   "aEnd": 35126370,
+   "bStart": 35126363,
+   "bEnd": 35126368,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35132351,
+   "aEnd": 35132356,
+   "bStart": 35132349,
+   "bEnd": 35132354,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35138481,
+   "aEnd": 35138486,
+   "bStart": 35138479,
+   "bEnd": 35138484,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35146017,
+   "aEnd": 35146022,
+   "bStart": 35146015,
+   "bEnd": 35146020,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35151991,
+   "aEnd": 35151996,
+   "bStart": 35151989,
+   "bEnd": 35151994,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35157921,
+   "aEnd": 35157926,
+   "bStart": 35157919,
+   "bEnd": 35157924,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35163711,
+   "aEnd": 35163716,
+   "bStart": 35163709,
+   "bEnd": 35163714,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35170053,
+   "aEnd": 35170058,
+   "bStart": 35170051,
+   "bEnd": 35170056,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35175943,
+   "aEnd": 35175948,
+   "bStart": 35175941,
+   "bEnd": 35175946,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35182237,
+   "aEnd": 35182242,
+   "bStart": 35182235,
+   "bEnd": 35182240,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35188415,
+   "aEnd": 35188420,
+   "bStart": 35188413,
+   "bEnd": 35188418,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35194503,
+   "aEnd": 35194508,
+   "bStart": 35194501,
+   "bEnd": 35194506,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35200379,
+   "aEnd": 35200384,
+   "bStart": 35200377,
+   "bEnd": 35200382,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35206437,
+   "aEnd": 35206442,
+   "bStart": 35206435,
+   "bEnd": 35206440,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35212477,
+   "aEnd": 35212482,
+   "bStart": 35212475,
+   "bEnd": 35212480,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35218413,
+   "aEnd": 35218418,
+   "bStart": 35218411,
+   "bEnd": 35218416,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35224371,
+   "aEnd": 35224376,
+   "bStart": 35224369,
+   "bEnd": 35224374,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35230359,
+   "aEnd": 35230364,
+   "bStart": 35230357,
+   "bEnd": 35230362,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35236339,
+   "aEnd": 35236344,
+   "bStart": 35236337,
+   "bEnd": 35236342,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35242129,
+   "aEnd": 35242134,
+   "bStart": 35242127,
+   "bEnd": 35242132,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35248049,
+   "aEnd": 35248054,
+   "bStart": 35248047,
+   "bEnd": 35248052,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35253961,
+   "aEnd": 35253966,
+   "bStart": 35253959,
+   "bEnd": 35253964,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35259863,
+   "aEnd": 35259868,
+   "bStart": 35259861,
+   "bEnd": 35259866,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35266107,
+   "aEnd": 35266112,
+   "bStart": 35266105,
+   "bEnd": 35266110,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35272161,
+   "aEnd": 35272166,
+   "bStart": 35272159,
+   "bEnd": 35272164,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35285785,
+   "aEnd": 35285790,
+   "bStart": 35285783,
+   "bEnd": 35285788,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35291695,
+   "aEnd": 35291700,
+   "bStart": 35291693,
+   "bEnd": 35291698,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35297633,
+   "aEnd": 35297638,
+   "bStart": 35297631,
+   "bEnd": 35297636,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35303829,
+   "aEnd": 35303834,
+   "bStart": 35303827,
+   "bEnd": 35303832,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35309717,
+   "aEnd": 35309722,
+   "bStart": 35309715,
+   "bEnd": 35309720,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35315789,
+   "aEnd": 35315794,
+   "bStart": 35315787,
+   "bEnd": 35315792,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35321725,
+   "aEnd": 35321730,
+   "bStart": 35321723,
+   "bEnd": 35321728,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35327971,
+   "aEnd": 35327976,
+   "bStart": 35327969,
+   "bEnd": 35327974,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35334319,
+   "aEnd": 35334324,
+   "bStart": 35334317,
+   "bEnd": 35334322,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35340727,
+   "aEnd": 35340732,
+   "bStart": 35340725,
+   "bEnd": 35340730,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35346653,
+   "aEnd": 35346658,
+   "bStart": 35346651,
+   "bEnd": 35346656,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35352595,
+   "aEnd": 35352600,
+   "bStart": 35352593,
+   "bEnd": 35352598,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35359969,
+   "aEnd": 35359974,
+   "bStart": 35359967,
+   "bEnd": 35359972,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35365967,
+   "aEnd": 35365972,
+   "bStart": 35365965,
+   "bEnd": 35365970,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35371863,
+   "aEnd": 35371868,
+   "bStart": 35371861,
+   "bEnd": 35371866,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35377939,
+   "aEnd": 35377944,
+   "bStart": 35377937,
+   "bEnd": 35377942,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35383819,
+   "aEnd": 35383824,
+   "bStart": 35383817,
+   "bEnd": 35383822,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35389881,
+   "aEnd": 35389886,
+   "bStart": 35389879,
+   "bEnd": 35389884,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35395947,
+   "aEnd": 35395952,
+   "bStart": 35395945,
+   "bEnd": 35395950,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35407313,
+   "aEnd": 35407318,
+   "bStart": 35407311,
+   "bEnd": 35407316,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35413261,
+   "aEnd": 35413266,
+   "bStart": 35413259,
+   "bEnd": 35413264,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35419297,
+   "aEnd": 35419302,
+   "bStart": 35419295,
+   "bEnd": 35419300,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35425323,
+   "aEnd": 35425328,
+   "bStart": 35425321,
+   "bEnd": 35425326,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35431491,
+   "aEnd": 35431496,
+   "bStart": 35431489,
+   "bEnd": 35431494,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35437359,
+   "aEnd": 35437364,
+   "bStart": 35437357,
+   "bEnd": 35437362,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35443451,
+   "aEnd": 35443456,
+   "bStart": 35443449,
+   "bEnd": 35443454,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35449413,
+   "aEnd": 35449418,
+   "bStart": 35449411,
+   "bEnd": 35449416,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35455293,
+   "aEnd": 35455298,
+   "bStart": 35455291,
+   "bEnd": 35455296,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35461641,
+   "aEnd": 35461646,
+   "bStart": 35461639,
+   "bEnd": 35461644,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35469121,
+   "aEnd": 35469126,
+   "bStart": 35469119,
+   "bEnd": 35469124,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35475249,
+   "aEnd": 35475254,
+   "bStart": 35475247,
+   "bEnd": 35475252,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35481127,
+   "aEnd": 35481132,
+   "bStart": 35481125,
+   "bEnd": 35481130,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35487123,
+   "aEnd": 35487128,
+   "bStart": 35487121,
+   "bEnd": 35487126,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35493259,
+   "aEnd": 35493264,
+   "bStart": 35493257,
+   "bEnd": 35493262,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35499049,
+   "aEnd": 35499054,
+   "bStart": 35499047,
+   "bEnd": 35499052,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35505183,
+   "aEnd": 35505188,
+   "bStart": 35505181,
+   "bEnd": 35505186,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35511123,
+   "aEnd": 35511128,
+   "bStart": 35511121,
+   "bEnd": 35511126,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35516985,
+   "aEnd": 35516990,
+   "bStart": 35516983,
+   "bEnd": 35516988,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35523005,
+   "aEnd": 35523010,
+   "bStart": 35523003,
+   "bEnd": 35523008,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35528973,
+   "aEnd": 35528978,
+   "bStart": 35528971,
+   "bEnd": 35528976,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35535037,
+   "aEnd": 35535042,
+   "bStart": 35535035,
+   "bEnd": 35535040,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35540983,
+   "aEnd": 35540988,
+   "bStart": 35540981,
+   "bEnd": 35540986,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35552335,
+   "aEnd": 35552340,
+   "bStart": 35552333,
+   "bEnd": 35552338,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35558201,
+   "aEnd": 35558206,
+   "bStart": 35558199,
+   "bEnd": 35558204,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35564087,
+   "aEnd": 35564092,
+   "bStart": 35564085,
+   "bEnd": 35564090,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35569993,
+   "aEnd": 35569998,
+   "bStart": 35569991,
+   "bEnd": 35569996,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35575921,
+   "aEnd": 35575926,
+   "bStart": 35575919,
+   "bEnd": 35575924,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35581963,
+   "aEnd": 35581968,
+   "bStart": 35581961,
+   "bEnd": 35581966,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35588007,
+   "aEnd": 35588012,
+   "bStart": 35588005,
+   "bEnd": 35588010,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35593921,
+   "aEnd": 35593926,
+   "bStart": 35593919,
+   "bEnd": 35593924,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35599925,
+   "aEnd": 35599930,
+   "bStart": 35599923,
+   "bEnd": 35599928,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35605909,
+   "aEnd": 35605914,
+   "bStart": 35605907,
+   "bEnd": 35605912,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35612059,
+   "aEnd": 35612064,
+   "bStart": 35612057,
+   "bEnd": 35612062,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35618061,
+   "aEnd": 35618066,
+   "bStart": 35618059,
+   "bEnd": 35618064,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35625425,
+   "aEnd": 35625430,
+   "bStart": 35625423,
+   "bEnd": 35625428,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35631215,
+   "aEnd": 35631220,
+   "bStart": 35631213,
+   "bEnd": 35631218,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35637005,
+   "aEnd": 35637010,
+   "bStart": 35637003,
+   "bEnd": 35637008,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35643123,
+   "aEnd": 35643128,
+   "bStart": 35643121,
+   "bEnd": 35643126,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35648913,
+   "aEnd": 35648918,
+   "bStart": 35648911,
+   "bEnd": 35648916,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35654765,
+   "aEnd": 35654770,
+   "bStart": 35654763,
+   "bEnd": 35654768,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35704525,
+   "aEnd": 35704534,
+   "bStart": 35704523,
+   "bEnd": 35704532,
+   "lenA": 3,
+   "lenB": 3,
+   "spans": 3,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35704867,
+   "aEnd": 35704868,
+   "bStart": 35704865,
+   "bEnd": 35704866,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35705195,
+   "aEnd": 35705196,
+   "bStart": 35705193,
+   "bEnd": 35705194,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35705525,
+   "aEnd": 35705526,
+   "bStart": 35705523,
+   "bEnd": 35705524,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35705743,
+   "aEnd": 35705784,
+   "bStart": 35705741,
+   "bEnd": 35705782,
+   "lenA": 6,
+   "lenB": 6,
+   "spans": 6,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35855383,
+   "aEnd": 35855384,
+   "bStart": 35855381,
+   "bEnd": 35855382,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35966083,
+   "aEnd": 35966096,
+   "bStart": 35966081,
+   "bEnd": 35966094,
+   "lenA": 2,
+   "lenB": 2,
+   "spans": 2,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35971543,
+   "aEnd": 35977836,
+   "bStart": 35971541,
+   "bEnd": 35977834,
+   "lenA": 878,
+   "lenB": 878,
+   "spans": 867,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35977873,
+   "aEnd": 35978462,
+   "bStart": 35977871,
+   "bEnd": 35978460,
+   "lenA": 87,
+   "lenB": 87,
+   "spans": 87,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35978499,
+   "aEnd": 35979240,
+   "bStart": 35978497,
+   "bEnd": 35979238,
+   "lenA": 106,
+   "lenB": 106,
+   "spans": 105,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35979277,
+   "aEnd": 35981216,
+   "bStart": 35979275,
+   "bEnd": 35981214,
+   "lenA": 265,
+   "lenB": 265,
+   "spans": 264,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35981253,
+   "aEnd": 35985454,
+   "bStart": 35981251,
+   "bEnd": 35985452,
+   "lenA": 581,
+   "lenB": 581,
+   "spans": 575,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35985499,
+   "aEnd": 35985500,
+   "bStart": 35985497,
+   "bEnd": 35985498,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35985537,
+   "aEnd": 35985590,
+   "bStart": 35985535,
+   "bEnd": 35985588,
+   "lenA": 3,
+   "lenB": 3,
+   "spans": 3,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35985627,
+   "aEnd": 35985628,
+   "bStart": 35985625,
+   "bEnd": 35985626,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35985665,
+   "aEnd": 35988350,
+   "bStart": 35985663,
+   "bEnd": 35988348,
+   "lenA": 385,
+   "lenB": 385,
+   "spans": 381,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35988387,
+   "aEnd": 35988388,
+   "bStart": 35988385,
+   "bEnd": 35988386,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35988425,
+   "aEnd": 35988426,
+   "bStart": 35988423,
+   "bEnd": 35988424,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35988463,
+   "aEnd": 35988464,
+   "bStart": 35988461,
+   "bEnd": 35988462,
+   "lenA": 1,
+   "lenB": 1,
+   "spans": 1,
+   "section": "NPC ff-records tail"
+  },
+  {
+   "aStart": 35988501,
+   "aEnd": 35990294,
+   "bStart": 35988499,
+   "bEnd": 35990292,
+   "lenA": 218,
+   "lenB": 218,
+   "spans": 217,
+   "section": "NPC ff-records tail"
+  }
+ ]
+}
