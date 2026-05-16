@@ -15512,10 +15512,20 @@ This is consistent with the engine writing per-character state on each player ac
 * **STRONG**: Enemy characters affected by a player action get their records touched (Memnon when Macedon besieges his fort).
 * **HYPOTHESIS**: The command-record subsystem is what RTW uses for rewinding to turn-start (undo button) and/or for AI command queueing. Not yet confirmed.
 
+#### STRONG — Alex event-log counter at u32@0xefd (≠ RIS imperial's 0x43f8)
+
+The +159 besiege-fort diff has only 2 mismatching bytes in the first 300 bytes of divergence:
+* `u32@0xefd`: A=`0xf1` (241) → B=`0x286` (646), Δ=+405
+
+This is the Alex equivalent of RIS imperial's `0x43f8` event-log counter (cracked sessions 110/113). Different campaigns put it at different offsets, but the role is identical: a u32 that advances on every save/action. The +405 advance for a single besiege-fort action is small (consistent with one short event being recorded), similar in magnitude to RIS's +226 for a no-op resave.
+
+So far: 3 known event-counter offsets — 0x43f8 (RIS imperial), 0xefd (Alex). Probably mod-data-dependent positions within a per-campaign header block.
+
 #### Files
 
 * `scripts/save-cracker/dig-alex-1.js` — initial probe, header decode, single-diff context
 * `scripts/save-cracker/dig-alex-2.js` — multi-action diff, common-bookkeeping detection, year-offset hunt
+* `scripts/save-cracker/dig-alex-3.js` — front/back alignment of the +159 besiege-fort diff; pins event-counter at 0xefd
 
 #### Next steps
 
