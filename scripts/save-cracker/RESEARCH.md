@@ -14924,6 +14924,88 @@ The save stores enough information to identify each faction *implicitly* (via re
 
 ---
 
+## Session 112 — CHARACTER_PATHS section decoded (2026-05-17)
+
+#### Brief
+
+User set the goal: "full cracking of the save files". Built `dig-inventory.js` to chart the whole save by classifying every 4-KB block, identified the largest unmapped zone (0x000a9000..0x000f9000, 320 KB) as a target, and decoded it.
+
+#### STRONG — `CHARACTER_PATHS` section at 0x000a9000..0x000f9000 (320 KB, 1695 path records)
+
+This is the section the header-strings table (HST) refers to as `CHARACTER_PATHS  v=1`. Format per path record:
+
+```
++0    u32 selfPtr     (= record offset)
++4    u32 path UUID   (per-path unique — NOT a character UUID)
++8    u32 selfPtr     (= record offset + 8)
++12   u32 ???         (broad distribution, ~500 distinct values across 1695 paths)
++16   u32 ???
++20   u32 ???
++24   u32 ???
++28   u32 ???
++32   waypoint list   : (u32 tile_X, u32 tile_Y) × N
++32+8N  trailer (0..4 zero bytes)
+```
+
+Path-record size distribution: stride 8, minimum 53 bytes (smallest path = 2-3 waypoints + header), maximum 1285 bytes (~156 waypoints). Total 1695 records in halo_oneman. Waypoint count distribution decays roughly exponentially — most paths are short (2–10 waypoints), with a long tail of multi-tile patrols.
+
+Sample path waypoints (path #0 at 0xa903f, 15 waypoints): `(278,427), (278,426), (278,425), (279,425), (279,424), (279,423), (279,422), (279,421), (279,420), (279,419), (279,418), (280,418), (280,417), (280,416), (280,415)` — clearly a coherent walk from north-east to south on the map.
+
+#### STRONG (NEGATIVE) — Path UUIDs are NOT character UUIDs
+
+Cross-checked all 1695 path UUIDs (u32@+4) against the 66 character metadata UUIDs (from the `ef 00 00 00 <uuid>` records). **0 matches.** Gnaeus's character UUID `0xf6971a2c` is not found in any path record. So the linkage `path → character` is not via `path.uuid == character.uuid`.
+
+#### Open: how to link each path to its owning character
+
+With 1695 paths and only 64 characters, the path-to-character ratio is ~26:1. Hypotheses:
+
+* (a) **Historical accumulator**: every move every character has ever made is logged as a separate path. At T0 there'd be 0; later there'd be one per character-per-turn. But halo_oneman is a fresh test save with ONE move, so 1695 doesn't fit "moves made".
+* (b) **AI pathfinding scratch**: the engine pre-computes possible movement paths for every character per turn (e.g., A* lookahead for AI), and stores them all. 1695 ≈ 64 chars × ~26 candidate paths per char.
+* (c) **Per-tile-traversed history**: every tile traversal (not just per-character-move) gets its own record. Single moves through 5 tiles produce 5 path records.
+
+The linkage might be via a hidden field at +12, +16, +20, +24, or +28 — none of which I've decoded yet. Or the linkage is positional (path records are in some implicit order matching character file-order).
+
+#### Inventory tool
+
+`dig-inventory.js` classifies every 4-KB block by content type (DATA / ASCII-rich / ZEROS / FFs / PAD / SECTION-grammar) and coalesces them into zones. Output summary for halo_oneman (35.99 MB):
+
+```
+  10.19 MB  NPC ff-records / exploration grids (session 108)
+   9.50 MB  tile-attribute static map (session 99 confirmed)
+   7.34 MB  UNZONED (most of it is the 7.2 MB ZEROS block at 0x000f9000..0x00800000 — reserved space)
+   3.38 MB  settlement zone (buildings, regions)
+   2.56 MB  major-faction records (23 majors, session 5)
+   0.50 MB  body section grammar (early)
+   0.38 MB  character/position records (session 110)
+   0.32 MB  late tail — long-tail records + section pointer tables
+   0.14 MB  scripted events (historic, olympics)
+   0.02 MB  header + HST + path strings + lua counter names
+```
+
+The 7.2 MB ZEROS block (0x000f9000..0x00800000) is genuinely empty — pre-allocated reserved space. The 9.5 MB tile-attribute zone IS mostly static map data (session 99 confirmed) but contains lots of structured ASCII content (mod-loaded string tables) that could be decoded further. The 10.19 MB NPC ff-records zone is the per-faction exploration grids (sessions 108 + 110, mostly decoded).
+
+#### Files
+
+* `scripts/save-cracker/dig-inventory.js` — whole-save classification, surfaces top unmapped zones
+* `scripts/save-cracker/dig-postEvents-1.js` — identifies the post-scripted-events zone as path data
+* `scripts/save-cracker/dig-paths-{1,2}.js` — decodes path-record structure + waypoint extraction
+
+#### Confidence summary
+
+* **STRONG**: CHARACTER_PATHS section at 0x000a9000..0x000f9000 holds 1695 path records. Each path is `<header><(u32 X, u32 Y) × N waypoints><trailer>`. The waypoint sequence reads as a coherent 1-tile-per-step movement trail in (X, Y) tile coordinates.
+* **STRONG**: Path UUID at +4 is NOT a character UUID. 0/1695 paths match any of the 66 known character UUIDs.
+* **HYPOTHESIS**: Path linkage to owner character is via an unidentified field at +12..+28, or via positional order matching character file-order. Future session should test by counting paths per character-file-order-index, or by checking if path X-coords cluster around character positions.
+* **STRONG**: The inventory tool identifies the 7.2 MB ZEROS block at 0x000f9000..0x00800000 as truly empty reserved space, NOT under-decoded content.
+
+#### Next steps
+
+1. **Decode path linkage to owner character**: test the positional-order hypothesis (path[i] belongs to character[i mod 64]?) or scan for path-header fields that match character data (positions, primaryUuid, secondaryUuid, etc).
+2. **Verify across save corpus**: run the path decoder on save_10_fresh, ror_t11s, athens_t22e and check whether the 1695 path count scales linearly with turn-count (would confirm hypothesis (a) historical accumulator).
+3. **Use the decoded paths in UI**: even without owner linkage, the 1695 paths' waypoints could be rendered as faint trails on the map (where characters have walked) — already visually useful.
+4. **Decode the 9.5 MB tile-attribute zone's structured content**: session 99 confirmed it's "static map data" but the inventory shows it contains massive ASCII-rich subzones. Possible content: mod-loaded building names, unit names, trait names — already loaded as bundled JSON in Provincia, but maybe with version drift.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
