@@ -46,6 +46,36 @@ function findCharacterRecords(buf, nameLookup, traitNames, surnamesFilter) {
     }
   }
 
+  // Session 101: attach pos + mpRemaining to each character that has a
+  // secondaryUuid. One file-wide scan covers all characters.
+  const uuidSet = new Set();
+  for (const c of records) {
+    if (c.secondaryUuid && c.secondaryUuid !== 0xffffffff) uuidSet.add(c.secondaryUuid);
+  }
+  if (uuidSet.size > 0) {
+    const posIdx = buildPositionIndex(buf, uuidSet);
+    for (const c of records) {
+      const p = posIdx.get(c.secondaryUuid);
+      if (p) {
+        c.tileX = p.x;
+        c.tileY = p.y;
+        // For turn-start saves, mpRemaining == max MP per turn for that
+        // character/unit type. Mid-turn, mpRemaining < max. We expose both
+        // names so the caller can decide: a UI showing "MP this turn"
+        // wants mpRemaining; a UI showing "this unit's speed" wants maxMP.
+        // Without a second snapshot we can't distinguish — both fields
+        // carry the same observed value.
+        c.mpRemaining = p.mpRemaining;
+        c.maxMP = p.mpRemaining;
+      } else {
+        c.tileX = null;
+        c.tileY = null;
+        c.mpRemaining = null;
+        c.maxMP = null;
+      }
+    }
+  }
+
   return records.sort((a, b) => a.offset - b.offset);
 }
 
@@ -338,6 +368,46 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
   };
 }
 
+// Per-character position + movement-points record (save-cracker session 101,
+// STRONG). For each character with a secondaryUuid (bodyguard unit UUID),
+// there's a 60+ byte "field-army position" record stored in the
+// post-merc-pool region of the save. Layout (offsets from uuid u32 location):
+//   +0   u32 = secondaryUuid (the record key)
+//   +4   u32 self-pointer-ish
+//   +8   u32 = x tile coordinate
+//   +12  u32 = y tile coordinate
+//   +16  u16 = mid-tile fractional position (32767/32768 boundary)
+//   +18..+57 misc state (selection state, pending order, …)
+//   +58  f32 = MP remaining this turn (UNALIGNED 4-byte read)
+//
+// Multiple uuid hits exist per character (one in the type-6 character record,
+// one in a path-end / movement-cache mirror, etc.); the TRUE pos record is
+// the one preceded by `u32 = 6` at -4 and with x,y in valid map range
+// (1..500). Verified by controlled experiment: save_mp_before/after.sav
+// shows Manius Aemilius Paullus moving (275,425)→(275,424) and ONLY this
+// record's f32(+58) changes (248.0 → 239.2, Δ-8.8 MP for one vertical tile).
+//
+// For turn-start saves, mpRemaining = max MP per turn for that character.
+// Across the corpus we observe distinct caps: 248.0 (Roman general fresh),
+// 250.0, 225.0 (navy?), 324.48 (mounted/fast trait), etc. — per-unit-type.
+function buildPositionIndex(buf, uuidSet) {
+  const idx = new Map();
+  for (let i = 100; i < buf.length - 64; i++) {
+    const u = buf.readUInt32LE(i);
+    if (!uuidSet.has(u)) continue;
+    // Filter: hdr u32 at -4 must be 6 (or 4 in some cases), and x,y in valid range.
+    const hdr = i >= 4 ? buf.readUInt32LE(i - 4) : 0;
+    if (hdr !== 6 && hdr !== 4) continue;
+    const x = buf.readUInt32LE(i + 8);
+    const y = buf.readUInt32LE(i + 12);
+    if (x < 1 || x > 500 || y < 1 || y > 500) continue;
+    const mp = buf.readFloatLE(i + 58);
+    if (!isFinite(mp) || mp < 0 || mp > 1000) continue;
+    if (!idx.has(u)) idx.set(u, { offset: i, x, y, mpRemaining: mp });
+  }
+  return idx;
+}
+
 // Given a character's secondaryUuid, find the unit record commanded by them
 // and extract its region. Returns the region name (UTF-16 decoded) or null.
 function findCharacterRegion(buf, secondaryUuid) {
@@ -412,4 +482,5 @@ module.exports = {
   parseCharacter,
   buildFamilyTree,
   findCharacterRegion,
+  buildPositionIndex,
 };

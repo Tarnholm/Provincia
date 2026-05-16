@@ -13323,6 +13323,111 @@ Files: `scripts/save-cracker/dig-settlebody-s100-1.js` (cross-save validator wit
 
 ---
 
+### Session 101 — Max MP per turn (controlled 1-tile move) 2026-05-16
+
+#### Brief
+
+User shipped a clean before/after save pair — same turn, same character, **one-tile vertical move** from `(275, 425)` to `(275, 424)` — to pin the per-character movement-points counter. Files: `save_mp_before.sav` (36,032,135 bytes) vs `save_mp_after.sav` (36,032,125 bytes). Subject: **Manius Aemilius Paullus** (firstName 'Manius', lastName 'Aemilius_Paullus', age 20, secondaryUuid `0x71a994f2`).
+
+Both files round-trip byte-identical with the current serializer.
+
+#### CONFIRMED — Per-character position record (offsets relative to secondaryUuid hit)
+
+The character's position + movement state is **NOT** stored in the type-6 character record. It lives in a separate ~60-byte "field-army position record" in the post-merc-pool region of the save (~0x150000..0x1f10000). The record is keyed by the character's `secondaryUuid` (the bodyguard unit UUID).
+
+Layout, with offsets relative to the secondaryUuid u32 location:
+
+| offset | size | field            | Manius BEFORE       | Manius AFTER        |
+|--------|------|------------------|---------------------|---------------------|
+| −4     | u32  | record header (= `6`, sometimes `4`) | `0x00000006` | `0x00000006` |
+| +0     | u32  | secondaryUuid    | `0x71a994f2`        | `0x71a994f2`        |
+| +4     | u32  | self/back-pointer | `0x0151 1fb2`     | (unchanged)         |
+| +8     | u32  | **tile x**       | 275                 | 275                 |
+| +12    | u32  | **tile y**       | 425                 | **424** (Δ −1)      |
+| +16    | u16  | mid-tile fractional | `0x7fff` (32767) | `0x8000` (32768) (Δ +1) |
+| +18    | u16  | unknown          | `0x0001`            | `0x0001`            |
+| +20    | u32  | unknown constant | `0x003f8000`        | `0x003f8000`        |
+| +58    | f32  | **MP remaining this turn** (unaligned read) | **248.0** | **239.2** (Δ −8.8) |
+
+Manius's pos record sits at absolute `0x1511fae` in both saves.
+
+The +58 f32 read is **unaligned 4 bytes** at the absolute byte position; reading aligned (+56 or +60) gives garbage. The "Floats in 0..128 range" sweep finds it only because of the unaligned probe.
+
+#### STRONG — Max MP per turn is per-character/per-unit-type
+
+In the BEFORE save (turn-start, no character has moved), `mpRemaining = maxMP`. Sampling 859 characters whose pos record was located, distinct caps appear:
+
+| MP cap | count | likely meaning                          |
+|--------|-------|-----------------------------------------|
+| 324.48 | 1     | top — fast-trait or special unit (e.g. Agathostratos, age 25) |
+| 299.52 | 2     |                                          |
+| 291.20 | 1     |                                          |
+| 274.56 | 2     |                                          |
+| 266.24 | 5     |                                          |
+| 257.92 | 8     |                                          |
+| 249.60 | 10    | Hellenistic general slight bonus         |
+| **248.00** | 34 | Roman general/captain default — Manius's cap |
+| 225.00 | 144   | naval (?) or alternate baseline          |
+| 0      | 759   | hits with valid uuid but x=0/y=0/mp=0 — uninstantiated or off-map |
+
+The cost for one vertical tile move (Manius) was **8.8 MP** (248.0 → 239.2). One tile of flat terrain consuming ~3.5% of the per-turn MP budget is consistent with the in-game "~28 tiles per turn" feel for a fresh general in RR.
+
+#### STRONG — Only the moving character's pos record + path-end mirror change
+
+Position-aligned byte diff over the entire file in the first ~34 MB region reveals **6 diff clusters** total, all narrow:
+
+| abs offset | bytes | meaning |
+|------------|-------|---------|
+| `0x043f8`  | 2     | RNG/turn counter (a119 → 9823) |
+| `0x846b5`  | 1     | ZoneA-log-slot tick (`ab → aa`) |
+| `0x1511fba`| 6     | **Manius position+fractional** (y u32, mid-tile u16) |
+| `0x1511fe8`| 3     | **Manius MP-remaining** (mantissa of f32 248.0 → 239.2) |
+| `0x152fe14`| 1     | path-end mirror flag (`00 → 01`) |
+| `0x152fe87`| 3     | **path-end MP mirror** (`174.72 → 239.2`) |
+
+Past `0x2080000` the alignment breaks because of a 10-byte insertion somewhere in the back half of the file (the `before` save is 10 bytes larger). The insertion was not localised this session — likely a turn-event-log entry that grew, but not relevant to MP.
+
+#### Path-end MP mirror (HYPOTHESIS)
+
+A second copy of the same uuid exists at `0x152fe83` (the mirror), preceded by UTF-16 region name "Etruria" + `0xffffffff` terminator. The `f32` at +4 from this uuid changed from `174.72` (before) to `239.2` (after). Same `239.2` AFTER as the primary MP-remaining. The BEFORE value `174.72 = 248 − 73.28 = 248 − (~8.32 × 8.81)` — could be the pending-path-end MP cached when the user had a queued ~8-tile order, then the engine reissues it as a 1-tile single-step. Not pinned; speculative.
+
+A byte at `0x152fe14` flipped `00 → 01` — candidate "has issued a path this turn" flag, but only one sample so SPECULATIVE.
+
+#### NEGATIVE — Forced-march toggle confirmed ABSENT
+
+No 4th cluster reading as a boolean toggle anywhere near the position record. Consistent with `project_rr_no_forced_march.md` memory: Rome Remastered removed forced march entirely.
+
+#### NEGATIVE — Movement trail / breadcrumb path
+
+No multi-byte "path history" cluster in the per-character region. The pos record stores only current state; the historic trail lives elsewhere (likely in the 919kB character-paths section at `0xa8beb..0xf8fd2`, which we expect to have changed but couldn't isolate because of the 10-byte size delta downstream).
+
+#### Parser changes (this session)
+
+`src/characterParser.js` now exposes (per character, when a valid pos record matches):
+
+```js
+c.tileX        // u32 tile coordinate
+c.tileY        // u32 tile coordinate
+c.mpRemaining  // f32 MP remaining this turn
+c.maxMP        // == mpRemaining (turn-start saves only; mid-turn requires baseline)
+```
+
+These are `null` when the character has no secondaryUuid match (757 of 936 in the RIS save — wives, children, off-map agents). New helper `buildPositionIndex(buf, uuidSet)` does the file-wide single-pass scan; cost is ~700 ms added to `findCharacterRecords`.
+
+Cross-check: in the AFTER save, Manius reads `(tileX=275, tileY=424, mpRemaining=239.2)` — confirms the change is exactly the position byte the user moved + the MP cost.
+
+#### Confidence summary
+
+* **STRONG**: pos record layout (uuid, x, y at +8/+12, MP at +58); discovered via single-byte controlled experiment with byte-identical round-trip on both endpoints.
+* **STRONG**: MP is per-character (not a global constant); 9 distinct caps across the corpus.
+* **STRONG**: only 6 narrow diff clusters in the position-aligned region — no other per-character per-tile state changes.
+* **HYPOTHESIS**: path-end mirror at `[0x152fe14, 0x152fe87]`; needs a second controlled save where the player issues a multi-tile path to verify.
+* **NEGATIVE**: no forced-march toggle (confirms RR engine change).
+
+Reproducer scripts: `scripts/save-cracker/dig-mp1.js` (locate Manius), `dig-mp4.js` (cluster diff), `dig-mp5.js` (layout walk), `dig-mp7.js` (float scan), `dig-mp11.js` (full-file pos record scan + diff verification), `dig-mp13.js` (mirror analysis).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.367",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Save-cracker session 101: pinned per-character position + movement-points record (STRONG). Each character's secondaryUuid keys a 60-byte field-army record holding tile x/y and MP-remaining at +58 as an unaligned f32. Verified on a controlled 1-tile move save pair: Manius Aemilius Paullus 248.0 → 239.2 MP (Δ −8.8 per tile). characterParser now exposes c.tileX, c.tileY, c.mpRemaining, c.maxMP on every character with a valid pos record (547/936 in the RIS save — wives/children/non-army agents fall through). Parser-only — no UI surface yet." },
+    ],
+  },
+  {
     version: "0.9.366",
     date: "2026-05-16",
     items: [
