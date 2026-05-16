@@ -1,0 +1,2793 @@
+{
+  "save": "save_1.2.sav",
+  "recordOffset": 34189993,
+  "recordSize": 334378,
+  "zoneRelStart": 50176,
+  "zoneRelEnd": 315392,
+  "zoneSize": 265216,
+  "windows": [
+    {
+      "w": 0,
+      "zoneOff": 0,
+      "recordOff": 50176,
+      "zero": 2728,
+      "ff": 3,
+      "print": 434,
+      "other": 931,
+      "top1": 2728,
+      "top1B": 0,
+      "top2": 2728,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 1,
+      "zoneOff": 4096,
+      "recordOff": 54272,
+      "zero": 2797,
+      "ff": 2,
+      "print": 459,
+      "other": 838,
+      "top1": 2797,
+      "top1B": 0,
+      "top2": 2797,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 2,
+      "zoneOff": 8192,
+      "recordOff": 58368,
+      "zero": 2612,
+      "ff": 3,
+      "print": 403,
+      "other": 1078,
+      "top1": 2612,
+      "top1B": 0,
+      "top2": 2612,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 3,
+      "zoneOff": 12288,
+      "recordOff": 62464,
+      "zero": 2604,
+      "ff": 2,
+      "print": 409,
+      "other": 1081,
+      "top1": 2604,
+      "top1B": 0,
+      "top2": 2604,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 4,
+      "zoneOff": 16384,
+      "recordOff": 66560,
+      "zero": 2646,
+      "ff": 2,
+      "print": 417,
+      "other": 1031,
+      "top1": 2646,
+      "top1B": 0,
+      "top2": 2646,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 5,
+      "zoneOff": 20480,
+      "recordOff": 70656,
+      "zero": 2858,
+      "ff": 1,
+      "print": 487,
+      "other": 750,
+      "top1": 2858,
+      "top1B": 0,
+      "top2": 2858,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 6,
+      "zoneOff": 24576,
+      "recordOff": 74752,
+      "zero": 3088,
+      "ff": 0,
+      "print": 585,
+      "other": 423,
+      "top1": 3088,
+      "top1B": 0,
+      "top2": 3088,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 7,
+      "zoneOff": 28672,
+      "recordOff": 78848,
+      "zero": 3097,
+      "ff": 0,
+      "print": 558,
+      "other": 441,
+      "top1": 3097,
+      "top1B": 0,
+      "top2": 3097,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 8,
+      "zoneOff": 32768,
+      "recordOff": 82944,
+      "zero": 3093,
+      "ff": 0,
+      "print": 554,
+      "other": 449,
+      "top1": 3093,
+      "top1B": 0,
+      "top2": 3093,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 9,
+      "zoneOff": 36864,
+      "recordOff": 87040,
+      "zero": 3088,
+      "ff": 0,
+      "print": 638,
+      "other": 370,
+      "top1": 3088,
+      "top1B": 0,
+      "top2": 3088,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 10,
+      "zoneOff": 40960,
+      "recordOff": 91136,
+      "zero": 3093,
+      "ff": 0,
+      "print": 555,
+      "other": 448,
+      "top1": 3093,
+      "top1B": 0,
+      "top2": 3093,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 11,
+      "zoneOff": 45056,
+      "recordOff": 95232,
+      "zero": 3095,
+      "ff": 0,
+      "print": 556,
+      "other": 445,
+      "top1": 3095,
+      "top1B": 0,
+      "top2": 3095,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 12,
+      "zoneOff": 49152,
+      "recordOff": 99328,
+      "zero": 3094,
+      "ff": 0,
+      "print": 609,
+      "other": 393,
+      "top1": 3094,
+      "top1B": 0,
+      "top2": 3094,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 13,
+      "zoneOff": 53248,
+      "recordOff": 103424,
+      "zero": 3086,
+      "ff": 0,
+      "print": 499,
+      "other": 511,
+      "top1": 3086,
+      "top1B": 0,
+      "top2": 3086,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 14,
+      "zoneOff": 57344,
+      "recordOff": 107520,
+      "zero": 3087,
+      "ff": 0,
+      "print": 449,
+      "other": 560,
+      "top1": 3087,
+      "top1B": 0,
+      "top2": 3087,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 15,
+      "zoneOff": 61440,
+      "recordOff": 111616,
+      "zero": 3090,
+      "ff": 0,
+      "print": 590,
+      "other": 416,
+      "top1": 3090,
+      "top1B": 0,
+      "top2": 3090,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 16,
+      "zoneOff": 65536,
+      "recordOff": 115712,
+      "zero": 3099,
+      "ff": 0,
+      "print": 606,
+      "other": 391,
+      "top1": 3099,
+      "top1B": 0,
+      "top2": 3099,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 17,
+      "zoneOff": 69632,
+      "recordOff": 119808,
+      "zero": 3098,
+      "ff": 0,
+      "print": 607,
+      "other": 391,
+      "top1": 3098,
+      "top1B": 0,
+      "top2": 3098,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 18,
+      "zoneOff": 73728,
+      "recordOff": 123904,
+      "zero": 3080,
+      "ff": 0,
+      "print": 512,
+      "other": 504,
+      "top1": 3080,
+      "top1B": 0,
+      "top2": 3080,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 19,
+      "zoneOff": 77824,
+      "recordOff": 128000,
+      "zero": 3097,
+      "ff": 0,
+      "print": 436,
+      "other": 563,
+      "top1": 3097,
+      "top1B": 0,
+      "top2": 3097,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 20,
+      "zoneOff": 81920,
+      "recordOff": 132096,
+      "zero": 3099,
+      "ff": 0,
+      "print": 598,
+      "other": 399,
+      "top1": 3099,
+      "top1B": 0,
+      "top2": 3099,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 21,
+      "zoneOff": 86016,
+      "recordOff": 136192,
+      "zero": 3096,
+      "ff": 0,
+      "print": 623,
+      "other": 377,
+      "top1": 3096,
+      "top1B": 0,
+      "top2": 3096,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 22,
+      "zoneOff": 90112,
+      "recordOff": 140288,
+      "zero": 3084,
+      "ff": 0,
+      "print": 504,
+      "other": 508,
+      "top1": 3084,
+      "top1B": 0,
+      "top2": 3084,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 23,
+      "zoneOff": 94208,
+      "recordOff": 144384,
+      "zero": 3092,
+      "ff": 0,
+      "print": 449,
+      "other": 555,
+      "top1": 3092,
+      "top1B": 0,
+      "top2": 3092,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 24,
+      "zoneOff": 98304,
+      "recordOff": 148480,
+      "zero": 3084,
+      "ff": 0,
+      "print": 515,
+      "other": 497,
+      "top1": 3084,
+      "top1B": 0,
+      "top2": 3084,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 25,
+      "zoneOff": 102400,
+      "recordOff": 152576,
+      "zero": 3094,
+      "ff": 0,
+      "print": 465,
+      "other": 537,
+      "top1": 3094,
+      "top1B": 0,
+      "top2": 3094,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 26,
+      "zoneOff": 106496,
+      "recordOff": 156672,
+      "zero": 3094,
+      "ff": 0,
+      "print": 683,
+      "other": 319,
+      "top1": 3094,
+      "top1B": 0,
+      "top2": 3094,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 27,
+      "zoneOff": 110592,
+      "recordOff": 160768,
+      "zero": 3088,
+      "ff": 0,
+      "print": 495,
+      "other": 513,
+      "top1": 3088,
+      "top1B": 0,
+      "top2": 3088,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 28,
+      "zoneOff": 114688,
+      "recordOff": 164864,
+      "zero": 3091,
+      "ff": 0,
+      "print": 461,
+      "other": 544,
+      "top1": 3091,
+      "top1B": 0,
+      "top2": 3091,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 29,
+      "zoneOff": 118784,
+      "recordOff": 168960,
+      "zero": 3096,
+      "ff": 0,
+      "print": 687,
+      "other": 313,
+      "top1": 3096,
+      "top1B": 0,
+      "top2": 3096,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 30,
+      "zoneOff": 122880,
+      "recordOff": 173056,
+      "zero": 3092,
+      "ff": 0,
+      "print": 666,
+      "other": 338,
+      "top1": 3092,
+      "top1B": 0,
+      "top2": 3092,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 31,
+      "zoneOff": 126976,
+      "recordOff": 177152,
+      "zero": 3096,
+      "ff": 0,
+      "print": 527,
+      "other": 473,
+      "top1": 3096,
+      "top1B": 0,
+      "top2": 3096,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 32,
+      "zoneOff": 131072,
+      "recordOff": 181248,
+      "zero": 3086,
+      "ff": 0,
+      "print": 490,
+      "other": 520,
+      "top1": 3086,
+      "top1B": 0,
+      "top2": 3086,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 33,
+      "zoneOff": 135168,
+      "recordOff": 185344,
+      "zero": 3095,
+      "ff": 0,
+      "print": 578,
+      "other": 423,
+      "top1": 3095,
+      "top1B": 0,
+      "top2": 3095,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 34,
+      "zoneOff": 139264,
+      "recordOff": 189440,
+      "zero": 3102,
+      "ff": 0,
+      "print": 583,
+      "other": 411,
+      "top1": 3102,
+      "top1B": 0,
+      "top2": 3102,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 35,
+      "zoneOff": 143360,
+      "recordOff": 193536,
+      "zero": 3100,
+      "ff": 0,
+      "print": 611,
+      "other": 385,
+      "top1": 3100,
+      "top1B": 0,
+      "top2": 3100,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 36,
+      "zoneOff": 147456,
+      "recordOff": 197632,
+      "zero": 2925,
+      "ff": 4,
+      "print": 711,
+      "other": 456,
+      "top1": 2925,
+      "top1B": 0,
+      "top2": 2925,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 37,
+      "zoneOff": 151552,
+      "recordOff": 201728,
+      "zero": 2874,
+      "ff": 2,
+      "print": 557,
+      "other": 663,
+      "top1": 2874,
+      "top1B": 0,
+      "top2": 2874,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 38,
+      "zoneOff": 155648,
+      "recordOff": 205824,
+      "zero": 2800,
+      "ff": 1,
+      "print": 623,
+      "other": 672,
+      "top1": 2800,
+      "top1B": 0,
+      "top2": 2800,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 39,
+      "zoneOff": 159744,
+      "recordOff": 209920,
+      "zero": 2894,
+      "ff": 2,
+      "print": 523,
+      "other": 677,
+      "top1": 2894,
+      "top1B": 0,
+      "top2": 2894,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 40,
+      "zoneOff": 163840,
+      "recordOff": 214016,
+      "zero": 2838,
+      "ff": 2,
+      "print": 479,
+      "other": 777,
+      "top1": 2838,
+      "top1B": 0,
+      "top2": 2838,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 41,
+      "zoneOff": 167936,
+      "recordOff": 218112,
+      "zero": 2805,
+      "ff": 3,
+      "print": 460,
+      "other": 828,
+      "top1": 2805,
+      "top1B": 0,
+      "top2": 2805,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 42,
+      "zoneOff": 172032,
+      "recordOff": 222208,
+      "zero": 2822,
+      "ff": 3,
+      "print": 493,
+      "other": 778,
+      "top1": 2822,
+      "top1B": 0,
+      "top2": 2822,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 43,
+      "zoneOff": 176128,
+      "recordOff": 226304,
+      "zero": 2866,
+      "ff": 2,
+      "print": 549,
+      "other": 679,
+      "top1": 2866,
+      "top1B": 0,
+      "top2": 2866,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 44,
+      "zoneOff": 180224,
+      "recordOff": 230400,
+      "zero": 2862,
+      "ff": 3,
+      "print": 471,
+      "other": 760,
+      "top1": 2862,
+      "top1B": 0,
+      "top2": 2862,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 45,
+      "zoneOff": 184320,
+      "recordOff": 234496,
+      "zero": 2849,
+      "ff": 3,
+      "print": 514,
+      "other": 730,
+      "top1": 2849,
+      "top1B": 0,
+      "top2": 2849,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 46,
+      "zoneOff": 188416,
+      "recordOff": 238592,
+      "zero": 2859,
+      "ff": 2,
+      "print": 428,
+      "other": 807,
+      "top1": 2859,
+      "top1B": 0,
+      "top2": 2859,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 47,
+      "zoneOff": 192512,
+      "recordOff": 242688,
+      "zero": 2861,
+      "ff": 3,
+      "print": 491,
+      "other": 741,
+      "top1": 2861,
+      "top1B": 0,
+      "top2": 2861,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 48,
+      "zoneOff": 196608,
+      "recordOff": 246784,
+      "zero": 2835,
+      "ff": 3,
+      "print": 464,
+      "other": 794,
+      "top1": 2835,
+      "top1B": 0,
+      "top2": 2835,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 49,
+      "zoneOff": 200704,
+      "recordOff": 250880,
+      "zero": 2827,
+      "ff": 3,
+      "print": 472,
+      "other": 794,
+      "top1": 2827,
+      "top1B": 0,
+      "top2": 2827,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 50,
+      "zoneOff": 204800,
+      "recordOff": 254976,
+      "zero": 2879,
+      "ff": 3,
+      "print": 497,
+      "other": 717,
+      "top1": 2879,
+      "top1B": 0,
+      "top2": 2879,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 51,
+      "zoneOff": 208896,
+      "recordOff": 259072,
+      "zero": 2844,
+      "ff": 3,
+      "print": 456,
+      "other": 793,
+      "top1": 2844,
+      "top1B": 0,
+      "top2": 2844,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 52,
+      "zoneOff": 212992,
+      "recordOff": 263168,
+      "zero": 2849,
+      "ff": 3,
+      "print": 487,
+      "other": 757,
+      "top1": 2849,
+      "top1B": 0,
+      "top2": 2849,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 53,
+      "zoneOff": 217088,
+      "recordOff": 267264,
+      "zero": 2920,
+      "ff": 4,
+      "print": 405,
+      "other": 767,
+      "top1": 2920,
+      "top1B": 0,
+      "top2": 2920,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 54,
+      "zoneOff": 221184,
+      "recordOff": 271360,
+      "zero": 2862,
+      "ff": 3,
+      "print": 455,
+      "other": 776,
+      "top1": 2862,
+      "top1B": 0,
+      "top2": 2862,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 55,
+      "zoneOff": 225280,
+      "recordOff": 275456,
+      "zero": 2768,
+      "ff": 3,
+      "print": 507,
+      "other": 818,
+      "top1": 2768,
+      "top1B": 0,
+      "top2": 2768,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 56,
+      "zoneOff": 229376,
+      "recordOff": 279552,
+      "zero": 2867,
+      "ff": 3,
+      "print": 432,
+      "other": 794,
+      "top1": 2867,
+      "top1B": 0,
+      "top2": 2867,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 57,
+      "zoneOff": 233472,
+      "recordOff": 283648,
+      "zero": 2741,
+      "ff": 2,
+      "print": 497,
+      "other": 856,
+      "top1": 2741,
+      "top1B": 0,
+      "top2": 2741,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 58,
+      "zoneOff": 237568,
+      "recordOff": 287744,
+      "zero": 2834,
+      "ff": 4,
+      "print": 449,
+      "other": 809,
+      "top1": 2834,
+      "top1B": 0,
+      "top2": 2834,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 59,
+      "zoneOff": 241664,
+      "recordOff": 291840,
+      "zero": 2867,
+      "ff": 2,
+      "print": 492,
+      "other": 735,
+      "top1": 2867,
+      "top1B": 0,
+      "top2": 2867,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 60,
+      "zoneOff": 245760,
+      "recordOff": 295936,
+      "zero": 2750,
+      "ff": 3,
+      "print": 426,
+      "other": 917,
+      "top1": 2750,
+      "top1B": 0,
+      "top2": 2750,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 61,
+      "zoneOff": 249856,
+      "recordOff": 300032,
+      "zero": 2740,
+      "ff": 2,
+      "print": 452,
+      "other": 902,
+      "top1": 2740,
+      "top1B": 0,
+      "top2": 2740,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 62,
+      "zoneOff": 253952,
+      "recordOff": 304128,
+      "zero": 2771,
+      "ff": 3,
+      "print": 477,
+      "other": 845,
+      "top1": 2771,
+      "top1B": 0,
+      "top2": 2771,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 63,
+      "zoneOff": 258048,
+      "recordOff": 308224,
+      "zero": 2430,
+      "ff": 2,
+      "print": 1200,
+      "other": 464,
+      "top1": 2430,
+      "top1B": 0,
+      "top2": 2430,
+      "top2B": 0,
+      "len": 4096
+    },
+    {
+      "w": 64,
+      "zoneOff": 262144,
+      "recordOff": 312320,
+      "zero": 1631,
+      "ff": 0,
+      "print": 1312,
+      "other": 129,
+      "top1": 1631,
+      "top1B": 0,
+      "top2": 1631,
+      "top2B": 0,
+      "len": 3072
+    }
+  ],
+  "ascii": [
+    {
+      "off": 23584,
+      "recOff": 73760,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 29412,
+      "recOff": 79588,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 35240,
+      "recOff": 85416,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 41068,
+      "recOff": 91244,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 46896,
+      "recOff": 97072,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 52724,
+      "recOff": 102900,
+      "len": 5,
+      "text": "greek"
+    },
+    {
+      "off": 60892,
+      "recOff": 111068,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 66720,
+      "recOff": 116896,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 71678,
+      "recOff": 121854,
+      "len": 5,
+      "text": "greek"
+    },
+    {
+      "off": 79846,
+      "recOff": 130022,
+      "len": 8,
+      "text": "egyptian"
+    },
+    {
+      "off": 83321,
+      "recOff": 133497,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 88279,
+      "recOff": 138455,
+      "len": 5,
+      "text": "greek"
+    },
+    {
+      "off": 96447,
+      "recOff": 146623,
+      "len": 5,
+      "text": "greek"
+    },
+    {
+      "off": 104615,
+      "recOff": 154791,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 109573,
+      "recOff": 159749,
+      "len": 5,
+      "text": "greek"
+    },
+    {
+      "off": 117741,
+      "recOff": 167917,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 122699,
+      "recOff": 172875,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 127657,
+      "recOff": 177833,
+      "len": 5,
+      "text": "greek"
+    },
+    {
+      "off": 135825,
+      "recOff": 186001,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 140783,
+      "recOff": 190959,
+      "len": 8,
+      "text": "egyptian"
+    },
+    {
+      "off": 144258,
+      "recOff": 194434,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 149237,
+      "recOff": 199413,
+      "len": 11,
+      "text": "african_men"
+    },
+    {
+      "off": 149423,
+      "recOff": 199599,
+      "len": 13,
+      "text": "african_women"
+    },
+    {
+      "off": 149539,
+      "recOff": 199715,
+      "len": 13,
+      "text": "anatolian_men"
+    },
+    {
+      "off": 149807,
+      "recOff": 199983,
+      "len": 15,
+      "text": "anatolian_women"
+    },
+    {
+      "off": 149941,
+      "recOff": 200117,
+      "len": 11,
+      "text": "apulian_men"
+    },
+    {
+      "off": 149967,
+      "recOff": 200143,
+      "len": 11,
+      "text": "arevaci_men"
+    },
+    {
+      "off": 150273,
+      "recOff": 200449,
+      "len": 13,
+      "text": "arevaci_women"
+    },
+    {
+      "off": 150341,
+      "recOff": 200517,
+      "len": 13,
+      "text": "arverni_women"
+    },
+    {
+      "off": 150365,
+      "recOff": 200541,
+      "len": 15,
+      "text": "baltoslavic_men"
+    },
+    {
+      "off": 150407,
+      "recOff": 200583,
+      "len": 17,
+      "text": "baltoslavic_women"
+    },
+    {
+      "off": 150439,
+      "recOff": 200615,
+      "len": 14,
+      "text": "blank_surnames"
+    },
+    {
+      "off": 150464,
+      "recOff": 200640,
+      "len": 10,
+      "text": "celtic_men"
+    },
+    {
+      "off": 150805,
+      "recOff": 200981,
+      "len": 12,
+      "text": "celtic_women"
+    },
+    {
+      "off": 150896,
+      "recOff": 201072,
+      "len": 12,
+      "text": "cilician_men"
+    },
+    {
+      "off": 150963,
+      "recOff": 201139,
+      "len": 14,
+      "text": "cilician_women"
+    },
+    {
+      "off": 151008,
+      "recOff": 201184,
+      "len": 12,
+      "text": "egyptian_men"
+    },
+    {
+      "off": 151203,
+      "recOff": 201379,
+      "len": 14,
+      "text": "egyptian_women"
+    },
+    {
+      "off": 151308,
+      "recOff": 201484,
+      "len": 9,
+      "text": "getae_men"
+    },
+    {
+      "off": 151492,
+      "recOff": 201668,
+      "len": 11,
+      "text": "getae_women"
+    },
+    {
+      "off": 151550,
+      "recOff": 201726,
+      "len": 9,
+      "text": "greek_men"
+    },
+    {
+      "off": 152898,
+      "recOff": 203074,
+      "len": 11,
+      "text": "greek_women"
+    },
+    {
+      "off": 153984,
+      "recOff": 204160,
+      "len": 12,
+      "text": "illyrian_men"
+    },
+    {
+      "off": 154319,
+      "recOff": 204495,
+      "len": 14,
+      "text": "illyrian_women"
+    },
+    {
+      "off": 154420,
+      "recOff": 204596,
+      "len": 10,
+      "text": "indian_men"
+    },
+    {
+      "off": 154865,
+      "recOff": 205041,
+      "len": 15,
+      "text": "indian_surnames"
+    },
+    {
+      "off": 154971,
+      "recOff": 205147,
+      "len": 12,
+      "text": "indian_women"
+    },
+    {
+      "off": 155162,
+      "recOff": 205338,
+      "len": 10,
+      "text": "ionian_men"
+    },
+    {
+      "off": 155227,
+      "recOff": 205403,
+      "len": 11,
+      "text": "iranian_men"
+    },
+    {
+      "off": 155345,
+      "recOff": 205521,
+      "len": 13,
+      "text": "iranian_women"
+    },
+    {
+      "off": 155401,
+      "recOff": 205577,
+      "len": 10,
+      "text": "italic_men"
+    },
+    {
+      "off": 155434,
+      "recOff": 205610,
+      "len": 15,
+      "text": "italic_surnames"
+    },
+    {
+      "off": 155464,
+      "recOff": 205640,
+      "len": 12,
+      "text": "italic_women"
+    },
+    {
+      "off": 155495,
+      "recOff": 205671,
+      "len": 11,
+      "text": "judaean_men"
+    },
+    {
+      "off": 155525,
+      "recOff": 205701,
+      "len": 13,
+      "text": "liburnian_men"
+    },
+    {
+      "off": 155757,
+      "recOff": 205933,
+      "len": 15,
+      "text": "liburnian_women"
+    },
+    {
+      "off": 155891,
+      "recOff": 206067,
+      "len": 10,
+      "text": "lycian_men"
+    },
+    {
+      "off": 156180,
+      "recOff": 206356,
+      "len": 12,
+      "text": "lycian_women"
+    },
+    {
+      "off": 156247,
+      "recOff": 206423,
+      "len": 14,
+      "text": "massylii_women"
+    },
+    {
+      "off": 156272,
+      "recOff": 206448,
+      "len": 16,
+      "text": "mesopotamian_men"
+    },
+    {
+      "off": 156315,
+      "recOff": 206491,
+      "len": 13,
+      "text": "nabataean_men"
+    },
+    {
+      "off": 156651,
+      "recOff": 206827,
+      "len": 15,
+      "text": "nabataean_women"
+    },
+    {
+      "off": 156713,
+      "recOff": 206889,
+      "len": 11,
+      "text": "parni_women"
+    },
+    {
+      "off": 156831,
+      "recOff": 207007,
+      "len": 14,
+      "text": "phoenician_men"
+    },
+    {
+      "off": 156860,
+      "recOff": 207036,
+      "len": 16,
+      "text": "phoenician_women"
+    },
+    {
+      "off": 156895,
+      "recOff": 207071,
+      "len": 12,
+      "text": "pontus_women"
+    },
+    {
+      "off": 156938,
+      "recOff": 207114,
+      "len": 9,
+      "text": "roman_men"
+    },
+    {
+      "off": 157030,
+      "recOff": 207206,
+      "len": 14,
+      "text": "roman_surnames"
+    },
+    {
+      "off": 158511,
+      "recOff": 208687,
+      "len": 11,
+      "text": "roman_women"
+    },
+    {
+      "off": 158885,
+      "recOff": 209061,
+      "len": 13,
+      "text": "s_arabian_men"
+    },
+    {
+      "off": 159113,
+      "recOff": 209289,
+      "len": 18,
+      "text": "s_arabian_surnames"
+    },
+    {
+      "off": 159350,
+      "recOff": 209526,
+      "len": 15,
+      "text": "s_arabian_women"
+    },
+    {
+      "off": 159528,
+      "recOff": 209704,
+      "len": 11,
+      "text": "siraces_men"
+    },
+    {
+      "off": 159678,
+      "recOff": 209854,
+      "len": 13,
+      "text": "siraces_women"
+    },
+    {
+      "off": 159750,
+      "recOff": 209926,
+      "len": 9,
+      "text": "slave_men"
+    },
+    {
+      "off": 159894,
+      "recOff": 210070,
+      "len": 11,
+      "text": "slave_women"
+    },
+    {
+      "off": 159976,
+      "recOff": 210152,
+      "len": 9,
+      "text": "suebi_men"
+    },
+    {
+      "off": 160392,
+      "recOff": 210568,
+      "len": 11,
+      "text": "suebi_women"
+    },
+    {
+      "off": 160534,
+      "recOff": 210710,
+      "len": 12,
+      "text": "thracian_men"
+    },
+    {
+      "off": 160941,
+      "recOff": 211117,
+      "len": 12,
+      "text": "venetian_men"
+    },
+    {
+      "off": 161172,
+      "recOff": 211348,
+      "len": 14,
+      "text": "venetian_women"
+    },
+    {
+      "off": 161245,
+      "recOff": 211421,
+      "len": 14,
+      "text": "aetolian_women"
+    },
+    {
+      "off": 162358,
+      "recOff": 212534,
+      "len": 12,
+      "text": "arcadian_men"
+    },
+    {
+      "off": 163737,
+      "recOff": 213913,
+      "len": 14,
+      "text": "arcadian_women"
+    },
+    {
+      "off": 164830,
+      "recOff": 215006,
+      "len": 11,
+      "text": "armenia_men"
+    },
+    {
+      "off": 164988,
+      "recOff": 215164,
+      "len": 13,
+      "text": "armenia_women"
+    },
+    {
+      "off": 165072,
+      "recOff": 215248,
+      "len": 11,
+      "text": "arverni_men"
+    },
+    {
+      "off": 165530,
+      "recOff": 215706,
+      "len": 12,
+      "text": "athenian_men"
+    },
+    {
+      "off": 166909,
+      "recOff": 217085,
+      "len": 14,
+      "text": "atropatene_men"
+    },
+    {
+      "off": 167086,
+      "recOff": 217262,
+      "len": 13,
+      "text": "bithynian_men"
+    },
+    {
+      "off": 168926,
+      "recOff": 219102,
+      "len": 12,
+      "text": "boeotian_men"
+    },
+    {
+      "off": 170317,
+      "recOff": 220493,
+      "len": 14,
+      "text": "boeotian_women"
+    },
+    {
+      "off": 171422,
+      "recOff": 221598,
+      "len": 13,
+      "text": "byzantium_men"
+    },
+    {
+      "off": 172798,
+      "recOff": 222974,
+      "len": 15,
+      "text": "cappadocian_men"
+    },
+    {
+      "off": 172984,
+      "recOff": 223160,
+      "len": 17,
+      "text": "cappadocian_women"
+    },
+    {
+      "off": 173056,
+      "recOff": 223232,
+      "len": 12,
+      "text": "carian_women"
+    },
+    {
+      "off": 173191,
+      "recOff": 223367,
+      "len": 12,
+      "text": "carthage_men"
+    },
+    {
+      "off": 173538,
+      "recOff": 223714,
+      "len": 14,
+      "text": "carthage_women"
+    },
+    {
+      "off": 173623,
+      "recOff": 223799,
+      "len": 15,
+      "text": "chersonesus_men"
+    },
+    {
+      "off": 174989,
+      "recOff": 225165,
+      "len": 9,
+      "text": "chios_men"
+    },
+    {
+      "off": 176345,
+      "recOff": 226521,
+      "len": 8,
+      "text": "cius_men"
+    },
+    {
+      "off": 177696,
+      "recOff": 227872,
+      "len": 11,
+      "text": "cyzicus_men"
+    },
+    {
+      "off": 179062,
+      "recOff": 229238,
+      "len": 13,
+      "text": "dalmatian_men"
+    },
+    {
+      "off": 179590,
+      "recOff": 229766,
+      "len": 15,
+      "text": "dalmatian_women"
+    },
+    {
+      "off": 179744,
+      "recOff": 229920,
+      "len": 13,
+      "text": "dardanian_men"
+    },
+    {
+      "off": 180252,
+      "recOff": 230428,
+      "len": 15,
+      "text": "dardanian_women"
+    },
+    {
+      "off": 180414,
+      "recOff": 230590,
+      "len": 10,
+      "text": "dorian_men"
+    },
+    {
+      "off": 181819,
+      "recOff": 231995,
+      "len": 12,
+      "text": "dorian_women"
+    },
+    {
+      "off": 182934,
+      "recOff": 233110,
+      "len": 13,
+      "text": "edetanian_men"
+    },
+    {
+      "off": 183250,
+      "recOff": 233426,
+      "len": 8,
+      "text": "elis_men"
+    },
+    {
+      "off": 184617,
+      "recOff": 234793,
+      "len": 12,
+      "text": "emporion_men"
+    },
+    {
+      "off": 185976,
+      "recOff": 236152,
+      "len": 13,
+      "text": "ethiopian_men"
+    },
+    {
+      "off": 186196,
+      "recOff": 236372,
+      "len": 13,
+      "text": "galatians_men"
+    },
+    {
+      "off": 186820,
+      "recOff": 236996,
+      "len": 15,
+      "text": "galatians_women"
+    },
+    {
+      "off": 186982,
+      "recOff": 237158,
+      "len": 10,
+      "text": "gortyn_men"
+    },
+    {
+      "off": 188335,
+      "recOff": 238511,
+      "len": 13,
+      "text": "heraclean_men"
+    },
+    {
+      "off": 189691,
+      "recOff": 239867,
+      "len": 11,
+      "text": "histria_men"
+    },
+    {
+      "off": 189757,
+      "recOff": 239933,
+      "len": 12,
+      "text": "ionian_women"
+    },
+    {
+      "off": 190904,
+      "recOff": 241080,
+      "len": 8,
+      "text": "issa_men"
+    },
+    {
+      "off": 192291,
+      "recOff": 242467,
+      "len": 10,
+      "text": "issa_women"
+    },
+    {
+      "off": 193400,
+      "recOff": 243576,
+      "len": 11,
+      "text": "knossos_men"
+    },
+    {
+      "off": 194778,
+      "recOff": 244954,
+      "len": 11,
+      "text": "kydonia_men"
+    },
+    {
+      "off": 196152,
+      "recOff": 246328,
+      "len": 14,
+      "text": "lusitanian_men"
+    },
+    {
+      "off": 196545,
+      "recOff": 246721,
+      "len": 16,
+      "text": "lusitanian_women"
+    },
+    {
+      "off": 196684,
+      "recOff": 246860,
+      "len": 10,
+      "text": "lyttos_men"
+    },
+    {
+      "off": 198045,
+      "recOff": 248221,
+      "len": 14,
+      "text": "macedonian_men"
+    },
+    {
+      "off": 199490,
+      "recOff": 249666,
+      "len": 16,
+      "text": "macedonian_women"
+    },
+    {
+      "off": 200609,
+      "recOff": 250785,
+      "len": 14,
+      "text": "massaliote_men"
+    },
+    {
+      "off": 201982,
+      "recOff": 252158,
+      "len": 12,
+      "text": "massylii_men"
+    },
+    {
+      "off": 202289,
+      "recOff": 252465,
+      "len": 11,
+      "text": "messene_men"
+    },
+    {
+      "off": 203659,
+      "recOff": 253835,
+      "len": 9,
+      "text": "olbia_men"
+    },
+    {
+      "off": 205027,
+      "recOff": 255203,
+      "len": 12,
+      "text": "paeonian_men"
+    },
+    {
+      "off": 205446,
+      "recOff": 255622,
+      "len": 15,
+      "text": "paphlagonia_men"
+    },
+    {
+      "off": 206812,
+      "recOff": 256988,
+      "len": 17,
+      "text": "paphlagonia_women"
+    },
+    {
+      "off": 207912,
+      "recOff": 258088,
+      "len": 9,
+      "text": "parni_men"
+    },
+    {
+      "off": 208112,
+      "recOff": 258288,
+      "len": 14,
+      "text": "pentapolis_men"
+    },
+    {
+      "off": 209501,
+      "recOff": 259677,
+      "len": 12,
+      "text": "pergamon_men"
+    },
+    {
+      "off": 210876,
+      "recOff": 261052,
+      "len": 14,
+      "text": "pergamon_women"
+    },
+    {
+      "off": 211973,
+      "recOff": 262149,
+      "len": 10,
+      "text": "pontus_men"
+    },
+    {
+      "off": 212098,
+      "recOff": 262274,
+      "len": 10,
+      "text": "priene_men"
+    },
+    {
+      "off": 213483,
+      "recOff": 263659,
+      "len": 11,
+      "text": "rhodian_men"
+    },
+    {
+      "off": 214861,
+      "recOff": 265037,
+      "len": 11,
+      "text": "sabaean_men"
+    },
+    {
+      "off": 215215,
+      "recOff": 265391,
+      "len": 13,
+      "text": "sabaean_women"
+    },
+    {
+      "off": 215399,
+      "recOff": 265575,
+      "len": 9,
+      "text": "selge_men"
+    },
+    {
+      "off": 216771,
+      "recOff": 266947,
+      "len": 11,
+      "text": "selge_women"
+    },
+    {
+      "off": 217865,
+      "recOff": 268041,
+      "len": 10,
+      "text": "sinope_men"
+    },
+    {
+      "off": 219226,
+      "recOff": 269402,
+      "len": 12,
+      "text": "sparta_women"
+    },
+    {
+      "off": 220369,
+      "recOff": 270545,
+      "len": 15,
+      "text": "syracusan_women"
+    },
+    {
+      "off": 221491,
+      "recOff": 271667,
+      "len": 16,
+      "text": "thessalian_women"
+    },
+    {
+      "off": 222586,
+      "recOff": 272762,
+      "len": 14,
+      "text": "thracian_women"
+    },
+    {
+      "off": 223915,
+      "recOff": 274091,
+      "len": 17,
+      "text": "trinovantes_women"
+    },
+    {
+      "off": 224063,
+      "recOff": 274239,
+      "len": 11,
+      "text": "achaean_men"
+    },
+    {
+      "off": 225509,
+      "recOff": 275685,
+      "len": 13,
+      "text": "akarnania_men"
+    },
+    {
+      "off": 226949,
+      "recOff": 277125,
+      "len": 11,
+      "text": "akragas_men"
+    },
+    {
+      "off": 228371,
+      "recOff": 278547,
+      "len": 13,
+      "text": "antigonid_men"
+    },
+    {
+      "off": 229859,
+      "recOff": 280035,
+      "len": 15,
+      "text": "antigonid_women"
+    },
+    {
+      "off": 230981,
+      "recOff": 281157,
+      "len": 10,
+      "text": "argive_men"
+    },
+    {
+      "off": 232394,
+      "recOff": 282570,
+      "len": 14,
+      "text": "athenian_women"
+    },
+    {
+      "off": 233575,
+      "recOff": 283751,
+      "len": 12,
+      "text": "bactrian_men"
+    },
+    {
+      "off": 235230,
+      "recOff": 285406,
+      "len": 15,
+      "text": "bithynian_women"
+    },
+    {
+      "off": 236604,
+      "recOff": 286780,
+      "len": 12,
+      "text": "bosporan_men"
+    },
+    {
+      "off": 238135,
+      "recOff": 288311,
+      "len": 14,
+      "text": "bosporan_women"
+    },
+    {
+      "off": 239264,
+      "recOff": 289440,
+      "len": 12,
+      "text": "cretan_women"
+    },
+    {
+      "off": 240383,
+      "recOff": 290559,
+      "len": 12,
+      "text": "cyrenean_men"
+    },
+    {
+      "off": 242046,
+      "recOff": 292222,
+      "len": 14,
+      "text": "cyrenean_women"
+    },
+    {
+      "off": 243187,
+      "recOff": 293363,
+      "len": 15,
+      "text": "daesitiates_men"
+    },
+    {
+      "off": 244037,
+      "recOff": 294213,
+      "len": 17,
+      "text": "daesitiates_women"
+    },
+    {
+      "off": 244261,
+      "recOff": 294437,
+      "len": 11,
+      "text": "epirote_men"
+    },
+    {
+      "off": 245723,
+      "recOff": 295899,
+      "len": 13,
+      "text": "epirote_women"
+    },
+    {
+      "off": 246859,
+      "recOff": 297035,
+      "len": 12,
+      "text": "nw_greek_men"
+    },
+    {
+      "off": 248274,
+      "recOff": 298450,
+      "len": 13,
+      "text": "ptolemaic_men"
+    },
+    {
+      "off": 250278,
+      "recOff": 300454,
+      "len": 15,
+      "text": "ptolemaic_women"
+    },
+    {
+      "off": 251480,
+      "recOff": 301656,
+      "len": 13,
+      "text": "scordisci_men"
+    },
+    {
+      "off": 252108,
+      "recOff": 302284,
+      "len": 12,
+      "text": "seleucid_men"
+    },
+    {
+      "off": 254131,
+      "recOff": 304307,
+      "len": 14,
+      "text": "seleucid_women"
+    },
+    {
+      "off": 255280,
+      "recOff": 305456,
+      "len": 10,
+      "text": "sparta_men"
+    },
+    {
+      "off": 256889,
+      "recOff": 307065,
+      "len": 13,
+      "text": "syracusan_men"
+    },
+    {
+      "off": 258433,
+      "recOff": 308609,
+      "len": 12,
+      "text": "aetolian_men"
+    }
+  ],
+  "utf16": [
+    {
+      "off": 259931,
+      "recOff": 310107,
+      "chars": 68,
+      "text": "Bdata/world/maps/campaign/imperial_campaign/RIS_Campaign_Script.txts"
+    },
+    {
+      "off": 260073,
+      "recOff": 310249,
+      "chars": 36,
+      "text": "ThessalyRebellion_AllAntigonidOwned2"
+    },
+    {
+      "off": 260151,
+      "recOff": 310327,
+      "chars": 38,
+      "text": "cappadocia_reform_greek_battle_counter"
+    },
+    {
+      "off": 260235,
+      "recOff": 310411,
+      "chars": 26,
+      "text": "num_battles_seleucids_rome"
+    },
+    {
+      "off": 260295,
+      "recOff": 310471,
+      "chars": 9,
+      "text": "id_sparta"
+    },
+    {
+      "off": 260321,
+      "recOff": 310497,
+      "chars": 27,
+      "text": "CiliciaRebellion_RebelOwned"
+    },
+    {
+      "off": 260383,
+      "recOff": 310559,
+      "chars": 21,
+      "text": "CiliciaRebellion_Done"
+    },
+    {
+      "off": 260433,
+      "recOff": 310609,
+      "chars": 32,
+      "text": "ChrysaoriaRebellion_ForeignOwned"
+    },
+    {
+      "off": 260505,
+      "recOff": 310681,
+      "chars": 32,
+      "text": "labeataean_reform_battle_counter"
+    },
+    {
+      "off": 260577,
+      "recOff": 310753,
+      "chars": 11,
+      "text": "turn_number"
+    },
+    {
+      "off": 260607,
+      "recOff": 310783,
+      "chars": 13,
+      "text": "id_allobroges"
+    },
+    {
+      "off": 260641,
+      "recOff": 310817,
+      "chars": 33,
+      "text": "ptolemaic_therapeia_recruit_count"
+    },
+    {
+      "off": 260715,
+      "recOff": 310891,
+      "chars": 28,
+      "text": "achaea_reform_battle_counter"
+    },
+    {
+      "off": 260779,
+      "recOff": 310955,
+      "chars": 31,
+      "text": "dardanian_reform_battle_counter"
+    },
+    {
+      "off": 260849,
+      "recOff": 311025,
+      "chars": 28,
+      "text": "german_reform_battle_counter"
+    },
+    {
+      "off": 260913,
+      "recOff": 311089,
+      "chars": 15,
+      "text": "id_romans_julii"
+    },
+    {
+      "off": 260951,
+      "recOff": 311127,
+      "chars": 21,
+      "text": "MiletusRebellion_Done"
+    },
+    {
+      "off": 261001,
+      "recOff": 311177,
+      "chars": 9,
+      "text": "id_athens"
+    },
+    {
+      "off": 261027,
+      "recOff": 311203,
+      "chars": 12,
+      "text": "id_ptolemaic"
+    },
+    {
+      "off": 261059,
+      "recOff": 311235,
+      "chars": 10,
+      "text": "id_boeotia"
+    },
+    {
+      "off": 261087,
+      "recOff": 311263,
+      "chars": 9,
+      "text": "id_cyrene"
+    },
+    {
+      "off": 261113,
+      "recOff": 311289,
+      "chars": 39,
+      "text": "thracian_peltasts_reform_battle_counter"
+    },
+    {
+      "off": 261199,
+      "recOff": 311375,
+      "chars": 8,
+      "text": "id_tylis"
+    },
+    {
+      "off": 261223,
+      "recOff": 311399,
+      "chars": 47,
+      "text": "illyrian_thureophoroi_cav_reform_battle_counter"
+    },
+    {
+      "off": 261325,
+      "recOff": 311501,
+      "chars": 19,
+      "text": "capital_first_setup"
+    },
+    {
+      "off": 261371,
+      "recOff": 311547,
+      "chars": 8,
+      "text": "id_parni"
+    },
+    {
+      "off": 261395,
+      "recOff": 311571,
+      "chars": 10,
+      "text": "id_arverni"
+    },
+    {
+      "off": 261423,
+      "recOff": 311599,
+      "chars": 11,
+      "text": "id_massalia"
+    },
+    {
+      "off": 261453,
+      "recOff": 311629,
+      "chars": 9,
+      "text": "id_pontus"
+    },
+    {
+      "off": 261479,
+      "recOff": 311655,
+      "chars": 10,
+      "text": "id_siraces"
+    },
+    {
+      "off": 261507,
+      "recOff": 311683,
+      "chars": 28,
+      "text": "cabyle_reform_battle_counter"
+    },
+    {
+      "off": 261571,
+      "recOff": 311747,
+      "chars": 8,
+      "text": "id_getae"
+    },
+    {
+      "off": 261595,
+      "recOff": 311771,
+      "chars": 31,
+      "text": "ChrysaoriaRebellion_RhodesTurns"
+    },
+    {
+      "off": 261665,
+      "recOff": 311841,
+      "chars": 8,
+      "text": "id_egypt"
+    },
+    {
+      "off": 261689,
+      "recOff": 311865,
+      "chars": 11,
+      "text": "id_pergamon"
+    },
+    {
+      "off": 261719,
+      "recOff": 311895,
+      "chars": 9,
+      "text": "id_cimbri"
+    },
+    {
+      "off": 261745,
+      "recOff": 311921,
+      "chars": 30,
+      "text": "ThessalyRebellion_PlayerRevolt"
+    },
+    {
+      "off": 261813,
+      "recOff": 311989,
+      "chars": 27,
+      "text": "pergamon_reform_war_counter"
+    },
+    {
+      "off": 261875,
+      "recOff": 312051,
+      "chars": 11,
+      "text": "id_bithynia"
+    },
+    {
+      "off": 261905,
+      "recOff": 312081,
+      "chars": 9,
+      "text": "id_belgae"
+    },
+    {
+      "off": 261931,
+      "recOff": 312107,
+      "chars": 10,
+      "text": "id_mauryan"
+    },
+    {
+      "off": 261959,
+      "recOff": 312135,
+      "chars": 12,
+      "text": "id_odrysians"
+    },
+    {
+      "off": 261991,
+      "recOff": 312167,
+      "chars": 9,
+      "text": "id_volcae"
+    },
+    {
+      "off": 262017,
+      "recOff": 312193,
+      "chars": 44,
+      "text": "cappadocia_reform_settlement_capture_counter"
+    },
+    {
+      "off": 262113,
+      "recOff": 312289,
+      "chars": 29,
+      "text": "CiliciaRebellion_PlayerRevolt"
+    },
+    {
+      "off": 262179,
+      "recOff": 312355,
+      "chars": 27,
+      "text": "selge_reform_battle_counter"
+    },
+    {
+      "off": 262241,
+      "recOff": 312417,
+      "chars": 27,
+      "text": "LyciaRebellion_PlayerRevolt"
+    },
+    {
+      "off": 262303,
+      "recOff": 312479,
+      "chars": 8,
+      "text": "id_slave"
+    },
+    {
+      "off": 262327,
+      "recOff": 312503,
+      "chars": 35,
+      "text": "ThessalyRebellion_ThessalyAntigonid"
+    },
+    {
+      "off": 262405,
+      "recOff": 312581,
+      "chars": 10,
+      "text": "id_ardiaei"
+    },
+    {
+      "off": 262433,
+      "recOff": 312609,
+      "chars": 7,
+      "text": "id_saba"
+    },
+    {
+      "off": 262455,
+      "recOff": 312631,
+      "chars": 29,
+      "text": "boeotia_reform_battle_counter"
+    },
+    {
+      "off": 262521,
+      "recOff": 312697,
+      "chars": 10,
+      "text": "id_edetani"
+    },
+    {
+      "off": 262549,
+      "recOff": 312725,
+      "chars": 29,
+      "text": "num_battles_antigonids_sparta"
+    },
+    {
+      "off": 262615,
+      "recOff": 312791,
+      "chars": 22,
+      "text": "num_battles_antigonids"
+    },
+    {
+      "off": 262667,
+      "recOff": 312843,
+      "chars": 28,
+      "text": "ThessalyRebellion_RebelOwned"
+    },
+    {
+      "off": 262731,
+      "recOff": 312907,
+      "chars": 31,
+      "text": "odrysians_reform_battle_counter"
+    },
+    {
+      "off": 262801,
+      "recOff": 312977,
+      "chars": 29,
+      "text": "MiletusRebellion_PlayerRevolt"
+    },
+    {
+      "off": 262867,
+      "recOff": 313043,
+      "chars": 11,
+      "text": "id_carthage"
+    },
+    {
+      "off": 262897,
+      "recOff": 313073,
+      "chars": 43,
+      "text": "cilician_thureophoroi_reform_battle_counter"
+    },
+    {
+      "off": 262991,
+      "recOff": 313167,
+      "chars": 16,
+      "text": "first_time_setup"
+    },
+    {
+      "off": 263031,
+      "recOff": 313207,
+      "chars": 12,
+      "text": "id_antigonid"
+    },
+    {
+      "off": 263063,
+      "recOff": 313239,
+      "chars": 31,
+      "text": "ChrysaoriaRebellion_RhodesOwned"
+    },
+    {
+      "off": 263133,
+      "recOff": 313309,
+      "chars": 8,
+      "text": "id_aedui"
+    },
+    {
+      "off": 263157,
+      "recOff": 313333,
+      "chars": 10,
+      "text": "id_arevaci"
+    },
+    {
+      "off": 263185,
+      "recOff": 313361,
+      "chars": 8,
+      "text": "id_lugii"
+    },
+    {
+      "off": 263209,
+      "recOff": 313385,
+      "chars": 30,
+      "text": "massalia_reform_battle_counter"
+    },
+    {
+      "off": 263277,
+      "recOff": 313453,
+      "chars": 28,
+      "text": "cyrene_reform_battle_counter"
+    },
+    {
+      "off": 263341,
+      "recOff": 313517,
+      "chars": 29,
+      "text": "num_battles_seleucids_parthia"
+    },
+    {
+      "off": 263407,
+      "recOff": 313583,
+      "chars": 26,
+      "text": "LyciaRebellion_RhodesOwned"
+    },
+    {
+      "off": 263467,
+      "recOff": 313643,
+      "chars": 26,
+      "text": "LyciaRebellion_RhodesTurns"
+    },
+    {
+      "off": 263527,
+      "recOff": 313703,
+      "chars": 10,
+      "text": "id_armenia"
+    },
+    {
+      "off": 263555,
+      "recOff": 313731,
+      "chars": 8,
+      "text": "id_suebi"
+    },
+    {
+      "off": 263579,
+      "recOff": 313755,
+      "chars": 32,
+      "text": "cappadocia_reform_battle_counter"
+    },
+    {
+      "off": 263651,
+      "recOff": 313827,
+      "chars": 11,
+      "text": "id_bosporan"
+    },
+    {
+      "off": 263681,
+      "recOff": 313857,
+      "chars": 30,
+      "text": "miletus_reform_recruit_counter"
+    },
+    {
+      "off": 263749,
+      "recOff": 313925,
+      "chars": 13,
+      "text": "id_cappadocia"
+    },
+    {
+      "off": 263783,
+      "recOff": 313959,
+      "chars": 7,
+      "text": "id_kush"
+    },
+    {
+      "off": 263805,
+      "recOff": 313981,
+      "chars": 32,
+      "text": "ChrysaoriaRebellion_PlayerRevolt"
+    },
+    {
+      "off": 263877,
+      "recOff": 314053,
+      "chars": 14,
+      "text": "id_trinovantes"
+    },
+    {
+      "off": 263913,
+      "recOff": 314089,
+      "chars": 22,
+      "text": "EgyptianRebellion_Done"
+    },
+    {
+      "off": 263965,
+      "recOff": 314141,
+      "chars": 12,
+      "text": "id_galatians"
+    },
+    {
+      "off": 263997,
+      "recOff": 314173,
+      "chars": 11,
+      "text": "id_massylii"
+    },
+    {
+      "off": 264027,
+      "recOff": 314203,
+      "chars": 13,
+      "text": "id_atropatene"
+    },
+    {
+      "off": 264061,
+      "recOff": 314237,
+      "chars": 19,
+      "text": "LyciaRebellion_Done"
+    },
+    {
+      "off": 264107,
+      "recOff": 314283,
+      "chars": 17,
+      "text": "has_game_reloaded"
+    },
+    {
+      "off": 264149,
+      "recOff": 314325,
+      "chars": 11,
+      "text": "id_syracuse"
+    },
+    {
+      "off": 264179,
+      "recOff": 314355,
+      "chars": 19,
+      "text": "id_ptolemaic_rebels"
+    },
+    {
+      "off": 264225,
+      "recOff": 314401,
+      "chars": 9,
+      "text": "id_chatti"
+    },
+    {
+      "off": 264251,
+      "recOff": 314427,
+      "chars": 11,
+      "text": "id_insubres"
+    },
+    {
+      "off": 264281,
+      "recOff": 314457,
+      "chars": 22,
+      "text": "ThessalyRebellion_Done"
+    },
+    {
+      "off": 264333,
+      "recOff": 314509,
+      "chars": 18,
+      "text": "PtolemaicReformOne"
+    },
+    {
+      "off": 264377,
+      "recOff": 314553,
+      "chars": 27,
+      "text": "LyciaRebellion_ForeignOwned"
+    },
+    {
+      "off": 264439,
+      "recOff": 314615,
+      "chars": 30,
+      "text": "syracuse_reform_battle_counter"
+    },
+    {
+      "off": 264507,
+      "recOff": 314683,
+      "chars": 30,
+      "text": "EgyptianRebellion_PlayerRevolt"
+    },
+    {
+      "off": 264575,
+      "recOff": 314751,
+      "chars": 7,
+      "text": "id_boii"
+    },
+    {
+      "off": 264597,
+      "recOff": 314773,
+      "chars": 18,
+      "text": "id_seleucid_rebels"
+    },
+    {
+      "off": 264641,
+      "recOff": 314817,
+      "chars": 11,
+      "text": "id_lusitani"
+    },
+    {
+      "off": 264671,
+      "recOff": 314847,
+      "chars": 9,
+      "text": "id_epirus"
+    },
+    {
+      "off": 264697,
+      "recOff": 314873,
+      "chars": 33,
+      "text": "pentapolis_reform_recruit_counter"
+    },
+    {
+      "off": 264771,
+      "recOff": 314947,
+      "chars": 9,
+      "text": "id_achaea"
+    },
+    {
+      "off": 264797,
+      "recOff": 314973,
+      "chars": 10,
+      "text": "id_dummies"
+    },
+    {
+      "off": 264825,
+      "recOff": 315001,
+      "chars": 30,
+      "text": "bosporan_reform_battle_counter"
+    },
+    {
+      "off": 264893,
+      "recOff": 315069,
+      "chars": 7,
+      "text": "id_saka"
+    },
+    {
+      "off": 264915,
+      "recOff": 315091,
+      "chars": 12,
+      "text": "id_masaesyli"
+    },
+    {
+      "off": 264947,
+      "recOff": 315123,
+      "chars": 9,
+      "text": "id_greeks"
+    },
+    {
+      "off": 264973,
+      "recOff": 315149,
+      "chars": 10,
+      "text": "id_aetolia"
+    },
+    {
+      "off": 265001,
+      "recOff": 315177,
+      "chars": 24,
+      "text": "ChrysaoriaRebellion_Done"
+    },
+    {
+      "off": 265057,
+      "recOff": 315233,
+      "chars": 11,
+      "text": "id_seleucid"
+    },
+    {
+      "off": 265087,
+      "recOff": 315263,
+      "chars": 10,
+      "text": "id_bactria"
+    },
+    {
+      "off": 265115,
+      "recOff": 315291,
+      "chars": 12,
+      "text": "id_thracians"
+    },
+    {
+      "off": 265147,
+      "recOff": 315323,
+      "chars": 11,
+      "text": "id_nabataea"
+    }
+  ],
+  "islands": [
+    {
+      "start": 2,
+      "end": 265216,
+      "len": 265214
+    }
+  ],
+  "topWords": [
+    [
+      "000000690064005f",
+      58
+    ],
+    [
+      "0000690064005f00",
+      58
+    ],
+    [
+      "0000007f00000000",
+      56
+    ],
+    [
+      "00007f0000000000",
+      56
+    ],
+    [
+      "007f000000000000",
+      56
+    ],
+    [
+      "7f00000000000000",
+      56
+    ],
+    [
+      "000000000000007f",
+      54
+    ],
+    [
+      "0000000000007f00",
+      54
+    ],
+    [
+      "00000000007f0000",
+      54
+    ],
+    [
+      "000000007f000000",
+      54
+    ],
+    [
+      "0097000000000000",
+      49
+    ],
+    [
+      "9700000000000000",
+      49
+    ],
+    [
+      "0000009700000000",
+      48
+    ],
+    [
+      "0000970000000000",
+      48
+    ],
+    [
+      "000000bc00000000",
+      48
+    ],
+    [
+      "0000000000000097",
+      47
+    ],
+    [
+      "0000000000009700",
+      47
+    ],
+    [
+      "0000000000970000",
+      47
+    ],
+    [
+      "0000000097000000",
+      47
+    ],
+    [
+      "0000bc0000000000",
+      47
+    ],
+    [
+      "00bc000000000000",
+      47
+    ],
+    [
+      "bc00000000000000",
+      47
+    ],
+    [
+      "00000000000000bc",
+      46
+    ],
+    [
+      "000000000000bc00",
+      46
+    ],
+    [
+      "0000000000bc0000",
+      46
+    ],
+    [
+      "00000000bc000000",
+      46
+    ],
+    [
+      "0025000000000000",
+      37
+    ],
+    [
+      "2500000000000000",
+      37
+    ],
+    [
+      "002a000000000000",
+      36
+    ],
+    [
+      "2a00000000000000",
+      36
+    ]
+  ]
+}

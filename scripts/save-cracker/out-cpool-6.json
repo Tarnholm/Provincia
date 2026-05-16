@@ -1,0 +1,4843 @@
+{
+  "structSummary": [
+    {
+      "idx": 0,
+      "text": "barbarian",
+      "strLen": 10,
+      "count": 42,
+      "sep": 0,
+      "recSize": 5828,
+      "isPerm": true,
+      "u32AfterPerm": 42,
+      "nzRest": 1376,
+      "maxRest": 151,
+      "afterPermOffset": 176
+    },
+    {
+      "idx": 1,
+      "text": "barbarian",
+      "strLen": 10,
+      "count": 42,
+      "sep": 0,
+      "recSize": 5828,
+      "isPerm": true,
+      "u32AfterPerm": 42,
+      "nzRest": 1378,
+      "maxRest": 151,
+      "afterPermOffset": 176
+    },
+    {
+      "idx": 2,
+      "text": "barbarian",
+      "strLen": 10,
+      "count": 42,
+      "sep": 0,
+      "recSize": 5828,
+      "isPerm": true,
+      "u32AfterPerm": 42,
+      "nzRest": 1376,
+      "maxRest": 151,
+      "afterPermOffset": 176
+    },
+    {
+      "idx": 3,
+      "text": "barbarian",
+      "strLen": 10,
+      "count": 42,
+      "sep": 0,
+      "recSize": 5828,
+      "isPerm": true,
+      "u32AfterPerm": 42,
+      "nzRest": 1376,
+      "maxRest": 151,
+      "afterPermOffset": 176
+    },
+    {
+      "idx": 4,
+      "text": "barbarian",
+      "strLen": 10,
+      "count": 42,
+      "sep": 0,
+      "recSize": 5828,
+      "isPerm": true,
+      "u32AfterPerm": 42,
+      "nzRest": 1376,
+      "maxRest": 151,
+      "afterPermOffset": 176
+    },
+    {
+      "idx": 5,
+      "text": "greek",
+      "strLen": 6,
+      "count": 55,
+      "sep": 0,
+      "recSize": 8168,
+      "isPerm": true,
+      "u32AfterPerm": 55,
+      "nzRest": 1949,
+      "maxRest": 188,
+      "afterPermOffset": 228
+    },
+    {
+      "idx": 6,
+      "text": "barbarian",
+      "strLen": 10,
+      "count": 42,
+      "sep": 0,
+      "recSize": 5828,
+      "isPerm": true,
+      "u32AfterPerm": 42,
+      "nzRest": 1376,
+      "maxRest": 151,
+      "afterPermOffset": 176
+    },
+    {
+      "idx": 7,
+      "text": "eastern",
+      "strLen": 8,
+      "count": 37,
+      "sep": 0,
+      "recSize": 4958,
+      "isPerm": true,
+      "u32AfterPerm": 37,
+      "nzRest": 1164,
+      "maxRest": 127,
+      "afterPermOffset": 156
+    },
+    {
+      "idx": 8,
+      "text": "greek",
+      "strLen": 6,
+      "count": 55,
+      "sep": 0,
+      "recSize": 8168,
+      "isPerm": true,
+      "u32AfterPerm": 55,
+      "nzRest": 1951,
+      "maxRest": 188,
+      "afterPermOffset": 228
+    },
+    {
+      "idx": 9,
+      "text": "egyptian",
+      "strLen": 9,
+      "count": 30,
+      "sep": 0,
+      "recSize": 3475,
+      "isPerm": true,
+      "u32AfterPerm": 30,
+      "nzRest": 802,
+      "maxRest": 85,
+      "afterPermOffset": 128
+    },
+    {
+      "idx": 10,
+      "text": "eastern",
+      "strLen": 8,
+      "count": 37,
+      "sep": 0,
+      "recSize": 4958,
+      "isPerm": true,
+      "u32AfterPerm": 37,
+      "nzRest": 1166,
+      "maxRest": 127,
+      "afterPermOffset": 156
+    },
+    {
+      "idx": 11,
+      "text": "greek",
+      "strLen": 6,
+      "count": 55,
+      "sep": 0,
+      "recSize": 8168,
+      "isPerm": true,
+      "u32AfterPerm": 55,
+      "nzRest": 1949,
+      "maxRest": 188,
+      "afterPermOffset": 228
+    },
+    {
+      "idx": 12,
+      "text": "greek",
+      "strLen": 6,
+      "count": 55,
+      "sep": 0,
+      "recSize": 8168,
+      "isPerm": true,
+      "u32AfterPerm": 55,
+      "nzRest": 1949,
+      "maxRest": 188,
+      "afterPermOffset": 228
+    },
+    {
+      "idx": 13,
+      "text": "eastern",
+      "strLen": 8,
+      "count": 37,
+      "sep": 1,
+      "recSize": 4958,
+      "isPerm": false,
+      "u32AfterPerm": 37,
+      "nzRest": 1164,
+      "maxRest": 127,
+      "afterPermOffset": 156
+    },
+    {
+      "idx": 14,
+      "text": "greek",
+      "strLen": 6,
+      "count": 55,
+      "sep": 0,
+      "recSize": 8168,
+      "isPerm": true,
+      "u32AfterPerm": 55,
+      "nzRest": 1949,
+      "maxRest": 188,
+      "afterPermOffset": 228
+    },
+    {
+      "idx": 15,
+      "text": "eastern",
+      "strLen": 8,
+      "count": 37,
+      "sep": 0,
+      "recSize": 4958,
+      "isPerm": true,
+      "u32AfterPerm": 37,
+      "nzRest": 1164,
+      "maxRest": 127,
+      "afterPermOffset": 156
+    },
+    {
+      "idx": 16,
+      "text": "eastern",
+      "strLen": 8,
+      "count": 37,
+      "sep": 0,
+      "recSize": 4958,
+      "isPerm": true,
+      "u32AfterPerm": 37,
+      "nzRest": 1164,
+      "maxRest": 127,
+      "afterPermOffset": 156
+    },
+    {
+      "idx": 17,
+      "text": "greek",
+      "strLen": 6,
+      "count": 55,
+      "sep": 0,
+      "recSize": 8168,
+      "isPerm": true,
+      "u32AfterPerm": 55,
+      "nzRest": 1949,
+      "maxRest": 188,
+      "afterPermOffset": 228
+    },
+    {
+      "idx": 18,
+      "text": "eastern",
+      "strLen": 8,
+      "count": 37,
+      "sep": 0,
+      "recSize": 4958,
+      "isPerm": true,
+      "u32AfterPerm": 37,
+      "nzRest": 1164,
+      "maxRest": 127,
+      "afterPermOffset": 156
+    },
+    {
+      "idx": 19,
+      "text": "egyptian",
+      "strLen": 9,
+      "count": 30,
+      "sep": 0,
+      "recSize": 3475,
+      "isPerm": true,
+      "u32AfterPerm": 30,
+      "nzRest": 800,
+      "maxRest": 85,
+      "afterPermOffset": 128
+    },
+    {
+      "idx": 20,
+      "text": "eastern",
+      "strLen": 8,
+      "count": 37,
+      "sep": 0,
+      "recSize": 4979,
+      "isPerm": true,
+      "u32AfterPerm": 37,
+      "nzRest": 1169,
+      "maxRest": 4294967040,
+      "afterPermOffset": 156
+    },
+    {
+      "idx": 21,
+      "text": "african_men",
+      "strLen": 12,
+      "count": 41,
+      "sep": 0,
+      "recSize": 186,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 172
+    },
+    {
+      "idx": 22,
+      "text": "african_women",
+      "strLen": 14,
+      "count": 23,
+      "sep": 0,
+      "recSize": 116,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 100
+    },
+    {
+      "idx": 23,
+      "text": "anatolian_men",
+      "strLen": 14,
+      "count": 61,
+      "sep": 0,
+      "recSize": 268,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 252
+    },
+    {
+      "idx": 24,
+      "text": "anatolian_women",
+      "strLen": 16,
+      "count": 27,
+      "sep": 0,
+      "recSize": 134,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 116
+    },
+    {
+      "idx": 25,
+      "text": "apulian_men",
+      "strLen": 12,
+      "count": 1,
+      "sep": 0,
+      "recSize": 26,
+      "isPerm": true,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 12
+    },
+    {
+      "idx": 26,
+      "text": "arevaci_men",
+      "strLen": 12,
+      "count": 71,
+      "sep": 0,
+      "recSize": 306,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 292
+    },
+    {
+      "idx": 27,
+      "text": "arevaci_women",
+      "strLen": 14,
+      "count": 11,
+      "sep": 0,
+      "recSize": 68,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 52
+    },
+    {
+      "idx": 28,
+      "text": "arverni_women",
+      "strLen": 14,
+      "count": 0,
+      "sep": 0,
+      "recSize": 24,
+      "isPerm": true,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 8
+    },
+    {
+      "idx": 29,
+      "text": "baltoslavic_men",
+      "strLen": 16,
+      "count": 4,
+      "sep": 0,
+      "recSize": 42,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 24
+    },
+    {
+      "idx": 30,
+      "text": "baltoslavic_women",
+      "strLen": 18,
+      "count": 1,
+      "sep": 0,
+      "recSize": 32,
+      "isPerm": true,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 12
+    },
+    {
+      "idx": 31,
+      "text": "blank_surnames",
+      "strLen": 15,
+      "count": 0,
+      "sep": 0,
+      "recSize": 25,
+      "isPerm": true,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 8
+    },
+    {
+      "idx": 32,
+      "text": "celtic_men",
+      "strLen": 11,
+      "count": 80,
+      "sep": 0,
+      "recSize": 341,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 328
+    },
+    {
+      "idx": 33,
+      "text": "celtic_women",
+      "strLen": 13,
+      "count": 17,
+      "sep": 0,
+      "recSize": 91,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 76
+    },
+    {
+      "idx": 34,
+      "text": "cilician_men",
+      "strLen": 13,
+      "count": 11,
+      "sep": 0,
+      "recSize": 67,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 52
+    },
+    {
+      "idx": 35,
+      "text": "cilician_women",
+      "strLen": 15,
+      "count": 5,
+      "sep": 0,
+      "recSize": 45,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 28
+    },
+    {
+      "idx": 36,
+      "text": "egyptian_men",
+      "strLen": 13,
+      "count": 43,
+      "sep": 0,
+      "recSize": 195,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 180
+    },
+    {
+      "idx": 37,
+      "text": "egyptian_women",
+      "strLen": 15,
+      "count": 20,
+      "sep": 0,
+      "recSize": 105,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 88
+    },
+    {
+      "idx": 38,
+      "text": "getae_men",
+      "strLen": 10,
+      "count": 41,
+      "sep": 0,
+      "recSize": 184,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 172
+    },
+    {
+      "idx": 39,
+      "text": "getae_women",
+      "strLen": 12,
+      "count": 9,
+      "sep": 0,
+      "recSize": 58,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 44
+    },
+    {
+      "idx": 40,
+      "text": "greek_men",
+      "strLen": 10,
+      "count": 332,
+      "sep": 0,
+      "recSize": 1348,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1336
+    },
+    {
+      "idx": 41,
+      "text": "greek_women",
+      "strLen": 12,
+      "count": 266,
+      "sep": 0,
+      "recSize": 1086,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1072
+    },
+    {
+      "idx": 42,
+      "text": "illyrian_men",
+      "strLen": 13,
+      "count": 78,
+      "sep": 0,
+      "recSize": 335,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 320
+    },
+    {
+      "idx": 43,
+      "text": "illyrian_women",
+      "strLen": 15,
+      "count": 19,
+      "sep": 0,
+      "recSize": 101,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 84
+    },
+    {
+      "idx": 44,
+      "text": "indian_men",
+      "strLen": 11,
+      "count": 106,
+      "sep": 0,
+      "recSize": 445,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 432
+    },
+    {
+      "idx": 45,
+      "text": "indian_surnames",
+      "strLen": 16,
+      "count": 20,
+      "sep": 0,
+      "recSize": 106,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 88
+    },
+    {
+      "idx": 46,
+      "text": "indian_women",
+      "strLen": 13,
+      "count": 42,
+      "sep": 0,
+      "recSize": 191,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 176
+    },
+    {
+      "idx": 47,
+      "text": "ionian_men",
+      "strLen": 11,
+      "count": 11,
+      "sep": 0,
+      "recSize": 65,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 52
+    },
+    {
+      "idx": 48,
+      "text": "iranian_men",
+      "strLen": 12,
+      "count": 24,
+      "sep": 0,
+      "recSize": 118,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 104
+    },
+    {
+      "idx": 49,
+      "text": "iranian_women",
+      "strLen": 14,
+      "count": 8,
+      "sep": 0,
+      "recSize": 56,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 40
+    },
+    {
+      "idx": 50,
+      "text": "italic_men",
+      "strLen": 11,
+      "count": 3,
+      "sep": 0,
+      "recSize": 33,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 20
+    },
+    {
+      "idx": 51,
+      "text": "italic_surnames",
+      "strLen": 16,
+      "count": 1,
+      "sep": 0,
+      "recSize": 30,
+      "isPerm": true,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 12
+    },
+    {
+      "idx": 52,
+      "text": "italic_women",
+      "strLen": 13,
+      "count": 2,
+      "sep": 0,
+      "recSize": 31,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 16
+    },
+    {
+      "idx": 53,
+      "text": "judaean_men",
+      "strLen": 12,
+      "count": 2,
+      "sep": 0,
+      "recSize": 30,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 16
+    },
+    {
+      "idx": 54,
+      "text": "liburnian_men",
+      "strLen": 14,
+      "count": 52,
+      "sep": 0,
+      "recSize": 232,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 216
+    },
+    {
+      "idx": 55,
+      "text": "liburnian_women",
+      "strLen": 16,
+      "count": 27,
+      "sep": 0,
+      "recSize": 134,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 116
+    },
+    {
+      "idx": 56,
+      "text": "lycian_men",
+      "strLen": 11,
+      "count": 67,
+      "sep": 0,
+      "recSize": 289,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 276
+    },
+    {
+      "idx": 57,
+      "text": "lycian_women",
+      "strLen": 13,
+      "count": 11,
+      "sep": 0,
+      "recSize": 67,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 52
+    },
+    {
+      "idx": 58,
+      "text": "massylii_women",
+      "strLen": 15,
+      "count": 0,
+      "sep": 0,
+      "recSize": 25,
+      "isPerm": true,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 8
+    },
+    {
+      "idx": 59,
+      "text": "mesopotamian_men",
+      "strLen": 17,
+      "count": 4,
+      "sep": 0,
+      "recSize": 43,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 24
+    },
+    {
+      "idx": 60,
+      "text": "nabataean_men",
+      "strLen": 14,
+      "count": 78,
+      "sep": 0,
+      "recSize": 336,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 320
+    },
+    {
+      "idx": 61,
+      "text": "nabataean_women",
+      "strLen": 16,
+      "count": 9,
+      "sep": 0,
+      "recSize": 62,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 44
+    },
+    {
+      "idx": 62,
+      "text": "parni_women",
+      "strLen": 12,
+      "count": 24,
+      "sep": 0,
+      "recSize": 118,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 104
+    },
+    {
+      "idx": 63,
+      "text": "phoenician_men",
+      "strLen": 15,
+      "count": 1,
+      "sep": 0,
+      "recSize": 29,
+      "isPerm": true,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 12
+    },
+    {
+      "idx": 64,
+      "text": "phoenician_women",
+      "strLen": 17,
+      "count": 2,
+      "sep": 0,
+      "recSize": 35,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 16
+    },
+    {
+      "idx": 65,
+      "text": "pontus_women",
+      "strLen": 13,
+      "count": 5,
+      "sep": 0,
+      "recSize": 43,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 28
+    },
+    {
+      "idx": 66,
+      "text": "roman_men",
+      "strLen": 10,
+      "count": 18,
+      "sep": 0,
+      "recSize": 92,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 80
+    },
+    {
+      "idx": 67,
+      "text": "roman_surnames",
+      "strLen": 15,
+      "count": 364,
+      "sep": 0,
+      "recSize": 1481,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1464
+    },
+    {
+      "idx": 68,
+      "text": "roman_women",
+      "strLen": 12,
+      "count": 88,
+      "sep": 0,
+      "recSize": 374,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 360
+    },
+    {
+      "idx": 69,
+      "text": "s_arabian_men",
+      "strLen": 14,
+      "count": 51,
+      "sep": 0,
+      "recSize": 228,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 212
+    },
+    {
+      "idx": 70,
+      "text": "s_arabian_surnames",
+      "strLen": 19,
+      "count": 52,
+      "sep": 0,
+      "recSize": 237,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 216
+    },
+    {
+      "idx": 71,
+      "text": "s_arabian_women",
+      "strLen": 16,
+      "count": 38,
+      "sep": 0,
+      "recSize": 178,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 160
+    },
+    {
+      "idx": 72,
+      "text": "siraces_men",
+      "strLen": 12,
+      "count": 32,
+      "sep": 0,
+      "recSize": 150,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 136
+    },
+    {
+      "idx": 73,
+      "text": "siraces_women",
+      "strLen": 14,
+      "count": 12,
+      "sep": 0,
+      "recSize": 72,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 56
+    },
+    {
+      "idx": 74,
+      "text": "slave_men",
+      "strLen": 10,
+      "count": 31,
+      "sep": 0,
+      "recSize": 144,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 132
+    },
+    {
+      "idx": 75,
+      "text": "slave_women",
+      "strLen": 12,
+      "count": 15,
+      "sep": 0,
+      "recSize": 82,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 68
+    },
+    {
+      "idx": 76,
+      "text": "suebi_men",
+      "strLen": 10,
+      "count": 99,
+      "sep": 0,
+      "recSize": 416,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 404
+    },
+    {
+      "idx": 77,
+      "text": "suebi_women",
+      "strLen": 12,
+      "count": 30,
+      "sep": 0,
+      "recSize": 142,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 128
+    },
+    {
+      "idx": 78,
+      "text": "thracian_men",
+      "strLen": 13,
+      "count": 96,
+      "sep": 0,
+      "recSize": 407,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 392
+    },
+    {
+      "idx": 79,
+      "text": "venetian_men",
+      "strLen": 13,
+      "count": 52,
+      "sep": 0,
+      "recSize": 231,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 216
+    },
+    {
+      "idx": 80,
+      "text": "venetian_women",
+      "strLen": 15,
+      "count": 12,
+      "sep": 0,
+      "recSize": 73,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 56
+    },
+    {
+      "idx": 81,
+      "text": "aetolian_women",
+      "strLen": 15,
+      "count": 272,
+      "sep": 0,
+      "recSize": 1113,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1096
+    },
+    {
+      "idx": 82,
+      "text": "arcadian_men",
+      "strLen": 13,
+      "count": 339,
+      "sep": 0,
+      "recSize": 1379,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1364
+    },
+    {
+      "idx": 83,
+      "text": "arcadian_women",
+      "strLen": 15,
+      "count": 267,
+      "sep": 0,
+      "recSize": 1093,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1076
+    },
+    {
+      "idx": 84,
+      "text": "armenia_men",
+      "strLen": 12,
+      "count": 34,
+      "sep": 0,
+      "recSize": 158,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 144
+    },
+    {
+      "idx": 85,
+      "text": "armenia_women",
+      "strLen": 14,
+      "count": 15,
+      "sep": 0,
+      "recSize": 84,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 68
+    },
+    {
+      "idx": 86,
+      "text": "arverni_men",
+      "strLen": 12,
+      "count": 109,
+      "sep": 0,
+      "recSize": 458,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 444
+    },
+    {
+      "idx": 87,
+      "text": "athenian_men",
+      "strLen": 13,
+      "count": 339,
+      "sep": 0,
+      "recSize": 1379,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1364
+    },
+    {
+      "idx": 88,
+      "text": "atropatene_men",
+      "strLen": 15,
+      "count": 38,
+      "sep": 0,
+      "recSize": 177,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 160
+    },
+    {
+      "idx": 89,
+      "text": "bithynian_men",
+      "strLen": 14,
+      "count": 454,
+      "sep": 0,
+      "recSize": 1840,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1824
+    },
+    {
+      "idx": 90,
+      "text": "boeotian_men",
+      "strLen": 13,
+      "count": 342,
+      "sep": 0,
+      "recSize": 1391,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1376
+    },
+    {
+      "idx": 91,
+      "text": "boeotian_women",
+      "strLen": 15,
+      "count": 270,
+      "sep": 0,
+      "recSize": 1105,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1088
+    },
+    {
+      "idx": 92,
+      "text": "byzantium_men",
+      "strLen": 14,
+      "count": 338,
+      "sep": 0,
+      "recSize": 1376,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1360
+    },
+    {
+      "idx": 93,
+      "text": "cappadocian_men",
+      "strLen": 16,
+      "count": 40,
+      "sep": 0,
+      "recSize": 186,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 168
+    },
+    {
+      "idx": 94,
+      "text": "cappadocian_women",
+      "strLen": 18,
+      "count": 11,
+      "sep": 0,
+      "recSize": 72,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 52
+    },
+    {
+      "idx": 95,
+      "text": "carian_women",
+      "strLen": 13,
+      "count": 28,
+      "sep": 0,
+      "recSize": 135,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 120
+    },
+    {
+      "idx": 96,
+      "text": "carthage_men",
+      "strLen": 13,
+      "count": 81,
+      "sep": 0,
+      "recSize": 347,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 332
+    },
+    {
+      "idx": 97,
+      "text": "carthage_women",
+      "strLen": 15,
+      "count": 15,
+      "sep": 0,
+      "recSize": 85,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 68
+    },
+    {
+      "idx": 98,
+      "text": "chersonesus_men",
+      "strLen": 16,
+      "count": 335,
+      "sep": 0,
+      "recSize": 1366,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1348
+    },
+    {
+      "idx": 99,
+      "text": "chios_men",
+      "strLen": 10,
+      "count": 334,
+      "sep": 0,
+      "recSize": 1356,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1344
+    },
+    {
+      "idx": 100,
+      "text": "cius_men",
+      "strLen": 9,
+      "count": 333,
+      "sep": 0,
+      "recSize": 1351,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1340
+    },
+    {
+      "idx": 101,
+      "text": "cyzicus_men",
+      "strLen": 12,
+      "count": 336,
+      "sep": 0,
+      "recSize": 1366,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1352
+    },
+    {
+      "idx": 102,
+      "text": "dalmatian_men",
+      "strLen": 14,
+      "count": 126,
+      "sep": 0,
+      "recSize": 528,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 512
+    },
+    {
+      "idx": 103,
+      "text": "dalmatian_women",
+      "strLen": 16,
+      "count": 32,
+      "sep": 0,
+      "recSize": 154,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 136
+    },
+    {
+      "idx": 104,
+      "text": "dardanian_men",
+      "strLen": 14,
+      "count": 121,
+      "sep": 0,
+      "recSize": 508,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 492
+    },
+    {
+      "idx": 105,
+      "text": "dardanian_women",
+      "strLen": 16,
+      "count": 34,
+      "sep": 0,
+      "recSize": 162,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 144
+    },
+    {
+      "idx": 106,
+      "text": "dorian_men",
+      "strLen": 11,
+      "count": 346,
+      "sep": 0,
+      "recSize": 1405,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1392
+    },
+    {
+      "idx": 107,
+      "text": "dorian_women",
+      "strLen": 13,
+      "count": 273,
+      "sep": 0,
+      "recSize": 1115,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1100
+    },
+    {
+      "idx": 108,
+      "text": "edetanian_men",
+      "strLen": 14,
+      "count": 73,
+      "sep": 0,
+      "recSize": 316,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 300
+    },
+    {
+      "idx": 109,
+      "text": "elis_men",
+      "strLen": 9,
+      "count": 337,
+      "sep": 0,
+      "recSize": 1367,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1356
+    },
+    {
+      "idx": 110,
+      "text": "emporion_men",
+      "strLen": 13,
+      "count": 334,
+      "sep": 0,
+      "recSize": 1359,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1344
+    },
+    {
+      "idx": 111,
+      "text": "ethiopian_men",
+      "strLen": 14,
+      "count": 49,
+      "sep": 0,
+      "recSize": 220,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 204
+    },
+    {
+      "idx": 112,
+      "text": "galatians_men",
+      "strLen": 14,
+      "count": 150,
+      "sep": 0,
+      "recSize": 624,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 608
+    },
+    {
+      "idx": 113,
+      "text": "galatians_women",
+      "strLen": 16,
+      "count": 34,
+      "sep": 0,
+      "recSize": 162,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 144
+    },
+    {
+      "idx": 114,
+      "text": "gortyn_men",
+      "strLen": 11,
+      "count": 333,
+      "sep": 0,
+      "recSize": 1353,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1340
+    },
+    {
+      "idx": 115,
+      "text": "heraclean_men",
+      "strLen": 14,
+      "count": 333,
+      "sep": 0,
+      "recSize": 1356,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1340
+    },
+    {
+      "idx": 116,
+      "text": "histria_men",
+      "strLen": 12,
+      "count": 11,
+      "sep": 0,
+      "recSize": 66,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 52
+    },
+    {
+      "idx": 117,
+      "text": "ionian_women",
+      "strLen": 13,
+      "count": 281,
+      "sep": 0,
+      "recSize": 1147,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1132
+    },
+    {
+      "idx": 118,
+      "text": "issa_men",
+      "strLen": 9,
+      "count": 342,
+      "sep": 0,
+      "recSize": 1387,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1376
+    },
+    {
+      "idx": 119,
+      "text": "issa_women",
+      "strLen": 11,
+      "count": 272,
+      "sep": 0,
+      "recSize": 1109,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1096
+    },
+    {
+      "idx": 120,
+      "text": "knossos_men",
+      "strLen": 12,
+      "count": 339,
+      "sep": 0,
+      "recSize": 1378,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1364
+    },
+    {
+      "idx": 121,
+      "text": "kydonia_men",
+      "strLen": 12,
+      "count": 338,
+      "sep": 0,
+      "recSize": 1374,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1360
+    },
+    {
+      "idx": 122,
+      "text": "lusitanian_men",
+      "strLen": 15,
+      "count": 92,
+      "sep": 0,
+      "recSize": 393,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 376
+    },
+    {
+      "idx": 123,
+      "text": "lusitanian_women",
+      "strLen": 17,
+      "count": 28,
+      "sep": 0,
+      "recSize": 139,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 120
+    },
+    {
+      "idx": 124,
+      "text": "lyttos_men",
+      "strLen": 11,
+      "count": 335,
+      "sep": 0,
+      "recSize": 1361,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1348
+    },
+    {
+      "idx": 125,
+      "text": "macedonian_men",
+      "strLen": 15,
+      "count": 355,
+      "sep": 0,
+      "recSize": 1445,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1428
+    },
+    {
+      "idx": 126,
+      "text": "macedonian_women",
+      "strLen": 17,
+      "count": 273,
+      "sep": 0,
+      "recSize": 1119,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1100
+    },
+    {
+      "idx": 127,
+      "text": "massaliote_men",
+      "strLen": 15,
+      "count": 337,
+      "sep": 0,
+      "recSize": 1373,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1356
+    },
+    {
+      "idx": 128,
+      "text": "massylii_men",
+      "strLen": 13,
+      "count": 71,
+      "sep": 0,
+      "recSize": 307,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 292
+    },
+    {
+      "idx": 129,
+      "text": "messene_men",
+      "strLen": 12,
+      "count": 337,
+      "sep": 0,
+      "recSize": 1370,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1356
+    },
+    {
+      "idx": 130,
+      "text": "olbia_men",
+      "strLen": 10,
+      "count": 337,
+      "sep": 0,
+      "recSize": 1368,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1356
+    },
+    {
+      "idx": 131,
+      "text": "paeonian_men",
+      "strLen": 13,
+      "count": 99,
+      "sep": 0,
+      "recSize": 419,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 404
+    },
+    {
+      "idx": 132,
+      "text": "paphlagonia_men",
+      "strLen": 16,
+      "count": 335,
+      "sep": 0,
+      "recSize": 1366,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1348
+    },
+    {
+      "idx": 133,
+      "text": "paphlagonia_women",
+      "strLen": 18,
+      "count": 268,
+      "sep": 0,
+      "recSize": 1100,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1080
+    },
+    {
+      "idx": 134,
+      "text": "parni_men",
+      "strLen": 10,
+      "count": 45,
+      "sep": 0,
+      "recSize": 200,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 188
+    },
+    {
+      "idx": 135,
+      "text": "pentapolis_men",
+      "strLen": 15,
+      "count": 341,
+      "sep": 0,
+      "recSize": 1389,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1372
+    },
+    {
+      "idx": 136,
+      "text": "pergamon_men",
+      "strLen": 13,
+      "count": 338,
+      "sep": 0,
+      "recSize": 1375,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1360
+    },
+    {
+      "idx": 137,
+      "text": "pergamon_women",
+      "strLen": 15,
+      "count": 268,
+      "sep": 0,
+      "recSize": 1097,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1080
+    },
+    {
+      "idx": 138,
+      "text": "pontus_men",
+      "strLen": 11,
+      "count": 26,
+      "sep": 0,
+      "recSize": 125,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 112
+    },
+    {
+      "idx": 139,
+      "text": "priene_men",
+      "strLen": 11,
+      "count": 341,
+      "sep": 0,
+      "recSize": 1385,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1372
+    },
+    {
+      "idx": 140,
+      "text": "rhodian_men",
+      "strLen": 12,
+      "count": 339,
+      "sep": 0,
+      "recSize": 1378,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1364
+    },
+    {
+      "idx": 141,
+      "text": "sabaean_men",
+      "strLen": 12,
+      "count": 83,
+      "sep": 0,
+      "recSize": 354,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 340
+    },
+    {
+      "idx": 142,
+      "text": "sabaean_women",
+      "strLen": 14,
+      "count": 40,
+      "sep": 0,
+      "recSize": 184,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 168
+    },
+    {
+      "idx": 143,
+      "text": "selge_men",
+      "strLen": 10,
+      "count": 338,
+      "sep": 0,
+      "recSize": 1372,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1360
+    },
+    {
+      "idx": 144,
+      "text": "selge_women",
+      "strLen": 12,
+      "count": 268,
+      "sep": 0,
+      "recSize": 1094,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1080
+    },
+    {
+      "idx": 145,
+      "text": "sinope_men",
+      "strLen": 11,
+      "count": 335,
+      "sep": 0,
+      "recSize": 1361,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1348
+    },
+    {
+      "idx": 146,
+      "text": "sparta_women",
+      "strLen": 13,
+      "count": 280,
+      "sep": 0,
+      "recSize": 1143,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1128
+    },
+    {
+      "idx": 147,
+      "text": "syracusan_women",
+      "strLen": 16,
+      "count": 274,
+      "sep": 0,
+      "recSize": 1122,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1104
+    },
+    {
+      "idx": 148,
+      "text": "thessalian_women",
+      "strLen": 17,
+      "count": 267,
+      "sep": 0,
+      "recSize": 1095,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1076
+    },
+    {
+      "idx": 149,
+      "text": "thracian_women",
+      "strLen": 15,
+      "count": 326,
+      "sep": 0,
+      "recSize": 1329,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1312
+    },
+    {
+      "idx": 150,
+      "text": "trinovantes_women",
+      "strLen": 18,
+      "count": 30,
+      "sep": 0,
+      "recSize": 148,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 128
+    },
+    {
+      "idx": 151,
+      "text": "achaean_men",
+      "strLen": 12,
+      "count": 356,
+      "sep": 0,
+      "recSize": 1446,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1432
+    },
+    {
+      "idx": 152,
+      "text": "akarnania_men",
+      "strLen": 14,
+      "count": 354,
+      "sep": 0,
+      "recSize": 1440,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1424
+    },
+    {
+      "idx": 153,
+      "text": "akragas_men",
+      "strLen": 12,
+      "count": 350,
+      "sep": 0,
+      "recSize": 1422,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1408
+    },
+    {
+      "idx": 154,
+      "text": "antigonid_men",
+      "strLen": 14,
+      "count": 366,
+      "sep": 0,
+      "recSize": 1488,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1472
+    },
+    {
+      "idx": 155,
+      "text": "antigonid_women",
+      "strLen": 16,
+      "count": 274,
+      "sep": 0,
+      "recSize": 1122,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1104
+    },
+    {
+      "idx": 156,
+      "text": "argive_men",
+      "strLen": 11,
+      "count": 348,
+      "sep": 0,
+      "recSize": 1413,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1400
+    },
+    {
+      "idx": 157,
+      "text": "athenian_women",
+      "strLen": 15,
+      "count": 289,
+      "sep": 0,
+      "recSize": 1181,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1164
+    },
+    {
+      "idx": 158,
+      "text": "bactrian_men",
+      "strLen": 13,
+      "count": 408,
+      "sep": 0,
+      "recSize": 1655,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1640
+    },
+    {
+      "idx": 159,
+      "text": "bithynian_women",
+      "strLen": 16,
+      "count": 337,
+      "sep": 0,
+      "recSize": 1374,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1356
+    },
+    {
+      "idx": 160,
+      "text": "bosporan_men",
+      "strLen": 13,
+      "count": 377,
+      "sep": 0,
+      "recSize": 1531,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1516
+    },
+    {
+      "idx": 161,
+      "text": "bosporan_women",
+      "strLen": 15,
+      "count": 276,
+      "sep": 0,
+      "recSize": 1129,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1112
+    },
+    {
+      "idx": 162,
+      "text": "cretan_women",
+      "strLen": 13,
+      "count": 274,
+      "sep": 0,
+      "recSize": 1119,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1104
+    },
+    {
+      "idx": 163,
+      "text": "cyrenean_men",
+      "strLen": 13,
+      "count": 410,
+      "sep": 0,
+      "recSize": 1663,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1648
+    },
+    {
+      "idx": 164,
+      "text": "cyrenean_women",
+      "strLen": 15,
+      "count": 279,
+      "sep": 0,
+      "recSize": 1141,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1124
+    },
+    {
+      "idx": 165,
+      "text": "daesitiates_men",
+      "strLen": 16,
+      "count": 206,
+      "sep": 0,
+      "recSize": 850,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 832
+    },
+    {
+      "idx": 166,
+      "text": "daesitiates_women",
+      "strLen": 18,
+      "count": 49,
+      "sep": 0,
+      "recSize": 224,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 204
+    },
+    {
+      "idx": 167,
+      "text": "epirote_men",
+      "strLen": 12,
+      "count": 360,
+      "sep": 0,
+      "recSize": 1462,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1448
+    },
+    {
+      "idx": 168,
+      "text": "epirote_women",
+      "strLen": 14,
+      "count": 278,
+      "sep": 0,
+      "recSize": 1136,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1120
+    },
+    {
+      "idx": 169,
+      "text": "nw_greek_men",
+      "strLen": 13,
+      "count": 348,
+      "sep": 0,
+      "recSize": 1415,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1400
+    },
+    {
+      "idx": 170,
+      "text": "ptolemaic_men",
+      "strLen": 14,
+      "count": 495,
+      "sep": 0,
+      "recSize": 2004,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1988
+    },
+    {
+      "idx": 171,
+      "text": "ptolemaic_women",
+      "strLen": 16,
+      "count": 294,
+      "sep": 0,
+      "recSize": 1202,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1184
+    },
+    {
+      "idx": 172,
+      "text": "scordisci_men",
+      "strLen": 14,
+      "count": 151,
+      "sep": 0,
+      "recSize": 628,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 612
+    },
+    {
+      "idx": 173,
+      "text": "seleucid_men",
+      "strLen": 13,
+      "count": 500,
+      "sep": 0,
+      "recSize": 2023,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 2008
+    },
+    {
+      "idx": 174,
+      "text": "seleucid_women",
+      "strLen": 15,
+      "count": 281,
+      "sep": 0,
+      "recSize": 1149,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1132
+    },
+    {
+      "idx": 175,
+      "text": "sparta_men",
+      "strLen": 11,
+      "count": 397,
+      "sep": 0,
+      "recSize": 1609,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1596
+    },
+    {
+      "idx": 176,
+      "text": "syracusan_men",
+      "strLen": 14,
+      "count": 380,
+      "sep": 0,
+      "recSize": 1544,
+      "isPerm": false,
+      "u32AfterPerm": -1,
+      "nzRest": 0,
+      "maxRest": 0,
+      "afterPermOffset": 1528
+    },
+    {
+      "idx": 177,
+      "text": "aetolian_men",
+      "strLen": 13,
+      "count": 363,
+      "sep": 0,
+      "recSize": 5828,
+      "isPerm": false,
+      "u32AfterPerm": 0,
+      "nzRest": 1063,
+      "maxRest": 4211108096,
+      "afterPermOffset": 1460
+    }
+  ],
+  "countDist": {
+    "0": 3,
+    "1": 4,
+    "2": 3,
+    "3": 1,
+    "4": 2,
+    "5": 2,
+    "8": 1,
+    "9": 2,
+    "11": 6,
+    "12": 2,
+    "15": 3,
+    "17": 1,
+    "18": 1,
+    "19": 1,
+    "20": 2,
+    "23": 1,
+    "24": 2,
+    "26": 1,
+    "27": 2,
+    "28": 2,
+    "30": 4,
+    "31": 1,
+    "32": 2,
+    "34": 3,
+    "37": 7,
+    "38": 2,
+    "40": 2,
+    "41": 2,
+    "42": 7,
+    "43": 1,
+    "45": 1,
+    "49": 2,
+    "51": 1,
+    "52": 3,
+    "55": 6,
+    "61": 1,
+    "67": 1,
+    "71": 2,
+    "73": 1,
+    "78": 2,
+    "80": 1,
+    "81": 1,
+    "83": 1,
+    "88": 1,
+    "92": 1,
+    "96": 1,
+    "99": 2,
+    "106": 1,
+    "109": 1,
+    "121": 1,
+    "126": 1,
+    "150": 1,
+    "151": 1,
+    "206": 1,
+    "266": 1,
+    "267": 2,
+    "268": 3,
+    "270": 1,
+    "272": 2,
+    "273": 2,
+    "274": 3,
+    "276": 1,
+    "278": 1,
+    "279": 1,
+    "280": 1,
+    "281": 2,
+    "289": 1,
+    "294": 1,
+    "326": 1,
+    "332": 1,
+    "333": 3,
+    "334": 2,
+    "335": 4,
+    "336": 1,
+    "337": 5,
+    "338": 4,
+    "339": 4,
+    "341": 2,
+    "342": 2,
+    "346": 1,
+    "348": 2,
+    "350": 1,
+    "354": 1,
+    "355": 1,
+    "356": 1,
+    "360": 1,
+    "363": 1,
+    "364": 1,
+    "366": 1,
+    "377": 1,
+    "380": 1,
+    "397": 1,
+    "408": 1,
+    "410": 1,
+    "454": 1,
+    "495": 1,
+    "500": 1
+  },
+  "sizeDist": {
+    "24": 1,
+    "25": 2,
+    "26": 1,
+    "29": 1,
+    "30": 2,
+    "31": 1,
+    "32": 1,
+    "33": 1,
+    "35": 1,
+    "42": 1,
+    "43": 2,
+    "45": 1,
+    "56": 1,
+    "58": 1,
+    "62": 1,
+    "65": 1,
+    "66": 1,
+    "67": 2,
+    "68": 1,
+    "72": 2,
+    "73": 1,
+    "82": 1,
+    "84": 1,
+    "85": 1,
+    "91": 1,
+    "92": 1,
+    "101": 1,
+    "105": 1,
+    "106": 1,
+    "116": 1,
+    "118": 2,
+    "125": 1,
+    "134": 2,
+    "135": 1,
+    "139": 1,
+    "142": 1,
+    "144": 1,
+    "148": 1,
+    "150": 1,
+    "154": 1,
+    "158": 1,
+    "162": 2,
+    "177": 1,
+    "178": 1,
+    "184": 2,
+    "186": 2,
+    "191": 1,
+    "195": 1,
+    "200": 1,
+    "220": 1,
+    "224": 1,
+    "228": 1,
+    "231": 1,
+    "232": 1,
+    "237": 1,
+    "268": 1,
+    "289": 1,
+    "306": 1,
+    "307": 1,
+    "316": 1,
+    "335": 1,
+    "336": 1,
+    "341": 1,
+    "347": 1,
+    "354": 1,
+    "374": 1,
+    "393": 1,
+    "407": 1,
+    "416": 1,
+    "419": 1,
+    "445": 1,
+    "458": 1,
+    "508": 1,
+    "528": 1,
+    "624": 1,
+    "628": 1,
+    "850": 1,
+    "1086": 1,
+    "1093": 1,
+    "1094": 1,
+    "1095": 1,
+    "1097": 1,
+    "1100": 1,
+    "1105": 1,
+    "1109": 1,
+    "1113": 1,
+    "1115": 1,
+    "1119": 2,
+    "1122": 2,
+    "1129": 1,
+    "1136": 1,
+    "1141": 1,
+    "1143": 1,
+    "1147": 1,
+    "1149": 1,
+    "1181": 1,
+    "1202": 1,
+    "1329": 1,
+    "1348": 1,
+    "1351": 1,
+    "1353": 1,
+    "1356": 2,
+    "1359": 1,
+    "1361": 2,
+    "1366": 3,
+    "1367": 1,
+    "1368": 1,
+    "1370": 1,
+    "1372": 1,
+    "1373": 1,
+    "1374": 2,
+    "1375": 1,
+    "1376": 1,
+    "1378": 2,
+    "1379": 2,
+    "1385": 1,
+    "1387": 1,
+    "1389": 1,
+    "1391": 1,
+    "1405": 1,
+    "1413": 1,
+    "1415": 1,
+    "1422": 1,
+    "1440": 1,
+    "1445": 1,
+    "1446": 1,
+    "1462": 1,
+    "1481": 1,
+    "1488": 1,
+    "1531": 1,
+    "1544": 1,
+    "1609": 1,
+    "1655": 1,
+    "1663": 1,
+    "1840": 1,
+    "2004": 1,
+    "2023": 1,
+    "3475": 2,
+    "4958": 6,
+    "4979": 1,
+    "5828": 7,
+    "8168": 6
+  },
+  "diffs": [
+    {
+      "idx": 1,
+      "text": "barbarian",
+      "hashes": {
+        "save_10_fresh.sav": "2c96003ff287fcc4",
+        "save_1.2.sav": "2c96003ff287fcc4",
+        "ror_t1e.sav": "2c96003ff287fcc4",
+        "ror_t2s.sav": "1c8ba08808692cbc",
+        "ror_t5.sav": "55b02cf0b4d671c0",
+        "ror_t11s.sav": "54564d0e7165e932",
+        "ror_t11e.sav": "54564d0e7165e932",
+        "athens_t21.sav": "b5627be0f2fa23ea",
+        "athens_t22e.sav": "5b95c1747965ac15"
+      }
+    },
+    {
+      "idx": 8,
+      "text": "greek",
+      "hashes": {
+        "save_10_fresh.sav": "e8e42b0f81c58e46",
+        "save_1.2.sav": "e8e42b0f81c58e46",
+        "ror_t1e.sav": "e8e42b0f81c58e46",
+        "ror_t2s.sav": "981c6b504d78550b",
+        "ror_t5.sav": "74e4fe2bad50799a",
+        "ror_t11s.sav": "3dc256768dbbc14a",
+        "ror_t11e.sav": "3dc256768dbbc14a",
+        "athens_t21.sav": "1fd1a31c6796e979",
+        "athens_t22e.sav": "f3c8b4a890ce8bbc"
+      }
+    },
+    {
+      "idx": 9,
+      "text": "egyptian",
+      "hashes": {
+        "save_10_fresh.sav": "8f5cc6e895a8897b",
+        "save_1.2.sav": "8f5cc6e895a8897b",
+        "ror_t1e.sav": "8f5cc6e895a8897b",
+        "ror_t2s.sav": "8f5cc6e895a8897b",
+        "ror_t5.sav": "81297f82633d88ac",
+        "ror_t11s.sav": "689bb34081d17b95",
+        "ror_t11e.sav": "689bb34081d17b95",
+        "athens_t21.sav": "010b9c63f96baf36",
+        "athens_t22e.sav": "0a34bec1731253c7"
+      }
+    },
+    {
+      "idx": 10,
+      "text": "eastern",
+      "hashes": {
+        "save_10_fresh.sav": "3674db7eecf9ff84",
+        "save_1.2.sav": "3674db7eecf9ff84",
+        "ror_t1e.sav": "3674db7eecf9ff84",
+        "ror_t2s.sav": "3674db7eecf9ff84",
+        "ror_t5.sav": "3df6a74f6abda3ae",
+        "ror_t11s.sav": "ffc799809b73e739",
+        "ror_t11e.sav": "ffc799809b73e739",
+        "athens_t21.sav": "fc6c93b86beea7f9",
+        "athens_t22e.sav": "4469ba5713ccb7f7"
+      }
+    },
+    {
+      "idx": 20,
+      "text": "eastern",
+      "hashes": {
+        "save_10_fresh.sav": "5864b3b0a2b8ecba",
+        "save_1.2.sav": "eb7deb3621cbfb7e",
+        "ror_t1e.sav": "f8febf9bfdeb00a1",
+        "ror_t2s.sav": "47aa67944565e852",
+        "ror_t5.sav": "fb7bac5228758cba",
+        "ror_t11s.sav": "13343e11d84d7b7b",
+        "ror_t11e.sav": "d75192ae0a44639a",
+        "athens_t21.sav": "e2dd9b2d660a467d",
+        "athens_t22e.sav": "4e8b49d8bb1590ac"
+      }
+    },
+    {
+      "idx": 21,
+      "text": "african_men",
+      "hashes": {
+        "save_10_fresh.sav": "cbbbdcd04d27df30",
+        "save_1.2.sav": "aa34e1f30c6db441",
+        "ror_t1e.sav": "a7c2d3e5d183694b",
+        "ror_t2s.sav": "a7c2d3e5d183694b",
+        "ror_t5.sav": "c5a55f12027accb9",
+        "ror_t11s.sav": "8f5692084bbdae96",
+        "ror_t11e.sav": "8f5692084bbdae96",
+        "athens_t21.sav": "f312a05988816313",
+        "athens_t22e.sav": "f312a05988816313"
+      }
+    },
+    {
+      "idx": 22,
+      "text": "african_women",
+      "hashes": {
+        "save_10_fresh.sav": "ecd27d24fe83072a",
+        "save_1.2.sav": "323987f4bd22bc3b",
+        "ror_t1e.sav": "bfc1b75d4cf29d27",
+        "ror_t2s.sav": "bfc1b75d4cf29d27",
+        "ror_t5.sav": "95fb2dbcc7410042",
+        "ror_t11s.sav": "ff51f00697cf6058",
+        "ror_t11e.sav": "ff51f00697cf6058",
+        "athens_t21.sav": "22fba0f1b4e5e27b",
+        "athens_t22e.sav": "d81d9eb881c12b43"
+      }
+    },
+    {
+      "idx": 23,
+      "text": "anatolian_men",
+      "hashes": {
+        "save_10_fresh.sav": "d0bc24b509c6a08a",
+        "save_1.2.sav": "431a9157c13429a2",
+        "ror_t1e.sav": "db7883711da26fa6",
+        "ror_t2s.sav": "db7883711da26fa6",
+        "ror_t5.sav": "0fb0df53e66ce441",
+        "ror_t11s.sav": "84983ae5a69fa0ef",
+        "ror_t11e.sav": "84983ae5a69fa0ef",
+        "athens_t21.sav": "ddc045210153d713",
+        "athens_t22e.sav": "ddc045210153d713"
+      }
+    },
+    {
+      "idx": 24,
+      "text": "anatolian_women",
+      "hashes": {
+        "save_10_fresh.sav": "c6d781c6ac377fbd",
+        "save_1.2.sav": "a8d81579210a3d1f",
+        "ror_t1e.sav": "9853813abd51c384",
+        "ror_t2s.sav": "9853813abd51c384",
+        "ror_t5.sav": "3cd4dfd6d7ba565f",
+        "ror_t11s.sav": "9ebe39b4a1f57127",
+        "ror_t11e.sav": "9ebe39b4a1f57127",
+        "athens_t21.sav": "dc0eeebdc82e5312",
+        "athens_t22e.sav": "dc0eeebdc82e5312"
+      }
+    },
+    {
+      "idx": 26,
+      "text": "arevaci_men",
+      "hashes": {
+        "save_10_fresh.sav": "56ce847897371b37",
+        "save_1.2.sav": "7d89f43835d92bf3",
+        "ror_t1e.sav": "05baa7a80b418495",
+        "ror_t2s.sav": "1486b7b2efe0d9b9",
+        "ror_t5.sav": "82ea2478fb0486c6",
+        "ror_t11s.sav": "f41961b88c68df73",
+        "ror_t11e.sav": "f41961b88c68df73",
+        "athens_t21.sav": "54f0c3b714eba0ce",
+        "athens_t22e.sav": "b5256ddc68b52c19"
+      }
+    },
+    {
+      "idx": 27,
+      "text": "arevaci_women",
+      "hashes": {
+        "save_10_fresh.sav": "9bff7189667c7a0b",
+        "save_1.2.sav": "f2bae1eb64bce5f3",
+        "ror_t1e.sav": "03408dbd18f81a00",
+        "ror_t2s.sav": "03408dbd18f81a00",
+        "ror_t5.sav": "2509a912d2639578",
+        "ror_t11s.sav": "4b0f34433821683e",
+        "ror_t11e.sav": "4b0f34433821683e",
+        "athens_t21.sav": "2513a7a3f51a4d2c",
+        "athens_t22e.sav": "5e1ee1f61dbc3b2e"
+      }
+    },
+    {
+      "idx": 29,
+      "text": "baltoslavic_men",
+      "hashes": {
+        "save_10_fresh.sav": "44ffb10a801f1afc",
+        "save_1.2.sav": "7579bb24fe1b2849",
+        "ror_t1e.sav": "65c9b9eb00e8fb2b",
+        "ror_t2s.sav": "65c9b9eb00e8fb2b",
+        "ror_t5.sav": "7579bb24fe1b2849",
+        "ror_t11s.sav": "65c9b9eb00e8fb2b",
+        "ror_t11e.sav": "65c9b9eb00e8fb2b",
+        "athens_t21.sav": "83be0b8f6961b136",
+        "athens_t22e.sav": "83be0b8f6961b136"
+      }
+    },
+    {
+      "idx": 32,
+      "text": "celtic_men",
+      "hashes": {
+        "save_10_fresh.sav": "aa2d7f8c84b95874",
+        "save_1.2.sav": "b6971d8416d60290",
+        "ror_t1e.sav": "6b7e6b5f44cfcb17",
+        "ror_t2s.sav": "09c7bbf159389f58",
+        "ror_t5.sav": "e94c326e59039f46",
+        "ror_t11s.sav": "5474463edbf1c58b",
+        "ror_t11e.sav": "5474463edbf1c58b",
+        "athens_t21.sav": "6fb0295aeb1e6b6c",
+        "athens_t22e.sav": "2d517232994fe013"
+      }
+    },
+    {
+      "idx": 33,
+      "text": "celtic_women",
+      "hashes": {
+        "save_10_fresh.sav": "bc1802bc5ca8fdd9",
+        "save_1.2.sav": "310f5ba024d58ea4",
+        "ror_t1e.sav": "8006df5ed50c91ee",
+        "ror_t2s.sav": "1bedf6ccaf7e5b12",
+        "ror_t5.sav": "7f5cb2da1920995c",
+        "ror_t11s.sav": "c7c176e8eb44b576",
+        "ror_t11e.sav": "c7c176e8eb44b576",
+        "athens_t21.sav": "1eb01962e856d57f",
+        "athens_t22e.sav": "153482d93d4091b2"
+      }
+    },
+    {
+      "idx": 34,
+      "text": "cilician_men",
+      "hashes": {
+        "save_10_fresh.sav": "fcdecf44ddc6a058",
+        "save_1.2.sav": "a7c0553f2b22b1c8",
+        "ror_t1e.sav": "7844baa74f133117",
+        "ror_t2s.sav": "7844baa74f133117",
+        "ror_t5.sav": "8460fa94ca9237b7",
+        "ror_t11s.sav": "bdc12db90e795994",
+        "ror_t11e.sav": "bdc12db90e795994",
+        "athens_t21.sav": "14d07d0fe5ec57a2",
+        "athens_t22e.sav": "14d07d0fe5ec57a2"
+      }
+    },
+    {
+      "idx": 35,
+      "text": "cilician_women",
+      "hashes": {
+        "save_10_fresh.sav": "98a72561e9ecfe1b",
+        "save_1.2.sav": "7c022f1c8a5d17ce",
+        "ror_t1e.sav": "ffb0069d4c479285",
+        "ror_t2s.sav": "ffb0069d4c479285",
+        "ror_t5.sav": "5b8270a165483750",
+        "ror_t11s.sav": "97d7ac70df40ffc1",
+        "ror_t11e.sav": "97d7ac70df40ffc1",
+        "athens_t21.sav": "d067891b85389f9f",
+        "athens_t22e.sav": "d067891b85389f9f"
+      }
+    },
+    {
+      "idx": 36,
+      "text": "egyptian_men",
+      "hashes": {
+        "save_10_fresh.sav": "b8888c71a0c4eb58",
+        "save_1.2.sav": "16d1b222ca9a6756",
+        "ror_t1e.sav": "3474fde40d1e3bf2",
+        "ror_t2s.sav": "3474fde40d1e3bf2",
+        "ror_t5.sav": "4e88c3577fdded20",
+        "ror_t11s.sav": "2b230242e2f07f9d",
+        "ror_t11e.sav": "2b230242e2f07f9d",
+        "athens_t21.sav": "9253ab0c25561cba",
+        "athens_t22e.sav": "9253ab0c25561cba"
+      }
+    },
+    {
+      "idx": 37,
+      "text": "egyptian_women",
+      "hashes": {
+        "save_10_fresh.sav": "3fbb85a2ba9d17b9",
+        "save_1.2.sav": "c8b247239ec37f19",
+        "ror_t1e.sav": "0200faad8f33ab3b",
+        "ror_t2s.sav": "0200faad8f33ab3b",
+        "ror_t5.sav": "600fe2fb790ce4f9",
+        "ror_t11s.sav": "051429534515bb97",
+        "ror_t11e.sav": "051429534515bb97",
+        "athens_t21.sav": "94b2c9a83e3500ff",
+        "athens_t22e.sav": "129310327a908b4b"
+      }
+    },
+    {
+      "idx": 38,
+      "text": "getae_men",
+      "hashes": {
+        "save_10_fresh.sav": "cae614d6ce356293",
+        "save_1.2.sav": "2739c1ea3ce7fe1c",
+        "ror_t1e.sav": "477e3d5a61b4e021",
+        "ror_t2s.sav": "55dae1794e66336a",
+        "ror_t5.sav": "2bb64fcf23d3a74c",
+        "ror_t11s.sav": "73c0b7969765b43c",
+        "ror_t11e.sav": "73c0b7969765b43c",
+        "athens_t21.sav": "a0fc475701dd810a",
+        "athens_t22e.sav": "fb04b56f595624e0"
+      }
+    },
+    {
+      "idx": 39,
+      "text": "getae_women",
+      "hashes": {
+        "save_10_fresh.sav": "62e4147027ebe8a8",
+        "save_1.2.sav": "5a137ecf5eb1464b",
+        "ror_t1e.sav": "fbd7c0927c549712",
+        "ror_t2s.sav": "fbd7c0927c549712",
+        "ror_t5.sav": "f5fbdf8017c23586",
+        "ror_t11s.sav": "3509b1c299082b4d",
+        "ror_t11e.sav": "3509b1c299082b4d",
+        "athens_t21.sav": "d9a2d0dccd2adbd8",
+        "athens_t22e.sav": "f87a2cf060d09fbf"
+      }
+    },
+    {
+      "idx": 40,
+      "text": "greek_men",
+      "hashes": {
+        "save_10_fresh.sav": "c01b3431667fd53f",
+        "save_1.2.sav": "f3e8a720db5b34e7",
+        "ror_t1e.sav": "a16a00fbb3e17731",
+        "ror_t2s.sav": "a288bc58fff2ebb3",
+        "ror_t5.sav": "781493524ca16711",
+        "ror_t11s.sav": "312d9a0214eb52cd",
+        "ror_t11e.sav": "7a0347f09b0fc5b0",
+        "athens_t21.sav": "dc41945ef75f91fa",
+        "athens_t22e.sav": "d6ab535d288f8296"
+      }
+    },
+    {
+      "idx": 41,
+      "text": "greek_women",
+      "hashes": {
+        "save_10_fresh.sav": "d60461071926cfc0",
+        "save_1.2.sav": "e5ae163ddd0064f5",
+        "ror_t1e.sav": "a8192431bd9c4c53",
+        "ror_t2s.sav": "2dbf4c50ff2eda59",
+        "ror_t5.sav": "e6659b56df3d5291",
+        "ror_t11s.sav": "ee51c1dc6d427583",
+        "ror_t11e.sav": "ee51c1dc6d427583",
+        "athens_t21.sav": "04b87960a7865f1a",
+        "athens_t22e.sav": "9f639106c3be6957"
+      }
+    },
+    {
+      "idx": 42,
+      "text": "illyrian_men",
+      "hashes": {
+        "save_10_fresh.sav": "5ebd77a3a345d778",
+        "save_1.2.sav": "0ca777a1c9a41140",
+        "ror_t1e.sav": "288777cf7bd3f2c2",
+        "ror_t2s.sav": "d16040a2740f28ec",
+        "ror_t5.sav": "5e42776cf93dbcfd",
+        "ror_t11s.sav": "f7595ff195aa7224",
+        "ror_t11e.sav": "f7595ff195aa7224",
+        "athens_t21.sav": "66e1775df98f06d7",
+        "athens_t22e.sav": "66e1775df98f06d7"
+      }
+    },
+    {
+      "idx": 43,
+      "text": "illyrian_women",
+      "hashes": {
+        "save_10_fresh.sav": "714eaac93511385d",
+        "save_1.2.sav": "4ea81e0baf7d6b1a",
+        "ror_t1e.sav": "e1d7de681f7178dc",
+        "ror_t2s.sav": "e1d7de681f7178dc",
+        "ror_t5.sav": "c9071907936251e4",
+        "ror_t11s.sav": "daa202dbcef2d574",
+        "ror_t11e.sav": "daa202dbcef2d574",
+        "athens_t21.sav": "a6235e5f276eda8a",
+        "athens_t22e.sav": "544e760f0e15acfd"
+      }
+    },
+    {
+      "idx": 44,
+      "text": "indian_men",
+      "hashes": {
+        "save_10_fresh.sav": "2db2b777f517985a",
+        "save_1.2.sav": "9a587611adb61404",
+        "ror_t1e.sav": "9ce4302dd090164b",
+        "ror_t2s.sav": "416e961a5a30dd53",
+        "ror_t5.sav": "579ee99b4cea1b6a",
+        "ror_t11s.sav": "e8fe5b849116010b",
+        "ror_t11e.sav": "e8fe5b849116010b",
+        "athens_t21.sav": "d31ee85b930f2c59",
+        "athens_t22e.sav": "1806d1ecfaa3a81a"
+      }
+    },
+    {
+      "idx": 45,
+      "text": "indian_surnames",
+      "hashes": {
+        "save_10_fresh.sav": "9cb1110c505c072d",
+        "save_1.2.sav": "5ab799ae736fe7dd",
+        "ror_t1e.sav": "e1c1449c6bf2e2d7",
+        "ror_t2s.sav": "c7c380bf720151ea",
+        "ror_t5.sav": "cbd6216daae052f6",
+        "ror_t11s.sav": "a1e63992562a49a4",
+        "ror_t11e.sav": "a1e63992562a49a4",
+        "athens_t21.sav": "f95190b76503dee0",
+        "athens_t22e.sav": "cd84d40cd1403372"
+      }
+    },
+    {
+      "idx": 46,
+      "text": "indian_women",
+      "hashes": {
+        "save_10_fresh.sav": "2aafa53f0b7010f3",
+        "save_1.2.sav": "8f7ff940ca69effc",
+        "ror_t1e.sav": "cef58ed60fb343aa",
+        "ror_t2s.sav": "cef58ed60fb343aa",
+        "ror_t5.sav": "7678d7e534332f2b",
+        "ror_t11s.sav": "dc5e4f26de8fabaa",
+        "ror_t11e.sav": "dc5e4f26de8fabaa",
+        "athens_t21.sav": "05b471996d3c559b",
+        "athens_t22e.sav": "8209c954d9223ee4"
+      }
+    },
+    {
+      "idx": 47,
+      "text": "ionian_men",
+      "hashes": {
+        "save_10_fresh.sav": "a107dca3faccddba",
+        "save_1.2.sav": "dfde4644eef5a846",
+        "ror_t1e.sav": "0b308ac1d6496142",
+        "ror_t2s.sav": "0b308ac1d6496142",
+        "ror_t5.sav": "fecf84952e57820b",
+        "ror_t11s.sav": "d7aa249ee785138a",
+        "ror_t11e.sav": "d7aa249ee785138a",
+        "athens_t21.sav": "1ba69ea4ba787a70",
+        "athens_t22e.sav": "1ba69ea4ba787a70"
+      }
+    },
+    {
+      "idx": 48,
+      "text": "iranian_men",
+      "hashes": {
+        "save_10_fresh.sav": "7688cf65b4a31d05",
+        "save_1.2.sav": "e68455c4d261a13a",
+        "ror_t1e.sav": "7b53af95ae1e5206",
+        "ror_t2s.sav": "7b53af95ae1e5206",
+        "ror_t5.sav": "b49f078898277f06",
+        "ror_t11s.sav": "92fa0a39033b166d",
+        "ror_t11e.sav": "92fa0a39033b166d",
+        "athens_t21.sav": "c5fceec900ad3db2",
+        "athens_t22e.sav": "c5fceec900ad3db2"
+      }
+    },
+    {
+      "idx": 49,
+      "text": "iranian_women",
+      "hashes": {
+        "save_10_fresh.sav": "0878e0ea57e22f46",
+        "save_1.2.sav": "a13687dcb8007082",
+        "ror_t1e.sav": "e402ca7434589081",
+        "ror_t2s.sav": "e402ca7434589081",
+        "ror_t5.sav": "404454d586e277cd",
+        "ror_t11s.sav": "09d8ad94fff42bb6",
+        "ror_t11e.sav": "09d8ad94fff42bb6",
+        "athens_t21.sav": "f45dd7d8dca39bc2",
+        "athens_t22e.sav": "f45dd7d8dca39bc2"
+      }
+    },
+    {
+      "idx": 50,
+      "text": "italic_men",
+      "hashes": {
+        "save_10_fresh.sav": "c1135a7b044a8839",
+        "save_1.2.sav": "f2b1683a4716deae",
+        "ror_t1e.sav": "a6b0be0d773b9aa0",
+        "ror_t2s.sav": "a6b0be0d773b9aa0",
+        "ror_t5.sav": "c1135a7b044a8839",
+        "ror_t11s.sav": "c1135a7b044a8839",
+        "ror_t11e.sav": "c1135a7b044a8839",
+        "athens_t21.sav": "6d8b0ff8758b3ef0",
+        "athens_t22e.sav": "6d8b0ff8758b3ef0"
+      }
+    },
+    {
+      "idx": 54,
+      "text": "liburnian_men",
+      "hashes": {
+        "save_10_fresh.sav": "03f18e392f224052",
+        "save_1.2.sav": "96304bc2c949a14e",
+        "ror_t1e.sav": "beaf9711e3fdac0d",
+        "ror_t2s.sav": "e77263b134dc0485",
+        "ror_t5.sav": "7a808972fd454b07",
+        "ror_t11s.sav": "4e9b07c91ac6aecd",
+        "ror_t11e.sav": "4e9b07c91ac6aecd",
+        "athens_t21.sav": "2d3b807e26a5f502",
+        "athens_t22e.sav": "c952c282b6a48b9d"
+      }
+    },
+    {
+      "idx": 55,
+      "text": "liburnian_women",
+      "hashes": {
+        "save_10_fresh.sav": "f7e46b5503dc84ae",
+        "save_1.2.sav": "950f8aa32a050127",
+        "ror_t1e.sav": "2124e001804ba21d",
+        "ror_t2s.sav": "2124e001804ba21d",
+        "ror_t5.sav": "4407446da7de7619",
+        "ror_t11s.sav": "36e7406c58857024",
+        "ror_t11e.sav": "36e7406c58857024",
+        "athens_t21.sav": "ec8390c9e24def08",
+        "athens_t22e.sav": "ec8390c9e24def08"
+      }
+    },
+    {
+      "idx": 56,
+      "text": "lycian_men",
+      "hashes": {
+        "save_10_fresh.sav": "eee52b41acd7b61f",
+        "save_1.2.sav": "0f34a864a29b8a72",
+        "ror_t1e.sav": "5376c9df2d263fd6",
+        "ror_t2s.sav": "5376c9df2d263fd6",
+        "ror_t5.sav": "ee68af9ab6f508be",
+        "ror_t11s.sav": "0ed62aee23a52527",
+        "ror_t11e.sav": "0ed62aee23a52527",
+        "athens_t21.sav": "30afad3b89a5d4d6",
+        "athens_t22e.sav": "30afad3b89a5d4d6"
+      }
+    },
+    {
+      "idx": 57,
+      "text": "lycian_women",
+      "hashes": {
+        "save_10_fresh.sav": "6937883055eecd48",
+        "save_1.2.sav": "0bc6f6573210b388",
+        "ror_t1e.sav": "b40f13573f4c8bef",
+        "ror_t2s.sav": "b40f13573f4c8bef",
+        "ror_t5.sav": "1498e5d4f6b49c07",
+        "ror_t11s.sav": "ea9a778b5172acb9",
+        "ror_t11e.sav": "ea9a778b5172acb9",
+        "athens_t21.sav": "e679660720da9a89",
+        "athens_t22e.sav": "e679660720da9a89"
+      }
+    },
+    {
+      "idx": 59,
+      "text": "mesopotamian_men",
+      "hashes": {
+        "save_10_fresh.sav": "ab383369a1425fe2",
+        "save_1.2.sav": "bd27a49d774e2aaa",
+        "ror_t1e.sav": "24d24e4ed1ad4879",
+        "ror_t2s.sav": "24d24e4ed1ad4879",
+        "ror_t5.sav": "ab383369a1425fe2",
+        "ror_t11s.sav": "cfeebc8f1b307e94",
+        "ror_t11e.sav": "cfeebc8f1b307e94",
+        "athens_t21.sav": "3c003355008ec77e",
+        "athens_t22e.sav": "3c003355008ec77e"
+      }
+    },
+    {
+      "idx": 60,
+      "text": "nabataean_men",
+      "hashes": {
+        "save_10_fresh.sav": "df7c1512a3817777",
+        "save_1.2.sav": "f2a86b96a8bda7ad",
+        "ror_t1e.sav": "446f4441ea437b84",
+        "ror_t2s.sav": "22ba31ed7ac97e20",
+        "ror_t5.sav": "fdf8b4ee5ecb7b0c",
+        "ror_t11s.sav": "cf2b6697f37be9f1",
+        "ror_t11e.sav": "cf2b6697f37be9f1",
+        "athens_t21.sav": "c5a4c786f1b7ec7e",
+        "athens_t22e.sav": "f5a44468be0b04d8"
+      }
+    },
+    {
+      "idx": 61,
+      "text": "nabataean_women",
+      "hashes": {
+        "save_10_fresh.sav": "4b386b36ad5bfe56",
+        "save_1.2.sav": "bff484a3de355f10",
+        "ror_t1e.sav": "9024c1d25bb60f5f",
+        "ror_t2s.sav": "9024c1d25bb60f5f",
+        "ror_t5.sav": "6b5dba61fe3fa65b",
+        "ror_t11s.sav": "5234d794e89189f6",
+        "ror_t11e.sav": "5234d794e89189f6",
+        "athens_t21.sav": "59f7c4d3c4f63de6",
+        "athens_t22e.sav": "59f7c4d3c4f63de6"
+      }
+    },
+    {
+      "idx": 62,
+      "text": "parni_women",
+      "hashes": {
+        "save_10_fresh.sav": "7aaaaae4c08bb0d4",
+        "save_1.2.sav": "5a37a04529572b1a",
+        "ror_t1e.sav": "5f04d1611d096320",
+        "ror_t2s.sav": "5f04d1611d096320",
+        "ror_t5.sav": "6737d290004744cd",
+        "ror_t11s.sav": "15f0cf9fdf598135",
+        "ror_t11e.sav": "15f0cf9fdf598135",
+        "athens_t21.sav": "b3c8708a8dd0881d",
+        "athens_t22e.sav": "0b11389f24cccbdb"
+      }
+    },
+    {
+      "idx": 65,
+      "text": "pontus_women",
+      "hashes": {
+        "save_10_fresh.sav": "074ac4cd22f110bc",
+        "save_1.2.sav": "8f918916acffd744",
+        "ror_t1e.sav": "00e69637a3f5e1ee",
+        "ror_t2s.sav": "00e69637a3f5e1ee",
+        "ror_t5.sav": "2bece6967c153ee3",
+        "ror_t11s.sav": "8e16aa3a93de322e",
+        "ror_t11e.sav": "8e16aa3a93de322e",
+        "athens_t21.sav": "cad68c79fd87bea6",
+        "athens_t22e.sav": "240692aa60e8113d"
+      }
+    },
+    {
+      "idx": 66,
+      "text": "roman_men",
+      "hashes": {
+        "save_10_fresh.sav": "2583b2cd657db4b0",
+        "save_1.2.sav": "0f2c0823f8d4df47",
+        "ror_t1e.sav": "416c84f505604f34",
+        "ror_t2s.sav": "c77204d33b6dc0cd",
+        "ror_t5.sav": "dfa79c7a6b337fc6",
+        "ror_t11s.sav": "be76b366d445dc02",
+        "ror_t11e.sav": "d354083e14d523fd",
+        "athens_t21.sav": "4a9259fa09d92bc0",
+        "athens_t22e.sav": "d13b0eececd12b16"
+      }
+    },
+    {
+      "idx": 67,
+      "text": "roman_surnames",
+      "hashes": {
+        "save_10_fresh.sav": "8a057e4eba994ed0",
+        "save_1.2.sav": "94c7e673d9334de7",
+        "ror_t1e.sav": "c1e847ba309a713b",
+        "ror_t2s.sav": "a203db730e04cea0",
+        "ror_t5.sav": "1c45fefbbd2ad2d0",
+        "ror_t11s.sav": "781ecf19f70ca64a",
+        "ror_t11e.sav": "8c10ca324215dcd0",
+        "athens_t21.sav": "0996d9a353d7abca",
+        "athens_t22e.sav": "4752f32165115fb5"
+      }
+    },
+    {
+      "idx": 68,
+      "text": "roman_women",
+      "hashes": {
+        "save_10_fresh.sav": "0c046b2d029ba073",
+        "save_1.2.sav": "859fc7522f12358d",
+        "ror_t1e.sav": "99108549b6287b67",
+        "ror_t2s.sav": "99108549b6287b67",
+        "ror_t5.sav": "fa80c283e4f2b32f",
+        "ror_t11s.sav": "aa8bf4c01a4ca368",
+        "ror_t11e.sav": "aa8bf4c01a4ca368",
+        "athens_t21.sav": "53d39d394e47241c",
+        "athens_t22e.sav": "81440cfe47fdbbcb"
+      }
+    },
+    {
+      "idx": 69,
+      "text": "s_arabian_men",
+      "hashes": {
+        "save_10_fresh.sav": "83d6d5f0e8c968cb",
+        "save_1.2.sav": "174e0e059476acd3",
+        "ror_t1e.sav": "71dacdb49335905a",
+        "ror_t2s.sav": "71dacdb49335905a",
+        "ror_t5.sav": "f52bbf691bfcdac0",
+        "ror_t11s.sav": "0b9b3fb330565c41",
+        "ror_t11e.sav": "0b9b3fb330565c41",
+        "athens_t21.sav": "ffe59da469d67d0f",
+        "athens_t22e.sav": "ffe59da469d67d0f"
+      }
+    },
+    {
+      "idx": 70,
+      "text": "s_arabian_surnames",
+      "hashes": {
+        "save_10_fresh.sav": "15f7f8a8afb466e2",
+        "save_1.2.sav": "37018b45e364fe01",
+        "ror_t1e.sav": "ddfb4c5131eb0fc2",
+        "ror_t2s.sav": "d9f6e0b2bcb32b03",
+        "ror_t5.sav": "697cf417bc768e45",
+        "ror_t11s.sav": "dea30f6cb9318f6d",
+        "ror_t11e.sav": "dea30f6cb9318f6d",
+        "athens_t21.sav": "07a88a844fa0fc73",
+        "athens_t22e.sav": "21cc0ff65e15cc48"
+      }
+    },
+    {
+      "idx": 71,
+      "text": "s_arabian_women",
+      "hashes": {
+        "save_10_fresh.sav": "ba75388057e06ab1",
+        "save_1.2.sav": "024cb33d488b57a3",
+        "ror_t1e.sav": "19cb743b8d636874",
+        "ror_t2s.sav": "19cb743b8d636874",
+        "ror_t5.sav": "c4324755c244c6d8",
+        "ror_t11s.sav": "91890545e5e6e64f",
+        "ror_t11e.sav": "91890545e5e6e64f",
+        "athens_t21.sav": "85aab550ecde05f4",
+        "athens_t22e.sav": "85aab550ecde05f4"
+      }
+    },
+    {
+      "idx": 72,
+      "text": "siraces_men",
+      "hashes": {
+        "save_10_fresh.sav": "859d6400880265cb",
+        "save_1.2.sav": "48c80390b484a303",
+        "ror_t1e.sav": "82e4aa1c04a427d3",
+        "ror_t2s.sav": "5c15eae481cd15eb",
+        "ror_t5.sav": "0d0ebfbec85bf55d",
+        "ror_t11s.sav": "065f4e5bf97819b6",
+        "ror_t11e.sav": "065f4e5bf97819b6",
+        "athens_t21.sav": "cf1fe71b51e94c26",
+        "athens_t22e.sav": "254ff0f33db29b23"
+      }
+    },
+    {
+      "idx": 73,
+      "text": "siraces_women",
+      "hashes": {
+        "save_10_fresh.sav": "9df62b050a377728",
+        "save_1.2.sav": "0b7a8cee8899380d",
+        "ror_t1e.sav": "d3e76ecf7665b252",
+        "ror_t2s.sav": "9fcd418d3b224ad7",
+        "ror_t5.sav": "a7f6d72a3e866d99",
+        "ror_t11s.sav": "d119e220c200eec4",
+        "ror_t11e.sav": "d119e220c200eec4",
+        "athens_t21.sav": "ab75e141962b38cd",
+        "athens_t22e.sav": "44684d76a8644f6f"
+      }
+    },
+    {
+      "idx": 74,
+      "text": "slave_men",
+      "hashes": {
+        "save_10_fresh.sav": "c557dd55a759c612",
+        "save_1.2.sav": "14cd1ef37ccd853a",
+        "ror_t1e.sav": "f9f4683210c8e1c8",
+        "ror_t2s.sav": "f9f4683210c8e1c8",
+        "ror_t5.sav": "d51d62bc21ad5ea4",
+        "ror_t11s.sav": "6d48b7bc6a7991b4",
+        "ror_t11e.sav": "6d48b7bc6a7991b4",
+        "athens_t21.sav": "5d9b30a7c29b7c42",
+        "athens_t22e.sav": "5d9b30a7c29b7c42"
+      }
+    },
+    {
+      "idx": 75,
+      "text": "slave_women",
+      "hashes": {
+        "save_10_fresh.sav": "c572a54776286579",
+        "save_1.2.sav": "e3df5ea6c082058e",
+        "ror_t1e.sav": "8f37d9b55f5cc121",
+        "ror_t2s.sav": "8f37d9b55f5cc121",
+        "ror_t5.sav": "d695c4cc497974c2",
+        "ror_t11s.sav": "871f631058748ead",
+        "ror_t11e.sav": "871f631058748ead",
+        "athens_t21.sav": "ed369bf7c5735afa",
+        "athens_t22e.sav": "ed369bf7c5735afa"
+      }
+    },
+    {
+      "idx": 76,
+      "text": "suebi_men",
+      "hashes": {
+        "save_10_fresh.sav": "b72ca4bf5d8320b3",
+        "save_1.2.sav": "fbd12c4178caa82e",
+        "ror_t1e.sav": "1ae6bcb0a137ee7b",
+        "ror_t2s.sav": "c289a729abe4ac03",
+        "ror_t5.sav": "de9c9e34d4eac487",
+        "ror_t11s.sav": "8c9ae4f40b37f404",
+        "ror_t11e.sav": "8c9ae4f40b37f404",
+        "athens_t21.sav": "b6a28bbbbc405bbf",
+        "athens_t22e.sav": "756fad412039d073"
+      }
+    },
+    {
+      "idx": 77,
+      "text": "suebi_women",
+      "hashes": {
+        "save_10_fresh.sav": "f37173627a17b7c2",
+        "save_1.2.sav": "9cecfcaeb33f1974",
+        "ror_t1e.sav": "7352dfee35ed5bb5",
+        "ror_t2s.sav": "7352dfee35ed5bb5",
+        "ror_t5.sav": "1c76c07b34bf9244",
+        "ror_t11s.sav": "6132805d79151bcc",
+        "ror_t11e.sav": "6132805d79151bcc",
+        "athens_t21.sav": "d225ef476369a50a",
+        "athens_t22e.sav": "d225ef476369a50a"
+      }
+    },
+    {
+      "idx": 78,
+      "text": "thracian_men",
+      "hashes": {
+        "save_10_fresh.sav": "40214188f4137cd5",
+        "save_1.2.sav": "9fb69d4b0773c1e0",
+        "ror_t1e.sav": "0ceee1fef7b93835",
+        "ror_t2s.sav": "18899d9d586be90e",
+        "ror_t5.sav": "229dfab8c80603c5",
+        "ror_t11s.sav": "ffe7e078c91f069a",
+        "ror_t11e.sav": "ffe7e078c91f069a",
+        "athens_t21.sav": "2b870f3ef11c7243",
+        "athens_t22e.sav": "82f81ffbb363452a"
+      }
+    },
+    {
+      "idx": 79,
+      "text": "venetian_men",
+      "hashes": {
+        "save_10_fresh.sav": "5d3be9b0b18e4eda",
+        "save_1.2.sav": "3a794306da8ff874",
+        "ror_t1e.sav": "dcecd318bdb7f6a4",
+        "ror_t2s.sav": "65a78ce3a52b73c1",
+        "ror_t5.sav": "312c223937403a01",
+        "ror_t11s.sav": "f0b143599dcd0fb3",
+        "ror_t11e.sav": "f0b143599dcd0fb3",
+        "athens_t21.sav": "ac5460b24a905113",
+        "athens_t22e.sav": "58c1193b1b2d3390"
+      }
+    },
+    {
+      "idx": 80,
+      "text": "venetian_women",
+      "hashes": {
+        "save_10_fresh.sav": "cafc29751fbb891a",
+        "save_1.2.sav": "90f0818c93895748",
+        "ror_t1e.sav": "2fae8a131f8a2df1",
+        "ror_t2s.sav": "2fae8a131f8a2df1",
+        "ror_t5.sav": "93260d3a16f15801",
+        "ror_t11s.sav": "47f87dfc6b96efd5",
+        "ror_t11e.sav": "47f87dfc6b96efd5",
+        "athens_t21.sav": "ce7c5970e0f9f85f",
+        "athens_t22e.sav": "ce7c5970e0f9f85f"
+      }
+    },
+    {
+      "idx": 81,
+      "text": "aetolian_women",
+      "hashes": {
+        "save_10_fresh.sav": "e4189b682166bef3",
+        "save_1.2.sav": "438382686a97689b",
+        "ror_t1e.sav": "d73ec8707f7cf376",
+        "ror_t2s.sav": "d73ec8707f7cf376",
+        "ror_t5.sav": "03c7c78364103e99",
+        "ror_t11s.sav": "5e2544f109aadc6d",
+        "ror_t11e.sav": "5e2544f109aadc6d",
+        "athens_t21.sav": "b3193a53a2b992c7",
+        "athens_t22e.sav": "b3193a53a2b992c7"
+      }
+    },
+    {
+      "idx": 82,
+      "text": "arcadian_men",
+      "hashes": {
+        "save_10_fresh.sav": "22eab1bf5eb7b9aa",
+        "save_1.2.sav": "06632eeffc11883e",
+        "ror_t1e.sav": "9dd36589e093673e",
+        "ror_t2s.sav": "9dd36589e093673e",
+        "ror_t5.sav": "1881699b547e3a1c",
+        "ror_t11s.sav": "2b4a0af313142d17",
+        "ror_t11e.sav": "2b4a0af313142d17",
+        "athens_t21.sav": "8f2bc1c10c61ae2d",
+        "athens_t22e.sav": "8f2bc1c10c61ae2d"
+      }
+    },
+    {
+      "idx": 83,
+      "text": "arcadian_women",
+      "hashes": {
+        "save_10_fresh.sav": "28c4c9e30e038958",
+        "save_1.2.sav": "d9bdadf8735ca593",
+        "ror_t1e.sav": "6f4a2cedd7088f59",
+        "ror_t2s.sav": "6f4a2cedd7088f59",
+        "ror_t5.sav": "af01046fb414dc65",
+        "ror_t11s.sav": "3b3add00dbad2113",
+        "ror_t11e.sav": "3b3add00dbad2113",
+        "athens_t21.sav": "b8b8c755f518fccf",
+        "athens_t22e.sav": "b8b8c755f518fccf"
+      }
+    },
+    {
+      "idx": 84,
+      "text": "armenia_men",
+      "hashes": {
+        "save_10_fresh.sav": "aa2755a7c16fb1ed",
+        "save_1.2.sav": "313e8b8bc0c0f485",
+        "ror_t1e.sav": "583da2d1ae2d7c1e",
+        "ror_t2s.sav": "031e6f74c75a7610",
+        "ror_t5.sav": "15496cadd12cb41c",
+        "ror_t11s.sav": "70e592fb1f219cc6",
+        "ror_t11e.sav": "70e592fb1f219cc6",
+        "athens_t21.sav": "15d378110988783d",
+        "athens_t22e.sav": "931124df93ab59bd"
+      }
+    },
+    {
+      "idx": 85,
+      "text": "armenia_women",
+      "hashes": {
+        "save_10_fresh.sav": "d84fd902e6f74c82",
+        "save_1.2.sav": "0a3ea748fc77154c",
+        "ror_t1e.sav": "20a68d65f8154cf6",
+        "ror_t2s.sav": "420f461cd2c8b3be",
+        "ror_t5.sav": "5365caa709d37b3d",
+        "ror_t11s.sav": "8c577b5db827142b",
+        "ror_t11e.sav": "8c577b5db827142b",
+        "athens_t21.sav": "dc4d2ed3dc09431f",
+        "athens_t22e.sav": "48cd8d3c7d857c00"
+      }
+    },
+    {
+      "idx": 86,
+      "text": "arverni_men",
+      "hashes": {
+        "save_10_fresh.sav": "c9d95f342d6a8b28",
+        "save_1.2.sav": "51d00bcc61d85549",
+        "ror_t1e.sav": "da7d5a3864fdb562",
+        "ror_t2s.sav": "0b9a5b536d8cc403",
+        "ror_t5.sav": "c7f0d9182fc290c7",
+        "ror_t11s.sav": "afd6d51dbe321dc8",
+        "ror_t11e.sav": "afd6d51dbe321dc8",
+        "athens_t21.sav": "7e20d89616591e9d",
+        "athens_t22e.sav": "64f11b7e8cb5d9a7"
+      }
+    },
+    {
+      "idx": 87,
+      "text": "athenian_men",
+      "hashes": {
+        "save_10_fresh.sav": "76816fddf3b460ce",
+        "save_1.2.sav": "230ccea557a635e4",
+        "ror_t1e.sav": "1037a7d32db57759",
+        "ror_t2s.sav": "3e4440d7eb8d8f71",
+        "ror_t5.sav": "6754593e43104f3c",
+        "ror_t11s.sav": "85ec29aa829546c3",
+        "ror_t11e.sav": "85ec29aa829546c3",
+        "athens_t21.sav": "f2cea7f0f6fc1b91",
+        "athens_t22e.sav": "f2cea7f0f6fc1b91"
+      }
+    },
+    {
+      "idx": 88,
+      "text": "atropatene_men",
+      "hashes": {
+        "save_10_fresh.sav": "c97889d0b3b3bcef",
+        "save_1.2.sav": "1b41403390aec31b",
+        "ror_t1e.sav": "3afb59582cc495b7",
+        "ror_t2s.sav": "8e130dc16f5d8cb3",
+        "ror_t5.sav": "5deeefbf8032ba07",
+        "ror_t11s.sav": "7630f875658be3b6",
+        "ror_t11e.sav": "7630f875658be3b6",
+        "athens_t21.sav": "248998c2d2ea86be",
+        "athens_t22e.sav": "248998c2d2ea86be"
+      }
+    },
+    {
+      "idx": 89,
+      "text": "bithynian_men",
+      "hashes": {
+        "save_10_fresh.sav": "df23ca751492aaca",
+        "save_1.2.sav": "a208aca6a99b2bc7",
+        "ror_t1e.sav": "ddfe17c875b5d61d",
+        "ror_t2s.sav": "ddfe17c875b5d61d",
+        "ror_t5.sav": "249dc89e1dda8893",
+        "ror_t11s.sav": "ad8947585fb61d1c",
+        "ror_t11e.sav": "ad8947585fb61d1c",
+        "athens_t21.sav": "9b22967400857a4a",
+        "athens_t22e.sav": "9b22967400857a4a"
+      }
+    },
+    {
+      "idx": 90,
+      "text": "boeotian_men",
+      "hashes": {
+        "save_10_fresh.sav": "837317e3aacf49e4",
+        "save_1.2.sav": "a006fa89b4b4eede",
+        "ror_t1e.sav": "aa790811bad83713",
+        "ror_t2s.sav": "aa790811bad83713",
+        "ror_t5.sav": "372a73197737a25f",
+        "ror_t11s.sav": "1e4a9faebcd6be9a",
+        "ror_t11e.sav": "1e4a9faebcd6be9a",
+        "athens_t21.sav": "24f0a5a52285eadd",
+        "athens_t22e.sav": "24f0a5a52285eadd"
+      }
+    },
+    {
+      "idx": 91,
+      "text": "boeotian_women",
+      "hashes": {
+        "save_10_fresh.sav": "c2d2765407dfe844",
+        "save_1.2.sav": "1c15f71565072563",
+        "ror_t1e.sav": "59ef8e48f88fb498",
+        "ror_t2s.sav": "59ef8e48f88fb498",
+        "ror_t5.sav": "02c3f0fcec0e1a66",
+        "ror_t11s.sav": "5490adf64219e0e5",
+        "ror_t11e.sav": "5490adf64219e0e5",
+        "athens_t21.sav": "744c8792f80b743c",
+        "athens_t22e.sav": "744c8792f80b743c"
+      }
+    },
+    {
+      "idx": 92,
+      "text": "byzantium_men",
+      "hashes": {
+        "save_10_fresh.sav": "684f4da3a999400c",
+        "save_1.2.sav": "8818563c91b6e7e6",
+        "ror_t1e.sav": "848929b62fd113d3",
+        "ror_t2s.sav": "69f062730c15e5fd",
+        "ror_t5.sav": "a071550a7140a65b",
+        "ror_t11s.sav": "376afc0f42df2034",
+        "ror_t11e.sav": "376afc0f42df2034",
+        "athens_t21.sav": "086cfbc98c417352",
+        "athens_t22e.sav": "086cfbc98c417352"
+      }
+    },
+    {
+      "idx": 93,
+      "text": "cappadocian_men",
+      "hashes": {
+        "save_10_fresh.sav": "783a2da1ab2743e1",
+        "save_1.2.sav": "e613af99f94d730d",
+        "ror_t1e.sav": "5e8ba1a6833e7c33",
+        "ror_t2s.sav": "29bff38f71ccf26e",
+        "ror_t5.sav": "3ab7e6cc87e80058",
+        "ror_t11s.sav": "39e1522d48b2ffb9",
+        "ror_t11e.sav": "39e1522d48b2ffb9",
+        "athens_t21.sav": "82a7875696f5134b",
+        "athens_t22e.sav": "73f0e24ea3d6bd71"
+      }
+    },
+    {
+      "idx": 94,
+      "text": "cappadocian_women",
+      "hashes": {
+        "save_10_fresh.sav": "cdccace972cacd09",
+        "save_1.2.sav": "e7240b08f0c6b748",
+        "ror_t1e.sav": "a5867afb3b058fdf",
+        "ror_t2s.sav": "a5867afb3b058fdf",
+        "ror_t5.sav": "0da2af27365bb5af",
+        "ror_t11s.sav": "75935960117997a7",
+        "ror_t11e.sav": "75935960117997a7",
+        "athens_t21.sav": "73809c73444f9fb1",
+        "athens_t22e.sav": "73809c73444f9fb1"
+      }
+    },
+    {
+      "idx": 95,
+      "text": "carian_women",
+      "hashes": {
+        "save_10_fresh.sav": "35e022f0e8ded60e",
+        "save_1.2.sav": "d860f243952c23fe",
+        "ror_t1e.sav": "5bfb6fd4f3b24628",
+        "ror_t2s.sav": "5bfb6fd4f3b24628",
+        "ror_t5.sav": "eee44e36be38e506",
+        "ror_t11s.sav": "44e2faf7cf4c7eca",
+        "ror_t11e.sav": "44e2faf7cf4c7eca",
+        "athens_t21.sav": "8d0d0e00b062785b",
+        "athens_t22e.sav": "8d0d0e00b062785b"
+      }
+    },
+    {
+      "idx": 96,
+      "text": "carthage_men",
+      "hashes": {
+        "save_10_fresh.sav": "f85f49e798d67d6f",
+        "save_1.2.sav": "6b0f0f6521d94367",
+        "ror_t1e.sav": "b760ed0673869ed9",
+        "ror_t2s.sav": "f48386a12ee76045",
+        "ror_t5.sav": "0e06461c1b8a7d71",
+        "ror_t11s.sav": "c94f8fd18817fb3a",
+        "ror_t11e.sav": "c94f8fd18817fb3a",
+        "athens_t21.sav": "fa35e7c8cb5bf4dc",
+        "athens_t22e.sav": "36ecbae4dab2b63e"
+      }
+    },
+    {
+      "idx": 97,
+      "text": "carthage_women",
+      "hashes": {
+        "save_10_fresh.sav": "e039db61ac3aa19c",
+        "save_1.2.sav": "77c99e4f1fd73253",
+        "ror_t1e.sav": "da6a8ff27225d6b5",
+        "ror_t2s.sav": "714d81d298225160",
+        "ror_t5.sav": "b602d6ec2f48c482",
+        "ror_t11s.sav": "225a5fe4eeb390a0",
+        "ror_t11e.sav": "225a5fe4eeb390a0",
+        "athens_t21.sav": "2ae0761f96a8b054",
+        "athens_t22e.sav": "c30eb9de5a99ae76"
+      }
+    },
+    {
+      "idx": 98,
+      "text": "chersonesus_men",
+      "hashes": {
+        "save_10_fresh.sav": "97e6b5648a5489b5",
+        "save_1.2.sav": "5291da3c80b0cd77",
+        "ror_t1e.sav": "a8e6e7ab0fb2aec4",
+        "ror_t2s.sav": "6a921543ca54e330",
+        "ror_t5.sav": "c073c677ea7b4eb9",
+        "ror_t11s.sav": "7355f6f29c68e6e2",
+        "ror_t11e.sav": "7355f6f29c68e6e2",
+        "athens_t21.sav": "bc20f394ff0e28ef",
+        "athens_t22e.sav": "66576f913dda29be"
+      }
+    },
+    {
+      "idx": 99,
+      "text": "chios_men",
+      "hashes": {
+        "save_10_fresh.sav": "a2c9119273d8951d",
+        "save_1.2.sav": "b15c1e027c9a4b44",
+        "ror_t1e.sav": "eb7d900ee3595d79",
+        "ror_t2s.sav": "393816b04a98f8f0",
+        "ror_t5.sav": "d4efb37cc97d244f",
+        "ror_t11s.sav": "d980534539d05375",
+        "ror_t11e.sav": "d980534539d05375",
+        "athens_t21.sav": "0862274777ade2e0",
+        "athens_t22e.sav": "0862274777ade2e0"
+      }
+    },
+    {
+      "idx": 100,
+      "text": "cius_men",
+      "hashes": {
+        "save_10_fresh.sav": "180e7361bfac2cb4",
+        "save_1.2.sav": "828727ffa1658595",
+        "ror_t1e.sav": "d502ccc9fb8d4c3a",
+        "ror_t2s.sav": "d502ccc9fb8d4c3a",
+        "ror_t5.sav": "bd1cc71d3a91b3f5",
+        "ror_t11s.sav": "3e46b312a4a5a545",
+        "ror_t11e.sav": "3e46b312a4a5a545",
+        "athens_t21.sav": "d19ccbc1e10b36bd",
+        "athens_t22e.sav": "d19ccbc1e10b36bd"
+      }
+    },
+    {
+      "idx": 101,
+      "text": "cyzicus_men",
+      "hashes": {
+        "save_10_fresh.sav": "77f5e4646f64a493",
+        "save_1.2.sav": "15a91414190f193e",
+        "ror_t1e.sav": "7e9f7fe1234b9d93",
+        "ror_t2s.sav": "a605ceef416d7215",
+        "ror_t5.sav": "5a5d05bef327476d",
+        "ror_t11s.sav": "3b1693358ed34178",
+        "ror_t11e.sav": "3b1693358ed34178",
+        "athens_t21.sav": "b201d2ffb5c5d2de",
+        "athens_t22e.sav": "b201d2ffb5c5d2de"
+      }
+    },
+    {
+      "idx": 102,
+      "text": "dalmatian_men",
+      "hashes": {
+        "save_10_fresh.sav": "f176611511f5e26a",
+        "save_1.2.sav": "b2e162e7f9167d7c",
+        "ror_t1e.sav": "25d42f9ba6a37033",
+        "ror_t2s.sav": "f2bb74c1841290ee",
+        "ror_t5.sav": "d03c92813a87d240",
+        "ror_t11s.sav": "b6806cad4014a91b",
+        "ror_t11e.sav": "b6806cad4014a91b",
+        "athens_t21.sav": "41707441b15892bc",
+        "athens_t22e.sav": "4ab08a6f64cc38a1"
+      }
+    },
+    {
+      "idx": 103,
+      "text": "dalmatian_women",
+      "hashes": {
+        "save_10_fresh.sav": "5aa7ff16da57c449",
+        "save_1.2.sav": "69252e94bbb2b6cb",
+        "ror_t1e.sav": "c7107c5223969f40",
+        "ror_t2s.sav": "c7107c5223969f40",
+        "ror_t5.sav": "7852c3a561608969",
+        "ror_t11s.sav": "d20dc85cfa238bb1",
+        "ror_t11e.sav": "d20dc85cfa238bb1",
+        "athens_t21.sav": "488fa067a584d8a0",
+        "athens_t22e.sav": "488fa067a584d8a0"
+      }
+    },
+    {
+      "idx": 104,
+      "text": "dardanian_men",
+      "hashes": {
+        "save_10_fresh.sav": "89f3f93aadc4a1a1",
+        "save_1.2.sav": "8cf6762c8f2ced4a",
+        "ror_t1e.sav": "2ceb48e89eb334a5",
+        "ror_t2s.sav": "d112812179c6c890",
+        "ror_t5.sav": "d592a47e552d4f09",
+        "ror_t11s.sav": "dc4507533bc07511",
+        "ror_t11e.sav": "dc4507533bc07511",
+        "athens_t21.sav": "52696ad682897217",
+        "athens_t22e.sav": "22902363de9fafe0"
+      }
+    },
+    {
+      "idx": 105,
+      "text": "dardanian_women",
+      "hashes": {
+        "save_10_fresh.sav": "48ccf3127d431424",
+        "save_1.2.sav": "5102a20f4e268daa",
+        "ror_t1e.sav": "9a7d0125e1578163",
+        "ror_t2s.sav": "9a7d0125e1578163",
+        "ror_t5.sav": "638123637fc198ef",
+        "ror_t11s.sav": "80877a8ae3834173",
+        "ror_t11e.sav": "80877a8ae3834173",
+        "athens_t21.sav": "31453293b822b8cc",
+        "athens_t22e.sav": "31453293b822b8cc"
+      }
+    },
+    {
+      "idx": 106,
+      "text": "dorian_men",
+      "hashes": {
+        "save_10_fresh.sav": "9058cac5f5a32e1a",
+        "save_1.2.sav": "7f063d7c8af9b2ca",
+        "ror_t1e.sav": "0d37a2c8b914ef77",
+        "ror_t2s.sav": "0d37a2c8b914ef77",
+        "ror_t5.sav": "7e16ba16879c08be",
+        "ror_t11s.sav": "1b65909f4d36162e",
+        "ror_t11e.sav": "1b65909f4d36162e",
+        "athens_t21.sav": "eea91c6b9e5f3348",
+        "athens_t22e.sav": "eea91c6b9e5f3348"
+      }
+    },
+    {
+      "idx": 107,
+      "text": "dorian_women",
+      "hashes": {
+        "save_10_fresh.sav": "75e60f0807608675",
+        "save_1.2.sav": "6f02247bb18322a4",
+        "ror_t1e.sav": "894214856d8eea5d",
+        "ror_t2s.sav": "894214856d8eea5d",
+        "ror_t5.sav": "e72c633bc98fa60b",
+        "ror_t11s.sav": "3278177e6f8a994a",
+        "ror_t11e.sav": "3278177e6f8a994a",
+        "athens_t21.sav": "cbe0add3ed1aa0a0",
+        "athens_t22e.sav": "cbe0add3ed1aa0a0"
+      }
+    },
+    {
+      "idx": 108,
+      "text": "edetanian_men",
+      "hashes": {
+        "save_10_fresh.sav": "a34a467da021da11",
+        "save_1.2.sav": "ceb0a88c6fb1c295",
+        "ror_t1e.sav": "64fed818d7fcd5f4",
+        "ror_t2s.sav": "69591a7b16bbab34",
+        "ror_t5.sav": "53875d416ce57558",
+        "ror_t11s.sav": "db42bc415fc552c2",
+        "ror_t11e.sav": "db42bc415fc552c2",
+        "athens_t21.sav": "92400eac6cacbb1d",
+        "athens_t22e.sav": "3bfd800b0ca9a147"
+      }
+    },
+    {
+      "idx": 109,
+      "text": "elis_men",
+      "hashes": {
+        "save_10_fresh.sav": "fd591ab97a8e735f",
+        "save_1.2.sav": "150e71813d9709c6",
+        "ror_t1e.sav": "ba014653b5636ffb",
+        "ror_t2s.sav": "ba014653b5636ffb",
+        "ror_t5.sav": "cd54caaa3864c2a1",
+        "ror_t11s.sav": "076e4d9c35cf0d62",
+        "ror_t11e.sav": "076e4d9c35cf0d62",
+        "athens_t21.sav": "7d810cfb5073b3b3",
+        "athens_t22e.sav": "7d810cfb5073b3b3"
+      }
+    },
+    {
+      "idx": 110,
+      "text": "emporion_men",
+      "hashes": {
+        "save_10_fresh.sav": "2974adfd264533c3",
+        "save_1.2.sav": "43b7e55b1024a16d",
+        "ror_t1e.sav": "b2ff67dea7b7350a",
+        "ror_t2s.sav": "69078098a17731d1",
+        "ror_t5.sav": "1560bf3a89881822",
+        "ror_t11s.sav": "881aa0e46262532c",
+        "ror_t11e.sav": "881aa0e46262532c",
+        "athens_t21.sav": "ade320e24c853ef2",
+        "athens_t22e.sav": "182d4454a1ba9bc6"
+      }
+    },
+    {
+      "idx": 111,
+      "text": "ethiopian_men",
+      "hashes": {
+        "save_10_fresh.sav": "dbc906147a1396b4",
+        "save_1.2.sav": "28eb2f91aa90af80",
+        "ror_t1e.sav": "6a15f1bd3e72580e",
+        "ror_t2s.sav": "5bf828d07b84768d",
+        "ror_t5.sav": "ad497396d7163219",
+        "ror_t11s.sav": "862b01befdf429a8",
+        "ror_t11e.sav": "862b01befdf429a8",
+        "athens_t21.sav": "d7788989bc986679",
+        "athens_t22e.sav": "223a55857e0f1d51"
+      }
+    },
+    {
+      "idx": 112,
+      "text": "galatians_men",
+      "hashes": {
+        "save_10_fresh.sav": "56490bf6c7c83694",
+        "save_1.2.sav": "a51cb5917aec56af",
+        "ror_t1e.sav": "b84ec8daa7382d0f",
+        "ror_t2s.sav": "f1e2403559a88e27",
+        "ror_t5.sav": "8a6a4a427a56a3ae",
+        "ror_t11s.sav": "899314096ea51dd3",
+        "ror_t11e.sav": "899314096ea51dd3",
+        "athens_t21.sav": "6c4414f5645afd32",
+        "athens_t22e.sav": "6c4414f5645afd32"
+      }
+    },
+    {
+      "idx": 113,
+      "text": "galatians_women",
+      "hashes": {
+        "save_10_fresh.sav": "578c0887317e1d26",
+        "save_1.2.sav": "6b1dfe9a0965e0e0",
+        "ror_t1e.sav": "21a145f9f7b57156",
+        "ror_t2s.sav": "21a145f9f7b57156",
+        "ror_t5.sav": "2b852f1b5da8f195",
+        "ror_t11s.sav": "b829e3811c748000",
+        "ror_t11e.sav": "b829e3811c748000",
+        "athens_t21.sav": "dc9fd4cd30c1b265",
+        "athens_t22e.sav": "ab9f94141dc05fa0"
+      }
+    },
+    {
+      "idx": 114,
+      "text": "gortyn_men",
+      "hashes": {
+        "save_10_fresh.sav": "48624ba356659bb8",
+        "save_1.2.sav": "c217674dbbc8342b",
+        "ror_t1e.sav": "2fff8d36ac0e2338",
+        "ror_t2s.sav": "614aa1fe56e4bdbd",
+        "ror_t5.sav": "f41b4a6fe732f630",
+        "ror_t11s.sav": "6e2477736972ae8f",
+        "ror_t11e.sav": "6e2477736972ae8f",
+        "athens_t21.sav": "d401bd5af2155c95",
+        "athens_t22e.sav": "1c2f1ba781e38954"
+      }
+    },
+    {
+      "idx": 115,
+      "text": "heraclean_men",
+      "hashes": {
+        "save_10_fresh.sav": "abf2fb10abf8585e",
+        "save_1.2.sav": "747a84ec132a1513",
+        "ror_t1e.sav": "3c2b62dd5b560c67",
+        "ror_t2s.sav": "fca83a50c7dc483d",
+        "ror_t5.sav": "94a462a6dff128b5",
+        "ror_t11s.sav": "e6e632a1eb371d8f",
+        "ror_t11e.sav": "e6e632a1eb371d8f",
+        "athens_t21.sav": "ce6ecf87c52ecbf4",
+        "athens_t22e.sav": "ce6ecf87c52ecbf4"
+      }
+    },
+    {
+      "idx": 116,
+      "text": "histria_men",
+      "hashes": {
+        "save_10_fresh.sav": "420068c1eff56aa0",
+        "save_1.2.sav": "99b05770b5227d33",
+        "ror_t1e.sav": "210b7ddc31be7705",
+        "ror_t2s.sav": "384aac4e7d2a2f29",
+        "ror_t5.sav": "f83d96dd142fdeea",
+        "ror_t11s.sav": "b114cfb6c72c7a70",
+        "ror_t11e.sav": "b114cfb6c72c7a70",
+        "athens_t21.sav": "a8480ceeb81f6062",
+        "athens_t22e.sav": "a8480ceeb81f6062"
+      }
+    },
+    {
+      "idx": 117,
+      "text": "ionian_women",
+      "hashes": {
+        "save_10_fresh.sav": "a3a3dbc75e3d6ef6",
+        "save_1.2.sav": "04b622360cc8be54",
+        "ror_t1e.sav": "c5f1801e6cf0a826",
+        "ror_t2s.sav": "c5f1801e6cf0a826",
+        "ror_t5.sav": "0573fd208dc1e7e3",
+        "ror_t11s.sav": "54ef00bdebccb498",
+        "ror_t11e.sav": "54ef00bdebccb498",
+        "athens_t21.sav": "b758d37ad042bb14",
+        "athens_t22e.sav": "b758d37ad042bb14"
+      }
+    },
+    {
+      "idx": 118,
+      "text": "issa_men",
+      "hashes": {
+        "save_10_fresh.sav": "c2a1e04fa2f6a1fe",
+        "save_1.2.sav": "a4998699ab660c7f",
+        "ror_t1e.sav": "ba44dbd8591e771a",
+        "ror_t2s.sav": "a9c78cff28227b3e",
+        "ror_t5.sav": "29b656ca45e8e53f",
+        "ror_t11s.sav": "8ea93f131f381f25",
+        "ror_t11e.sav": "8ea93f131f381f25",
+        "athens_t21.sav": "5327b7f9af3ad02b",
+        "athens_t22e.sav": "5327b7f9af3ad02b"
+      }
+    },
+    {
+      "idx": 119,
+      "text": "issa_women",
+      "hashes": {
+        "save_10_fresh.sav": "70e46447c0f55d02",
+        "save_1.2.sav": "85379bb39872371b",
+        "ror_t1e.sav": "34f74842a8d30848",
+        "ror_t2s.sav": "34f74842a8d30848",
+        "ror_t5.sav": "19b83d37c3542f58",
+        "ror_t11s.sav": "ea91444e6e591f02",
+        "ror_t11e.sav": "ea91444e6e591f02",
+        "athens_t21.sav": "da2aef62146307cf",
+        "athens_t22e.sav": "dad8ad7c81291108"
+      }
+    },
+    {
+      "idx": 120,
+      "text": "knossos_men",
+      "hashes": {
+        "save_10_fresh.sav": "ed8b2757c9e940c7",
+        "save_1.2.sav": "305c9ee40a6e50d7",
+        "ror_t1e.sav": "479e7cc6fa4a7e44",
+        "ror_t2s.sav": "fe937c9b69b17a6c",
+        "ror_t5.sav": "bc1a9daaa0037fec",
+        "ror_t11s.sav": "53bfe38ddde3580e",
+        "ror_t11e.sav": "53bfe38ddde3580e",
+        "athens_t21.sav": "e229223242300c8f",
+        "athens_t22e.sav": "5a3c00254965aa6b"
+      }
+    },
+    {
+      "idx": 121,
+      "text": "kydonia_men",
+      "hashes": {
+        "save_10_fresh.sav": "dfea7b87d7e5dba0",
+        "save_1.2.sav": "b1e996e3a3f30a95",
+        "ror_t1e.sav": "575cb3e5e3b10789",
+        "ror_t2s.sav": "575cb3e5e3b10789",
+        "ror_t5.sav": "6ea36c0a41740dd0",
+        "ror_t11s.sav": "728a96fb4f17462b",
+        "ror_t11e.sav": "728a96fb4f17462b",
+        "athens_t21.sav": "93efefdf3c13496b",
+        "athens_t22e.sav": "93efefdf3c13496b"
+      }
+    },
+    {
+      "idx": 122,
+      "text": "lusitanian_men",
+      "hashes": {
+        "save_10_fresh.sav": "e5011df61f262d34",
+        "save_1.2.sav": "bc65a514457d31fb",
+        "ror_t1e.sav": "363a4e011fd27541",
+        "ror_t2s.sav": "1102c3f27403b34a",
+        "ror_t5.sav": "687ab9e25f51e810",
+        "ror_t11s.sav": "6bc213cc89473981",
+        "ror_t11e.sav": "6bc213cc89473981",
+        "athens_t21.sav": "e8c9504f08219322",
+        "athens_t22e.sav": "9c9519607b844ddc"
+      }
+    },
+    {
+      "idx": 123,
+      "text": "lusitanian_women",
+      "hashes": {
+        "save_10_fresh.sav": "d32e694c2439fec8",
+        "save_1.2.sav": "198767726ad7810e",
+        "ror_t1e.sav": "6b97499fab2641fe",
+        "ror_t2s.sav": "6b97499fab2641fe",
+        "ror_t5.sav": "89db69d1150b0d3d",
+        "ror_t11s.sav": "1cbfdcd91a438fd4",
+        "ror_t11e.sav": "1cbfdcd91a438fd4",
+        "athens_t21.sav": "874de07cf045fb30",
+        "athens_t22e.sav": "874de07cf045fb30"
+      }
+    },
+    {
+      "idx": 124,
+      "text": "lyttos_men",
+      "hashes": {
+        "save_10_fresh.sav": "bce976fd5f40fbe1",
+        "save_1.2.sav": "a8e98d9c13c5a4df",
+        "ror_t1e.sav": "f0b538f9b25d03b6",
+        "ror_t2s.sav": "f0b538f9b25d03b6",
+        "ror_t5.sav": "899720629cbc9d0b",
+        "ror_t11s.sav": "1538b46f99c6fb15",
+        "ror_t11e.sav": "1538b46f99c6fb15",
+        "athens_t21.sav": "b5448f48a9bb99db",
+        "athens_t22e.sav": "fe4c2c57f8ff9ea2"
+      }
+    },
+    {
+      "idx": 125,
+      "text": "macedonian_men",
+      "hashes": {
+        "save_10_fresh.sav": "030e86e2caf8dd17",
+        "save_1.2.sav": "cd860d87dd205bd4",
+        "ror_t1e.sav": "8651664c09697d6a",
+        "ror_t2s.sav": "8651664c09697d6a",
+        "ror_t5.sav": "c726d584439a61f8",
+        "ror_t11s.sav": "409aae2f14fa982e",
+        "ror_t11e.sav": "409aae2f14fa982e",
+        "athens_t21.sav": "e290d1b20d6c6583",
+        "athens_t22e.sav": "e290d1b20d6c6583"
+      }
+    },
+    {
+      "idx": 126,
+      "text": "macedonian_women",
+      "hashes": {
+        "save_10_fresh.sav": "c962278b8658e6e6",
+        "save_1.2.sav": "dda476843141f410",
+        "ror_t1e.sav": "7c5b580d66228eea",
+        "ror_t2s.sav": "7c5b580d66228eea",
+        "ror_t5.sav": "ecf185482b02aeeb",
+        "ror_t11s.sav": "6c6fadb32a9e3046",
+        "ror_t11e.sav": "6c6fadb32a9e3046",
+        "athens_t21.sav": "14df68646ee64290",
+        "athens_t22e.sav": "14df68646ee64290"
+      }
+    },
+    {
+      "idx": 127,
+      "text": "massaliote_men",
+      "hashes": {
+        "save_10_fresh.sav": "6625f840b2ac4be5",
+        "save_1.2.sav": "497b2b86b0b6af60",
+        "ror_t1e.sav": "fb8ea7a5d201b07a",
+        "ror_t2s.sav": "fb8ea7a5d201b07a",
+        "ror_t5.sav": "16abda82cbcb9fbf",
+        "ror_t11s.sav": "fe6ea793765a61f2",
+        "ror_t11e.sav": "fe6ea793765a61f2",
+        "athens_t21.sav": "2b6d73bd36ceb83f",
+        "athens_t22e.sav": "41dfbd08186dd73b"
+      }
+    },
+    {
+      "idx": 128,
+      "text": "massylii_men",
+      "hashes": {
+        "save_10_fresh.sav": "761fde6300198002",
+        "save_1.2.sav": "1e39b6d13da40d2e",
+        "ror_t1e.sav": "f9b0ca4ec474834a",
+        "ror_t2s.sav": "79d47399ebc418bb",
+        "ror_t5.sav": "f43338492db4ed58",
+        "ror_t11s.sav": "52f4d9d2b77b6eab",
+        "ror_t11e.sav": "52f4d9d2b77b6eab",
+        "athens_t21.sav": "de0bdda81388adee",
+        "athens_t22e.sav": "1037a6d2d30edb92"
+      }
+    },
+    {
+      "idx": 129,
+      "text": "messene_men",
+      "hashes": {
+        "save_10_fresh.sav": "6992d94b8fcc97e7",
+        "save_1.2.sav": "90dd544579537610",
+        "ror_t1e.sav": "24486938906d8123",
+        "ror_t2s.sav": "24486938906d8123",
+        "ror_t5.sav": "6be98f2af398e5df",
+        "ror_t11s.sav": "2a31fced5462d06a",
+        "ror_t11e.sav": "2a31fced5462d06a",
+        "athens_t21.sav": "88d3832f5deadf0c",
+        "athens_t22e.sav": "88d3832f5deadf0c"
+      }
+    },
+    {
+      "idx": 130,
+      "text": "olbia_men",
+      "hashes": {
+        "save_10_fresh.sav": "cf53dd110a103f18",
+        "save_1.2.sav": "8eb6daabc62268d3",
+        "ror_t1e.sav": "9d18001bff4f8b43",
+        "ror_t2s.sav": "3dde6a1f9b8e9cb9",
+        "ror_t5.sav": "f614d5d64616f4c4",
+        "ror_t11s.sav": "3e097351d573042a",
+        "ror_t11e.sav": "3e097351d573042a",
+        "athens_t21.sav": "876f1d74778d3544",
+        "athens_t22e.sav": "876f1d74778d3544"
+      }
+    },
+    {
+      "idx": 131,
+      "text": "paeonian_men",
+      "hashes": {
+        "save_10_fresh.sav": "b8af1d670f75c803",
+        "save_1.2.sav": "732d79a18171db21",
+        "ror_t1e.sav": "e0904b33d8dc2652",
+        "ror_t2s.sav": "e0904b33d8dc2652",
+        "ror_t5.sav": "73341884f13058cb",
+        "ror_t11s.sav": "84997697bfb472de",
+        "ror_t11e.sav": "84997697bfb472de",
+        "athens_t21.sav": "d81a73108d12cdf1",
+        "athens_t22e.sav": "d81a73108d12cdf1"
+      }
+    },
+    {
+      "idx": 132,
+      "text": "paphlagonia_men",
+      "hashes": {
+        "save_10_fresh.sav": "dea4277ec750eb2e",
+        "save_1.2.sav": "709dcef83af127c6",
+        "ror_t1e.sav": "9ce963ebbe90155d",
+        "ror_t2s.sav": "f7bf04ada99c22fd",
+        "ror_t5.sav": "5b58752e4e30d060",
+        "ror_t11s.sav": "e58714a4a57e1939",
+        "ror_t11e.sav": "e58714a4a57e1939",
+        "athens_t21.sav": "560ff29d680ad9cc",
+        "athens_t22e.sav": "560ff29d680ad9cc"
+      }
+    },
+    {
+      "idx": 133,
+      "text": "paphlagonia_women",
+      "hashes": {
+        "save_10_fresh.sav": "c03c174d4a49ba0c",
+        "save_1.2.sav": "5933433bf119c98c",
+        "ror_t1e.sav": "c0645bb5fdf34cee",
+        "ror_t2s.sav": "c0645bb5fdf34cee",
+        "ror_t5.sav": "e3ac12e95856d108",
+        "ror_t11s.sav": "3eef5ce84ee8cfc3",
+        "ror_t11e.sav": "3eef5ce84ee8cfc3",
+        "athens_t21.sav": "ce666fc9b2b28389",
+        "athens_t22e.sav": "ce666fc9b2b28389"
+      }
+    },
+    {
+      "idx": 134,
+      "text": "parni_men",
+      "hashes": {
+        "save_10_fresh.sav": "a1193aacbe4a8e2b",
+        "save_1.2.sav": "e18f4373b451272a",
+        "ror_t1e.sav": "f88ab3a7ec789032",
+        "ror_t2s.sav": "650b868d304d035a",
+        "ror_t5.sav": "8dae905e3a6d979f",
+        "ror_t11s.sav": "ea52aebb5af34690",
+        "ror_t11e.sav": "ea52aebb5af34690",
+        "athens_t21.sav": "16a7cfb61835ec81",
+        "athens_t22e.sav": "ddabef2dae41506f"
+      }
+    },
+    {
+      "idx": 135,
+      "text": "pentapolis_men",
+      "hashes": {
+        "save_10_fresh.sav": "31373c54e5f22603",
+        "save_1.2.sav": "530b3de8e07637bb",
+        "ror_t1e.sav": "58e313d725fde712",
+        "ror_t2s.sav": "58e313d725fde712",
+        "ror_t5.sav": "27f62d60fd945da9",
+        "ror_t11s.sav": "370468c4979108b9",
+        "ror_t11e.sav": "370468c4979108b9",
+        "athens_t21.sav": "4a75dc8b2ddbee9c",
+        "athens_t22e.sav": "52cced5469f544e6"
+      }
+    },
+    {
+      "idx": 136,
+      "text": "pergamon_men",
+      "hashes": {
+        "save_10_fresh.sav": "66c3f8fab22125da",
+        "save_1.2.sav": "0b94c477a9670bdb",
+        "ror_t1e.sav": "1c0344b185af71b5",
+        "ror_t2s.sav": "ea33863d83a9331e",
+        "ror_t5.sav": "1d282daa93f81376",
+        "ror_t11s.sav": "ed5d75e949983a36",
+        "ror_t11e.sav": "ed5d75e949983a36",
+        "athens_t21.sav": "7bdd3063126b16a5",
+        "athens_t22e.sav": "7bdd3063126b16a5"
+      }
+    },
+    {
+      "idx": 137,
+      "text": "pergamon_women",
+      "hashes": {
+        "save_10_fresh.sav": "2f985d067542a495",
+        "save_1.2.sav": "db6617ca951822fa",
+        "ror_t1e.sav": "8b711767d195e7f4",
+        "ror_t2s.sav": "8b711767d195e7f4",
+        "ror_t5.sav": "d6fc1642c5a3605f",
+        "ror_t11s.sav": "c3f90410da337fbc",
+        "ror_t11e.sav": "c3f90410da337fbc",
+        "athens_t21.sav": "36a613386e0383b8",
+        "athens_t22e.sav": "36a613386e0383b8"
+      }
+    },
+    {
+      "idx": 138,
+      "text": "pontus_men",
+      "hashes": {
+        "save_10_fresh.sav": "0f29220c5e7613b9",
+        "save_1.2.sav": "6c6c7b08896882da",
+        "ror_t1e.sav": "c979e838f70a9c8e",
+        "ror_t2s.sav": "c979e838f70a9c8e",
+        "ror_t5.sav": "a8e0d572d487d663",
+        "ror_t11s.sav": "c4d4a326ea0afd77",
+        "ror_t11e.sav": "c4d4a326ea0afd77",
+        "athens_t21.sav": "9ec5307f3c056d82",
+        "athens_t22e.sav": "9ec5307f3c056d82"
+      }
+    },
+    {
+      "idx": 139,
+      "text": "priene_men",
+      "hashes": {
+        "save_10_fresh.sav": "4716e1d77f611875",
+        "save_1.2.sav": "79292ab4f7e0beea",
+        "ror_t1e.sav": "b73c1e4fd1d311f5",
+        "ror_t2s.sav": "24c80e34eedb6993",
+        "ror_t5.sav": "ad31de5352671a24",
+        "ror_t11s.sav": "2fff20d21a75b885",
+        "ror_t11e.sav": "2fff20d21a75b885",
+        "athens_t21.sav": "28eaab1346c6988c",
+        "athens_t22e.sav": "28eaab1346c6988c"
+      }
+    },
+    {
+      "idx": 140,
+      "text": "rhodian_men",
+      "hashes": {
+        "save_10_fresh.sav": "0b057d3a4f0e17a6",
+        "save_1.2.sav": "fb13a69ef99894fd",
+        "ror_t1e.sav": "4147c3b0c751aa7d",
+        "ror_t2s.sav": "bb422d40d556bac9",
+        "ror_t5.sav": "5245086eea8b1dee",
+        "ror_t11s.sav": "7ea1f780d6739bee",
+        "ror_t11e.sav": "7ea1f780d6739bee",
+        "athens_t21.sav": "7fd87c47bbfc65f8",
+        "athens_t22e.sav": "90540bf3c448dc6c"
+      }
+    },
+    {
+      "idx": 141,
+      "text": "sabaean_men",
+      "hashes": {
+        "save_10_fresh.sav": "7da2e1d095b0e78a",
+        "save_1.2.sav": "7da02482873cf00c",
+        "ror_t1e.sav": "e89d7fb6e9f12fa1",
+        "ror_t2s.sav": "90fe048a8aeacf62",
+        "ror_t5.sav": "4c001cd1de2dabeb",
+        "ror_t11s.sav": "651b421c035db4c8",
+        "ror_t11e.sav": "651b421c035db4c8",
+        "athens_t21.sav": "474c57cf3bbf1e46",
+        "athens_t22e.sav": "4097c028fa62a488"
+      }
+    },
+    {
+      "idx": 142,
+      "text": "sabaean_women",
+      "hashes": {
+        "save_10_fresh.sav": "d07cfd7a651db457",
+        "save_1.2.sav": "b92d79b6a582db13",
+        "ror_t1e.sav": "3aa41a0298359c24",
+        "ror_t2s.sav": "712932b1027f1769",
+        "ror_t5.sav": "f8b2426e093d3f54",
+        "ror_t11s.sav": "84126b15e2a4bd27",
+        "ror_t11e.sav": "84126b15e2a4bd27",
+        "athens_t21.sav": "86df45d55f3e8830",
+        "athens_t22e.sav": "854d495ddc589975"
+      }
+    },
+    {
+      "idx": 143,
+      "text": "selge_men",
+      "hashes": {
+        "save_10_fresh.sav": "77816025a4e849b0",
+        "save_1.2.sav": "eb69f9f5075813eb",
+        "ror_t1e.sav": "cd1c63a736718189",
+        "ror_t2s.sav": "cd1c63a736718189",
+        "ror_t5.sav": "18d99ba298b5aca5",
+        "ror_t11s.sav": "8d05fd31a85b18fb",
+        "ror_t11e.sav": "8d05fd31a85b18fb",
+        "athens_t21.sav": "e0cd6e67601132de",
+        "athens_t22e.sav": "e0cd6e67601132de"
+      }
+    },
+    {
+      "idx": 144,
+      "text": "selge_women",
+      "hashes": {
+        "save_10_fresh.sav": "8001a4cefe8531c9",
+        "save_1.2.sav": "3fc13f50f27d6bde",
+        "ror_t1e.sav": "c3d06f0e89b9ef63",
+        "ror_t2s.sav": "c3d06f0e89b9ef63",
+        "ror_t5.sav": "6853be363c3994b9",
+        "ror_t11s.sav": "f2dc13d6109408a5",
+        "ror_t11e.sav": "f2dc13d6109408a5",
+        "athens_t21.sav": "b0e1657e060bcbc0",
+        "athens_t22e.sav": "b0e1657e060bcbc0"
+      }
+    },
+    {
+      "idx": 145,
+      "text": "sinope_men",
+      "hashes": {
+        "save_10_fresh.sav": "c2aee82288c1a330",
+        "save_1.2.sav": "26ac669861af1b22",
+        "ror_t1e.sav": "d4241c16740eeea1",
+        "ror_t2s.sav": "d4241c16740eeea1",
+        "ror_t5.sav": "023f1cd64f0828a0",
+        "ror_t11s.sav": "f90410ff6dcc7fdd",
+        "ror_t11e.sav": "f90410ff6dcc7fdd",
+        "athens_t21.sav": "94cfde54fe6edf80",
+        "athens_t22e.sav": "2a9007c05f0da197"
+      }
+    },
+    {
+      "idx": 146,
+      "text": "sparta_women",
+      "hashes": {
+        "save_10_fresh.sav": "6ceaa6ecd0a02b80",
+        "save_1.2.sav": "956a49d78d413095",
+        "ror_t1e.sav": "ee21e8768389d40e",
+        "ror_t2s.sav": "ee21e8768389d40e",
+        "ror_t5.sav": "0769cdb5363d5789",
+        "ror_t11s.sav": "3517b162e900e353",
+        "ror_t11e.sav": "3517b162e900e353",
+        "athens_t21.sav": "2ec13f562d6fd700",
+        "athens_t22e.sav": "2ec13f562d6fd700"
+      }
+    },
+    {
+      "idx": 147,
+      "text": "syracusan_women",
+      "hashes": {
+        "save_10_fresh.sav": "49c45b84f99987b6",
+        "save_1.2.sav": "efcb5199b7f01b45",
+        "ror_t1e.sav": "40002836f274e787",
+        "ror_t2s.sav": "40002836f274e787",
+        "ror_t5.sav": "0425a9cdbdaa7a7e",
+        "ror_t11s.sav": "e7d391930390faef",
+        "ror_t11e.sav": "e7d391930390faef",
+        "athens_t21.sav": "fe4ffbe4671d1766",
+        "athens_t22e.sav": "f133430bbc29c72c"
+      }
+    },
+    {
+      "idx": 148,
+      "text": "thessalian_women",
+      "hashes": {
+        "save_10_fresh.sav": "3c2c5a9bd6dcc6f7",
+        "save_1.2.sav": "ad88599ee4d34261",
+        "ror_t1e.sav": "a0d10fbef6c6378d",
+        "ror_t2s.sav": "a0d10fbef6c6378d",
+        "ror_t5.sav": "72ead51643f098d3",
+        "ror_t11s.sav": "c4251f2bc1c97b19",
+        "ror_t11e.sav": "c4251f2bc1c97b19",
+        "athens_t21.sav": "a23f783d75c3f43a",
+        "athens_t22e.sav": "a23f783d75c3f43a"
+      }
+    },
+    {
+      "idx": 149,
+      "text": "thracian_women",
+      "hashes": {
+        "save_10_fresh.sav": "a8be9c0fbd9a8fc7",
+        "save_1.2.sav": "4f054c7c823123a0",
+        "ror_t1e.sav": "030aa611476c4395",
+        "ror_t2s.sav": "3aecedb4a6784dca",
+        "ror_t5.sav": "7b4d9b6016e173d9",
+        "ror_t11s.sav": "54103c73c7b6b92b",
+        "ror_t11e.sav": "54103c73c7b6b92b",
+        "athens_t21.sav": "f90d09a65fa729e3",
+        "athens_t22e.sav": "f90d09a65fa729e3"
+      }
+    },
+    {
+      "idx": 150,
+      "text": "trinovantes_women",
+      "hashes": {
+        "save_10_fresh.sav": "ada2224a0142e8c4",
+        "save_1.2.sav": "40ec002c5ec61215",
+        "ror_t1e.sav": "e808d037a5e56be3",
+        "ror_t2s.sav": "e808d037a5e56be3",
+        "ror_t5.sav": "b0f0c23b56edee2a",
+        "ror_t11s.sav": "0e68aaf6157293ba",
+        "ror_t11e.sav": "0e68aaf6157293ba",
+        "athens_t21.sav": "a7914556f26190f3",
+        "athens_t22e.sav": "a7914556f26190f3"
+      }
+    },
+    {
+      "idx": 151,
+      "text": "achaean_men",
+      "hashes": {
+        "save_10_fresh.sav": "9d79c8bece94b648",
+        "save_1.2.sav": "effb3efe98c0a5c9",
+        "ror_t1e.sav": "a60a54bc22b4ac03",
+        "ror_t2s.sav": "a60a54bc22b4ac03",
+        "ror_t5.sav": "e5c2585054f5f391",
+        "ror_t11s.sav": "571a8cac95c7c497",
+        "ror_t11e.sav": "571a8cac95c7c497",
+        "athens_t21.sav": "cafaab851e6ae54c",
+        "athens_t22e.sav": "c5da9120762adefe"
+      }
+    },
+    {
+      "idx": 152,
+      "text": "akarnania_men",
+      "hashes": {
+        "save_10_fresh.sav": "acecbbcc2487cb66",
+        "save_1.2.sav": "8855721179abc40b",
+        "ror_t1e.sav": "afd50f13d6f38d45",
+        "ror_t2s.sav": "7a74b6f1a0d2d3ad",
+        "ror_t5.sav": "b0717d47b81b8a20",
+        "ror_t11s.sav": "3df245af55ad4c8a",
+        "ror_t11e.sav": "3df245af55ad4c8a",
+        "athens_t21.sav": "d635ced92ee921aa",
+        "athens_t22e.sav": "d635ced92ee921aa"
+      }
+    },
+    {
+      "idx": 153,
+      "text": "akragas_men",
+      "hashes": {
+        "save_10_fresh.sav": "4fef1a2e6cd7639e",
+        "save_1.2.sav": "ac291396a177fb17",
+        "ror_t1e.sav": "ca61ed693453d272",
+        "ror_t2s.sav": "ca61ed693453d272",
+        "ror_t5.sav": "985a15202ee26fe8",
+        "ror_t11s.sav": "e7ce3e911f7f39fa",
+        "ror_t11e.sav": "e7ce3e911f7f39fa",
+        "athens_t21.sav": "82bf0bcb9d2028b8",
+        "athens_t22e.sav": "82bf0bcb9d2028b8"
+      }
+    },
+    {
+      "idx": 154,
+      "text": "antigonid_men",
+      "hashes": {
+        "save_10_fresh.sav": "9dd2484a6ae51f6d",
+        "save_1.2.sav": "0022bf0536401583",
+        "ror_t1e.sav": "ffc89eddbc933409",
+        "ror_t2s.sav": "22aabf9fa3b1270e",
+        "ror_t5.sav": "7fd40a751c1ef783",
+        "ror_t11s.sav": "8cf58a8373afb147",
+        "ror_t11e.sav": "8cf58a8373afb147",
+        "athens_t21.sav": "f584ec6073632b40",
+        "athens_t22e.sav": "f584ec6073632b40"
+      }
+    },
+    {
+      "idx": 155,
+      "text": "antigonid_women",
+      "hashes": {
+        "save_10_fresh.sav": "00eb730661924a13",
+        "save_1.2.sav": "612277792303a384",
+        "ror_t1e.sav": "d2d08ebc4e6c7996",
+        "ror_t2s.sav": "512a56f2b4d98f96",
+        "ror_t5.sav": "1965fc93c34594d6",
+        "ror_t11s.sav": "66e62657d2ea2420",
+        "ror_t11e.sav": "66e62657d2ea2420",
+        "athens_t21.sav": "97563167d01ad338",
+        "athens_t22e.sav": "c9e96b531ac05089"
+      }
+    },
+    {
+      "idx": 156,
+      "text": "argive_men",
+      "hashes": {
+        "save_10_fresh.sav": "7092d70df2976960",
+        "save_1.2.sav": "171299fa3fbed5e5",
+        "ror_t1e.sav": "1dceefc6d78a32eb",
+        "ror_t2s.sav": "1dceefc6d78a32eb",
+        "ror_t5.sav": "ef2ed6d27256f072",
+        "ror_t11s.sav": "3c4246d905a0f797",
+        "ror_t11e.sav": "3c4246d905a0f797",
+        "athens_t21.sav": "f45e567ed7dfe9be",
+        "athens_t22e.sav": "f45e567ed7dfe9be"
+      }
+    },
+    {
+      "idx": 157,
+      "text": "athenian_women",
+      "hashes": {
+        "save_10_fresh.sav": "8946229c055a06e0",
+        "save_1.2.sav": "1cf525abac00233c",
+        "ror_t1e.sav": "3e798e9a09e53405",
+        "ror_t2s.sav": "3e798e9a09e53405",
+        "ror_t5.sav": "bf8c6836d08e8d38",
+        "ror_t11s.sav": "d3fbd6194b46206b",
+        "ror_t11e.sav": "d3fbd6194b46206b",
+        "athens_t21.sav": "67dd732d4fedbba2",
+        "athens_t22e.sav": "67dd732d4fedbba2"
+      }
+    },
+    {
+      "idx": 158,
+      "text": "bactrian_men",
+      "hashes": {
+        "save_10_fresh.sav": "f816b5ed7cb6c69c",
+        "save_1.2.sav": "601d9516f4de7b00",
+        "ror_t1e.sav": "b174868a68dfd296",
+        "ror_t2s.sav": "3ab518c077358c3d",
+        "ror_t5.sav": "3ad0b558eea96b78",
+        "ror_t11s.sav": "04a0a58c67999bf0",
+        "ror_t11e.sav": "04a0a58c67999bf0",
+        "athens_t21.sav": "ccd40aec72051f1e",
+        "athens_t22e.sav": "ccd40aec72051f1e"
+      }
+    },
+    {
+      "idx": 159,
+      "text": "bithynian_women",
+      "hashes": {
+        "save_10_fresh.sav": "65b3e008568f3552",
+        "save_1.2.sav": "e9ced2082ded96db",
+        "ror_t1e.sav": "4ab22012f72c7dfc",
+        "ror_t2s.sav": "4ab22012f72c7dfc",
+        "ror_t5.sav": "07a78cb09fe20719",
+        "ror_t11s.sav": "d9b19b6ed29c9856",
+        "ror_t11e.sav": "d9b19b6ed29c9856",
+        "athens_t21.sav": "5b83da0dc461dccc",
+        "athens_t22e.sav": "5b83da0dc461dccc"
+      }
+    },
+    {
+      "idx": 160,
+      "text": "bosporan_men",
+      "hashes": {
+        "save_10_fresh.sav": "fd2b3e13ddb1e189",
+        "save_1.2.sav": "7e094c7f7c9b80e8",
+        "ror_t1e.sav": "ed4ac3a3880cf1ee",
+        "ror_t2s.sav": "7473fa1982cd7500",
+        "ror_t5.sav": "c48721a21a9791f3",
+        "ror_t11s.sav": "d048e9d612be52f7",
+        "ror_t11e.sav": "d048e9d612be52f7",
+        "athens_t21.sav": "a18c49d3d0e46179",
+        "athens_t22e.sav": "a18c49d3d0e46179"
+      }
+    },
+    {
+      "idx": 161,
+      "text": "bosporan_women",
+      "hashes": {
+        "save_10_fresh.sav": "c52ae918b8314bf5",
+        "save_1.2.sav": "7d0fb1add1dea5a9",
+        "ror_t1e.sav": "e5d12b9e7b982484",
+        "ror_t2s.sav": "e5d12b9e7b982484",
+        "ror_t5.sav": "0d66c028cb0437dd",
+        "ror_t11s.sav": "e913710eb5ad95a0",
+        "ror_t11e.sav": "e913710eb5ad95a0",
+        "athens_t21.sav": "b459ec1db8108b56",
+        "athens_t22e.sav": "b459ec1db8108b56"
+      }
+    },
+    {
+      "idx": 162,
+      "text": "cretan_women",
+      "hashes": {
+        "save_10_fresh.sav": "f953a27668674e7a",
+        "save_1.2.sav": "b804cf1c774c93b4",
+        "ror_t1e.sav": "1f875783f4acdd15",
+        "ror_t2s.sav": "1f875783f4acdd15",
+        "ror_t5.sav": "af2460b59bdfe580",
+        "ror_t11s.sav": "070a06fe84cf8128",
+        "ror_t11e.sav": "070a06fe84cf8128",
+        "athens_t21.sav": "b961bfd67a7597a8",
+        "athens_t22e.sav": "b961bfd67a7597a8"
+      }
+    },
+    {
+      "idx": 163,
+      "text": "cyrenean_men",
+      "hashes": {
+        "save_10_fresh.sav": "cdbffc6ea8f0aa72",
+        "save_1.2.sav": "f7c21c78f1048800",
+        "ror_t1e.sav": "ebb77d85b6d36279",
+        "ror_t2s.sav": "69a21ee58a922237",
+        "ror_t5.sav": "7b076d48a1e5f39e",
+        "ror_t11s.sav": "239816fdbfaff799",
+        "ror_t11e.sav": "239816fdbfaff799",
+        "athens_t21.sav": "0391847f5abfec1a",
+        "athens_t22e.sav": "0391847f5abfec1a"
+      }
+    },
+    {
+      "idx": 164,
+      "text": "cyrenean_women",
+      "hashes": {
+        "save_10_fresh.sav": "4e02375d191d83a8",
+        "save_1.2.sav": "42c7e2d7471e7fc3",
+        "ror_t1e.sav": "17f35a87d188aeff",
+        "ror_t2s.sav": "17f35a87d188aeff",
+        "ror_t5.sav": "7ac74537d648e106",
+        "ror_t11s.sav": "af0d741968bf0b18",
+        "ror_t11e.sav": "af0d741968bf0b18",
+        "athens_t21.sav": "dfa4817e47f327a6",
+        "athens_t22e.sav": "82b30d900fa7fa8e"
+      }
+    },
+    {
+      "idx": 165,
+      "text": "daesitiates_men",
+      "hashes": {
+        "save_10_fresh.sav": "c503090d36c0eb89",
+        "save_1.2.sav": "641274e9f386e094",
+        "ror_t1e.sav": "3dd80e3ba7e6600e",
+        "ror_t2s.sav": "3dd80e3ba7e6600e",
+        "ror_t5.sav": "10c8c4ba0eea8e4e",
+        "ror_t11s.sav": "1dae894e9996cd71",
+        "ror_t11e.sav": "1dae894e9996cd71",
+        "athens_t21.sav": "9eb6f0ac705ccbc4",
+        "athens_t22e.sav": "9eb6f0ac705ccbc4"
+      }
+    },
+    {
+      "idx": 166,
+      "text": "daesitiates_women",
+      "hashes": {
+        "save_10_fresh.sav": "44d520234ce75aab",
+        "save_1.2.sav": "39efe8f2f48b2e2b",
+        "ror_t1e.sav": "0e94b16cda55c42a",
+        "ror_t2s.sav": "0e94b16cda55c42a",
+        "ror_t5.sav": "1277d8672878a655",
+        "ror_t11s.sav": "5585b47843208250",
+        "ror_t11e.sav": "5585b47843208250",
+        "athens_t21.sav": "6462406228e3c29f",
+        "athens_t22e.sav": "6462406228e3c29f"
+      }
+    },
+    {
+      "idx": 167,
+      "text": "epirote_men",
+      "hashes": {
+        "save_10_fresh.sav": "d425f632465bfe68",
+        "save_1.2.sav": "5bb74523dddca3a5",
+        "ror_t1e.sav": "f68d9ee335df98b0",
+        "ror_t2s.sav": "e83d52caa7399058",
+        "ror_t5.sav": "36d8e383b3749eac",
+        "ror_t11s.sav": "721edc6c481ab539",
+        "ror_t11e.sav": "721edc6c481ab539",
+        "athens_t21.sav": "4958a4f1eb449108",
+        "athens_t22e.sav": "461cce295b08836c"
+      }
+    },
+    {
+      "idx": 168,
+      "text": "epirote_women",
+      "hashes": {
+        "save_10_fresh.sav": "b524a6e263215d50",
+        "save_1.2.sav": "2ee84b747ac00add",
+        "ror_t1e.sav": "fe5bcef294b6b122",
+        "ror_t2s.sav": "fe5bcef294b6b122",
+        "ror_t5.sav": "0783a6d6ae76313f",
+        "ror_t11s.sav": "244a8c0335899790",
+        "ror_t11e.sav": "244a8c0335899790",
+        "athens_t21.sav": "d3c99e0c419d20d4",
+        "athens_t22e.sav": "d3c99e0c419d20d4"
+      }
+    },
+    {
+      "idx": 169,
+      "text": "nw_greek_men",
+      "hashes": {
+        "save_10_fresh.sav": "39386bea4d11e075",
+        "save_1.2.sav": "c8edfe509b68eda3",
+        "ror_t1e.sav": "f211c3ed16ce0bdc",
+        "ror_t2s.sav": "f211c3ed16ce0bdc",
+        "ror_t5.sav": "57cd43c9de7a1874",
+        "ror_t11s.sav": "394fa83ac6e8f94c",
+        "ror_t11e.sav": "394fa83ac6e8f94c",
+        "athens_t21.sav": "282e85f76a24af40",
+        "athens_t22e.sav": "282e85f76a24af40"
+      }
+    },
+    {
+      "idx": 170,
+      "text": "ptolemaic_men",
+      "hashes": {
+        "save_10_fresh.sav": "36802a122cb66427",
+        "save_1.2.sav": "17e8057c3212d3aa",
+        "ror_t1e.sav": "f4b91a5b246ddd1d",
+        "ror_t2s.sav": "30c1995becf69029",
+        "ror_t5.sav": "64b919c71b90e1fe",
+        "ror_t11s.sav": "7a2a982602d21343",
+        "ror_t11e.sav": "7a2a982602d21343",
+        "athens_t21.sav": "a6439d32b8dec957",
+        "athens_t22e.sav": "a6439d32b8dec957"
+      }
+    },
+    {
+      "idx": 171,
+      "text": "ptolemaic_women",
+      "hashes": {
+        "save_10_fresh.sav": "553b95d0aa9ba06b",
+        "save_1.2.sav": "b88871be7d05f232",
+        "ror_t1e.sav": "597d144f1579b880",
+        "ror_t2s.sav": "54018ec2b423ec13",
+        "ror_t5.sav": "026713331536c26b",
+        "ror_t11s.sav": "a3ca835ac1d92406",
+        "ror_t11e.sav": "a3ca835ac1d92406",
+        "athens_t21.sav": "5fa6394d0a3b25cb",
+        "athens_t22e.sav": "b57600b1e6f07276"
+      }
+    },
+    {
+      "idx": 172,
+      "text": "scordisci_men",
+      "hashes": {
+        "save_10_fresh.sav": "726fed1f33c4b741",
+        "save_1.2.sav": "d56320c8015ab19f",
+        "ror_t1e.sav": "e60f7a6ef10a66ab",
+        "ror_t2s.sav": "016bdb40ce3b96d6",
+        "ror_t5.sav": "022213d30469a1da",
+        "ror_t11s.sav": "bef1dffcb01d9e00",
+        "ror_t11e.sav": "bef1dffcb01d9e00",
+        "athens_t21.sav": "827bb9661e6b84ab",
+        "athens_t22e.sav": "827bb9661e6b84ab"
+      }
+    },
+    {
+      "idx": 173,
+      "text": "seleucid_men",
+      "hashes": {
+        "save_10_fresh.sav": "e4538605ddbf7258",
+        "save_1.2.sav": "506f519ac72ee28f",
+        "ror_t1e.sav": "d8890a6056a367d8",
+        "ror_t2s.sav": "d1b3184a519526f4",
+        "ror_t5.sav": "b926f4f8a99c69c3",
+        "ror_t11s.sav": "70c3b01abd5f540a",
+        "ror_t11e.sav": "70c3b01abd5f540a",
+        "athens_t21.sav": "2e584092f6ec7cfc",
+        "athens_t22e.sav": "90a21540ca53da74"
+      }
+    },
+    {
+      "idx": 174,
+      "text": "seleucid_women",
+      "hashes": {
+        "save_10_fresh.sav": "ca77f59284c19035",
+        "save_1.2.sav": "0dc3f96ce9ac9579",
+        "ror_t1e.sav": "28800783950654f9",
+        "ror_t2s.sav": "37bc3aa793ddee73",
+        "ror_t5.sav": "ff1aa8d953c2c008",
+        "ror_t11s.sav": "03f164468810e0bf",
+        "ror_t11e.sav": "03f164468810e0bf",
+        "athens_t21.sav": "e127235305d0f1a4",
+        "athens_t22e.sav": "bb3de74299a0f9d8"
+      }
+    },
+    {
+      "idx": 175,
+      "text": "sparta_men",
+      "hashes": {
+        "save_10_fresh.sav": "8df59f182ecccd84",
+        "save_1.2.sav": "bf872f12e4aacd62",
+        "ror_t1e.sav": "275d9d9248f6fc2a",
+        "ror_t2s.sav": "275d9d9248f6fc2a",
+        "ror_t5.sav": "a67ff78fee0f44af",
+        "ror_t11s.sav": "eff75651d8c0ca1c",
+        "ror_t11e.sav": "eff75651d8c0ca1c",
+        "athens_t21.sav": "ce010aa2bddff929",
+        "athens_t22e.sav": "ef2c24a3aabf465b"
+      }
+    },
+    {
+      "idx": 176,
+      "text": "syracusan_men",
+      "hashes": {
+        "save_10_fresh.sav": "642e20b8765dc4b6",
+        "save_1.2.sav": "d8933b63448a615b",
+        "ror_t1e.sav": "158b3a9ecf1f8c01",
+        "ror_t2s.sav": "33ee219619f5d11d",
+        "ror_t5.sav": "7d18494609a10bec",
+        "ror_t11s.sav": "fce9a662530e8d95",
+        "ror_t11e.sav": "fce9a662530e8d95",
+        "athens_t21.sav": "d89d3b3e68214a5c",
+        "athens_t22e.sav": "d89d3b3e68214a5c"
+      }
+    },
+    {
+      "idx": 177,
+      "text": "aetolian_men",
+      "hashes": {
+        "save_10_fresh.sav": "9422e6e243359bb7",
+        "save_1.2.sav": "41a949651bb4c2a7",
+        "ror_t1e.sav": "99b6ecf6f6d6c27c",
+        "ror_t2s.sav": "34e06368960f028e",
+        "ror_t5.sav": "66e3c10dd62d07e1",
+        "ror_t11s.sav": "30d0b93aed949b01",
+        "ror_t11e.sav": "8c9be9a28fa41b30",
+        "athens_t21.sav": "8e227f28eca99360",
+        "athens_t22e.sav": "a142abb41138d4b8"
+      }
+    }
+  ]
+}

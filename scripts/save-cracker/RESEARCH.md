@@ -13994,6 +13994,188 @@ The previously-mysterious "v≥5 late-game explosion" is **not real data** — i
 
 ---
 
+## Session 106 — character/name pool 261 KB decomposition (2026-05-16)
+
+#### Brief
+
+Session 102 catalogued the player faction record's middle region (`+0x0c400..+0x04d000`, ~261 KB, 75% zeros) as the "character pool / name pool / family-tree blob". The ASCII string `roman_men` at rec+0x3290a was visible but the rest of the zone was opaque. Session 106's goal: decompose this zone, identify sub-section boundaries, and pin semantics for at least 2 sub-regions.
+
+Saves used: all 9 sample saves used in sessions 102-105 (save_10_fresh / save_1.2 / ror_t1e/t2s/t5/t11s/t11e / athens_t21/t22e).
+
+#### CONFIRMED — The "261 KB sparse zone" is two distinct sub-regions, not one
+
+The macro-window 4 KB classifier from session 102 averaged out the boundary between two structurally different sub-regions. Walking the player record from rec+0xc400 forward and anchoring on the first byte sequence `0a 00 "barbarian\0"` (the `<u16 strLen=10> <ASCII>` of the first culture-pool record), the zone splits cleanly into:
+
+| Sub-region | T0 (save_10_fresh) size | Late-game (athens_t21) size | Class | Interpretation |
+|---|---|---|---|---|
+| `+0xc400..firstBarbAbs` (the "head") | 23.6 KB | 1074.4 KB (growth = 1050 KB) | grows per-turn | **per-faction reference / character data zone** |
+| `firstBarbAbs..+lastPoolEnd` (the "pool zone") | 241.4 KB | 241.4 KB (CONSTANT) | static-size | **178 culture / name-list pool records (decoded below)** |
+
+The "head" size grows by orders of magnitude with campaign progression (23.6 KB → 1074.4 KB between T0 and athens turn 21) while the pool zone remains exactly fixed-size. Together they span the ~261 KB envelope and grow into the Lua zone gap as the head expands. Files: `dig-cpool-1.js`, `dig-cpool-3.js`, `dig-cpool-A.js`.
+
+#### CONFIRMED — Pool zone has exactly 178 records with a uniform 2-tier structure
+
+`dig-cpool-3.js` walks forward from `firstBarbAbs` and finds **exactly 178 pool records in every single save** by matching `<u16 strLen> <ASCII bytes>` headers where the string matches a culture key (`barbarian`/`greek`/`eastern`/`egyptian`) or ends in `_men`/`_women`/`_surnames`. Same 178 strings, same order, in T0 and athens_t22e and everything in between.
+
+Two record tiers:
+
+**Tier A — 21 culture-pool records** (idx 0..20, totalling ~120 KB):
+- 6 × `barbarian` (5828 B each)
+- 6 × `greek` (8168 B each)
+- 7 × `eastern` (4958 B each; idx=20 is 4979 B due to a trailing pad)
+- 2 × `egyptian` (3475 B each)
+- → matches the count of culture-instances across RIS-imperial's playable factions (Gauls/Britons/Germans/Dacii/Scythia/Spain = 6 barb, Greek-cities/Macedon/Seleucid/etc. = 6 greek, Pontus/Armenia/Parthia/etc. = 7 east, Egypt + Saba = 2 east-egyptian)
+
+**Tier B — 157 named-pool records** (idx 21..177, totalling ~121 KB):
+- Sorted **alphabetically by faction-suffix**: `african_men, african_women, anatolian_men, anatolian_women, apulian_men, arevaci_men, ...` then later blocks for Greek and special-faction names
+- Each is a single `<u16 strLen> <ASCII bytes> <u32 count> <u32 zero> <count u32 indices>` record where `count = preallocated capacity` and the indices form a Fisher-Yates-style shuffled draw order
+
+Files: `dig-cpool-3.js`, `dig-cpool-6.js`, `dig-cpool-9.js`.
+
+#### CONFIRMED — Pool record structure: `<u16 strLen> <ASCII> [<u32 count> <u32 0> <count u32 indices>]+`
+
+Each pool record contains one or more "sub-pool" blocks:
+```
+<u16 strLen>                    // length of name string in bytes (+ optional null)
+<ASCII bytes>                   // pool key, e.g. "african_men\0" or "barbarian\0"
+// Then a chain of sub-pools:
+<u32 count>                     // number of indices in this sub-pool
+<u32 zero>                      // separator (always 0 across all 9 saves and all 178 records)
+<count × u32 indices>           // shuffled draw order, each index in [0, count-1] or [1, count]
+// Padding to align (zero bytes; varies per record-tier)
+```
+
+For Tier B records (`african_men` etc.) there is **exactly 1 sub-pool per record** and `recSize = 2 + strLen + 8 + count*4`. Examples verified:
+- `african_men`: strLen=12, count=41, recSize=186 = 2+12+8+41×4 ✓
+- `arverni_women`: strLen=14, count=0, recSize=24 = 2+14+8 ✓ (empty pool, just header)
+- `aetolian_men` (the LAST record): strLen=13, count=363, content extends with zero pad to fill end-of-pool-zone
+
+For Tier A records (21 culture-pool, totalling ~120 KB) **each record has 13 or 18 sub-pools** with a culture-specific count signature:
+
+| Culture | Sub-pool count signature (in order) | recSize |
+|---|---|---|
+| barbarian | `[42, 42, 151, 42, 42, 42, 151, 151, 151, 151, 151, 151, 151]` (5×42 + 8×151 = 1418 u32) | 5828 |
+| greek | `[55, 55, 188, 55, 55, 55, 188, 188, 188, 188, 188, 188, 45, 45, 188, 45, 45, 45]` (5×55 + 7×188 + 6×45 = 1851 u32) | 8168 |
+| eastern | `[37, 37, 127, 37, 37, 37, 127, 127, 127, 127, 127, 127, 127]` (5×37 + 8×127 = 1201 u32) | 4958 |
+| egyptian | `[30, 30, 85, 30, 30, 30, 85, 85, 85, 85, 85, 85, 85]` (5×30 + 8×85 = 830 u32) | 3475 |
+
+The signature is **identical for every instance** of each culture in every save. Even in athens_t22e the barbarian records still have exactly 13 sub-pools with counts 42,42,151,42,42,42,151,151,151,151,151,151,151.
+
+Confidence: STRONG. Files: `dig-cpool-8.js`, `dig-cpool-9.js`.
+
+#### CONFIRMED — Sub-pool counts are STATIC across all 9 saves (preallocated capacity)
+
+Across all 178 records × 9 saves = 1602 record-instances, `dig-cpool-7.js` finds **0 records with a count u32[0] mismatch across saves**. The `count` field is a frozen preallocation that never changes — it's a per-faction capacity allocated at campaign start. Counts range from 0 (empty pool, e.g. `arverni_women`) up to 500 (e.g. `greek_men`).
+
+#### STRONG — Sub-pool INDICES (the permutations) DO change per save
+
+While counts are static, the shuffled-order index lists are **save-specific**. 152 of 178 records have different body hashes across the 9 saves (only the 26 records with very small or zero counts are identical-by-default). Example for `african_men` (count=41, max idx=40):
+
+| Save | first 10 indices in the permutation |
+|---|---|
+| save_10_fresh | 30,23,9,21,10,13,3,24,1,25 |
+| save_1.2 | 19,23,30,8,1,3,25,15,39,36 |
+| ror_t1e | 11,37,31,23,28,12,38,13,1,6 |
+| ror_t11s | 4,2,12,22,25,23,31,40,15,16 |
+| athens_t21 | 4,40,24,33,9,29,37,3,12,26 |
+
+The permutations also contain **duplicates** (e.g. value `1` appears twice in T0's `african_men` permutation, positions 9 and 31) — so they are NOT strict permutations but **random-with-replacement draw orders**. This makes sense as **Fisher-Yates-style shuffled draws of preallocated name slots, redrawn at every save** — the engine re-shuffles the draw order whenever it commits state, like a deterministic-from-RNG-seed scratch buffer.
+
+The 26 records identical across saves are the small/zero-count ones: `arverni_women` (count=0), `apulian_men` (count=1), `baltoslavic_women` (count=1), `italic_surnames` (count=1), `blank_surnames` (count=0), and a few similar — with count ≤ 1 the "permutation" is trivial.
+
+Files: `dig-cpool-6.js`, `dig-cpool-7.js`.
+
+#### STRONG — The 21 "Tier A" culture-pool records map 1:1 to playable factions in RIS imperial
+
+The 21 records are the **per-playable-faction name-drawing state**, one record per faction that exists at campaign start in the RIS imperial mod. The first barbarian record (idx=0) is **byte-identical across all 9 saves** — including its 13 sub-pool permutations — strongly suggesting it's owned by a faction whose name-drawing state has never been touched (likely a rebel/slave faction or a faction the engine never instantiates characters for in any of these campaigns).
+
+#### STRONG — The "head" sub-region (rec+0xc400 to firstBarbAbs) is per-turn-growing data
+
+T0 saves have a tight 23.6 KB head; ror_t5 has 308 KB; athens_t21 has 1074 KB. This is **the actively-written campaign state** — likely **character records, family tree, agent positions, and other per-frame faction-owned objects**. Its byte structure:
+
+| Save | head size | u32 slots | slots with lowU16=0 | hiU16 max |
+|---|---|---|---|---|
+| save_10_fresh | 23608 | 5902 | 33 (0.6%) | 0 |
+| save_1.2 | 23582 | 5895 | 5895 (100%) | 479 |
+| ror_t1e | 23630 | 5907 | 5907 (100%) | 479 |
+| ror_t2s | 51250 | 12812 | 6247 (48.8%) | 65535 |
+| ror_t11s | 551315 | 137828 | 9503 (6.9%) | 65535 |
+| athens_t21 | 1100169 | 275042 | 10215 (3.7%) | 65535 |
+
+In T0 / T1, the first ~24 KB is **stride-4 u16 indices** (5902 slots) with values in `[0, 479]` — 480 distinct values appearing at frequencies of 8, 13, or 18 each. The maximum 479 strongly resembles a **settlement-index range** (RIS imperial has on the order of 240 regions × 2 indexing modes, or settlement-tile vs region-id). Plausible interpretation: a **per-faction settlement-influence lookup**, populated at campaign-start but mostly static.
+
+The interleaving of "lowU16=0" (u16 in the high half) and "lowU16=value" reverses between save_10_fresh and save_1.2 by 2 bytes — these are byte-shifted alignment differences from the file's variable header, not a structural change.
+
+Once campaigns progress, the head zone explodes with new packed records that include 0xff bytes (max u16 hits 65535), indicating **u32 or i32 fields with large values** appear — these are likely the actual character records, including positions, ages, traits, and the family-tree linkage.
+
+Confidence: STRONG that it's per-faction growing data. HYPOTHESIS that the 24 KB T0 tail is a settlement lookup; specific semantics not pinned this session.
+
+#### CONFIRMED — One byte of `00` separates the pool zone from the Lua zone
+
+After the LAST pool record (`aetolian_men`, idx=177), there is exactly **one `00` byte** before the UTF-16 path string `RIS_Campaign_Script.txts` that marks the start of the Lua persistent-state zone (session 102 / 104). Verified across all 9 saves. The end-of-pool-zone offset shifts with the head's growth (rel +0x51a3d in T0, rel +0x15ba10 in athens_t21) but the structure is invariant. Files: `dig-cpool-4.js`.
+
+#### Headline sub-section map of the 261 KB zone (correction to session 102)
+
+```
++0x0c400..+firstBarbAbs   (24 KB → 1.07 MB depending on campaign)
+  the "head" — per-faction reference + growing character/agent record zone
+  In T0: 5902 stride-4 u16 slots, values in [0..479], settlement-lookup-like
+  In late-campaign: dense packed records with u32 fields (character/family-tree state)
+
++firstBarbAbs..+endOfPoolZone  (241.4 KB, EXACTLY CONSTANT across all saves)
+  the "pool zone" — 178 culture/name-list pool records, by tier:
+    idx 0..20  (Tier A): 21 culture-pool records per playable faction
+                          - barbarian (5828 B × 6)
+                          - greek (8168 B × 6)
+                          - eastern (4958 B × 7)
+                          - egyptian (3475 B × 2)
+                          Each = 13 or 18 sub-pools × <u32 count><u32 0><count u32 indices>
+                          Counts static (preallocated capacity); permutations re-shuffle per save
+    idx 21..177 (Tier B): 157 named-pool records `<faction>_men`/`<faction>_women`/`<faction>_surnames`
+                          Each = 1 sub-pool with <u32 count><u32 0><count u32 indices>
+                          Counts: 0 (arverni_women) to 500 (greek_men)
+
++endOfPoolZone .. +endOfPoolZone+1   one 0x00 separator
+
++endOfPoolZone + 1 .. EOF             Lua persistent-state zone (session 102/104)
+```
+
+#### Confidence summary
+
+* **CONFIRMED**: Pool zone has exactly 178 records, identical name set + order in all 9 saves.
+* **CONFIRMED**: Pool record structure is `<u16 strLen><ASCII>[<u32 count><u32 0><count u32 indices>]+`.
+* **CONFIRMED**: Per-record sub-pool count signatures are uniform per culture (barbarian = 13 sub-pools `[42×5, 151×8]`; greek = 18 sub-pools `[55×5, 188×7, 45×6]`; eastern = 13 sub-pools `[37×5, 127×8]`; egyptian = 13 sub-pools `[30×5, 85×8]`).
+* **CONFIRMED**: All 178 records' `count` field is byte-identical across all 9 saves (preallocated capacity).
+* **CONFIRMED**: Pool zone byte-size is fixed across all saves (~241 KB; no growth).
+* **CONFIRMED**: The "head" sub-region grows monotonically through a campaign (1.6×–47× growth between T0 and athens_t21).
+* **STRONG**: 152 of 178 records have differing body hashes across saves — sub-pool permutations are save-specific.
+* **STRONG**: 21 Tier-A culture-pool records map 1:1 to RIS imperial playable factions.
+* **HYPOTHESIS**: The T0 head's 5902 stride-4 u16 entries with values in [0..479] are a per-faction settlement-influence lookup. Unpinned this session.
+* **HYPOTHESIS**: The growing portion of the head zone (post-T1) is **the actual character / family-tree / agent record data** — aligning to session 102's "character/name pool" intuition but with the *actual* character data lying in the head, not in the pool zone. Unpinned this session.
+* **NEGATIVE**: The pool zone is NOT consumed by character creation — counts stay constant from T0 to T22e. It's a draw-order scratch buffer, not an inventory.
+
+#### Files
+
+* `scripts/save-cracker/dig-cpool-1.js` — initial 4 KB-window classification, ASCII / UTF-16 string sweep, stride autocorrelation. Pinned the stride-4 pattern.
+* `scripts/save-cracker/dig-cpool-2.js` — first walker (recRel +0xc400..+0x4d000 anchor) — worked only on T0/T1/T2 saves; revealed late-game saves' Lua zone migrates the offsets.
+* `scripts/save-cracker/dig-cpool-3.js` — second walker anchored on the FIRST `barbarian` string in the player record. Robust across all 9 saves; finds 178 pool records every time.
+* `scripts/save-cracker/dig-cpool-4.js` — per-record body hashes (152/178 differ across saves); gap-before-firstBarb analysis (T0=23 KB → athens_t21=1074 KB).
+* `scripts/save-cracker/dig-cpool-5.js` — per-record byte-window diffing; revealed first barbarian is byte-identical across saves; structure decode `<u32 count> <u32 sep> <count u32 indices>`.
+* `scripts/save-cracker/dig-cpool-6.js` — full 178-record structure summary (count, recSize, perm validity).
+* `scripts/save-cracker/dig-cpool-7.js` — verified counts are static across all 9 saves (0 mismatches).
+* `scripts/save-cracker/dig-cpool-8.js` — first sub-pool chain walker (missed zero-padded boundaries).
+* `scripts/save-cracker/dig-cpool-9.js` — robust sub-pool chain walker; locked the per-culture sub-pool signatures.
+* `scripts/save-cracker/dig-cpool-A.js` — head-zone (rec+0xc400..firstBarb) analysis; growth per save; stride-4 u16 [0..479] discovery for T0.
+
+#### Next steps
+
+1. Pin head-zone semantics: are the 480-value u16 entries settlement indices, region IDs, or character IDs? Cross-tab against the parsed region/settlement enumeration from session 35/42.
+2. Decode the per-character record format inside the growing head zone. Cross-reference `src/characterParser.js` — it already parses character records elsewhere; if those records also live in this zone, they should match.
+3. Map the 21 Tier-A culture-pool records to specific faction IDs by cross-correlating with the faction-record array (session 102 idx=237 player record vs the other 237 faction records). Each playable faction probably "owns" exactly one Tier-A entry.
+4. Cross-check the sub-pool count signatures against `descr_names.txt` from the RIS mod source — the count numbers (42, 151, 55, 188, 45, 37, 127, 30, 85) should each correspond to one or more name lists in the mod data.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

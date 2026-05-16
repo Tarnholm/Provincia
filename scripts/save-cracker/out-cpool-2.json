@@ -1,0 +1,3531 @@
+{
+  "save_10_fresh.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 178,
+    "records": [
+      {
+        "off": 23608,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 29436,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 35264,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 41092,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 46920,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 52748,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 60916,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 66744,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 71702,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 79870,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 83345,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 88303,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 96471,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 104639,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 109597,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 117765,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 122723,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 127681,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 135849,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 140807,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 144282,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 149261,
+        "strLen": 12,
+        "text": "african_men"
+      },
+      {
+        "off": 149447,
+        "strLen": 14,
+        "text": "african_women"
+      },
+      {
+        "off": 149563,
+        "strLen": 14,
+        "text": "anatolian_men"
+      },
+      {
+        "off": 149831,
+        "strLen": 16,
+        "text": "anatolian_women"
+      },
+      {
+        "off": 149965,
+        "strLen": 12,
+        "text": "apulian_men"
+      },
+      {
+        "off": 149991,
+        "strLen": 12,
+        "text": "arevaci_men"
+      },
+      {
+        "off": 150297,
+        "strLen": 14,
+        "text": "arevaci_women"
+      },
+      {
+        "off": 150365,
+        "strLen": 14,
+        "text": "arverni_women"
+      },
+      {
+        "off": 150389,
+        "strLen": 16,
+        "text": "baltoslavic_men"
+      },
+      {
+        "off": 150431,
+        "strLen": 18,
+        "text": "baltoslavic_women"
+      },
+      {
+        "off": 150463,
+        "strLen": 15,
+        "text": "blank_surnames"
+      },
+      {
+        "off": 150488,
+        "strLen": 11,
+        "text": "celtic_men"
+      },
+      {
+        "off": 150829,
+        "strLen": 13,
+        "text": "celtic_women"
+      },
+      {
+        "off": 150920,
+        "strLen": 13,
+        "text": "cilician_men"
+      },
+      {
+        "off": 150987,
+        "strLen": 15,
+        "text": "cilician_women"
+      },
+      {
+        "off": 151032,
+        "strLen": 13,
+        "text": "egyptian_men"
+      },
+      {
+        "off": 151227,
+        "strLen": 15,
+        "text": "egyptian_women"
+      },
+      {
+        "off": 151332,
+        "strLen": 10,
+        "text": "getae_men"
+      },
+      {
+        "off": 151516,
+        "strLen": 12,
+        "text": "getae_women"
+      },
+      {
+        "off": 151574,
+        "strLen": 10,
+        "text": "greek_men"
+      },
+      {
+        "off": 152922,
+        "strLen": 12,
+        "text": "greek_women"
+      },
+      {
+        "off": 154008,
+        "strLen": 13,
+        "text": "illyrian_men"
+      },
+      {
+        "off": 154343,
+        "strLen": 15,
+        "text": "illyrian_women"
+      },
+      {
+        "off": 154444,
+        "strLen": 11,
+        "text": "indian_men"
+      },
+      {
+        "off": 154889,
+        "strLen": 16,
+        "text": "indian_surnames"
+      },
+      {
+        "off": 154995,
+        "strLen": 13,
+        "text": "indian_women"
+      },
+      {
+        "off": 155186,
+        "strLen": 11,
+        "text": "ionian_men"
+      },
+      {
+        "off": 155251,
+        "strLen": 12,
+        "text": "iranian_men"
+      },
+      {
+        "off": 155369,
+        "strLen": 14,
+        "text": "iranian_women"
+      },
+      {
+        "off": 155425,
+        "strLen": 11,
+        "text": "italic_men"
+      },
+      {
+        "off": 155458,
+        "strLen": 16,
+        "text": "italic_surnames"
+      },
+      {
+        "off": 155488,
+        "strLen": 13,
+        "text": "italic_women"
+      },
+      {
+        "off": 155519,
+        "strLen": 12,
+        "text": "judaean_men"
+      },
+      {
+        "off": 155549,
+        "strLen": 14,
+        "text": "liburnian_men"
+      },
+      {
+        "off": 155781,
+        "strLen": 16,
+        "text": "liburnian_women"
+      },
+      {
+        "off": 155915,
+        "strLen": 11,
+        "text": "lycian_men"
+      },
+      {
+        "off": 156204,
+        "strLen": 13,
+        "text": "lycian_women"
+      },
+      {
+        "off": 156271,
+        "strLen": 15,
+        "text": "massylii_women"
+      },
+      {
+        "off": 156296,
+        "strLen": 17,
+        "text": "mesopotamian_men"
+      },
+      {
+        "off": 156339,
+        "strLen": 14,
+        "text": "nabataean_men"
+      },
+      {
+        "off": 156675,
+        "strLen": 16,
+        "text": "nabataean_women"
+      },
+      {
+        "off": 156737,
+        "strLen": 12,
+        "text": "parni_women"
+      },
+      {
+        "off": 156855,
+        "strLen": 15,
+        "text": "phoenician_men"
+      },
+      {
+        "off": 156884,
+        "strLen": 17,
+        "text": "phoenician_women"
+      },
+      {
+        "off": 156919,
+        "strLen": 13,
+        "text": "pontus_women"
+      },
+      {
+        "off": 156962,
+        "strLen": 10,
+        "text": "roman_men"
+      },
+      {
+        "off": 157054,
+        "strLen": 15,
+        "text": "roman_surnames"
+      },
+      {
+        "off": 158535,
+        "strLen": 12,
+        "text": "roman_women"
+      },
+      {
+        "off": 158909,
+        "strLen": 14,
+        "text": "s_arabian_men"
+      },
+      {
+        "off": 159137,
+        "strLen": 19,
+        "text": "s_arabian_surnames"
+      },
+      {
+        "off": 159374,
+        "strLen": 16,
+        "text": "s_arabian_women"
+      },
+      {
+        "off": 159552,
+        "strLen": 12,
+        "text": "siraces_men"
+      },
+      {
+        "off": 159702,
+        "strLen": 14,
+        "text": "siraces_women"
+      },
+      {
+        "off": 159774,
+        "strLen": 10,
+        "text": "slave_men"
+      },
+      {
+        "off": 159918,
+        "strLen": 12,
+        "text": "slave_women"
+      },
+      {
+        "off": 160000,
+        "strLen": 10,
+        "text": "suebi_men"
+      },
+      {
+        "off": 160416,
+        "strLen": 12,
+        "text": "suebi_women"
+      },
+      {
+        "off": 160558,
+        "strLen": 13,
+        "text": "thracian_men"
+      },
+      {
+        "off": 160965,
+        "strLen": 13,
+        "text": "venetian_men"
+      },
+      {
+        "off": 161196,
+        "strLen": 15,
+        "text": "venetian_women"
+      },
+      {
+        "off": 161269,
+        "strLen": 15,
+        "text": "aetolian_women"
+      },
+      {
+        "off": 162382,
+        "strLen": 13,
+        "text": "arcadian_men"
+      },
+      {
+        "off": 163761,
+        "strLen": 15,
+        "text": "arcadian_women"
+      },
+      {
+        "off": 164854,
+        "strLen": 12,
+        "text": "armenia_men"
+      },
+      {
+        "off": 165012,
+        "strLen": 14,
+        "text": "armenia_women"
+      },
+      {
+        "off": 165096,
+        "strLen": 12,
+        "text": "arverni_men"
+      },
+      {
+        "off": 165554,
+        "strLen": 13,
+        "text": "athenian_men"
+      },
+      {
+        "off": 166933,
+        "strLen": 15,
+        "text": "atropatene_men"
+      },
+      {
+        "off": 167110,
+        "strLen": 14,
+        "text": "bithynian_men"
+      },
+      {
+        "off": 168950,
+        "strLen": 13,
+        "text": "boeotian_men"
+      },
+      {
+        "off": 170341,
+        "strLen": 15,
+        "text": "boeotian_women"
+      },
+      {
+        "off": 171446,
+        "strLen": 14,
+        "text": "byzantium_men"
+      },
+      {
+        "off": 172822,
+        "strLen": 16,
+        "text": "cappadocian_men"
+      },
+      {
+        "off": 173008,
+        "strLen": 18,
+        "text": "cappadocian_women"
+      },
+      {
+        "off": 173080,
+        "strLen": 13,
+        "text": "carian_women"
+      },
+      {
+        "off": 173215,
+        "strLen": 13,
+        "text": "carthage_men"
+      },
+      {
+        "off": 173562,
+        "strLen": 15,
+        "text": "carthage_women"
+      },
+      {
+        "off": 173647,
+        "strLen": 16,
+        "text": "chersonesus_men"
+      },
+      {
+        "off": 175013,
+        "strLen": 10,
+        "text": "chios_men"
+      },
+      {
+        "off": 176369,
+        "strLen": 9,
+        "text": "cius_men"
+      },
+      {
+        "off": 177720,
+        "strLen": 12,
+        "text": "cyzicus_men"
+      },
+      {
+        "off": 179086,
+        "strLen": 14,
+        "text": "dalmatian_men"
+      },
+      {
+        "off": 179614,
+        "strLen": 16,
+        "text": "dalmatian_women"
+      },
+      {
+        "off": 179768,
+        "strLen": 14,
+        "text": "dardanian_men"
+      },
+      {
+        "off": 180276,
+        "strLen": 16,
+        "text": "dardanian_women"
+      },
+      {
+        "off": 180438,
+        "strLen": 11,
+        "text": "dorian_men"
+      },
+      {
+        "off": 181843,
+        "strLen": 13,
+        "text": "dorian_women"
+      },
+      {
+        "off": 182958,
+        "strLen": 14,
+        "text": "edetanian_men"
+      },
+      {
+        "off": 183274,
+        "strLen": 9,
+        "text": "elis_men"
+      },
+      {
+        "off": 184641,
+        "strLen": 13,
+        "text": "emporion_men"
+      },
+      {
+        "off": 186000,
+        "strLen": 14,
+        "text": "ethiopian_men"
+      },
+      {
+        "off": 186220,
+        "strLen": 14,
+        "text": "galatians_men"
+      },
+      {
+        "off": 186844,
+        "strLen": 16,
+        "text": "galatians_women"
+      },
+      {
+        "off": 187006,
+        "strLen": 11,
+        "text": "gortyn_men"
+      },
+      {
+        "off": 188359,
+        "strLen": 14,
+        "text": "heraclean_men"
+      },
+      {
+        "off": 189715,
+        "strLen": 12,
+        "text": "histria_men"
+      },
+      {
+        "off": 189781,
+        "strLen": 13,
+        "text": "ionian_women"
+      },
+      {
+        "off": 190928,
+        "strLen": 9,
+        "text": "issa_men"
+      },
+      {
+        "off": 192315,
+        "strLen": 11,
+        "text": "issa_women"
+      },
+      {
+        "off": 193424,
+        "strLen": 12,
+        "text": "knossos_men"
+      },
+      {
+        "off": 194802,
+        "strLen": 12,
+        "text": "kydonia_men"
+      },
+      {
+        "off": 196176,
+        "strLen": 15,
+        "text": "lusitanian_men"
+      },
+      {
+        "off": 196569,
+        "strLen": 17,
+        "text": "lusitanian_women"
+      },
+      {
+        "off": 196708,
+        "strLen": 11,
+        "text": "lyttos_men"
+      },
+      {
+        "off": 198069,
+        "strLen": 15,
+        "text": "macedonian_men"
+      },
+      {
+        "off": 199514,
+        "strLen": 17,
+        "text": "macedonian_women"
+      },
+      {
+        "off": 200633,
+        "strLen": 15,
+        "text": "massaliote_men"
+      },
+      {
+        "off": 202006,
+        "strLen": 13,
+        "text": "massylii_men"
+      },
+      {
+        "off": 202313,
+        "strLen": 12,
+        "text": "messene_men"
+      },
+      {
+        "off": 203683,
+        "strLen": 10,
+        "text": "olbia_men"
+      },
+      {
+        "off": 205051,
+        "strLen": 13,
+        "text": "paeonian_men"
+      },
+      {
+        "off": 205470,
+        "strLen": 16,
+        "text": "paphlagonia_men"
+      },
+      {
+        "off": 206836,
+        "strLen": 18,
+        "text": "paphlagonia_women"
+      },
+      {
+        "off": 207936,
+        "strLen": 10,
+        "text": "parni_men"
+      },
+      {
+        "off": 208136,
+        "strLen": 15,
+        "text": "pentapolis_men"
+      },
+      {
+        "off": 209525,
+        "strLen": 13,
+        "text": "pergamon_men"
+      },
+      {
+        "off": 210900,
+        "strLen": 15,
+        "text": "pergamon_women"
+      },
+      {
+        "off": 211997,
+        "strLen": 11,
+        "text": "pontus_men"
+      },
+      {
+        "off": 212122,
+        "strLen": 11,
+        "text": "priene_men"
+      },
+      {
+        "off": 213507,
+        "strLen": 12,
+        "text": "rhodian_men"
+      },
+      {
+        "off": 214885,
+        "strLen": 12,
+        "text": "sabaean_men"
+      },
+      {
+        "off": 215239,
+        "strLen": 14,
+        "text": "sabaean_women"
+      },
+      {
+        "off": 215423,
+        "strLen": 10,
+        "text": "selge_men"
+      },
+      {
+        "off": 216795,
+        "strLen": 12,
+        "text": "selge_women"
+      },
+      {
+        "off": 217889,
+        "strLen": 11,
+        "text": "sinope_men"
+      },
+      {
+        "off": 219250,
+        "strLen": 13,
+        "text": "sparta_women"
+      },
+      {
+        "off": 220393,
+        "strLen": 16,
+        "text": "syracusan_women"
+      },
+      {
+        "off": 221515,
+        "strLen": 17,
+        "text": "thessalian_women"
+      },
+      {
+        "off": 222610,
+        "strLen": 15,
+        "text": "thracian_women"
+      },
+      {
+        "off": 223939,
+        "strLen": 18,
+        "text": "trinovantes_women"
+      },
+      {
+        "off": 224087,
+        "strLen": 12,
+        "text": "achaean_men"
+      },
+      {
+        "off": 225533,
+        "strLen": 14,
+        "text": "akarnania_men"
+      },
+      {
+        "off": 226973,
+        "strLen": 12,
+        "text": "akragas_men"
+      },
+      {
+        "off": 228395,
+        "strLen": 14,
+        "text": "antigonid_men"
+      },
+      {
+        "off": 229883,
+        "strLen": 16,
+        "text": "antigonid_women"
+      },
+      {
+        "off": 231005,
+        "strLen": 11,
+        "text": "argive_men"
+      },
+      {
+        "off": 232418,
+        "strLen": 15,
+        "text": "athenian_women"
+      },
+      {
+        "off": 233599,
+        "strLen": 13,
+        "text": "bactrian_men"
+      },
+      {
+        "off": 235254,
+        "strLen": 16,
+        "text": "bithynian_women"
+      },
+      {
+        "off": 236628,
+        "strLen": 13,
+        "text": "bosporan_men"
+      },
+      {
+        "off": 238159,
+        "strLen": 15,
+        "text": "bosporan_women"
+      },
+      {
+        "off": 239288,
+        "strLen": 13,
+        "text": "cretan_women"
+      },
+      {
+        "off": 240407,
+        "strLen": 13,
+        "text": "cyrenean_men"
+      },
+      {
+        "off": 242070,
+        "strLen": 15,
+        "text": "cyrenean_women"
+      },
+      {
+        "off": 243211,
+        "strLen": 16,
+        "text": "daesitiates_men"
+      },
+      {
+        "off": 244061,
+        "strLen": 18,
+        "text": "daesitiates_women"
+      },
+      {
+        "off": 244285,
+        "strLen": 12,
+        "text": "epirote_men"
+      },
+      {
+        "off": 245747,
+        "strLen": 14,
+        "text": "epirote_women"
+      },
+      {
+        "off": 246883,
+        "strLen": 13,
+        "text": "nw_greek_men"
+      },
+      {
+        "off": 248298,
+        "strLen": 14,
+        "text": "ptolemaic_men"
+      },
+      {
+        "off": 250302,
+        "strLen": 16,
+        "text": "ptolemaic_women"
+      },
+      {
+        "off": 251504,
+        "strLen": 14,
+        "text": "scordisci_men"
+      },
+      {
+        "off": 252132,
+        "strLen": 13,
+        "text": "seleucid_men"
+      },
+      {
+        "off": 254155,
+        "strLen": 15,
+        "text": "seleucid_women"
+      },
+      {
+        "off": 255304,
+        "strLen": 11,
+        "text": "sparta_men"
+      },
+      {
+        "off": 256913,
+        "strLen": 14,
+        "text": "syracusan_men"
+      },
+      {
+        "off": 258457,
+        "strLen": 13,
+        "text": "aetolian_men"
+      }
+    ]
+  },
+  "save_1.2.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 178,
+    "records": [
+      {
+        "off": 23582,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 29410,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 35238,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 41066,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 46894,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 52722,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 60890,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 66718,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 71676,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 79844,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 83319,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 88277,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 96445,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 104613,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 109571,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 117739,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 122697,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 127655,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 135823,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 140781,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 144256,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 149235,
+        "strLen": 12,
+        "text": "african_men"
+      },
+      {
+        "off": 149421,
+        "strLen": 14,
+        "text": "african_women"
+      },
+      {
+        "off": 149537,
+        "strLen": 14,
+        "text": "anatolian_men"
+      },
+      {
+        "off": 149805,
+        "strLen": 16,
+        "text": "anatolian_women"
+      },
+      {
+        "off": 149939,
+        "strLen": 12,
+        "text": "apulian_men"
+      },
+      {
+        "off": 149965,
+        "strLen": 12,
+        "text": "arevaci_men"
+      },
+      {
+        "off": 150271,
+        "strLen": 14,
+        "text": "arevaci_women"
+      },
+      {
+        "off": 150339,
+        "strLen": 14,
+        "text": "arverni_women"
+      },
+      {
+        "off": 150363,
+        "strLen": 16,
+        "text": "baltoslavic_men"
+      },
+      {
+        "off": 150405,
+        "strLen": 18,
+        "text": "baltoslavic_women"
+      },
+      {
+        "off": 150437,
+        "strLen": 15,
+        "text": "blank_surnames"
+      },
+      {
+        "off": 150462,
+        "strLen": 11,
+        "text": "celtic_men"
+      },
+      {
+        "off": 150803,
+        "strLen": 13,
+        "text": "celtic_women"
+      },
+      {
+        "off": 150894,
+        "strLen": 13,
+        "text": "cilician_men"
+      },
+      {
+        "off": 150961,
+        "strLen": 15,
+        "text": "cilician_women"
+      },
+      {
+        "off": 151006,
+        "strLen": 13,
+        "text": "egyptian_men"
+      },
+      {
+        "off": 151201,
+        "strLen": 15,
+        "text": "egyptian_women"
+      },
+      {
+        "off": 151306,
+        "strLen": 10,
+        "text": "getae_men"
+      },
+      {
+        "off": 151490,
+        "strLen": 12,
+        "text": "getae_women"
+      },
+      {
+        "off": 151548,
+        "strLen": 10,
+        "text": "greek_men"
+      },
+      {
+        "off": 152896,
+        "strLen": 12,
+        "text": "greek_women"
+      },
+      {
+        "off": 153982,
+        "strLen": 13,
+        "text": "illyrian_men"
+      },
+      {
+        "off": 154317,
+        "strLen": 15,
+        "text": "illyrian_women"
+      },
+      {
+        "off": 154418,
+        "strLen": 11,
+        "text": "indian_men"
+      },
+      {
+        "off": 154863,
+        "strLen": 16,
+        "text": "indian_surnames"
+      },
+      {
+        "off": 154969,
+        "strLen": 13,
+        "text": "indian_women"
+      },
+      {
+        "off": 155160,
+        "strLen": 11,
+        "text": "ionian_men"
+      },
+      {
+        "off": 155225,
+        "strLen": 12,
+        "text": "iranian_men"
+      },
+      {
+        "off": 155343,
+        "strLen": 14,
+        "text": "iranian_women"
+      },
+      {
+        "off": 155399,
+        "strLen": 11,
+        "text": "italic_men"
+      },
+      {
+        "off": 155432,
+        "strLen": 16,
+        "text": "italic_surnames"
+      },
+      {
+        "off": 155462,
+        "strLen": 13,
+        "text": "italic_women"
+      },
+      {
+        "off": 155493,
+        "strLen": 12,
+        "text": "judaean_men"
+      },
+      {
+        "off": 155523,
+        "strLen": 14,
+        "text": "liburnian_men"
+      },
+      {
+        "off": 155755,
+        "strLen": 16,
+        "text": "liburnian_women"
+      },
+      {
+        "off": 155889,
+        "strLen": 11,
+        "text": "lycian_men"
+      },
+      {
+        "off": 156178,
+        "strLen": 13,
+        "text": "lycian_women"
+      },
+      {
+        "off": 156245,
+        "strLen": 15,
+        "text": "massylii_women"
+      },
+      {
+        "off": 156270,
+        "strLen": 17,
+        "text": "mesopotamian_men"
+      },
+      {
+        "off": 156313,
+        "strLen": 14,
+        "text": "nabataean_men"
+      },
+      {
+        "off": 156649,
+        "strLen": 16,
+        "text": "nabataean_women"
+      },
+      {
+        "off": 156711,
+        "strLen": 12,
+        "text": "parni_women"
+      },
+      {
+        "off": 156829,
+        "strLen": 15,
+        "text": "phoenician_men"
+      },
+      {
+        "off": 156858,
+        "strLen": 17,
+        "text": "phoenician_women"
+      },
+      {
+        "off": 156893,
+        "strLen": 13,
+        "text": "pontus_women"
+      },
+      {
+        "off": 156936,
+        "strLen": 10,
+        "text": "roman_men"
+      },
+      {
+        "off": 157028,
+        "strLen": 15,
+        "text": "roman_surnames"
+      },
+      {
+        "off": 158509,
+        "strLen": 12,
+        "text": "roman_women"
+      },
+      {
+        "off": 158883,
+        "strLen": 14,
+        "text": "s_arabian_men"
+      },
+      {
+        "off": 159111,
+        "strLen": 19,
+        "text": "s_arabian_surnames"
+      },
+      {
+        "off": 159348,
+        "strLen": 16,
+        "text": "s_arabian_women"
+      },
+      {
+        "off": 159526,
+        "strLen": 12,
+        "text": "siraces_men"
+      },
+      {
+        "off": 159676,
+        "strLen": 14,
+        "text": "siraces_women"
+      },
+      {
+        "off": 159748,
+        "strLen": 10,
+        "text": "slave_men"
+      },
+      {
+        "off": 159892,
+        "strLen": 12,
+        "text": "slave_women"
+      },
+      {
+        "off": 159974,
+        "strLen": 10,
+        "text": "suebi_men"
+      },
+      {
+        "off": 160390,
+        "strLen": 12,
+        "text": "suebi_women"
+      },
+      {
+        "off": 160532,
+        "strLen": 13,
+        "text": "thracian_men"
+      },
+      {
+        "off": 160939,
+        "strLen": 13,
+        "text": "venetian_men"
+      },
+      {
+        "off": 161170,
+        "strLen": 15,
+        "text": "venetian_women"
+      },
+      {
+        "off": 161243,
+        "strLen": 15,
+        "text": "aetolian_women"
+      },
+      {
+        "off": 162356,
+        "strLen": 13,
+        "text": "arcadian_men"
+      },
+      {
+        "off": 163735,
+        "strLen": 15,
+        "text": "arcadian_women"
+      },
+      {
+        "off": 164828,
+        "strLen": 12,
+        "text": "armenia_men"
+      },
+      {
+        "off": 164986,
+        "strLen": 14,
+        "text": "armenia_women"
+      },
+      {
+        "off": 165070,
+        "strLen": 12,
+        "text": "arverni_men"
+      },
+      {
+        "off": 165528,
+        "strLen": 13,
+        "text": "athenian_men"
+      },
+      {
+        "off": 166907,
+        "strLen": 15,
+        "text": "atropatene_men"
+      },
+      {
+        "off": 167084,
+        "strLen": 14,
+        "text": "bithynian_men"
+      },
+      {
+        "off": 168924,
+        "strLen": 13,
+        "text": "boeotian_men"
+      },
+      {
+        "off": 170315,
+        "strLen": 15,
+        "text": "boeotian_women"
+      },
+      {
+        "off": 171420,
+        "strLen": 14,
+        "text": "byzantium_men"
+      },
+      {
+        "off": 172796,
+        "strLen": 16,
+        "text": "cappadocian_men"
+      },
+      {
+        "off": 172982,
+        "strLen": 18,
+        "text": "cappadocian_women"
+      },
+      {
+        "off": 173054,
+        "strLen": 13,
+        "text": "carian_women"
+      },
+      {
+        "off": 173189,
+        "strLen": 13,
+        "text": "carthage_men"
+      },
+      {
+        "off": 173536,
+        "strLen": 15,
+        "text": "carthage_women"
+      },
+      {
+        "off": 173621,
+        "strLen": 16,
+        "text": "chersonesus_men"
+      },
+      {
+        "off": 174987,
+        "strLen": 10,
+        "text": "chios_men"
+      },
+      {
+        "off": 176343,
+        "strLen": 9,
+        "text": "cius_men"
+      },
+      {
+        "off": 177694,
+        "strLen": 12,
+        "text": "cyzicus_men"
+      },
+      {
+        "off": 179060,
+        "strLen": 14,
+        "text": "dalmatian_men"
+      },
+      {
+        "off": 179588,
+        "strLen": 16,
+        "text": "dalmatian_women"
+      },
+      {
+        "off": 179742,
+        "strLen": 14,
+        "text": "dardanian_men"
+      },
+      {
+        "off": 180250,
+        "strLen": 16,
+        "text": "dardanian_women"
+      },
+      {
+        "off": 180412,
+        "strLen": 11,
+        "text": "dorian_men"
+      },
+      {
+        "off": 181817,
+        "strLen": 13,
+        "text": "dorian_women"
+      },
+      {
+        "off": 182932,
+        "strLen": 14,
+        "text": "edetanian_men"
+      },
+      {
+        "off": 183248,
+        "strLen": 9,
+        "text": "elis_men"
+      },
+      {
+        "off": 184615,
+        "strLen": 13,
+        "text": "emporion_men"
+      },
+      {
+        "off": 185974,
+        "strLen": 14,
+        "text": "ethiopian_men"
+      },
+      {
+        "off": 186194,
+        "strLen": 14,
+        "text": "galatians_men"
+      },
+      {
+        "off": 186818,
+        "strLen": 16,
+        "text": "galatians_women"
+      },
+      {
+        "off": 186980,
+        "strLen": 11,
+        "text": "gortyn_men"
+      },
+      {
+        "off": 188333,
+        "strLen": 14,
+        "text": "heraclean_men"
+      },
+      {
+        "off": 189689,
+        "strLen": 12,
+        "text": "histria_men"
+      },
+      {
+        "off": 189755,
+        "strLen": 13,
+        "text": "ionian_women"
+      },
+      {
+        "off": 190902,
+        "strLen": 9,
+        "text": "issa_men"
+      },
+      {
+        "off": 192289,
+        "strLen": 11,
+        "text": "issa_women"
+      },
+      {
+        "off": 193398,
+        "strLen": 12,
+        "text": "knossos_men"
+      },
+      {
+        "off": 194776,
+        "strLen": 12,
+        "text": "kydonia_men"
+      },
+      {
+        "off": 196150,
+        "strLen": 15,
+        "text": "lusitanian_men"
+      },
+      {
+        "off": 196543,
+        "strLen": 17,
+        "text": "lusitanian_women"
+      },
+      {
+        "off": 196682,
+        "strLen": 11,
+        "text": "lyttos_men"
+      },
+      {
+        "off": 198043,
+        "strLen": 15,
+        "text": "macedonian_men"
+      },
+      {
+        "off": 199488,
+        "strLen": 17,
+        "text": "macedonian_women"
+      },
+      {
+        "off": 200607,
+        "strLen": 15,
+        "text": "massaliote_men"
+      },
+      {
+        "off": 201980,
+        "strLen": 13,
+        "text": "massylii_men"
+      },
+      {
+        "off": 202287,
+        "strLen": 12,
+        "text": "messene_men"
+      },
+      {
+        "off": 203657,
+        "strLen": 10,
+        "text": "olbia_men"
+      },
+      {
+        "off": 205025,
+        "strLen": 13,
+        "text": "paeonian_men"
+      },
+      {
+        "off": 205444,
+        "strLen": 16,
+        "text": "paphlagonia_men"
+      },
+      {
+        "off": 206810,
+        "strLen": 18,
+        "text": "paphlagonia_women"
+      },
+      {
+        "off": 207910,
+        "strLen": 10,
+        "text": "parni_men"
+      },
+      {
+        "off": 208110,
+        "strLen": 15,
+        "text": "pentapolis_men"
+      },
+      {
+        "off": 209499,
+        "strLen": 13,
+        "text": "pergamon_men"
+      },
+      {
+        "off": 210874,
+        "strLen": 15,
+        "text": "pergamon_women"
+      },
+      {
+        "off": 211971,
+        "strLen": 11,
+        "text": "pontus_men"
+      },
+      {
+        "off": 212096,
+        "strLen": 11,
+        "text": "priene_men"
+      },
+      {
+        "off": 213481,
+        "strLen": 12,
+        "text": "rhodian_men"
+      },
+      {
+        "off": 214859,
+        "strLen": 12,
+        "text": "sabaean_men"
+      },
+      {
+        "off": 215213,
+        "strLen": 14,
+        "text": "sabaean_women"
+      },
+      {
+        "off": 215397,
+        "strLen": 10,
+        "text": "selge_men"
+      },
+      {
+        "off": 216769,
+        "strLen": 12,
+        "text": "selge_women"
+      },
+      {
+        "off": 217863,
+        "strLen": 11,
+        "text": "sinope_men"
+      },
+      {
+        "off": 219224,
+        "strLen": 13,
+        "text": "sparta_women"
+      },
+      {
+        "off": 220367,
+        "strLen": 16,
+        "text": "syracusan_women"
+      },
+      {
+        "off": 221489,
+        "strLen": 17,
+        "text": "thessalian_women"
+      },
+      {
+        "off": 222584,
+        "strLen": 15,
+        "text": "thracian_women"
+      },
+      {
+        "off": 223913,
+        "strLen": 18,
+        "text": "trinovantes_women"
+      },
+      {
+        "off": 224061,
+        "strLen": 12,
+        "text": "achaean_men"
+      },
+      {
+        "off": 225507,
+        "strLen": 14,
+        "text": "akarnania_men"
+      },
+      {
+        "off": 226947,
+        "strLen": 12,
+        "text": "akragas_men"
+      },
+      {
+        "off": 228369,
+        "strLen": 14,
+        "text": "antigonid_men"
+      },
+      {
+        "off": 229857,
+        "strLen": 16,
+        "text": "antigonid_women"
+      },
+      {
+        "off": 230979,
+        "strLen": 11,
+        "text": "argive_men"
+      },
+      {
+        "off": 232392,
+        "strLen": 15,
+        "text": "athenian_women"
+      },
+      {
+        "off": 233573,
+        "strLen": 13,
+        "text": "bactrian_men"
+      },
+      {
+        "off": 235228,
+        "strLen": 16,
+        "text": "bithynian_women"
+      },
+      {
+        "off": 236602,
+        "strLen": 13,
+        "text": "bosporan_men"
+      },
+      {
+        "off": 238133,
+        "strLen": 15,
+        "text": "bosporan_women"
+      },
+      {
+        "off": 239262,
+        "strLen": 13,
+        "text": "cretan_women"
+      },
+      {
+        "off": 240381,
+        "strLen": 13,
+        "text": "cyrenean_men"
+      },
+      {
+        "off": 242044,
+        "strLen": 15,
+        "text": "cyrenean_women"
+      },
+      {
+        "off": 243185,
+        "strLen": 16,
+        "text": "daesitiates_men"
+      },
+      {
+        "off": 244035,
+        "strLen": 18,
+        "text": "daesitiates_women"
+      },
+      {
+        "off": 244259,
+        "strLen": 12,
+        "text": "epirote_men"
+      },
+      {
+        "off": 245721,
+        "strLen": 14,
+        "text": "epirote_women"
+      },
+      {
+        "off": 246857,
+        "strLen": 13,
+        "text": "nw_greek_men"
+      },
+      {
+        "off": 248272,
+        "strLen": 14,
+        "text": "ptolemaic_men"
+      },
+      {
+        "off": 250276,
+        "strLen": 16,
+        "text": "ptolemaic_women"
+      },
+      {
+        "off": 251478,
+        "strLen": 14,
+        "text": "scordisci_men"
+      },
+      {
+        "off": 252106,
+        "strLen": 13,
+        "text": "seleucid_men"
+      },
+      {
+        "off": 254129,
+        "strLen": 15,
+        "text": "seleucid_women"
+      },
+      {
+        "off": 255278,
+        "strLen": 11,
+        "text": "sparta_men"
+      },
+      {
+        "off": 256887,
+        "strLen": 14,
+        "text": "syracusan_men"
+      },
+      {
+        "off": 258431,
+        "strLen": 13,
+        "text": "aetolian_men"
+      }
+    ]
+  },
+  "ror_t1e.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 178,
+    "records": [
+      {
+        "off": 23630,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 29458,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 35286,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 41114,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 46942,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 52770,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 60938,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 66766,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 71724,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 79892,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 83367,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 88325,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 96493,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 104661,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 109619,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 117787,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 122745,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 127703,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 135871,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 140829,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 144304,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 149283,
+        "strLen": 12,
+        "text": "african_men"
+      },
+      {
+        "off": 149469,
+        "strLen": 14,
+        "text": "african_women"
+      },
+      {
+        "off": 149585,
+        "strLen": 14,
+        "text": "anatolian_men"
+      },
+      {
+        "off": 149853,
+        "strLen": 16,
+        "text": "anatolian_women"
+      },
+      {
+        "off": 149987,
+        "strLen": 12,
+        "text": "apulian_men"
+      },
+      {
+        "off": 150013,
+        "strLen": 12,
+        "text": "arevaci_men"
+      },
+      {
+        "off": 150319,
+        "strLen": 14,
+        "text": "arevaci_women"
+      },
+      {
+        "off": 150387,
+        "strLen": 14,
+        "text": "arverni_women"
+      },
+      {
+        "off": 150411,
+        "strLen": 16,
+        "text": "baltoslavic_men"
+      },
+      {
+        "off": 150453,
+        "strLen": 18,
+        "text": "baltoslavic_women"
+      },
+      {
+        "off": 150485,
+        "strLen": 15,
+        "text": "blank_surnames"
+      },
+      {
+        "off": 150510,
+        "strLen": 11,
+        "text": "celtic_men"
+      },
+      {
+        "off": 150851,
+        "strLen": 13,
+        "text": "celtic_women"
+      },
+      {
+        "off": 150942,
+        "strLen": 13,
+        "text": "cilician_men"
+      },
+      {
+        "off": 151009,
+        "strLen": 15,
+        "text": "cilician_women"
+      },
+      {
+        "off": 151054,
+        "strLen": 13,
+        "text": "egyptian_men"
+      },
+      {
+        "off": 151249,
+        "strLen": 15,
+        "text": "egyptian_women"
+      },
+      {
+        "off": 151354,
+        "strLen": 10,
+        "text": "getae_men"
+      },
+      {
+        "off": 151538,
+        "strLen": 12,
+        "text": "getae_women"
+      },
+      {
+        "off": 151596,
+        "strLen": 10,
+        "text": "greek_men"
+      },
+      {
+        "off": 152944,
+        "strLen": 12,
+        "text": "greek_women"
+      },
+      {
+        "off": 154030,
+        "strLen": 13,
+        "text": "illyrian_men"
+      },
+      {
+        "off": 154365,
+        "strLen": 15,
+        "text": "illyrian_women"
+      },
+      {
+        "off": 154466,
+        "strLen": 11,
+        "text": "indian_men"
+      },
+      {
+        "off": 154911,
+        "strLen": 16,
+        "text": "indian_surnames"
+      },
+      {
+        "off": 155017,
+        "strLen": 13,
+        "text": "indian_women"
+      },
+      {
+        "off": 155208,
+        "strLen": 11,
+        "text": "ionian_men"
+      },
+      {
+        "off": 155273,
+        "strLen": 12,
+        "text": "iranian_men"
+      },
+      {
+        "off": 155391,
+        "strLen": 14,
+        "text": "iranian_women"
+      },
+      {
+        "off": 155447,
+        "strLen": 11,
+        "text": "italic_men"
+      },
+      {
+        "off": 155480,
+        "strLen": 16,
+        "text": "italic_surnames"
+      },
+      {
+        "off": 155510,
+        "strLen": 13,
+        "text": "italic_women"
+      },
+      {
+        "off": 155541,
+        "strLen": 12,
+        "text": "judaean_men"
+      },
+      {
+        "off": 155571,
+        "strLen": 14,
+        "text": "liburnian_men"
+      },
+      {
+        "off": 155803,
+        "strLen": 16,
+        "text": "liburnian_women"
+      },
+      {
+        "off": 155937,
+        "strLen": 11,
+        "text": "lycian_men"
+      },
+      {
+        "off": 156226,
+        "strLen": 13,
+        "text": "lycian_women"
+      },
+      {
+        "off": 156293,
+        "strLen": 15,
+        "text": "massylii_women"
+      },
+      {
+        "off": 156318,
+        "strLen": 17,
+        "text": "mesopotamian_men"
+      },
+      {
+        "off": 156361,
+        "strLen": 14,
+        "text": "nabataean_men"
+      },
+      {
+        "off": 156697,
+        "strLen": 16,
+        "text": "nabataean_women"
+      },
+      {
+        "off": 156759,
+        "strLen": 12,
+        "text": "parni_women"
+      },
+      {
+        "off": 156877,
+        "strLen": 15,
+        "text": "phoenician_men"
+      },
+      {
+        "off": 156906,
+        "strLen": 17,
+        "text": "phoenician_women"
+      },
+      {
+        "off": 156941,
+        "strLen": 13,
+        "text": "pontus_women"
+      },
+      {
+        "off": 156984,
+        "strLen": 10,
+        "text": "roman_men"
+      },
+      {
+        "off": 157076,
+        "strLen": 15,
+        "text": "roman_surnames"
+      },
+      {
+        "off": 158557,
+        "strLen": 12,
+        "text": "roman_women"
+      },
+      {
+        "off": 158931,
+        "strLen": 14,
+        "text": "s_arabian_men"
+      },
+      {
+        "off": 159159,
+        "strLen": 19,
+        "text": "s_arabian_surnames"
+      },
+      {
+        "off": 159396,
+        "strLen": 16,
+        "text": "s_arabian_women"
+      },
+      {
+        "off": 159574,
+        "strLen": 12,
+        "text": "siraces_men"
+      },
+      {
+        "off": 159724,
+        "strLen": 14,
+        "text": "siraces_women"
+      },
+      {
+        "off": 159796,
+        "strLen": 10,
+        "text": "slave_men"
+      },
+      {
+        "off": 159940,
+        "strLen": 12,
+        "text": "slave_women"
+      },
+      {
+        "off": 160022,
+        "strLen": 10,
+        "text": "suebi_men"
+      },
+      {
+        "off": 160438,
+        "strLen": 12,
+        "text": "suebi_women"
+      },
+      {
+        "off": 160580,
+        "strLen": 13,
+        "text": "thracian_men"
+      },
+      {
+        "off": 160987,
+        "strLen": 13,
+        "text": "venetian_men"
+      },
+      {
+        "off": 161218,
+        "strLen": 15,
+        "text": "venetian_women"
+      },
+      {
+        "off": 161291,
+        "strLen": 15,
+        "text": "aetolian_women"
+      },
+      {
+        "off": 162404,
+        "strLen": 13,
+        "text": "arcadian_men"
+      },
+      {
+        "off": 163783,
+        "strLen": 15,
+        "text": "arcadian_women"
+      },
+      {
+        "off": 164876,
+        "strLen": 12,
+        "text": "armenia_men"
+      },
+      {
+        "off": 165034,
+        "strLen": 14,
+        "text": "armenia_women"
+      },
+      {
+        "off": 165118,
+        "strLen": 12,
+        "text": "arverni_men"
+      },
+      {
+        "off": 165576,
+        "strLen": 13,
+        "text": "athenian_men"
+      },
+      {
+        "off": 166955,
+        "strLen": 15,
+        "text": "atropatene_men"
+      },
+      {
+        "off": 167132,
+        "strLen": 14,
+        "text": "bithynian_men"
+      },
+      {
+        "off": 168972,
+        "strLen": 13,
+        "text": "boeotian_men"
+      },
+      {
+        "off": 170363,
+        "strLen": 15,
+        "text": "boeotian_women"
+      },
+      {
+        "off": 171468,
+        "strLen": 14,
+        "text": "byzantium_men"
+      },
+      {
+        "off": 172844,
+        "strLen": 16,
+        "text": "cappadocian_men"
+      },
+      {
+        "off": 173030,
+        "strLen": 18,
+        "text": "cappadocian_women"
+      },
+      {
+        "off": 173102,
+        "strLen": 13,
+        "text": "carian_women"
+      },
+      {
+        "off": 173237,
+        "strLen": 13,
+        "text": "carthage_men"
+      },
+      {
+        "off": 173584,
+        "strLen": 15,
+        "text": "carthage_women"
+      },
+      {
+        "off": 173669,
+        "strLen": 16,
+        "text": "chersonesus_men"
+      },
+      {
+        "off": 175035,
+        "strLen": 10,
+        "text": "chios_men"
+      },
+      {
+        "off": 176391,
+        "strLen": 9,
+        "text": "cius_men"
+      },
+      {
+        "off": 177742,
+        "strLen": 12,
+        "text": "cyzicus_men"
+      },
+      {
+        "off": 179108,
+        "strLen": 14,
+        "text": "dalmatian_men"
+      },
+      {
+        "off": 179636,
+        "strLen": 16,
+        "text": "dalmatian_women"
+      },
+      {
+        "off": 179790,
+        "strLen": 14,
+        "text": "dardanian_men"
+      },
+      {
+        "off": 180298,
+        "strLen": 16,
+        "text": "dardanian_women"
+      },
+      {
+        "off": 180460,
+        "strLen": 11,
+        "text": "dorian_men"
+      },
+      {
+        "off": 181865,
+        "strLen": 13,
+        "text": "dorian_women"
+      },
+      {
+        "off": 182980,
+        "strLen": 14,
+        "text": "edetanian_men"
+      },
+      {
+        "off": 183296,
+        "strLen": 9,
+        "text": "elis_men"
+      },
+      {
+        "off": 184663,
+        "strLen": 13,
+        "text": "emporion_men"
+      },
+      {
+        "off": 186022,
+        "strLen": 14,
+        "text": "ethiopian_men"
+      },
+      {
+        "off": 186242,
+        "strLen": 14,
+        "text": "galatians_men"
+      },
+      {
+        "off": 186866,
+        "strLen": 16,
+        "text": "galatians_women"
+      },
+      {
+        "off": 187028,
+        "strLen": 11,
+        "text": "gortyn_men"
+      },
+      {
+        "off": 188381,
+        "strLen": 14,
+        "text": "heraclean_men"
+      },
+      {
+        "off": 189737,
+        "strLen": 12,
+        "text": "histria_men"
+      },
+      {
+        "off": 189803,
+        "strLen": 13,
+        "text": "ionian_women"
+      },
+      {
+        "off": 190950,
+        "strLen": 9,
+        "text": "issa_men"
+      },
+      {
+        "off": 192337,
+        "strLen": 11,
+        "text": "issa_women"
+      },
+      {
+        "off": 193446,
+        "strLen": 12,
+        "text": "knossos_men"
+      },
+      {
+        "off": 194824,
+        "strLen": 12,
+        "text": "kydonia_men"
+      },
+      {
+        "off": 196198,
+        "strLen": 15,
+        "text": "lusitanian_men"
+      },
+      {
+        "off": 196591,
+        "strLen": 17,
+        "text": "lusitanian_women"
+      },
+      {
+        "off": 196730,
+        "strLen": 11,
+        "text": "lyttos_men"
+      },
+      {
+        "off": 198091,
+        "strLen": 15,
+        "text": "macedonian_men"
+      },
+      {
+        "off": 199536,
+        "strLen": 17,
+        "text": "macedonian_women"
+      },
+      {
+        "off": 200655,
+        "strLen": 15,
+        "text": "massaliote_men"
+      },
+      {
+        "off": 202028,
+        "strLen": 13,
+        "text": "massylii_men"
+      },
+      {
+        "off": 202335,
+        "strLen": 12,
+        "text": "messene_men"
+      },
+      {
+        "off": 203705,
+        "strLen": 10,
+        "text": "olbia_men"
+      },
+      {
+        "off": 205073,
+        "strLen": 13,
+        "text": "paeonian_men"
+      },
+      {
+        "off": 205492,
+        "strLen": 16,
+        "text": "paphlagonia_men"
+      },
+      {
+        "off": 206858,
+        "strLen": 18,
+        "text": "paphlagonia_women"
+      },
+      {
+        "off": 207958,
+        "strLen": 10,
+        "text": "parni_men"
+      },
+      {
+        "off": 208158,
+        "strLen": 15,
+        "text": "pentapolis_men"
+      },
+      {
+        "off": 209547,
+        "strLen": 13,
+        "text": "pergamon_men"
+      },
+      {
+        "off": 210922,
+        "strLen": 15,
+        "text": "pergamon_women"
+      },
+      {
+        "off": 212019,
+        "strLen": 11,
+        "text": "pontus_men"
+      },
+      {
+        "off": 212144,
+        "strLen": 11,
+        "text": "priene_men"
+      },
+      {
+        "off": 213529,
+        "strLen": 12,
+        "text": "rhodian_men"
+      },
+      {
+        "off": 214907,
+        "strLen": 12,
+        "text": "sabaean_men"
+      },
+      {
+        "off": 215261,
+        "strLen": 14,
+        "text": "sabaean_women"
+      },
+      {
+        "off": 215445,
+        "strLen": 10,
+        "text": "selge_men"
+      },
+      {
+        "off": 216817,
+        "strLen": 12,
+        "text": "selge_women"
+      },
+      {
+        "off": 217911,
+        "strLen": 11,
+        "text": "sinope_men"
+      },
+      {
+        "off": 219272,
+        "strLen": 13,
+        "text": "sparta_women"
+      },
+      {
+        "off": 220415,
+        "strLen": 16,
+        "text": "syracusan_women"
+      },
+      {
+        "off": 221537,
+        "strLen": 17,
+        "text": "thessalian_women"
+      },
+      {
+        "off": 222632,
+        "strLen": 15,
+        "text": "thracian_women"
+      },
+      {
+        "off": 223961,
+        "strLen": 18,
+        "text": "trinovantes_women"
+      },
+      {
+        "off": 224109,
+        "strLen": 12,
+        "text": "achaean_men"
+      },
+      {
+        "off": 225555,
+        "strLen": 14,
+        "text": "akarnania_men"
+      },
+      {
+        "off": 226995,
+        "strLen": 12,
+        "text": "akragas_men"
+      },
+      {
+        "off": 228417,
+        "strLen": 14,
+        "text": "antigonid_men"
+      },
+      {
+        "off": 229905,
+        "strLen": 16,
+        "text": "antigonid_women"
+      },
+      {
+        "off": 231027,
+        "strLen": 11,
+        "text": "argive_men"
+      },
+      {
+        "off": 232440,
+        "strLen": 15,
+        "text": "athenian_women"
+      },
+      {
+        "off": 233621,
+        "strLen": 13,
+        "text": "bactrian_men"
+      },
+      {
+        "off": 235276,
+        "strLen": 16,
+        "text": "bithynian_women"
+      },
+      {
+        "off": 236650,
+        "strLen": 13,
+        "text": "bosporan_men"
+      },
+      {
+        "off": 238181,
+        "strLen": 15,
+        "text": "bosporan_women"
+      },
+      {
+        "off": 239310,
+        "strLen": 13,
+        "text": "cretan_women"
+      },
+      {
+        "off": 240429,
+        "strLen": 13,
+        "text": "cyrenean_men"
+      },
+      {
+        "off": 242092,
+        "strLen": 15,
+        "text": "cyrenean_women"
+      },
+      {
+        "off": 243233,
+        "strLen": 16,
+        "text": "daesitiates_men"
+      },
+      {
+        "off": 244083,
+        "strLen": 18,
+        "text": "daesitiates_women"
+      },
+      {
+        "off": 244307,
+        "strLen": 12,
+        "text": "epirote_men"
+      },
+      {
+        "off": 245769,
+        "strLen": 14,
+        "text": "epirote_women"
+      },
+      {
+        "off": 246905,
+        "strLen": 13,
+        "text": "nw_greek_men"
+      },
+      {
+        "off": 248320,
+        "strLen": 14,
+        "text": "ptolemaic_men"
+      },
+      {
+        "off": 250324,
+        "strLen": 16,
+        "text": "ptolemaic_women"
+      },
+      {
+        "off": 251526,
+        "strLen": 14,
+        "text": "scordisci_men"
+      },
+      {
+        "off": 252154,
+        "strLen": 13,
+        "text": "seleucid_men"
+      },
+      {
+        "off": 254177,
+        "strLen": 15,
+        "text": "seleucid_women"
+      },
+      {
+        "off": 255326,
+        "strLen": 11,
+        "text": "sparta_men"
+      },
+      {
+        "off": 256935,
+        "strLen": 14,
+        "text": "syracusan_men"
+      },
+      {
+        "off": 258479,
+        "strLen": 13,
+        "text": "aetolian_men"
+      }
+    ]
+  },
+  "ror_t2s.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 162,
+    "records": [
+      {
+        "off": 27290,
+        "strLen": 6,
+        "text": "roman"
+      },
+      {
+        "off": 51250,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 57078,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 62906,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 68734,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 74562,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 80390,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 88558,
+        "strLen": 10,
+        "text": "barbarian"
+      },
+      {
+        "off": 94386,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 99344,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 107512,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 110987,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 115945,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 124113,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 132281,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 137239,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 145407,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 150365,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 155323,
+        "strLen": 6,
+        "text": "greek"
+      },
+      {
+        "off": 163491,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 168449,
+        "strLen": 9,
+        "text": "egyptian"
+      },
+      {
+        "off": 171924,
+        "strLen": 8,
+        "text": "eastern"
+      },
+      {
+        "off": 176903,
+        "strLen": 12,
+        "text": "african_men"
+      },
+      {
+        "off": 177089,
+        "strLen": 14,
+        "text": "african_women"
+      },
+      {
+        "off": 177205,
+        "strLen": 14,
+        "text": "anatolian_men"
+      },
+      {
+        "off": 177473,
+        "strLen": 16,
+        "text": "anatolian_women"
+      },
+      {
+        "off": 177607,
+        "strLen": 12,
+        "text": "apulian_men"
+      },
+      {
+        "off": 177633,
+        "strLen": 12,
+        "text": "arevaci_men"
+      },
+      {
+        "off": 177939,
+        "strLen": 14,
+        "text": "arevaci_women"
+      },
+      {
+        "off": 178007,
+        "strLen": 14,
+        "text": "arverni_women"
+      },
+      {
+        "off": 178031,
+        "strLen": 16,
+        "text": "baltoslavic_men"
+      },
+      {
+        "off": 178073,
+        "strLen": 18,
+        "text": "baltoslavic_women"
+      },
+      {
+        "off": 178105,
+        "strLen": 15,
+        "text": "blank_surnames"
+      },
+      {
+        "off": 178130,
+        "strLen": 11,
+        "text": "celtic_men"
+      },
+      {
+        "off": 178471,
+        "strLen": 13,
+        "text": "celtic_women"
+      },
+      {
+        "off": 178562,
+        "strLen": 13,
+        "text": "cilician_men"
+      },
+      {
+        "off": 178629,
+        "strLen": 15,
+        "text": "cilician_women"
+      },
+      {
+        "off": 178674,
+        "strLen": 13,
+        "text": "egyptian_men"
+      },
+      {
+        "off": 178869,
+        "strLen": 15,
+        "text": "egyptian_women"
+      },
+      {
+        "off": 178974,
+        "strLen": 10,
+        "text": "getae_men"
+      },
+      {
+        "off": 179158,
+        "strLen": 12,
+        "text": "getae_women"
+      },
+      {
+        "off": 179216,
+        "strLen": 10,
+        "text": "greek_men"
+      },
+      {
+        "off": 180564,
+        "strLen": 12,
+        "text": "greek_women"
+      },
+      {
+        "off": 181650,
+        "strLen": 13,
+        "text": "illyrian_men"
+      },
+      {
+        "off": 181985,
+        "strLen": 15,
+        "text": "illyrian_women"
+      },
+      {
+        "off": 182086,
+        "strLen": 11,
+        "text": "indian_men"
+      },
+      {
+        "off": 182531,
+        "strLen": 16,
+        "text": "indian_surnames"
+      },
+      {
+        "off": 182637,
+        "strLen": 13,
+        "text": "indian_women"
+      },
+      {
+        "off": 182828,
+        "strLen": 11,
+        "text": "ionian_men"
+      },
+      {
+        "off": 182893,
+        "strLen": 12,
+        "text": "iranian_men"
+      },
+      {
+        "off": 183011,
+        "strLen": 14,
+        "text": "iranian_women"
+      },
+      {
+        "off": 183067,
+        "strLen": 11,
+        "text": "italic_men"
+      },
+      {
+        "off": 183100,
+        "strLen": 16,
+        "text": "italic_surnames"
+      },
+      {
+        "off": 183130,
+        "strLen": 13,
+        "text": "italic_women"
+      },
+      {
+        "off": 183161,
+        "strLen": 12,
+        "text": "judaean_men"
+      },
+      {
+        "off": 183191,
+        "strLen": 14,
+        "text": "liburnian_men"
+      },
+      {
+        "off": 183423,
+        "strLen": 16,
+        "text": "liburnian_women"
+      },
+      {
+        "off": 183557,
+        "strLen": 11,
+        "text": "lycian_men"
+      },
+      {
+        "off": 183846,
+        "strLen": 13,
+        "text": "lycian_women"
+      },
+      {
+        "off": 183913,
+        "strLen": 15,
+        "text": "massylii_women"
+      },
+      {
+        "off": 183938,
+        "strLen": 17,
+        "text": "mesopotamian_men"
+      },
+      {
+        "off": 183981,
+        "strLen": 14,
+        "text": "nabataean_men"
+      },
+      {
+        "off": 184317,
+        "strLen": 16,
+        "text": "nabataean_women"
+      },
+      {
+        "off": 184379,
+        "strLen": 12,
+        "text": "parni_women"
+      },
+      {
+        "off": 184497,
+        "strLen": 15,
+        "text": "phoenician_men"
+      },
+      {
+        "off": 184526,
+        "strLen": 17,
+        "text": "phoenician_women"
+      },
+      {
+        "off": 184561,
+        "strLen": 13,
+        "text": "pontus_women"
+      },
+      {
+        "off": 184604,
+        "strLen": 10,
+        "text": "roman_men"
+      },
+      {
+        "off": 184696,
+        "strLen": 15,
+        "text": "roman_surnames"
+      },
+      {
+        "off": 186177,
+        "strLen": 12,
+        "text": "roman_women"
+      },
+      {
+        "off": 186551,
+        "strLen": 14,
+        "text": "s_arabian_men"
+      },
+      {
+        "off": 186779,
+        "strLen": 19,
+        "text": "s_arabian_surnames"
+      },
+      {
+        "off": 187016,
+        "strLen": 16,
+        "text": "s_arabian_women"
+      },
+      {
+        "off": 187194,
+        "strLen": 12,
+        "text": "siraces_men"
+      },
+      {
+        "off": 187344,
+        "strLen": 14,
+        "text": "siraces_women"
+      },
+      {
+        "off": 187416,
+        "strLen": 10,
+        "text": "slave_men"
+      },
+      {
+        "off": 187560,
+        "strLen": 12,
+        "text": "slave_women"
+      },
+      {
+        "off": 187642,
+        "strLen": 10,
+        "text": "suebi_men"
+      },
+      {
+        "off": 188058,
+        "strLen": 12,
+        "text": "suebi_women"
+      },
+      {
+        "off": 188200,
+        "strLen": 13,
+        "text": "thracian_men"
+      },
+      {
+        "off": 188607,
+        "strLen": 13,
+        "text": "venetian_men"
+      },
+      {
+        "off": 188838,
+        "strLen": 15,
+        "text": "venetian_women"
+      },
+      {
+        "off": 188911,
+        "strLen": 15,
+        "text": "aetolian_women"
+      },
+      {
+        "off": 190024,
+        "strLen": 13,
+        "text": "arcadian_men"
+      },
+      {
+        "off": 191403,
+        "strLen": 15,
+        "text": "arcadian_women"
+      },
+      {
+        "off": 192496,
+        "strLen": 12,
+        "text": "armenia_men"
+      },
+      {
+        "off": 192654,
+        "strLen": 14,
+        "text": "armenia_women"
+      },
+      {
+        "off": 192738,
+        "strLen": 12,
+        "text": "arverni_men"
+      },
+      {
+        "off": 193196,
+        "strLen": 13,
+        "text": "athenian_men"
+      },
+      {
+        "off": 194575,
+        "strLen": 15,
+        "text": "atropatene_men"
+      },
+      {
+        "off": 194752,
+        "strLen": 14,
+        "text": "bithynian_men"
+      },
+      {
+        "off": 196592,
+        "strLen": 13,
+        "text": "boeotian_men"
+      },
+      {
+        "off": 197983,
+        "strLen": 15,
+        "text": "boeotian_women"
+      },
+      {
+        "off": 199088,
+        "strLen": 14,
+        "text": "byzantium_men"
+      },
+      {
+        "off": 200464,
+        "strLen": 16,
+        "text": "cappadocian_men"
+      },
+      {
+        "off": 200650,
+        "strLen": 18,
+        "text": "cappadocian_women"
+      },
+      {
+        "off": 200722,
+        "strLen": 13,
+        "text": "carian_women"
+      },
+      {
+        "off": 200857,
+        "strLen": 13,
+        "text": "carthage_men"
+      },
+      {
+        "off": 201204,
+        "strLen": 15,
+        "text": "carthage_women"
+      },
+      {
+        "off": 201289,
+        "strLen": 16,
+        "text": "chersonesus_men"
+      },
+      {
+        "off": 202655,
+        "strLen": 10,
+        "text": "chios_men"
+      },
+      {
+        "off": 204011,
+        "strLen": 9,
+        "text": "cius_men"
+      },
+      {
+        "off": 205362,
+        "strLen": 12,
+        "text": "cyzicus_men"
+      },
+      {
+        "off": 206728,
+        "strLen": 14,
+        "text": "dalmatian_men"
+      },
+      {
+        "off": 207256,
+        "strLen": 16,
+        "text": "dalmatian_women"
+      },
+      {
+        "off": 207410,
+        "strLen": 14,
+        "text": "dardanian_men"
+      },
+      {
+        "off": 207918,
+        "strLen": 16,
+        "text": "dardanian_women"
+      },
+      {
+        "off": 208080,
+        "strLen": 11,
+        "text": "dorian_men"
+      },
+      {
+        "off": 209485,
+        "strLen": 13,
+        "text": "dorian_women"
+      },
+      {
+        "off": 210600,
+        "strLen": 14,
+        "text": "edetanian_men"
+      },
+      {
+        "off": 210916,
+        "strLen": 9,
+        "text": "elis_men"
+      },
+      {
+        "off": 212283,
+        "strLen": 13,
+        "text": "emporion_men"
+      },
+      {
+        "off": 213642,
+        "strLen": 14,
+        "text": "ethiopian_men"
+      },
+      {
+        "off": 213862,
+        "strLen": 14,
+        "text": "galatians_men"
+      },
+      {
+        "off": 214486,
+        "strLen": 16,
+        "text": "galatians_women"
+      },
+      {
+        "off": 214648,
+        "strLen": 11,
+        "text": "gortyn_men"
+      },
+      {
+        "off": 216001,
+        "strLen": 14,
+        "text": "heraclean_men"
+      },
+      {
+        "off": 217357,
+        "strLen": 12,
+        "text": "histria_men"
+      },
+      {
+        "off": 217423,
+        "strLen": 13,
+        "text": "ionian_women"
+      },
+      {
+        "off": 218570,
+        "strLen": 9,
+        "text": "issa_men"
+      },
+      {
+        "off": 219957,
+        "strLen": 11,
+        "text": "issa_women"
+      },
+      {
+        "off": 221066,
+        "strLen": 12,
+        "text": "knossos_men"
+      },
+      {
+        "off": 222444,
+        "strLen": 12,
+        "text": "kydonia_men"
+      },
+      {
+        "off": 223818,
+        "strLen": 15,
+        "text": "lusitanian_men"
+      },
+      {
+        "off": 224211,
+        "strLen": 17,
+        "text": "lusitanian_women"
+      },
+      {
+        "off": 224350,
+        "strLen": 11,
+        "text": "lyttos_men"
+      },
+      {
+        "off": 225711,
+        "strLen": 15,
+        "text": "macedonian_men"
+      },
+      {
+        "off": 227156,
+        "strLen": 17,
+        "text": "macedonian_women"
+      },
+      {
+        "off": 228275,
+        "strLen": 15,
+        "text": "massaliote_men"
+      },
+      {
+        "off": 229648,
+        "strLen": 13,
+        "text": "massylii_men"
+      },
+      {
+        "off": 229955,
+        "strLen": 12,
+        "text": "messene_men"
+      },
+      {
+        "off": 231325,
+        "strLen": 10,
+        "text": "olbia_men"
+      },
+      {
+        "off": 232693,
+        "strLen": 13,
+        "text": "paeonian_men"
+      },
+      {
+        "off": 233112,
+        "strLen": 16,
+        "text": "paphlagonia_men"
+      },
+      {
+        "off": 234478,
+        "strLen": 18,
+        "text": "paphlagonia_women"
+      },
+      {
+        "off": 235578,
+        "strLen": 10,
+        "text": "parni_men"
+      },
+      {
+        "off": 235778,
+        "strLen": 15,
+        "text": "pentapolis_men"
+      },
+      {
+        "off": 237167,
+        "strLen": 13,
+        "text": "pergamon_men"
+      },
+      {
+        "off": 238542,
+        "strLen": 15,
+        "text": "pergamon_women"
+      },
+      {
+        "off": 239639,
+        "strLen": 11,
+        "text": "pontus_men"
+      },
+      {
+        "off": 239764,
+        "strLen": 11,
+        "text": "priene_men"
+      },
+      {
+        "off": 241149,
+        "strLen": 12,
+        "text": "rhodian_men"
+      },
+      {
+        "off": 242527,
+        "strLen": 12,
+        "text": "sabaean_men"
+      },
+      {
+        "off": 242881,
+        "strLen": 14,
+        "text": "sabaean_women"
+      },
+      {
+        "off": 243065,
+        "strLen": 10,
+        "text": "selge_men"
+      },
+      {
+        "off": 244437,
+        "strLen": 12,
+        "text": "selge_women"
+      },
+      {
+        "off": 245531,
+        "strLen": 11,
+        "text": "sinope_men"
+      },
+      {
+        "off": 246892,
+        "strLen": 13,
+        "text": "sparta_women"
+      },
+      {
+        "off": 248035,
+        "strLen": 16,
+        "text": "syracusan_women"
+      },
+      {
+        "off": 249157,
+        "strLen": 17,
+        "text": "thessalian_women"
+      },
+      {
+        "off": 250252,
+        "strLen": 15,
+        "text": "thracian_women"
+      },
+      {
+        "off": 251581,
+        "strLen": 18,
+        "text": "trinovantes_women"
+      },
+      {
+        "off": 251729,
+        "strLen": 12,
+        "text": "achaean_men"
+      },
+      {
+        "off": 253175,
+        "strLen": 14,
+        "text": "akarnania_men"
+      },
+      {
+        "off": 254615,
+        "strLen": 12,
+        "text": "akragas_men"
+      },
+      {
+        "off": 256037,
+        "strLen": 14,
+        "text": "antigonid_men"
+      },
+      {
+        "off": 257525,
+        "strLen": 16,
+        "text": "antigonid_women"
+      },
+      {
+        "off": 258647,
+        "strLen": 11,
+        "text": "argive_men"
+      },
+      {
+        "off": 260060,
+        "strLen": 15,
+        "text": "athenian_women"
+      },
+      {
+        "off": 261241,
+        "strLen": 13,
+        "text": "bactrian_men"
+      },
+      {
+        "off": 262896,
+        "strLen": 16,
+        "text": "bithynian_women"
+      },
+      {
+        "off": 264270,
+        "strLen": 13,
+        "text": "bosporan_men"
+      }
+    ]
+  },
+  "ror_t5.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 0,
+    "records": []
+  },
+  "ror_t11s.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 0,
+    "records": []
+  },
+  "ror_t11e.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 0,
+    "records": []
+  },
+  "athens_t21.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 0,
+    "records": []
+  },
+  "athens_t22e.sav": {
+    "zoneSize": 265216,
+    "poolRecordsCount": 0,
+    "records": []
+  }
+}
