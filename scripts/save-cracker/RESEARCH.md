@@ -15113,6 +15113,72 @@ The very first byte difference between save_t1 and save_t1adoption is at `0x0000
 
 ---
 
+## Session 114 — End Turn delta + resave noise floor (2026-05-17)
+
+#### Brief
+
+Using the user's 4 saves (t0, t0_before_end, t1, t1_adoption), ran two complementary diffs:
+* **t0 vs t0_before_end** (same size, pure resave) — defines the noise floor.
+* **t0_before_end vs t1** (+639 KB) — defines a full End Turn delta.
+
+#### STRONG — Pure-resave noise floor is exactly 4 bytes
+
+Two saves of identical size (34,531,348 bytes) with no player action between them differ at only **4 byte positions across all 34.5 MB**:
+
+| Offset | A | B | Δ | Meaning |
+|---|---|---|---|---|
+| 0x000043f8..0x000043f9 | 5a 01 | 3c 02 | +226 | event-log counter (session 110 / 113) — advances even on no-op resave |
+| 0x00084681..0x00084685 | e6 03 00 00 04 | e9 03 00 00 06 | +3 / +2 | small u32 counter + sub-counter (likely Lua tick) |
+
+So every future per-action diff has a near-zero noise floor — any cluster outside these 4 byte ranges is real signal.
+
+#### STRONG — Year advances every 2 turns, not every turn
+
+Confirmed via direct read of the year field (i32 @ 0x44e7, session 104):
+* t0: turn 1, year -270
+* t1: turn 2, **still year -270**
+
+RTW's 2-turns-per-year convention applies. The year field only ticks when both summer and winter turns of a year complete. The turn counter (u32 @ 0x44e3, +1) advances every turn as expected.
+
+#### STRONG — Event-log counter @0x43f8 is not a byte-count
+
+| Transition | counter Δ | file size Δ | journal-bytes-added |
+|---|---|---|---|
+| t0 → t0_before_end | +226 | 0 | 0 (none visible) |
+| t0_before_end → t1 | +2311 | +639,253 | several KB |
+| t1 → t1_adoption | +144 | +248 | ~262 (1 record) |
+
+The counter's deltas don't match file-size delta or journal-byte delta. Probably a Lua / scripting tick counter that advances on internal engine events, independent of save-file growth.
+
+#### STRONG — CHARACTER_PATHS doesn't accumulate per turn
+
+Path record counts across the four saves (using the session-112 path-signature scanner):
+* t0: 1693 paths
+* t0_before_end: 1693 paths (unchanged on resave)
+* t1: **1696 paths** (only +3 across a full End Turn)
+* t1_adoption: 1696 paths (no path-record added by adoption)
+
+Three new path records over an End Turn that processed 23 factions worth of AI moves is FAR fewer than expected if paths were "1 per character per turn". The +3 likely correspond to the 3 turn-1 journal events (Adbugissa birth, Biggus death, Aulus adoption). So path records are tied to **specific lifecycle events**, not to movement.
+
+Key implication: the CHARACTER_PATHS section is NOT a per-turn-per-character movement log. The 1695 records in halo_oneman represent something more like "structural slots for narrative-significant character events." Session 112's hypothesis (a) "historical accumulator of every move" is REFUTED. The actual semantics are TBD.
+
+Despite path count staying flat, the CHARACTER_PATHS section grew by ~186 KB by absorbing space from the "zeros gap" zone — so EXISTING path records expanded (longer waypoint lists from AI moves), even though no new path records were added.
+
+#### Open questions after this session
+
+1. **What ARE the 1695 path records actually tracking?** Not 1-per-move. The +3 across an End Turn matches 3 lifecycle events. Test: a save with N births in one turn should grow paths by N.
+2. **Where does the +639 KB file growth go zone-by-zone?** Walking-diff with resync window was confused by content shifts. A more careful per-zone analysis (anchor each known section's start, diff bytes within) would give clean per-zone deltas.
+3. **What does the 0x43f8 counter actually count?** +226 from a no-op resave suggests Lua/scripting events fire on save. +2311 from End Turn = many engine events. Needs a cross-correlation with `scripting_log.txt` event counts.
+
+#### Files
+
+* `scripts/save-cracker/dig-resave-1.js` — pure-resave noise floor (4 bytes, 2 clusters)
+* `scripts/save-cracker/dig-endturn-1.js` — full T0→T1 diff with 256-byte resync, per-zone summary
+* `scripts/save-cracker/dig-endturn-2.js` — dive into top diff clusters (mostly content-shift, no obvious new content)
+* `scripts/save-cracker/dig-endturn-3.js` — fact-check on turn/year/event-counter/path counts
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
