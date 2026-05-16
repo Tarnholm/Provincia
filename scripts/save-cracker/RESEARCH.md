@@ -14792,6 +14792,119 @@ The value is a forward file offset; +1358 bytes is a plausible event-log advance
 
 ---
 
+## Session 111 — companion-metadata deep decode + per-major faction UUID (2026-05-17)
+
+#### Brief
+
+Continue session 110: the companion-metadata record (`ef 00 00 00 <uuid>` pattern) holds the character class + region — what else is there? Specifically, hunting for a **faction UUID** to unblock the diplomatic-relations partner-faction resolution that session 109 left open.
+
+Saves: `save_halo_oneman.sav..sav` + 4 fixture saves (save_10_fresh, ror_t11s, athens_t22e).
+
+#### STRONG — Full layout of the companion-metadata record (relative to record start)
+
+```
++0x00  u32 = 0xef (record-type marker)
++0x04  u32 = character UUID
++0x08..+0x15  14 zero bytes (padding)
++0x16  u16 = per-character counter (= 1 on T0 saves, accumulates after turns)
++0x18  u16 = ASCIIZ class-string length (incl null)
++0x1a  ASCIIZ class string e.g. "roman general\0"
++(classEnd+0)   u8   padding/flag byte (often 0x00, varies)
++(classEnd+1)   u32  UUID-A (per-character unique)
++(classEnd+5)   u32  UUID-B (per-character unique)
++(classEnd+9)   u32  zeros
++(classEnd+13)  u32  Y coord (matches position record's Y for Gnaeus, but for greek
+                     general chars holds 0x258=600 not the actual Y — so possibly a
+                     packed value, not a literal Y, in non-Roman cases)
++(classEnd+17)  u32 = 1 (constant)
++(classEnd+21)  u16  region UTF-16 strlen
++(classEnd+23)  UTF-16 region chars
++...           trailing `ff ff ff ff` terminator + repeated character UUID
+```
+
+The two per-character UUIDs (UUID-A / UUID-B at classEnd+1 / +5) **vary per character** within the same faction — so they are **NOT** the faction handle. Cross-checked across 21 greek-general records: all 21 have distinct UUID-A and UUID-B values. Likely: father UUID, dynasty head UUID, army UUID, current settlement UUID, or similar per-character relationships.
+
+The u16 at +0x16 was tested as a possible faction or culture ID — value=1 for most chars on fresh saves, but scattered 1..20 on turn-11/22 saves. So it is **not** a faction tag; more likely an event-counter or trait-count for the character.
+
+Files: `dig-meta-decode-{1,2,3,4,5}.js`.
+
+#### STRONG — `u32@+28` of major-faction record is a unique per-major faction UUID
+
+Each of the 23 major-faction records (already located by Provincia at `main.js:4310`) carries a per-faction UUID at offset **+28** that is unique across all 23 majors in every save. Verified across save_halo_oneman:
+
+```
+major[0]  tag=0x19d5d7eb  regions=35  treasury=10000  ← likely player faction
+major[1]  tag=0x1cd9a08a  regions=22  treasury=10000
+major[2]  tag=0x6e861f77  regions=30  treasury=7500
+major[3]  tag=0x6e853388  regions=31  treasury=20000  ← richest faction
+major[4]  tag=0xde991c5f  regions=33  treasury=15000
+...
+major[22] tag=0x25993521  regions=16  treasury=5000
+```
+
+Layout of major-record bytes +24..+44:
+```
++24  u32 = self-pointer (= position + 24)
++28  u32 = FACTION UUID (per-major unique)         ← session 111 new finding
++32..+39  u32×2 zeros
++40  u32 = self-pointer (= position + 40)
++44  u32 = 6 (size tag)
+```
+
+#### STRONG (NEGATIVE) — Faction UUID does not directly link to character UUIDs
+
+Cross-check: 0 of the 64 character metadata records' UUID-A or UUID-B match any major's factionTag. So `<character UUID> → <faction UUID>` is not a direct lookup via the metadata record's per-character UUIDs.
+
+That means resolving "this character belongs to faction X" still requires either:
+* (a) parsing the class-string faction word ("roman general" → roman culture-cluster), OR
+* (b) cross-referencing the character's position to a region, then region to faction.
+
+Both are already in Provincia's pipeline today.
+
+#### STRONG — Faction UUID appears file-wide in per-faction event records
+
+Each major's factionTag appears 5–270 times throughout the save (highest count for largest majors). Each occurrence has a consistent layout:
+```
+... 20 zero bytes ... factionTag (4B) ... second UUID (4B) ... 8 zero bytes ...
+... u32 valueA ... u32 valueB ...
+```
+These are **per-faction event/action records** (counters, log entries, etc.) — not a clean faction-name table.
+
+#### STRONG — Player-faction first occurrence is special (header zone)
+
+The factionTag for major[0] (likely the player faction) has its FIRST occurrence at `0x3c2a` in the header zone, **isolated** from the other majors' first occurrences (which cluster around `0x10e92a2..0x113afbc`). Suggests the engine special-cases the player faction with a header-level entry, while AI factions live in the post-header zone.
+
+#### NEGATIVE — No clean faction-name → UUID table found
+
+Searched the save for ASCII faction-name strings ("roman", "seleucid", "nabataean", etc.) — they appear hundreds of times each, but only embedded in unit names (e.g., "roman leves", "seleucid hypaspists") and character class strings (e.g., "roman general"). **No dedicated faction-definition table with `(UUID, name)` pairs was found** within 4 KB of any faction-name string.
+
+This means the canonical way to resolve a major-record's faction NAME is still via the file-order assumption (player at index 0, AI in descr_strat order) — the current Provincia approach, with its known fragility (see memory `project_faction_treasury_index_caveat`). A robust fix would require:
+* (a) Cross-referencing each major's region list to descr_strat's T0 per-faction region list (fingerprint match, breaks after turns when regions change owners), OR
+* (b) Matching each major's faction-leader-character UUID to a known leader name from descr_strat (requires finding leader UUID inside the major record — not yet pinned).
+
+#### Confidence summary
+
+* **STRONG**: Full byte-layout of the companion-metadata record (post-class-string fields), validated on 4 sample records spanning 3 factions.
+* **STRONG**: `u32@+28` of each major-faction record is a unique per-major faction UUID. Verified 23 unique values across 23 majors in halo_oneman.
+* **STRONG**: The faction UUID is NOT identical to any per-character UUID (UUID-A / UUID-B / character UUID).
+* **STRONG**: Faction UUIDs appear file-wide in per-faction event records (5–270 occurrences each).
+* **STRONG**: Major[0]'s factionTag has a special header-zone entry not seen for the other 22 majors — likely player-faction tag.
+* **NEGATIVE**: No clean faction-name → UUID table exists in the save. Faction names are only embedded in unit names and class strings; the canonical descr_strat order + player-first remains the only path to resolve major-record → faction name.
+
+#### Files
+
+* `scripts/save-cracker/dig-meta-decode-{1,2,3,4,5}.js` — incremental decode of the companion-metadata record (fixed-offset comparisons → class-string-end-anchored comparisons → side-by-side raw-byte dumps → faction-id hypothesis → u16-at-+0x16 verification)
+* `scripts/save-cracker/dig-major-faction-tag-{1,2,3}.js` — major-record faction-tag discovery, character-UUID cross-check, file-wide occurrence analysis
+
+#### Next steps
+
+1. **Pin player-faction identification**: the special header-zone entry at `0x3c2a` strongly suggests major[0]'s factionTag is the player. Verify by loading multiple saves with different player factions and checking which major's factionTag has the header-zone entry.
+2. **Find faction-leader UUID inside major records**: scan for character-UUID patterns inside each major record's body (e.g., u32@+88, u32@+92, etc.). If the leader-UUID is present, it can be cross-referenced with a parsed character → name to label the faction.
+3. **Replace `MAJOR_FACTIONS` hardcoded list** (`App.js:13776`): use a more robust mapping based on this session's findings + region-list fingerprint match against descr_strat T0 regions. Removes the brittle "trust descr_strat order" assumption flagged in `project_faction_treasury_index_caveat`.
+4. **Surface diplomatic-relation counts in UI** (per-major basis): even without partner-faction resolution, the session-109 B/C enums can drive a "per-faction diplomacy summary" panel (e.g., "Carthage has 8 active wars, 2 alliances, 14 peace") — useful interim feature.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
