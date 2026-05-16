@@ -13843,6 +13843,157 @@ The value=5+ explosion is mysterious. In ror_t1e the count is 1,114; in ror_t5 i
 
 ---
 
+## Session 105 — player exploration grid values ≥2 (2026-05-16)
+
+#### Brief
+
+Follow-up to Session 103. Session 103 confirmed the 49,740-byte stride-2 `<u8 value, u8 count>` RLE zone in the player faction record decodes to a 510×1400 per-tile grid where `v=0` is unexplored and `v=1` is ever-explored land. Two open hypotheses remained:
+* `v=2,3,4` — transient AI scratch (possibly live LOS halo)
+* `v≥5` — late-game "explosion" from ~1k cells (T0) to ~244k cells (athens_t22e), unexplained
+
+Session 105 set out to pin both.
+
+#### NEGATIVE — Session 103's "v≥5 late-game explosion" was a decoder artifact, not real data
+
+The RLE zone in session 103 was assumed fixed at `+0x18..+0x0c264` (49,740 bytes). In reality the RLE block is **variable length and terminated by a pair with count=0** — even T0 / T1 saves end the RLE block earlier than `+0xc264` and then carry a trailing settlement-list section (struct of u32 fields including x/y coords). Session 103's decoder ran past the real end-of-grid and consumed those bytes as RLE pairs.
+
+| Save | RLE-end (terminated by `<v, 0>` pair) | "v≥5" with session-103 decode | Real v≥5 with proper decode |
+|---|---|---|---|
+| save_10_fresh.sav | `+0xc1cc` (88 bytes trailing) | 1,367 | 1,367 |
+| save_1.2.sav | `+0xc1b2` | 1,892 | 1,892 |
+| ror_t1e.sav | `+0xc1e2` | 1,114 | 1,114 |
+| ror_t5.sav | `+0xb848` (2,572 bytes trailing) | 48,852 | 510 |
+| ror_t11s.sav | `+0xa024` (8,800 bytes trailing) | ~161k | 263 |
+| athens_t22e.sav | `+0x8e9a` (13,258 bytes trailing) | 244,534 | 273 |
+
+The trailing section is `n × u32` records (looks like a settlement list — first u32 = small count like 6/7, then several u32 values including small ints and what look like (x, y) coords). Embedded ASCII strings (`Eastern_Large_Town`, `Carthaginian_Town`, `Celtic_Large_Town`, `Egyptian_City`, etc.) appear inside this trailing section in mid/late saves — they're length-prefixed building-type names, not part of the grid.
+
+So the "explosion" was the RLE decoder reading `T=84`, `t=116`, `e=101`, `_=95`, etc. as tile values, plus surrounding u32-record bytes.
+
+With proper termination (RLE pair with `count == 0` ends the block), **every save decodes to exactly 714,000-714,002 tiles** (= 510 × 1400 exactly for early saves; +2 padding pairs in late saves likely for engine-internal reasons). Save_1.2 round-trip is byte-identical (`origLen=49740, reBuiltLen=49740, Buffer.compare === 0`). The real `v≥5` counts in late saves are 263-273 — totally consistent with the per-character/settlement LOS halo theory below.
+
+Files: `dig-aidip-H.js` (first-ASCII-run scan, byte distribution by zone position), `dig-aidip-I.js` (auto-truncation + corrected histograms), `dig-aidip-M.js` (RLE terminator `<v, 0>` discovery + byte-identical round-trip).
+
+#### STRONG — Character coordinate mapping: `gx = c.x`, `gy = 2 * c.y`
+
+Character records contain `(x, y)` at offsets `+8, +12` in the type-6 record (see `src/characterParser.js` `buildPositionIndex`). Coords range 0..500. The strategic grid is 510×1400. Four mapping candidates were tested by counting how often a character stands on `v=1`:
+
+| Mapping | save_10_fresh chars on v=1 | ror_t11s chars on v=1 |
+|---|---|---|
+| `gy = c.y` | 2493/3527 (70.7%) | 5307/6421 (82.6%) |
+| `gy = H-1-c.y` | 1714/3527 | 3304/6421 |
+| `gy = 2*c.y` | 2241/3527 | 5335/6421 |
+| `gy = H-1-2*c.y` | 2520/3527 | 5104/6421 |
+
+The `gy = c.y` mapping had the highest hit rate but the resulting halo geometry was wrong (no concentric structure). The `gy = 2*c.y` mapping is the **CORRECT** one — proof comes from the t11s→t11e shift test:
+
+* Char `a1d839a3` moved (296, 427) → (296, 428) during turn 11.
+* Shift cells in the v=2/3 grid cluster at (gx=293..302, gy=844..866).
+* `2 × 427 = 854` — dead center of the shift cluster. `2 × 428 = 856` — exact target of the move.
+
+With `gy = 2*c.y`, **78.3% of t11s→t11e shift cells are within 8 tiles of a moved-char position; 98.3% within 16 tiles**. The chars-on-v=1 ratio is lower than `gy=c.y` (62%) because every character maps to an EVEN gy (the engine writes halo only on even rows; odd rows are mostly v=0 "scratch"), so chars-on-v=1 is bounded by the even-row v=1 share, not the absolute v=1 share.
+
+This means the effective operational grid is **510 wide × 700 tall** (the same as the TGA), but stored at 510×1400 with odd rows used as RLE filler/scratch. Parity analysis confirms: v=4/5/6 are 77/71/89% on even rows respectively (vs the 50/50 baseline expected for random).
+
+Files: `dig-aidip-D.js`, `dig-aidip-E.js`, `dig-aidip-F.js`.
+
+#### STRONG — Values 2/3/4/5/6/7 are a **concentric line-of-sight halo** with radar-style falloff (`v = max(0, 8 − distance)`)
+
+11×11 neighborhood inspections around true local peaks (cell where v ≥ all neighbours in 9×9 window):
+
+```
+Peak at (492,5) v=6.        Peak around (494,7-9) v=7 (the cluster's real centre):
+  22333433333                 ...........
+  ...........                 23345545454       Higher values sit AT the centre;
+  23345545454                 ...........       lower values form concentric rings
+  ...........                 22444#55534       outward; v=2 is the outermost
+  22444#55534                 ...........       visible band.
+  ...........                 23555666644
+  23555666644                 ...........
+  ...........                 35565777664
+  35565777664
+```
+
+Sample mean halo radius for v=7 cells (save_10_fresh, 109 v=7 cells, 30 samples):
+* v≥4 reaches: 15.80 grid tiles ≈ 8 character-tiles
+* v≥2 reaches: 16.00 grid tiles ≈ 8 character-tiles
+
+RTW's documented line-of-sight ranges are 6-10 tiles for armies/spies — matches.
+
+Distance-to-nearest-character distribution (mapping `gy=2*c.y`), athens_t22e:
+
+| Value | Count | meanDist | ≤4 tiles | ≤8 tiles | ≤16 tiles |
+|---|---|---|---|---|---|
+| v=4 | 368 | 14.5 | 48.1% | 80.2% | 92.7% |
+| v=5 | 162 | 8.8 | 60.5% | 82.1% | 96.3% |
+| v=6 | 106 | 2.8 | 83.0% | 95.3% | 100% |
+| v=7 | 3 | 7.1 | — | 100% | 100% |
+
+The HIGHER the value, the CLOSER to a character. v=6 is essentially "on top of" a character (mean 2.8 tiles). Higher values do go beyond 7 in some saves (peak v=11 found at (400,722) in save_10_fresh — that's a stacked-LOS bonus where multiple LOS sources overlap).
+
+Files: `dig-aidip-J.js` (concentric structure verification + cluster centre detection), `dig-aidip-K.js` (true local peaks + halo radius measurement + stable-across-time test).
+
+#### STRONG — t11s→t11e (same turn, start vs end) confirms halos are computed AT SAVE TIME, not per-tick
+
+Compared `ror_t11s.sav` (start of T11) and `ror_t11e.sav` (end of T11) over the full strategic grid:
+
+| Value | t11s count | t11e count | both | only_t11s | only_t11e | Jaccard |
+|---|---|---|---|---|---|---|
+| v=2 | 19,309 | 19,277 | 19,277 | 32 | 0 | 0.998 |
+| v=3 | 3,330 | 3,249 | 3,249 | 81 | 0 | 0.976 |
+| v=4 | 657 | 657 | 657 | 0 | 0 | **1.000** |
+| v=5 | 225 | 225 | 225 | 0 | 0 | **1.000** |
+| v=6 | 35 | 35 | 35 | 0 | 0 | **1.000** |
+| v=7 | 6 | 6 | 6 | 0 | 0 | **1.000** |
+
+Only 113 cells changed during the entire turn (32 in v=2 + 81 in v=3, all collapsing to v=1). Those 113 cells localize tightly around char `a1d839a3` who moved (296,427)→(296,428). The shifts go ONE-DIRECTIONAL: t11s → v=2/3 became t11e → v=1. **The halo doesn't shift LIVE per tile-move; instead the engine writes "newly stably-explored land" into v=1 at character-move time**, and the v=2/3 outer rings around the moved char's previous position resolve into v=1 on the new turn.
+
+`save_mp_before` vs `save_mp_after` (a 1-tile move within already-explored territory): **0 differing tiles** in the entire grid, confirming halos in known territory don't update.
+
+Files: `dig-aidip-D.js`, `dig-aidip-E.js`.
+
+#### STRONG — Stable halo centres across T0/T1e/T5 = settlements (not characters)
+
+Cells with v≥5 in all of save_10_fresh, ror_t1e, ror_t5: **472 cells stable**. New v≥5 in ror_t5 only: 27. Most stable halo peaks have NO character within 1 tile (93/136 v≥6 peaks in save_10_fresh have no char nearby; 1 has a stack, 42 have a single nearby char).
+
+These character-less halos are **settlement LOS**: in RTW each settlement provides passive LOS even without a governor character. The stable 472 cells correspond to **all settlements visible to the player at T0** (player's own + neighbouring scouted settlements). The 27 new cells in T5 are settlements scouted between T1 and T5. We didn't bridge to the actual settlement records (would need session 106), but the cell count is consistent with RTW's ~150 settlement count and 1-2 cells per settlement halo centre.
+
+Files: `dig-aidip-J.js`, `dig-aidip-K.js`.
+
+#### Headline value semantics — REVISED
+
+| Value | meaning | confidence |
+|---|---|---|
+| **0** | unexplored / never-seen tile | STRONG (session 103) |
+| **1** | ever-explored land (permanent reveal) | STRONG (session 103) |
+| **2..7+** | active LOS halo around character/settlement with radar falloff `v ≈ 8 − distance` | STRONG |
+| odd-row cells | RLE scratch (mostly v=0); operational grid is 510×700, stored at 510×1400 with stride-2 in Y | STRONG |
+
+The `v=2..N` "transient AI scratch" hypothesis from session 103 is now CONFIRMED but precisely: it's the LIVE LOS halo, with concentric falloff. The halos collapse to v=1 (ever-explored) when the source moves and re-stabilizes elsewhere — the engine doesn't bother stripping the previous halo, it just lets it decay as the surrounding cells become v=1.
+
+The previously-mysterious "v≥5 late-game explosion" is **not real data** — it's an artifact of the session-103 decoder reading past the RLE block into a trailing building/region section.
+
+#### Files
+
+* `scripts/save-cracker/dig-aidip-D.js` — LOS halo test: char→grid mapping candidates + t11s/t11e Jaccard (v=4..7 are 100% identical = no per-turn shift) + centroid analysis.
+* `scripts/save-cracker/dig-aidip-E.js` — ASCII overlay of v=2/3/4 with char positions; t11s/t11e per-cell shift list (32+81 cells, all in 1 spatial cluster around moved char a1d839a3).
+* `scripts/save-cracker/dig-aidip-F.js` — confirms `gy=2*c.y` mapping: v=4/5/6/7 within 8 tiles of nearest char >80%; concentric halo neighbourhoods printed for individual characters; v=6 within 16 tiles of moved chars 100%.
+* `scripts/save-cracker/dig-aidip-G.js` — full byte histograms expose ASCII letters (101=e, 116=t, 84=T, 119=w, 95=_, …) dominating "v≥5" in late saves; parity analysis (v=4/5/6 strongly favour even rows).
+* `scripts/save-cracker/dig-aidip-H.js` — ASCII-run scan in the zone; building-type strings (`Eastern_Large_Town`, `Egyptian_City`, etc.) found at +0xb870 / +0xa04a / +0x90a6 / +0x8ec0 in ror_t5 / ror_t11s / athens_t21 / athens_t22e.
+* `scripts/save-cracker/dig-aidip-I.js` — auto-truncation of RLE zone at first ASCII run; corrected per-save histograms confirm `v≥5` collapses from 244k to ~273 in late saves; decoded count = 714,000 ± in every save.
+* `scripts/save-cracker/dig-aidip-J.js` — concentric halo structure inspection; ring-r=8..12 outside v≥5 peaks shows v=4>v=3>v=2 in proper falloff order; flood-fill clustering finds 67 halo blobs in save_10_fresh.
+* `scripts/save-cracker/dig-aidip-K.js` — local-peak detection (max in 9×9); 472/1644 stable v≥5 cells across T0/T1e/T5 = settlement halos; halo radius ≈ 16 grid tiles ≈ 8 character-tiles.
+* `scripts/save-cracker/dig-aidip-L.js` — first round-trip attempt; full-zone re-encode mismatches at zone offset 0xc1b2 — exposing that the RLE block doesn't fill the whole zone.
+* `scripts/save-cracker/dig-aidip-M.js` — RLE terminator discovery: a pair with `count == 0` ends the block (never produced by a maximal encoder). Byte-identical round-trip confirmed on save_1.2 with `RLE + trailing-bytes` model. Identifies a trailing "settlement list" structure (`n × u32` records, possibly per-region per-settlement records) of size 32-13,258 bytes depending on campaign progress.
+
+#### Next steps
+
+1. Decode the trailing settlement-list structure: looks like `<u32 count, u32 ???, u32 x, u32 y, u32 ???, u32 ???>` per settlement. Cross-link to halo centres from this session to confirm settlement-LOS interpretation.
+2. The peak values >7 (v=8..11 seen at busy crossroads) confirm halo VALUES STACK when multiple LOS sources overlap. Verify the stack formula (additive? max+1?) by finding a known city with army stack and reading the peak value.
+3. Cross-link in `src/RegionInfo.js`: an UI overlay showing v=0 ("never seen") tiles vs v=1 ("explored") would let players plan exploration targets.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
