@@ -1545,6 +1545,11 @@ function App() {
   const [saveQueues, setSaveQueues] = useState(null); // { city: [chainName, ...] } currently-queued buildings from save parser
   const [saveTaxByCity, setSaveTaxByCity] = useState(null); // { city: "low"|"normal"|"high"|"very_high" } from save parser
   const [saveHappinessByCity, setSaveHappinessByCity] = useState(null); // { city: f32 } from save parser (f32 at settlement.offset-30, raw 100..200 scale, see save-cracker dossier 2026-05-10)
+  // Player's ever-explored tile grid from save (session 103, 2026-05-16).
+  // { grid: Uint8Array(510*1400), width: 510, height: 1400 }. value=0 means
+  // never explored, value≥1 means ever-explored land. Drives the "Explored"
+  // map mode that dims unexplored regions.
+  const [playerExploration, setPlayerExploration] = useState(null);
   const [savePopulationByCity, setSavePopulationByCity] = useState(null); // { city: u32 } live population from save parser (u32 at settlement.offset-1494, save-cracker session 2)
   const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
   const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
@@ -3371,6 +3376,7 @@ function App() {
       if (data && data.queues) setSaveQueues(data.queues);
       if (data && data.taxByCity) setSaveTaxByCity(data.taxByCity);
       if (data && data.happinessByCity) setSaveHappinessByCity(data.happinessByCity);
+      if (data && data.playerExploration) setPlayerExploration(data.playerExploration);
       if (data && data.populationByCity) setSavePopulationByCity(data.populationByCity);
       if (data && data.incomeByCity) setSaveIncomeByCity(data.incomeByCity);
       if (data && data.sizeByCity) setSaveSizeByCity(data.sizeByCity);
@@ -3418,6 +3424,7 @@ function App() {
         if (d.queues) setSaveQueues(d.queues);
         if (d.taxByCity) setSaveTaxByCity(d.taxByCity);
         if (d.happinessByCity) setSaveHappinessByCity(d.happinessByCity);
+        if (d.playerExploration) setPlayerExploration(d.playerExploration);
         if (d.populationByCity) setSavePopulationByCity(d.populationByCity);
         if (d.incomeByCity) setSaveIncomeByCity(d.incomeByCity);
         if (d.sizeByCity) setSaveSizeByCity(d.sizeByCity);
@@ -3469,6 +3476,7 @@ function App() {
       setSaveQueues(null);
       setSaveTaxByCity(null);
       setSaveHappinessByCity(null);
+      setPlayerExploration(null);
       setSavePopulationByCity(null);
       setSaveIncomeByCity(null);
       setSaveSizeByCity(null);
@@ -4254,7 +4262,7 @@ function App() {
     // Ctrl+1..9 → Faction/Victory/Culture/Religion/Population/Fertility/
     // Resources/Homeland/Government.
     const numericModes = [
-      "faction", "victory", "culture", "religion", "loyalist",
+      "faction", "victory", "culture", "religion", "loyalist", "explored",
       "population", "farm", "resource", "homeland", "government",
     ];
     const handler = (e) => {
@@ -4643,6 +4651,58 @@ function App() {
             Math.max(0, Math.min(255, final[2] + v)),
           ];
         }));
+      } else if (colorMode === "explored") {
+        // Player's ever-explored tile grid from the save (session 103,
+        // 2026-05-16). Paints regions in their normal faction colour
+        // where the player has been (value ≥ 1) and dims to dark grey
+        // where they've never seen (value = 0). Grid is 510×1400; TGA
+        // is 1020×700. Mapping: strategic_x = floor(px / 2),
+        // strategic_y = floor(py * (1400 / TGA_H)) with flipY because
+        // the grid is stored top-down and the TGA is bottom-up.
+        const grid = playerExploration && playerExploration.grid;
+        const gridW = (playerExploration && playerExploration.width) || 510;
+        const gridH = (playerExploration && playerExploration.height) || 1400;
+        // Build current owner → colour map (same as faction mode)
+        const rgbToOwner = {};
+        for (const [faction, regionNames] of Object.entries(factionRegionsMap || {})) {
+          for (const rn of (regionNames || [])) {
+            for (const [rgbKey, r] of Object.entries(regions)) {
+              if (r.region?.toLowerCase() === rn.toLowerCase() || r.city?.toLowerCase() === rn.toLowerCase()) {
+                rgbToOwner[rgbKey] = faction;
+                break;
+              }
+            }
+          }
+        }
+        if (currentOwnerByCity) {
+          for (const [rgbKey, r] of Object.entries(regions)) {
+            const live = currentOwnerByCity[r.city];
+            if (live) rgbToOwner[rgbKey] = live;
+          }
+        }
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb, srcX, srcY) => {
+          // Look up the grid cell. flipY: TGA bottom-up → grid top-down.
+          let explored = true; // if no grid loaded, treat everything as explored
+          if (grid) {
+            const gx = Math.min(gridW - 1, Math.max(0, Math.floor(srcX * gridW / W)));
+            const flippedY = (H - 1 - srcY);
+            const gy = Math.min(gridH - 1, Math.max(0, Math.floor(flippedY * gridH / H)));
+            const v = grid[gy * gridW + gx];
+            explored = v > 0;
+          }
+          // Owner colour
+          const rgbKey = `${pr},${pg},${pb}`;
+          const owner = rgbToOwner[rgbKey];
+          const fc = owner && factionColors[owner.toLowerCase()];
+          const base = (fc && fc.primary) || [100, 100, 100];
+          if (explored) return base;
+          // Unexplored: mix 70 % toward very dark grey
+          return [
+            Math.round(base[0] * 0.30 + 18),
+            Math.round(base[1] * 0.30 + 18),
+            Math.round(base[2] * 0.30 + 22),
+          ];
+        }));
       } else if (colorMode === "pop_growth") {
         // Headroom = pop_level (cap from descr_strat) − current population
         // bracket. Green = lots of room to grow, red = capped.
@@ -4940,7 +5000,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick]);
+  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -7719,6 +7779,7 @@ function App() {
       { key: "culture", label: "Culture" },
       { key: "religion", label: "Religion" },
       { key: "loyalist", label: "Loyalist" },
+      { key: "explored", label: "Explored" },
       { key: "population", label: "Population" },
       { key: "farm", label: "Fertility" },
       { key: "resource", label: "Resources" },

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.372",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "New `Explored` map mode (Ctrl+6) — surfaces the player's ever-explored tile grid decoded from the save (session 103 finding). Regions you've seen at any point paint in their normal owner colour; regions you've never explored are dimmed 70 % toward black so the unexplored shadow is unmistakable. Reads the 510×1400 RLE grid from the player faction record's first 49,740 bytes after the 24 B header. Updates live when you load a new save." },
+    ],
+  },
+  {
     version: "0.9.371",
     date: "2026-05-16",
     items: [

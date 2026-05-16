@@ -4154,6 +4154,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   // Lua persistent counters: named u32 values (turn_number, id_<faction>, etc.).
   let factionRecords = null;
   let luaCounters = null;
+  let playerExploration = null;
   try {
     const fr = findFactionRecords(data);
     factionRecords = {
@@ -4161,6 +4162,37 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
       arraySpan: summarizeFactionArray(fr),
       records: fr,
     };
+    // Decode the player's ever-explored tile grid (save-cracker session 103
+    // 2026-05-16). The player faction record is the LARGEST one (~334 KB
+    // vs ~6 KB per NPC). Its first 49,740 bytes after the 24 B header are
+    // stride-2 RLE pairs <u8 value><u8 count> that decode to a 510×1400
+    // grid (half-x, double-y of the 1020×700 TGA). value=0 means never
+    // explored; value≥1 means ever-explored land.
+    if (fr && fr.length > 0) {
+      let largest = fr[0];
+      for (const r of fr) {
+        if ((r.size || 0) > (largest.size || 0)) largest = r;
+      }
+      const GRID_W = 510, GRID_H = 1400;
+      const RLE_START = largest.offset + 0x18;
+      const RLE_END = largest.offset + 0xc264;
+      if (largest.size >= 0xc264 && RLE_END <= data.length) {
+        const grid = new Uint8Array(GRID_W * GRID_H);
+        let gi = 0;
+        for (let i = RLE_START; i + 2 <= RLE_END && gi < grid.length; i += 2) {
+          const val = data[i];
+          const count = data[i + 1];
+          const limit = Math.min(count, grid.length - gi);
+          for (let k = 0; k < limit; k++) grid[gi + k] = val;
+          gi += limit;
+          if (val === 0 && count === 0) break; // safety: stop on null pair
+        }
+        // Sanity: at least 100k cells decoded
+        if (gi >= 100000) {
+          playerExploration = { grid, width: GRID_W, height: GRID_H, decoded: gi };
+        }
+      }
+    }
   } catch (err) { console.warn("[faction-records] parse failed:", err && err.message); }
   try {
     const recs = findLuaCounters(data);
@@ -4226,7 +4258,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     treasuryByFaction = null;
   }
 
-  return { buildings: buildingsByCity, armies, queues, taxByCity, happinessByCity, populationByCity, incomeByCity, sizeByCity, factionRecords, luaCounters, treasuryByFaction };
+  return { buildings: buildingsByCity, armies, queues, taxByCity, happinessByCity, populationByCity, incomeByCity, sizeByCity, factionRecords, luaCounters, treasuryByFaction, playerExploration };
 }
 
 function diffSaveData(prev, curr) {
