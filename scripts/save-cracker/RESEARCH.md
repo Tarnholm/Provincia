@@ -15440,6 +15440,92 @@ What might differ:
 
 ---
 
+## Session 118 — Alexander expansion: command-record format + offset shifts (2026-05-17)
+
+#### Brief
+
+User switched campaigns to Feral Remastered's Alexander expansion (still `0x070a` magic, NOT classic 1.5) and produced 9 turn-1 saves: a baseline + 8 distinct player actions issued (siege, embark, move, attack, tax change). All saves are ~1 MB — 35× smaller than RIS imperial — so diffs run in seconds.
+
+#### STRONG — Year field at i32@0x504 for Alex campaign
+
+For RIS imperial (sessions 104+), the year was at `i32@0x44e7`. For the Alex campaign, the year `-336` (Alex starts in 336 BC) is at **`i32@0x504`** — a completely different offset. So per-campaign offsets are mod-data-dependent and Provincia's hardcoded offset assumption needs a campaign-name lookup table.
+
+The campaign name `"alexander"` is still at the same Feral location (`pstr16 UTF-16 at 0x3a`) — that part of the header is engine-versioned, not mod-versioned. So a safe strategy: read the campaign name first, then dispatch to per-campaign offset tables for everything else.
+
+#### STRONG — Player actions write fixed-size "command records"
+
+9 Alex saves, each with one specific player action issued from baseline:
+
+| Action | File Δ |
+|---|---|
+| besiege fort | +159 |
+| besiege Byzantium (settlement siege) | +592 |
+| move 1 unit to besieging army | +592 |
+| disembark ship | +592 |
+| board ship | +598 |
+| attack enemy that retreats | +614 |
+| taxes increased in Pella | +614 |
+| taxes lowered in Sparta | +614 |
+
+The clean size clustering (+159, +592, +598, +614) implies fixed-size command records keyed by action class:
+* **+159 bytes** — non-mobilizing commands (initiate siege without moving)
+* **+592 bytes** — army-mobilization commands (move, settlement-siege, disembark)
+* **+598 bytes** — ship-embark commands (+6 bytes over base: probably the embarking-unit reference)
+* **+614 bytes** — region-admin commands (tax changes, retreats) — +22 bytes over +592, likely region-id + new-value fields
+
+This is a NEW UNCRACKED SUBSYSTEM: the engine logs PLAYER COMMANDS as fixed-size records, separate from the journal/events section. Could be how the engine implements the "rewind to start of turn" feature, or how it queues commands for AI processing.
+
+#### STRONG — A "transient state" record at 0x34dfc changes on every action
+
+The smallest cluster present in every single action diff is at offset `0x34dfc`. Each action overwrites different content there:
+
+```
+A (baseline):     00 ff ff ff ff 00 00 00 d0 42 00 00 00 00 ...
+B (besige_fort):  00 ff ff ff ff 00 00 00 a0 42 00 00 00 00 ...
+B (move):         00 ff ff ff ff 00 00 00 a0 42 00 00 00 00 ...
+B (besige_byz):   00 ff ff ff ff 00 00 00 a0 42 00 00 00 00 ...
+```
+
+The byte at 0x34e04 goes `0xd0 → 0xa0` for every action (a one-byte status flag flipping). The bytes after that (an 8-byte hash-like field) vary per-action — different commands write different 8-byte tokens here. Could be:
+* A "session token" / "command idempotency key" for the last action issued
+* A reference back into the command-record-list (a back-pointer to the most recent command)
+
+#### Per-action signature: each cluster's specific bytes differ
+
+Looking at the smallest atomic action (`besiege fort`, +159 bytes total), the cluster at 0x34e04 changes 8 specific bytes and a status flag. The +159 byte cost might be just:
+* 8 bytes at 0x34e04 (transient state update)
+* ~150 bytes of inserted command record at a separate offset
+
+Need to find that separate offset (will look in the +159-vs-baseline diff specifically).
+
+#### Memnon of Rhodes — Persian/enemy character touched by Macedon's siege
+
+The diff for `besige_fort` showed bytes around offset 0x42xxx containing the ASCII string `"memnon of rhodes"`. Memnon is a Persian defender. When the Macedon player initiates a siege against the fort he's defending, his character record gets touched (probably an attitude / awareness flip).
+
+This is consistent with the engine writing per-character state on each player action that affects them.
+
+#### Confidence summary
+
+* **STRONG**: Alex campaign year offset = `0x504` (≠ RIS imperial's 0x44e7). Per-campaign offset tables needed.
+* **STRONG**: Player actions write fixed-size command records (+159, +592, +598, +614 bytes depending on action class).
+* **STRONG**: A transient "last command" state record at 0x34dfc updates on every action (1-byte flag flip + 8 bytes of action-specific token).
+* **STRONG**: Enemy characters affected by a player action get their records touched (Memnon when Macedon besieges his fort).
+* **HYPOTHESIS**: The command-record subsystem is what RTW uses for rewinding to turn-start (undo button) and/or for AI command queueing. Not yet confirmed.
+
+#### Files
+
+* `scripts/save-cracker/dig-alex-1.js` — initial probe, header decode, single-diff context
+* `scripts/save-cracker/dig-alex-2.js` — multi-action diff, common-bookkeeping detection, year-offset hunt
+
+#### Next steps
+
+1. **Crack the +159 besiege-fort record exactly** — it's the smallest atomic action with the cleanest diff. Find the exact bytes of the command record (separate from the transient state at 0x34dfc).
+2. **Compare the +614 region-admin records** (3 saves: attack-retreats, tax-Pella, tax-Sparta) — three same-size commands of different types should reveal which 22 extra bytes encode the region/value vs. the action-type.
+3. **Map all 9 actions side-by-side** to identify command-record bytes that share patterns (action-type tag, faction-id, target-id, timestamp, etc.).
+4. **Use Provincia's existing `characterParserV2.js`** (already tuned for Alex saves) to identify the Macedonian player character UUIDs and cross-reference them with the action records.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
