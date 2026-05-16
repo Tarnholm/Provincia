@@ -42,9 +42,33 @@ const widgetRegistry = new Map();
 // own the lifecycle (call register on mount/resize, unregister on unmount).
 export function registerFixedRect(id, rect) {
   widgetRegistry.set(id, rect);
+  notifyWidgets();
 }
 export function unregisterFixedRect(id) {
   widgetRegistry.delete(id);
+  notifyWidgets();
+}
+
+// Return a snapshot of the current widget registry as a plain object so
+// callers can read widget positions without mutating the live Map.
+export function getWidgetSnapshot() {
+  const out = {};
+  for (const [id, p] of widgetRegistry) out[id] = { ...p };
+  return out;
+}
+
+// Pub/sub for widget-position changes — App.js uses this to re-run the
+// map's canvasSize calculation whenever a Movable moves, so the map
+// auto-shrinks to keep clear of any widget the user drags toward it.
+const _widgetSubscribers = new Set();
+export function subscribeWidgets(fn) {
+  _widgetSubscribers.add(fn);
+  return () => _widgetSubscribers.delete(fn);
+}
+function notifyWidgets() {
+  for (const fn of _widgetSubscribers) {
+    try { fn(); } catch {}
+  }
 }
 
 // Debounced "current layout" dumper. Calls log-message IPC after the user
@@ -188,9 +212,11 @@ export function useWidgetPos(id, defaultPct) {
     widgetRegistry.set(id, pos);
     widgetSetters.set(id, setPos);
     maybeLogBootLayout();
+    notifyWidgets();
     return () => {
       widgetRegistry.delete(id);
       widgetSetters.delete(id);
+      notifyWidgets();
     };
   }, [id, pos]);
   return [pos, setPos];

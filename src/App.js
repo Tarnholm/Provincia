@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
-import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect } from "./Movable";
+import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
@@ -5930,7 +5930,7 @@ function App() {
         ? Math.round(window.innerWidth * rightColPct)
         : 0;
       const effectiveSidebar = overrideRightW || baselineSidebar;
-      const availableWidthForMap =
+      let availableWidthForMap =
         window.innerWidth - MAP_PADDING * 2 - effectiveSidebar - PANELS_GAP - (overrideRightW ? 0 : MAP_WIDTH_ADJUST);
 
       // Bottom strip height: user override (bottomStripPct > 0) wins, else REGIONINFO_HEIGHT.
@@ -5938,8 +5938,39 @@ function App() {
         ? Math.round(window.innerHeight * bottomStripPct)
         : 0;
       const effectiveBottom = overrideBottomH || REGIONINFO_HEIGHT;
-      const availableHeightForMap =
+      let availableHeightForMap =
         window.innerHeight - MAP_PADDING * 2 - effectiveBottom - MAP_PADDING;
+
+      // Dynamic canvas sizing — also constrain by any Movable widget that
+      // sits in the map's lane. If the user dragged a widget toward the
+      // map, shrink the canvas so the map keeps its GAP_FRAC of air-gap
+      // with that widget instead of overlapping it.
+      const widgets = getWidgetSnapshot();
+      const gapPx = 6;
+      for (const [id, w] of Object.entries(widgets)) {
+        if (id === "map.canvas") continue;
+        // Widget extends into the map's vertical span (anywhere y < 0.5)
+        // and starts to the right of the map's left edge → it caps the
+        // map's right edge.
+        if (w.y < 0.5 && w.x > 0.1) {
+          const widgetLeftPx = Math.floor(w.x * window.innerWidth);
+          const maxMapRight = widgetLeftPx - gapPx;
+          const candidate = maxMapRight - MAP_PADDING;
+          if (candidate > 50 && candidate < availableWidthForMap) {
+            availableWidthForMap = candidate;
+          }
+        }
+        // Widget extends into the map's horizontal span (anywhere x < 0.5)
+        // and starts below the map's top edge → it caps the map's bottom.
+        if (w.x < 0.5 && w.y > 0.1) {
+          const widgetTopPx = Math.floor(w.y * window.innerHeight);
+          const maxMapBottom = widgetTopPx - gapPx;
+          const candidate = maxMapBottom - MAP_PADDING;
+          if (candidate > 50 && candidate < availableHeightForMap) {
+            availableHeightForMap = candidate;
+          }
+        }
+      }
 
       const imgAspect = imgSize.width / imgSize.height;
       let mapW = availableWidthForMap;
@@ -5958,8 +5989,14 @@ function App() {
       setRightColWidth(rightWidth);
     }
     window.addEventListener("resize", handleResize);
+    // Re-run when any widget moves so the map auto-shrinks/expands to
+    // keep its air-gap with widgets.
+    const unsub = subscribeWidgets(() => handleResize());
     handleResize();
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      unsub();
+    };
   }, [imgSize.width, imgSize.height, bottomStripPct, rightColPct]);
 
   const effectiveBottomHeight = bottomStripPct > 0

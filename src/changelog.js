@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.363",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Map canvas now auto-shrinks to fit around Movable widgets. handleResize subscribes to widget-position changes; whenever you drag a widget toward the map, the canvas trims to keep a 6 px gap with that widget instead of letting the map overlap the UI. Lookups are heuristic — widgets with y<0.5 + x>0.1 cap the map's right edge; widgets with x<0.5 + y>0.1 cap the bottom. No more map-over-UI." },
+    ],
+  },
+  {
     version: "0.9.362",
     date: "2026-05-16",
     items: [
