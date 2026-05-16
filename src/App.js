@@ -10751,7 +10751,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
-              defaultPct={{ x: 0.005, y: 0.745, w: 0.18, h: 0.250 }}
+              defaultPct={{ x: 0.005, y: 0.744, w: 0.205, h: 0.251 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>
@@ -10759,64 +10759,9 @@ function App() {
               </div>
             </Movable>
 
-            {(recentRegions.length > 0 || selectedProvinces.length > 0) && (
-              <Movable id="bottom.recent" title="Recent / Summary" designMode={designMode}
-                defaultPct={{ x: 0.190, y: 0.708, w: 0.375, h: 0.040 }}>
-                <div className="panel" style={{ width: "100%", height: "100%", padding: "6px 10px", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                  {recentRegions.length > 0 && (
-                    <>
-                      <span style={{ fontWeight: 700, fontSize: "0.7rem", color: "#dca64a", flexShrink: 0 }}>↶ Recent</span>
-                      <div className="resource-panel-scroll" style={{
-                        display: "flex", flexWrap: "nowrap", gap: 3,
-                        overflowX: "auto", overflowY: "hidden",
-                        scrollbarWidth: "none", flex: 1, minWidth: 0,
-                      }}>
-                        {recentRegions.map(key => {
-                          const r = regions[key];
-                          if (!r) return null;
-                          const label = r.city || r.region || key;
-                          const isLocked = lockedRegionInfo?.rgb === key;
-                          return (
-                            <button
-                              key={key}
-                              onClick={() => jumpToPin({ key, label })}
-                              title={r.region && r.city ? `${r.region} (${r.city})` : label}
-                              style={{
-                                padding: "1px 6px", borderRadius: 4,
-                                border: isLocked ? "1px solid #dca64a" : "1px solid #555",
-                                background: isLocked ? "rgba(220,166,74,0.18)" : "rgba(255,255,255,0.06)",
-                                color: isLocked ? "#dca64a" : "#ddd",
-                                cursor: "pointer", fontSize: "0.7rem",
-                                whiteSpace: "nowrap", flexShrink: 0,
-                              }}
-                            >
-                              {label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <span
-                        onClick={() => setRecentRegions([])}
-                        title="Clear recent regions"
-                        style={{ fontSize: "0.65rem", fontWeight: 400, opacity: 0.7, cursor: "pointer", flexShrink: 0 }}
-                      >clear</span>
-                    </>
-                  )}
-                  {selectedProvinces.length > 0 && (
-                    <button
-                      onClick={() => setShowFactionSummary((s) => !s)}
-                      style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
-                        border: "1px solid #888", cursor: "pointer", flexShrink: 0,
-                        background: showFactionSummary ? "#dca64a" : "transparent",
-                        color: showFactionSummary ? "#221" : "inherit" }}
-                      title="Toggle faction summary"
-                    >
-                      {showFactionSummary ? "Summary ON" : "Summary"}
-                    </button>
-                  )}
-                </div>
-              </Movable>
-            )}
+            {/* Recent regions + Summary live INSIDE bottom.selected as a
+                fixed top row (merged in 0.9.361). One less widget; one
+                more row of vertical space for the list itself. */}
 
             {pinnedRegions.length > 0 && (
               <Movable id="bottom.pinned" title="Pinned" designMode={designMode}
@@ -10849,10 +10794,69 @@ function App() {
             )}
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
-              defaultPct={{ x: 0.190, y: 0.800, w: 0.375, h: 0.195 }}>
-              {/* Fixed header (label + Deselect All) + scrollable body so
-                  the header stays put while the province list scrolls. */}
+              defaultPct={{ x: 0.215, y: 0.700, w: 0.351, h: 0.295 }}>
+              {/* Three sections in this widget:
+                    1) Recent regions chips + Summary toggle (fixed row)
+                    2) "Selected Provinces:" title + Deselect All (fixed row)
+                    3) Scrollable province list / faction summary
+                  Recent was a separate Movable (`bottom.recent`) until
+                  0.9.361 — merged here to reclaim a row of vertical space. */}
               <div className="panel" style={{ width: "100%", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", padding: "8px 14px" }}>
+                {(recentRegions.length > 0 || selectedProvinces.length > 0) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexShrink: 0, minWidth: 0 }}>
+                    {recentRegions.length > 0 && (
+                      <>
+                        <span style={{ fontWeight: 700, fontSize: "0.7rem", color: "#dca64a", flexShrink: 0 }}>↶ Recent</span>
+                        <div className="resource-panel-scroll" style={{
+                          display: "flex", flexWrap: "nowrap", gap: 3,
+                          overflowX: "auto", overflowY: "hidden",
+                          scrollbarWidth: "none", flex: 1, minWidth: 0,
+                        }}>
+                          {recentRegions.map(key => {
+                            const r = regions[key];
+                            if (!r) return null;
+                            const label = r.city || r.region || key;
+                            const isLocked = lockedRegionInfo?.rgb === key;
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => jumpToPin({ key, label })}
+                                title={r.region && r.city ? `${r.region} (${r.city})` : label}
+                                style={{
+                                  padding: "1px 6px", borderRadius: 4,
+                                  border: isLocked ? "1px solid #dca64a" : "1px solid #555",
+                                  background: isLocked ? "rgba(220,166,74,0.18)" : "rgba(255,255,255,0.06)",
+                                  color: isLocked ? "#dca64a" : "#ddd",
+                                  cursor: "pointer", fontSize: "0.7rem",
+                                  whiteSpace: "nowrap", flexShrink: 0,
+                                }}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <span
+                          onClick={() => setRecentRegions([])}
+                          title="Clear recent regions"
+                          style={{ fontSize: "0.65rem", fontWeight: 400, opacity: 0.7, cursor: "pointer", flexShrink: 0 }}
+                        >clear</span>
+                      </>
+                    )}
+                    {selectedProvinces.length > 0 && (
+                      <button
+                        onClick={() => setShowFactionSummary((s) => !s)}
+                        style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
+                          border: "1px solid #888", cursor: "pointer", flexShrink: 0,
+                          background: showFactionSummary ? "#dca64a" : "transparent",
+                          color: showFactionSummary ? "#221" : "inherit" }}
+                        title="Toggle faction summary"
+                      >
+                        {showFactionSummary ? "Summary ON" : "Summary"}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
                     {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}

@@ -102,7 +102,7 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 5;
+const LAYOUT_VERSION = 6;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -118,13 +118,16 @@ const CANONICAL_V4 = {
   "region.buildings":   { x: 0.5720, y: 0.5180, w: 0.2150, h: 0.4770 },
   "region.garrison":    { x: 0.7950, y: 0.5180, w: 0.2000, h: 0.1820 },
   "region.fieldArmies": { x: 0.7950, y: 0.7130, w: 0.2000, h: 0.2820 },
-  // Bottom-strip widgets — search bar above factions panel; recent +
-  // selected provinces stack vertically on the right side of the strip.
+  // Bottom-strip widgets. Search bar above factions; selected provinces
+  // (with recent regions + Summary merged in as its top row) on the right.
+  // Pinned regions (conditional) stays its own Movable so it can be
+  // moved independently when present.
   "bottom.search":      { x: 0.0050, y: 0.7000, w: 0.2050, h: 0.0400 },
-  "bottom.factions":    { x: 0.0050, y: 0.7530, w: 0.2050, h: 0.2420 },
-  "bottom.recent":      { x: 0.2150, y: 0.7000, w: 0.3510, h: 0.0400 },
-  "bottom.pinned":      { x: 0.2150, y: 0.7530, w: 0.3510, h: 0.0400 },
-  "bottom.selected":    { x: 0.2150, y: 0.7530, w: 0.3510, h: 0.2420 },
+  "bottom.factions":    { x: 0.0050, y: 0.7440, w: 0.2050, h: 0.2510 },
+  "bottom.selected":    { x: 0.2150, y: 0.7000, w: 0.3510, h: 0.2950 },
+  // Note: bottom.pinned is intentionally omitted from canonical — its
+  // Movable only renders when pinnedRegions is non-empty, so most users
+  // won't see it. JSX default position handles the first-time render.
 };
 // Splitter overrides that put the map at the width the canonical widget
 // grid assumes. rightColPct=0.428 leaves x∈(0.566, 1) for widgets.
@@ -139,6 +142,11 @@ const CANONICAL_V4_SPLITTERS = {
 try {
   const stored = parseInt(localStorage.getItem("widget.layoutVersion") || "0", 10);
   if (stored < LAYOUT_VERSION) {
+    // Drop widgets that no longer exist — `bottom.recent` was merged into
+    // `bottom.selected` in 0.9.361. Leaving its localStorage entry around
+    // makes the snap/collision registry see a phantom rect at the old
+    // recent position.
+    try { localStorage.removeItem("widget.bottom.recent"); } catch {}
     for (const [id, pos] of Object.entries(CANONICAL_V4)) {
       localStorage.setItem(`widget.${id}`, JSON.stringify(pos));
     }

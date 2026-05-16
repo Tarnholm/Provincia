@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.361",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "Region info / Build queue / Unit queue widget content was flush against the panel's rounded corners. Wrapped each one's body in a 14 px-padded scroll container so titles and chips clear the curve like every other widget." },
+      { type: "change", text: "Recent regions + Summary button merged INTO the Selected provinces widget as a fixed top row. The old `bottom.recent` Movable is gone (migration drops its localStorage entry). Selected provinces widget is now taller (h=0.295 from y=0.700) so the merged content fits — gives the province list more room than the previous 3-row stack." },
+      { type: "change", text: "Factions widget pulled up closer to the Search widget — default position bumped from y=0.753 to y=0.744 so the two share the same tight gap as other adjacent widgets." },
+    ],
+  },
+  {
     version: "0.9.360",
     date: "2026-05-16",
     items: [

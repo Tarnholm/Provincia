@@ -505,6 +505,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.info" title="Region info" designMode={designMode}
         defaultPct={{ x: 0.5720, y: 0.0080, w: 0.2150, h: 0.3290 }}>
       <div className={panelInnerClass} style={panelInner}>
+        <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {region && (
           <div
             title="Double-click to copy region name"
@@ -882,6 +883,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <strong>{modeExtra.label}:</strong> {modeExtra.value}
           </div>
         )}
+        </div>
       </div>
       </Movable>
 
@@ -951,6 +953,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.queue" title="Build queue" designMode={designMode}
         defaultPct={{ x: 0.8975, y: 0.3500, w: 0.0975, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
+        <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
           <div
             title="Construction queue (decoded from save's default_set chain — session 36)"
@@ -977,6 +980,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         ) : (
           <span style={{ color: "#888", fontStyle: "italic", fontSize: "0.72rem" }}>No queue</span>
         )}
+        </div>
       </div>
       </Movable>
 
@@ -985,6 +989,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
         defaultPct={{ x: 0.7950, y: 0.3500, w: 0.0975, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
+        <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
           <div
             title="Recruitment queue (decoded from save's recruit chain — session 36)"
@@ -1010,6 +1015,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         ) : (
           <span style={{ color: "#888", fontStyle: "italic", fontSize: "0.72rem" }}>No queue</span>
         )}
+        </div>
       </div>
       </Movable>
 
