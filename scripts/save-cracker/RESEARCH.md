@@ -15627,14 +15627,21 @@ Two complementary battle saves:
 
 Both shrink — destroyed armies always get removed regardless of who wins. The asymmetry reflects which army's records (units + characters + paths) got purged. Useful for distinguishing "wiped out yours" from "wiped out theirs" by size alone.
 
-#### STRONG — Year transition costs ~3.8× more in Alex (confirms RIS pattern)
+#### REFUTED — "Year transition costs ~3.8× more" was a small-sample artifact
 
-| Alex End Turn | Year tick? | Δ size |
+Sessions 116/118 claimed year-transition End Turns cost ~2-4× normal End Turns. With more samples through Alex turns 11-15, that's wrong:
+
+| Year tick | Game phase | Δ size |
 |---|---|---|
-| T3 → T4 | no (-335 → -335) | +9,820 |
-| T4 → T5 | **yes (-335 → -334)** | **+37,168** |
+| Alex T4 → T5 | year -335 → -334 (early) | **+37,168** |
+| Alex T11 → T12 | year -331 → -330 (mid) | **-62,443** |
+| Alex T14 → T15 | year -330 → -329 (mid) | **-7,606** |
 
-Matches the RIS pattern (session 116) where year-transition End Turns had ~2× the file growth of mid-year End Turns. Alex's effect is even more pronounced (3.8×) probably because regular Alex turn growth is much smaller, making the annual-bookkeeping overhead more visible proportionally.
+Only the early-game year tick produced growth. Two later year ticks SHRANK the file. The early-game year tick growth was probably first-year setup overhead (annual reports being initialized, faction starting state being processed). Once the campaign has stable year-reporting machinery in place, later year ticks can be net-neutral or destructive (characters aging out, units disbanded, settlements lost via attrition, etc.).
+
+**Lesson** (again): hold off on STRONG claims about per-event invariants until ≥5 independent samples confirm. This is the third such retraction across sessions 110-118 (after the +3 paths/turn and the +144 adoption-counter retractions).
+
+The actual year-tick signal: variable Δsize depending on game phase and accumulated state, but the year field at the per-campaign offset ALWAYS advances. So the year-field check is the reliable signal; the size delta isn't.
 
 So year-transition is a STRONG content-class fingerprint visible in size deltas alone — confirmed across both campaigns and across many years of campaign data.
 
