@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.365",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Gap bumped to 9 px on both axes (was 5). Horizontal fraction 0.0047, vertical 0.0083 — equal pixels. Bottom strip (search / factions / selected provinces) now sits exactly 9 px below the map's bottom edge — the same gap they keep with each other horizontally. LAYOUT_VERSION 9; migration applies on next launch." },
+    ],
+  },
+  {
     version: "0.9.364",
     date: "2026-05-16",
     items: [

@@ -126,7 +126,7 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 8;
+const LAYOUT_VERSION = 9;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -134,24 +134,22 @@ const LAYOUT_VERSION = 8;
 // shorter (h=0.329) to leave room for `region.characters` between info
 // and buildings.
 const CANONICAL_V4 = {
-  // Uniform 5-PIXEL gaps everywhere at 1920×1080. Horizontal fraction
-  // ≈ 5/1920 = 0.0026; vertical fraction ≈ 5/1080 = 0.0046. Different
-  // fractions, but the same number of pixels — visually consistent.
-  "region.info":        { x: 0.5720, y: 0.0080, w: 0.2102, h: 0.3290 },
-  "region.recruit":     { x: 0.7848, y: 0.0080, w: 0.2102, h: 0.3290 },
-  "region.characters":  { x: 0.5720, y: 0.3416, w: 0.2102, h: 0.1550 },
-  "region.unitQueue":   { x: 0.7848, y: 0.3416, w: 0.1038, h: 0.1550 },
-  "region.queue":       { x: 0.8912, y: 0.3416, w: 0.1038, h: 0.1550 },
-  "region.buildings":   { x: 0.5720, y: 0.5012, w: 0.2102, h: 0.4938 },
-  "region.garrison":    { x: 0.7848, y: 0.5012, w: 0.2102, h: 0.1900 },
-  "region.fieldArmies": { x: 0.7848, y: 0.6958, w: 0.2102, h: 0.2992 },
-  // Bottom-strip widgets — 5-px gaps too.
-  "bottom.search":      { x: 0.0050, y: 0.7550, w: 0.2076, h: 0.0400 },
-  "bottom.factions":    { x: 0.0050, y: 0.7996, w: 0.2076, h: 0.1954 },
-  "bottom.selected":    { x: 0.2152, y: 0.7550, w: 0.3514, h: 0.2400 },
-  // Note: bottom.pinned is intentionally omitted from canonical — its
-  // Movable only renders when pinnedRegions is non-empty, so most users
-  // won't see it. JSX default position handles the first-time render.
+  // Uniform 9-PIXEL gaps everywhere at 1920×1080. Horizontal fraction
+  // ≈ 9/1920 = 0.0047; vertical fraction ≈ 9/1080 = 0.0083. Bottom
+  // strip widgets sit 9 px below the map's bottom edge.
+  "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3287 },
+  "region.recruit":     { x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 },
+  "region.characters":  { x: 0.5720, y: 0.3453, w: 0.2090, h: 0.1550 },
+  "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
+  "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
+  "region.buildings":   { x: 0.5720, y: 0.5086, w: 0.2090, h: 0.4864 },
+  "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1900 },
+  "region.fieldArmies": { x: 0.7857, y: 0.7069, w: 0.2090, h: 0.2881 },
+  // Bottom-strip widgets — 9 px below the map's bottom edge (map
+  // y=0.0083 + h=0.6843 = 0.6926; strip y = 0.6926 + 9/1080 = 0.7009).
+  "bottom.search":      { x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 },
+  "bottom.factions":    { x: 0.0047, y: 0.7492, w: 0.2076, h: 0.2458 },
+  "bottom.selected":    { x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 },
 };
 // Splitter overrides that put the map at the width the canonical widget
 // grid assumes. rightColPct=0.428 leaves x∈(0.566, 1) for widgets.

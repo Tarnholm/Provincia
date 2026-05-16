@@ -31,11 +31,12 @@ const PANEL_WIDTH = 220;
 // Shrinks the map canvas horizontally to free space for the right sidebar
 // (Resources panel, Factions tiles, search). Tuned for 1920px default.
 const MAP_WIDTH_ADJUST = 120;
-// Reserved bottom-strip height when no override is set. Trimmed in 0.9.362
-// (was 320) since widgets float independently of the strip now; the
-// canvas can claim the extra height for the map. Widgets at default
-// canonical positions still fit inside this area.
-const REGIONINFO_HEIGHT = 270;
+// Reserved bottom-strip height when no override is set. 323 px at 1080p
+// → strip top at y=0.7009, which gives the canonical bottom-strip widgets
+// (search/factions/selected) their 9 px gap below the map's bottom edge.
+// Dynamic canvas resizing takes over once Movable widgets register, so
+// this is just the first-paint baseline.
+const REGIONINFO_HEIGHT = 323;
 const ICON_SIZE = 72;
 const ICON_GAP = 3;
 const ICON_SIDE_PAD = 0;
@@ -10770,7 +10771,7 @@ function App() {
                 in design mode. Headers/buttons stay put; only inner
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
-              defaultPct={{ x: 0.005, y: 0.755, w: 0.2076, h: 0.040 }}
+              defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
                   chrome (no cream background, no extra padding). Input
@@ -10794,7 +10795,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
-              defaultPct={{ x: 0.005, y: 0.7996, w: 0.2076, h: 0.1954 }}
+              defaultPct={{ x: 0.0047, y: 0.7492, w: 0.2076, h: 0.2458 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>
@@ -10837,7 +10838,7 @@ function App() {
             )}
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
-              defaultPct={{ x: 0.2152, y: 0.755, w: 0.3514, h: 0.240 }}>
+              defaultPct={{ x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 }}>
               {/* Three sections in this widget:
                     1) Recent regions chips + Summary toggle (fixed row)
                     2) "Selected Provinces:" title + Deselect All (fixed row)
