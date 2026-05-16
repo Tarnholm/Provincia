@@ -4610,20 +4610,37 @@ function App() {
         }));
       } else if (colorMode === "loyalist") {
         // Loyalist mode: colour every region by its `descr_regions` faction
-        // (field 3 of the region block) — i.e. who takes the settlement
-        // when it rebels. Reveals the "shadow map" of latent claims under
-        // the current ownership. Pulls colour from descr_sm_factions via
-        // the existing factionColors map; falls back to grey for unknown.
+        // (field 3 = who takes the settlement on rebellion). Reveals the
+        // shadow map of latent claims under current ownership.
+        //
+        // Cross-check against descr_strat's `faction_creator` (= the
+        // initial turn-0 owner, available via initialOwnerByCity). When
+        // rebel_default ≠ faction_creator the loyalist revolt is
+        // misconfigured — the settlement would defect to the wrong
+        // faction on rebellion. MATCH regions get full saturation;
+        // MISMATCH regions are mixed toward grey (45 % of original
+        // colour + grey base) so they're visibly dimmed but still keyed
+        // to the rebel-default colour.
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           const rebelFac = (r.faction || "").toLowerCase();
           const fc = rebelFac && factionColors[rebelFac];
           const base = (fc && fc.primary) || [110, 110, 110];
-          if (devFlatColors) return base;
+          const creator = ((initialOwnerByCity && initialOwnerByCity[r.city]) || "").toLowerCase();
+          const isMatch = !!creator && creator === rebelFac;
+          let final = base;
+          if (!isMatch) {
+            final = [
+              Math.round(base[0] * 0.45 + 60),
+              Math.round(base[1] * 0.45 + 60),
+              Math.round(base[2] * 0.45 + 60),
+            ];
+          }
+          if (devFlatColors) return final;
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.8;
           return [
-            Math.max(0, Math.min(255, base[0] + v)),
-            Math.max(0, Math.min(255, base[1] + v)),
-            Math.max(0, Math.min(255, base[2] + v)),
+            Math.max(0, Math.min(255, final[0] + v)),
+            Math.max(0, Math.min(255, final[1] + v)),
+            Math.max(0, Math.min(255, final[2] + v)),
           ];
         }));
       } else if (colorMode === "pop_growth") {
@@ -9793,19 +9810,26 @@ function App() {
     }
 
     // Loyalist legend — aggregate by the descr_regions rebel-default
-    // faction (r.faction). Each entry shows the faction colour, count of
-    // provinces, and clicks select all regions with that rebel-default.
+    // faction (r.faction). Each entry shows faction colour, total
+    // provinces, MATCH count (rebel_default == faction_creator) and
+    // MISMATCH count (the loyalist revolt would defect to a different
+    // faction than the descr_strat creator).
     if (colorMode === "loyalist") {
       const rebelMap = {};
+      let totalMatch = 0, totalMismatch = 0;
       for (const [rgbKey, r] of Object.entries(regions)) {
         const f = (r.faction || "").toLowerCase();
         if (!f) continue;
         if (!rebelMap[f]) {
           const fc = factionColors[f];
           const color = (fc && fc.primary) ? fc.primary : [110, 110, 110];
-          rebelMap[f] = { color, count: 0, rgbKeys: [] };
+          rebelMap[f] = { color, count: 0, matchCount: 0, mismatchCount: 0, rgbKeys: [] };
         }
+        const creator = ((initialOwnerByCity && initialOwnerByCity[r.city]) || "").toLowerCase();
+        const isMatch = !!creator && creator === f;
         rebelMap[f].count++;
+        if (isMatch) { rebelMap[f].matchCount++; totalMatch++; }
+        else { rebelMap[f].mismatchCount++; totalMismatch++; }
         rebelMap[f].rgbKeys.push(rgbKey);
       }
       const allEntries = Object.entries(rebelMap).sort((a, b) => b[1].count - a[1].count);
@@ -9839,6 +9863,16 @@ function App() {
               <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: 6 }}>{collapseArrow}</span>
               {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi</span>}
             </div>
+            {!legendCollapsed && (totalMatch + totalMismatch > 0) && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6, fontSize: "0.66rem",
+                color: "#aaa", marginBottom: 4, padding: "2px 4px",
+              }} title="MATCH: descr_regions rebel-default = descr_strat faction_creator. MISMATCH: rebellion would defect to a different faction than the original creator (loyalist revolt misconfigured).">
+                <span style={{ color: "#7fc97f" }}>✓ {totalMatch}</span>
+                <span style={{ color: "#e74c3c" }}>✗ {totalMismatch}</span>
+                <span style={{ color: "#777", flex: 1, textAlign: "right" }}>{Math.round(totalMatch / Math.max(1, totalMatch + totalMismatch) * 100)}% aligned</span>
+              </div>
+            )}
             {!legendCollapsed && (
               <input
                 type="text"
@@ -9855,23 +9889,30 @@ function App() {
             )}
           </div>
           <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
-            {filtered.map(([name, { color, count }]) => {
+            {filtered.map(([name, { color, count, matchCount, mismatchCount }]) => {
               const selected = activeSet?.has(name);
               const dimmed = activeSet && activeSet.size > 0 && !selected;
               return (
-                <div key={name} onClick={(e) => onClick(name, e.shiftKey)} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "2px 4px", borderRadius: 4, cursor: "pointer",
-                  background: selected ? "rgba(220,166,74,0.25)" : "transparent",
-                  opacity: dimmed ? 0.4 : 1,
-                  transition: "opacity 0.15s, background 0.15s",
-                }}>
+                <div key={name} onClick={(e) => onClick(name, e.shiftKey)}
+                  title={`${display(name)} — ${matchCount} match, ${mismatchCount} mismatch (loyalist revolt to wrong faction)`}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "2px 4px", borderRadius: 4, cursor: "pointer",
+                    background: selected ? "rgba(220,166,74,0.25)" : "transparent",
+                    opacity: dimmed ? 0.4 : 1,
+                    transition: "opacity 0.15s, background 0.15s",
+                  }}>
                   <div style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0,
                     background: `rgb(${color[0]},${color[1]},${color[2]})`,
                     outline: selected ? "2px solid #dca64a" : "none",
                   }} />
-                  <span style={{ flex: 1, textTransform: "capitalize", fontSize: "0.66rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={display(name)}>{display(name)}</span>
-                  <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({count})</span>
+                  <span style={{ flex: 1, textTransform: "capitalize", fontSize: "0.66rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{display(name)}</span>
+                  {matchCount > 0 && (
+                    <span style={{ fontSize: "0.6rem", color: "#7fc97f", flexShrink: 0, fontWeight: 600 }}>✓{matchCount}</span>
+                  )}
+                  {mismatchCount > 0 && (
+                    <span style={{ fontSize: "0.6rem", color: "#e74c3c", flexShrink: 0, fontWeight: 600 }}>✗{mismatchCount}</span>
+                  )}
                 </div>
               );
             })}

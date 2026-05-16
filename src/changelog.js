@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.371",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Loyalist map mode now cross-checks the rebel-default against descr_strat's faction_creator (computed live from the same alignment logic as the user's faction_summary.txt). MATCH regions paint at full saturation in their rebel-default colour; MISMATCH regions (rebel_default ≠ faction_creator, i.e. the loyalist revolt would defect to a different faction than the original creator — a mod-data integrity bug) get mixed 45 % toward grey so they're visibly dimmed but still keyed to the rebel-default colour." },
+      { type: "improvement", text: "Loyalist legend shows match / mismatch counts. Header summary `✓ N ✗ M — XX% aligned`; per-faction rows show ✓N ✗M chips next to each entry. Hover an entry for a tooltip explaining what the counts mean. Lets you spot mod-design issues at a glance without running the user's Python report script." },
+    ],
+  },
+  {
     version: "0.9.370",
     date: "2026-05-16",
     items: [
