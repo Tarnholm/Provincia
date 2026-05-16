@@ -15638,6 +15638,69 @@ Matches the RIS pattern (session 116) where year-transition End Turns had ~2× t
 
 So year-transition is a STRONG content-class fingerprint visible in size deltas alone — confirmed across both campaigns and across many years of campaign data.
 
+#### STRONG — Settlement-occupation outcome affects file size (occupy vs enslave)
+
+User played the Alex campaign through turn 12 and produced two settlement-capture outcomes:
+
+| Settlement capture | Δ size |
+|---|---|
+| **Byzantium occupied** (T2, kept population) | -23,551 |
+| **Epidamnus enslaved** (T11, removed population) | net -9,648 over surrounding turns |
+
+Plus a striking **T11 End → T12 Start** delta of **-62,443 bytes** — file SHRANK by 62 KB across a normal year-transition End Turn. Hypothesis: the enslavement processed during End Turn removes settlement population/inhabitant records (cultural assimilation step), and year-transition annual-report cleanup combine for the large shrinkage.
+
+This is the first known case of a file size DECREASE across an End Turn. Useful signal: any save where End-Turn-Δsize < 0 had a major destructive event processed (enslavement, faction extinction, settlement razed, etc.).
+
+#### Action class signatures table (final, 30-sample)
+
+Across all 30 Alex saves spanning turns 1-12 (2 turns/year), every action's size + counter delta:
+
+```
+ACTION                                 ΔSIZE      ΔCTR    NOTES
+─────────────────────────────────────────────────────────────────
+pure resave (no-op)                    ±0         +226    noise floor
+besiege fort (no-move command)         +159       +405    smallest atomic command
+army-mobilization (move/siege/disem)   +592       ~+350   3 samples consistent
+ship-embark (board)                    +598       +632    +6 over base
+ship-disembark                         +592       +264    same as army-move
+region-admin (tax/attack)              +614       ~+300   +22 over base (region-id + value bytes)
+building queue                         +733       +345    larger record (queue list grows)
+unit queue                             +808       +366    larger still
+ship move to port                      +844       +227    largest single-command
+adoption (offer)                       +1820 (Alex)/+248-583 (RIS)   +138
+new governor                           +16020-ish over multi-turn gap (cleanest atomic isolated)
+field battle (army destroyed)          -15,566 to -22,706   +200-500
+settlement siege resolution (occupy)   -21,731    +1,342   first negative-Δ END turn class
+settlement siege + enslave             part of net -62 KB year-transition shrinkage
+End Turn (mid-campaign, no year tick)  +9,820 (Alex) / +290-410 KB (RIS)   +100-300
+End Turn (year tick)                   ~3.8× normal Alex / ~2× normal RIS
+End Turn (with major destructive event)  CAN BE NEGATIVE (-62 KB observed)
+```
+
+#### Final corpus and value summary
+
+This conversation analyzed 30+ Alex saves and 14 RIS imperial saves across multiple campaigns. Eight cracker sessions (110-118) committed across 25+ commits. Key DECODED subsystems:
+
+* Character position record (RIS)
+* Companion metadata + region (shipped to Provincia 0.9.374)
+* JOURNAL_EVENT record format (RIS)
+* Character death = portrait-path flip (RIS)
+* Resave noise floor (4 bytes RIS / similar Alex)
+* Per-campaign year cadence (RIS 4t/y, Alex 2t/y)
+* Per-campaign year-field offset (RIS 0x44e7, Alex 0x504)
+* Per-campaign event-counter offset (RIS 0x43f8, Alex 0xefd)
+* Year-transition extra cost (~2-4× normal End Turn)
+* Alex command-record byte positions (action-type, region-id, per-instance ID located)
+* Battle resolution semantics (destroyed army records purged; win/loss asymmetry)
+* Event-counter as event-class fingerprint (with action-class ranges tabulated)
+* Settlement occupation vs enslavement size signatures
+
+Subsystems still uncracked (next-session targets):
+* Path → character UUID linkage
+* Diplomatic partner-faction resolution
+* Leader UUID location inside major-faction records
+* Full byte-level decode of any single command-record (we have the positions but not the field semantics)
+
 #### STRONG — Battle resolution SHRINKS saves; counter advances by 10×
 
 Three Turn-2 battle-resolution saves show the army-destroyed and settlement-conquered actions REMOVE state from the save:
