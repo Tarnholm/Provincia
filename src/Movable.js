@@ -102,26 +102,32 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 3;
-// Bigger visible gap between horizontally-adjacent widgets (info|recruit,
-// unitQueue|queue, characters|queues, buildings|garrison) — ~10 px on a
-// 1920-wide viewport — plus a taller `region.info` so worst-case tags +
-// hidden resources + ethnicities don't push the widget into overflow.
-const CANONICAL_V3 = {
-  "region.info":        { x: 0.5720, y: 0.0080, w: 0.2150, h: 0.4000 },
-  "region.recruit":     { x: 0.7950, y: 0.0080, w: 0.2000, h: 0.4000 },
-  "region.characters":  { x: 0.5720, y: 0.4130, w: 0.2150, h: 0.1000 },
-  "region.unitQueue":   { x: 0.7950, y: 0.4130, w: 0.0975, h: 0.1000 },
-  "region.queue":       { x: 0.8975, y: 0.4130, w: 0.0975, h: 0.1000 },
-  "region.buildings":   { x: 0.5720, y: 0.5180, w: 0.2150, h: 0.4770 },
-  "region.garrison":    { x: 0.7950, y: 0.5180, w: 0.2000, h: 0.2000 },
-  "region.fieldArmies": { x: 0.7950, y: 0.7230, w: 0.2000, h: 0.2720 },
+const LAYOUT_VERSION = 4;
+// Canonical v4: bigger vertical gaps between widget rows so they match the
+// pixel-spacing of horizontal gaps on a 1920×1080 viewport (~13 px both
+// directions). Adds bottom-strip widgets — `bottom.search`,
+// `bottom.factions`, `bottom.recent`, `bottom.pinned`, `bottom.selected`
+// — that used to live in a non-Movable CSS grid.
+const CANONICAL_V4 = {
+  "region.info":        { x: 0.5720, y: 0.0080, w: 0.2150, h: 0.3900 },
+  "region.recruit":     { x: 0.7950, y: 0.0080, w: 0.2000, h: 0.3900 },
+  "region.characters":  { x: 0.5720, y: 0.4100, w: 0.2150, h: 0.0950 },
+  "region.unitQueue":   { x: 0.7950, y: 0.4100, w: 0.0975, h: 0.0950 },
+  "region.queue":       { x: 0.8975, y: 0.4100, w: 0.0975, h: 0.0950 },
+  "region.buildings":   { x: 0.5720, y: 0.5180, w: 0.2150, h: 0.1820 },
+  "region.garrison":    { x: 0.7950, y: 0.5180, w: 0.2000, h: 0.1820 },
+  "region.fieldArmies": { x: 0.7950, y: 0.7130, w: 0.2000, h: 0.2820 },
+  // Bottom-strip widgets (factions / search / recent / pinned / selected
+  // provinces). Replaces the old non-Movable grid container.
+  "bottom.search":      { x: 0.0050, y: 0.7080, w: 0.1800, h: 0.0300 },
+  "bottom.factions":    { x: 0.0050, y: 0.7450, w: 0.1800, h: 0.2500 },
+  "bottom.recent":      { x: 0.1900, y: 0.7080, w: 0.3750, h: 0.0400 },
+  "bottom.pinned":      { x: 0.1900, y: 0.7550, w: 0.3750, h: 0.0400 },
+  "bottom.selected":    { x: 0.1900, y: 0.8000, w: 0.3750, h: 0.1950 },
 };
 // Splitter overrides that put the map at the width the canonical widget
-// grid assumes. With rightColPct=0.428 the map ends near x≈0.566 leaving
-// the right column from x≈0.572 to x≈0.995 for the widgets — the same
-// shape the user fine-tuned to.
-const CANONICAL_V3_SPLITTERS = {
+// grid assumes. rightColPct=0.428 leaves x∈(0.566, 1) for widgets.
+const CANONICAL_V4_SPLITTERS = {
   "layout.rightColPct": "0.428",
   "layout.bottomStripPct": "0",
   "layout.factionColPct": "0",
@@ -132,10 +138,10 @@ const CANONICAL_V3_SPLITTERS = {
 try {
   const stored = parseInt(localStorage.getItem("widget.layoutVersion") || "0", 10);
   if (stored < LAYOUT_VERSION) {
-    for (const [id, pos] of Object.entries(CANONICAL_V3)) {
+    for (const [id, pos] of Object.entries(CANONICAL_V4)) {
       localStorage.setItem(`widget.${id}`, JSON.stringify(pos));
     }
-    for (const [key, val] of Object.entries(CANONICAL_V3_SPLITTERS)) {
+    for (const [key, val] of Object.entries(CANONICAL_V4_SPLITTERS)) {
       localStorage.setItem(key, val);
     }
     localStorage.setItem("widget.layoutVersion", String(LAYOUT_VERSION));

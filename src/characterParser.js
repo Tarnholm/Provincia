@@ -208,8 +208,12 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
       command    = buf.readUInt32LE(mgmtOff + 4);
       influence  = buf.readUInt32LE(mgmtOff + 8);
       loyalty    = buf.readUInt32LE(mgmtOff + 24);
-      // Sanity: real stats are 0..15. Anything larger = layout drift, drop.
-      if (management > 15 || command > 15 || influence > 15 || loyalty > 15) {
+      // Sanity gate: session 91 found stats in the 0..15 range, but
+      // trait-stacked late-game generals can push command/influence well
+      // past that. Widen to 30 so legit veteran stats survive while
+      // garbage reads (offset drift = 4-byte values in the 10^6+ range)
+      // still get filtered.
+      if (management > 30 || command > 30 || influence > 30 || loyalty > 30) {
         management = command = influence = loyalty = null;
       }
     }

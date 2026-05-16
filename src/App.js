@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
-import { resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect } from "./Movable";
+import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
@@ -6780,8 +6780,12 @@ function App() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 5,
-            padding: "6px 8px 0 8px",
+            marginBottom: 4,
+            // Bumped horizontal padding from 8 → 14 so the title clears
+            // the panel's 12 px border-radius corner curve. Top padding
+            // reduced (was 6 → 3) so the header sits closer to the top
+            // edge of the widget — close, but not corner-clipped.
+            padding: "3px 14px 0 14px",
             gap: 8,
           }}
         >
@@ -6962,26 +6966,9 @@ function App() {
             Deselect
           </button>
         </div>
-        <div style={{ padding: "0 8px 4px 8px", position: "relative" }}>
-          {/* Unified search: filters the visible faction grid AND shows a
-              province/settlement dropdown for jump-to-and-select. Replaces
-              the old separate province search that lived in the bottom-
-              strip right column. */}
-          <input
-            type="text"
-            ref={searchInputRef}
-            placeholder="Search... (Ctrl+F)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%", boxSizing: "border-box", padding: "3px 8px",
-              borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(0,0,0,0.3)", color: "inherit", fontSize: "0.8rem",
-              outline: "none",
-            }}
-          />
-          {renderProvinceDropdown && renderProvinceDropdown()}
-        </div>
+        {/* Search input lives in its own Movable widget (bottom.search)
+            above the factions panel — not inside this scroll area — so
+            it stays visible whether you scroll the faction grid or not. */}
         <div
           style={{
             display: "grid",
@@ -10726,44 +10713,46 @@ function App() {
                 separately stretches to fill the right column + the
                 bottom-right corner (L-shape) so it gets all the remaining
                 space. */}
-            <div
-              style={{
-                position: "fixed",
-                left: MAP_PADDING,
-                width: canvasSize.width,
-                bottom: MAP_PADDING,
-                height: effectiveBottomHeight,
-                display: "grid",
-                gridTemplateColumns: (() => {
-                  const overrideW = factionColPct > 0
-                    ? Math.round(canvasSize.width * factionColPct)
-                    : 0;
-                  const w = overrideW || Math.max(0, Math.floor(factionPanelTargetWidth));
-                  return `${w}px 1fr`;
-                })(),
-                columnGap: PANELS_GAP,
-                boxSizing: "border-box",
-                zIndex: welcomeHighlight === "factions" ? 10001 : 2,
-              }}
-            >
-              <CustomScrollArea
-                className={"panel panel-tight factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
-                /* CSS mask fades out partial row at bottom */
-                style={{ width: "100%", height: "100%" }}
-                skin={SCROLL_SKIN} railInset={{ top: 40, bottom: 40 }}
-                trackWidth={SCROLLBAR_GUTTER} railWidth={4} thumbWidth={16}
-                thumbMin={THUMB_MIN_PX} ariaLabel="Factions"
-              >
-                {renderFactionSelector()}
-              </CustomScrollArea>
+            {/* Each bottom-strip section is now its own Movable widget —
+                search, factions, recent+summary row, pinned regions, and
+                selected provinces. Default positions seed the previous
+                bottom-strip grid; user can drag/resize each independently
+                in design mode. Headers/buttons stay put; only inner
+                content scrolls. */}
+            <Movable id="bottom.search" title="Search" designMode={designMode}
+              defaultPct={{ x: 0.005, y: 0.708, w: 0.18, h: 0.030 }}
+              zIndex={2}>
+              <div className="panel" style={{ width: "100%", height: "100%", padding: "4px 8px", boxSizing: "border-box", position: "relative" }}>
+                <input
+                  type="text"
+                  ref={searchInputRef}
+                  placeholder="Search... (Ctrl+F)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: "100%", height: "100%", boxSizing: "border-box", padding: "3px 8px",
+                    borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(0,0,0,0.3)", color: "inherit", fontSize: "0.8rem",
+                    outline: "none",
+                  }}
+                />
+                {renderProvinceDropdown && renderProvinceDropdown()}
+              </div>
+            </Movable>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: PANELS_GAP, height: "100%", overflow: "hidden" }}>
-                {/* Top row: Recent regions + Summary toggle inline.
-                    The dedicated province search box was removed in
-                    0.9.357 — search is now the unified bar above the
-                    factions panel. */}
-                {(recentRegions.length > 0 || selectedProvinces.length > 0) && (
-                <div className="panel" style={{ padding: "6px 10px", flexShrink: 0, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <Movable id="bottom.factions" title="Factions" designMode={designMode}
+              defaultPct={{ x: 0.005, y: 0.745, w: 0.18, h: 0.250 }}
+              zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
+              <div className={"panel panel-tight factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
+                style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "auto", padding: "4px 0" }}>
+                {renderFactionSelector()}
+              </div>
+            </Movable>
+
+            {(recentRegions.length > 0 || selectedProvinces.length > 0) && (
+              <Movable id="bottom.recent" title="Recent / Summary" designMode={designMode}
+                defaultPct={{ x: 0.190, y: 0.708, w: 0.375, h: 0.040 }}>
+                <div className="panel" style={{ width: "100%", height: "100%", padding: "6px 10px", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                   {recentRegions.length > 0 && (
                     <>
                       <span style={{ fontWeight: 700, fontSize: "0.7rem", color: "#dca64a", flexShrink: 0 }}>↶ Recent</span>
@@ -10816,109 +10805,110 @@ function App() {
                     </button>
                   )}
                 </div>
-                )}
+              </Movable>
+            )}
 
-                {/* Pinned regions */}
-                {pinnedRegions.length > 0 && (
-                  <div className="panel" style={{ padding: "8px 10px", flexShrink: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 5, color: "#dca64a" }}>📌 Pinned Regions</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 6px" }}>
-                      {pinnedRegions.map(pin => (
-                        <div key={pin.key} style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                          <button
-                            onClick={() => jumpToPin(pin)}
-                            style={{ padding: "2px 8px", borderRadius: 5, border: "1px solid #777",
-                              background: "rgba(255,255,255,0.1)", color: "#eee", cursor: "pointer", fontSize: "0.78rem" }}
-                          >
-                            {pin.label}
-                          </button>
-                          <button
-                            onClick={() => setPinnedRegions(prev => prev.filter(p => p.key !== pin.key))}
-                            title="Unpin"
-                            style={{ padding: "2px 5px", borderRadius: 5, border: "1px solid #555",
-                              background: "transparent", color: "#aaa", cursor: "pointer", fontSize: "0.75rem", lineHeight: 1 }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Selected provinces / faction summary */}
-                <CustomScrollArea
-                  className="panel"
-                  style={{ width: "100%", flex: 1, minHeight: 0 }}
-                  skin={SCROLL_SKIN} railInset={{ top: 40, bottom: 40 }}
-                  trackWidth={SCROLLBAR_GUTTER} railWidth={4} thumbWidth={16}
-                  thumbMin={THUMB_MIN_PX} ariaLabel="Selected provinces"
-                >
-                  <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
-                      {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}
-                    </span>
-                    <button
-                      style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: 6, border: "1px solid #bbb",
-                        cursor: selectedProvinces.length ? "pointer" : "not-allowed",
-                        opacity: selectedProvinces.length ? 1 : 0.5, fontWeight: 500,
-                        background: "transparent", color: "inherit", flexShrink: 0 }}
-                      onClick={() => { setSelectedProvinces([]); setSelectedFaction(null); }}
-                      disabled={selectedProvinces.length === 0}
-                      title="Clear all selected provinces"
-                    >Deselect All</button>
-                    {devMode && isVictoryMode && mapCampaign === "imperial" && (
-                      <div style={{ display: "flex", gap: 4 }}>
-                        {!portedVictory && (
-                          <button
-                            onClick={portClassicVictory}
-                            style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
-                              border: "1px solid #e8a030", background: "rgba(232,160,48,0.15)",
-                              color: "#e8a030", cursor: "pointer", fontWeight: 600 }}
-                            title="Map classic campaign victory conditions to imperial regions using coordinate overlap"
-                          >Port from Classic</button>
-                        )}
-                        {portedVictory && (
-                          <button
-                            onClick={togglePortedVictory}
-                            style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
-                              border: "1px solid " + (showPortedVictory ? "#e8a030" : "#888"),
-                              background: showPortedVictory ? "rgba(232,160,48,0.3)" : "transparent",
-                              color: showPortedVictory ? "#e8a030" : "#aaa", cursor: "pointer", fontWeight: 600 }}
-                            title="Toggle between ported classic and original victory conditions"
-                          >{showPortedVictory ? "Ported (ON)" : "Ported (OFF)"}</button>
-                        )}
+            {pinnedRegions.length > 0 && (
+              <Movable id="bottom.pinned" title="Pinned" designMode={designMode}
+                defaultPct={{ x: 0.190, y: 0.755, w: 0.375, h: 0.040 }}>
+                <div className="panel" style={{ width: "100%", height: "100%", padding: "8px 10px", boxSizing: "border-box", overflow: "auto" }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 5, color: "#dca64a" }}>📌 Pinned Regions</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 6px" }}>
+                    {pinnedRegions.map(pin => (
+                      <div key={pin.key} style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <button
+                          onClick={() => jumpToPin(pin)}
+                          style={{ padding: "2px 8px", borderRadius: 5, border: "1px solid #777",
+                            background: "rgba(255,255,255,0.1)", color: "#eee", cursor: "pointer", fontSize: "0.78rem" }}
+                        >
+                          {pin.label}
+                        </button>
+                        <button
+                          onClick={() => setPinnedRegions(prev => prev.filter(p => p.key !== pin.key))}
+                          title="Unpin"
+                          style={{ padding: "2px 5px", borderRadius: 5, border: "1px solid #555",
+                            background: "transparent", color: "#aaa", cursor: "pointer", fontSize: "0.75rem", lineHeight: 1 }}
+                        >
+                          ×
+                        </button>
                       </div>
-                    )}
+                    ))}
                   </div>
+                </div>
+              </Movable>
+            )}
+
+            <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
+              defaultPct={{ x: 0.190, y: 0.800, w: 0.375, h: 0.195 }}>
+              {/* Fixed header (label + Deselect All) + scrollable body so
+                  the header stays put while the province list scrolls. */}
+              <div className="panel" style={{ width: "100%", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", padding: "8px 14px" }}>
+                <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexShrink: 0 }}>
+                  <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
+                    {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}
+                  </span>
+                  <button
+                    style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: 6, border: "1px solid #bbb",
+                      cursor: selectedProvinces.length ? "pointer" : "not-allowed",
+                      opacity: selectedProvinces.length ? 1 : 0.5, fontWeight: 500,
+                      background: "transparent", color: "inherit", flexShrink: 0 }}
+                    onClick={() => { setSelectedProvinces([]); setSelectedFaction(null); }}
+                    disabled={selectedProvinces.length === 0}
+                    title="Clear all selected provinces"
+                  >Deselect All</button>
+                  {devMode && isVictoryMode && mapCampaign === "imperial" && (
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {!portedVictory && (
+                        <button
+                          onClick={portClassicVictory}
+                          style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
+                            border: "1px solid #e8a030", background: "rgba(232,160,48,0.15)",
+                            color: "#e8a030", cursor: "pointer", fontWeight: 600 }}
+                          title="Map classic campaign victory conditions to imperial regions using coordinate overlap"
+                        >Port from Classic</button>
+                      )}
+                      {portedVictory && (
+                        <button
+                          onClick={togglePortedVictory}
+                          style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
+                            border: "1px solid " + (showPortedVictory ? "#e8a030" : "#888"),
+                            background: showPortedVictory ? "rgba(232,160,48,0.3)" : "transparent",
+                            color: showPortedVictory ? "#e8a030" : "#aaa", cursor: "pointer", fontWeight: 600 }}
+                          title="Toggle between ported classic and original victory conditions"
+                        >{showPortedVictory ? "Ported (ON)" : "Ported (OFF)"}</button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
                   {showFactionSummary && selectedProvinces.length > 0
                     ? renderFactionSummary()
                     : renderSelectedProvincesList()}
-                  {devMode && selectedProvinces.length > 0 && (
-                    <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                      <button
-                        onClick={() => {
-                          const names = selectedProvinces
-                            .map(k => regions[k]?.city || regions[k]?.region)
-                            .filter(Boolean);
-                          navigator.clipboard.writeText(names.join("\n"))
-                            .then(() => {
-                              const btn = document.activeElement;
-                              if (btn) { const orig = btn.textContent; btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = orig; }, 1200); }
-                            });
-                        }}
-                        style={{ flex: 1, fontSize: "0.8rem", padding: "3px 10px", borderRadius: 6,
-                          border: "1px solid #888", cursor: "pointer",
-                          background: "transparent", color: "inherit" }}
-                        title="Copy selected province names to clipboard"
-                      >
-                        Copy List
-                      </button>
-                    </div>
-                  )}
-                </CustomScrollArea>
+                </div>
+                {devMode && selectedProvinces.length > 0 && (
+                  <div style={{ display: "flex", gap: 4, marginTop: 8, flexShrink: 0 }}>
+                    <button
+                      onClick={() => {
+                        const names = selectedProvinces
+                          .map(k => regions[k]?.city || regions[k]?.region)
+                          .filter(Boolean);
+                        navigator.clipboard.writeText(names.join("\n"))
+                          .then(() => {
+                            const btn = document.activeElement;
+                            if (btn) { const orig = btn.textContent; btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = orig; }, 1200); }
+                          });
+                      }}
+                      style={{ flex: 1, fontSize: "0.8rem", padding: "3px 10px", borderRadius: 6,
+                        border: "1px solid #888", cursor: "pointer",
+                        background: "transparent", color: "inherit" }}
+                      title="Copy selected province names to clipboard"
+                    >
+                      Copy List
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
+            </Movable>
 
             {/* REGION INFO PANEL — UI reshuffle 2026-05-15 (v2): L-shape
                 covering the entire right column + the bottom-right corner.

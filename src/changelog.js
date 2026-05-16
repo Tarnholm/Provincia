@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.359",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Bottom-strip pieces are now all Movables — `bottom.search`, `bottom.factions`, `bottom.recent`, `bottom.pinned`, `bottom.selected`. The old non-Movable CSS-grid container is gone; each section is independently draggable/resizable in design mode. Migration v4 seeds default positions matching the previous strip layout." },
+      { type: "change", text: "Search bar is its own widget above the factions panel (not nested inside it). The factions header sits closer to the top edge of the widget — horizontal padding bumped to 14 px so the title clears the panel's 12 px corner curve without being clipped." },
+      { type: "improvement", text: "Selected provinces widget now has a fixed header + scrolling body. The label, Deselect All button, and victory-mode toolbar stay put while the province list scrolls inside the widget. Header gets 14 px horizontal padding so it clears the rounded corners." },
+      { type: "improvement", text: "Character stats sanity gate widened from 0..15 to 0..30. Trait-stacked late-game generals (FactionLeader, military traits) can push command/influence past 15; the old gate was nulling valid stats and showing ? everywhere. Garbage reads (offset drift = huge values) still get filtered." },
+      { type: "improvement", text: "Bigger vertical gaps between widget rows in the canonical layout (matching the ~13 px horizontal pixel spacing) and slightly shorter `region.info`/`region.recruit` so the 3-row left column fits without being cramped." },
+    ],
+  },
+  {
     version: "0.9.358",
     date: "2026-05-16",
     items: [
