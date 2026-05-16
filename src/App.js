@@ -4233,7 +4233,7 @@ function App() {
   useEffect(() => { localStorage.setItem("mapVariant", mapVariant); }, [mapVariant]);
   useEffect(() => {
     localStorage.setItem("colorMode", colorMode);
-    if (colorMode !== "culture" && colorMode !== "religion" && colorMode !== "faction" && !DEV_COLOR_MODES.has(colorMode)) {
+    if (colorMode !== "culture" && colorMode !== "religion" && colorMode !== "faction" && colorMode !== "loyalist" && !DEV_COLOR_MODES.has(colorMode)) {
       setLegendFilter(null);
       setSelectedProvinces([]);
     }
@@ -6570,7 +6570,14 @@ function App() {
   }
 
   function handleContextMenu(e) {
-    if (!devMode || !pixelDataRef.current) return;
+    // Right-click is normally gated on dev mode (lets non-dev users use
+    // the browser's native right-click for whatever). EXCEPTION: Loyalist
+    // map mode — right-clicking a province lets the user reassign the
+    // rebel-default faction without needing dev mode, since that's the
+    // whole point of being in Loyalist mode.
+    const allowedWithoutDev = colorMode === "loyalist";
+    if (!devMode && !allowedWithoutDev) return;
+    if (!pixelDataRef.current) return;
     e.preventDefault();
     const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
     const x = Math.floor((e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale);
@@ -6628,6 +6635,12 @@ function App() {
           });
           setFactionOwnerChanges(prev => ({ ...prev, [regionName]: value }));
         }
+        return { ...prev, [rgbKey]: { ...r, faction: value } };
+      }
+      if (field === "rebel_default") {
+        // Loyalist-mode edit — change ONLY the descr_regions rebel-default
+        // faction (r.faction). Does NOT touch factionRegionsMap; the
+        // current owner stays as-is. Only descr_regions.txt is dirtied.
         return { ...prev, [rgbKey]: { ...r, faction: value } };
       }
       if (field === "culture") return { ...prev, [rgbKey]: { ...r, culture: value } };
@@ -7227,6 +7240,27 @@ function App() {
   function handleSearchSelect(result) {
     setSearchQuery("");
     setSearchResults([]);
+    // Faction match — select every region owned by this faction and pan
+    // to the centroid of the cluster (average of all province centroids).
+    if (result.kind === "faction" && Array.isArray(result.rgbKeys) && result.rgbKeys.length > 0) {
+      setSelectedProvinces(result.rgbKeys);
+      // Pan to the centroid of all the faction's provinces.
+      let sx = 0, sy = 0, n = 0;
+      for (const k of result.rgbKeys) {
+        const p = regionCentroids[k];
+        if (p) { sx += p.x; sy += p.y; n++; }
+      }
+      if (n > 0) {
+        const cx = sx / n, cy = sy / n;
+        const { scale } = computeTransform();
+        const ts = scale * zoom;
+        const bx = (canvasSize.width - imgSize.width * ts) / 2;
+        const by = (canvasSize.height - imgSize.height * ts) / 2;
+        setOffset(clampOffset({ x: canvasSize.width / 2 - cx * ts - bx, y: canvasSize.height / 2 - cy * ts - by }));
+      }
+      return;
+    }
+    // Province match — single-select and pan to its centroid.
     setSelectedProvinces((prev) => prev.includes(result.key) ? prev : [...prev, result.key]);
     const pos = regionCentroids[result.key];
     if (pos) {
@@ -7241,17 +7275,45 @@ function App() {
   // Province-results dropdown anchored to whichever search input is
   // mounted (now the unified one in the factions panel). Returns null when
   // there's no query / no matches. Extracted from the old renderSearch so
-  // the factions-panel input can render the same dropdown.
+  // the factions-panel input can render the same dropdown. Now also
+  // surfaces faction matches at the top: typing a faction name shows a
+  // "Select all of X" row that highlights every region owned by X.
   function renderProvinceDropdown() {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return null;
+    // Faction matches — both internal name + display name.
+    const factionHits = [];
+    const seenFac = new Set();
+    for (const f of Object.keys(factionRegionsMap || {})) {
+      const disp = (factionDisplayNames && factionDisplayNames[f]) || f;
+      if (f.toLowerCase().includes(q) || disp.toLowerCase().includes(q)) {
+        if (!seenFac.has(f)) { seenFac.add(f); factionHits.push({ id: f, disp }); }
+      }
+    }
+    const factionResults = factionHits.slice(0, 4).map(({ id, disp }) => {
+      const regionNames = factionRegionsMap[id] || [];
+      const rgbKeys = [];
+      for (const [rgbKey, r] of Object.entries(regions)) {
+        if (regionNames.some(rn => rn.toLowerCase() === (r.region || "").toLowerCase() || rn.toLowerCase() === (r.city || "").toLowerCase())) {
+          rgbKeys.push(rgbKey);
+        }
+      }
+      return {
+        kind: "faction",
+        key: `__faction__${id}`,
+        label: `${disp} — ${rgbKeys.length} province${rgbKeys.length === 1 ? "" : "s"}`,
+        factionId: id,
+        rgbKeys,
+      };
+    });
     const allMatches = Object.entries(regions)
       .filter(([, v]) => v.region?.toLowerCase().includes(q) || v.city?.toLowerCase().includes(q));
-    const results = allMatches
-      .slice(0, 8)
-      .map(([key, v]) => ({ key, label: v.region && v.city ? `${v.region} (${v.city})` : v.region || v.city || key }));
+    const provinceResults = allMatches
+      .slice(0, 8 - factionResults.length)
+      .map(([key, v]) => ({ kind: "province", key, label: v.region && v.city ? `${v.region} (${v.city})` : v.region || v.city || key }));
+    const results = [...factionResults, ...provinceResults];
     if (results.length === 0) return null;
-    const overflow = Math.max(0, allMatches.length - results.length);
+    const overflow = Math.max(0, allMatches.length - provinceResults.length);
     const inputEl = searchInputRef.current;
     const rect = inputEl ? inputEl.getBoundingClientRect() : null;
     if (!rect) return null;
@@ -7286,10 +7348,18 @@ function App() {
         {results.map((r) => (
           <div key={r.key}
             onClick={() => handleSearchSelect(r)}
-            style={{ padding: "6px 10px", cursor: "pointer", fontSize: "0.88rem", color: "#eee", borderBottom: "1px solid #3335" }}
+            style={{
+              padding: "6px 10px", cursor: "pointer", fontSize: "0.88rem", color: "#eee",
+              borderBottom: "1px solid #3335",
+              // Faction matches get an amber tint + leading icon so they
+              // visually stand apart from province rows.
+              background: r.kind === "faction" ? "rgba(220,166,74,0.10)" : "transparent",
+              display: "flex", alignItems: "center", gap: 6,
+            }}
             onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            onMouseLeave={(e) => e.currentTarget.style.background = r.kind === "faction" ? "rgba(220,166,74,0.10)" : "transparent"}
           >
+            {r.kind === "faction" && <span style={{ color: "#dca64a", fontSize: "0.78rem", flexShrink: 0 }}>🏛</span>}
             {highlight(r.label)}
           </div>
         ))}
@@ -9713,6 +9783,94 @@ function App() {
                       cursor: "help", fontWeight: 700,
                     }}>⚠</span>
                   )}
+                  <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({count})</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Loyalist legend — aggregate by the descr_regions rebel-default
+    // faction (r.faction). Each entry shows the faction colour, count of
+    // provinces, and clicks select all regions with that rebel-default.
+    if (colorMode === "loyalist") {
+      const rebelMap = {};
+      for (const [rgbKey, r] of Object.entries(regions)) {
+        const f = (r.faction || "").toLowerCase();
+        if (!f) continue;
+        if (!rebelMap[f]) {
+          const fc = factionColors[f];
+          const color = (fc && fc.primary) ? fc.primary : [110, 110, 110];
+          rebelMap[f] = { color, count: 0, rgbKeys: [] };
+        }
+        rebelMap[f].count++;
+        rebelMap[f].rgbKeys.push(rgbKey);
+      }
+      const allEntries = Object.entries(rebelMap).sort((a, b) => b[1].count - a[1].count);
+      if (allEntries.length === 0) return null;
+      const activeSet = legendFilter instanceof Set ? legendFilter : null;
+      const lq = legendSearch.trim().toLowerCase();
+      const display = (f) => (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " ");
+      const filtered = lq ? allEntries.filter(([name]) => display(name).toLowerCase().includes(lq) || name.toLowerCase().includes(lq)) : allEntries;
+      const onClick = (factionName, isShift) => {
+        setLegendFilter(prev => {
+          const current = prev instanceof Set ? new Set(prev) : new Set();
+          if (isShift) {
+            if (current.has(factionName)) current.delete(factionName);
+            else current.add(factionName);
+          } else {
+            if (current.size === 1 && current.has(factionName)) current.clear();
+            else { current.clear(); current.add(factionName); }
+          }
+          const allKeys = [...current].flatMap(n => rebelMap[n]?.rgbKeys || []);
+          const unique = [...new Set(allKeys)];
+          setSelectedProvinces(unique);
+          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
+          return current.size === 0 ? null : current;
+        });
+      };
+      return (
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
+              Loyalist (rebel default) <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#aaa" }}>({allEntries.length})</span>
+              <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: 6 }}>{collapseArrow}</span>
+              {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi</span>}
+            </div>
+            {!legendCollapsed && (
+              <input
+                type="text"
+                value={legendSearch}
+                onChange={(e) => setLegendSearch(e.target.value)}
+                className="legend-search-input"
+                placeholder="Search rebel default..."
+                style={{
+                  width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
+                  borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
+                  color: "#eee", fontSize: "0.74rem", outline: "none",
+                }}
+              />
+            )}
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
+            {filtered.map(([name, { color, count }]) => {
+              const selected = activeSet?.has(name);
+              const dimmed = activeSet && activeSet.size > 0 && !selected;
+              return (
+                <div key={name} onClick={(e) => onClick(name, e.shiftKey)} style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "2px 4px", borderRadius: 4, cursor: "pointer",
+                  background: selected ? "rgba(220,166,74,0.25)" : "transparent",
+                  opacity: dimmed ? 0.4 : 1,
+                  transition: "opacity 0.15s, background 0.15s",
+                }}>
+                  <div style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                    background: `rgb(${color[0]},${color[1]},${color[2]})`,
+                    outline: selected ? "2px solid #dca64a" : "none",
+                  }} />
+                  <span style={{ flex: 1, textTransform: "capitalize", fontSize: "0.66rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={display(name)}>{display(name)}</span>
                   <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({count})</span>
                 </div>
               );
@@ -12474,7 +12632,7 @@ function App() {
         )}
       </div>
       {/* ── Dev Context Menu (right-click edit) ──────────────────── */}
-      {devContextMenu && devMode && (() => {
+      {devContextMenu && (devMode || colorMode === "loyalist") && (() => {
         const { x, y, rgbKey, region } = devContextMenu;
         const menuStyle = {
           position: "fixed", left: x, top: y, zIndex: 9999,
@@ -12556,17 +12714,25 @@ function App() {
             );
           }
         }
-        // Faction mode
-        else if (colorMode === "faction") {
-          title = `${region.region} — Faction`;
+        // Faction mode and Loyalist mode both edit the descr_regions
+        // rebel-default (= region.faction). In faction mode this also
+        // shifts ownership in factionRegionsMap; in loyalist mode we
+        // want ONLY the rebel-default change. applyDevEdit handles both
+        // via the `field` argument.
+        else if (colorMode === "faction" || colorMode === "loyalist") {
+          title = `${region.region} — ${colorMode === "loyalist" ? "Rebel default" : "Faction"}`;
           const allFactions = [...new Set(Object.values(regions).map(r => r.faction))].sort();
+          const editField = colorMode === "loyalist" ? "rebel_default" : "faction";
           items = allFactions.map(f => {
             const isCurrent = f === region.faction;
+            const fc = factionColors[(f || "").toLowerCase()];
+            const swatch = (fc && fc.primary) || null;
             return (
-              <div key={f} onClick={() => applyDevEdit(rgbKey, "faction", f)} style={{
+              <div key={f} onClick={() => applyDevEdit(rgbKey, editField, f)} style={{
                 padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
                 background: isCurrent ? "rgba(232,160,48,0.2)" : "transparent", fontWeight: isCurrent ? 700 : 400,
               }} onMouseEnter={(e) => rowHover(e)} onMouseLeave={(e) => rowLeave(e, isCurrent)}>
+                {swatch && <div style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0, background: `rgb(${swatch[0]},${swatch[1]},${swatch[2]})`, outline: isCurrent ? "2px solid #dca64a" : "none" }} />}
                 {f.replace(/_/g, " ")}{isCurrent ? " (current)" : ""}
               </div>
             );

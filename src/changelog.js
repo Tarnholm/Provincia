@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.369",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "Loyalist map mode has a legend sidebar now — same pattern as Faction/Culture/Religion. Lists every descr_regions rebel-default faction with its primary colour and province count; click an entry to highlight every region whose rebel-default is that faction. Shift+click for multi-select." },
+      { type: "feature", text: "Right-click a province in Loyalist mode to reassign its rebel-default faction (works without dev mode). New `rebel_default` edit field updates ONLY the descr_regions field 3 — the current owner stays put. Edits flag descr_regions.txt dirty for export." },
+      { type: "feature", text: "Search bar now matches faction names too. Type a faction's id or display name and you'll see an amber-tinted 🏛 row — clicking it selects every province owned by that faction and pans to the cluster centroid. Province matches still appear below." },
+    ],
+  },
+  {
     version: "0.9.368",
     date: "2026-05-16",
     items: [
