@@ -15372,6 +15372,74 @@ End Turn 4 (year transition) was +628 KB — about double the previous turn. Yea
 
 ---
 
+## Session 117 — full T0..T7 timeline statistics (2026-05-17)
+
+#### Brief
+
+User extended to t6 + t7. Final analysis across 7 End Turns and 4 adoption events in the RIS imperial Dummies campaign.
+
+#### Final per-End-Turn statistics
+
+| Metric | min | max | avg | values |
+|---|---|---|---|---|
+| Size Δ | 234,487 | 639,253 | 424,431 | 639, 385, 292, 628, 410, 234, 382 KB |
+| Path Δ | 0 | 16 | 5.9 | 3, 3, 3, 0, 16, 4, 12 |
+| Journal Δ | 0 | 106 | 21.1 | 0, 106, 5, 14, 4, 5, 14 |
+| evtCtr Δ | 2,311 | 11,698 | 5,035 | varies wildly |
+
+Steady-state mid-campaign size growth: ~250–410 KB per turn. The two outliers (turn 1 = 639 KB and turn 4 = 628 KB) are explained by campaign setup and year-transition bookkeeping respectively.
+
+#### Path growth is essentially event-driven on opaque criteria
+
+Path Δ values 3, 3, 3, 0, 16, 4, 12 across 7 End Turns. No obvious correlation with:
+* turn number (no monotonic pattern)
+* journal Δ (T2 had +106 journals but +3 paths; T5 had +4 journals but +16 paths)
+* size Δ (T1 had biggest size but only +3 paths)
+
+The only consistent signal is "+0 paths during year transition (T4)". Path semantics remain unresolved despite having 7 data points — they correlate with some event class that the other counters don't capture.
+
+#### Lesson: small samples can mislead
+
+Sessions 115 and 116 both made "STRONG" claims that the 7-sample data refuted:
+* Session 115: "Adoption events have a stable counter-Δ fingerprint of +144/+145" → 4-sample range is +120 to +217
+* Session 115: "Paths grow by exactly +3 per End Turn" → 7-sample range is +0 to +16
+* Session 116 (after first refutation): "Adoption events have a bounded counter-Δ in ~120-220 range" — this stands but is much weaker
+
+Future cracker sessions should hold off on "STRONG" claims about per-event invariants until at least 5 independent samples confirm the pattern.
+
+#### User next move: switching to vanilla RTW Alexander expansion
+
+Fewer factions and simpler campaign structure → cleaner diffs for follow-up cracking. This is a different engine binary in some respects:
+* Magic byte `0x0704` (Feral Remastered is `0x070a`)
+* No 16-byte GUID at offset 0x24
+* Smaller HST (header strings table) — fewer record types
+* Different default mod data — but the section grammar is preserved
+
+What stays the same (mostly):
+* Section self-pointer invariant
+* HST shape
+* ASCIIZ pstr16 / UTF-16 string conventions
+* No compression / no checksum
+
+What might differ:
+* Some sections may have different fixed offsets (Remastered shifted things by +16 due to GUID insertion at 0x24)
+* CHARACTER_PATHS section may exist with different size budget
+* Major-faction record count is mod-dependent
+
+#### Files
+
+* `scripts/save-cracker/dig-t6-1.js` — t6 incremental
+* `scripts/save-cracker/dig-t7-1.js` — final T0..T7 statistics
+
+#### Next steps
+
+1. **Apply the saved-file inventory tool to a vanilla Alexander save** to see how the geography differs from RIS imperial. Likely much smaller file (fewer factions = less per-faction state).
+2. **Repeat the T0/T1 End Turn diff on Alexander** for a baseline of "what minimal vanilla cadence looks like". 
+3. **Use Alexander's smaller character pool to crack the Path UUID → character linkage** (session 112's open question) — fewer characters means easier 1:1 matching.
+4. **Cross-validate every "STRONG" finding from sessions 110-117 against Alexander** — anything that doesn't hold there is a RIS-imperial-only quirk.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
