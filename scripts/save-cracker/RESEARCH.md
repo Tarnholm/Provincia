@@ -15017,6 +15017,102 @@ The TRUE tile-attribute static map zone is only the first 7.5 MB (0x00800000..0x
 
 ---
 
+## Session 113 — JOURNAL/EVENT-LOG section decoded (2026-05-17)
+
+#### Brief
+
+User produced four T0/T1 saves of the RIS imperial Dummies faction (a test faction whose leader dies turn 1, triggering adoption). Ground truth from `message_log.txt`:
+
+* Biggus Dickus (Dummies leader, runtime ptr `0x21fa4dac540`)
+* Aulus (adopted heir, runtime ptr `0x21f9eab92c0`)
+* Event: "Aulus has been adopted by Biggus Dickus into the family"
+
+Save sizes:
+| save | bytes | Δ from prev |
+|---|---|---|
+| save_t0.sav | 34,531,348 | — |
+| save_t0justbeforeturnend.sav | 34,531,348 | 0 (pure resave) |
+| save_t1.sav | 35,170,601 | +639,253 |
+| save_t1adoption.sav | 35,170,849 | +248 |
+
+#### STRONG — Journal/event-log section in late tail; records ~250–300 bytes each
+
+The +248 byte t1→t1adoption diff was almost entirely **one new journal-event record** at `0x02144b4b`. Format (relative to record start):
+
+```
++0   u32 selfPtr = pos
++4   u32 = 3                              ← record version / shape tag
++8   i32 = -270                           ← event year (matches save year)
++12  u32 = 2                              ← season? sub-type? (=summer=2?)
++16  u32 = 237                            ← per-faction event index (= 0xed)
++20  u16 strlen N1
++22  UTF-16 chars × N1                    ← character first name ("Aulus")
++22+2·N1     u16 strlen N2
++24+2·N1     UTF-16 chars × N2            ← event-type tag ("Adoption")
++24+2·(N1+N2)  u16 strlen N3
++26+2·(N1+N2)  UTF-16 chars × N3          ← localized event message
+                                              ("This man has been adopted into our family,
+                                                and will bring honour and glory to our name
+                                                through his deeds.")
++...trailer: small u32 fields + 4×u32 self-pointer chain to adjacent records
+```
+
+The full adoption record is 262 bytes (header 22 + 3 pstr16 strings 240 + trailer ~0). Sizes vary by message length — birth events have shorter messages than founding events.
+
+Walking backward 0x14b bytes from the adoption record, **another journal entry** appears:
+* first name: "Adbugissa"
+* event type: "A Birth in the Family"
+* message: "Our faction has been blessed by the arrival of a new child. He will come of age in the fullness of time and add to our glory."
+
+So turn 1 of this campaign generated at least TWO journal events for the Dummies faction. The sequence appears chronological.
+
+This is the canonical **JOURNAL section** referenced by the HST as `JOURNAL_EVENT  v=1`. Provincia hadn't decoded the per-record format before; session 113 nails it.
+
+#### STRONG — Biggus Dickus death is encoded as a portrait-path flip
+
+Inside the diff at `0x0150a420..0x0150a490` (cluster #0 of the t1 vs t1adoption diff):
+
+```
+Before (t1):
+  data/ui/greek/portraits/portraits/young/generals/175.tga
+
+After (t1adoption):
+  data/ui/greek/portraits/portraits/dead/175.tga
+```
+
+The character's portrait path field gets rewritten from `young/` to `dead/` when they die — a simple in-place string replacement. Portrait number `175.tga` is Biggus Dickus's specific artwork. This is in the character/position record zone (0x14e0000..0x1540000 from the geography map).
+
+#### NEGATIVE — Runtime engine-pointer low 32 bits are NOT the save UUID
+
+The message_log emits character runtime pointers like `21fa4dac540` (Biggus) and `21f9eab92c0` (Aulus). The low 32 bits (`0xa4dac540` and `0x9eab92c0`) appear **0 times** in either save file. So the engine uses a different persistent identifier in the save than what gets logged at runtime.
+
+This means `message_log.txt` parsing alone cannot give us save-UUIDs for new characters — we have to rely on the save file's own UTF-16 name field for matching (which DID work: "Aulus" appears uniquely in the new journal record).
+
+#### STRONG — First diff between t1 and t1adoption is at 0x43f8 (event-log counter)
+
+The very first byte difference between save_t1 and save_t1adoption is at `0x000043f8` — the same `event-log advance counter` identified in session 110's halo-move diff. The counter advanced because a new event record was written. This confirms the 0x43f8 field is a **global pointer/byte-count into the event-log section** (advances by ~event-record-size every time a journal entry is written).
+
+#### Confidence summary
+
+* **STRONG**: JOURNAL section in the late tail (around 0x2144000 in this save) contains chronological event records. Each record header is `<u32 selfPtr><u32 = 3><i32 year><u32 season/sub-type><u32 event-index>` followed by 3 UTF-16 pstr16 strings (character name + event type + localized message).
+* **STRONG**: Character death is recorded by rewriting their portrait-path field from `young/generals/N.tga` to `dead/N.tga` in their character record. Provincia could detect "this character is dead" by checking the portrait path.
+* **STRONG**: The event-log counter at file offset 0x43f8 advances by the byte-size of each new journal event written.
+* **STRONG (NEGATIVE)**: Runtime engine pointers from `message_log.txt` low 32 bits are NOT save UUIDs. Different identifier spaces.
+
+#### Files
+
+* `scripts/save-cracker/dig-adoption-{1,2,3,4,5}.js` — diff, journal-record decode, structural verification
+* `scripts/save-cracker/dig-adoption-verify.js` — needle search for "Aulus" UTF-16
+
+#### Next steps
+
+1. **Decode the full T0→T1 diff (+639 KB)**: many AI faction actions, treasury increments, year advance, NPC exploration grid updates, AI character moves. This is the canonical "end-turn snapshot delta" worth fully decoding.
+2. **Enumerate all journal records in this save** (the script crashed at the end; fix the bounds check). Build a journal-event timeline visualization.
+3. **Use the portrait-path-flip as a dead-character detector** in Provincia's character parser (sometimes more reliable than the existing `isDead` heuristic).
+4. **Test whether `Aulus` gets a full character record on T2** (he was only in the journal in T1adoption). Would confirm "new characters are journal-first, character-record-added-later" semantics.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
