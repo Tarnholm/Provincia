@@ -10770,7 +10770,7 @@ function App() {
                 in design mode. Headers/buttons stay put; only inner
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
-              defaultPct={{ x: 0.005, y: 0.755, w: 0.205, h: 0.040 }}
+              defaultPct={{ x: 0.005, y: 0.755, w: 0.2076, h: 0.040 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
                   chrome (no cream background, no extra padding). Input
@@ -10794,7 +10794,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
-              defaultPct={{ x: 0.005, y: 0.800, w: 0.205, h: 0.195 }}
+              defaultPct={{ x: 0.005, y: 0.7996, w: 0.2076, h: 0.1954 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>
@@ -10837,7 +10837,7 @@ function App() {
             )}
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
-              defaultPct={{ x: 0.215, y: 0.755, w: 0.351, h: 0.240 }}>
+              defaultPct={{ x: 0.2152, y: 0.755, w: 0.3514, h: 0.240 }}>
               {/* Three sections in this widget:
                     1) Recent regions chips + Summary toggle (fixed row)
                     2) "Selected Provinces:" title + Deselect All (fixed row)

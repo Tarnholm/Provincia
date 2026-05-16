@@ -503,7 +503,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           w=0.1991. Row anchors are y=0.0056 / 0.3148 / 0.4573 with a
           common GAP_FRAC≈0.0035 between rows. */}
       <Movable id="region.info" title="Region info" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.0080, w: 0.2150, h: 0.3290 }}>
+        defaultPct={{ x: 0.5720, y: 0.0080, w: 0.2102, h: 0.3290 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {region && (
@@ -889,7 +889,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Characters — Movable widget extracted from buildings */}
       <Movable id="region.characters" title="Characters" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.3420, w: 0.2150, h: 0.1550 }}>
+        defaultPct={{ x: 0.5720, y: 0.3416, w: 0.2102, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8" }}>
@@ -951,7 +951,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Building queue — Movable widget extracted from buildings */}
       <Movable id="region.queue" title="Build queue" designMode={designMode}
-        defaultPct={{ x: 0.8975, y: 0.3420, w: 0.0975, h: 0.1550 }}>
+        defaultPct={{ x: 0.8912, y: 0.3416, w: 0.1038, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
@@ -987,7 +987,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       {/* Unit queue — Movable widget. Lists units currently being
           recruited in this settlement (recruitingNow from save). */}
       <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.3420, w: 0.0975, h: 0.1550 }}>
+        defaultPct={{ x: 0.7848, y: 0.3416, w: 0.1038, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {Array.isArray(recruitingNow) && recruitingNow.length > 0 ? (
@@ -1021,7 +1021,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.5020, w: 0.2150, h: 0.2430 }}>
+        defaultPct={{ x: 0.5720, y: 0.5012, w: 0.2102, h: 0.4938 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Buildings:</div>
@@ -1143,7 +1143,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Recruitable — Movable widget */}
       <Movable id="region.recruit" title="Recruitable" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.0080, w: 0.2000, h: 0.3290 }}>
+        defaultPct={{ x: 0.7848, y: 0.0080, w: 0.2102, h: 0.3290 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#9fc78a" }}>Recruitable:</div>
@@ -1237,7 +1237,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.5020, w: 0.2000, h: 0.1960 }}>
+        defaultPct={{ x: 0.7848, y: 0.5012, w: 0.2102, h: 0.1900 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf",
@@ -1374,7 +1374,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
-        defaultPct={{ x: 0.7950, y: 0.7030, w: 0.2000, h: 0.2920 }}>
+        defaultPct={{ x: 0.7848, y: 0.6958, w: 0.2102, h: 0.2992 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6" }}>Field armies:</div>

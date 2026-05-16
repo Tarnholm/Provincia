@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.364",
+    date: "2026-05-16",
+    items: [
+      { type: "improvement", text: "Uniform 5-PIXEL gaps between every widget on both axes. Horizontal fraction ≈ 0.0026 (5/1920), vertical fraction ≈ 0.0046 (5/1080) — different fractions, same pixel size, visually consistent. LAYOUT_VERSION bumped to 8 so the new canonical applies on next launch (overwrites any custom positions)." },
+    ],
+  },
+  {
     version: "0.9.363",
     date: "2026-05-16",
     items: [
