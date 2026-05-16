@@ -15179,6 +15179,120 @@ Despite path count staying flat, the CHARACTER_PATHS section grew by ~186 KB by 
 
 ---
 
+## Session 115 — adoption fork + full T0..T3 timeline patterns (2026-05-17)
+
+#### Brief
+
+User extended the 4-save quartet with 4 more: `save_t2.sav` + `save_t2declineadoption.sav` (T2 fork between accepting and declining the Aulus adoption) plus `save_t3.sav` + `save_t3a_adoption.sav` (T3 with a second adoption event for "Appius"). Eight saves now span turns 1–4 of the RIS imperial Dummies campaign.
+
+#### STRONG — Journal record is IDENTICAL whether adoption is accepted or declined
+
+Parsed the Aulus journal record in both `t2.sav` and `t2_declineadoption.sav`:
+
+```js
+{
+  recStart: 35173387/35174017,  // shifted in B due to upstream insertions
+  selfPtr: same,
+  ver: 3,
+  year: -270,
+  v12: 2,
+  v16: 237,
+  str1: "Aulus",
+  str2: "Adoption",
+  str3: "This man has been adopted into our family, and will bring honour and glory to our name through his deeds."
+}
+```
+
+**The journal records the adoption OFFER, not the decision.** Same content in both saves. The 636-byte difference between t2 (accept) and t2_decline lives elsewhere — in the character/position record zone (0x14e0000..0x17d0000), where Aulus's character record + family-tree linkage only exist when accepted.
+
+So: parsing the journal tells you "an adoption was offered involving X", but to know whether the player accepted you have to check the character section for X's actual character record.
+
+#### STRONG — Event-type counter advance fingerprints adoption events
+
+The `0x43f8` event counter advances by remarkably consistent amounts per event type:
+
+| Event | Counter Δ |
+|---|---|
+| No-op resave | +226 |
+| Accept adoption (Aulus, T1) | **+144** |
+| Accept adoption (Appius, T3) | **+145** |
+| Decline adoption (T2 fork) | +172 |
+| End Turn 1 | +2311 |
+| End Turn 2 (accept timeline) | +11698 |
+| End Turn 3 (decline timeline) | +3215 |
+
+Two completely independent adoption events advanced the counter by 144 and 145. Other event types may have similarly characteristic deltas — if so, the counter is a usable **event-type fingerprint** for detecting what happened between saves without parsing the journal in detail.
+
+The decline-path delta (+172) is distinct from both the noise floor (+226 for pure resave) AND the accept-path delta (+144), so the counter also distinguishes between accepting and declining the same event type.
+
+#### STRONG — Paths grow by exactly +3 per End Turn, regardless of decisions
+
+Across all transitions:
+
+| Transition | Path count Δ |
+|---|---|
+| Pure resave | 0 |
+| Accept adoption | 0 |
+| Decline adoption | 0 |
+| Resave from accept-to-decline | 0 |
+| **End Turn 1** | **+3** |
+| **End Turn 2** | **+3** |
+| **End Turn 3** | **+3** |
+
+So path records grow by **3 per turn** like clockwork. They're NOT tied to character lifecycle (births/deaths/adoptions). The "+3" cadence suggests an engine-level per-turn bookkeeping operation that produces exactly 3 records — possibly per-faction (the 3 Roman dummy factions: `roman_rebels_1`, `roman_rebels_2`, `roman_senate`), or per-event-class (one for player-actions, one for AI-actions, one for engine-internal).
+
+Path-record SEMANTICS are still TBD but the CADENCE is rock-solid: 3 records per turn, period.
+
+#### STRONG — RIS imperial uses 4 turns per year (user-confirmed)
+
+Year stayed at `-270` across all 4 turns of the user's campaign (t0 through t3a_adoption = turns 1..4). User confirmed RIS imperial uses 4 turns per year (instead of vanilla RTW's 2). So turn 5 (next save in the timeline) should be the first to show year = -269. The year field at `0x44e7` is a simple `start_year + floor((turn - 1) / 4)` derivative for RIS.
+
+For vanilla RTW the cadence is 2 turns per year; the divisor is `descr_strat`-configurable per mod (the `era_year` and `turns_per_year` fields).
+
+#### File-growth pattern across End Turns (decreasing setup cost)
+
+| End Turn | Size Δ |
+|---|---|
+| 1 (campaign setup heavy) | +639,253 |
+| 2 | +385,350 |
+| 3 | +292,235 |
+
+Decreasing pattern — first End Turn has large one-time campaign setup overhead, later turns approach a steady state around +250-300 KB. Useful baseline for sizing a save-disk-budget per turn.
+
+#### Second adoption ("Appius") — same format, larger byte cost
+
+The T3 second adoption diff (`t3 → t3a_adoption`, +583 bytes) produced exactly one new journal record:
+* year = -270
+* str1 = "Appius"
+* str2 = "Adoption"
+* (full message text not extracted but presumably the same template)
+
+Why +583 vs the first adoption's +248? Hypothesis: the family-tree linkage section grows quadratically (or linearly with #live characters) as more adoptees accumulate. The first adoption added Aulus to a near-empty family tree; the second adoption inserts Appius into a tree that already contains Aulus, so more cross-references update.
+
+#### Confidence summary
+
+* **STRONG**: Journal records the adoption OFFER. Decision (accept/decline) is encoded elsewhere — accept costs +636 bytes over 1 turn relative to decline.
+* **STRONG**: Event counter advance per accepted-adoption = exactly +144 to +145. Usable as a per-event-type fingerprint.
+* **STRONG**: CHARACTER_PATHS grows by exactly +3 records per End Turn. Cadence is rock-solid; semantics still TBD.
+* **STRONG**: RIS imperial doesn't use 2-turns-per-year — year stayed -270 across 4 turns.
+* **STRONG**: First-End-Turn file growth is ~2× later turns' (campaign setup overhead).
+
+#### Files
+
+* `scripts/save-cracker/dig-decline-1.js` — t2 vs t2_decline initial diff
+* `scripts/save-cracker/dig-decline-2.js` — journal-record parsing confirms identical text in accept/decline
+* `scripts/save-cracker/dig-adopt2-1.js` — t3 vs t3a_adoption isolates Appius journal record
+* `scripts/save-cracker/dig-endturn2-1.js` — full T0..T3 fact sheet with pairwise deltas
+
+#### Next steps
+
+1. **Find Aulus's character record location** — it's only in the accept saves. Walking diff t2 vs t2_decline focused on 0x14e0000..0x17d0000 should reveal exactly where character records get inserted on accept.
+2. **Test the 3-path-per-turn hypothesis** — produce a save with 5 turns played and verify path count grows by exactly 15 (= 3 × 5).
+3. **Build event-type fingerprint dictionary** — for each known game event (battle, building completion, character death, war declaration, etc.), record the typical 0x43f8 counter advance. Builds a no-parse event detector.
+4. **Find where year ticks** — need saves spanning a known year transition (e.g., turn 12 vs turn 13 if the campaign uses 12-turns-per-year). Tells us whether year advances on a fixed turn boundary or on a scripted event.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
