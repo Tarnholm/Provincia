@@ -4162,12 +4162,20 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
       arraySpan: summarizeFactionArray(fr),
       records: fr,
     };
-    // Decode the player's ever-explored tile grid (save-cracker session 103
-    // 2026-05-16). The player faction record is the LARGEST one (~334 KB
-    // vs ~6 KB per NPC). Its first 49,740 bytes after the 24 B header are
-    // stride-2 RLE pairs <u8 value><u8 count> that decode to a 510×1400
-    // grid (half-x, double-y of the 1020×700 TGA). value=0 means never
-    // explored; value≥1 means ever-explored land.
+    // Decode the player's ever-explored tile grid + active LOS halo
+    // (save-cracker sessions 103 + 105, 2026-05-16). The player faction
+    // record is the LARGEST one (~334 KB vs ~6 KB per NPC). After the
+    // 24 B header come stride-2 RLE pairs <u8 value><u8 count> that
+    // expand to a 510×1400 grid (half-x, double-y of the 1020×700 TGA;
+    // odd rows are stride-filler, real data lives on even rows).
+    //
+    // Value semantics (session 105):
+    //   0 = unexplored / never-seen
+    //   1 = ever-explored land
+    //   2..7 = active LOS halo, falloff ~ (8 − distance-from-character)
+    //   count == 0 in an RLE pair is the TERMINATOR. Session 103's
+    //   hard-coded end at +0xc264 was wrong — it leaked ASCII bytes
+    //   from the trailing settlement-list as fake high tile values.
     if (fr && fr.length > 0) {
       let largest = fr[0];
       for (const r of fr) {
@@ -4175,19 +4183,20 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
       }
       const GRID_W = 510, GRID_H = 1400;
       const RLE_START = largest.offset + 0x18;
-      const RLE_END = largest.offset + 0xc264;
-      if (largest.size >= 0xc264 && RLE_END <= data.length) {
+      const RLE_MAX = Math.min(largest.offset + largest.size, data.length);
+      if (largest.size >= 0x18 + 4 && RLE_START < data.length) {
         const grid = new Uint8Array(GRID_W * GRID_H);
         let gi = 0;
-        for (let i = RLE_START; i + 2 <= RLE_END && gi < grid.length; i += 2) {
+        let i = RLE_START;
+        while (i + 2 <= RLE_MAX && gi < grid.length) {
           const val = data[i];
           const count = data[i + 1];
+          if (count === 0) break; // canonical RLE terminator
           const limit = Math.min(count, grid.length - gi);
           for (let k = 0; k < limit; k++) grid[gi + k] = val;
           gi += limit;
-          if (val === 0 && count === 0) break; // safety: stop on null pair
+          i += 2;
         }
-        // Sanity: at least 100k cells decoded
         if (gi >= 100000) {
           playerExploration = { grid, width: GRID_W, height: GRID_H, decoded: gi };
         }

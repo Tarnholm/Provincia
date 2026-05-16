@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.373",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "Explored map mode decoder fixed per save-cracker session 105 — the player exploration RLE block is terminated by a pair with `count == 0`, not by a fixed offset. 0.9.372's hard-coded `+0xc264` cutoff was leaking ASCII bytes from the trailing settlement-list (`Eastern_Large_Town`, `Egyptian_City`, …) as fake high tile values. New decoder stops on the canonical count=0 terminator; the false 244k v≥5 cells collapse to a clean 273 real LOS-halo cells. Session 105 also confirmed values 2..7+ are an active LOS halo with falloff `v ≈ 8 − distance` from each character/settlement." },
+    ],
+  },
+  {
     version: "0.9.372",
     date: "2026-05-16",
     items: [
