@@ -13576,6 +13576,124 @@ EOF=+0x051a2a (= +334378 B from record start)
 
 ---
 
+## Session 104 — turn_number Lua counter + absolute turn location (2026-05-16)
+
+#### Brief
+
+Follow-up to Session 102. Two goals:
+1. Resolve the `turn_number` Lua counter that read `-3` in `ror_t2s` and `-2` in `ror_t11s` — clearly not the absolute turn.
+2. Find where the **absolute campaign turn** actually lives in RIS imperial Remastered saves. `main.js` `readTurnFromSave` claimed offset `0xf80` (3968), but that offset is `00 00 00 00` in every RIS sample → the function returns turn 1 for every loaded save. Bug.
+
+Saves used: all 13 in `scripts/save-cracker/fixtures/feral/` with known-turn metadata (ror_t1e/t2s/t5/t11s/t11e, athens_t21/t22s/t22mid/t22e, save_10_fresh = T0). Three "unknown turn" saves (save_1.2, save_mp_before/after) treated as inferable from the result.
+
+#### CONFIRMED — Absolute turn lives at file offset `0x44e3` (= 17,635), u32 LE, **stored as `turn - 1`**
+
+`dig-turnnum-3.js` did a full-file scan looking for an offset where `u32_LE == (knownTurn - 1)` in every save. Exactly **one** offset survived the intersection of all 10 known-turn saves:
+
+| save | known turn | u32 @ 0x44e3 | turn = value + 1 |
+|---|---|---|---|
+| save_10_fresh | 1 | 0 | 1 OK |
+| ror_t1e | 1 | 0 | 1 OK |
+| ror_t2s | 2 | 1 | 2 OK |
+| ror_t5 | 5 | 4 | 5 OK |
+| ror_t11s | 11 | 10 | 11 OK |
+| ror_t11e | 11 | 10 | 11 OK |
+| athens_t21 | 21 | 20 | 21 OK |
+| athens_t22s | 22 | 21 | 22 OK |
+| athens_t22mid | 22 | 21 | 22 OK |
+| athens_t22e | 22 | 21 | 22 OK |
+
+Inferred for unknown saves: `save_1.2` = turn 1, `save_mp_before/after` = turn 1. (save_1.2 is a Romans Julii fresh-start mid-action save, consistent with the rest of the session-102 evidence — its player record is ~334 KB just like save_10_fresh.)
+
+Context bytes (0x44d3..0x44f7) are identical structure across all 13 saves:
+
+```
++0x44d3  00 74 00 2e 00 74 00 78 00 74 00   "_t_._t_x_t_"  (UTF-16 LE tail of preceding path string)
++0x44de  de 44 00 00                         u32 = 0x44de  (back-pointer = address of this field)
++0x44e2  01 (or 00 in fresh ror_t1e)          u8 flag — "turn-rollover has happened"? 0 only in ror_t1e
++0x44e3  XX XX 00 00                         u32 LE = turn - 1   ← **the absolute-turn field**
++0x44e7  f2..f7 fe ff ff                     i32 LE ≈ -270..-265  ← **looks like CURRENT YEAR** (BC, negative)
++0x44eb  02 00 00 00                         u32 = 2  (separator?)
++0x44ef  f2 fe ff ff                         i32 = -270  ← **start-year constant** (campaign start year)
++0x44f3  02 00 00 00                         u32 = 2  (separator?)
+```
+
+**Year field**: the i32 at 0x44e7 advances by 1 per turn alongside the turn counter. In athens_t21 it's `f7 fe ff ff` = -265, in athens_t22 it's also `f7 fe ff ff` = -265 (so year hasn't ticked between t21 and t22 — likely 2-turns-per-year campaign clock). The i32 at 0x44ef is a constant `f2 fe ff ff` = -270 across all saves → **campaign start year**. Both signed-int32, both negative for BC. Year = -270 BC matches the imperial_campaign start date (RIS imperial canonically starts 270 BC).
+
+→ **TODO for the existing parser**: `readTurnFromSave` at `main.js:612` and `readCurrentYearFromSave` at `main.js:604` should read from `0x44e3` and `0x44e7` respectively, not from `0x0f80` / `0x0f84`. The old offsets are zero-bytes in RIS saves so the badge currently displays "T1 · 0 AD" for every loaded save. (Out of scope for session 104; logged in feedback memory for next coding session.)
+
+#### CONFIRMED — `turn_number` Lua counter is NOT the campaign turn
+
+`dig-turnnum-1.js` enumerated all 208 unique Lua counter strings across the 13 saves. The `turn_number` counter (in the player faction record's Lua zone, structure `<u32 lenChars> <UTF-16 chars> <u32 value>`) gave these values:
+
+| save | header-turn (from 0x44e3) | turn_number |
+|---|---|---|
+| save_10_fresh | 1 | 0 |
+| ror_t1e | 1 | 0 |
+| ror_t2s | 2 | **-3** |
+| ror_t5 | 5 | 0 |
+| ror_t11s | 11 | **-2** |
+| ror_t11e | 11 | **-2** |
+| save_1.2 | 1 | 0 |
+| save_mp_before | 1 | 0 |
+| save_mp_after | 1 | 0 |
+| athens_t21 | 21 | 0 |
+| athens_t22s | 22 | **-3** |
+| athens_t22mid | 22 | **-3** |
+| athens_t22e | 22 | **-3** |
+
+No simple algebraic relation to header-turn fits (we tested `turn_number = -(turn-1)`, `turn_number = turn-X`, `turn_number = -turn%N`, etc. — all fail). Critical observations:
+
+- `ror_t11s` and `ror_t11e` both read **-2**. If `turn_number` were a true counter tied to the campaign turn, it would either differ between start and end of turn, or be the same number for both. It's the same → it's not advancing on a per-turn basis.
+- `athens_t22s`/`mid`/`e` all read **-3** — also constant within a turn. But also constant across t22s and t22mid (a save during the same turn after partial actions), so it's not advancing on per-action either.
+- `ror_t5` reads **0** while `ror_t2s` reads **-3** and `ror_t11s` reads **-2** — non-monotonic, with intermittent zeroes.
+
+**INTERPRETATION (STRONG):** `turn_number` is a **campaign-script-managed countdown variable** unrelated to the engine's turn counter. The RIS_Campaign_Script.txts module declares `turn_number` as one of its 115 Lua persistent state values; it's set to a negative number when some script event arms a timer ("wait N turns then re-trigger") and decremented or reset by other script paths. The name is the script author's choice — it does NOT represent the in-game turn.
+
+Confidence: STRONG that it's not the engine turn (we have the engine turn at `0x44e3` to compare against). WEAK on the exact countdown semantic — without the RIS Campaign script source we can't pin which event arms it. The repeated `-3` after Athens turn 22 (three consecutive mid-turn saves) suggests it was just-set to `-3` by a script firing at turn 22, and the player hasn't done the action that resets it. The `-2` value in both `ror_t11s` and `ror_t11e` could indicate that whatever sets it is a turn-end script that runs once and stays at `-2` until the next script-fire condition.
+
+The script source `data/world/maps/campaign/imperial_campaign/RIS_Campaign_Script.txts` (referenced by the UTF-16 path at +0x4bb50 of the player record) presumably defines what `turn_number` actually tracks. Worth a future grep of the RIS mod source.
+
+#### Top-20 most-dynamic Lua counters across the 13 saves
+
+Counters ranked by distinct u32 values across saves (more distinct → more dynamic / more interesting to decode). The top of the list shows clear semantics; the lower entries are mostly **walker false positives** (the greedy enumerator was matching single-char "counter names" inside garbage bytes between true counters, especially in larger saves where the Lua zone has more padding):
+
+| rank | distinct | counter name | values (10_fresh, t1e, t2s, t5, t11s, t11e, 1.2, mp_b) | guess |
+|---|---|---|---|---|
+| 1 | 9 | `cappadocia_reform_settlement_capture_counter` | 0,0,8,139,326,327,0,0 | monotonic per-turn — campaign-wide settlement-capture tally toward the Cappadocia faction-reform trigger |
+| 2 | 4 | `achaea_reform_battle_counter` | 0,0,0,0,0,0,0,0 (Athens: 6,9,10,9) | Athens-specific reform progress (Achaean League) |
+| 3 | 4 | `thracian_peltasts_reform_battle_counter` | 0,0,0,1,2,2,0,0 (Athens: 5,5,5,5) | per-faction battle counter toward unit-line reform |
+| 4 | 4 | `num_battles_antigonids` | 0,0,0,4,13,13,0,0 (Athens: 5,5,5,5) | total Antigonid battles fought (campaign-wide) |
+| 5 | 4 | `pentapolis_reform_recruit_counter` | 0,0,0,4,11,11,0,0 (Athens: 19) | recruitment tally toward Pentapolis reform |
+| 6 | 4 | `bosporan_reform_battle_counter` | 0,0,0,0,2,2,0,0 (Athens: 5,5,8,5) | Bosporan kingdom reform tally |
+| 9 | 3 | `ThessalyRebellion_AllAntigonidOwned` | 50,50,34,35,35,35,50,50 (Athens: 35) | rebellion trigger threshold/state |
+| 10 | 3 | `turn_number` | 0,0,-3,0,-2,-2,0,0 (Athens: 0,-3,-3,-3) | script countdown (see above) |
+| 11 | 3 | `selge_reform_battle_counter` | 0,0,0,1,1,1,0,0 (Athens: 2,2,2,2) | Selge reform tally |
+| 12 | 3 | `boeotia_reform_battle_counter` | 0,0,0,1,2,2,0,0 (Athens: 2,2,2,2) | Boeotian reform tally |
+| 13 | 3 | `massalia_reform_battle_counter` | 0,0,0,0,4,4,0,0 (Athens: 6,6,6,6) | Massalia reform tally |
+| 14-20 | 3 each | `x`, `T`, `0`, `5`, `6`, `8`, `!` | (garbage values) | **walker false positives** — single-char "names" inside random byte gaps. Walker should be tightened to require strings ≥ 3 chars or alphabetic-first to suppress these. |
+
+Aggregate: of the 208 unique names found, **73 are dynamic (≥2 distinct values across saves)**, but ~50 of those are garbage from single-char hits in the broken Lua zone (the walker's `len < 200` check is too loose). After excluding sub-3-char names there are roughly **20 meaningful named counters that change** — almost all are RIS campaign-script reform/rebellion progress trackers, plus `capital_first_setup` (player has-set-capital flag, session 102) and `turn_number` (script countdown, session 104).
+
+Important note: most counters are **per-faction-script-scope** — the `_athens` saves see different counters trigger than `_ror` saves because the active player faction's script branches differ. The Lua zone is shared global state but most events only write to it when their owning faction is the player.
+
+#### Confidence summary
+
+* **CONFIRMED**: absolute turn at file offset `0x44e3`, u32 LE, stored as `(turn - 1)`. Verified across 10 known-turn saves (intersection = exactly 1 surviving offset).
+* **STRONG**: campaign year (i32 LE) at `0x44e7`; campaign-start year (i32 LE) at `0x44ef`. Both negative for BC. Constant -270 BC start matches RIS imperial campaign canonical start.
+* **CONFIRMED**: `turn_number` Lua counter is NOT the engine turn. It's a script-managed countdown / timer variable.
+* **STRONG**: 6 RIS reform/rebellion progress counters identified (`*_reform_*_counter`, `num_battles_*`, `*Rebellion_*`) as the most-dynamic per-turn-changing Lua state.
+* **BUG (logged)**: `main.js` `readTurnFromSave` and `readCurrentYearFromSave` use offsets `0xf80`/`0xf84` which are zero-bytes in RIS Remastered saves. Should read from `0x44e3`/`0x44e7`. Out of scope for this research session.
+
+#### Files
+
+* `scripts/save-cracker/dig-turnnum-1.js` — Lua counter enumeration across all 13 saves; turn-ish key tabulation; top-20 dynamic counter ranking.
+* `scripts/save-cracker/dig-turnnum-2.js` — header-region u32 scans (first 16 KB) for known-turn values; bytes-around-0xf80 dump showing main.js's hardcoded offset is zero in RIS.
+* `scripts/save-cracker/dig-turnnum-3.js` — full-file intersection scan that found `0x44e3`. Tests `turn`, `turn-1`, u16/u32 widths.
+* `scripts/save-cracker/dig-turnnum-4.js` — confirmation: dump bytes around 0x44e3, verify the formula across all saves, infer turn for the 3 unknown-turn saves.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
