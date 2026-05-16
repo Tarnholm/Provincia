@@ -15733,6 +15733,90 @@ This is the first known event class with a strongly negative file-size delta —
 
 ---
 
+## Session 119 — vanilla Rome (no mods) cross-validation — major retractions (2026-05-17)
+
+#### Brief
+
+User played vanilla Rome Imperial Campaign (no mods) as Spain. First save plus 7 follow-ups covering player actions and 3 End Turn cycles. Used to cross-validate findings from sessions 5-118 (which were all on RIS imperial or Alex expansion).
+
+#### REFUTED — Major-faction record format was RIS-mod-specific
+
+Session 5's `class=100 + self-pointers at +24/+40 + version=1 + region count at +48` major-faction record signature finds **0 records** in vanilla Rome. The structural pattern that I thought was the engine's canonical major-faction format was actually the RIS mod's specific record layout for its 23 major factions.
+
+So sessions 5/108/109/111's STRONG claims about the major-faction record were RIS-mod-specific:
+* Treasury at +0
+* class=100 tag at +8
+* Self-pointers at +24 and +40
+* Region count at +48
+* Diplomatic marker at +(244 + 4N)
+* factionTag at +28
+
+None of these apply to vanilla Rome saves. The vanilla engine must store the 21 factions' state in some completely different shape that we haven't decoded yet.
+
+This invalidates a lot of past work for the general case. Provincia's `treasuryByFaction` parser (`main.js:4310`) gates on `campaignName === "imperial_campaign"` which **includes vanilla**, so it's currently silently emitting wrong results on vanilla Rome saves. Bug to fix.
+
+#### REFUTED — Event counter at 0xefd was Alex-specific
+
+The u32 at 0xefd is **constant = 1** across ALL vanilla Rome saves (baseline, move-spy, move-diplomat-army, T2-trade, T3-End, T3-spy-infiltrate, T4-Start). So 0xefd doesn't hold the event counter in vanilla Rome.
+
+Previously verified per-campaign counter offsets:
+* RIS imperial: `u32@0x43f8` (sessions 110/113/118)
+* Alex expansion: `u32@0xefd` (session 118)
+* **Vanilla Rome imperial: UNKNOWN** — neither 0x43f8 nor 0xefd advances
+
+The event counter is more deeply campaign-data-dependent than I claimed. Could be at yet another offset for vanilla Rome.
+
+#### STRONG — Year field at u32@0x514 for vanilla Rome (different again)
+
+Year `-270` found at 0x514 in vanilla Rome. Three campaign year offsets now:
+* RIS imperial: `i32@0x44e7` (4 turns/year)
+* Alex expansion: `i32@0x504` (2 turns/year)
+* **Vanilla Rome: `i32@0x514`** (2 turns/year)
+
+Each campaign content puts the year field at a different offset because the per-campaign header content has different sizes. Vanilla Rome's year is +16 bytes from Alex's, suggesting one extra 16-byte block in vanilla's header.
+
+#### STRONG — Vanilla Rome confirms 2 turns/year (classic RTW cadence)
+
+Year ticked from -270 to -269 between Turn 2 (trade-offer save) and Turn 3 (End save). Standard 2-turns-per-year matching vanilla classic RTW.
+
+#### STRONG — Trade-offer record is large (~40 KB) in vanilla Rome
+
+T2 trade-offer-to-carthage save is +89,947 bytes from baseline, but this includes the full End Turn 1 (~40-50 KB of setup) plus the trade offer itself. The trade-offer record proper is roughly half of that, ~40 KB.
+
+Diplomatic offer/acceptance records are significantly bigger than single-action commands (which were 159-844 bytes in Alex). Suggests trade offers carry significant content — possibly the full set of resources / goods affected, or per-faction trade-modifier tables.
+
+#### Tiny finding — spy infiltration = +14 bytes
+
+T3 End → "infiltrated city with spy" autosave = **+14 bytes**. Almost no state change. So a successful spy infiltration writes minimal data — probably just a journal-entry trigger and a flag on the target settlement. The "spy is in city" persistent state is either encoded with extreme density or stored elsewhere not tracked by this delta.
+
+#### Confidence summary
+
+* **REFUTED**: Major-faction record format (sessions 5/108/109/111) was RIS-mod-specific. Doesn't apply to vanilla.
+* **REFUTED**: Event counter at fixed offset 0xefd or 0x43f8 was per-mod-pair, not engine-universal. Vanilla Rome counter unknown.
+* **STRONG**: Year offset per-campaign: RIS 0x44e7, Alex 0x504, vanilla Rome 0x514.
+* **STRONG**: Year cadence per-campaign: RIS 4 t/y, Alex 2 t/y, vanilla Rome 2 t/y.
+* **STRONG**: Trade offers are bulky diplomatic records (~40 KB).
+* **STRONG**: Spy infiltration is near-zero-cost (+14 bytes).
+* **BUG**: Provincia's `treasuryByFaction` parser silently emits wrong results on vanilla Rome saves because it uses the RIS-specific major-faction record signature.
+
+#### Lessons learned across the conversation
+
+This conversation has had 4 explicit retractions of previously-STRONG claims:
+1. "+3 paths per turn" (refuted by 7-sample data)
+2. "+144 adoption counter fingerprint" (refuted by 4-sample data)
+3. "Year transitions cost 2-4× normal" (refuted by 5-sample data)
+4. "Major-faction record class=100 signature" (refuted by vanilla data)
+
+Future cracker work should treat single-mod findings as MOD-SPECIFIC by default until cross-validated against vanilla or another mod's data. Patterns that hold in RIS-imperial-only are likely RIS-specific. The engine's "true" format is what's common across vanilla + multiple mods.
+
+#### Files
+
+* `scripts/save-cracker/dig-vanilla-1.js` — header probe, year hunt
+* `scripts/save-cracker/dig-vanilla-2.js` — relaxed major-record search (0 found), faction-name ASCII catalog
+* `scripts/save-cracker/dig-vanilla-3.js` — trade offer + spy diff
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
