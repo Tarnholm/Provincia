@@ -15587,6 +15587,37 @@ The counter advance (+138) IS in the same range as RIS adoptions (120-220), so t
 * `scripts/save-cracker/dig-alex-3.js` — front/back alignment of the +159 besiege-fort diff; pins event-counter at 0xefd
 * `scripts/save-cracker/dig-alex-4.js` — full T1/T2 fact sheet + +614 trio decomposition + adoption + battle-resolution stats
 * `scripts/save-cracker/dig-alex-5.js` — battle resolution analysis (army destruction shrinks save by 22 KB)
+* `scripts/save-cracker/dig-alex-final.js` — chronological tabulation across 24 saves
+
+#### STRONG — Alex uses 2 turns per year (vanilla RTW cadence)
+
+User-confirmed Alex saves at -336 for turns 1-2, then -335 for turn 3. So Alex = 2 turns/year (matches vanilla RTW default). Each mod can configure this in descr_strat via `turns_per_year`. Known cadences:
+* Vanilla RTW / Alex expansion = 2 turns/year
+* RIS imperial campaign = 4 turns/year
+
+The year field offset is per-campaign too: Alex at `0x504`, RIS imperial at `0x44e7`.
+
+#### STRONG — Alex End Turn growth converges to ~10 KB (steady state)
+
+| Alex End Turn | Δ size |
+|---|---|
+| T1 → T2 (first, setup-heavy) | +40,334 bytes |
+| T3 → T4 (mid-campaign) | +9,820 bytes |
+
+So Alex saves grow ~10 KB per steady-state End Turn, 40× cheaper than RIS imperial's ~290-410 KB. Combined with Alex's tiny save size (~1 MB), this makes Alex an ideal test bed for cracking End-Turn-driven content — diffs run in seconds and have clear signal.
+
+#### Action-class → event-counter-advance signature (final, 24-sample)
+
+| Action class | Counter Δ range |
+|---|---|
+| Pure resave noise | +0 to +226 |
+| Player command (tax/move/queue/etc.) | +100 to +600 |
+| Adoption event | +138 (single sample in Alex) |
+| Field battle (army destroyed) | +200-500 |
+| **Settlement siege resolution + occupy** | **+1,342** (one sample) |
+| End Turn full cycle | +1500-2300 |
+
+So the counter is roughly proportional to the engine-event count fired by the action. Battles trigger many sub-events (per-unit casualties, retreat path, attitude updates, etc.), settlement captures even more (faction-extinct check, exploration map update, building list transfer, etc.).
 
 #### STRONG — Battle resolution SHRINKS saves; counter advances by 10×
 
