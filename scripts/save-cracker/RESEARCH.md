@@ -15586,6 +15586,23 @@ The counter advance (+138) IS in the same range as RIS adoptions (120-220), so t
 * `scripts/save-cracker/dig-alex-2.js` — multi-action diff, common-bookkeeping detection, year-offset hunt
 * `scripts/save-cracker/dig-alex-3.js` — front/back alignment of the +159 besiege-fort diff; pins event-counter at 0xefd
 * `scripts/save-cracker/dig-alex-4.js` — full T1/T2 fact sheet + +614 trio decomposition + adoption + battle-resolution stats
+* `scripts/save-cracker/dig-alex-5.js` — battle resolution analysis (army destruction shrinks save by 22 KB)
+
+#### STRONG — Battle resolution SHRINKS saves; counter advances by 10×
+
+Three Turn-2 battle-resolution saves show the army-destroyed and settlement-conquered actions REMOVE state from the save:
+
+| Save | Δ size vs t2_manual | Δ counter |
+|---|---|---|
+| t2_attack_rebel | **-21,546** | +1,657 |
+| t2_clear_victory | **-22,706** | +1,874 |
+| t2_autoresolve_byz | **-21,731** | +1,480 |
+
+When the rebel army gets destroyed in combat, the engine removes ~22 KB of records (unit records, character records, path records, etc. for the destroyed faction's units). When Byzantium falls and gets occupied, the rebel settlement's per-faction-state-on-rebel-side gets stripped too.
+
+**Counter advance for battle is 10× larger than adoption** (+1480-1874 vs +138-217 range). So the event counter is roughly proportional to the number of internal engine events the action triggers. Battles trigger many sub-events (per-unit casualties, retreat path resolution, post-battle attitude updates, etc.) — adoptions trigger few.
+
+This is the first known event class with a strongly negative file-size delta — useful for distinguishing "destructive action" from "creative action" classes when classifying saves.
 
 #### Next steps
 
