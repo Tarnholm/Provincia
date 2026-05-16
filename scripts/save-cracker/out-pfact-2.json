@@ -1,0 +1,1449 @@
+{
+  "recordOffset": 34189993,
+  "recordSize": 334378,
+  "paddingRuns": [],
+  "asciiStrings": [
+    {
+      "off": 73760,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 79588,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 85416,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 91244,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 97072,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 111068,
+      "len": 9,
+      "text": "barbarian"
+    },
+    {
+      "off": 116896,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 130022,
+      "len": 8,
+      "text": "egyptian"
+    },
+    {
+      "off": 133497,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 154791,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 167917,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 172875,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 186001,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 190959,
+      "len": 8,
+      "text": "egyptian"
+    },
+    {
+      "off": 194434,
+      "len": 7,
+      "text": "eastern"
+    },
+    {
+      "off": 199413,
+      "len": 11,
+      "text": "african_men"
+    },
+    {
+      "off": 199599,
+      "len": 13,
+      "text": "african_women"
+    },
+    {
+      "off": 199715,
+      "len": 13,
+      "text": "anatolian_men"
+    },
+    {
+      "off": 199983,
+      "len": 15,
+      "text": "anatolian_women"
+    },
+    {
+      "off": 200117,
+      "len": 11,
+      "text": "apulian_men"
+    },
+    {
+      "off": 200143,
+      "len": 11,
+      "text": "arevaci_men"
+    },
+    {
+      "off": 200449,
+      "len": 13,
+      "text": "arevaci_women"
+    },
+    {
+      "off": 200517,
+      "len": 13,
+      "text": "arverni_women"
+    },
+    {
+      "off": 200541,
+      "len": 15,
+      "text": "baltoslavic_men"
+    },
+    {
+      "off": 200583,
+      "len": 17,
+      "text": "baltoslavic_women"
+    },
+    {
+      "off": 200615,
+      "len": 14,
+      "text": "blank_surnames"
+    },
+    {
+      "off": 200640,
+      "len": 10,
+      "text": "celtic_men"
+    },
+    {
+      "off": 200981,
+      "len": 12,
+      "text": "celtic_women"
+    },
+    {
+      "off": 201072,
+      "len": 12,
+      "text": "cilician_men"
+    },
+    {
+      "off": 201139,
+      "len": 14,
+      "text": "cilician_women"
+    },
+    {
+      "off": 201184,
+      "len": 12,
+      "text": "egyptian_men"
+    },
+    {
+      "off": 201379,
+      "len": 14,
+      "text": "egyptian_women"
+    },
+    {
+      "off": 201484,
+      "len": 9,
+      "text": "getae_men"
+    },
+    {
+      "off": 201668,
+      "len": 11,
+      "text": "getae_women"
+    },
+    {
+      "off": 201726,
+      "len": 9,
+      "text": "greek_men"
+    },
+    {
+      "off": 203074,
+      "len": 11,
+      "text": "greek_women"
+    },
+    {
+      "off": 204160,
+      "len": 12,
+      "text": "illyrian_men"
+    },
+    {
+      "off": 204495,
+      "len": 14,
+      "text": "illyrian_women"
+    },
+    {
+      "off": 204596,
+      "len": 10,
+      "text": "indian_men"
+    },
+    {
+      "off": 205041,
+      "len": 15,
+      "text": "indian_surnames"
+    },
+    {
+      "off": 205147,
+      "len": 12,
+      "text": "indian_women"
+    },
+    {
+      "off": 205338,
+      "len": 10,
+      "text": "ionian_men"
+    },
+    {
+      "off": 205403,
+      "len": 11,
+      "text": "iranian_men"
+    },
+    {
+      "off": 205521,
+      "len": 13,
+      "text": "iranian_women"
+    },
+    {
+      "off": 205577,
+      "len": 10,
+      "text": "italic_men"
+    },
+    {
+      "off": 205610,
+      "len": 15,
+      "text": "italic_surnames"
+    },
+    {
+      "off": 205640,
+      "len": 12,
+      "text": "italic_women"
+    },
+    {
+      "off": 205671,
+      "len": 11,
+      "text": "judaean_men"
+    },
+    {
+      "off": 205701,
+      "len": 13,
+      "text": "liburnian_men"
+    },
+    {
+      "off": 205933,
+      "len": 15,
+      "text": "liburnian_women"
+    },
+    {
+      "off": 206067,
+      "len": 10,
+      "text": "lycian_men"
+    },
+    {
+      "off": 206356,
+      "len": 12,
+      "text": "lycian_women"
+    },
+    {
+      "off": 206423,
+      "len": 14,
+      "text": "massylii_women"
+    },
+    {
+      "off": 206448,
+      "len": 16,
+      "text": "mesopotamian_men"
+    },
+    {
+      "off": 206491,
+      "len": 13,
+      "text": "nabataean_men"
+    },
+    {
+      "off": 206827,
+      "len": 15,
+      "text": "nabataean_women"
+    },
+    {
+      "off": 206889,
+      "len": 11,
+      "text": "parni_women"
+    },
+    {
+      "off": 207007,
+      "len": 14,
+      "text": "phoenician_men"
+    },
+    {
+      "off": 207036,
+      "len": 16,
+      "text": "phoenician_women"
+    },
+    {
+      "off": 207071,
+      "len": 12,
+      "text": "pontus_women"
+    },
+    {
+      "off": 207114,
+      "len": 9,
+      "text": "roman_men"
+    },
+    {
+      "off": 207206,
+      "len": 14,
+      "text": "roman_surnames"
+    },
+    {
+      "off": 208687,
+      "len": 11,
+      "text": "roman_women"
+    },
+    {
+      "off": 209061,
+      "len": 13,
+      "text": "s_arabian_men"
+    },
+    {
+      "off": 209289,
+      "len": 18,
+      "text": "s_arabian_surnames"
+    },
+    {
+      "off": 209526,
+      "len": 15,
+      "text": "s_arabian_women"
+    },
+    {
+      "off": 209704,
+      "len": 11,
+      "text": "siraces_men"
+    },
+    {
+      "off": 209854,
+      "len": 13,
+      "text": "siraces_women"
+    },
+    {
+      "off": 209926,
+      "len": 9,
+      "text": "slave_men"
+    },
+    {
+      "off": 210070,
+      "len": 11,
+      "text": "slave_women"
+    },
+    {
+      "off": 210152,
+      "len": 9,
+      "text": "suebi_men"
+    },
+    {
+      "off": 210568,
+      "len": 11,
+      "text": "suebi_women"
+    },
+    {
+      "off": 210710,
+      "len": 12,
+      "text": "thracian_men"
+    },
+    {
+      "off": 211117,
+      "len": 12,
+      "text": "venetian_men"
+    },
+    {
+      "off": 211348,
+      "len": 14,
+      "text": "venetian_women"
+    },
+    {
+      "off": 211421,
+      "len": 14,
+      "text": "aetolian_women"
+    },
+    {
+      "off": 212534,
+      "len": 12,
+      "text": "arcadian_men"
+    },
+    {
+      "off": 213913,
+      "len": 14,
+      "text": "arcadian_women"
+    },
+    {
+      "off": 215006,
+      "len": 11,
+      "text": "armenia_men"
+    },
+    {
+      "off": 215164,
+      "len": 13,
+      "text": "armenia_women"
+    },
+    {
+      "off": 215248,
+      "len": 11,
+      "text": "arverni_men"
+    },
+    {
+      "off": 215706,
+      "len": 12,
+      "text": "athenian_men"
+    },
+    {
+      "off": 217085,
+      "len": 14,
+      "text": "atropatene_men"
+    },
+    {
+      "off": 217262,
+      "len": 13,
+      "text": "bithynian_men"
+    },
+    {
+      "off": 219102,
+      "len": 12,
+      "text": "boeotian_men"
+    },
+    {
+      "off": 220493,
+      "len": 14,
+      "text": "boeotian_women"
+    },
+    {
+      "off": 221598,
+      "len": 13,
+      "text": "byzantium_men"
+    },
+    {
+      "off": 222974,
+      "len": 15,
+      "text": "cappadocian_men"
+    },
+    {
+      "off": 223160,
+      "len": 17,
+      "text": "cappadocian_women"
+    },
+    {
+      "off": 223232,
+      "len": 12,
+      "text": "carian_women"
+    },
+    {
+      "off": 223367,
+      "len": 12,
+      "text": "carthage_men"
+    },
+    {
+      "off": 223714,
+      "len": 14,
+      "text": "carthage_women"
+    },
+    {
+      "off": 223799,
+      "len": 15,
+      "text": "chersonesus_men"
+    },
+    {
+      "off": 225165,
+      "len": 9,
+      "text": "chios_men"
+    },
+    {
+      "off": 226521,
+      "len": 8,
+      "text": "cius_men"
+    },
+    {
+      "off": 227872,
+      "len": 11,
+      "text": "cyzicus_men"
+    },
+    {
+      "off": 229238,
+      "len": 13,
+      "text": "dalmatian_men"
+    },
+    {
+      "off": 229766,
+      "len": 15,
+      "text": "dalmatian_women"
+    },
+    {
+      "off": 229920,
+      "len": 13,
+      "text": "dardanian_men"
+    },
+    {
+      "off": 230428,
+      "len": 15,
+      "text": "dardanian_women"
+    },
+    {
+      "off": 230590,
+      "len": 10,
+      "text": "dorian_men"
+    },
+    {
+      "off": 231995,
+      "len": 12,
+      "text": "dorian_women"
+    },
+    {
+      "off": 233110,
+      "len": 13,
+      "text": "edetanian_men"
+    },
+    {
+      "off": 233426,
+      "len": 8,
+      "text": "elis_men"
+    },
+    {
+      "off": 234793,
+      "len": 12,
+      "text": "emporion_men"
+    },
+    {
+      "off": 236152,
+      "len": 13,
+      "text": "ethiopian_men"
+    },
+    {
+      "off": 236372,
+      "len": 13,
+      "text": "galatians_men"
+    },
+    {
+      "off": 236996,
+      "len": 15,
+      "text": "galatians_women"
+    },
+    {
+      "off": 237158,
+      "len": 10,
+      "text": "gortyn_men"
+    },
+    {
+      "off": 238511,
+      "len": 13,
+      "text": "heraclean_men"
+    },
+    {
+      "off": 239867,
+      "len": 11,
+      "text": "histria_men"
+    },
+    {
+      "off": 239933,
+      "len": 12,
+      "text": "ionian_women"
+    },
+    {
+      "off": 241080,
+      "len": 8,
+      "text": "issa_men"
+    },
+    {
+      "off": 242467,
+      "len": 10,
+      "text": "issa_women"
+    },
+    {
+      "off": 243576,
+      "len": 11,
+      "text": "knossos_men"
+    },
+    {
+      "off": 244954,
+      "len": 11,
+      "text": "kydonia_men"
+    },
+    {
+      "off": 246328,
+      "len": 14,
+      "text": "lusitanian_men"
+    },
+    {
+      "off": 246721,
+      "len": 16,
+      "text": "lusitanian_women"
+    },
+    {
+      "off": 246860,
+      "len": 10,
+      "text": "lyttos_men"
+    },
+    {
+      "off": 248221,
+      "len": 14,
+      "text": "macedonian_men"
+    },
+    {
+      "off": 249666,
+      "len": 16,
+      "text": "macedonian_women"
+    },
+    {
+      "off": 250785,
+      "len": 14,
+      "text": "massaliote_men"
+    },
+    {
+      "off": 252158,
+      "len": 12,
+      "text": "massylii_men"
+    },
+    {
+      "off": 252465,
+      "len": 11,
+      "text": "messene_men"
+    },
+    {
+      "off": 253835,
+      "len": 9,
+      "text": "olbia_men"
+    },
+    {
+      "off": 255203,
+      "len": 12,
+      "text": "paeonian_men"
+    },
+    {
+      "off": 255622,
+      "len": 15,
+      "text": "paphlagonia_men"
+    },
+    {
+      "off": 256988,
+      "len": 17,
+      "text": "paphlagonia_women"
+    },
+    {
+      "off": 258088,
+      "len": 9,
+      "text": "parni_men"
+    },
+    {
+      "off": 258288,
+      "len": 14,
+      "text": "pentapolis_men"
+    },
+    {
+      "off": 259677,
+      "len": 12,
+      "text": "pergamon_men"
+    },
+    {
+      "off": 261052,
+      "len": 14,
+      "text": "pergamon_women"
+    },
+    {
+      "off": 262149,
+      "len": 10,
+      "text": "pontus_men"
+    },
+    {
+      "off": 262274,
+      "len": 10,
+      "text": "priene_men"
+    },
+    {
+      "off": 263659,
+      "len": 11,
+      "text": "rhodian_men"
+    },
+    {
+      "off": 265037,
+      "len": 11,
+      "text": "sabaean_men"
+    },
+    {
+      "off": 265391,
+      "len": 13,
+      "text": "sabaean_women"
+    },
+    {
+      "off": 265575,
+      "len": 9,
+      "text": "selge_men"
+    },
+    {
+      "off": 266947,
+      "len": 11,
+      "text": "selge_women"
+    },
+    {
+      "off": 268041,
+      "len": 10,
+      "text": "sinope_men"
+    },
+    {
+      "off": 269402,
+      "len": 12,
+      "text": "sparta_women"
+    },
+    {
+      "off": 270545,
+      "len": 15,
+      "text": "syracusan_women"
+    },
+    {
+      "off": 271667,
+      "len": 16,
+      "text": "thessalian_women"
+    },
+    {
+      "off": 272762,
+      "len": 14,
+      "text": "thracian_women"
+    },
+    {
+      "off": 274091,
+      "len": 17,
+      "text": "trinovantes_women"
+    },
+    {
+      "off": 274239,
+      "len": 11,
+      "text": "achaean_men"
+    },
+    {
+      "off": 275685,
+      "len": 13,
+      "text": "akarnania_men"
+    },
+    {
+      "off": 277125,
+      "len": 11,
+      "text": "akragas_men"
+    },
+    {
+      "off": 278547,
+      "len": 13,
+      "text": "antigonid_men"
+    },
+    {
+      "off": 280035,
+      "len": 15,
+      "text": "antigonid_women"
+    },
+    {
+      "off": 281157,
+      "len": 10,
+      "text": "argive_men"
+    },
+    {
+      "off": 282570,
+      "len": 14,
+      "text": "athenian_women"
+    },
+    {
+      "off": 283751,
+      "len": 12,
+      "text": "bactrian_men"
+    },
+    {
+      "off": 285406,
+      "len": 15,
+      "text": "bithynian_women"
+    },
+    {
+      "off": 286780,
+      "len": 12,
+      "text": "bosporan_men"
+    },
+    {
+      "off": 288311,
+      "len": 14,
+      "text": "bosporan_women"
+    },
+    {
+      "off": 289440,
+      "len": 12,
+      "text": "cretan_women"
+    },
+    {
+      "off": 290559,
+      "len": 12,
+      "text": "cyrenean_men"
+    },
+    {
+      "off": 292222,
+      "len": 14,
+      "text": "cyrenean_women"
+    },
+    {
+      "off": 293363,
+      "len": 15,
+      "text": "daesitiates_men"
+    },
+    {
+      "off": 294213,
+      "len": 17,
+      "text": "daesitiates_women"
+    },
+    {
+      "off": 294437,
+      "len": 11,
+      "text": "epirote_men"
+    },
+    {
+      "off": 295899,
+      "len": 13,
+      "text": "epirote_women"
+    },
+    {
+      "off": 297035,
+      "len": 12,
+      "text": "nw_greek_men"
+    },
+    {
+      "off": 298450,
+      "len": 13,
+      "text": "ptolemaic_men"
+    },
+    {
+      "off": 300454,
+      "len": 15,
+      "text": "ptolemaic_women"
+    },
+    {
+      "off": 301656,
+      "len": 13,
+      "text": "scordisci_men"
+    },
+    {
+      "off": 302284,
+      "len": 12,
+      "text": "seleucid_men"
+    },
+    {
+      "off": 304307,
+      "len": 14,
+      "text": "seleucid_women"
+    },
+    {
+      "off": 305456,
+      "len": 10,
+      "text": "sparta_men"
+    },
+    {
+      "off": 307065,
+      "len": 13,
+      "text": "syracusan_men"
+    },
+    {
+      "off": 308609,
+      "len": 12,
+      "text": "aetolian_men"
+    }
+  ],
+  "utf16Strings": [
+    {
+      "off": 310107,
+      "chars": 68,
+      "text": "Bdata/world/maps/campaign/imperial_campaign/RIS_Campaign_Script.txts"
+    },
+    {
+      "off": 310249,
+      "chars": 36,
+      "text": "ThessalyRebellion_AllAntigonidOwned2"
+    },
+    {
+      "off": 310327,
+      "chars": 38,
+      "text": "cappadocia_reform_greek_battle_counter"
+    },
+    {
+      "off": 310411,
+      "chars": 26,
+      "text": "num_battles_seleucids_rome"
+    },
+    {
+      "off": 310471,
+      "chars": 9,
+      "text": "id_sparta"
+    },
+    {
+      "off": 310497,
+      "chars": 27,
+      "text": "CiliciaRebellion_RebelOwned"
+    },
+    {
+      "off": 310559,
+      "chars": 21,
+      "text": "CiliciaRebellion_Done"
+    },
+    {
+      "off": 310609,
+      "chars": 32,
+      "text": "ChrysaoriaRebellion_ForeignOwned"
+    },
+    {
+      "off": 310681,
+      "chars": 32,
+      "text": "labeataean_reform_battle_counter"
+    },
+    {
+      "off": 310753,
+      "chars": 11,
+      "text": "turn_number"
+    },
+    {
+      "off": 310783,
+      "chars": 13,
+      "text": "id_allobroges"
+    },
+    {
+      "off": 310817,
+      "chars": 33,
+      "text": "ptolemaic_therapeia_recruit_count"
+    },
+    {
+      "off": 310891,
+      "chars": 28,
+      "text": "achaea_reform_battle_counter"
+    },
+    {
+      "off": 310955,
+      "chars": 31,
+      "text": "dardanian_reform_battle_counter"
+    },
+    {
+      "off": 311025,
+      "chars": 28,
+      "text": "german_reform_battle_counter"
+    },
+    {
+      "off": 311089,
+      "chars": 15,
+      "text": "id_romans_julii"
+    },
+    {
+      "off": 311127,
+      "chars": 21,
+      "text": "MiletusRebellion_Done"
+    },
+    {
+      "off": 311177,
+      "chars": 9,
+      "text": "id_athens"
+    },
+    {
+      "off": 311203,
+      "chars": 12,
+      "text": "id_ptolemaic"
+    },
+    {
+      "off": 311235,
+      "chars": 10,
+      "text": "id_boeotia"
+    },
+    {
+      "off": 311263,
+      "chars": 9,
+      "text": "id_cyrene"
+    },
+    {
+      "off": 311289,
+      "chars": 39,
+      "text": "thracian_peltasts_reform_battle_counter"
+    },
+    {
+      "off": 311375,
+      "chars": 8,
+      "text": "id_tylis"
+    },
+    {
+      "off": 311399,
+      "chars": 47,
+      "text": "illyrian_thureophoroi_cav_reform_battle_counter"
+    },
+    {
+      "off": 311501,
+      "chars": 19,
+      "text": "capital_first_setup"
+    },
+    {
+      "off": 311547,
+      "chars": 8,
+      "text": "id_parni"
+    },
+    {
+      "off": 311571,
+      "chars": 10,
+      "text": "id_arverni"
+    },
+    {
+      "off": 311599,
+      "chars": 11,
+      "text": "id_massalia"
+    },
+    {
+      "off": 311629,
+      "chars": 9,
+      "text": "id_pontus"
+    },
+    {
+      "off": 311655,
+      "chars": 10,
+      "text": "id_siraces"
+    },
+    {
+      "off": 311683,
+      "chars": 28,
+      "text": "cabyle_reform_battle_counter"
+    },
+    {
+      "off": 311747,
+      "chars": 8,
+      "text": "id_getae"
+    },
+    {
+      "off": 311771,
+      "chars": 31,
+      "text": "ChrysaoriaRebellion_RhodesTurns"
+    },
+    {
+      "off": 311841,
+      "chars": 8,
+      "text": "id_egypt"
+    },
+    {
+      "off": 311865,
+      "chars": 11,
+      "text": "id_pergamon"
+    },
+    {
+      "off": 311895,
+      "chars": 9,
+      "text": "id_cimbri"
+    },
+    {
+      "off": 311921,
+      "chars": 30,
+      "text": "ThessalyRebellion_PlayerRevolt"
+    },
+    {
+      "off": 311989,
+      "chars": 27,
+      "text": "pergamon_reform_war_counter"
+    },
+    {
+      "off": 312051,
+      "chars": 11,
+      "text": "id_bithynia"
+    },
+    {
+      "off": 312081,
+      "chars": 9,
+      "text": "id_belgae"
+    },
+    {
+      "off": 312107,
+      "chars": 10,
+      "text": "id_mauryan"
+    },
+    {
+      "off": 312135,
+      "chars": 12,
+      "text": "id_odrysians"
+    },
+    {
+      "off": 312167,
+      "chars": 9,
+      "text": "id_volcae"
+    },
+    {
+      "off": 312193,
+      "chars": 44,
+      "text": "cappadocia_reform_settlement_capture_counter"
+    },
+    {
+      "off": 312289,
+      "chars": 29,
+      "text": "CiliciaRebellion_PlayerRevolt"
+    },
+    {
+      "off": 312355,
+      "chars": 27,
+      "text": "selge_reform_battle_counter"
+    },
+    {
+      "off": 312417,
+      "chars": 27,
+      "text": "LyciaRebellion_PlayerRevolt"
+    },
+    {
+      "off": 312479,
+      "chars": 8,
+      "text": "id_slave"
+    },
+    {
+      "off": 312503,
+      "chars": 35,
+      "text": "ThessalyRebellion_ThessalyAntigonid"
+    },
+    {
+      "off": 312581,
+      "chars": 10,
+      "text": "id_ardiaei"
+    },
+    {
+      "off": 312609,
+      "chars": 7,
+      "text": "id_saba"
+    },
+    {
+      "off": 312631,
+      "chars": 29,
+      "text": "boeotia_reform_battle_counter"
+    },
+    {
+      "off": 312697,
+      "chars": 10,
+      "text": "id_edetani"
+    },
+    {
+      "off": 312725,
+      "chars": 29,
+      "text": "num_battles_antigonids_sparta"
+    },
+    {
+      "off": 312791,
+      "chars": 22,
+      "text": "num_battles_antigonids"
+    },
+    {
+      "off": 312843,
+      "chars": 28,
+      "text": "ThessalyRebellion_RebelOwned"
+    },
+    {
+      "off": 312907,
+      "chars": 31,
+      "text": "odrysians_reform_battle_counter"
+    },
+    {
+      "off": 312977,
+      "chars": 29,
+      "text": "MiletusRebellion_PlayerRevolt"
+    },
+    {
+      "off": 313043,
+      "chars": 11,
+      "text": "id_carthage"
+    },
+    {
+      "off": 313073,
+      "chars": 43,
+      "text": "cilician_thureophoroi_reform_battle_counter"
+    },
+    {
+      "off": 313167,
+      "chars": 16,
+      "text": "first_time_setup"
+    },
+    {
+      "off": 313207,
+      "chars": 12,
+      "text": "id_antigonid"
+    },
+    {
+      "off": 313239,
+      "chars": 31,
+      "text": "ChrysaoriaRebellion_RhodesOwned"
+    },
+    {
+      "off": 313309,
+      "chars": 8,
+      "text": "id_aedui"
+    },
+    {
+      "off": 313333,
+      "chars": 10,
+      "text": "id_arevaci"
+    },
+    {
+      "off": 313361,
+      "chars": 8,
+      "text": "id_lugii"
+    },
+    {
+      "off": 313385,
+      "chars": 30,
+      "text": "massalia_reform_battle_counter"
+    },
+    {
+      "off": 313453,
+      "chars": 28,
+      "text": "cyrene_reform_battle_counter"
+    },
+    {
+      "off": 313517,
+      "chars": 29,
+      "text": "num_battles_seleucids_parthia"
+    },
+    {
+      "off": 313583,
+      "chars": 26,
+      "text": "LyciaRebellion_RhodesOwned"
+    },
+    {
+      "off": 313643,
+      "chars": 26,
+      "text": "LyciaRebellion_RhodesTurns"
+    },
+    {
+      "off": 313703,
+      "chars": 10,
+      "text": "id_armenia"
+    },
+    {
+      "off": 313731,
+      "chars": 8,
+      "text": "id_suebi"
+    },
+    {
+      "off": 313755,
+      "chars": 32,
+      "text": "cappadocia_reform_battle_counter"
+    },
+    {
+      "off": 313827,
+      "chars": 11,
+      "text": "id_bosporan"
+    },
+    {
+      "off": 313857,
+      "chars": 30,
+      "text": "miletus_reform_recruit_counter"
+    },
+    {
+      "off": 313925,
+      "chars": 13,
+      "text": "id_cappadocia"
+    },
+    {
+      "off": 313959,
+      "chars": 7,
+      "text": "id_kush"
+    },
+    {
+      "off": 313981,
+      "chars": 32,
+      "text": "ChrysaoriaRebellion_PlayerRevolt"
+    },
+    {
+      "off": 314053,
+      "chars": 14,
+      "text": "id_trinovantes"
+    },
+    {
+      "off": 314089,
+      "chars": 22,
+      "text": "EgyptianRebellion_Done"
+    },
+    {
+      "off": 314141,
+      "chars": 12,
+      "text": "id_galatians"
+    },
+    {
+      "off": 314173,
+      "chars": 11,
+      "text": "id_massylii"
+    },
+    {
+      "off": 314203,
+      "chars": 13,
+      "text": "id_atropatene"
+    },
+    {
+      "off": 314237,
+      "chars": 19,
+      "text": "LyciaRebellion_Done"
+    },
+    {
+      "off": 314283,
+      "chars": 17,
+      "text": "has_game_reloaded"
+    },
+    {
+      "off": 314325,
+      "chars": 11,
+      "text": "id_syracuse"
+    },
+    {
+      "off": 314355,
+      "chars": 19,
+      "text": "id_ptolemaic_rebels"
+    },
+    {
+      "off": 314401,
+      "chars": 9,
+      "text": "id_chatti"
+    },
+    {
+      "off": 314427,
+      "chars": 11,
+      "text": "id_insubres"
+    },
+    {
+      "off": 314457,
+      "chars": 22,
+      "text": "ThessalyRebellion_Done"
+    },
+    {
+      "off": 314509,
+      "chars": 18,
+      "text": "PtolemaicReformOne"
+    },
+    {
+      "off": 314553,
+      "chars": 27,
+      "text": "LyciaRebellion_ForeignOwned"
+    },
+    {
+      "off": 314615,
+      "chars": 30,
+      "text": "syracuse_reform_battle_counter"
+    },
+    {
+      "off": 314683,
+      "chars": 30,
+      "text": "EgyptianRebellion_PlayerRevolt"
+    },
+    {
+      "off": 314751,
+      "chars": 7,
+      "text": "id_boii"
+    },
+    {
+      "off": 314773,
+      "chars": 18,
+      "text": "id_seleucid_rebels"
+    },
+    {
+      "off": 314817,
+      "chars": 11,
+      "text": "id_lusitani"
+    },
+    {
+      "off": 314847,
+      "chars": 9,
+      "text": "id_epirus"
+    },
+    {
+      "off": 314873,
+      "chars": 33,
+      "text": "pentapolis_reform_recruit_counter"
+    },
+    {
+      "off": 314947,
+      "chars": 9,
+      "text": "id_achaea"
+    },
+    {
+      "off": 314973,
+      "chars": 10,
+      "text": "id_dummies"
+    },
+    {
+      "off": 315001,
+      "chars": 30,
+      "text": "bosporan_reform_battle_counter"
+    },
+    {
+      "off": 315069,
+      "chars": 7,
+      "text": "id_saka"
+    },
+    {
+      "off": 315091,
+      "chars": 12,
+      "text": "id_masaesyli"
+    },
+    {
+      "off": 315123,
+      "chars": 9,
+      "text": "id_greeks"
+    },
+    {
+      "off": 315149,
+      "chars": 10,
+      "text": "id_aetolia"
+    },
+    {
+      "off": 315177,
+      "chars": 24,
+      "text": "ChrysaoriaRebellion_Done"
+    },
+    {
+      "off": 315233,
+      "chars": 11,
+      "text": "id_seleucid"
+    },
+    {
+      "off": 315263,
+      "chars": 10,
+      "text": "id_bactria"
+    },
+    {
+      "off": 315291,
+      "chars": 12,
+      "text": "id_thracians"
+    },
+    {
+      "off": 315323,
+      "chars": 11,
+      "text": "id_nabataea"
+    },
+    {
+      "off": 315353,
+      "chars": 33,
+      "text": "pontus_reform_rome_battle_counter"
+    },
+    {
+      "off": 315427,
+      "chars": 9,
+      "text": "id_rhodes"
+    },
+    {
+      "off": 315453,
+      "chars": 12,
+      "text": "id_scordisci"
+    },
+    {
+      "off": 315485,
+      "chars": 28,
+      "text": "num_mercs_recruited_seleucid"
+    }
+  ]
+}

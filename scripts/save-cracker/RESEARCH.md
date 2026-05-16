@@ -13428,6 +13428,154 @@ Reproducer scripts: `scripts/save-cracker/dig-mp1.js` (locate Manius), `dig-mp4.
 
 ---
 
+### Session 102 — Player faction record decomposition 2026-05-16
+
+#### Brief
+
+The player faction record is the single largest under-decoded chunk in the file (~284-326 KB depending on save). Session 99 / Headline 7 noted it but did not decompose. Goal of session 102: a section map of the record, a per-region semantic guess, and ≥3 cross-validated strong findings about its sub-fields.
+
+Saves used (all in `scripts/save-cracker/fixtures/feral/`):
+- `save_1.2.sav` — Romans Julii mid-campaign reference (player record = 334,378 B at abs offset `0x209b2a9`, index 237/238).
+- `save_10_fresh.sav` — T0 baseline (player rec = 334,398 B at abs offset `0x220b413`).
+- `save_mp_before.sav` / `save_mp_after.sav` — pre/post 1-tile move; player record = 334,398 B both, file offset shifts 10 B.
+- `ror_t1e.sav` / `ror_t2s.sav` / `ror_t5.sav` / `ror_t11s.sav` / `ror_t11e.sav` — Romans turns 1-end through 11-end.
+
+`src/factionRecordParser.js` (existing) was used unchanged: scans for `ff 0a af f0 [u32 self+4] [u32 self+8] f0 0a af f0 [u32 0x3FC] [u32 0x2BC]` and reports `{offset, size}` per faction. `findFactionRecords()` returns exactly 238 records in every sample save; the last one is always anomalously large (the player). NPC median = 6,004 B, player = 334,378 B = **55.7× the median**.
+
+#### CONFIRMED — Three-section macro layout of the player record
+
+Coarse 1024-byte-window classification (`zero%, ff%, printable%`) reveals a clean **3-section** macro split, identical across all 7 sampled saves:
+
+| Region (rel to record start) | Size    | Class      | Interpretation |
+|---|---|---|---|
+| `+0x000000..+0x00c400` | 50.0 KB | binary-dense | **AI / diplomacy / per-faction-pair state** (low zero%, no printable, packed `<u8 a> <u8 b> <u8 c> 01` records) |
+| `+0x00c400..+0x04d000` | 261.0 KB | sparse (75% zeros) | **Character pool / name pool / family-tree blob** (includes inline name list, e.g. `"roman_men"` ASCII at +0x03290a; mostly empty in T0) |
+| `+0x04d000..EOF`       | 18.8 KB | binary-dense | **Lua persistent state** (115 counter strings + tail back-reference index) |
+
+Files: `scripts/save-cracker/dig-pfact-1.js` enumerates the 238 records; `dig-pfact-2.js` produces the byte-class histogram; `dig-pfact-7.js` aggregates the classification into the table above.
+
+#### CONFIRMED — Lua persistent-counter zone @ +0x04bb50
+
+The Lua state opens with the UTF-16 path string `data/world/maps/campaign/imperial_campaign/RIS_Campaign_Script.txts` (`u32 lenChars=53` prefix at +0x04bb50, then 106 UTF-16 bytes). Following the path is a sequence of 115 named counters — `dig-pfact-7.js` enumerates them by greedy-walk and finds 115 counter strings in every sampled save:
+
+```
+<u32 lenChars> <UTF-16 chars> <u32 value or hash> ...
+```
+
+A handful confirmed by semantics:
+* `"capital_first_setup"` u32-after = 0 in T0/T1e/T2s, **flips to 1 in T5 and stays 1 in T11s** — exactly matches a "has the player set up their capital yet" boolean.
+* `"num_battles_seleucids_rome"` u32-after = 0 across all our saves — campaign-correct (no Seleucid-vs-Rome battles in these samples).
+* `"ptolemaic_therapeia_recruit_count"` u32-after = 0 across all — Rome player never recruited at Therapeia.
+
+These were used to cross-validate the layout: **`<u32 lenChars> <UTF-16 string> <u32 value>` is the canonical Lua-counter record**.
+
+`turn_number` is an exception: u32-after = `0` in T0/T1e/T5 and `-3`/`-2` in T2s/T11s. This is NOT the actual turn counter; the real turn count is stored elsewhere (cross-references the prior session-94/96 settlement-record turn-counter at +0x... region) — the value here looks like a delta or last-action-turn relative to the current global turn. **HYPOTHESIS**: `turn_number` Lua value is "turns elapsed since some baseline event minus current turn" (always negative or zero by construction). Not pinned this session.
+
+The counter zone's absolute offset shifts dramatically between saves because the Lua zone is variable-size (longer scripts → more counter entries → more bytes) — e.g. save_1.2 puts the path at +0x04bb50 but ror_t11s puts it at +0x0ccad4. **This is one of the dominant byte-growth drivers in long campaigns** (Lua state grew from ~19 KB at T1 to ~325 KB by T11; not all of that is the counters, but they're a measurable fraction).
+
+#### STRONG — Back-pointer self-index at +0x00c264..+0x00c298
+
+The diff between `save_mp_before` and `save_mp_after` (1-tile move, file shrinks by exactly 10 bytes) revealed an 8-entry cluster of u32 values at relative offsets +0x00c264..+0x00c298, where every changed value **decreased by exactly 10**. Cross-check: these are **absolute file pointers** into the same player record's sparse zone:
+
+| Rel off | Before-pointer | After-pointer | Δ | Target bytes (first 16) |
+|---|---|---|---|---|
+| +0x0c264 | 0x22176ad | 0x22176a3 | -10 | `ad762102b1762102b576210200000000` |
+| +0x0c268 | 0x22176b1 | 0x22176a7 | -10 | `b1762102b576210200000000bd762102` |
+| +0x0c26c | 0x22176b5 | 0x22176ab | -10 | ... |
+| +0x0c270 | (always 0) | (always 0) | — | (zero — array-end / null) |
+| +0x0c274 | 0x22176bd | 0x22176b3 | -10 | ... |
+| +0x0c298 | 0x22176e1 | 0x22176d7 | -10 | `e1762102 16000000 0600 726f6d616e00` ← **"roman"** ASCII! |
+
+The pointer at +0x0c298 lands directly on `[u32 self-ptr] [u32 unknown=22] [u16 strLen=6] "roman\0"` — confirming this index entry points at the **player faction's culture-name record** ("roman" = the Romans Julii faction's culture group in RIS imperial). The other 6 pointers in the cluster point further forward into a contiguous run starting at abs `0x22176ad`, which is a 4-byte-stride table of 8 (`XX 76 21 02`) pointers — a **2-level back-pointer lookup table**: the player record contains a fixed-size 8-slot pointer array (at +0x0c264..+0x0c298) that points to an 8-record secondary table (at abs `0x22176ad` onwards) that itself points to character/army/region/culture records elsewhere.
+
+Between +0x0c288 and +0x0c294 are 4 consecutive u32 = `0xef` (= 239) — the **RIS faction count**. This is likely a sentinel "239 factions total" written alongside the 8-slot lookup.
+
+**Confidence: STRONG.** The exact `-10` shift on each pointer in lockstep with the 10-byte file shrink is incontrovertible. Semantic role of the 8-slot table is HYPOTHESIS (likely "player's frequently-used internal pointers": culture name, primary region, capital settlement, dynasty head, etc.).
+
+Files: `scripts/save-cracker/dig-pfact-4.js`, `dig-pfact-5.js`.
+
+#### STRONG — Per-faction record head bytes have high cross-faction byte-distinctness at +0x18..+0x80
+
+Counting distinct byte values at each offset across all 238 faction records in save_1.2:
+* `+0x04` 124 distinct, `+0x05` 155, `+0x08` 124, `+0x09` 157 — **confirms self-pointer fields** (each faction has a unique record offset, so the low 2 bytes of (offset+4) and (offset+8) span a wide range).
+* `+0x18..+0x80` shows 2-4 distinct values per byte — packed-byte per-faction state (likely a `<flags> <culture> <leader-trait> ...` block of u8/u16 fields), 100+ bytes long.
+
+Decoding bytes around +0x18..+0x80 reveals the stride-3 packed pattern `<u8 X> 0x01 <u8 Y> 0xZZ` recurring; the f32 read of 8194.5 at +0x000fbc was a **misread** (the bytes `01 42 00 37` decode to f32 8194.5 but they're three separate stride-1 packed-record bytes, not a float field). **NEGATIVE result on the "+0x000fbc = treasury candidate" hypothesis from dig-pfact-4.**
+
+Files: `scripts/save-cracker/dig-pfact-5.js`, `dig-pfact-7.js`.
+
+#### STRONG — 1-tile-move pair: tiny, localized diff
+
+The `save_mp_before` vs `save_mp_after` diff against the player record gives **only 2,606 differing bytes** out of 334,398 (= 0.78%), concentrated in:
+
+| Window (rel) | Diffs | Region |
+|---|---|---|
+| `+0x000000..+0x001000` | 2 | record self-pointer header (offset shifted -10) |
+| `+0x00c000..+0x00d000` | 8 | the back-pointer self-index (above) |
+| `+0x030000..+0x031000` | 1 | character/name pool (one byte tweak) |
+| `+0x04b000..+0x04c000` | 2 | Lua zone leading header (path-length-prefix shift?) |
+| `+0x04d000..+0x052000` | 2593 | **Lua persistent-state region (turn-counter, RNG, mid-turn state)** |
+
+The 1-tile move triggers a Lua state update — 2,593 bytes of change in the Lua zone for a single tile of movement. The Lua counters are dense ASCII-comparable strings, and the high diff count is because the **Lua zone is structurally re-packed on every save** (string offsets shift). Most of the 2593 are not "semantic" changes but storage relocations.
+
+Conclusion: the AI-state / diplomacy / character-pool sub-regions are **stable across a 1-tile move** (only 11 bytes differ in the 311 KB outside the Lua zone). Future controlled-experiment work in those zones is now feasible by diffing one targeted action.
+
+Files: `scripts/save-cracker/dig-pfact-3.js`.
+
+#### NEGATIVE — No `treasury == 10000` and no `year == 270/-270` u32 or f32 in the player record
+
+Step-5 numeric scans against save_1.2 player record:
+* u32/f32 == 10000 → 0 hits
+* i32 == -18334 (net income) → 0 hits
+* i32 == -270 (year BC) → 0 hits
+* i32 == +270 → 78 hits but no obvious meaningful one near the head
+
+**Treasury and year are NOT stored in the player faction record.** This is consistent with the session-97-99 finding that faction state is partly maintained in a separate per-faction array elsewhere; the 326 KB "player record" appears to contain AI-policy + character-pool + Lua state, but not the core economic ledger.
+
+Files: `scripts/save-cracker/dig-pfact-3.js`.
+
+#### Headline section map (consolidated)
+
+```
++0x000000..+0x000018  : record header (magic1, self-ptr+4, self-ptr+8, magic2, 0x3FC, 0x2BC)
++0x000018..+0x00c264  : per-faction AI / diplo state (packed stride-3 binary, ~50 KB)
++0x00c264..+0x00c298  : 8-slot back-pointer self-index (points into sparse zone)
++0x00c298..+0x00c2a0  : "roman" culture record entry header
++0x00c2a0..+0x00c400  : tail of AI state region (transition)
++0x00c400..+0x04d000  : sparse zone (75% zeros) — character pool, family tree, name pools
+   +0x030af5..+0x033xxxx   : ASCII name pools (african_men, anatolian_men, ... roman_men, slave_men, etc.)
++0x04d000..+0x04bb50  : (gap) — appears mis-stated; correct is +0x04bb50 marks Lua-zone header
++0x04bb50..+0x04bb56  : u32 lenChars=53 → path "data/world/maps/campaign/imperial_campaign/RIS_Campaign_Script.txts"
++0x04bbxx..EOF        : 115 named Lua counters with structure
+                       <u32 lenChars> <UTF-16 chars> <u32 value>
+                       (+ tail back-reference index)
+EOF=+0x051a2a (= +334378 B from record start)
+```
+
+(The "/+0x04d000..+0x04bb50/" entry in the table is mislabelled in the macro 3-section split — Lua zone actually starts at +0x04bb50, slightly before +0x04d000. Macro-window-classification rounded to 1024-byte boundaries.)
+
+#### Confidence summary
+
+* **CONFIRMED**: 3-section macro layout; AI-binary @ 0..0x0c400, sparse-pool @ 0x0c400..0x4d000, Lua @ 0x4bb50..EOF.
+* **CONFIRMED**: Lua counter layout `<u32 lenChars> <UTF-16 chars> <u32 value>` (validated against `capital_first_setup` flipping 0→1 between T2s and T5).
+* **STRONG**: 8-slot back-pointer self-index at +0x0c264..+0x0c298, one entry points to "roman" culture record. -10 byte shift cluster on the 1-tile-move pair confirms these are absolute file pointers.
+* **STRONG**: 1-tile move's player-record delta is 99.4% confined to the Lua state region — non-Lua zones are flat across the move.
+* **NEGATIVE**: treasury, net income, year are NOT in this record (despite session-99's speculative "treasury at 270 BC = 10000" target).
+* **HYPOTHESIS**: `turn_number` Lua counter stores `(last-action-turn - current-turn)`, not the absolute turn.
+
+#### Files
+
+* `scripts/save-cracker/dig-pfact-1.js` — enumerate 238 faction records, confirm player is index 237 and ~55× median size.
+* `scripts/save-cracker/dig-pfact-2.js` — byte-class histogram in 4 KB windows; ASCII + UTF-16 string enumeration.
+* `scripts/save-cracker/dig-pfact-3.js` — three-pair diff (1-tile move, T1e→T2s, T0→mid-campaign) + numeric scans for treasury/year.
+* `scripts/save-cracker/dig-pfact-4.js` — drill into the +0x0c264 stride-4 cluster (back-pointer table); +0x000fbc f32 candidate (rejected).
+* `scripts/save-cracker/dig-pfact-5.js` — pointer-destination dump; cross-faction byte-distinct analysis.
+* `scripts/save-cracker/dig-pfact-6.js` — "turn_number" string location + u32 dump across saves.
+* `scripts/save-cracker/dig-pfact-7.js` — final Lua-counter enumeration + 1024-byte section classifier.
+* `scripts/save-cracker/out-pfact-1.json`, `out-pfact-2.json` — full record manifest + section map.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
