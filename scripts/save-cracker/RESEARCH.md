@@ -15004,6 +15004,17 @@ The 7.2 MB ZEROS block (0x000f9000..0x00800000) is genuinely empty — pre-alloc
 3. **Use the decoded paths in UI**: even without owner linkage, the 1695 paths' waypoints could be rendered as faint trails on the map (where characters have walked) — already visually useful.
 4. **Decode the 9.5 MB tile-attribute zone's structured content**: session 99 confirmed it's "static map data" but the inventory shows it contains massive ASCII-rich subzones. Possible content: mod-loaded building names, unit names, trait names — already loaded as bundled JSON in Provincia, but maybe with version drift.
 
+#### Sub-finding: settlement-plan sub-zone inside "tile-attribute" (0x00f80000..0x01180000, ~2 MB)
+
+Sampling the "tile-attribute" zone in `dig-tileAttr-1.js` found 3593 length-prefixed strings concentrated in its last 2 MB (0x00f80000..0x01180000). The structure is per-settlement records with:
+
+* UTF-16 settlement display names: `"Rome"`, `"Arretium"`, `"Paphos"`, etc.
+* ASCII building-chain names following each settlement: `"default_set"`, `"hinterland_region"`, `"core_building"`, `"governmentD"`, `"military_industrial_complex"`, `"irrigated_farming"`, `"market"`, `"port_buildings"`, `"dyes_production"`, `"health"`, `"hinterland_roads"`, `"temples_of_viking"`, `"defenses"`
+
+This is the **per-settlement saved building chain state** — what buildings each settlement has + their queue. Provincia's `buildingsWorker.js` already parses this region, but the per-settlement-record boundaries (~580 bytes/string average, ~70 settlements × ~50 strings each = 3500) are now confirmed.
+
+The TRUE tile-attribute static map zone is only the first 7.5 MB (0x00800000..0x00f80000), which is mostly zeros — pre-allocated tile state buffer. The KNOWN_ZONES boundaries in `dig-inventory.js` should be updated to reflect: 7.5 MB tile-attribute static + 2 MB settlement-plans, not a single 9.5 MB "tile-attribute" block.
+
 ---
 
 ## Sources
