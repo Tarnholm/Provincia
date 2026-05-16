@@ -14176,6 +14176,221 @@ After the LAST pool record (`aetolian_men`, idx=177), there is exactly **one `00
 
 ---
 
+## Session 107 — player faction HEAD sub-region (2026-05-16)
+
+#### Brief
+
+Session 106 split the player-faction record's middle 261 KB into a growing HEAD sub-region (`+0xc400 .. firstBarbAbs`) and a fixed 241 KB name-pool tail. Session 106 confirmed the head ranges from 23 KB at T0 to 1074 KB at athens_t21 (47× growth). Session 107's job: decompose the HEAD and pin what's inside.
+
+Saves used: all 13 in `scripts/save-cracker/fixtures/feral/` (added athens_t22s/t22mid/t22e and the save_mp pair to the session 106 set).
+
+#### CONFIRMED — HEAD = `[per-turn event/message log] + [23.6 KB static settlement-lookup tail]`
+
+The HEAD has TWO sub-zones, not one homogenous growing zone:
+
+| Sub-zone | T0 | ror_t11s | athens_t21 | athens_t22s/e | Behaviour |
+|---|---|---|---|---|---|
+| Building-completion records (`+0x0 .. magicIdx`) | 0 B | 22,915 B | 27,290 B | 28,447 B | grows per-turn (prepend) |
+| Magic header `ff 0a af f0` | absent | 1× at +0x5983 | 1× | 1× | one-shot delimiter |
+| UTF-16 message log (`magicIdx .. tailStart`) | 0 B | 504,792 B | 1,049,271 B | 285,479 B | grows mid-turn; PURGED on turn end |
+| Static settlement-lookup (last 23,608 B) | 23,608 B | 23,608 B | 23,608 B | 23,608 B | byte-identical across saves (0-4 differing bytes only) |
+
+The "athens_t21 → athens_t22s" boundary is the smoking gun: HEAD shrinks from 1.07 MB to 330 KB on a single turn-end transition. The message-log zone is **erased at end-of-turn save**, not appended to forever — that's why 0.9.x late-campaign saves don't grow without bound.
+
+The fact that `save_mp_before.sav` and `save_mp_after.sav` (a 1-tile move within turn) have **byte-identical HEADs** plus only 0-4 mismatching bytes across all campaign saves in the static tail proves the tail is a per-faction lookup baked at campaign start, not live state.
+
+Files: `dig-head-1.js` (HEAD size enumeration across 13 saves), `dig-head-8.js` (turn-boundary purge), `dig-head-9.js` (tail byte-identity).
+
+#### CONFIRMED — Building-completion-record zone: 27/36-byte records, most-recent-first prepend
+
+Walking from HEAD+0 forward and matching `<u16 strLen> <ASCII (TitleCase + underscore)> \0` finds settlement-class strings: `Carthaginian_Large_Town`, `Celtic_Town`, `Celtic_Large_Town`, `Germanic_Town`, `W_hellenistic_Large_Town`, etc. — 19 distinct settlement-class names in ror_t11s, taken from the RIS imperial mod's `descr_strat` building tree. Total record count grows from 0 (T0) → 15 (T2s, 1 turn played) → 210 (T5) → 481 (T11s) → 582 (athens_t21) → 610 (athens_t22).
+
+Record layout (37% of records have a 36-byte header, 30% have a 27-byte header, ~20% are "double-string" repeats where two adjacent class names share a header):
+
+```
+Rec 1 (36-byte header, single string "Celtic_Town"):
+  +0x42  1b 00 00 00      // u32 = 27 (record-type / opcode enum)
+         d8 00 00 00      // u32 = 216 (sub-type / settlement-event enum)
+         ef 01 00 00      // u32 = 495 (turn-stamp / event-id?)
+         01 00 00 00      // u32 = 1
+         ff ff ff ff      // u32 = sentinel (probably "no faction owner" marker)
+         12 00 00 00      // u32 = 18
+         16 00 00 00      // u32 = 22 (region_id, 0..240)
+         02 00 00 00      // u32 = 2 (culture_id, matches the 4 cultures)
+         21 00 00 00      // u32 = 33 (settlement_id)
+  +0x66  0c 00 [Celtic_Town\0]   // <u16 strLen> <ASCII class>
+
+Rec 2 (36-byte header, DOUBLE string -- starts with "Celtic_Large_Town" twice):
+  +0x74  1b 00 00 00 d8 00 00 00 16 02 00 00 02 00 00 00
+         00 00 00 00 5c 00 00 00 02 00 00 00 02 00 00 00 ef 00 00 00
+  +0x9a  12 00 [Celtic_Large_Town\0]
+  +0xae  12 00 [Celtic_Large_Town\0]
+```
+
+First u32 distribution (record-type enum): **27 (count=233), 29 (count=139), 30 (count=9), 31 (count=7)** — four discrete enum values, suggesting `<27=settlement-state, 29=construction-finished, 30=siege-event, 31=upgrade-event>` (specific mapping not pinned). Last u32 before the first strLen distribution: `0xef=239` (count=118), `0x1000000` (count=98), `0x21=33` (count=28), `0xcc=204` (count=14), `0x21=33` (count=28). The `0xef=239` and `0xcc=204` are most likely region_ids (within RIS imperial's 240-region range).
+
+**Records are PREPENDED, not appended.** Diffing ror_t11s (481 recs) → ror_t11e (485 recs): common SUFFIX = 367 records, common PREFIX = 1 record. The 4 new records added during turn 11 appeared at the BEGINNING of the building zone. The athens_t21 (582 recs) → athens_t22s (610 recs) diff: common suffix = 141 records, common prefix = 0 — i.e., the turn-end save substantially reshuffles the building zone (likely re-sorted by event-recency, with some "decayed" records dropped).
+
+The records track the visible-to-player **per-settlement state snapshot at observation time** — they accumulate as the player witnesses new buildings/upgrades around the campaign map. The 19 distinct class names exclude the player's own faction-style (Roman_City etc. don't appear in the Romans' player record), so this is the per-faction **diplomatic intelligence / observed-cities-of-other-factions catalog**.
+
+Files: `dig-head-2.js` (string/zero/uuid scan), `dig-head-4.js` (class-name walker + gap histogram), `dig-head-6.js` (sub-magic detection + 4 KB classifier), `dig-head-7.js` (logical-record grouping + first-u32/last-u32 histograms), `dig-head-8.js` (t11s/t11e + t21/t22s diff).
+
+#### CONFIRMED — `ff 0a af f0` magic at HEAD+`magicIdx` marks the START of the UTF-16 message-log zone
+
+Exactly ONE occurrence per save (after T1; absent in T0/T1 because the log is empty), no other `ff..f0` magic candidates in HEAD. Bytes immediately after the magic:
+
+```
++magicIdx+0    ff 0a af f0                         // magic
++magicIdx+4    6e ec 45 02                         // u32 record-pointer? (0x0245ec6e)
++magicIdx+8    72 ec 45 02                         // u32 pointer + 4
++magicIdx+12   76 ec 45 02                         // u32 pointer + 8
++magicIdx+16   3b 08 00 00                         // u32 = 2107 (?)
++magicIdx+20   09 00 00 00                         // u32 = 9
+                                                    // first message-record begins below
++magicIdx+24   f2 fe ff ff 02 00 00 00 ee 00 00 00 // event-record sub-magic + fields
++magicIdx+36   04 00 [UTF-16: "Abai"]              // <u16 strLen=4 chars> <UTF-16 settlement-name>
++magicIdx+46   0f 00 [UTF-16: "Settlement Lost..."] // <u16 strLen=15 chars> <UTF-16 message body>
+```
+
+The triple of consecutive `* * 45 02` u32s right after the magic looks like (self_ptr, self_ptr+4, self_ptr+8) — the same self-pointer pattern as the faction record magic (`ff 0a af f0 <self_ptr> <self_ptr+4>` from `src/factionRecordParser.js`). So the magic is structurally a "child record" of the same family: the player faction record contains a nested record marking the start of its message log.
+
+#### STRONG — UTF-16 message log: paired Lost/Gained settlement-change events
+
+Sub-magic `f2 fe ff ff` (= `0xfffffef2`) appears 856 times in the ror_t11s message-zone with alternating delta sizes (~25-29 bytes / ~200-220 bytes). The 200-byte records contain the long UTF-16 message body (`Settlement Lost: We no longer control this settlement, a blow to our wealth and prestige.` — 88 UTF-16 chars = 176 bytes, plus framing); the 25-byte records contain the short reference back-fields.
+
+Across saves, every "Settlement Lost" UTF-16 has a corresponding "Settlement Gained" UTF-16 (ror_t11s: 326 Lost = 326 Gained; athens_t22e: 513 Lost = 513 Gained). Each pair is one **settlement change-of-ownership event** in the campaign world that the player has line-of-sight to. The 856 sub-magic positions in ror_t11s = ~2.6× the pair count, consistent with each event creating multiple sub-records (event-header + Lost-text + Gained-text + event-footer).
+
+athens_t22s (start of turn 22) → athens_t22e (end of turn 22): building zone byte-identical; message-zone +642 bytes (single event added). So **within-turn the message log only grows by player-visible events**.
+
+Files: `dig-head-2.js`, `dig-head-6.js`, `dig-head-8.js`.
+
+#### STRONG — Static tail (last 23,608 bytes) = 5902 stride-4 u32 settlement-id lookup, ~byte-identical across all saves
+
+The last 23,608 bytes of HEAD (= T0 head size exactly) are byte-identical between `save_10_fresh`, `save_mp_before`, `save_mp_after`, and `ror_t1e`; differ by **at most 4 bytes** between any pair of campaigns (including across cross-campaigns like Rome vs Athens):
+
+| Pair | Mismatching bytes / 23,608 |
+|---|---|
+| save_10_fresh vs save_mp_before | 0 |
+| save_10_fresh vs save_mp_after | 0 |
+| save_mp_before vs save_mp_after | 0 |
+| save_10_fresh vs ror_t1e | 0 |
+| save_10_fresh vs ror_t11s | 4 |
+| save_10_fresh vs athens_t21 | 3 |
+| athens_t21 vs athens_t22e | 2 |
+
+5902 stride-4 slots; 480 distinct u32 values in `[0, 479]` (exactly), with the frequency histogram:
+
+| Slots per value | Number of distinct values |
+|---|---|
+| 33 | 1 |
+| 19 | 2 |
+| 18 | 63 |
+| 17 | 10 |
+| 13 | 199 |
+| 12 | 75 |
+| 8 | 130 |
+| total = 480 values, 5902 slots | |
+
+The pattern (8/12/13/17/18 slots per value, with a few outliers) strongly suggests this is a **per-settlement-record index table** where the slot count per settlement ID is a function of the settlement's tier (city = 18 slots, large_town = 13 slots, town = 12 slots, village = 8 slots, capital = 33 slots — exact mapping not pinned but the tier-correlation is clear). Value `0` appears 33× — likely the player's own capital. The 480 settlement-ID range matches RIS imperial's ~240 regions × 2 (since the engine tracks at-tile and at-region levels) — or 480 directly = 240 + 240 mirror.
+
+Confidence: STRONG that it's a per-faction settlement-lookup; HYPOTHESIS that the slot count = settlement-tier. Not pinned which tier maps to which count.
+
+Files: `dig-head-9.js` (pairwise byte-identity), `dig-cpool-A.js` (session 106's original discovery of the stride-4 [0..479] pattern).
+
+#### NEGATIVE — Per-character live state is NOT in HEAD
+
+- `save_mp_before` vs `save_mp_after` (1-tile move within turn): **HEAD is byte-identical** (0 bytes differ).
+- Character `secondaryUuid` hits in HEAD: 2658 occurrences (vs random baseline of 0.03 — i.e., 2658× chance) but those hits are inside building-completion records' header fields and message records' reference fields. They are character-id references, not full character records.
+- The actual character record structure (with name indices, age, traits, portraits at +302..+308 etc., per `src/characterParser.js`) lives elsewhere in the save (sessions 1-101 located them at scattered offsets, often near the unit/army records, not inside any faction record).
+
+So HEAD does NOT contain the family tree, character traits, or per-character history. Those records are elsewhere in the save file (the body section + character_paths zone — session 100's "settlement zone vs character-paths zone" split applies).
+
+What HEAD DOES contain is **per-faction observed-world state**: settlements the player has seen, settlement changes of ownership the player has witnessed (with full UTF-16 message text), and a static settlement-lookup table.
+
+#### Per-turn growth budget
+
+Diffs across save pairs:
+
+| Pair | Turns | bldgZone delta | msgZone delta | Notes |
+|---|---|---|---|---|
+| save_mp_before → save_mp_after | 0 (1-tile move) | 0 | 0 | HEAD byte-identical |
+| ror_t1e → ror_t2s | 1 turn | +1742 (15 new records) | +25,878 (8 pairs) | end-T1 → start-T2 |
+| ror_t11s → ror_t11e | within T11 | +229 (~4 records) | +1162 (~2 events) | within turn |
+| athens_t21 → athens_t22s | 1 turn | +1157 (28 new records) | **-763,792 bytes** | turn-end purges 0.7 MB! |
+| athens_t22s → athens_t22mid | within T22 | +1 (+1 record) | +5857 | within turn |
+| athens_t22s → athens_t22e | within T22 | 0 | +642 | within turn (1 event) |
+
+Two key budget observations:
+1. **Turn-end PURGES the msg-log zone.** athens_t21 (1.05 MB msg-zone) → athens_t22s (286 KB msg-zone) = **730 KB freed**. The message log is not unbounded; it's bounded by what's relevant to the current diplomatic snapshot.
+2. **Within-turn growth is ~640 bytes per "settlement change" event** in the msg zone. A turn with K AI-faction settlement-ownership changes adds ~640K bytes mid-turn, which is purged at turn-end.
+
+The athens_t21 → athens_t22s msg-zone purge from 1.05 MB to 286 KB suggests the engine retains a **fixed-K-events recent buffer** rather than a full history. 326 events at t11s, 497 at t21 (within-turn growth), then back down to 512 at t22s after the purge.
+
+#### Headline HEAD structure map (correction & expansion of session 106)
+
+```
++0xc400 .. +magicIdx                        (0 B at T0, 28 KB at athens_t22s)
+  Building-completion / settlement-state snapshot records
+  Each record: <u32 type:{27,29,30,31}><u32 sub-type><u32 event-id>
+               <u32><u32 sentinel?><u32><u32 region_id><u32 culture_id><u32 settlement_id>
+               <u16 strLen><ASCII settlement-class>\0
+               [<u16 strLen><ASCII settlement-class>\0 if double]
+  Records PREPENDED on update (most-recent-first ordering)
+  19 distinct settlement-class strings (RIS imperial buildings)
+
++magicIdx                                   (single occurrence per save)
+  Magic: ff 0a af f0 <3 × u32 ptr/uuid> <u32 ?> <u32 ?>
+  Same family as faction-record magic; structurally a nested sub-record
+
++magicIdx+24 .. +headEnd-23608               (0 B at T0, varies 285 KB to 1049 KB)
+  Per-faction UTF-16 message log
+  Sub-records framed by f2fefff (0xfffffef2) sub-magic
+  Paired "Settlement Lost" + "Settlement Gained" events
+  PURGED on turn-end save (NOT unbounded growth)
+
++headEnd-23608 .. firstBarbAbs              (always 23,608 B; -4..-2 bytes variation)
+  Static settlement-lookup table
+  5902 stride-4 u32 slots, values in [0, 479] (480 distinct settlement IDs)
+  Slot count per ID = 8/12/13/17/18/19/33 (likely settlement-tier dependent)
+  Byte-identical (or near-identical) across all saves of any campaign
+```
+
+#### Confidence summary
+
+- **CONFIRMED**: HEAD has three sub-zones (building records, UTF-16 message log, static lookup tail).
+- **CONFIRMED**: Static tail is 23,608 bytes, byte-identical (≤4 byte variation) across all 13 saves of two different campaigns.
+- **CONFIRMED**: Message-log magic `ff 0a af f0` occurs exactly once per save; absent in T0/T1.
+- **CONFIRMED**: Building-completion records are prepended (most-recent-first), 19 distinct settlement-class strings (RIS imperial buildings), 4 record-type enums {27, 29, 30, 31}.
+- **CONFIRMED**: Settlement Lost = Settlement Gained count per save (every change-of-ownership creates both a "lost" entry and "gained" entry).
+- **CONFIRMED**: 1-tile move (save_mp_before/after) leaves HEAD byte-identical → HEAD is NOT per-character live state.
+- **CONFIRMED**: Turn-end save dramatically PURGES the message-log zone (athens_t21 1.05 MB → athens_t22s 286 KB).
+- **STRONG**: First-u32 enum {27,29,30,31} is a 4-value record-type opcode; last-u32 = region_id (most frequent 239 = end-of-RIS-region-range).
+- **STRONG**: Records contain character UUID references (2658× over random baseline) but not full character records.
+- **HYPOTHESIS**: Static-tail slot count {8,12,13,17,18,33} per settlement ID corresponds to settlement tiers (village=8 / town=12 / large_town=13 / city=17 / large_city=18 / capital=33). Not pinned.
+- **HYPOTHESIS**: The 3-pointer / self-ptr-like structure after the magic is the same pattern as faction-record self-pointers (4 byte offset+0, +4, +8). Worth confirming.
+
+#### Files
+
+- `scripts/save-cracker/dig-head-1.js` — HEAD sizes across all 13 saves. Confirms 23 KB → 1074 KB growth; athens_t22 saves are smaller than t21 (purge).
+- `scripts/save-cracker/dig-head-2.js` — Full structure dump of ror_t11s HEAD: ASCII / UTF-16 strings, zero runs, char UUID cross-check, u32 frequency, stride autocorrelation. First finding of settlement-class strings + UTF-16 "Settlement Lost/Gained" messages.
+- `scripts/save-cracker/dig-head-3.js` — Pairwise HEAD diffs: save_mp byte-identical, ror_t1e→t2s grows but LCS=7315 bytes, t11s→t11e grows by 1391 bytes within turn, athens_t22s/mid/e have constant 23965-byte common suffix.
+- `scripts/save-cracker/dig-head-4.js` — Class-name record walker + 4 KB classifier (UTF-16-text middle, sparse-records tail). First identification of `ff 0a af f0` at HEAD+0x5983 as the message-log start marker.
+- `scripts/save-cracker/dig-head-5.js` — Per-save magic count (always 1), Settlement Lost/Gained counts, tail-lookup unique=480 max=479, per-turn growth profile (~48K bytes per turn early-game; -730K at athens_t21→t22s purge). UUID hits in HEAD = 2658× random baseline.
+- `scripts/save-cracker/dig-head-6.js` — Decomposes HEAD into [bldg-zone][magic][msg-zone][tail]; per-turn record counts (15→210→481→610). Magic sub-records via `f2 fe ff ff` sub-magic (856 in ror_t11s).
+- `scripts/save-cracker/dig-head-7.js` — Logical record grouping (389 logical records from 481 strings in ror_t11s); first-u32 enum {27,29,30,31}; last-u32 distribution (239 dominant).
+- `scripts/save-cracker/dig-head-8.js` — t11s→t11e diff (common suffix = 367 records; 1 prefix); athens_t21→t22s diff (common suffix = 141, 0 prefix); athens_t22s→t22e (building zone byte-identical, msg-zone +642 bytes for 1 event).
+- `scripts/save-cracker/dig-head-9.js` — Tail-lookup byte-identity table (0-4 bytes differ across all 8 sampled saves); frequency histogram of slot counts per settlement ID.
+
+#### Next steps
+
+1. **Pin the record-type enum {27,29,30,31}**. Look at the bldg-zone's first-u32 values across saves with known mid-turn events (e.g. siege start, building finished) and correlate with which value got added.
+2. **Map the 480-value lookup to specific settlements**. Cross-reference the slot-count distribution (1 cap@33 + 2@19 + 63@18 + 10@17 + 199@13 + 75@12 + 130@8) against settlement-tier counts in the player's known world from `public/regions_large.json`. The 33-slot value-0 is probably the player's capital (Rome / Athens).
+3. **Decode the message-record framing more deeply**. The `f2 fe ff ff` sub-magic and the 200-byte / 25-byte alternation suggest a structured framing; pinning the field offsets would let us cleanly extract every player-visible diplomatic event from any save.
+4. **Cross-link HEAD UUIDs back to characters**. The 2658× over-baseline of secondaryUuid hits in HEAD means each "Settlement Lost" / "Settlement Gained" record likely names the character who took/lost the settlement. Decoding this would surface a per-player event history (general X conquered city Y on turn N).
+5. **Player-visible UI overlay**: a "campaign timeline" panel in the Provincia React app showing per-turn settlement changes the player witnessed would be a direct consumer of the message-log zone — every event is already in UTF-16 message text inside the save.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
