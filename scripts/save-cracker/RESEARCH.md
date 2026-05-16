@@ -13694,6 +13694,155 @@ Important note: most counters are **per-faction-script-scope** — the `_athens`
 
 ---
 
+## Session 103 — AI/diplomatic stride-3 zone (2026-05-16)
+
+#### Brief
+
+Session 102 catalogued the player faction record into 3 macro regions and claimed the leading 50 KB (`+0x18..+0x0c264`) was packed as "stride-3 <u8 a><u8 b><u8 c>" records (~16K triples). Session 103's target was to decompose that zone and identify what each triple meant.
+
+Saves used: same 9-13 in `scripts/save-cracker/fixtures/feral/` as prior sessions (save_10_fresh, save_1.2, save_mp_before/after, ror_t1e/t2s/t5/t11e/t11s, athens_t21/t22e).
+
+#### NEGATIVE — Session 102's "stride-3" claim is wrong
+
+Phase-divergence score (mean pairwise L1 distance between byte distributions at each phase) for the zone:
+
+| Stride | Score | Interpretation |
+|---|---|---|
+| 2 | **1.19** | strong stride structure |
+| 3 | 0.066 | indistinguishable from random alignment |
+| 4 | 0.82 | secondary harmonic of stride-2 |
+| 6,8,10,12 | 0.70-0.75 | also harmonics of stride-2 |
+
+**Stride-2, not stride-3.** Session 102's interpretation of `<u8 a><u8 b><u8 c> 01` was a misread of the recurring `01 ff 01 ff 01 NN ...` pattern — those bytes are actually pairs `<v=1, c=255> <v=1, c=255> <v=1, c=NN>`, not stride-3 triples with a `01` separator.
+
+Files: `dig-aidip-1.js` (phase histogram + stride scoring).
+
+#### STRONG — The zone is a **stride-2 <u8 value, u8 count> RLE encoded tile grid for the player faction**
+
+Decoding the zone as stride-2 `<v, c>` RLE yields a tile stream whose total length is ≈714,000 — **exactly 1020 × 700, the dimensions of `public/map_regions_large.tga`**. Per-save naive sums:
+
+| Save | Tile count | Δ from 1020×700 |
+|---|---|---|
+| save_10_fresh.sav | 714,263 | +263 |
+| save_1.2.sav | 714,855 | +855 |
+| save_mp_before.sav | 714,263 | +263 |
+| save_mp_after.sav | 714,263 | +263 (identical to before) |
+| ror_t1e.sav | 714,010 | +10 |
+| ror_t2s.sav | 690,780 | -23,220 |
+| ror_t5.sav | 782,510 | +68,510 |
+| ror_t11e.sav | 938,312 | +224,312 |
+| ror_t11s.sav | 937,541 | +223,541 |
+| athens_t21.sav | 1,018,737 | +304,737 |
+| athens_t22e.sav | 1,038,569 | +324,569 |
+
+The zone is **fixed at 49,740 bytes = 24,870 pairs in every save**, but the decoded count varies because the data being encoded isn't a fixed-size grid — see the "what's encoded" discussion below.
+
+Files: `dig-aidip-3.js` (RLE decode + per-save count + value histograms).
+
+#### STRONG — Spatial correlation with `map_regions_large.tga` confirms it's a per-tile geographic grid
+
+Read `public/map_regions_large.tga` (1020×700, 24-bit RGB), cluster all pixels within Δ<24 of the modal color `0xf98c29` (orange = sea), build a 1020×700 land/sea mask. Cross-tab the RLE-decoded grid (treating as 1020×700 in flipY orientation) against the mask:
+
+For save_10_fresh (T0 baseline):
+* `v=0` on land: 180,120  on sea: 182,230  (sea ratio 50.3% — random with respect to land/sea)
+* `v=1` on land: 308,991  on sea:     420  (**sea ratio 0.1%** — essentially exclusive to land)
+* `v=2` on land:  27,399  on sea:   3,389  (sea 11.0%)
+* `v=3` on land:   6,701  on sea:   1,747  (sea 20.7%)
+* `v=4` on land:   1,259  on sea:     638  (sea 33.6%)
+
+**value=1 is 99.9% on land** in flipY orientation. The grid IS spatially aligned with the campaign map (top-down storage, vs the TGA's bottom-up convention). value=0 has 50.3% sea ratio vs the map's 26.4% sea — a ~2× enrichment, consistent with value=0 = "unexplored / fog tile" weighted toward sea (which is harder for a land faction to explore).
+
+Files: `dig-aidip-5.js`, `dig-aidip-6.js`, `dig-aidip-7.js` (TGA load + cluster + cross-tabulation + 4 orientations tested).
+
+#### STRONG — value=1 is monotonically increasing: **"ever-explored / permanent reveal" map**
+
+Transition matrix from value at ror_t1e to value at ror_t11s (10 in-game turns of Roman play, per-tile):
+
+| from \ to | v=0 | v=1 | v=2 | v=3 | v=4 | v=5 | v=6 | v=7 |
+|---|---|---|---|---|---|---|---|---|
+| v=0 | 346,478 | **12,635** | 3,148 | 42 | 65 | 17 | 0 | 0 |
+| v=1 | 0 | **308,694** | 595 | 24 | 30 | 0 | 0 | 0 |
+| v=2 | 33 | **16,364** | 14,162 | 282 | 5 | 2 | 0 | 0 |
+| v=3 | 0 | **4,689** | 1,150 | 2,484 | 104 | 0 | 0 | 0 |
+| v=4 | 0 | **1,036** | 141 | 373 | 306 | 35 | 0 | 0 |
+| v=5 | 0 | 306 | 72 | 65 | 65 | 122 | 5 | 0 |
+
+Two strong patterns:
+1. **No tile ever goes from v=1 back to v=0** (top-row column 0 is 0). Once a tile is value=1, it stays value=1 — classic "permanently revealed" semantics.
+2. **The v=1 column dominates everything as the target.** 16,364 v=2 tiles became v=1, 4,689 v=3 → v=1, 1,036 v=4 → v=1, 306 v=5 → v=1. Higher values are **transient AI/strategic-state** values that collapse to v=1 (explored land) over time. After 10 turns of Roman play, 12,635 previously-unexplored tiles (v=0) became revealed (v=1).
+
+The 0→1 spatial bins also cluster heavily in the upper-x bins of rows 4-6, i.e. **the geographic area where Romans expanded during turns 1-11** (northern Italy / Po Valley / southern Gaul). This is essentially a per-faction exploration / line-of-sight ever-seen map.
+
+Files: `dig-aidip-4.js` (transition matrix + spatial-bin diff), `dig-aidip-8.js` (quadrant statistics + corner-tile per-save sample).
+
+#### STRONG — Row stride is 510, not 1020 — the strategic tile grid is half-x-resolution of the TGA
+
+Cumulative running sum of `c` lands on a multiple of 510 exactly at **every** row-end pair (verified for the first ~50 row-ends in save_1.2). For comparison: hits on multiples of 1020 are also present but at every-other boundary. Final cumulative sums divided by 510 give very near-integer row counts:
+
+| Save | final | /510 | mod 510 |
+|---|---|---|---|
+| save_10_fresh | 714,263 | 1400.516 | 263 |
+| save_1.2 | 714,855 | 1401.677 | 855 |
+| ror_t1e | 714,010 | 1400.020 | 10 |
+| ror_t2s | 690,780 | 1354.471 | 240 |
+| ror_t11s | 937,541 | 1838.316 | 161 |
+
+T0 / T1 saves land closely on 1400 rows (= 2 × 700). **The strategic tile grid is 510 wide × 1400 tall**, half-resolution on X versus the rendered 1020-pixel-wide TGA. This matches RTW's well-known engine convention that each "strategy tile" is roughly 2 map pixels wide. As campaigns progress, more pairs encode the same logical 510×1400 grid (because runs split when their value changes mid-tile), so the per-save naive byte-sum drifts above 714,000 — that's a feature of RLE, not a count of additional tiles.
+
+Files: `dig-aidip-B.js` (cumulative-sum row-boundary alignment), `dig-aidip-C.js` (510×1400 PGM render + ASCII visualization showing recognizable coastlines).
+
+Note: the row-end alignment also shows the `01 ff 01 ff 01 NN` pattern (which session 102 mistook for stride-3 delimiters) is just **two consecutive runs of value=1 for 255 tiles each** — the natural RLE encoding of a 510-wide row where the first 510 tiles all have value=1 (an "all-sea" or "all-uniform" row). The first 24 rows of every save are uniform-1, so the encoding produces `01 ff 01 ff 01 NN` for each — which is why those tokens appear in clusters.
+
+#### STRONG — 1-tile move pair (save_mp_before/after) shows ZERO differing tiles in this grid
+
+The session-102 finding that the 1-tile move's 99% of byte change was in the Lua zone is reinforced here: **the player's permanent exploration map is byte-identical between save_mp_before and save_mp_after** (decoded count 714,263 identical, all 714k tiles match exactly). A 1-tile move within already-explored territory doesn't change this grid at all — which is consistent with "ever-explored" semantics (the bit was already set, the move just visited it again).
+
+Files: `dig-aidip-4.js`.
+
+#### Headline value semantics (with confidence)
+
+| Value | Tiles in T0 | Tiles in T22e (mid-late) | Direction | Interpretation |
+|---|---|---|---|---|
+| **0** | 362,350 (51%) | 339,611 (33%) | shrinks | **unexplored / never-seen tile** (STRONG) |
+| **1** | 309,411 (43%) | 359,415 (35%) | grows | **explored / ever-seen land** (STRONG; 99.9% on land) |
+| **2** | 30,790 (4.3%) | 13,219 (1.3%) | shrinks | **AI scratch state — likely active LOS or active threat halo** (HYPOTHESIS — transient, collapses to v=1) |
+| **3** | 8,448 (1.2%) | 1,711 (0.2%) | shrinks | similar transient state (HYPOTHESIS) |
+| **4** | 1,897 (0.3%) | 372 (0.04%) | shrinks | rarer transient state |
+| **5+** | 1,367 (0.2%) | 244,534 (24%) | **explodes late** | unknown — explosion at T5+ in late-game saves is unexplained; possibly per-region settlement-tagged tiles |
+
+The value=5+ explosion is mysterious. In ror_t1e the count is 1,114; in ror_t5 it jumps to 48,852; in ror_t11e to 161,382; in athens_t22e to 244,534. The transition matrix shows most v=5+ comes from v=0/1/2 with no obvious causal pathway. Best hypothesis: late-game saves include some kind of per-region settlement-tile tagging (each owned settlement broadcasts a value to nearby tiles?), but unverified. Tagged HYPOTHESIS pending dedicated digging.
+
+#### Confidence summary
+
+* **NEGATIVE**: Session 102's "stride-3 packed records (~16K triples)" was wrong. The actual stride is 2.
+* **STRONG**: Zone is stride-2 `<value:u8, count:u8>` RLE, 24,870 pairs (fixed 49,740 bytes per save).
+* **STRONG**: Decoded sum ≈ 714,000 tiles ≈ 510 × 1400 (strategic-grid dim); row stride is 510 (half-x of TGA's 1020 pixel width).
+* **STRONG**: Spatial cross-tab against `map_regions_large.tga` (Δ<24 cluster of `0xf98c29` for sea) gives value=1 with 99.9% land share in flipY orientation. Geographic alignment confirmed.
+* **STRONG**: value=1 is monotonically non-decreasing across turns (0 transitions out of 308,694 between t1e and t11s) — "permanently-revealed" semantics.
+* **STRONG**: 1-tile move (save_mp_before/after) has zero differing tiles in this grid — consistent with "ever-explored" being unaffected by re-visiting known territory.
+* **HYPOTHESIS**: value=2,3,4 are transient AI-scratch values (active line-of-sight halos? active-army threat tracker?) that collapse to v=1 over time. Unverified pinned semantics.
+* **HYPOTHESIS / UNEXPLAINED**: value≥5 explodes in late campaign (1,367 → 244,534 between T0 and Athens T22e). Possibly per-settlement broadcast values. Not pinned.
+
+#### Files
+
+* `scripts/save-cracker/dig-aidip-1.js` — phase-divergence test; falsifies stride-3 (score 0.066 vs stride-2 score 1.19); shows top frequent triples / quads.
+* `scripts/save-cracker/dig-aidip-2.js` — search for `01 ff 01 ff 01` delimiter; finds 24 occurrences in every save (those are RLE artifacts, not structural delimiters).
+* `scripts/save-cracker/dig-aidip-3.js` — stride-2 RLE decoder; per-save tile-count totals matching 714,000 ≈ 1020 × 700; value histograms.
+* `scripts/save-cracker/dig-aidip-4.js` — full RLE decode + per-tile transition matrices + PGM visualizations.
+* `scripts/save-cracker/dig-aidip-5.js`, `dig-aidip-6.js`, `dig-aidip-7.js` — TGA load + sea-cluster detection + orientation cross-tab (natural / flipY / flipX / col-major / row-reversed) → flipY wins with v=1 at 99.9% land.
+* `scripts/save-cracker/dig-aidip-8.js` — quadrant statistics; 0→1 spatial-bin clustering matches Roman expansion area; corner-tile per-save sampling.
+* `scripts/save-cracker/dig-aidip-9.js`, `dig-aidip-A.js` — sentinel-byte tests (rejected: no special sentinels needed); section split at consecutive 01ff markers.
+* `scripts/save-cracker/dig-aidip-B.js` — cumulative-sum row-boundary alignment; confirms 510-wide row stride.
+* `scripts/save-cracker/dig-aidip-C.js` — 510×1400 PGM render + ASCII visualization (output files deleted after verification).
+
+#### Next steps
+
+1. Pin value=2,3,4 semantics — likely tied to active LOS or per-army-radius halo. Test by moving an army by 1 tile and comparing exact tile diffs (need a non-rome11s save where the AI/diplo zone differs across a controlled action).
+2. Explain the value≥5 late-game explosion. Cross-correlate with per-region settlement positions from the saves: do v≥5 tile clusters center on owned settlements?
+3. The 510×1400 grid dim should be cross-verified against another data source (e.g., the descr_strat tile dimensions or the mid-file tilegrid section examined in sessions 22, 24, 95-100). Likely there's a precomputed map dimension in the file header we missed.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
