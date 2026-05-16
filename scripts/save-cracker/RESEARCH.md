@@ -15619,6 +15619,25 @@ So Alex saves grow ~10 KB per steady-state End Turn, 40× cheaper than RIS imper
 
 So the counter is roughly proportional to the engine-event count fired by the action. Battles trigger many sub-events (per-unit casualties, retreat path, attitude updates, etc.), settlement captures even more (faction-extinct check, exploration map update, building list transfer, etc.).
 
+#### STRONG — Win/Loss asymmetry in battle resolution file deltas
+
+Two complementary battle saves:
+* **Turn 2 Clear Victory** (you destroy enemy army): Δsize = **-22,706 bytes**
+* **Turn 5 Clear Defeat** (your army destroyed): Δsize = **-15,566 bytes**
+
+Both shrink — destroyed armies always get removed regardless of who wins. The asymmetry reflects which army's records (units + characters + paths) got purged. Useful for distinguishing "wiped out yours" from "wiped out theirs" by size alone.
+
+#### STRONG — Year transition costs ~3.8× more in Alex (confirms RIS pattern)
+
+| Alex End Turn | Year tick? | Δ size |
+|---|---|---|
+| T3 → T4 | no (-335 → -335) | +9,820 |
+| T4 → T5 | **yes (-335 → -334)** | **+37,168** |
+
+Matches the RIS pattern (session 116) where year-transition End Turns had ~2× the file growth of mid-year End Turns. Alex's effect is even more pronounced (3.8×) probably because regular Alex turn growth is much smaller, making the annual-bookkeeping overhead more visible proportionally.
+
+So year-transition is a STRONG content-class fingerprint visible in size deltas alone — confirmed across both campaigns and across many years of campaign data.
+
 #### STRONG — Battle resolution SHRINKS saves; counter advances by 10×
 
 Three Turn-2 battle-resolution saves show the army-destroyed and settlement-conquered actions REMOVE state from the save:
