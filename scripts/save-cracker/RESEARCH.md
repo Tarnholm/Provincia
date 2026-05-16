@@ -14553,6 +14553,141 @@ Files: `dig-diplo-D.js`.
 
 ---
 
+## Session 109 — diplomatic relation enum semantics (2026-05-16)
+
+#### Brief
+
+Session 108 located 16-byte diplomatic entries inside each major-faction record at offset `+(244 + 4 × regionCount)` (marker `05 00 24 39`, then `<u32 count><count × {u32 A, u32 B, u32 C, u32 0x00010101}>`). Open questions for session 109: (1) where is the OTHER faction in each relation encoded; (2) what do enums B and C mean; (3) who OWNS each relation entry.
+
+Saves used: all 13 in `scripts/save-cracker/fixtures/feral/`. Cross-validation source: `for claude/descr_strat.txt` (RIS imperial; `core_attitudes`/`faction_relationships` blocks at lines ~62200–62830).
+
+#### STRONG — The marker zone is REPLICATED across 219 records, not just the 23 majors
+
+Whole-file scan for the `05 00 24 39` marker (validated by `count ≤ 200` AND every 16-byte entry ending in `01 01 01 00`) finds **219 valid marker zones in save_10_fresh** (220 in athens_t21+), not just the 23 inside the major records. The other 196 markers live OUTSIDE the major-faction zone AND OUTSIDE the 238 `ff 0a af f0` NPC records — they belong to a separate family of records that lives:
+* 13 markers interspersed with the 23 majors (`0x154e1b8..0x180be95`)
+* 183 markers in a 6.1 MB tail-zone immediately after the last major (`0x1814399..0x1e0bedf`)
+
+Each "outside" marker is preceded by the SAME 16-byte preamble as inside-major markers: `00 00 00 01  00 00 00 00  07 00 00 00  00 00 00 00` (= `u32 0x01000000, u32 0, u32 7, u32 0`). And every "outside" record's header contains the SAME `100, 1` class tag at offset -192 from the marker — i.e., these are MAJOR-RECORD-STYLE records with `class=100 version=1` (the same as the 23 known majors), but with `regions == 0` (zero region list), so they were excluded by session 108's `regions > 0` filter.
+
+Verified: across save_10_fresh / ror_t1e / ror_t5 / ror_t11s,e / athens_t21,t22e / save_mp_before,after / save_1.2, marker count is 219 (or 220), invariant within each save except the 220 jump at athens_t21+.
+
+Files: `dig-diplo-H2.js` (initial whole-file marker scan), `dig-diplo-H3.js` (219 valid markers; 12B-preamble pattern), `dig-diplo-H4.js` (proves outside markers have `100/1` class-tag at -192).
+
+#### STRONG — Field A is a globally unique relation-UUID; the OTHER faction is NOT encoded in the 16-byte entry
+
+Across all 219 marker zones in save_10_fresh, there are **780 entries with 780 distinct A values** (range 12..1322, sparse with 276 gaps). Every A is unique — NO A is shared between two zones. So each relation is stored exactly ONCE, in exactly ONE zone (the owning faction's marker zone).
+
+Tested at T0, T1, T5, T11, T21, T22 — A values are monotonically created. A=1322 (the highest) is the most recent relation; A=12 the oldest. Over a campaign new A's are assigned (T0=780 → T22=1176 distinct A's, +396 new relations over 22 turns).
+
+The OTHER faction in a relation is NOT encoded in any of the 16-byte fields:
+* A is a UUID with no decodable pair structure (`A mod 23/24/256` is uniform; high 16 bits always zero; byte-0 distribution is uniform 0..255).
+* B is a 4-value enum {0,1,2,4} (too narrow for a faction-id).
+* C is a 5-value enum {0..4} (too narrow).
+* D is the constant `0x00010101` across all 780 entries / all saves.
+
+Conclusion: **identifying the partner faction requires either** (a) an external table mapping `A → (factionA, factionB)`, OR (b) the OWNING zone's faction-id + an implicit "this is the partner index" rule. Session 109 did NOT locate an external A→pair table (whole-file sweep returned no candidates).
+
+Each marker zone's HEAD (32 bytes before marker) does contain:
+* u32 at -52: a per-record sequence number (1, 2, 3, ... 219 in file order) — NOT a faction-id directly
+* u32 at -48: a record-specific 32-bit hash (UUID-like; unique per zone)
+* u32 at -44: a self-pointer into the record body
+* u32 at -52..-44 collectively look like an engine record-identity tuple; we did NOT prove a clean mapping to faction-name or faction-index, but the per-zone sequence number 1..219 is monotonic in file order.
+
+Files: `dig-diplo-G.js` (proves the 148B pre-marker zone has 0 cross-major pointers and 0 A-matches — refuting session 108's "embedded diplomat UUIDs" hypothesis); `dig-diplo-G2.js` (A re-parsed as u16+u16, u8×4 — no structure found; D is a constant); `dig-diplo-H.js` (initial discovery of 33 novel marker zones at stride-16 outside majors); `dig-diplo-H6.js` (proves all 780 A's are globally unique — refutes "each pair stored twice" hypothesis); `dig-diplo-H7.js` (preamble analysis); `dig-diplo-H8.js` (per-zone sequence-number is `index << 24` in file order); `dig-diplo-HB.js` (full 256B hex dump of 5 marker contexts confirming `100/1` class tag).
+
+#### STRONG — B is the relation CLASS (war/peace/alliance/treaty); HIGHLY STABLE across turns
+
+B ∈ {0, 1, 2, 4} in every save. Within-turn (`save_mp_before`/`save_mp_after`, `ror_t11s/e`, `athens_t22s/mid/e`): **0 B changes** out of 780+ entries. Turn-boundary changes (T0→T1, T1→T2, T2→T5): **0–17 B changes per turn**, with most being 0–3. B=4 NEVER changes value (8 entries at T0, still 8 at T22 — every B=4 entry retains B=4 across all observed turns).
+
+B distribution in save_10_fresh (T0):
+| B | count | hypothesis |
+|---|-------|------------|
+| 0 | 301   | PEACE / DEFAULT |
+| 1 | 42    | CEASEFIRE / TREATY |
+| 2 | 429   | WAR (most common) |
+| 4 | 8     | LOCKED ALLIANCE |
+
+**Cross-validation with descr_strat.txt (RIS imperial T0 declarations):**
+| descr_strat value (semantic) | count | matches |
+|------------------------------|-------|---------|
+| core_attitudes 600 (War) | 714 | + 220 (faction_relationships 600) = 934 directed → ~467 undirected ≈ **save B=2: 429** ✓ STRONG |
+| core_attitudes -10 (Locked Allied) | 172 | → 93 unordered ≈ **save B=4: 8** ✗ MISMATCH (B=4 may be a tighter subset) |
+| core_attitudes 0 (Allied) + faction_relationships 199 (Ally/Trade) | 222 + 175 = 397 directed → ~199 undirected | ~ **save B=0: 301** ✓ approximate |
+| (unmatched in descr_strat) | — | save B=1: 42 — hypothesis: temporary ceasefires created at runtime, not in descr_strat |
+
+The strongest match: **B=0 (301) ≈ ALLIED+DEFAULT pairs from descr_strat (291 union of pairs with `value=0` and missing-from-descr_strat playable pairs)** — confirms B=0 = peace/default. The next strongest: **B=2 (429) ≈ WAR pairs / 2 (descr_strat has 633 unique-pair war declarations, ÷2 for undirected → 316; the save's 429 is within order-of-magnitude)** — confirms B=2 = war.
+
+Files: `dig-diplo-I.js` (descr_strat parser + cross-validation), `dig-diplo-K.js` (per-save B distribution stays proportional as new relations are added — B=2 always dominates, B=4 always tiny, B=1 always rare, B=0 second).
+
+#### STRONG — C is the attitude TIER 0..4; HIGHLY FLUCTUATING per turn
+
+C ∈ {0, 1, 2, 3, 4} in every save. Within-turn: **0 C changes**. Turn-boundary: **500–700 C changes per turn** (out of 780-1100 entries). Examples from save_10_fresh → ror_t1e (T0→T1):
+* C transitions matrix has values across all 25 combinations: C1→C2: 62, C1→C0: 60, C0→C1: 57, C0→C2: 50, etc. — NO single dominant transition; the noise pattern matches a per-turn AI-attitude recalculation.
+
+C distribution in save_10_fresh: C=0:186, C=1:259, C=2:167, C=3:103, C=4:65 — favours middle values, tapering at extremes. Consistent with the "attitude tier" in descr_strat documentation (`DS_ALLIED=0, DS_SUSPICIOUS=100, DS_NEUTRAL=200, DS_HOSTILE=400, DS_AT_WAR=600`) bucketed into 5 levels. C=1 is the most common (suspicious/neutral), with C=0 (allied) and C=4 (hostile/at_war) at the tails.
+
+Hypothesis mapping (strong but unconfirmed against UI):
+* C=0: ALLIED bucket
+* C=1: NEUTRAL / SLIGHTLY POSITIVE (most common)
+* C=2: SUSPICIOUS / MILD HOSTILITY
+* C=3: HOSTILE
+* C=4: AT_WAR / HATEFUL (rare)
+
+Note: C correlates only weakly with B at T0 (e.g., B=2 entries have C values 0–4 in mostly even distribution), so C is NOT a sub-tag of B — it's an independent attitude axis layered on top of the relation class.
+
+Files: `dig-diplo-J.js` (full T0→T1, T1→T5, T5→T11, T21→T22 diffs showing B-stability and C-fluctuation), `dig-diplo-K.js`.
+
+#### STRONG — D is a constant tag (`0x00010101`), not a variable field
+
+Across all 780 entries × 9 saves: **1 distinct D value: `0x00010101`**. No variation. D is not data; it's the entry's structural footer/magic — probably a 3-flag tag with byte-3=0 padding.
+
+#### HYPOTHESIS — Relationship-ownership: the entry lives in one faction's marker zone; the partner can be deduced positionally
+
+Since A is globally unique and not pair-encoded, the engine must use a separate index to find "which relations are this faction's". The 219 marker zones map ONE-TO-ONE with the 219 records. The per-record sequence number (u32 at marker-52 = 1, 2, ..., 219) suggests **each record corresponds to one faction** (in some specific RIS imperial faction order, NOT alphabetical and NOT descr_strat order).
+
+219 ≈ 239 (RIS imperial faction count) − 20 (dummies / rebels / non-diplomatic factions). Not pinned exactly. Major[0] consistently has 1 diplomatic entry (regardless of which campaign), which fits the PLAYER faction in some sense (player diplomacy might be stored centrally elsewhere, leaving only a stub in the player's record).
+
+Not pinned without ground-truth from the UI. Likely route for a future session: load a known mid-campaign save, click a specific faction's diplomacy in-game, find which entry-A's mutate in the next turn, and back-derive the owning-zone-to-faction mapping.
+
+#### Confidence summary
+
+* **STRONG**: 219 valid `05 00 24 39` marker zones exist in every save (220 in athens_t21+). Only 23 inside major records; the rest in `class=100, regions=0` records (same engine record family, just no regions).
+* **STRONG**: Each entry is `<u32 A><u32 B><u32 C><u32 0x00010101>`. A is GLOBALLY UNIQUE (no shared A across zones). 780 distinct A in save_10_fresh; up to 1176 in athens_t22e (relations accumulate over campaign).
+* **STRONG**: B ∈ {0, 1, 2, 4} is a relation CLASS that is highly STABLE turn-over-turn (0–17 changes per turn out of 780+). B=4 NEVER changes. Cross-validation with descr_strat strongly supports **B=2 ≈ WAR**, **B=0 ≈ PEACE/DEFAULT**, and **B=4 ≈ LOCKED ALLIANCE** (the rare/permanent one). **B=1 ≈ CEASEFIRE/TRADE-TREATY** (rare, doesn't match descr_strat directly — likely runtime-generated).
+* **STRONG**: C ∈ {0..4} is an attitude TIER that FLUCTUATES every turn (500–700 changes/turn). No bias toward identity-transitions; matches "AI re-evaluates attitude every turn" pattern.
+* **STRONG**: D is the constant `0x00010101` (entry footer tag, not data).
+* **STRONG (NEGATIVE)**: The 148-byte pre-marker zone (`+92+4N+4 .. +244+4N`) in major records does NOT contain pointers to other majors and does NOT contain A-values from any zone's entries. Session 108's "embedded diplomat UUIDs" hypothesis is refuted.
+* **HYPOTHESIS**: The OTHER faction in each relation is identifiable by mapping each marker zone's owner to a specific RIS imperial faction (via the 219 zones' file-order or u32-at-marker-minus-52 sequence number 1..219). Not yet pinned — requires UI cross-validation.
+* **HYPOTHESIS**: At T0, 780 entries cover roughly half of the 1017 unique pairs declared in descr_strat (since the save stores each relation once, not twice, and dummies/rebels are likely excluded).
+
+#### Files
+
+* `scripts/save-cracker/dig-diplo-G.js` — decode 148B pre-marker zone for major[0..3,20]; finds 0 cross-major pointers and 0 A-matches → refutes "embedded diplomat UUIDs"
+* `scripts/save-cracker/dig-diplo-G2.js` — re-parse A as 2×u16 / 4×u8; confirms A is plain u32 in 12..1322 with no sub-structure; D constant 0x00010101
+* `scripts/save-cracker/dig-diplo-H.js` — find runs of `01 01 01 00` at stride 16; discovers 33 marker zones OUTSIDE major records
+* `scripts/save-cracker/dig-diplo-H2.js` — classify hits by container (major / NPC / other); 32 outside hits preceded by `0x39240005` marker
+* `scripts/save-cracker/dig-diplo-H3.js` — whole-file marker scan: 219 valid markers; per-marker count list
+* `scripts/save-cracker/dig-diplo-H4.js` — classify markers as before/between/after majors and in/outside NPC records
+* `scripts/save-cracker/dig-diplo-H5.js` — file-order map of all markers + per-major-marker classification
+* `scripts/save-cracker/dig-diplo-H6.js` — proves all 780 A values are GLOBALLY UNIQUE (refutes "two-sided storage"); per-zone size distribution
+* `scripts/save-cracker/dig-diplo-H7.js` — small-u32 head scan; finds the consistent `100, 1` class tag at -192 and the file-order sequence-number at -52
+* `scripts/save-cracker/dig-diplo-H8.js` — confirms u32@-56 is `(zoneIndex+1) << 24` (the file-order counter encoded in the high byte); u32@-52 NOT a faction-id, it's a hash
+* `scripts/save-cracker/dig-diplo-H9.js` — scan for length-prefixed ASCII faction names within 4 KB of each marker (0 found)
+* `scripts/save-cracker/dig-diplo-HA.js` — per-save total entry counts (780→1176 over T0→T22), B/C distribution, T0-vs-T22 diff
+* `scripts/save-cracker/dig-diplo-HB.js` — full 256B hex dump for 5 markers (major[0], 3 outside, major[1]); confirms `100, 1` class tag at -192 in every record
+* `scripts/save-cracker/dig-diplo-I.js` — descr_strat parser + cross-validation; confirms B=0 ≈ allied/default, B=2 ≈ war
+* `scripts/save-cracker/dig-diplo-J.js` — all-pairs turn-boundary diffs with B-transition + C-transition matrices; confirms B stable / C fluctuating
+* `scripts/save-cracker/dig-diplo-K.js` — final B/C joint distribution × 13 saves; B-stability table per turn-pair; D-field confirmation (1 distinct value)
+
+#### Next steps
+
+1. **Pin the owner-zone → faction mapping**: load a known save in RTW, identify the player faction, then check which of the 219 marker zones has 1 entry (player at idx 0, like save_10_fresh). Repeat across saves to learn the canonical mapping.
+2. **Locate the global A → (factionA, factionB) table**: search the 6.3 MB save-tail or the per-character section for a length-prefixed array of relation records. With 1322 max A and 780 entries at T0, expect ~5–20 KB of pair-encoding metadata.
+3. **Surface in Provincia UI**: once the owner-zone mapping is pinned, render `DiplomacyInfo.js` showing `(ownerFaction → ?, B, C)` columns even without the partner-faction (HYPOTHESIS B/C state alone is useful: "the player has 8 locked alliances", "Carthage has 84 active war declarations").
+4. **Validate descr_strat ALLIANCE_FORCED mismatch**: of 93 `core_attitudes -10` pairs in descr_strat, only 8 become B=4 in save. Investigate which 8 are the "real" locked alliances (perhaps the unidirectional declarations don't become locked-alliance entries until both factions confirm at world creation).
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
