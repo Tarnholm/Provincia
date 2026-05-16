@@ -15521,11 +15521,71 @@ This is the Alex equivalent of RIS imperial's `0x43f8` event-log counter (cracke
 
 So far: 3 known event-counter offsets — 0x43f8 (RIS imperial), 0xefd (Alex). Probably mod-data-dependent positions within a per-campaign header block.
 
+#### STRONG — Command-record byte positions identified via +614 trio
+
+Three same-size +614 commands (attack-retreats / tax-Pella / tax-Sparta) compared pairwise revealed exactly which bytes encode WHAT in the command record. Across the 3 pairwise comparisons, all differing positions cluster at the same small set of offsets:
+
+| Offset | Role | Reasoning |
+|---|---|---|
+| `0xefd-0xefe` | event counter | always varies (general counter advance) |
+| `0x2b92` | action-type byte | varies between attack and tax, same between two taxes |
+| `0x2b96` | tax-specific byte | only varies among the two tax events |
+| `0x339e` | region-id byte | distinguishes Pella from Sparta |
+| `0x10b5b` `0x10d70` | tax-vs-attack class flag | differs between attack and both taxes; matches between the taxes |
+| `0x11329` `0x1153e` | settlement-context flag | similar pattern to above |
+| `0x30437` `0x30497` `0x30498` | per-action unique ID | varies in ALL pairs (every action has a unique tag) |
+
+Total: 10 differing positions covering ~10 bytes of meaningful data — a far cry from the +614 byte file growth. So the +614 bytes are mostly inserted/shifted padding, with just ~10 bytes of action-specific content.
+
+This decomposition is verifiable on a vanilla campaign with more same-class actions.
+
+#### STRONG — Manual save and autosave at same instant are nearly identical
+
+The Turn 2 manual save and Turn 2 Start autosave (taken at the same game moment) are:
+* Same size: 1,092,557 bytes
+* Only 83 differing bytes
+* First 10 diffs at: 0xefd, 0xefe (counter), then a scattered set in 0x11000-0x16000 range
+
+The autosave is essentially a snapshot taken at the same engine state. Useful confirmation: any cracker should be agnostic to autosave-vs-manual; only the counter and a few timestamps drift.
+
+#### STRONG — Alex End Turn is ~16× smaller than RIS imperial
+
+| Campaign | First End Turn size delta |
+|---|---|
+| RIS imperial | +639,253 bytes |
+| Alex | **+40,334 bytes** |
+
+Alex's End Turn cost is 16× smaller because it has ~5 playable factions vs RIS imperial's 23 majors + 200+ minor. Much cleaner test bed for cracking End-Turn-driven content (per-faction state, AI moves, exploration grid updates).
+
+#### STRONG — AI mid-EndTurn battle resolution = +21,529 bytes
+
+The autosave at "AI attacked, army next to besieged fort" was taken DURING End Turn processing, right after the AI initiated a combat. From Turn 1 End → this autosave is +21,529 bytes — a substantial slice of the total End Turn cost is the battle resolution alone (probably battle records, casualty tracking, retreat path logging, etc.).
+
+The "AI attacked" state → Turn 2 Start adds another +18,805 bytes — so End Turn processing after the combat continues for many more events (other AI factions, character ageing, regional updates, etc.).
+
+#### STRONG — Alex adoption ≠ RIS adoption byte-cost
+
+| Adoption | Size Δ | Counter Δ |
+|---|---|---|
+| RIS Aulus (T1) | +248 | +144 |
+| RIS Appius (T3) | +583 | +145 |
+| RIS Aulus-again (T5) | +240 | +217 |
+| RIS Gaius (T6) | +240 | +120 |
+| **Alex T2 adoption** | **+1,820** | **+138** |
+
+The Alex adoption costs 7× more file growth than RIS's typical adoption-offer record. Possible explanations:
+* Alex adoption rules generate more journal entries (e.g., 2 "Adoption" UTF-16 strings found in t2_adoption vs 1 in RIS)
+* Alex has additional family-tree state changes immediately on adoption (where RIS waited until End Turn)
+* Vanilla engine adoption format differs from Remastered RIS-imperial format
+
+The counter advance (+138) IS in the same range as RIS adoptions (120-220), so the *event class* is recognized as the same type by the engine's counter — but the record bytes are formatted differently.
+
 #### Files
 
 * `scripts/save-cracker/dig-alex-1.js` — initial probe, header decode, single-diff context
 * `scripts/save-cracker/dig-alex-2.js` — multi-action diff, common-bookkeeping detection, year-offset hunt
 * `scripts/save-cracker/dig-alex-3.js` — front/back alignment of the +159 besiege-fort diff; pins event-counter at 0xefd
+* `scripts/save-cracker/dig-alex-4.js` — full T1/T2 fact sheet + +614 trio decomposition + adoption + battle-resolution stats
 
 #### Next steps
 
