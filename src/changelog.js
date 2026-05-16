@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.366",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "Garrison card size regression from 0.9.362. Cards were filling the widget (1fr × 1fr) and ballooning past their original 28-px footprint. Capped back to `minmax(0, 32 px)` columns with min-content rows — cards stay compact regardless of widget size, just like before." },
+    ],
+  },
+  {
     version: "0.9.365",
     date: "2026-05-16",
     items: [

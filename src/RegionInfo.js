@@ -1260,14 +1260,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         {garrison && garrison.length > 0 ? (
           <div style={{
             display: "grid",
-            // Settlements can hold at most 20 units (10×2). Reserve all
-            // 20 slots so the grid keeps a stable shape; empty slots
-            // render as faint dashed placeholders below the real units.
-            gridTemplateColumns: "repeat(10, 1fr)",
-            gridTemplateRows: "repeat(2, 1fr)",
+            // Cards capped at 32 px wide so they stay compact (10×2 = 20
+            // slots max in any settlement). `minmax(0, 32px)` lets cards
+            // shrink if the widget is narrow but never balloon past 32 px
+            // when the widget is wide — restores the pre-0.9.362 size.
+            gridTemplateColumns: "repeat(10, minmax(0, 32px))",
+            gridAutoRows: "min-content",
             gap: 2,
-            flex: 1,
-            minHeight: 0,
+            justifyContent: "start",
+            alignContent: "start",
           }}>
             {garrison.map((u, i) => {
               const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
