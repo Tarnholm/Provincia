@@ -4254,7 +4254,7 @@ function App() {
     // Ctrl+1..9 → Faction/Victory/Culture/Religion/Population/Fertility/
     // Resources/Homeland/Government.
     const numericModes = [
-      "faction", "victory", "culture", "religion",
+      "faction", "victory", "culture", "religion", "loyalist",
       "population", "farm", "resource", "homeland", "government",
     ];
     const handler = (e) => {
@@ -4600,6 +4600,24 @@ function App() {
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           const rel = getDominant(r);
           const base = (rel && RELIGION_COLORS[rel]) || [80, 80, 80];
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.8;
+          return [
+            Math.max(0, Math.min(255, base[0] + v)),
+            Math.max(0, Math.min(255, base[1] + v)),
+            Math.max(0, Math.min(255, base[2] + v)),
+          ];
+        }));
+      } else if (colorMode === "loyalist") {
+        // Loyalist mode: colour every region by its `descr_regions` faction
+        // (field 3 of the region block) — i.e. who takes the settlement
+        // when it rebels. Reveals the "shadow map" of latent claims under
+        // the current ownership. Pulls colour from descr_sm_factions via
+        // the existing factionColors map; falls back to grey for unknown.
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const rebelFac = (r.faction || "").toLowerCase();
+          const fc = rebelFac && factionColors[rebelFac];
+          const base = (fc && fc.primary) || [110, 110, 110];
           if (devFlatColors) return base;
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.8;
           return [
@@ -7613,6 +7631,7 @@ function App() {
       { key: "region", label: "Region" },
       { key: "culture", label: "Culture" },
       { key: "religion", label: "Religion" },
+      { key: "loyalist", label: "Loyalist" },
       { key: "population", label: "Population" },
       { key: "farm", label: "Fertility" },
       { key: "resource", label: "Resources" },

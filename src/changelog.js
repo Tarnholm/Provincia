@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.368",
+    date: "2026-05-16",
+    items: [
+      { type: "feature", text: "New `Loyalist` map mode — paints every region by its `descr_regions` faction (field 3), i.e. who'd take the settlement if it rebelled. Reveals the 'shadow map' of latent rebel-default claims under the current ownership. Uses each rebel-default faction's primary colour from descr_sm_factions. Slots into the map-mode pill between Religion and Population (Ctrl+5 shortcut)." },
+      { type: "improvement", text: "Garrison widget shrank to fit the actual 10×2 = 20-card grid (h trimmed from 0.190 to 0.134). The reclaimed vertical space went to Field armies, which now starts at y=0.6509 with h=0.3441 (was 0.7069/0.2881) — extra room to render many field stacks before scrolling. LAYOUT_VERSION 10; migration applies on next launch." },
+    ],
+  },
+  {
     version: "0.9.367",
     date: "2026-05-16",
     items: [

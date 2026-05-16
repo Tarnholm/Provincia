@@ -126,7 +126,7 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 9;
+const LAYOUT_VERSION = 10;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -143,8 +143,8 @@ const CANONICAL_V4 = {
   "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
   "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
   "region.buildings":   { x: 0.5720, y: 0.5086, w: 0.2090, h: 0.4864 },
-  "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1900 },
-  "region.fieldArmies": { x: 0.7857, y: 0.7069, w: 0.2090, h: 0.2881 },
+  "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1340 },
+  "region.fieldArmies": { x: 0.7857, y: 0.6509, w: 0.2090, h: 0.3441 },
   // Bottom-strip widgets — 9 px below the map's bottom edge (map
   // y=0.0083 + h=0.6843 = 0.6926; strip y = 0.6926 + 9/1080 = 0.7009).
   "bottom.search":      { x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 },

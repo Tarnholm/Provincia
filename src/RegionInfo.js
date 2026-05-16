@@ -1237,7 +1237,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode}
-        defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1900 }}>
+        defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1340 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf",
@@ -1375,7 +1375,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
-        defaultPct={{ x: 0.7857, y: 0.7069, w: 0.2090, h: 0.2881 }}>
+        defaultPct={{ x: 0.7857, y: 0.6509, w: 0.2090, h: 0.3441 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6" }}>Field armies:</div>
