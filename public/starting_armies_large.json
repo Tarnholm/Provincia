@@ -89144,29 +89144,11 @@
   "Vennonia-Caluconia": {
     "garrison": [
       {
-        "character": "Bolgios",
-        "faction": "rhaetians",
+        "character": "Garrison of Vennonia-Caluconia",
+        "faction": "slave",
         "x": 260,
         "y": 481,
         "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
           {
             "name": "celtic swordsmen",
             "exp": 1,
@@ -89178,41 +89160,13 @@
             "exp": 1,
             "armour": 0,
             "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
           }
         ],
-        "age": 46,
-        "tags": [
-          "leader",
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
+        "age": null,
+        "tags": [],
+        "traits": [],
         "ancillaries": [],
-        "charType": "general"
+        "charType": "garrison"
       }
     ],
     "field": [],
@@ -89488,9 +89442,82 @@
   "Breunia": {
     "garrison": [
       {
-        "character": "Catuuolcus",
-        "faction": "rhaetians",
+        "character": "Bolgios",
+        "faction": "breuni",
         "x": 276,
+        "y": 482,
+        "units": [
+          {
+            "name": "gallic royal bodyguards",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "celtic swordsmen",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "gallic light cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "celtic swordsmen",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "celtic spearmen",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "celtic skirmishers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "gallic light cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 46,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingCeltic",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 2
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Catuuolcus",
+        "faction": "breuni",
+        "x": 277,
         "y": 482,
         "units": [
           {
@@ -89523,7 +89550,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 276,
       "y": 482

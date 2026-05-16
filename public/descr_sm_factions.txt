@@ -4232,6 +4232,79 @@
 		;;allow this faction to have a functioning family tree
 		"allow reproduction": true,
 	},
+	"breuni":
+	{
+		;;name and description
+		"string":      "BREUNI",
+		"description": "BREUNI_DESCR",
+
+		;;culture and (default?) character ethnicity
+		"culture":   "barbarian",
+		"ethnicity": "caucasiandark",
+
+		;;tags for faction groups
+		"tags": [ "fgroup_barbarian", "fgroup_celtic", ],
+
+		;;namelists
+		"namelists":
+		{
+			"men":      "arverni_men",
+			"women":    "celtic_women",
+			"surnames": "blank_surnames",
+		},
+
+		"logos":
+		{
+			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
+			"loading screen icon": "data/ui/faction_icons/breuni.tga",
+
+			;;standard index as declared in descr_standards (4 per page)
+			"standard index":       39,
+			"rebel standard index": 39,
+
+			;;logo index as declared in descr_sm_faction_logos (1 per page)
+			"logo index":       47,
+			"rebel logo index": 47,
+
+			;;flag models to be used on the strat map when a settlement is unoccupied
+			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
+		},
+
+		;;faction colours (some base game factions may have hardcoded overrides)
+		"colours":
+		{
+			"primary":   [  6, 64, 43,  ],
+			"secondary": [  255, 250, 200, ],
+
+			"family tree":
+			{
+				"background":      [  28, 23, 1,  ],
+				"font":            [  255, 255, 255, ],
+
+				"selected line":   [  255, 255, 255, ],
+				"unselected line": [  200, 187, 187, ],
+			},
+		},
+
+		"movies":
+		{
+			;;movie to play when starting a campaign
+			"intro": "data/fmv/intros/barbarian_intro_1080p.wmv",
+
+			;;movie to play when this faction wins or is defeated, respectively
+			"victory": "data/fmv/victory/barbarian_outro.wmv",
+			"defeat": "data/fmv/lose/aedui.wmv",
+		},
+
+		"available in custom battles": false,
+		"prefer naval invasions": false,
+		"default religion": "celtic",
+		"default battle ai personality": "default_personality",
+
+		;;allow this faction to have a functioning family tree
+		"allow reproduction": true,
+	},
 	"brigantes": ;Brigantes
 	{
 		;;name and description
@@ -10589,7 +10662,7 @@
 			"loading screen icon": "data/ui/faction_icons/italics.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       196,
+			"standard index":       198,
 			"rebel standard index": 145,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
@@ -14874,79 +14947,6 @@
 		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
-		"default battle ai personality": "default_personality",
-
-		;;allow this faction to have a functioning family tree
-		"allow reproduction": true,
-	},
-	"rhaetians":
-	{
-		;;name and description
-		"string":      "RHAETIANS",
-		"description": "RHAETIANS_DESCR",
-
-		;;culture and (default?) character ethnicity
-		"culture":   "barbarian",
-		"ethnicity": "caucasiandark",
-
-		;;tags for faction groups
-		"tags": [ "fgroup_barbarian", "fgroup_celtic", ],
-
-		;;namelists
-		"namelists":
-		{
-			"men":      "arverni_men",
-			"women":    "celtic_women",
-			"surnames": "blank_surnames",
-		},
-
-		"logos":
-		{
-			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
-			"loading screen icon": "data/ui/faction_icons/rhaetians.tga",
-
-			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
-			"rebel standard index": 39,
-
-			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
-			"rebel logo index": 47,
-
-			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
-			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
-		},
-
-		;;faction colours (some base game factions may have hardcoded overrides)
-		"colours":
-		{
-			"primary":   [  28, 23, 1,  ],
-			"secondary": [  255, 250, 200, ],
-
-			"family tree":
-			{
-				"background":      [  28, 23, 1,  ],
-				"font":            [  255, 255, 255, ],
-
-				"selected line":   [  255, 255, 255, ],
-				"unselected line": [  200, 187, 187, ],
-			},
-		},
-
-		"movies":
-		{
-			;;movie to play when starting a campaign
-			"intro": "data/fmv/intros/barbarian_intro_1080p.wmv",
-
-			;;movie to play when this faction wins or is defeated, respectively
-			"victory": "data/fmv/victory/barbarian_outro.wmv",
-			"defeat": "data/fmv/lose/aedui.wmv",
-		},
-
-		"available in custom battles": false,
-		"prefer naval invasions": false,
-		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree

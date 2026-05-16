@@ -519,6 +519,9 @@
     "Aspourgiania",
     "Maiotis"
   ],
+  "breuni": [
+    "Breunia"
+  ],
   "brigantes": [
     "Brigantia",
     "Ituna_Aestuarium",
@@ -1030,10 +1033,6 @@
   "quadi": [
     "Quadia_Vetus"
   ],
-  "rhaetians": [
-    "Breunia",
-    "Vennonia-Caluconia"
-  ],
   "rhodes": [
     "Rhodos",
     "Notios_Rhodos"
@@ -1412,6 +1411,7 @@
     "Maricia-Laevia",
     "Lingonia_Cisalpina",
     "Septem_Maria",
+    "Vennonia-Caluconia",
     "Isarcia-Brixenetia",
     "Brigantia-Alpes",
     "Estionia",

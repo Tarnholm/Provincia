@@ -596,6 +596,69 @@ function parseWorldObjectPositions(buf) {
   return map;
 }
 
+// Save-cracker session 110 (2026-05-16): each character has a companion
+// metadata record carrying a class name (ASCII "roman general", etc.) and
+// the character's current region as a UTF-16 string. Linked to the position
+// record by shared UUID. Validated across all 15 fixture saves: every
+// "<faction> general/captain/admiral/diplomat/spy/.../priest"-class record
+// has a region AND a matching position record (100% hit rate).
+// Returns Map<uuid, { className, regionName }>.
+function parseCharacterMetadataByUuid(buf) {
+  const CHAR_CLASS_RE = /\b(general|captain|admiral|diplomat|spy|assassin|merchant|princess|priest)\b/i;
+  const out = new Map();
+  for (let i = 0; i < buf.length - 64; i++) {
+    // Record-type marker: u32 LE = 0xef (239)
+    if (buf.readUInt32LE(i) !== 0xef) continue;
+    const uuid = buf.readUInt32LE(i + 4);
+    if (!uuid || uuid === 0xffffffff) continue;
+    // Walk forward looking for an ASCIIZ pstr16 in window i+0x10..i+0x40.
+    // Padding length varies (record header layout isn't fixed-width).
+    let classStr = null, classEnd = -1;
+    for (let p = i + 0x10; p < i + 0x40 && p + 2 < buf.length; p++) {
+      const lenP1 = buf.readUInt16LE(p);
+      if (lenP1 < 4 || lenP1 > 50) continue;
+      if (p + 2 + lenP1 > buf.length) continue;
+      let ok = true;
+      for (let j = 0; j < lenP1 - 1; j++) {
+        const c = buf[p + 2 + j];
+        if (c < 0x20 || c > 0x7e) { ok = false; break; }
+      }
+      if (!ok) continue;
+      if (buf[p + 2 + lenP1 - 1] !== 0) continue;
+      const s = buf.slice(p + 2, p + 2 + lenP1 - 1).toString("latin1");
+      if (CHAR_CLASS_RE.test(s) && /^[a-z][a-z _0-9]*[a-z0-9]$/i.test(s)) {
+        classStr = s;
+        classEnd = p + 2 + lenP1;
+        break;
+      }
+    }
+    if (!classStr) continue;
+    // Region name follows the class string within ~80 bytes as a UTF-16
+    // length-prefixed string.
+    let regionStr = null;
+    for (let p = classEnd; p < classEnd + 80 && p + 2 < buf.length; p++) {
+      const lenChars = buf.readUInt16LE(p);
+      if (lenChars < 3 || lenChars > 40) continue;
+      if (p + 2 + lenChars * 2 > buf.length) continue;
+      const chars = [];
+      let ok = true;
+      for (let j = 0; j < lenChars; j++) {
+        const c = buf.readUInt16LE(p + 2 + j * 2);
+        if (c < 0x20 || c > 0x7e) { ok = false; break; }
+        chars.push(String.fromCharCode(c));
+      }
+      if (!ok) continue;
+      const s = chars.join("");
+      if (/^[A-Z][A-Za-z _0-9-]*$/.test(s)) {
+        regionStr = s;
+        break;
+      }
+    }
+    out.set(uuid, { className: classStr, regionName: regionStr });
+  }
+  return out;
+}
+
 // Read the current in-game year directly from the save header.
 // Confirmed across the Alex-campaign archive: file offset 3972 is an int32
 // signed year (negative for BC). Offset 3968 is the turn counter (turn-1)
@@ -703,6 +766,11 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     }
   }
   const worldPositions = parseWorldObjectPositions(saveBuf);
+  // Save-direct character metadata (class name + region UTF-16 string),
+  // keyed by character secondaryUuid. Used as primary region source — it
+  // covers characters without a bodyguard unit (diplomats/spies/captains)
+  // that the unit-region fallback below misses.
+  const charMetaByUuid = parseCharacterMetadataByUuid(saveBuf);
   // Parse units first so we can build a `commanderUuid → region` index. The
   // legacy `findCharacterRegion()` did a full-buffer indexOf scan PER
   // character (~33s on a 40MB save with 100 characters); the index makes
@@ -715,7 +783,9 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     }
   }
   for (const c of characters) {
-    c.region = regionByCommanderUuid.get(c.secondaryUuid) || null;
+    const meta = c.secondaryUuid ? charMetaByUuid.get(c.secondaryUuid) : null;
+    c.characterClass = meta?.className || null;
+    c.region = (meta?.regionName) || regionByCommanderUuid.get(c.secondaryUuid) || null;
     // For v1 character records the army-commander UUID is `secondaryUuid`
     // (offset -43 from record start). The earlier code read offset -16,
     // which works for v2 but is junk for v1 — that's why position-on-map

@@ -8,10 +8,10 @@
  */
 const CHANGELOG = [
   {
-    version: "0.9.373",
+    version: "0.9.374",
     date: "2026-05-16",
     items: [
-      { type: "fix", text: "Explored map mode decoder fixed per save-cracker session 105 — the player exploration RLE block is terminated by a pair with `count == 0`, not by a fixed offset. 0.9.372's hard-coded `+0xc264` cutoff was leaking ASCII bytes from the trailing settlement-list (`Eastern_Large_Town`, `Egyptian_City`, …) as fake high tile values. New decoder stops on the canonical count=0 terminator; the false 244k v≥5 cells collapse to a clean 273 real LOS-halo cells. Session 105 also confirmed values 2..7+ are an active LOS halo with falloff `v ≈ 8 − distance` from each character/settlement." },
+      { type: "improvement", text: "Character region now read save-direct (save-cracker session 110). Each character has a companion metadata record (`ef 00 00 00 <uuid>` + ASCIIZ class string + UTF-16 region name) keyed by the same UUID as the position record. main.js's parseCharacterMetadataByUuid extracts these and uses them as the primary region source, falling back to the bodyguard-unit derivation when missing — fixes captains-without-bodyguard and in-transit characters whose previous region was null. Validated 100% hit rate on 16 saves (halo + 15 fixtures): every <faction>-general/captain/admiral/diplomat/spy/etc record has both a region and a matching position record by UUID. Also exposes c.characterClass (e.g. \"roman general\") for future UI use." },
     ],
   },
   {

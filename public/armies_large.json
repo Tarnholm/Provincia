@@ -41526,6 +41526,116 @@
     ]
   },
   {
+    "name": "Bolgios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Veldidena",
+    "faction": "breuni",
+    "x": 276,
+    "y": 482,
+    "age": 46,
+    "tags": [
+      "leader",
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCeltic",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "gallic royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic light cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic skirmishers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic light cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Catuuolcus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Veldidena",
+    "faction": "breuni",
+    "x": 277,
+    "y": 482,
+    "age": 20,
+    "tags": [
+      "heir",
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCeltic",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "gallic royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Garrison of Brigantia_Centralis",
     "charType": "garrison",
     "armyClass": "garrison",
@@ -70684,116 +70794,6 @@
     ]
   },
   {
-    "name": "Bolgios",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Vennonium",
-    "faction": "rhaetians",
-    "x": 260,
-    "y": 481,
-    "age": 46,
-    "tags": [
-      "leader",
-      "named"
-    ],
-    "traits": [
-      {
-        "name": "BeingCeltic",
-        "level": 1
-      },
-      {
-        "name": "ReligionAssigned",
-        "level": 1
-      },
-      {
-        "name": "TurnsAlive",
-        "level": 2
-      }
-    ],
-    "ancillaries": [],
-    "units": [
-      {
-        "name": "gallic royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "celtic swordsmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "gallic light cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "celtic swordsmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "celtic spearmen",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "celtic skirmishers",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "gallic light cavalry",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Catuuolcus",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Veldidena",
-    "faction": "rhaetians",
-    "x": 276,
-    "y": 482,
-    "age": 20,
-    "tags": [
-      "heir",
-      "named"
-    ],
-    "traits": [
-      {
-        "name": "BeingCeltic",
-        "level": 1
-      },
-      {
-        "name": "ReligionAssigned",
-        "level": 1
-      },
-      {
-        "name": "TurnsAlive",
-        "level": 2
-      }
-    ],
-    "ancillaries": [],
-    "units": [
-      {
-        "name": "gallic royal bodyguards",
-        "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
     "name": "Agathostratos",
     "charType": "general",
     "armyClass": "garrison",
@@ -85016,6 +85016,31 @@
     "x": null,
     "y": null,
     "region": "Septem_Maria",
+    "units": [
+      {
+        "name": "celtic swordsmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
+    "name": "Garrison of Vennonia-Caluconia",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Vennonia-Caluconia",
+    "faction": "slave",
+    "x": null,
+    "y": null,
+    "region": "Vennonia-Caluconia",
     "units": [
       {
         "name": "celtic swordsmen",
