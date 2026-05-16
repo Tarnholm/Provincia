@@ -14906,6 +14906,8 @@ This means the canonical way to resolve a major-record's faction NAME is still v
 
 * **Packed faction-list array hunt**: scanned the entire save for runs of 3+ consecutive factionTag u32s and for any back-to-back factionTag pair — **0 runs found, 0 pairs found**. The 985 occurrences of factionTags throughout the save are all isolated (one factionTag per record-context, never adjacent to another). **There is no `[factionTag0, factionTag1, ..., factionTag22]` array anywhere in the save.** (`dig-major-leader-4.js`)
 
+* **Post-region-list 40-byte zone** (`+(52+4N)..+(92+4N)`): no leader UUIDs here either — 0/23 majors have a character UUID in this zone. The zone is mostly zeros with two non-zero u32s: first u32 = 30 (constant across all 23 majors), last u32 = 100 for 21 majors but **200 for major[3] and major[4]** — exactly the two majors that OWN wonders. Likely a per-faction "influence base" or "max prestige" value bumped for wonder-owning factions. (`dig-major-leader-5.js`)
+
 #### Conclusive: no clean factionTag → faction-name mapping exists in the save
 
 The save stores enough information to identify each faction *implicitly* (via region list, factionTag, treasury, etc.) but has no explicit `{factionTag: u32, name: string}` table. Resolution paths:
