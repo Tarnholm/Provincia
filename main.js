@@ -602,18 +602,23 @@ function parseWorldObjectPositions(buf) {
 // in the same header block. We prefer reading the year directly because
 // it's stored by the engine and works for any campaign configuration.
 function readCurrentYearFromSave(saveBuf) {
-  if (saveBuf.length < 3976) return null;
-  const year = saveBuf.readInt32LE(3972);
-  // Sanity-check: within plausible BC range for RTW campaigns
+  // Session 104 (2026-05-16) refit: the absolute turn + current year live
+  // at file offset 0x44e3 (u32 LE = turn-1) and 0x44e7 (i32 LE = year, BC
+  // is negative). The old offsets (0xf80 / 0xf84 = 3968 / 3972) read all
+  // zeros in RIS imperial saves — badge showed "T1 · 0 AD" for every
+  // loaded save. Confirmed via full-file intersection scan across 10
+  // known-turn saves (ror_t1e..ror_t11e + athens_t21..t22e + T0).
+  if (saveBuf.length < 0x44e3 + 8) return null;
+  const year = saveBuf.readInt32LE(0x44e7);
   if (year < -2000 || year > 3000) return null;
   return year;
 }
 
 function readTurnFromSave(saveBuf) {
-  if (saveBuf.length < 3972) return null;
-  const turnCounter = saveBuf.readUInt32LE(3968);
+  if (saveBuf.length < 0x44e3 + 4) return null;
+  const turnCounter = saveBuf.readUInt32LE(0x44e3);
   if (turnCounter > 10000) return null;
-  return turnCounter + 1; // displayed turn number
+  return turnCounter + 1; // displayed turn number (save stores turn-1)
 }
 
 function parseCharactersAndUnits(saveBuf, precomputedChars = null) {

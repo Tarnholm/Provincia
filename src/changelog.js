@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.370",
+    date: "2026-05-16",
+    items: [
+      { type: "fix", text: "Turn/year badge fixed for RIS imperial saves. The old `readTurnFromSave` / `readCurrentYearFromSave` read u32 @ 0xf80 / int32 @ 0xf84 — those offsets are all zeros in every RIS sample, so every save showed `T1 · 0 AD` regardless of when it was saved. Save-cracker session 104 (commit `b5b2b1e`) pinned the correct location via full-file intersection scan across 10 known-turn saves: turn at `0x44e3` (u32 LE = turn-1), current year at `0x44e7` (i32 LE, negative for BC). Verified 0/1/4/10/20/21 in T0/T1e/T5/T11s/T21/T22 respectively. Provincia now reads from the right place." },
+    ],
+  },
+  {
     version: "0.9.369",
     date: "2026-05-16",
     items: [
