@@ -15962,6 +15962,27 @@ If Block 7 = Carthage and Block 17 (or 18) = Spain, that matches the flipped rec
 
 The diplomatic relation format crack alone is the biggest single advance the save-cracker has had — it answers session 109's longstanding "where is the partner faction encoded" question definitively. Provincia's diplomatic UI can now be built atop this format directly, even before block-to-faction mapping is fully resolved (just render the 380 relations in their array order with attitudes — the directionality information is enough for "who declared war on whom" labeling).
 
+#### STRONG — War declaration cancels pending adoption events
+
+Comparing journal/event records between peace and war saves:
+
+| Save | Adoption events ("has been adopted" UTF-16) | Journal records |
+|---|---|---|
+| Peace | 4 | 4 |
+| War | 1 | 1 |
+
+Three pending adoption events were CANCELLED when Spain declared war on Carthage. This is a state-cascade effect: diplomatic changes ripple through the event system, removing in-progress events tied to the now-hostile relationship.
+
+This has implications for Provincia: parsing the journal across save reloads won't show a consistent event list because state changes can RETROACTIVELY remove events. To track full event history, the player needs to save before each turn end.
+
+The peace journal records (now lost on war declaration):
+* "Taharqa Philadelphos" (Egyptian-style name)
+* "Deukalos of Larissa" (Greek)
+* "Lucco of Arurius" (Latin/Spanish)
+* "Odovacar of Vesontio" (Germanic/Celtic)
+
+Adoption events involve characters from multiple factions. The 3 that disappear in war involve at least one character with a Carthage-tied profile.
+
 ---
 
 ## Sources
