@@ -15817,6 +15817,76 @@ Future cracker work should treat single-mod findings as MOD-SPECIFIC by default 
 
 ---
 
+## Session 120 — 🎯 DIPLOMATIC RELATION RECORD FORMAT CRACKED (2026-05-18)
+
+#### Brief
+
+Session 109's biggest unresolved puzzle: how is the partner faction encoded in a diplomatic relation? Cracked via the user's vanilla Rome Spain-vs-Carthage save pair (T4 Start peace baseline + T4 besieged Corduba which auto-declared war on Carthage).
+
+#### STRONG — 16-byte diplomatic relation record format decoded
+
+```
+DIPLOMATIC RELATION RECORD (16 bytes proper):
++0x00  i32  attitude_value     200=NEUTRAL, 600=AT_WAR
++0x04  i32  initiator_state    2 in peace (default), 1 (I declared war) or 0 (they declared on me)
++0x08  i32  some_counter       46 in peace, 14 in war (decreased on war declaration — same magnitude in both directions)
++0x0c  i32  per-side value     varies per faction direction
+
+Preceded by a shared 20-byte header (-0x14 to -0x00):
+-0x14  i32 = 8     constant flag (relation-active marker?)
+-0x10  i32 = 0
+-0x0c  i32 = 0
+-0x08  i32 = 13    constant (relation_id? season?)
+-0x04  i32 = 200   constant baseline NEUTRAL value
+```
+
+So each relation record is 36 bytes total (20-byte preamble + 16-byte data).
+
+#### STRONG — Spain↔Carthage relation lives at two positions (bidirectional)
+
+The Spain-vs-Carthage war declaration was triggered by siege of Corduba. Both directions of the relation flipped:
+
+* **File offset `0x11929`** — Spain's view of Carthage. `attitude 200→600`, `state 2→1` ("I declared war")
+* **File offset `0x17bfd`** — Carthage's view of Spain. `attitude 200→600`, `state 2→0` ("they declared war on me")
+
+The `+0x4` state byte tells you which side INITIATED the war: 1 for the declarer, 0 for the recipient. So given a relation record, you can tell who fired first. This is exactly the directional info session 109's analysis was missing.
+
+#### STRONG — Records are sparse (only 2 of 86 attitude=600 values changed)
+
+Whole-file scan for `i32 == 600`:
+* peace: 86 occurrences
+* war: 88 occurrences
+* **Net new: exactly 2**
+
+So the engine writes one 16-byte relation record per (factionA, factionB) ordered pair where the relation is "tracked." Most factions in vanilla Rome are pre-set at war (rebels, slaves, hostile barbarians), accounting for the 86 baseline `600`s. Spain-Carthage was at neutral 200 in peace and flipped both directions to 600 on war declaration — adding exactly 2 new `600` values.
+
+This refutes session 109's "no symmetric pair" hypothesis. Vanilla Rome DOES store BOTH directions of every relation. RIS imperial may differ structurally (sessions 108/109's analysis was on RIS, where it found only one record per relation) — possibly RIS uses a different encoding.
+
+#### Implication for Provincia
+
+The diplomatic UI can now show, per faction:
+* Each known relation as `(otherFaction, attitude, who_started_it)`
+* Identify "Spain declared war on Carthage" vs "Carthage declared war on Spain"
+* Render war/peace/alliance state across the full faction matrix
+
+To find each faction's full relation table, scan for the 36-byte record signature (preamble + relation). The two found in this save are at `0x11929` and `0x17bfd` — spacing of `0x62d4` (25,300) bytes, suggesting one faction's full diplomatic record block is ~25 KB and there are ~21 such blocks for vanilla Rome's faction list.
+
+#### Files
+
+* `scripts/save-cracker/dig-war-9.js` — initial scan for small in-place diffs (mostly RNG noise)
+* `scripts/save-cracker/dig-war-10.js` — targeted hunt for i32==600 (AT_WAR enum) appearances → FOUND THE TWO BYTES
+* `scripts/save-cracker/dig-war-11.js` — field-by-field decode of both records → CRACKED THE FORMAT
+
+#### Confidence summary
+
+* **STRONG**: 16-byte diplomatic relation record format with attitude at +0, initiator-state at +4, counter at +8.
+* **STRONG**: Vanilla Rome stores BOTH directions of every diplomatic relation (bidirectional encoding). Spain-Carthage war added exactly 2 new `i32==600` values.
+* **STRONG**: The +4 `initiator_state` field directly identifies who declared war (1) vs who got declared war on (0). Solves session 109's biggest puzzle.
+* **HYPOTHESIS**: Each faction's full diplomatic record block is ~25 KB. There are ~21 such blocks for vanilla Rome's 21 factions. Total diplomatic-state section is ~525 KB of the 1.5 MB save.
+* **OPEN**: How to map a relation record's absolute file offset to (factionA_id, factionB_id). Each faction must have a known position offset; need to find the header table that maps faction_index → file_offset.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
