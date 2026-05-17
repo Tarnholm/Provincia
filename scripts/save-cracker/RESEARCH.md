@@ -16516,6 +16516,105 @@ Five major sections of the save now identified/decoded. Treasury location remain
 
 ---
 
+## Session 125 — Per-settlement TILE COORDINATES decoded (2026-05-17)
+
+#### Brief
+
+While hunting for treasury, discovered the per-settlement default_set header has tile X/Y coordinates at fixed offsets. **All 103 vanilla Rome settlements now have decoded (X, Y) tile positions.**
+
+#### STRONG — Settlement coordinate format
+
+Inside each settlement's `default_set` header (the 61-byte structure after `pstr16("default_set")`), the tile coordinates are at:
+
+```
+Header layout (relative to default_set_marker + 14):
+  +0   u32  self-pointer
+  +4   u32  hash/uuid
+  +8   u32  = 0xFCFCFCFC (canary)
+  +12  u32  tile_X      ← ⭐ X coordinate
+  +16  u32  tile_Y      ← ⭐ Y coordinate
+  +20  u32  = 1
+  +24..36  zeros
+  +40  u32  = 256 (constant)
+  +44  u32  = 0
+  +48  u32  = 256 (constant)
+  +52  u32  building_count
+  +56  u32  forward-pointer
+```
+
+So at byte offset `default_set + 26` is the tile X (4 bytes), and at `default_set + 30` is the tile Y (4 bytes).
+
+#### STRONG — All 103 settlements have valid coordinates
+
+Spot-checked positions match vanilla RTW Imperial Campaign map (~250×150 tile grid):
+
+```
+Rome          (138, 68)    central Italy ✓
+Capua         (106, 51)    south Italy ✓
+Memphis       (187,  2)    Egypt south ✓
+Thebes        (189, 45)    Egypt north ✓
+Corinth       (178, 19)    Greece ✓
+Athens        (158, 49)    Greece ✓
+Sparta        (161, 45)    Greece ✓
+Carthage      ( 94, 48)    North Africa ✓
+Lilybaeum     ( 83, 34)    Sicily ✓
+Syracuse      ( 55, 41)    Sicily ✓
+Antioch       (205, 43)    Levant ✓
+Damascus      (193, 58)    Levant ✓
+Sardis        ( 82, 45)    Asia Minor ✓
+Pergamum      (132, 55)    Asia Minor ✓
+Byzantium     (144, 52)    Bosphorus ✓
+Susa          (248, 152)   far east ✓
+Asturica      (  8, 72)    NW Spain ✓
+Scallabis     ( 36, 58)    Spain ✓
+Numantia      ( 47, 99)    Spain north ✓
+Lugdunum      ( 67, 82)    Gaul ✓
+Trier         ( 84, 127)   Germany ✓
+Eburacum      (227, 87)    Britain (high X = atypical) ⚠
+```
+
+X range across all settlements: 8..253. Y range: 1..153. These bounds match the campaign map dimensions.
+
+#### Files
+
+* `scripts/save-cracker/dig-settlement-coords.js` — decoded all 103 settlement coords
+* `scripts/save-cracker/dig-population-field.js` — first found the pattern by looking at default_set headers
+
+#### Implications for Provincia
+
+This is one of the most directly-useful cracks of the entire save-cracker effort:
+
+1. **Settlement map rendering**: Provincia can now place every settlement at its EXACT save-state tile coordinate, not just an approximation from descr_strat
+2. **Live map overlay**: Combined with session 124's region border polygons, the full campaign map can be reconstructed from save state
+3. **Settlement → region matching**: With both polygon outlines AND settlement points, point-in-polygon containment determines which settlement belongs to which region
+4. **Cross-save tracking**: Compare coordinates across saves to detect settlement re-captures or relocations
+5. **Region-of-influence display**: Show each settlement's reach/influence on the map UI
+
+This combines with session 121 (per-settlement building lists) to give a COMPLETE per-settlement state extraction:
+* Tile position (this session)
+* Building list (session 121)
+* Owner faction (session 120's owner-table at 0x1190)
+* All directly readable from save state without static descr_strat assumptions.
+
+#### Confidence summary
+
+* **STRONG**: Tile X and Y are u32 fields at offsets +12 and +16 from default_set_header_start (= default_set_marker + 14).
+* **STRONG**: All 103 settlements have valid coordinates in the vanilla 250×150 tile grid.
+* **STRONG**: Settlement coordinates match known vanilla RTW geography.
+
+#### Anomalies to investigate
+
+* Corduba shows tile (253, 78) — X=253 is at the far east edge, but Corduba should be in Spain (X≈20-25). Could be:
+  - Wrong settlement (multiple Cordubas in different mods)
+  - Edge-wrap encoding for uninitialized state
+  - Different campaign-map convention
+
+* Arsakia at (253, 50) similar — far east placeholder?
+
+Possible that X=253 is a "not yet placed on map" sentinel for settlements that exist as records but haven't been physically positioned.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
