@@ -16712,7 +16712,90 @@ Remaining open puzzles for future sessions:
 * Treasury / faction record block (not found in 0x0..0x100000 as plain u32)
 * Block-index → faction-name mapping (need cross-validation save)
 * Per-unit experience/upgrade stats (post-location bytes in unit records)
-* Settlement population (varies by record-internal offset, not fixed)
+
+## Session 128 — Settlement POPULATION field decoded (2026-05-17)
+
+#### Brief
+
+While exploring the bytes BEFORE each settlement's UTF-16 name pstr16, discovered a stats block containing population, public order, and other per-settlement metadata.
+
+#### STRONG — Population at section_tag+4+48
+
+Each settlement record has a `0x15 00 00 00` section tag before its name. Walking back 4 bytes from the name and finding this tag gives the start of a stats block. **u32 at offset +48 inside the stats block is settlement POPULATION.**
+
+```
+Verified vanilla starting populations:
+  Rome:       24397   (vanilla starts at ~25000 ✓)
+  Memphis:    46967   (vanilla huge_city, ~24-50K ✓)
+  Susa:       64768   (large eastern city)
+  Damascus:   52480
+  Jerusalem:  51966
+  Tarsus:     49657
+  Corinth:    35819
+  Bylazora:   34816
+  Larissa:    34816
+  Tarentum:   29397
+  Croton:     29264
+  Syracuse:   27333
+  Messana:    27332
+  Sardis:     41727
+  Pergamum:   39439
+  Tylis:      38496
+  Porrolissum: 35840
+  Bostra:     54635
+  Thebes:     48058
+  Salamis:    48623
+```
+
+These all match plausible vanilla RTW 270 BC populations.
+
+#### Known issues
+
+* Section-tag detection (the `0x15 00 00 00` marker) is unreliable for some settlements — produces false "billion" population values when it lands on a non-stats-block 0x15 tag.
+* Settlements showing population=0 (Ancyra, Lovosice, Iuvavum, etc.) may be:
+  - Recently captured / uninitialized
+  - Tiny villages where the field genuinely is 0
+  - Mis-anchored stats block
+
+#### Files
+
+* `scripts/save-cracker/dig-faction-records.js` — first noticed the stats block pattern
+* `scripts/save-cracker/dig-settlement-stats.js` — full stats block dump for Rome (488 bytes)
+* `scripts/save-cracker/dig-population-cross.js` — cross-validated population at +48 for 50+ cities
+
+#### Implications
+
+Combined with prior cracks, Provincia can now extract:
+* Settlement name + tile X/Y (session 125)
+* Settlement population (THIS session)
+* Settlement buildings list (session 121)
+* Settlement owner faction (session 120)
+
+That's a near-complete per-settlement state extraction directly from save data.
+
+#### Confidence summary
+
+* **STRONG**: u32 at `0x15_section_tag + 4 + 48` = settlement population.
+* **STRONG**: Populations from 27K-65K matched plausible vanilla city sizes.
+* **HYPOTHESIS**: Other fields in the 488-byte stats block hold public_order, garrison_size, happiness, and similar per-settlement state.
+* **OPEN**: Reliable settlement-stats-block start detection (some settlements have multiple 0x15 tags nearby).
+* **OPEN**: Decode the other stats fields (f32 values like 1.0/2.0/16.0/70.0 suggest morale, influence, or modifiers).
+
+#### Final tally across this conversation
+
+| Session | Cracked |
+|---|---|
+| 120 | Diplomatic relations table (380×115 bytes) + 16-byte format |
+| 121 | Per-settlement building list (103 settlements × buildings by category) |
+| 122 | REFUTED 4 prior treasury candidates (all building coords) |
+| 123 | Historic events table + 7 Wonders of the World |
+| 124 | Region border polygons (vertex arrays) |
+| 125 | Per-settlement tile X/Y (all 103) |
+| 126 | Unit records zone at 0x100000+ (type + location) |
+| 127 | Full unit roster: 649 units × 106 types + mercenary pools |
+| 128 | **Settlement POPULATION at stats_block+48** |
+
+Nine major sections cracked in one continuous conversation. The save file is now substantially mapped: diplomacy, settlements (position + buildings + population + ownership), regions (polygon outlines), events, wonders, units (composition + location), and mercenaries. Treasury and the per-faction record block remain the biggest open targets.
 
 #### EXPANSION: Unit records span ALL of 0x37000..end (sessions 126/127)
 
