@@ -158,7 +158,21 @@ Effects detectable from save state changes:
 | Siege started | ~592 bytes added to besieged settlement | ✓ Byzantium siege |
 | Unit casualties | Per-soldier 9-byte records change | ✓ Battle outcomes |
 
-## Open puzzles
+## Validated game state transitions
+
+### Construction lifecycle — FULL LOOP VALIDATED (Pella port_buildings)
+- **Queue**: Session 162/165 — T1 save shows `port_buildings\0` pstr16 inserted
+  in Pella's record (specifically at 0x10783 / 0x10785 depending on save variant)
+- **Completion**: Session 158 — T7 save shows port_buildings now in Pella's BUILT
+  list at tier 0 (=`port`, the base level per Alexander EDB)
+- Both ends of the lifecycle validated: queue → complete transition observed
+
+Provincia can display:
+- Settlements with active construction queues (look for pstr16 names in queue zone)
+- Newly-completed buildings (compare to previous turn's building list)
+- Construction completed buildings always start at tier 0 (cross-reference EDB)
+
+## Still genuinely open puzzles
 
 These require further work or new save data:
 
@@ -166,8 +180,10 @@ These require further work or new save data:
    location remains elusive. Treasury isn't at any stable u32 offset in
    the first 1.3 MB; likely buried in a per-faction packed record.
 
-2. **Construction queue progress (turns to completion)** — known to exist
-   somewhere but specific offset not located.
+2. **Construction queue exact turns-remaining counter** — we know queue
+   completes (port_buildings did between T1 and T7) but the specific
+   "turns until done" counter location isn't pinpointed. A save mid-queue
+   showing varying turn counts would reveal it.
 
 3. **Religion percentages per settlement** — known to exist but offset
    not pinpointed.
