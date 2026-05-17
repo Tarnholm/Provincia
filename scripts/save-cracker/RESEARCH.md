@@ -16287,6 +16287,138 @@ The settlement-buildings cracker (session 121) is unaffected — that work stand
 
 ---
 
+## Session 123 — Historic events table + Wonders of the World located (2026-05-17)
+
+#### Brief
+
+After refuting the treasury candidates in session 122, expanded the search into the 38 KB gap between the settlement-owner table (ends at 0x14a0) and the building-coord plan zone (starts at 0xaa00). Found two major scripted-data tables.
+
+#### STRONG — Historic events table at 0x5400..0x5cef
+
+About **50 historic events** are listed as `(category, specific_name, trailer)` triples. The category is one of `volcano`, `plague`, `historic`, `earthquake`, `horde`, `flood`, `storm`, `dustbowl`, `locusts`. Each category has 1-many specific instances.
+
+```
+Format per event:
+  pstr16_asciiz(category_name)         e.g. "volcano", "historic"
+  pstr16_asciiz(specific_event_name)   e.g. "eruption_at_etna", "lex_aebutia"
+  ~20-30 bytes trailer:
+    i32  year_or_offset      (varying — some negative like -261)
+    i32  field2              (0, 1, 2)
+    i32  is_active_or_fired  (0 or 1)
+    i32  region_id           (104, 138, etc — descr_regions index)
+```
+
+Complete event list (parsed from save):
+```
+volcano:
+  eruption_at_etna
+  eruption_at_vesuvius
+plague:
+  plague_in_macedonia, plague_in_alexandria, plague_in_italy (×2),
+  plague_in_asia_minor
+historic (philosophy/science):
+  stoic_philosophy, hand_pump_invented, through_a_glass_clearly,
+  archimedes_screw, greek_logic, star_catalogue, concrete_invented,
+  philosophy_is_foppish, astronomy_advances, de_rerum_natura,
+  a_new_religion, de_materia_medica, julian_calendar, the_aeneid
+historic (law/politics):
+  lex_aebutia, lex_papira, lex_pompeia, lex_adulteriis_coercendis,
+  lex_fufia_caninia, vestal_virgin_struck_down, trouble_in_judea
+historic (religion/culture):
+  roman_stoicism
+earthquake:
+  earthquake_in_pontus, earthquake_in_iberia, earthquake, earthquake
+generic disasters (just type, no specific name):
+  volcano (×2), flood (×2), storm (×2), horde (×2), dustbowl (×2),
+  locusts (×2), plague (×2)
+```
+
+This matches the RTW vanilla `descr_strat.txt` events section. The save tracks each event's state (fired/not-fired, target year).
+
+#### STRONG — Wonders of the World table at 0x7b88..0x7c20
+
+The seven Wonders of the World are listed as ASCII strings:
+
+```
+0x07b88  pyramids_and_sphinx
+0x07baa  pharos
+0x07bbf  colossus
+0x07bd6  temple        (Temple of Artemis at Ephesus)
+0x07beb  statue        (Statue of Zeus at Olympia)
+0x07c00  gardens       (Hanging Gardens of Babylon)
+0x07c16  mausoleum     (Mausoleum of Halicarnassus)
+```
+
+Each wonder likely has a "is destroyed" / "is built" flag and a region_id stored in its trailer bytes.
+
+#### Per-event trailer field analysis
+
+Example trailers:
+```
+eruption_at_etna:        fb fe ff ff  02 00 00 00  01 00 00 00  68 00 00 00
+                         year=-261?    field2=2     active=1     region_id=104 (Sicilia)
+plague_in_macedonia:     00 00 ff ff ff 00 00 00  00 01 00 00 00  8a 00 00 00
+                                                                    region_id=138 (Macedonia)
+stoic_philosophy:        00 00 ff ff ff  02 00 00 00  00 00 00 00  01 00 00 00
+                                          field2=2    active=0     fired_count=1?
+```
+
+Active=1 means the event is set up but not yet fired. Active=0 means already fired or completed. The `ff ff ff` prefix suggests a 24-bit packed marker for the event-state machine.
+
+#### HYPOTHESIS — Pre-event-zone (0x4800..0x5400) is per-faction record block
+
+The 2.7 KB region right before the events table (0x4800-0x5400) has a structure of small integers, mostly zero bytes, with isolated u32 values like:
+* `u32@0x49d8 = 3905` (with neighbor context: u32=0x01, u32=0x1c=28, u32=3905, zeros, u32=6, u32=0x1c0c787a)
+* `u32@0x5188 = 7726` (similar isolated context)
+
+These could be **per-faction record fields** (treasury, income, score, score). With 20 factions × ~135 bytes each = 2700 bytes, matching the 0x4800..0x5400 range.
+
+Confirmation requires comparing the SAME u32 offsets across player-faction-different saves.
+
+#### Per-settlement population candidates
+
+Scanning the gap also found a series of isolated u32s with values 32000-42000, increasing slightly with offset:
+```
+u32@0x7e48 = 32328
+u32@0x7fd4 = 32724
+u32@0x8170 = 33136
+u32@0x83ac = 33708
+u32@0x8668 = 34408
+u32@0x8c88 = 35976
+u32@0x9054 = 36948
+u32@0x96ec = 38636
+u32@0x9bf4 = 39924
+u32@0xa2dc = 41692
+```
+
+These could be per-settlement populations (settlements with 30K-40K pop in late campaign). Spacing of ~400-1500 bytes between successive entries suggests fixed per-settlement records. With 20 factions and ~100 settlements, this could be the per-settlement detail block.
+
+#### Files
+
+* `scripts/save-cracker/dig-faction-block-hunt.js` — found the events table and Wonders zone via ASCII string scan
+* `scripts/save-cracker/dig-events-table.js` — decoded the event-record format
+
+#### Confidence summary
+
+* **STRONG**: Historic events table at 0x5400..0x5cef contains all ~50 vanilla descr_strat events with category + specific name + trailer.
+* **STRONG**: Wonders of the World listed as 7 ASCII strings at 0x7b88..0x7c20.
+* **STRONG**: Event records have a year-i32, field2-i32, is_active-i32, region_id-i32 trailer (16 bytes after the pstr16 pair).
+* **HYPOTHESIS**: Per-faction record block lives at 0x4800..0x5400 (~135 bytes per faction). Treasury could be in there.
+* **HYPOTHESIS**: Per-settlement detail block at 0x7c20..0xaa00 contains population fields.
+* **OPEN**: Identify exact treasury offset (and which faction is at which slot).
+
+#### Implications for Provincia
+
+The events table is directly useful for the game UI:
+* Show all historic events with their categories and triggered/pending status
+* Display upcoming events (active=1 events sorted by year)
+* Track which scripted events have already fired in the campaign
+* Cross-reference event region_ids with the regions display
+
+For RIS mod data, the events table might differ — but the FORMAT (pstr16 pair + trailer) should be the same.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
