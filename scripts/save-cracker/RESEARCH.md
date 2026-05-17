@@ -15885,6 +15885,21 @@ To find each faction's full relation table, scan for the 36-byte record signatur
 * **HYPOTHESIS**: Each faction's full diplomatic record block is ~25 KB. There are ~21 such blocks for vanilla Rome's 21 factions. Total diplomatic-state section is ~525 KB of the 1.5 MB save.
 * **OPEN**: How to map a relation record's absolute file offset to (factionA_id, factionB_id). Each faction must have a known position offset; need to find the header table that maps faction_index → file_offset.
 
+#### Follow-up search: vanilla Rome has no clean faction-name table at low offsets
+
+Searched the save for all 21 vanilla Rome faction-name ASCII strings (`romans_julii`, `macedon`, `spain`, `carthage`, etc.) with word-boundary checking. Results:
+* Most factions appear at high offsets (0x50000-0x100000+) in unit-record blocks
+* `romans_senate` has 0 hits (Roman Senate might use a different tag or be split)
+* `spain` has 0 word-boundary hits (only appears as `spain_men`, `spain_rebel`, etc. with underscore-prefix)
+* No clean faction-table-with-IDs section was found
+
+So vanilla Rome's faction list is encoded implicitly through unit records and per-faction state blocks, not through a centralized faction-name → ID table. To label each diplomatic relation record by faction, future work needs:
+1. Find the start of each per-faction state block (positional markers, section headers)
+2. Map block-position → faction-index via some other signal (treasury value, capital region, leader UUID, etc.)
+3. Use that map to label relation records by their containing faction block
+
+The two known relation records (0x11929 and 0x17bfd) are inside what looks like the settlement-plan zone (around 0x10000-0x20000) with garbled UTF-16 text mixed in. Possible the entire 0x10000-0x20000 range is a per-faction state section for one specific faction.
+
 ---
 
 ## Sources
