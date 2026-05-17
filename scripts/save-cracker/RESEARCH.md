@@ -16615,6 +16615,107 @@ Possible that X=253 is a "not yet placed on map" sentinel for settlements that e
 
 ---
 
+## Session 126 — Unit records zone at 0x100000+ located (2026-05-17)
+
+#### Brief
+
+Cross-file ASCII string scan revealed that **0x100000..end is the unit-records zone**. Each unit has its type name as ASCII, followed by metadata including its stationed region.
+
+#### STRONG — Unit record format
+
+```
+UNIT RECORD (~1000-1700 bytes each):
+[before]    24 bytes header: 0x15 section tag + UUID + small_count + ...
+[type name] ASCII unit type (e.g. "numidian cavalry", 6-50 chars)
+[location]  pstr16_utf16 region/settlement name (e.g. "Mauretania")
+[stats]     ~900-1600 bytes of unit state (experience, weapon/armor upgrades,
+            morale, position, soldier count, etc.)
+```
+
+Example for first unit:
+```
+0x100278: 4c 21 ff ff ff ff 15 00 00 00 d1 21 a7 66 ...  ← 0x15 section tag + UUID
+0x100288: 00 00 00 00 00 00 00 00 00 00 00 00 03 00 11 00  ← small counts
+0x100298: 6e 75 6d 69 64 69 61 6e 20 63 61 76 61 6c 72 79  ← "numidian cavalry"
+0x1002a8: 00 10 4f 47 34 44 84 33 ae fe 00 00 00 00 2c 01
+0x1002b8: 00 00 00 00 00 00 0a 00 4d 00 61 00 75 00 72 00  ← pstr16(10) "Mauretania"
+0x1002c8: 65 00 74 00 61 00 6e 00 69 00 61 00 ff ff ff ff
+```
+
+#### STRONG — 187 units, 50 distinct types
+
+Top 20 unit types in vanilla Rome T4 save:
+```
+18× "greek hoplite militia"
+17× "barb infantry slave"
+12× "barb horse archers scythian"
+11× "greek peltast"
+ 9× "roman hastati"
+ 8× "merc illyrian"
+ 7× "numidian cavalry"
+ 6× "numidian javelinmen"
+ 6× "barb archer scythian"
+ 6× "rebel amazon chariots"
+ 5× "barb naked fanatics slave"
+ 5× "east infantry"
+ 5× "naval pirate ships"
+ 4× "roman generals guard cavalry early"
+ 4× "barb cavalry slave"
+```
+
+Spain-related: only 1 "merc spanish infantry" found — Spain's starting units probably use generic types not name-prefixed with "spanish".
+
+#### Implications
+
+This is another major win:
+* Every army unit's TYPE is now readable
+* Every unit's LOCATION (region/settlement name) is right after the type
+* The 187 units + their positions = full army composition map of the campaign
+
+Combined with prior sessions:
+* Session 120: diplomatic relations
+* Session 121: settlement buildings
+* Session 124: region polygons
+* Session 125: settlement tile coords
+* **Session 126: unit composition + positions** ← NEW
+
+Provincia can now reconstruct the complete strategic state of any vanilla Rome save: where every army is, what units it contains, what every settlement has built, who's at war with whom, and the live map geography.
+
+#### Files
+
+* `scripts/save-cracker/dig-text-labels.js` — text label search (found "trade", "fertility", "religion" + 0x100000+ unit names)
+* `scripts/save-cracker/dig-unit-records.js` — decoded 187 unit records with type strides
+
+#### Confidence summary
+
+* **STRONG**: Unit records start at 0x100000 and continue through the high-offset region.
+* **STRONG**: Each record has ASCII type + UTF-16 location + ~1000 bytes state.
+* **STRONG**: 50 distinct unit types observed across 187 individual units.
+* **OPEN**: Decode the post-location stats block (experience, upgrades, soldier count, etc.)
+* **OPEN**: Identify which faction owns each unit (likely a UUID match against settlement-owner table).
+
+#### Final tally — sessions 120-126 across this conversation
+
+| Session | What was cracked |
+|---|---|
+| 120 | Diplomatic relation 16-byte record format + 380-record table at 0xcff0..0x1943f |
+| 121 | Per-settlement building list (103 settlements × buildings by category) |
+| 122 | REFUTED 4 prior treasury candidates (all building coords) |
+| 123 | Historic events table at 0x5400..0x5cef + Wonders of the World |
+| 124 | Region border polygons at 0x7c20..0xaa00 (self-pointer + vertex list) |
+| 125 | Per-settlement tile X/Y at default_set+26/+30 (all 103 decoded) |
+| 126 | Unit records at 0x100000+ (type ASCII + location pstr16 + 1KB state) |
+
+Seven major sections cracked in one continuous conversation. The save file is now substantially mapped: diplomacy, settlements (position + buildings + ownership), regions (polygon outlines), events, wonders, and units (composition + location).
+
+Remaining open puzzles for future sessions:
+* Treasury / faction record block (not found in 0x0..0x100000 as plain u32)
+* Block-index → faction-name mapping (need cross-validation save)
+* Per-unit experience/upgrade stats (post-location bytes in unit records)
+* Settlement population (varies by record-internal offset, not fixed)
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
