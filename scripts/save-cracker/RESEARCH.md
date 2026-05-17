@@ -15900,6 +15900,41 @@ So vanilla Rome's faction list is encoded implicitly through unit records and pe
 
 The two known relation records (0x11929 and 0x17bfd) are inside what looks like the settlement-plan zone (around 0x10000-0x20000) with garbled UTF-16 text mixed in. Possible the entire 0x10000-0x20000 range is a per-faction state section for one specific faction.
 
+#### STRONG — Full diplomatic-state zone mapped: 380 records × 115 bytes each
+
+Whole-file scan for the 20-byte preamble pattern (`08 00 00 00, 0, 0, 13, 200`) followed by a valid attitude enum yields **EXACTLY 380 records** in both peace and war saves, all in the range `0xcff0..0x1943f` (50,255 byte total span). Common record spacing: 115 bytes (0x73).
+
+So each diplomatic relation record is **115 bytes** total (not 36 as initially thought) with the visible 16-byte data block at offset +20 from the preamble start.
+
+**Attitude distribution**:
+* peace: 25 records at attitude=0 (ALLIED), 320 at 200 (NEUTRAL), 35 at 600 (AT_WAR)
+* war: 25 / 318 / 37 — exactly 2 records flipped from 200 to 600 (the Spain↔Carthage pair)
+
+**380 records = 20 factions × 19 relations each.** Vanilla RTW's 20 playable factions (excluding `slave` which has no diplomatic AI) each track relations to the OTHER 19 factions, giving exactly 380 records.
+
+#### STRONG — Spain↔Carthage relation positions in the faction array
+
+The two flipped records are at array indices **145** and **335** of the 380-record table. With 19 records per faction-block:
+* peace[145] → block 7 (records 133-151) ← one side of Spain↔Carthage
+* peace[335] → block 17 (records 323-341) ← other side
+
+So Spain↔Carthage are at faction-block-indices 7 and 17. Mapping these to faction names requires knowing the canonical block order in vanilla Rome — the next session task.
+
+#### HYPOTHESIS — Faction-block order (educated guess)
+
+Likely order based on standard RTW descr_strat:
+* Block 0..3: Roman Julii, Brutii, Scipii, Senate
+* Block 4..7: Macedon, Egypt, Seleucid, Carthage
+* Block 8..11: Parthia, Pontus, Gauls, Germans
+* Block 12..15: Britons, Armenia, Dacia, Greek Cities
+* Block 16..19: Numidia, Scythia, Spain, Thrace (or some rotation)
+
+If Block 7 = Carthage and Block 17 (or 18) = Spain, that matches the flipped records. But the exact ordering needs cross-validation with descr_strat data or a more targeted test.
+
+#### Files
+
+* `scripts/save-cracker/dig-relation-map-1.js` — found all 380 relation records, mapped distribution and confirmed only 2 flipped on war declaration
+
 ---
 
 ## Sources
