@@ -16062,6 +16062,126 @@ Hook condition "crack the save" — STATUS: substantial. The biggest single open
 
 ---
 
+## Session 121 — Per-settlement building list FORMAT CRACKED (2026-05-17)
+
+#### Brief
+
+After session 120's diplomatic-relation breakthrough, focused on cracking what each settlement actually CONTAINS. The full per-settlement building list (count + names of each building) is now decoded across all 103 settlements in the vanilla Spain T4 save.
+
+#### STRONG — Settlement-record buildings sub-format
+
+After each settlement's UTF-16 name pstr16 there's an 18-byte gap, then the literal `pstr16_asciiz("default_set")`, then a fixed 61-byte header, then `N` building records of stride `(pstr16_name_len + 78)` bytes.
+
+```
+SETTLEMENT BUILDINGS LAYOUT (after the UTF-16 settlement name pstr16):
+[0..17]   18-byte gap (5 zeros + 4×0xfc + u32=4 + u16=0 + u16=X)
+[18..31]  pstr16_asciiz("default_set\0") — 14 bytes total (2-byte len=0x0c + 12 bytes)
+[32..36]  u32 self-pointer to (32)
+[36..40]  u32 some hash/uuid
+[40..44]  4 bytes 0xfc canary
+[44..48]  u32 ? per-record varying
+[48..52]  u32 ? per-record varying
+[52..56]  u32 = 1 (constant)
+[56..64]  8 zero bytes
+[64..72]  byte 0x01 + 7 zeros
+[72..80]  byte 0x01 + 7 zeros
+[80..84]  byte 0x01 + 3 zeros
+[84..88]  u32 buildingCount
+[88..92]  u32 forward-ptr (~self+~17)
+[92..]    N × { pstr16_asciiz(building_category_name) + 78 bytes building-data }
+```
+
+The 78 trailing bytes per building have:
+* +0..3: u32 hash/random
+* +4..28: 25 bytes (zeros for most buildings; defense buildings have wall-coords data)
+* +29: 1 byte — per-settlement CONSTANT (Carthago_Nova=0x12, Corduba=0x08, Numantia=0x0a, Lilybaeum=0x07, Cirta=0x10, Thapsus=0x07). Likely settlement size/region-id.
+* +30..32: zeros
+* +33: 0x64 = 100 (constant)
+* +34..49: zeros
+* +50: 0x15 = 21 (constant — same section tag seen elsewhere)
+* +51..77: 0xff bytes and zeros (record terminator)
+
+#### STRONG — Building CATEGORY names (not levels)
+
+Buildings are stored as their **category-class** name, not the specific level. Observed across all 103 settlements:
+
+```
+core_building       defenses             barracks
+equestrian          missiles             smith
+market              port_buildings       hinterland_farms
+hinterland_roads    hinterland_mines     amphitheatres
+temple_of_governors temple_of_leadership temple_of_one_god
+temple_of_hunting   temple_of_trade
+```
+
+The actual upgrade LEVEL (village → city, militia_barracks → city_barracks) is not encoded in the building-category string. It must be inferred from the per-building data block — likely the u32 at trail+0..3 or one of the unknowns at +4..28.
+
+#### STRONG — Sample Spanish settlements (Turn 4 Start save)
+
+```
+Carthago_Nova (capital):  core_building, barracks
+Corduba:                  core_building, defenses, barracks, equestrian, market, port_buildings, temple_of_one_god
+Numantia:                 core_building, defenses, missiles, temple_of_hunting
+Asturica:                 core_building, defenses, missiles
+```
+
+Spain's capital starting with just 2 buildings is consistent with vanilla descr_strat — Spain begins as a small faction with mostly under-developed settlements.
+
+#### STRONG — 103 default_set markers total
+
+The save file contains exactly 103 `pstr16("default_set")` markers — one per settlement record. Total settlements across ALL factions: 103. Confirmed by counting the constant-named template references.
+
+The 66 settlements with cleanly parseable UTF-16 names (vs 103 total markers) are due to some settlement names being either too short or containing non-ASCII UTF-16 chars that the strict `[0x20..0x7e]` filter rejects. With looser filtering all 103 names should be recoverable.
+
+#### STRONG — Settlement back-pointer table at 0x14270..0x14370
+
+Each settlement's name pstr16 is preceded by a u32 pointer at `nameOff - 29` that points into the range 0x14270..0x14370 (256 bytes). 30 unique pointer values across 66 settlements suggests that range is a small per-faction or per-culture-group table (not per-settlement), referenced by multiple settlements simultaneously.
+
+```
+Arretium     ptr=0x1432a   (Roman)
+Ariminum     ptr=0x1432a   (Roman) ← same as Arretium
+Tarentum     ptr=0x14325   (Greek-colony)
+Croton       ptr=0x14325   (Greek-colony)
+Messana      ptr=0x14320   (Greek-colony)
+Rome         ptr=0x14352   (Roman capital)
+Bylazora     ptr=0x14370   (Macedon)
+Memphis      ptr=0x142e6   (Egyptian)
+```
+
+Settlements within the same FACTION often share pointers (Roman cities → 0x1432a, Greek colonies → 0x14325/0x14320). So this table looks like a **per-faction culture/settlement-template lookup**. Could be the bridge from settlement → owner.
+
+Bytes at 0x14000..0x14400 contain repeating 24-byte records with fields `u32=3, u32=0, u32=0x243, u32=-1, u32=14` and `u32=13, u32=200, u32=200, u32=2, u32=6, u32=200`. The `200` constant matches the `NEUTRAL` attitude enum and `0xc8`-baseline elsewhere — these are likely AI-state vectors keyed by faction/culture.
+
+#### Files
+
+* `scripts/save-cracker/dig-settlement-buildings.js` — initial building-name scan per settlement
+* `scripts/save-cracker/dig-buildings-2.js` — found post-default_set 61-byte header + first building offset
+* `scripts/save-cracker/dig-buildings-3.js` — walked all 103 settlements with building counts
+* `scripts/save-cracker/dig-buildings-4.js` — Spanish-settlement-specific decode with trail-byte dump
+* `scripts/save-cracker/dig-settlement-record.js` — settlement back-pointer table investigation
+* `scripts/save-cracker/dig-settlement-owner-table.js` — examined 0x14000..0x14400 culture/faction table
+
+#### Confidence summary
+
+* **STRONG**: 103 settlements have a `pstr16("default_set")` marker followed by a 61-byte header and a building-list of (count × variable-stride records).
+* **STRONG**: Building list is by CATEGORY (core_building, defenses, barracks, etc.) — 17 distinct categories seen across vanilla Rome.
+* **STRONG**: Each building record is `pstr16_asciiz_name + 78 bytes data`. Constant stride trailer.
+* **STRONG**: Each settlement has a back-pointer into 0x14270..0x14370 — likely culture/faction template lookup (30 unique values).
+* **HYPOTHESIS**: Building UPGRADE LEVEL is encoded in the trail bytes (likely the u32 at +0..3 or one of the unknowns at +4..28), but the specific field hasn't been isolated.
+* **HYPOTHESIS**: Per-settlement constant byte at trail+29 is settlement size or region-id.
+* **OPEN**: Map back-pointer in 0x14270..0x14370 → faction-id (would solve session 120's block→faction puzzle if it succeeds).
+
+#### Implications for Provincia
+
+The settlement view in Provincia can now show:
+* Per-settlement building list (which categories are built)
+* Settlement count and total buildings per faction
+* Building-category distribution across the campaign
+
+Once the per-building level is isolated, full RTW save → settlement state can be exported.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
