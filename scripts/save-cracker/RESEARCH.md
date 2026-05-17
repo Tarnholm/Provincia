@@ -16182,6 +16182,111 @@ Once the per-building level is isolated, full RTW save → settlement state can 
 
 ---
 
+## Session 122 — Treasury candidate REFUTATION + settlement back-pointer NOT faction (2026-05-17)
+
+#### Brief
+
+Continued cracking after session 121's building-list breakthrough. Two RETRACTIONS this session:
+
+#### REFUTED — Session 120's 4 "treasury candidates" are building coordinates, not treasury
+
+The four candidates from session 120 (0xaa74, 0xb6fc, 0xb708, 0xb718) were all flagged because their values fall in the 1000-50000 range and vary across saves. Deep inspection reveals they are actually fixed-point (×256) building-grid coordinates.
+
+```
+At 0xaa74, alternating u32s decode as (x, y) building positions:
+  (x=18944, y=63744) ÷256 = (74, 249)
+  (x=19200, y=64000) ÷256 = (75, 250)
+  (x=19456, y=64000) ÷256 = (76, 250)
+  ...sequential building positions
+```
+
+Every single value is a MULTIPLE OF 256, which is the diagnostic for fixed-point coordinate data. Real treasury would be an arbitrary integer (e.g. 5,000 or 8,237 denarii), not 5376 = 21×256.
+
+When the treasury hunt is repeated excluding multiples of 256, only **9 isolated u32 candidates** remain, and inspection of the top candidate (`u32@0x19b30: T1=1201 T4=1276`) shows it's a false reading across the canary→gap boundary (the 0xfc canary byte combined with the following 0x04 reads as u32=1276).
+
+**Treasury is NOT a u32 in the 0x100..end range in the 1000-30000 decimal range.** Encoding options not yet eliminated:
+* u64 (8 bytes — denarii × multiplier)
+* float32 (none found in 1000-30000 magnitude)
+* Per-faction record stored at a high offset (>1 MB) inside a packed record
+* Different integer representation (treasury × 1000 = millicredits, or treasury × N for stored as cents)
+
+#### REFUTED — Settlement back-pointer to 0x14270..0x14370 is NOT faction-indexed
+
+Tested the hypothesis from session 121 that each settlement's back-pointer at `nameOff-29` (range 0x14270..0x14370, 30 unique values) is faction-indexed. Cluster analysis across 66 named settlements:
+
+```
+0x14270 cluster: Cirta (numidia), Athens (greek_cities), Cyrene (egypt), Iuvavum (germans)
+  → 4 different factions, REFUTES faction-indexing
+0x14282 cluster: Nepte (numidia), Lovosice (germans)
+  → 2 different factions, REFUTES
+0x142e6 cluster: Memphis, Thebes (egypt), Susa (seleucid), Tingi (numidia), Bostra (?)
+  → mixed factions
+```
+
+Only 2/30 clusters match a single faction (Rome alone → 0x14352 matches romans_senate; Patavium alone → 0x142f0 matches romans_julii). So this back-pointer is NOT the faction-owner field — it's likely a **settlement-template lookup** (which UI layout, which terrain palette, which starting garrison style) shared between geographically-distant settlements of similar size or culture.
+
+#### STRONG — Settlement-owner table at 0x1190 confirmed (sorted by faction-id, +4 field)
+
+Validated session 120's settlement-owner table:
+* Stride: 12 bytes
+* Range: 0x1190..0x14a0 (784 bytes ≈ 65 entries)
+* Field +0: u32 packed coord encoding `(byte0=1, byte1=32, byte2=region_byte, byte3=0)` — always `0xXX2001`
+* Field +4: u32 faction-id, range 3-19, **sorted ascending**
+* Field +8: u32 owner UUID / character hash
+
+```
+Faction-id occurrence counts (65 settlements distributed across 17 factions):
+  fac=3: 1   fac=4: 1   fac=5: 1   fac=6: 4   fac=7: 2   fac=8: 7
+  fac=9: 4   fac=10: 8  fac=11: 2  fac=12: 2  fac=13: 3
+  fac=14: 10 fac=15: 3  fac=16: 2  fac=17: 1  fac=18: 6  fac=19: 9
+```
+
+Faction-id 0/1/2 are absent — likely reserved for slave (rebel cities have no faction-owner table entry).
+
+Mapping faction-id → faction-name still requires either:
+* a different player-faction save for cross-validation
+* decoding the field +0's `0xXX2001` packed encoding into actual settlement region-id
+* finding a reference table that maps faction-id to faction-name
+
+#### NEW — Building-coord plan zone at 0xaa00..0xb750
+
+Discovered by examining the false-positive treasury candidates. This zone contains per-building grid positions in fixed-point format (`x × 256, y × 256`). Each settlement's "buildings_default_set" plan references positions in this zone.
+
+```
+0xaa74..0xaab8: building positions for one settlement (x∈{74..78}, y∈{249..253})
+0xb680..0xb6e0: building positions for another (x∈{91..96}, y∈{79..82})
+0xb6f0..0xb740: building wall/structural coords (12288..23808 = 48..93 ÷ 256)
+```
+
+Likely shared between settlements that use the same default building plan.
+
+#### Files
+
+* `scripts/save-cracker/dig-treasury-final.js` — exposed the building-coord nature of the 4 prior treasury candidates
+* `scripts/save-cracker/dig-treasury-real.js` — confirmed all candidates are coord-pair data
+* `scripts/save-cracker/dig-treasury-fullscan.js` — full-file scan; 24 candidates all multiples of 256
+* `scripts/save-cracker/dig-treasury-mod256.js` — non-multiples-of-256 scan; 9 candidates all false
+* `scripts/save-cracker/dig-settlement-faction.js` — back-pointer cluster analysis (refuted faction-indexing)
+* `scripts/save-cracker/dig-faction-id-source.js` — settlement-owner table field decode
+* `scripts/save-cracker/dig-19b30-context.js` — confirmed 0x19b30 candidate was a canary-byte false reading
+
+#### Confidence summary
+
+* **REFUTED**: 4 candidates from session 120 are not treasury. All are fixed-point building grid coords.
+* **REFUTED**: Settlement back-pointer (0x14270..0x14370) is not faction-indexed.
+* **STRONG**: Settlement-owner table at 0x1190 has faction-id at field+4, sorted ascending 3-19.
+* **STRONG**: Treasury is NOT stored as a plain u32 in 1000-30000 range in the 0x100..end region.
+* **HYPOTHESIS**: Treasury may be a u64 (denarii×multiplier), float, or stored inside a higher-offset packed faction record.
+* **HYPOTHESIS**: Building-coord plan zone at 0xaa00..0xb750 shared between settlements using same default plan.
+
+#### Implications
+
+The session-120 confidence in "4 candidates likely contain Spain's treasury" was wrong. The actual treasury must be hunted differently — likely by finding the per-faction record block and decoding its structure top-down, rather than by value-range search.
+
+The settlement-buildings cracker (session 121) is unaffected — that work stands on its own.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav

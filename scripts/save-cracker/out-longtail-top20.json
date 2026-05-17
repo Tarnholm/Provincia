@@ -1,0 +1,650 @@
+[
+  {
+    "start": 22214002,
+    "end": 34500238,
+    "bytes": 12286236,
+    "headHex": "3d 06 30 00 00 00 00 00 01 a3 06 30 00 00 00 00 00 03 7c 05 30 00 00 00 00 00 05 77 04 30 00 00 00 00 00 02 83 04 30 00 00 00 00 00 01 26 04 30 00 00 00 00 00 03 05 06 30 00 00 00 00 00 02 54",
+    "tailHex": "69 00 67 00 6e 00 5f 00 53 00 63 00 72 00 69 00 70 00 74 00 2e 00 74 00 78 00 74 00 73 00 00 00",
+    "sig32": "3d0630000000000001a306300000000000037c05300000000000057704300000",
+    "sig8": "3d 06 30 00 00 00 00 00",
+    "stats": {
+      "zeros": 6829432,
+      "ascii": 1261682,
+      "other": 4195122,
+      "len": 12286236
+    },
+    "strings": [
+      "@+516:roman principes early",
+      "@+2701:roman hastati early",
+      "@+4884:roman hastati early",
+      "@+7067:roman rorarii",
+      "@+8845:roman rorarii",
+      "@+10623:roman leves",
+      "@+12399:roman leves",
+      "@+14175:roman leves"
+    ],
+    "before": {
+      "name": "siege",
+      "gap": 0
+    },
+    "after": {
+      "name": "lua-footer",
+      "gap": 0
+    }
+  },
+  {
+    "start": 22025749,
+    "end": 22213929,
+    "bytes": 188180,
+    "headHex": "19 c6 c0 cf 8f 25 cd ce 00 00 00 00 1e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 94 0c 00 00 01 0c 0b 00 00 00 ba 02 00 00 00 00 00",
+    "tailHex": "00 00 00 00 00 04 f0 06 30 00 00 00 00 00 03 25 04 30 00 00 00 00 00 02 bf 05 30 00 00 00 00 00",
+    "sig32": "19c6c0cf8f25cdce000000001e00000000000000000000000000000000000000",
+    "sig8": "19 c6 c0 cf 8f 25 cd ce",
+    "stats": {
+      "zeros": 99746,
+      "ascii": 22736,
+      "other": 65698,
+      "len": 188180
+    },
+    "strings": [
+      "@+535:data/ui/roman/portraits/cards/old/generals/000.tga",
+      "@+588:data/ui/roman/portraits/portraits/old/generals/000.tga",
+      "@+1137:data/ui/roman/portraits/cards/young/generals/000.tga",
+      "@+1192:data/ui/roman/portraits/portraits/young/generals/000.tga",
+      "@+1735:data/ui/roman/portraits/cards/young/generals/171.tga",
+      "@+1790:data/ui/roman/portraits/portraits/young/generals/171.tga",
+      "@+2389:data/ui/roman/portraits/cards/young/generals/274.tga",
+      "@+2444:data/ui/roman/portraits/portraits/young/generals/274.tga"
+    ],
+    "before": {
+      "name": "merc-pool",
+      "gap": 0
+    },
+    "after": {
+      "name": "siege",
+      "gap": 0
+    }
+  },
+  {
+    "start": 34505538,
+    "end": 34524371,
+    "bytes": 18833,
+    "headHex": "01 69 00 00 00 47 83 0e 02 01 00 1d 01 00 00 94 01 00 00 55 83 0e 02 00 00 5b 83 0e 02 00 00 61 83 0e 02 00 00 67 83 0e 02 01 00 0c 01 00 00 aa 01 00 00 75 83 0e 02 00 00 7b 83 0e 02 01 00 0f",
+    "tailHex": "b3 cc 0e 02 02 00 ee 01 00 00 5c 01 00 00 ee 01 00 00 5c 01 00 00 c9 cc 0e 02 00 00 00 01 01 00",
+    "sig32": "016900000047830e0201001d0100009401000055830e0200005b830e02000061",
+    "sig8": "01 69 00 00 00 47 83 0e",
+    "stats": {
+      "zeros": 6945,
+      "ascii": 1118,
+      "other": 10770,
+      "len": 18833
+    },
+    "strings": [],
+    "before": {
+      "name": "lua-footer",
+      "gap": 0
+    },
+    "after": null
+  },
+  {
+    "start": 17490442,
+    "end": 17499112,
+    "bytes": 8670,
+    "headHex": "72 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 10 02 04 88 01 08 40 00 c0 01 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 10 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 25 43 01 00 00 00 00 00 00 00 00 00 00 00 da 03 0b 01 de 03 0b 01 00 00 ef 00 00 00",
+    "sig32": "72000000000000fcfcfcfc64000000001002048801084000c001000400000000",
+    "sig8": "72 00 00 00 00 00 00 fc",
+    "stats": {
+      "zeros": 4615,
+      "ascii": 241,
+      "other": 3814,
+      "len": 8670
+    },
+    "strings": [
+      "@+118:default_set",
+      "@+193:hinterland_region",
+      "@+509:core_building",
+      "@+3528:default_set",
+      "@+3603:hinterland_region",
+      "@+3919:core_building",
+      "@+4231:garrison",
+      "@+4538:irrigated_farming"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 18073886,
+    "end": 18081338,
+    "bytes": 7452,
+    "headHex": "00 00 00 00 00 fc fc fc fc 64 00 00 00 00 20 02 00 00 10 00 00 00 c0 01 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00 00 00 08 00 00 00 20 00 00 00 00 00 00",
+    "tailHex": "00 00 00 80 40 43 01 00 00 00 00 00 00 00 00 00 00 00 2c e6 13 01 30 e6 13 01 00 00 ef 00 00 00",
+    "sig32": "0000000000fcfcfcfc64000000002002000010000000c0010400000000000000",
+    "sig8": "00 00 00 00 00 fc fc fc",
+    "stats": {
+      "zeros": 2736,
+      "ascii": 335,
+      "other": 4381,
+      "len": 7452
+    },
+    "strings": [
+      "@+116:default_set",
+      "@+191:hinterland_region",
+      "@+507:core_building",
+      "@+819:military_industrial_complex",
+      "@+1145:rainfed_farming",
+      "@+1459:market",
+      "@+1764:port_buildings",
+      "@+2077:pottery_production"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 19505160,
+    "end": 19512311,
+    "bytes": 7151,
+    "headHex": "6e 00 69 00 75 00 6d 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 00 12 04 00 00 00 00 40 c0 81 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 00 00 08 00 00",
+    "tailHex": "00 00 00 80 77 43 01 00 00 00 00 00 00 00 00 00 00 00 e9 bb 29 01 ed bb 29 01 00 00 ef 00 00 00",
+    "sig32": "6e00690075006d000000000000fcfcfcfc64000000000012040000000040c081",
+    "sig8": "6e 00 69 00 75 00 6d 00",
+    "stats": {
+      "zeros": 2741,
+      "ascii": 293,
+      "other": 4117,
+      "len": 7151
+    },
+    "strings": [
+      "@+124:default_set",
+      "@+140:R~qO",
+      "@+199:hinterland_region",
+      "@+515:core_building",
+      "@+827:military_industrial_complex",
+      "@+1153:irrigated_farming",
+      "@+1469:market",
+      "@+1774:port_buildings"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 16997288,
+    "end": 17004106,
+    "bytes": 6818,
+    "headHex": "00 00 00 00 00 fc fc fc fc 64 00 00 00 00 08 02 00 80 02 00 00 82 c1 01 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 c9 42 01 00 00 00 00 00 00 00 00 00 00 00 3c 76 03 01 40 76 03 01 00 00 ef 00 00 00",
+    "sig32": "0000000000fcfcfcfc64000000000802008002000082c1010200000000000000",
+    "sig8": "00 00 00 00 00 fc fc fc",
+    "stats": {
+      "zeros": 2636,
+      "ascii": 269,
+      "other": 3913,
+      "len": 6818
+    },
+    "strings": [
+      "@+116:default_set",
+      "@+191:hinterland_region",
+      "@+507:core_building",
+      "@+819:garrison",
+      "@+1126:highland_pastoralism",
+      "@+1445:market",
+      "@+1750:port_buildings",
+      "@+2063:textiles_production"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 16409189,
+    "end": 16415743,
+    "bytes": 6554,
+    "headHex": "65 00 74 00 74 00 6c 00 65 00 6d 00 65 00 6e 00 74 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 00 00 00 00 00 00 00 01 c0 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 80 8e 43 01 00 00 00 00 00 00 00 00 00 00 00 f1 7b fa 00 f5 7b fa 00 00 00 ef 00 00 00",
+    "sig32": "6500740074006c0065006d0065006e0074000000000000fcfcfcfc6400000000",
+    "sig8": "65 00 74 00 74 00 6c 00",
+    "stats": {
+      "zeros": 2484,
+      "ascii": 307,
+      "other": 3763,
+      "len": 6554
+    },
+    "strings": [
+      "@+134:default_set",
+      "@+209:hinterland_region",
+      "@+525:core_building",
+      "@+837:military_industrial_complex",
+      "@+1163:irrigated_farming",
+      "@+1479:market",
+      "@+1784:port_buildings",
+      "@+1811:*:C&KC"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 18526337,
+    "end": 18532868,
+    "bytes": 6531,
+    "headHex": "61 00 75 00 61 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 28 02 00 10 00 00 40 00 c0 01 10 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 2a 43 01 00 00 00 00 00 00 00 00 00 00 00 f6 c9 1a 01 fa c9 1a 01 00 00 ef 00 00 00",
+    "sig32": "6100750061000000000000fcfcfcfc64000000002802001000004000c0011000",
+    "sig8": "61 00 75 00 61 00 00 00",
+    "stats": {
+      "zeros": 2611,
+      "ascii": 297,
+      "other": 3623,
+      "len": 6531
+    },
+    "strings": [
+      "@+122:default_set",
+      "@+197:hinterland_region",
+      "@+513:core_building",
+      "@+825:military_industrial_complex",
+      "@+1151:irrigated_farming",
+      "@+1467:market",
+      "@+1772:port_buildings",
+      "@+2085:perfumes_industry"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 18720279,
+    "end": 18726810,
+    "bytes": 6531,
+    "headHex": "75 00 6d 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 08 02 04 04 00 00 40 40 c0 01 02 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 0a 00 00 00 00 00 00 00 00 00 08 00 00 20 00 00 00",
+    "tailHex": "00 00 00 00 7f 43 01 00 00 00 00 00 00 00 00 00 00 00 8c bf 1d 01 90 bf 1d 01 00 00 ef 00 00 00",
+    "sig32": "75006d000000000000fcfcfcfc64000000000802040400004040c00102000000",
+    "sig8": "75 00 6d 00 00 00 00 00",
+    "stats": {
+      "zeros": 2632,
+      "ascii": 282,
+      "other": 3617,
+      "len": 6531
+    },
+    "strings": [
+      "@+120:default_set",
+      "@+195:hinterland_region",
+      "@+511:core_building",
+      "@+823:military_industrial_complex",
+      "@+1149:irrigated_farming",
+      "@+1465:market",
+      "@+1770:port_buildings",
+      "@+2083:salted_fish"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 21761379,
+    "end": 21767905,
+    "bytes": 6526,
+    "headHex": "6d 00 61 00 6e 00 61 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 00 02 80 50 00 00 40 00 c0 01 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 a0 41 01 00 00 00 00 00 00 00 00 00 00 00 d3 26 4c 01 d7 26 4c 01 00 00 ef 00 00 00",
+    "sig32": "6d0061006e0061000000000000fcfcfcfc64000000000002805000004000c001",
+    "sig8": "6d 00 61 00 6e 00 61 00",
+    "stats": {
+      "zeros": 2653,
+      "ascii": 260,
+      "other": 3613,
+      "len": 6526
+    },
+    "strings": [
+      "@+124:default_set",
+      "@+199:hinterland_region",
+      "@+515:core_building",
+      "@+529:p-rx",
+      "@+827:military_industrial_complex",
+      "@+1153:marsh_reclamation",
+      "@+1469:market",
+      "@+1774:port_buildings"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 16806357,
+    "end": 16812878,
+    "bytes": 6521,
+    "headHex": "61 00 72 00 6e 00 61 00 73 00 73 00 6f 00 73 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 20 03 00 04 00 08 00 80 c1 01 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 10 00 08 00 00 10 08 00 00",
+    "tailHex": "00 00 00 00 e6 42 01 00 00 00 00 00 00 00 00 00 00 00 40 8b 00 01 44 8b 00 01 00 00 ef 00 00 00",
+    "sig32": "610072006e006100730073006f0073000000000000fcfcfcfc64000000002003",
+    "sig8": "61 00 72 00 6e 00 61 00",
+    "stats": {
+      "zeros": 2553,
+      "ascii": 305,
+      "other": 3663,
+      "len": 6521
+    },
+    "strings": [
+      "@+132:default_set",
+      "@+207:hinterland_region",
+      "@+225:hz2_",
+      "@+230:AdSsT\\EmRyE Dm\\oMdos",
+      "@+523:core_building",
+      "@+835:garrison",
+      "@+1142:irrigated_farming",
+      "@+1458:market"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 17381681,
+    "end": 17388202,
+    "bytes": 6521,
+    "headHex": "73 00 69 00 61 00 2d 00 4d 00 61 00 69 00 61 00 6e 00 64 00 72 00 6f 00 73 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 10 03 00 40 00 00 00 00 c1 01 00 02 00 00 00 00 00 00 00 01 00 00 00 00",
+    "tailHex": "00 00 00 80 1b 43 01 00 00 00 00 00 00 00 00 00 00 00 9c 52 09 01 a0 52 09 01 00 00 ef 00 00 00",
+    "sig32": "7300690061002d004d006100690061006e00640072006f0073000000000000fc",
+    "sig8": "73 00 69 00 61 00 2d 00",
+    "stats": {
+      "zeros": 2648,
+      "ascii": 238,
+      "other": 3635,
+      "len": 6521
+    },
+    "strings": [
+      "@+142:default_set",
+      "@+217:hinterland_region",
+      "@+533:core_building",
+      "@+845:garrison",
+      "@+1152:irrigated_farming",
+      "@+1468:market",
+      "@+1773:agroforestry",
+      "@+2084:health"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 17266502,
+    "end": 17273004,
+    "bytes": 6502,
+    "headHex": "73 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 32 02 01 40 00 00 40 00 c0 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 52 43 01 00 00 00 00 00 00 00 00 00 00 00 9e 90 07 01 a2 90 07 01 00 00 ef 00 00 00",
+    "sig32": "73000000000000fcfcfcfc64000000003202014000004000c001000100000000",
+    "sig8": "73 00 00 00 00 00 00 fc",
+    "stats": {
+      "zeros": 2632,
+      "ascii": 235,
+      "other": 3635,
+      "len": 6502
+    },
+    "strings": [
+      "@+118:default_set",
+      "@+193:hinterland_region",
+      "@+509:core_building",
+      "@+821:garrison",
+      "@+1128:irrigated_farming",
+      "@+1444:market",
+      "@+1749:silk_trader",
+      "@+2059:horse_trainer"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 16270898,
+    "end": 16277340,
+    "bytes": 6442,
+    "headHex": "05 00 00 00 00 00 00 00 00 00 00 00 0a 00 00 00 42 46 f8 00 ac ac fc fc 1f 05 0c 00 64 65 66 61 75 6c 74 5f 73 65 74 00 5a 46 f8 00 0b 49 e9 c0 fc fc fc fc 1d 01 00 00 94 01 00 00 01 00 00 00",
+    "tailHex": "00 00 00 00 66 43 01 00 00 00 00 00 00 00 00 00 00 00 4e 5f f8 00 52 5f f8 00 00 00 ef 00 00 00",
+    "sig32": "0500000000000000000000000a0000004246f800acacfcfc1f050c0064656661",
+    "sig8": "05 00 00 00 00 00 00 00",
+    "stats": {
+      "zeros": 2398,
+      "ascii": 326,
+      "other": 3718,
+      "len": 6442
+    },
+    "strings": [
+      "@+28:default_set",
+      "@+103:hinterland_region",
+      "@+419:core_building",
+      "@+731:governmentD",
+      "@+1041:military_industrial_complex",
+      "@+1367:irrigated_farming",
+      "@+1397:7LB1",
+      "@+1683:market"
+    ],
+    "before": {
+      "name": "tile-grid-matrix",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 17794490,
+    "end": 17800733,
+    "bytes": 6243,
+    "headHex": "61 00 75 00 6c 00 6f 00 6e 00 5f 00 54 00 61 00 70 00 68 00 61 00 69 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 09 02 00 00 90 00 00 00 d0 01 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 61 43 01 00 00 00 00 00 00 00 00 00 00 00 0f 9e 0f 01 13 9e 0f 01 00 00 ef 00 00 00",
+    "sig32": "610075006c006f006e005f005400610070006800610069000000000000fcfcfc",
+    "sig8": "61 00 75 00 6c 00 6f 00",
+    "stats": {
+      "zeros": 2611,
+      "ascii": 242,
+      "other": 3390,
+      "len": 6243
+    },
+    "strings": [
+      "@+140:default_set",
+      "@+215:hinterland_region",
+      "@+531:core_building",
+      "@+843:military_industrial_complex",
+      "@+1169:irrigated_farming",
+      "@+1485:market",
+      "@+1790:dyes_production",
+      "@+2104:horse_trainer"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 19852374,
+    "end": 19858616,
+    "bytes": 6242,
+    "headHex": "65 00 74 00 61 00 69 00 6b 00 65 00 5f 00 4b 00 6f 00 6d 00 65 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 08 02 44 00 00 00 40 00 c0 01 10 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 66 43 01 00 00 00 00 00 00 00 00 00 00 00 aa 04 2f 01 ae 04 2f 01 00 00 ef 00 00 00",
+    "sig32": "65007400610069006b0065005f004b006f006d0065000000000000fcfcfcfc64",
+    "sig8": "65 00 74 00 61 00 69 00",
+    "stats": {
+      "zeros": 2595,
+      "ascii": 276,
+      "other": 3371,
+      "len": 6242
+    },
+    "strings": [
+      "@+138:default_set",
+      "@+213:hinterland_region",
+      "@+529:core_building",
+      "@+841:military_industrial_complex",
+      "@+1167:irrigated_farming",
+      "@+1483:market",
+      "@+1788:port_buildings",
+      "@+2101:silk_trader"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 19245557,
+    "end": 19251796,
+    "bytes": 6239,
+    "headHex": "6f 00 61 00 64 00 5f 00 74 00 6f 00 5f 00 50 00 61 00 6c 00 69 00 62 00 6f 00 74 00 68 00 72 00 61 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 00 02 01 00 80 00 00 00 c0 01 08 00 00 00 00 00",
+    "tailHex": "00 00 00 00 07 43 01 00 00 00 00 00 00 00 00 00 00 00 46 c2 25 01 4a c2 25 01 00 00 ef 00 00 00",
+    "sig32": "6f00610064005f0074006f005f00500061006c00690062006f00740068007200",
+    "sig8": "6f 00 61 00 64 00 5f 00",
+    "stats": {
+      "zeros": 2520,
+      "ascii": 250,
+      "other": 3469,
+      "len": 6239
+    },
+    "strings": [
+      "@+150:default_set",
+      "@+225:hinterland_region",
+      "@+541:core_building",
+      "@+853:military_industrial_complex",
+      "@+1179:shifting_cultivation",
+      "@+1498:market",
+      "@+1803:spices_trading",
+      "@+2116:hunters"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 16753789,
+    "end": 16760023,
+    "bytes": 6234,
+    "headHex": "6e 00 6f 00 6e 00 5f 00 54 00 65 00 69 00 63 00 68 00 6f 00 73 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 00 02 02 00 10 00 00 00 c0 01 04 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 50 43 01 00 00 00 00 00 00 00 00 00 00 00 c9 bc ff 00 cd bc ff 00 00 00 ef 00 00 00",
+    "sig32": "6e006f006e005f00540065006900630068006f0073000000000000fcfcfcfc64",
+    "sig8": "6e 00 6f 00 6e 00 5f 00",
+    "stats": {
+      "zeros": 2512,
+      "ascii": 244,
+      "other": 3478,
+      "len": 6234
+    },
+    "strings": [
+      "@+138:default_set",
+      "@+213:hinterland_region",
+      "@+529:core_building",
+      "@+841:military_industrial_complex",
+      "@+1167:irrigated_farming",
+      "@+1483:market",
+      "@+1788:port_buildings",
+      "@+2101:glass_production"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  },
+  {
+    "start": 19653190,
+    "end": 19659419,
+    "bytes": 6229,
+    "headHex": "75 00 6d 00 00 00 00 00 00 fc fc fc fc 64 00 00 00 00 00 02 02 10 20 00 00 40 c0 01 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00",
+    "tailHex": "00 00 00 00 7f 43 01 00 00 00 00 00 00 00 00 00 00 00 8d fa 2b 01 91 fa 2b 01 00 00 ef 00 00 00",
+    "sig32": "75006d000000000000fcfcfcfc64000000000002021020000040c00104000000",
+    "sig8": "75 00 6d 00 00 00 00 00",
+    "stats": {
+      "zeros": 2586,
+      "ascii": 257,
+      "other": 3386,
+      "len": 6229
+    },
+    "strings": [
+      "@+120:default_set",
+      "@+136:l,5C",
+      "@+195:hinterland_region",
+      "@+511:core_building",
+      "@+823:military_industrial_complex",
+      "@+1149:irrigated_farming",
+      "@+1465:market",
+      "@+1770:port_buildings"
+    ],
+    "before": {
+      "name": "settle",
+      "gap": 0
+    },
+    "after": {
+      "name": "settle",
+      "gap": 0
+    }
+  }
+]
