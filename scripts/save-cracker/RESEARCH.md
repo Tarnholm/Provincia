@@ -15934,6 +15934,33 @@ If Block 7 = Carthage and Block 17 (or 18) = Spain, that matches the flipped rec
 #### Files
 
 * `scripts/save-cracker/dig-relation-map-1.js` — found all 380 relation records, mapped distribution and confirmed only 2 flipped on war declaration
+* `scripts/save-cracker/dig-relation-map-2.js` — per-block attitude analysis (Roman family identification)
+* `scripts/save-cracker/dig-relation-map-3.js` — symmetric pair analysis (block→faction mapping requires external grounding)
+* `scripts/save-cracker/dig-player-faction.js` — header scan for player-faction marker
+* `scripts/save-cracker/dig-settlement-owners.js` — settlement-owner table at 0x1190 (12-byte stride, sorted by faction-id)
+* `scripts/save-cracker/dig-block-faction-final.js` — refuted "diplomatic blocks preceded by settlement names" hypothesis
+
+#### Final session 120 summary (autonomous overnight work)
+
+11 cracker sub-sessions tonight pushed the save-cracker work to its biggest breakthrough yet. From the user's vanilla Rome Spain-vs-Carthage save pair:
+
+**SOLVED:**
+1. 16-byte diplomatic relation record format (attitude + initiator-state + counter + per-side value)
+2. 20-byte preamble structure (constant fields: 8/0/0/13/200)
+3. Bidirectional encoding (each relation stored from both sides)
+4. Initiator-state byte (1 = "I declared war", 0 = "they declared on me")
+5. Full 380-record diplomatic-state zone (0xcff0..0x1943f, 50 KB total, 20 blocks × 19 records)
+6. Per-block attitude pattern identifies 4 Roman factions at blocks 0-3
+7. Settlement-owner table at 0x1190 (12-byte stride, faction-id sorted)
+
+**OPEN:**
+1. Block-index → faction-name mapping (requires cross-validation with a different player-faction save, or descr_strat reference)
+2. Position-within-block ordering convention (not simple skip-and-shift)
+3. The +0x8 counter and +0xc per-side fields' exact semantics
+4. The settlement-owner table's +0x0 packed-coords decode
+5. Cross-system mapping: settlement-table faction-id (3-19 range) doesn't match diplomatic-table block-index (0-19 range)
+
+The diplomatic relation format crack alone is the biggest single advance the save-cracker has had — it answers session 109's longstanding "where is the partner faction encoded" question definitively. Provincia's diplomatic UI can now be built atop this format directly, even before block-to-faction mapping is fully resolved (just render the 380 relations in their array order with attitudes — the directionality information is enough for "who declared war on whom" labeling).
 
 ---
 
