@@ -1,0 +1,83 @@
+// Map each default_set in T1 Alex save to the preceding settlement name
+
+const fs = require('fs');
+const path = require('path');
+
+const BASE = 'C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Alexander\\saves\\';
+const T1 = fs.readFileSync(path.join(BASE, 'save_17-05-2026   Macedon   Turn 1.sav'));
+
+function readPstr16Utf16(buf, off) {
+  if (off + 2 > buf.length) return null;
+  const len = buf.readUInt16LE(off);
+  if (len < 1 || len > 50) return null;
+  if (off + 2 + len * 2 > buf.length) return null;
+  const chars = [];
+  for (let i = 0; i < len; i++) {
+    const c = buf.readUInt16LE(off + 2 + i * 2);
+    if (c < 0x20 || c > 0x024F) return null;
+    chars.push(String.fromCharCode(c));
+  }
+  return { str: chars.join(''), totalLen: 2 + len * 2 };
+}
+
+function readPstr16Asciiz(buf, off) {
+  if (off + 2 > buf.length) return null;
+  const lenP1 = buf.readUInt16LE(off);
+  if (lenP1 < 2 || lenP1 > 100) return null;
+  if (off + 2 + lenP1 > buf.length) return null;
+  for (let j = 0; j < lenP1 - 1; j++) {
+    const c = buf[off + 2 + j];
+    if (c < 0x20 || c > 0x7e) return null;
+  }
+  if (buf[off + 2 + lenP1 - 1] !== 0) return null;
+  return { str: buf.slice(off + 2, off + 2 + lenP1 - 1).toString('latin1'), totalLen: 2 + lenP1 };
+}
+
+function findPstr16Asciiz(buf, str) {
+  const len = str.length + 1;
+  const prefix = Buffer.alloc(2);
+  prefix.writeUInt16LE(len, 0);
+  const target = Buffer.concat([prefix, Buffer.from(str + '\0')]);
+  const hits = [];
+  let p = 0;
+  while ((p = buf.indexOf(target, p)) !== -1) {
+    hits.push(p);
+    p++;
+  }
+  return hits;
+}
+
+const defSets = findPstr16Asciiz(T1, 'default_set');
+console.log('Total default_set markers in T1: ' + defSets.length);
+console.log('\n=== Settlement name → buildings list (first 5) ===');
+for (let idx = 0; idx < Math.min(5, defSets.length); idx++) {
+  const ds = defSets[idx];
+  // Look back for name pstr16
+  let nameOff = -1, name = null;
+  for (let gap = 18; gap <= 25; gap++) {
+    for (let step = -50; step <= 0; step++) {
+      const c = ds - gap + step;
+      if (c < 0) continue;
+      const r = readPstr16Utf16(T1, c);
+      if (r && r.totalLen === ds - c - gap) {
+        nameOff = c;
+        name = r.str;
+        break;
+      }
+    }
+    if (name) break;
+  }
+  console.log('\nSettlement ' + idx + ' default_set @ 0x' + ds.toString(16) + ', name: "' + name + '" @ 0x' + (nameOff || 0).toString(16));
+
+  // Walk buildings
+  let p = ds + 14 + 61;
+  for (let i = 0; i < 15; i++) {
+    const r = readPstr16Asciiz(T1, p);
+    if (!r) break;
+    if (!/^[a-z_][a-z_0-9]*$/.test(r.str)) break;
+    if (r.str === 'default_set') break;
+    const tier = T1[p + r.totalLen + 4];
+    console.log('  ' + r.str.padEnd(25) + ' byte+4=' + tier);
+    p += r.totalLen + 78;
+  }
+}
