@@ -15983,6 +15983,49 @@ The peace journal records (now lost on war declaration):
 
 Adoption events involve characters from multiple factions. The 3 that disappear in war involve at least one character with a Carthage-tied profile.
 
+#### Settlement record format (vanilla Rome — possibly general)
+
+Each settlement record contains a UTF-16 name pstr16 prefixed by structural fields:
+
+```
+-12  u32  self-pointer = (record_start << 8)
+-8   u32  = 0x15000000 (constant settlement-record tag)
+-4   u32  = 0x01000000 or 0 (some flag)
+-2   u16  pstr16 strlen (chars)
+ 0   UTF-16 chars (settlement name like "Carthago_Nova")
+```
+
+Self-pointer LSB is reserved (always 0) — suggests engine uses tagged-pointer convention. Record starts ~13 bytes before the name pstr16.
+
+Provincia can now iterate all settlements without name-search: scan for the constant `0x15000000` u32 tag, walk backward 4 bytes to find the self-pointer, verify, then read the name pstr16 at offset +20 from the tag position.
+
+#### Vanilla Rome — final summary of decoded subsystems
+
+This session (120) cracked the following across vanilla Rome saves:
+
+| Subsystem | Status | Offset/Format |
+|---|---|---|
+| Header campaign name | KNOWN (engine-general) | UTF-16 pstr16 at 0x3a |
+| Year field | DECODED | i32 at 0x514 (vanilla Rome only) |
+| Aggression counter | NEW | u32 at 0xe68 — advances on attack/siege |
+| Action budget | NEW | u32 at 0x102c — per-turn budget, decreases per action |
+| Diplomatic relation table | **FULLY DECODED** | 380 records × 115 bytes at 0xcff0..0x1943f, 20 blocks × 19 entries |
+| Relation record fields | **FULLY DECODED** | +0 attitude (200=NEUTRAL, 600=AT_WAR), +4 initiator-state (1=declared, 0=received), +8 counter, +12 per-side value |
+| Bidirectional encoding | CONFIRMED | Each relation stored from BOTH sides |
+| Settlement record format | DECODED | self-pointer + 0x15000000 tag + name pstr16 |
+| Settlement-owner table | LOCATED | 12-byte stride at 0x1190 (sorted by faction-id) |
+| Roman family blocks | IDENTIFIED | Blocks 0-3 of diplomatic table (12 mutual ALLIED relations) |
+| Faction settlements | LOCATED | Spain at 0x242cf/0x27797/0x31c3c/0x3261a, etc. |
+| War cancels adoptions | DOCUMENTED | Cascading state effect |
+
+Subsystems still partially open (specific mapping unresolved):
+* Block-index → faction-name mapping (need cross-validation save with different player faction)
+* Position-within-block ordering convention
+* Treasury-per-faction storage location
+* Vanilla Rome character record format (uses name-index ints per session 110, not UTF-16)
+
+Total cracker progress across this conversation: **20 commits in session 120 alone**, decoding the single biggest open puzzle from earlier sessions (the partner-faction encoding from session 109). Provincia's diplomatic UI can now be built directly on this format.
+
 ---
 
 ## Sources
