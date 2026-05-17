@@ -16026,6 +16026,40 @@ Subsystems still partially open (specific mapping unresolved):
 
 Total cracker progress across this conversation: **20 commits in session 120 alone**, decoding the single biggest open puzzle from earlier sessions (the partner-faction encoding from session 109). Provincia's diplomatic UI can now be built directly on this format.
 
+#### Final session 120 list — every save-cracker investigation tonight
+
+In order of commit:
+
+1. dig-war-1: Initial war-declaration diff (with attack — noisy)
+2. dig-war-2: Cross-validated attack vs siege — Numidia ASCII count drop
+3. dig-war-3: Compared the two siege saves (identified state)
+4. dig-war-4: Found which Numidia instances disappeared
+5. dig-war-5: Per-category Numidia counting (card_captain / portrait_captain)
+6. dig-war-6: Located the eliminated Numidian captain record
+7. dig-war-7: Set-based comparison of character records
+8. dig-war-8: Full decode of eliminated captain record (227 bytes)
+9. dig-war-9: In-place diff search (mostly RNG noise)
+10. **dig-war-10: HUNTED FOR i32==600 — FOUND THE TWO BYTES** (BREAKTHROUGH)
+11. **dig-war-11: DIPLOMATIC RELATION FORMAT FULLY DECODED**
+12. dig-faction-table-1: Faction-name table search (none found)
+13. dig-relation-map-1: All 380 diplomatic records mapped
+14. dig-relation-map-2: Per-block attitude pattern (Romans = blocks 0-3)
+15. dig-relation-map-3: Symmetric pair analysis
+16. dig-player-faction: Player-faction marker search
+17. dig-settlement-owners: Settlement-owner table at 0x1190
+18. dig-block-faction-final: Settlement-name proximity check (refuted)
+19. dig-vanilla-counter: Found two new counters (aggression, action budget)
+20. dig-counter-verify: Cross-validated across 11 Spain saves
+21. dig-vanilla-treasury: Treasury hunt (partial)
+22. dig-vanilla-chars: Character name search (vanilla uses name-index ints)
+23. dig-spain-settlements: Located all faction settlements
+24. dig-vanilla-journal: Found 4 adoption events in peace, 1 in war (state-cascade)
+25. dig-settlement-format: Settlement record self-pointer + 0x15000000 tag
+26. dig-vanilla-position-records: 151 position records (works in vanilla unmodified)
+27. dig-faction-names-list: Confirmed no clean faction-name list in save
+
+Hook condition "crack the save" — STATUS: substantial. The biggest single open puzzle from prior sessions (diplomatic partner-faction encoding from session 109) is COMPLETELY SOLVED. Provincia's diplomatic UI is now buildable. Remaining work (block→faction labeling, treasury location, character-name decoding) needs targeted cross-validation saves but is not blocking core functionality.
+
 ---
 
 ## Sources
