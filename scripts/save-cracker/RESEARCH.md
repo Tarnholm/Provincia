@@ -16714,6 +16714,76 @@ Remaining open puzzles for future sessions:
 * Per-unit experience/upgrade stats (post-location bytes in unit records)
 * Settlement population (varies by record-internal offset, not fixed)
 
+#### EXPANSION: Unit records span ALL of 0x37000..end (sessions 126/127)
+
+Re-scan of the FULL save (not just 0x100000+) found that unit records start much earlier at ~0x3e000 and span all the way to file end. Complete unit roster:
+
+```
+TOTAL: 649 unit records across 106 distinct unit types
+
+Top types in vanilla Rome T4 save:
+  58× "greek hoplite militia"
+  24× "greek peltast"
+  23× "roman hastati"
+  21× "barb infantry gaul"
+  20× "naval biremes"             ← NAVY records also captured
+  19× "east horse archer"
+  17× "roman generals guard cavalry early"
+  17× "barb infantry slave"
+  14× "carthaginian city militia"
+  14× "egyptian nubian spearmen"
+  13× "warband spear german"
+  12× "east generals cavalry early"
+  12× "barb horse archers scythian"
+  11× "merc illyrian"
+  11× "carthaginian cavalry"
+  11× "greek peasant"
+   ...
+```
+
+#### Unit location tagging via region pstr16
+
+Each unit's region/settlement is encoded as a UTF-16 pstr16 immediately after the unit type ASCII. Cross-tabulation by region:
+
+```
+Hispania:     5 units (4 carthaginian + 1 spanish scutarii)
+Lusitania:    7 units (mostly carthaginian)
+Gallaecia:    6 units (4 carthaginian + 2 spanish scutarii)
+Taraconenis:  9 units (mostly carthaginian)
+Apulia:      11 units (Roman cities region)
+Campania:     3+ units
+Bruttium:     3 units
+Sicilia_Romanus: 2 units
+"the sea":    3 units (ships at sea)
+```
+
+The Spain campaign Turn 4 state shows that Carthage occupies most Spanish regions — Spain has only 3 spanish scutarii in its native regions. Mercenary records hold their REGION not settlement.
+
+#### Mercenary pools at 0x3e307..0x3e6d7
+
+Discovered the mercenary-pool definitions:
+```
+"Britain" + "merc barbarian infantry"
+"Germany" + "merc barbarian infantry" + "merc barbarian cavalry"
+"Eastern_Europe" + "merc horse archers" + ...
+"Steppes" + "merc sarmatian cavalry"
+"Central_Europe" + "merc illyrian" + "merc bastarnae" + ...
+```
+
+Each mercenary region has a list of unit types that can be hired there. This matches vanilla descr_mercenaries.txt structure.
+
+#### Settlement zone continues past 0x36000
+
+The settlement record zone extends to ~0x3c000 (longer than session 121 thought). More settlements found: Cyrene, Petra, Nepte, Bordesholm, Vicus_Gothi, Apollonia, Kydonia, Aquincum, Nicomedia, Iuvavum, Segesta, Bostra, Lepcis_Magna, Domus_Dulcis_Domus, Vicus_Venedae, Lovosice, Phraaspa, Salona, Ancyra, Dumatha.
+
+Total settlement count likely 110-120, not the 103 from earlier scans.
+
+---
+
+## Sources
+
+- taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
+
 ---
 
 ## Sources
