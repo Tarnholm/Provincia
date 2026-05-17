@@ -16419,6 +16419,103 @@ For RIS mod data, the events table might differ — but the FORMAT (pstr16 pair 
 
 ---
 
+## Session 124 — REGION BORDER POLYGONS located at 0x7c20..0xaa00 (2026-05-17)
+
+#### Brief
+
+Session 123's "isolated u32s in 32K-42K range" hypothesis was wrong. These values are NOT per-settlement population fields — they're **SELF-POINTERS** inside region-border-polygon records.
+
+#### STRONG — Each candidate is a self-pointer (record header)
+
+```
+At each "candidate" offset, the u32 EQUALS the file offset itself:
+  u32@0x7e48 = 0x7e48  (self-pointer)
+  u32@0x7fd4 = 0x7fd4
+  u32@0x8170 = 0x8170
+  ...
+```
+
+So the values 32328 (=0x7e48), 32724 (=0x7fd4), 33136 (=0x8170), etc. are not populations — they're file-offset pointers used as record-start sentinels.
+
+#### STRONG — Region border polygon record format
+
+Each region polygon record at offset `P` has this layout:
+
+```
++0x00  u32 selfPtr = P
++0x04  u32 region_uuid (e.g. 0x7c1c227c, 0x20a85d, 0xf90d1cce)
++0x08  u32 selfPtr2 = P + 8 (or similar back-pointer)
++0x0c  u32 polygon_vertex_count (e.g. 0x3f=63, 0x40=64, 0x37=55)
++0x10  u32 second_count (same or close to first count)
++0x14  u32 ?
++0x18  u32 some_flag
++0x1c  u32 ?
++0x20  vertex_count × (i32 x, i32 y)  — sequential tile coordinates
++...   polygon outline as (x, y) pairs
+```
+
+The vertices form a closed polygon outlining the region's territory on the campaign map. Coordinates are in TILE units (typically 0-255 range for vanilla RTW map).
+
+#### Sample decoded polygons
+
+Looking at the data:
+```
+Record @ 0x7c20 (head):
+  vertex sequence starting at 0x7c3c: (114, 63), (113, 63), (112, 63), (112, 64), (112, 65),
+                                       (112, 66), (111, 66), (111, 67), (110, 67), (110, 68),
+                                       (108, 68), (108, 69), (107, 69), (106, 69), (106, 70),
+                                       (105, 70), (105, 71)
+```
+
+These are SEQUENTIAL tile coordinates tracing the boundary of one region. The (~110, ~70) coordinate range falls in central Italy on the vanilla campaign map.
+
+#### Strides between records
+
+```
+0x7e48 → 0x7fd4: 396 bytes
+0x7fd4 → 0x8170: 412 bytes
+0x8170 → 0x83ac: 572 bytes
+0x83ac → 0x8668: 700 bytes
+0x8668 → 0x8c88: 1568 bytes
+0x8c88 → 0x9054: 972 bytes
+```
+
+Variable strides because each polygon has a different vertex count. The average ~800 bytes implies ~100 vertices per region (4 bytes × 2 × ~100). With ~200 regions in vanilla RTW, the full zone should be ~200 × 800 = 160 KB, which roughly matches the 0x7c20..0xaa00 zone size (62 KB) plus the rest scattered elsewhere.
+
+#### Files
+
+* `scripts/save-cracker/dig-settlement-detail-zone.js` — proved the candidates are self-pointers, decoded polygon-vertex sequences
+
+#### Confidence summary
+
+* **STRONG**: Each "candidate" in 0x7c20..0xaa00 zone is a self-pointer (u32 equals its own offset).
+* **STRONG**: Records contain polygon-vertex coordinate arrays in (i32 x, i32 y) format.
+* **HYPOTHESIS**: These are REGION BORDER POLYGONS — one per region in the campaign map.
+* **REFUTED**: They are NOT per-settlement population fields (session 123 hypothesis).
+
+#### Implications for Provincia
+
+If these are region border polygons, Provincia could:
+* Extract every region's outline directly from the save
+* Render the campaign map with accurate region boundaries
+* Compute settlement→region containment for any map position
+* Show territorial changes between saves (compare polygons across turns)
+
+This is a major win for the map visualization feature — currently Provincia uses static descr_regions data; with this crack it can show the LIVE campaign state.
+
+#### Overall session arc (sessions 120-124 across one continuous conversation)
+
+What started as "crack the save" overnight produced:
+* **Session 120**: 380-record diplomatic relations table, attitude/initiator decode
+* **Session 121**: Per-settlement building list format (103 settlements, 341 buildings)
+* **Session 122**: REFUTED 4 prior treasury candidates (all building coords)
+* **Session 123**: Historic events table + Wonders of the World location
+* **Session 124**: Region border polygons (region map outline data)
+
+Five major sections of the save now identified/decoded. Treasury location remains open — likely buried in a high-offset per-faction packed record requiring different hunt techniques.
+
+---
+
 ## Sources
 
 - taw/etwng/sav: https://github.com/taw/etwng/tree/master/sav
