@@ -1558,6 +1558,8 @@ function App() {
   // 0.9.376 backend extras — every save-cracker finding now exposed for any UI feature
   const [saveHeader, setSaveHeader] = useState(null);
   const [factionDiscovered, setFactionDiscovered] = useState(null);
+  const [factionDiplomacy, setFactionDiplomacy] = useState(null);
+  const [factionTreasuries, setFactionTreasuries] = useState(null);
   const [factionConfig, setFactionConfig] = useState(null);
   const [modInfo, setModInfo] = useState(null);
   const [characterExtras, setCharacterExtras] = useState(null);
@@ -3406,6 +3408,8 @@ function App() {
       if (data && data.treasuryByFaction) setSaveTreasuryRecords(data.treasuryByFaction);
       if (data && data.saveHeader) setSaveHeader(data.saveHeader);
       if (data && data.factionDiscovered) setFactionDiscovered(data.factionDiscovered);
+      if (data && data.factionDiplomacy) setFactionDiplomacy(data.factionDiplomacy);
+      if (data && data.factionTreasuries) setFactionTreasuries(data.factionTreasuries);
       if (data && data.factionConfig) setFactionConfig(data.factionConfig);
       if (data && data.modInfo) setModInfo(data.modInfo);
       if (data && data.characterExtras) setCharacterExtras(data.characterExtras);

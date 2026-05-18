@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.404",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Wired `factionDiplomacy` and `factionTreasuries` from `saveCrackerExtras.js` into App.js state so future panels can consume them. factionDiplomacy gives per-faction relation lists (uuid + class + attitude + tag); factionTreasuries gives full-shape records with offset/regionCount/regionIds. Both extracted on every save load." },
+    ],
+  },
+  {
     version: "0.9.403",
     date: "2026-05-18",
     items: [
