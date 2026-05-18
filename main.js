@@ -159,6 +159,7 @@ const {
   parseCharacterExtras: cxParseCharacterExtras,
   attachMapCoords: cxAttachMapCoords,
   resolvePortraitsByCharacter: cxResolvePortraits,
+  parseFactionTreasuries: cxParseTreasuries,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
 } = require("./src/saveCrackerExtras.js");
@@ -4785,6 +4786,13 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     }
   } catch (err) { console.warn("[portraits] resolve failed:", err && err.message); }
   try { religionByCity = cxParseReligion(data, settlements); } catch (err) { console.warn("[religion] parse failed:", err && err.message); }
+  // Crack: parse major-faction records to get per-faction treasury + region count.
+  // Works on vanilla imperial saves (Macedon T0 yields 23 records, player at idx 0).
+  let factionTreasuries = null;
+  try {
+    factionTreasuries = cxParseTreasuries(data);
+    if (factionTreasuries) console.log(`[treasuries] parsed ${factionTreasuries.length} major-faction records`);
+  } catch (err) { console.warn("[treasuries] parse failed:", err && err.message); }
   try {
     if (characterExtras) {
       // v1Chars come from the existing character parser path — wire whatever is
@@ -4805,6 +4813,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     modInfo,
     characterExtras,
     religionByCity,
+    factionTreasuries,
     familyTreeMaps: familyTreeMaps ? {
       byUuid: Array.from(familyTreeMaps.byUuid.entries()),
       spouseOf: Array.from(familyTreeMaps.spouseOf.entries()),

@@ -220,6 +220,56 @@ function parseCharacterExtras(buf) {
   return out;
 }
 
+// Parse all "major faction" records — one per playable faction. Each record
+// holds the faction's current treasury, start-of-turn treasury (so net
+// = income earned this turn so far), regionCount, and region IDs.
+//
+// Confirmed structure from session 5 (cracker memory `dig-faction-treasury-final.js`):
+//   +0   i32  current treasury (denarii)
+//   +8   u32 = 100   (MAJOR-CLASS tag — distinguishes from rebels/NPCs)
+//   +12  u32 = 1     (version)
+//   +24  self_ptr   = record_pos + 24
+//   +40  self_ptr   = record_pos + 40
+//   +44  u32 = 6     (next sub-section size)
+//   +48  u32         regionCount
+//   +52..+(52+4N)    region IDs (u32 each)
+//   +(92 + 4N)       i32 start-of-turn treasury snapshot
+//
+// Validates on Macedon T0 (vanilla imperial, 34 MB save): 23 records found,
+// player at index 0, treasuries in 5000–20000 range. Spain T1 classic save
+// doesn't have these records — classic campaign uses a different format.
+function parseFactionTreasuries(buf) {
+  const out = [];
+  for (let i = 0; i + 96 < buf.length; i += 1) {
+    if (buf.readUInt32LE(i + 8) !== 100) continue;
+    if (buf.readUInt32LE(i + 12) !== 1) continue;
+    if (buf.readUInt32LE(i + 16) !== 0 || buf.readUInt32LE(i + 20) !== 0) continue;
+    if (buf.readUInt32LE(i + 24) !== i + 24) continue;
+    if (buf.readUInt32LE(i + 32) !== 0 || buf.readUInt32LE(i + 36) !== 0) continue;
+    if (buf.readUInt32LE(i + 40) !== i + 40) continue;
+    if (buf.readUInt32LE(i + 44) !== 6) continue;
+    const regions = buf.readUInt32LE(i + 48);
+    if (regions > 200) continue;
+    if (i + 92 + 4 * regions + 4 > buf.length) continue;
+    const treasury = buf.readInt32LE(i);
+    const turnStart = buf.readInt32LE(i + 92 + 4 * regions);
+    const regionIds = [];
+    for (let r = 0; r < regions; r += 1) regionIds.push(buf.readUInt32LE(i + 52 + r * 4));
+    out.push({
+      offset: i,
+      treasury,
+      turnStartTreasury: turnStart,
+      // `net` = income earned so far this turn (treasury - turnStart). For
+      // a turn-start save (T1, T2 etc.) net is typically 0; mid-turn saves
+      // show partial income.
+      netThisTurn: treasury - turnStart,
+      regionCount: regions,
+      regionIds,
+    });
+  }
+  return out;
+}
+
 // Read the +288 / +292 map coordinates from each character's extended
 // record. Useful for bridging save data ↔ descr_strat data (descr_strat
 // character lines have explicit x,y; the extended record stores the same
@@ -472,6 +522,7 @@ module.exports = {
   parseCharacterExtras,
   attachMapCoords,
   resolvePortraitsByCharacter,
+  parseFactionTreasuries,
   buildFamilyTreeMaps,
   parseSoldierArray,
   parseUnitStatSlots,

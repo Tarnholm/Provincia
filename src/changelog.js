@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.399",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Factored the major-faction treasury parser out of `main.js` into `saveCrackerExtras.js` as a reusable `parseFactionTreasuries(buf)` function. Returns an array of `{offset, treasury, turnStartTreasury, netThisTurn, regionCount, regionIds}` per record. Also exposed as `factionTreasuries` in the IPC return so future panels can consume it without duplicating the byte logic. The existing Wealth-widget treasury display continues to work via `treasuryByFaction` for backward compatibility." },
+    ],
+  },
+  {
     version: "0.9.398",
     date: "2026-05-18",
     items: [
