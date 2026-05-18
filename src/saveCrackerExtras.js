@@ -220,6 +220,23 @@ function parseCharacterExtras(buf) {
   return out;
 }
 
+// Read the +288 / +292 map coordinates from each character's extended
+// record. Useful for bridging save data ↔ descr_strat data (descr_strat
+// character lines have explicit x,y; the extended record stores the same
+// values). Resolves 134/143 chars on Macedon T0 vanilla save.
+function attachMapCoords(buf, characters) {
+  for (const c of characters) {
+    if (!c.ownUuid) continue;
+    const ownBytes = Buffer.alloc(4);
+    ownBytes.writeUInt32LE(c.ownUuid);
+    const ref = buf.indexOf(ownBytes, 0x1500000);
+    if (ref < 0 || ref >= c.offset) continue;
+    if (ref + 296 > buf.length) continue;
+    c.extX = buf.readUInt32LE(ref + 288);
+    c.extY = buf.readUInt32LE(ref + 292);
+  }
+}
+
 // Crack 2026-05-18: each character's portrait is identified by a u32
 // portrait UUID stored at offset +280 of the character's 354-byte extended
 // record (located by the first back-ref of own_uuid in the portrait pool
@@ -427,6 +444,7 @@ module.exports = {
   parseFactionConfigRecords,
   parseModInfo,
   parseCharacterExtras,
+  attachMapCoords,
   resolvePortraitsByCharacter,
   buildFamilyTreeMaps,
   parseSoldierArray,

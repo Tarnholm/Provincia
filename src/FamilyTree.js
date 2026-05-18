@@ -37,23 +37,32 @@ function categoryFor(char) {
 // Portrait. `shape="rect"` renders a tall rectangle (in-game card style);
 // `shape="circle"` is the small sidebar thumbnail. `size` controls the
 // width; height is derived (size for circle, size*1.25 for rect).
-function Portrait({ char, culture, modDataDir, size = 56, shape = "rect" }) {
+function Portrait({ char, culture, modDataDir, size = 56, shape = "rect", coordToPortrait }) {
   const slot = categoryFor(char);
   // Per-character context lets the IPC pick a unique portrait from the
   // young/old generals pool. Only used for the "general" slot — other
   // slots (wife/son/daughter) share a single static TGA.
-  const charContext = useMemo(
-    () => (slot === "general" && char.firstName)
-      ? {
-          name: char.firstName,
-          lastName: char.lastName || "",
-          faction: char.faction || "",
-          age: char.age != null ? Number(char.age) : null,
-          portraitIndex: char.portraitIndex != null ? Number(char.portraitIndex) : null,
-        }
-      : null,
-    [slot, char.firstName, char.lastName, char.faction, char.age, char.portraitIndex]
-  );
+  //
+  // If a save is loaded and the char's (x,y) matches a save record's
+  // (extX, extY), `savePath` is set — the IPC's fast-path loads that
+  // file directly, bypassing the hash. This gives the EXACT in-game
+  // portrait (engine-assigned + stored in the save).
+  const charContext = useMemo(() => {
+    if (slot !== "general" || !char.firstName) return null;
+    const ctx = {
+      name: char.firstName,
+      lastName: char.lastName || "",
+      faction: char.faction || "",
+      age: char.age != null ? Number(char.age) : null,
+      portraitIndex: char.portraitIndex != null ? Number(char.portraitIndex) : null,
+    };
+    if (coordToPortrait && char.x != null && char.y != null) {
+      const k = `${char.x},${char.y}`;
+      const hit = coordToPortrait.get(k);
+      if (hit && hit.cards) ctx.savePath = hit.cards;
+    }
+    return ctx;
+  }, [slot, char.firstName, char.lastName, char.faction, char.age, char.portraitIndex, char.x, char.y, coordToPortrait]);
   const [url, setUrl] = useState(() => getCachedPortrait(culture, slot, charContext));
 
   useEffect(() => {
@@ -145,7 +154,7 @@ function tooltipFor(char) {
   return lines.join("\n");
 }
 
-function MemberCard({ char, culture, modDataDir, portraitSize = 64, compact = false }) {
+function MemberCard({ char, culture, modDataDir, portraitSize = 64, compact = false, coordToPortrait }) {
   const dead = char.alive === false || char.isDead;
   const isLeader = char.tags && char.tags.includes("leader");
   const fullName = displayFirstName(char.firstName) +
@@ -165,7 +174,7 @@ function MemberCard({ char, culture, modDataDir, portraitSize = 64, compact = fa
       textAlign: "center",
       cursor: "default",
     }}>
-      <Portrait char={char} culture={culture} modDataDir={modDataDir} size={portraitSize} />
+      <Portrait char={char} culture={culture} modDataDir={modDataDir} size={portraitSize} coordToPortrait={coordToPortrait} />
       <div style={{
         fontWeight: 700, marginTop: 3, lineHeight: 1.1,
         color: dead ? "#777" : (isLeader ? "#7a4a10" : "#221f1a"),
@@ -196,16 +205,16 @@ function MemberCard({ char, culture, modDataDir, portraitSize = 64, compact = fa
 // removes the brittle `calc(count * 130px)` math that drifted whenever
 // the cards weren't exactly 130 px wide.
 
-function FamilyNode({ family, allByHead, culture, modDataDir, depth = 0 }) {
+function FamilyNode({ family, allByHead, culture, modDataDir, depth = 0, coordToPortrait }) {
   const hasChildren = family.children && family.children.length > 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "12px 0" }}>
       <div style={{ display: "flex", alignItems: "center" }}>
-        <MemberCard char={family.husband} culture={culture} modDataDir={modDataDir} />
+        <MemberCard char={family.husband} culture={culture} modDataDir={modDataDir} coordToPortrait={coordToPortrait} />
         {family.wife && (
           <>
             <div style={{ color: "#8a6429", fontSize: 22, margin: "0 6px" }} title="Married">⚭</div>
-            <MemberCard char={family.wife} culture={culture} modDataDir={modDataDir} />
+            <MemberCard char={family.wife} culture={culture} modDataDir={modDataDir} coordToPortrait={coordToPortrait} />
           </>
         )}
       </div>
@@ -238,9 +247,9 @@ function FamilyNode({ family, allByHead, culture, modDataDir, depth = 0 }) {
                   {/* Short vertical stub connecting child to the horizontal line */}
                   <div style={{ width: 2, height: 12, background: "#8a6429" }} />
                   {subFamily ? (
-                    <FamilyNode family={subFamily} allByHead={allByHead} culture={culture} modDataDir={modDataDir} depth={depth + 1} />
+                    <FamilyNode family={subFamily} allByHead={allByHead} culture={culture} modDataDir={modDataDir} depth={depth + 1} coordToPortrait={coordToPortrait} />
                   ) : (
-                    <MemberCard char={c} culture={culture} modDataDir={modDataDir} portraitSize={48} compact />
+                    <MemberCard char={c} culture={culture} modDataDir={modDataDir} portraitSize={48} compact coordToPortrait={coordToPortrait} />
                   )}
                 </div>
               );
@@ -412,7 +421,7 @@ function ZoomPanViewport({ children, fitKey }) {
 
 // ── Sidebar list of male adult generals ─────────────────────────────────
 
-function GeneralsList({ generals, selectedName, onSelect, culture, modDataDir }) {
+function GeneralsList({ generals, selectedName, onSelect, culture, modDataDir, coordToPortrait }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {generals.map((g) => {
@@ -434,7 +443,7 @@ function GeneralsList({ generals, selectedName, onSelect, culture, modDataDir })
               textAlign: "left",
               transition: "background 0.12s",
             }}>
-            <Portrait char={g} culture={culture} modDataDir={modDataDir} size={32} shape="circle" />
+            <Portrait char={g} culture={culture} modDataDir={modDataDir} size={32} shape="circle" coordToPortrait={coordToPortrait} />
             <div style={{ flex: 1, lineHeight: 1.2 }}>
               <div style={{ fontWeight: 700, color: isSel ? "#3a2208" : "#221f1a" }}>
                 {g.tags && g.tags.includes("leader") && "👑 "}
@@ -455,6 +464,22 @@ function GeneralsList({ generals, selectedName, onSelect, culture, modDataDir })
 // ── Main component ─────────────────────────────────────────────────────
 
 export default function FamilyTree({ characterExtras, familyTreeMaps, modFamiliesByFaction, factionDisplayNames, factionCultures, modDataDir, defaultFaction, onClose }) {
+  // Coord→portrait-path lookup built from characterExtras when a save is
+  // loaded. Lets a descr_strat-derived tree member (which has x, y from
+  // its `character` line) match the save's resolved portrait path.
+  const coordToPortrait = useMemo(() => {
+    const m = new Map();
+    if (!characterExtras) return m;
+    for (const c of characterExtras) {
+      if (c.portraitCardsPath && c.extX != null && c.extY != null) {
+        m.set(`${c.extX},${c.extY}`, {
+          cards: c.portraitCardsPath,
+          fulls: c.portraitFullPath,
+        });
+      }
+    }
+    return m;
+  }, [characterExtras]);
   const [selectedFaction, setSelectedFaction] = useState(null);
   const [selectedGeneral, setSelectedGeneral] = useState(null);
 
@@ -581,13 +606,14 @@ export default function FamilyTree({ characterExtras, familyTreeMaps, modFamilie
               onSelect={setSelectedGeneral}
               culture={culture}
               modDataDir={modDataDir}
+              coordToPortrait={coordToPortrait}
             />
           </div>
           {/* Right: zoom/pan tree */}
           <div style={{ flex: 1, minWidth: 0, position: "relative", background: "rgba(58,42,8,0.05)" }}>
             {visibleRoot ? (
               <ZoomPanViewport fitKey={`${selectedFaction}|${selectedGeneral}`}>
-                <FamilyNode family={visibleRoot} allByHead={familyByHead} culture={culture} modDataDir={modDataDir} />
+                <FamilyNode family={visibleRoot} allByHead={familyByHead} culture={culture} modDataDir={modDataDir} coordToPortrait={coordToPortrait} />
               </ZoomPanViewport>
             ) : (
               <div style={{ padding: 20, color: "#3a2a08" }}>

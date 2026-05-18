@@ -157,6 +157,7 @@ const {
   parseFactionConfigRecords: cxParseFactionConfig,
   parseModInfo: cxParseModInfo,
   parseCharacterExtras: cxParseCharacterExtras,
+  attachMapCoords: cxAttachMapCoords,
   resolvePortraitsByCharacter: cxResolvePortraits,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
@@ -4754,7 +4755,13 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   try { if (header) factionDiscovered = cxParseBitmask(data, header); } catch (err) { console.warn("[bitmask] parse failed:", err && err.message); }
   try { if (header && factionDiscovered) factionConfig = cxParseFactionConfig(data, header, factionDiscovered); } catch (err) { console.warn("[faction-config] parse failed:", err && err.message); }
   try { modInfo = cxParseModInfo(data); } catch (err) { console.warn("[mod-info] parse failed:", err && err.message); }
-  try { characterExtras = cxParseCharacterExtras(data); } catch (err) { console.warn("[character-extras] parse failed:", err && err.message); }
+  try {
+    characterExtras = cxParseCharacterExtras(data);
+    // Attach +288 / +292 map coordinates from the extended record. Lets
+    // downstream code bridge save chars to descr_strat character lines by
+    // matching (x, y).
+    if (characterExtras) cxAttachMapCoords(data, characterExtras);
+  } catch (err) { console.warn("[character-extras] parse failed:", err && err.message); }
   // Crack 2026-05-18: each character's portrait is identified by a u32 at
   // +280 of the 354-byte extended record, matched against u32-prefixed
   // entries in the portrait pool. Resolves to the EXACT pstr16 portrait

@@ -22,8 +22,14 @@ const inflight = new Map(); // cacheKey -> Promise
 
 function makeKey(culture, slot, charContext) {
   const base = `${String(culture).toLowerCase()}|${slot}`;
-  if (slot === "general" && charContext && charContext.name) {
-    return `${base}|${charContext.name}|${charContext.age || ""}`;
+  if (slot === "general" && charContext) {
+    // savePath is the most-specific identifier when present (engine-assigned
+    // portrait from the loaded save); use it as the cache key so two
+    // same-named characters with different save portraits don't collide.
+    if (charContext.savePath) return `${base}|savepath:${charContext.savePath}`;
+    if (charContext.name) {
+      return `${base}|${charContext.name}|${charContext.lastName || ""}|${charContext.faction || ""}|${charContext.age || ""}`;
+    }
   }
   return base;
 }

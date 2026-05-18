@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.397",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "Family Tree now uses the EXACT in-game portrait per character when a save is loaded. Bridge: descr_strat character lines have x,y coords; the save's extended character record stores the same coords at +288/+292 alongside a portrait-path UUID at +280. FamilyTree builds a `coordToPortrait` lookup keyed by (x,y) and passes the resolved save path through Portrait → resolve-portrait IPC's fast-path, which loads the exact .tga.dds file. Falls back to the DJB2 hash for chars without a matching save record (most family members, captains, etc.)." },
+      { type: "improvement", text: "Portrait cache key now includes savePath / lastName / faction so two same-firstname characters with different save portraits don't collide." },
+    ],
+  },
+  {
     version: "0.9.396",
     date: "2026-05-18",
     items: [
