@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.398",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Portrait resolver now hits 143/143 (100%) characters via a seed-modulo fallback. For characters whose +280 doesn't match a stored portrait UUID (typically rebels and procedurally-generated chars with a small enumerated seed in +280 instead), the resolver computes `seed % pool_size_per_culture_age` and synthesizes the path. Pool sizes baked in for the six vanilla cultures (greek/eastern/egyptian/carthaginian/barbarian = 188; roman = 479). Marks these results `derived: true` so callers can tell them apart from save-stored paths." },
+    ],
+  },
+  {
     version: "0.9.397",
     date: "2026-05-18",
     items: [

@@ -282,11 +282,23 @@ function resolvePortraitsByCharacter(buf, characters) {
   }
 
   // For each character, locate their extended record and read +280, then
-  // look up portraitByUuid. If not found, skip.
+  // look up portraitByUuid. If the UUID lookup misses (some characters —
+  // typically rebels / procedurally-generated — have small enumerated
+  // seeds in +280 instead of a full portrait UUID), fall back to building
+  // a path from the seed via `seed % pool_size`.
   const byOwnUuid = new Map();
+  // Approximate pool sizes per (culture, age) — used for seed-modulo
+  // fallback. Read from real listings in production if possible.
+  const POOL_SIZES = {
+    "greek/young": 188, "greek/old": 188,
+    "roman/young": 479, "roman/old": 479,
+    "eastern/young": 188, "eastern/old": 188,
+    "egyptian/young": 188, "egyptian/old": 188,
+    "carthaginian/young": 188, "carthaginian/old": 188,
+    "barbarian/young": 188, "barbarian/old": 188,
+  };
   for (const c of characters) {
     if (!c.ownUuid) continue;
-    // Find first occurrence of own_uuid as u32 in [0x1500000, role_string_offset)
     const ownBytes = Buffer.alloc(4);
     ownBytes.writeUInt32LE(c.ownUuid);
     const ref = buf.indexOf(ownBytes, 0x1500000);
@@ -301,7 +313,21 @@ function resolvePortraitsByCharacter(buf, characters) {
         cards: portrait.cards,
         fulls: portrait.fulls,
       });
+      continue;
     }
+    // Fallback: seed-modulo for chars without a stored portrait UUID
+    // (rebels, procedurally-generated). Pick young if age < 35.
+    const ageBucket = (c.age != null && c.age >= 35) ? "old" : "young";
+    const poolKey = `${c.culture}/${ageBucket}`;
+    const poolSize = POOL_SIZES[poolKey] || 188;
+    const idx = portraitUuid % poolSize;
+    const num = String(idx).padStart(3, "0");
+    byOwnUuid.set(c.ownUuid, {
+      portraitUuid,
+      cards: `data/ui/${c.culture}/portraits/cards/${ageBucket}/generals/${num}.tga`,
+      fulls: `data/ui/${c.culture}/portraits/portraits/${ageBucket}/generals/${num}.tga`,
+      derived: true,
+    });
   }
   return byOwnUuid;
 }
