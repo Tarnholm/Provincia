@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.401",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree dropdown now hides the RIS `dummies` placeholder faction unless the player is actually playing as it. RIS declares dummies with -50000 denari, which auto-bankrupts the faction after end-turn 1; showing it in the family-tree picker for a normal player adds a confusing entry (one character, Biggus_Dickus the Immortal, at off-map coords 998/4) that's destroyed by T2 anyway." },
+    ],
+  },
+  {
     version: "0.9.400",
     date: "2026-05-18",
     items: [

@@ -10206,6 +10206,7 @@ function App() {
           factionCultures={factionCultures}
           modDataDir={modDataDir}
           defaultFaction={familyTreeDefaultFaction}
+          playerFaction={playerFaction}
           onClose={() => { setFamilyTreeOpen(false); setFamilyTreeDefaultFaction(null); }}
         />
       )}

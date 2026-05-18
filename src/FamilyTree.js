@@ -463,7 +463,7 @@ function GeneralsList({ generals, selectedName, onSelect, culture, modDataDir, c
 
 // ── Main component ─────────────────────────────────────────────────────
 
-export default function FamilyTree({ characterExtras, familyTreeMaps, modFamiliesByFaction, factionDisplayNames, factionCultures, modDataDir, defaultFaction, onClose }) {
+export default function FamilyTree({ characterExtras, familyTreeMaps, modFamiliesByFaction, factionDisplayNames, factionCultures, modDataDir, defaultFaction, playerFaction, onClose }) {
   // Coord→portrait-path lookup built from characterExtras when a save is
   // loaded. Lets a descr_strat-derived tree member (which has x, y from
   // its `character` line) match the save's resolved portrait path.
@@ -487,16 +487,21 @@ export default function FamilyTree({ characterExtras, familyTreeMaps, modFamilie
 
   const modFactions = useMemo(() => {
     if (!modFamiliesByFaction) return [];
+    const pf = playerFaction ? String(playerFaction).toLowerCase() : null;
     return Object.entries(modFamiliesByFaction)
       .map(([id, data]) => ({ id, data }))
       .filter(({ data }) => data.members && data.members.length > 0)
+      // RIS's `dummies` is a placeholder faction with -50000 denari that
+      // bankrupts and is destroyed after end-turn 1 — drop it from the
+      // dropdown unless the player is actually playing as it.
+      .filter(({ id }) => id !== "dummies" || pf === "dummies")
       .sort((a, b) => {
         const aRel = (a.data.relatives || []).length;
         const bRel = (b.data.relatives || []).length;
         if (aRel !== bRel) return bRel - aRel;
         return b.data.members.length - a.data.members.length;
       });
-  }, [modFamiliesByFaction]);
+  }, [modFamiliesByFaction, playerFaction]);
 
   // Initial faction: caller-provided (clicked-province owner) if it actually
   // has data; otherwise the faction with the most relatives.
