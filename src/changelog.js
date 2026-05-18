@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.396",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "Portrait-byte CRACKED. Each character's portrait is identified by a u32 portrait UUID stored at offset +280 of their 354-byte extended record. The portrait pool entries are prefixed by the same UUID, with the pstr16 portrait path 72-74 bytes before. Backend resolver (`resolvePortraitsByCharacter` in `saveCrackerExtras.js`) resolves 134/143 characters in a Macedon T0 save to their EXACT in-game portrait path. Each character in `characterExtras` now has `portraitCardsPath`, `portraitFullPath`, and `portraitUuid` fields when resolved." },
+      { type: "improvement", text: "`resolve-portrait` IPC fast-path: if the renderer passes `charContext.savePath` (an exact path from the save), the IPC loads that file directly — no culture mapping or hash fallback. Falls back to existing lookup if the file isn't found. Sets the stage for FamilyTree to render the exact in-game portrait per character on live saves once the renderer plumbs the field through." },
+    ],
+  },
+  {
     version: "0.9.395",
     date: "2026-05-18",
     items: [

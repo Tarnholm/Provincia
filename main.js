@@ -157,6 +157,7 @@ const {
   parseFactionConfigRecords: cxParseFactionConfig,
   parseModInfo: cxParseModInfo,
   parseCharacterExtras: cxParseCharacterExtras,
+  resolvePortraitsByCharacter: cxResolvePortraits,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
 } = require("./src/saveCrackerExtras.js");
@@ -2098,6 +2099,42 @@ function hashName(name) {
 }
 
 ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, charContext) => {
+  // Crack 2026-05-18 fast-path: if the caller passes an exact save-derived
+  // portrait path (`charContext.savePath` like "data/ui/greek/portraits/
+  // cards/young/generals/149.tga"), load it directly — no culture mapping
+  // or hash needed. This is the in-game-exact portrait.
+  if (charContext && charContext.savePath && typeof charContext.savePath === "string") {
+    const rel = charContext.savePath.replace(/^\/+/, "");
+    // Try mod dir first, then vanilla. The save path is rooted at "data/..."
+    // so we strip that prefix to get "ui/..." and prepend each search dir.
+    const subPath = rel.replace(/^data\//, "");
+    // Also try adding .dds — RTW stores the actual files as .tga.dds, save
+    // references them as .tga.
+    const candidates = [];
+    const VANILLA_DATA = "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data";
+    const dataDirs = [
+      modDataDir ? modDataDir : null,
+      VANILLA_DATA,
+    ].filter(Boolean);
+    for (const d of dataDirs) {
+      candidates.push(path.join(d, subPath));
+      candidates.push(path.join(d, subPath + ".dds"));
+    }
+    for (const candidate of candidates) {
+      try {
+        if (fs.existsSync(candidate)) {
+          const buffer = fs.readFileSync(candidate);
+          return {
+            ok: true,
+            buffer: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+            path: candidate,
+            encoded: candidate.endsWith(".dds") ? "rtw-tga-dds" : null,
+          };
+        }
+      } catch {}
+    }
+    // Fall through to hash-based lookup if save path doesn't find a file
+  }
   if (!culture || !slot) return { ok: false };
   const c = String(culture).toLowerCase();
   const s = String(slot).toLowerCase();
@@ -4718,6 +4755,28 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   try { if (header && factionDiscovered) factionConfig = cxParseFactionConfig(data, header, factionDiscovered); } catch (err) { console.warn("[faction-config] parse failed:", err && err.message); }
   try { modInfo = cxParseModInfo(data); } catch (err) { console.warn("[mod-info] parse failed:", err && err.message); }
   try { characterExtras = cxParseCharacterExtras(data); } catch (err) { console.warn("[character-extras] parse failed:", err && err.message); }
+  // Crack 2026-05-18: each character's portrait is identified by a u32 at
+  // +280 of the 354-byte extended record, matched against u32-prefixed
+  // entries in the portrait pool. Resolves to the EXACT pstr16 portrait
+  // path the in-game family tree displays.
+  let portraitByOwnUuid = null;
+  try {
+    if (characterExtras) {
+      const m = cxResolvePortraits(data, characterExtras);
+      // Attach per-character portraitPath onto each characterExtras entry
+      // for trivial downstream lookup.
+      for (const c of characterExtras) {
+        const p = m.get(c.ownUuid);
+        if (p) {
+          c.portraitCardsPath = p.cards;
+          c.portraitFullPath = p.fulls;
+          c.portraitUuid = p.portraitUuid;
+        }
+      }
+      portraitByOwnUuid = Array.from(m.entries()).map(([uuid, v]) => [uuid, v]);
+      console.log(`[portraits] resolved ${m.size}/${characterExtras.length} characters via save UUID linkage`);
+    }
+  } catch (err) { console.warn("[portraits] resolve failed:", err && err.message); }
   try { religionByCity = cxParseReligion(data, settlements); } catch (err) { console.warn("[religion] parse failed:", err && err.message); }
   try {
     if (characterExtras) {

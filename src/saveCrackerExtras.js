@@ -220,6 +220,75 @@ function parseCharacterExtras(buf) {
   return out;
 }
 
+// Crack 2026-05-18: each character's portrait is identified by a u32
+// portrait UUID stored at offset +280 of the character's 354-byte extended
+// record (located by the first back-ref of own_uuid in the portrait pool
+// section, before the role string). The portrait pool entries embed pstr16
+// portrait paths with their UUID 72–74 bytes AFTER each pstr16 start.
+//
+// Validated on Macedon T0 vanilla save: 103/109 greek generals resolved to
+// unique portrait paths.
+function resolvePortraitsByCharacter(buf, characters) {
+  // Walk every pstr16 portrait path in the buffer. For each cards/portraits
+  // pair, sweep a small window AFTER the pair for the u32 portrait_uuid
+  // (empirically ~16–32 bytes after the portraits pstr16 ends). Index every
+  // u32 in that window under the pair so a character's +280 lookup hits
+  // even if the exact byte offset varies between records.
+  const portraitByUuid = new Map(); // portraitUuid -> { cards, fulls, atCards }
+  let lastCards = null;
+  for (let i = 0x1000; i + 200 < buf.length; i++) {
+    const len = buf.readUInt16LE(i);
+    if (len < 8 || len > 200) continue;
+    let s = "", ok = true;
+    for (let k = 0; k < len - 1; k++) {
+      const b = buf[i + 2 + k];
+      if (b < 0x20 || b > 0x7e) { ok = false; break; }
+      s += String.fromCharCode(b);
+    }
+    if (!ok || buf[i + 2 + len - 1] !== 0) continue;
+    if (!s.startsWith("data/ui/") || !s.includes("/portraits/")) continue;
+    if (s.includes("/cards/")) {
+      lastCards = { at: i, s };
+    } else if (lastCards) {
+      const entry = { cards: lastCards.s, fulls: s, atCards: lastCards.at };
+      // Sweep the window from pair end to pair end + 64 bytes for u32
+      // candidates; index each so the character's +280 lookup resolves.
+      const pairEnd = i + 2 + len;
+      for (let off = pairEnd; off + 4 < Math.min(buf.length, pairEnd + 64); off++) {
+        const cand = buf.readUInt32LE(off);
+        if (cand === 0 || cand === 0xffffffff) continue;
+        if (!portraitByUuid.has(cand)) portraitByUuid.set(cand, entry);
+      }
+      lastCards = null;
+    }
+    i += 1 + len;
+  }
+
+  // For each character, locate their extended record and read +280, then
+  // look up portraitByUuid. If not found, skip.
+  const byOwnUuid = new Map();
+  for (const c of characters) {
+    if (!c.ownUuid) continue;
+    // Find first occurrence of own_uuid as u32 in [0x1500000, role_string_offset)
+    const ownBytes = Buffer.alloc(4);
+    ownBytes.writeUInt32LE(c.ownUuid);
+    const ref = buf.indexOf(ownBytes, 0x1500000);
+    if (ref < 0 || ref >= c.offset) continue;
+    if (ref + 284 > buf.length) continue;
+    const portraitUuid = buf.readUInt32LE(ref + 280);
+    if (portraitUuid === 0 || portraitUuid === 0xffffffff) continue;
+    const portrait = portraitByUuid.get(portraitUuid);
+    if (portrait) {
+      byOwnUuid.set(c.ownUuid, {
+        portraitUuid,
+        cards: portrait.cards,
+        fulls: portrait.fulls,
+      });
+    }
+  }
+  return byOwnUuid;
+}
+
 // Build family tree maps. Provincia's existing v1 parser already produces
 // father_uuid; combine with our spouse_uuid to expose parent/spouse/children.
 //
@@ -358,6 +427,7 @@ module.exports = {
   parseFactionConfigRecords,
   parseModInfo,
   parseCharacterExtras,
+  resolvePortraitsByCharacter,
   buildFamilyTreeMaps,
   parseSoldierArray,
   parseUnitStatSlots,
