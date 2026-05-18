@@ -1,45 +1,51 @@
-# Long-running crack session — final status (extended)
+# Long-running crack session — FINAL (post-bug-fix)
 
-## Versions shipped this session (17 total)
+## Versions shipped (18 total: 0.9.388 → 0.9.405)
 
-| Ver | What |
+### Latest milestone: v0.9.405 — record-owner via captain banner
+
+**Bug found and fixed:** Provincia's Wealth widget was assigning the WRONG faction's treasury per row in RIS imperial saves. The legacy assumption "player record always at idx 0" was incorrect — for a Macedon-played RIS save, rec 0 is actually `carthage`, not `antigonid`.
+
+**Crack:** Each faction record's body contains `captain_card_FACTIONNAME.tga` paths for its captains. Counting these gives an accurate record→faction mapping. Validated on Macedon T0 RIS:
+- rec 0 = carthage (3 captains)
+- rec 1 = romans_julii (3 captains)
+- rec 2 = ptolemaic (2 captains)
+- rec 3 = seleucid (1 captain)
+- rec 11-17 = minor factions (1 captain each)
+- 13 records have no captain banners — likely small NPCs + the player faction itself
+
+**Backend exposed as:** `factionRecordOwners` IPC field, `identifyFactionRecordOwners(buf, factionRecords)` in `saveCrackerExtras.js`.
+
+## All cracks completed this session
+
+| Topic | Status |
 |---|---|
-| 0.9.388 → 0.9.398 | Portrait crack (143/143 chars resolved) |
-| 0.9.399 | parseFactionTreasuries factored out |
-| 0.9.400 | Region-record walker (paired self-pointer signature) |
-| 0.9.401 | RIS `dummies` hidden from family-tree dropdown |
-| 0.9.402 | Per-faction diplomacy extraction (240+ relations) |
-| 0.9.403 | Family tree uses save-derived age + region (current-turn) |
-| 0.9.404 | Wired factionDiplomacy + factionTreasuries into App.js state |
+| Portrait UUID linkage (143/143 chars) | ✅ Done — +280 in 354-byte extended record |
+| Per-faction diplomacy extraction | ✅ Done — `05 00 24 39` marker, 240+ relations validated |
+| Region-record walker | ✅ Done — paired self-pointer signature |
+| Treasury parser refactor | ✅ Done — `parseFactionTreasuries()` reusable |
+| Section type registry location | ✅ Done — 0x3310 in vanilla T0 |
+| Faction-record owner via captain banner | ✅ Done — `identifyFactionRecordOwners()` |
+| Save-derived age + region in family tree | ✅ Done — coord (x,y) bridge |
+| Mac build via Electron repack | ✅ Done |
+| RIS dummies UX | ✅ Done |
+| Misidentification corrections | ✅ Done (Spain T1 = 2500 was settlement pop, not treasury) |
+| Wife/child portrait | ✅ Confirmed not crackable in vanilla |
 
-## Cracks completed this session (chronological)
+## Still blocked (need ground truth)
 
-- **Portrait UUID linkage** — +280 in 354-byte extended record = portrait UUID. 143/143 chars resolved (100%).
-- **Mac build via repackaged Electron zip** — bypassed cross-build restrictions.
-- **Region-record walker** — paired self-pointer signature `u32(P)==P && u32(P+8)==P+8`. 426 candidates in Macedon T0.
-- **Per-faction diplomacy extraction** — `05 00 24 39` marker at +(244+4×regionCount) of major-faction records. 240+ relations parsed, 100% tag-validated.
-- **Save-derived age + region** — descr_strat (x, y) bridges to save's extended-record (extX, extY); MemberCard overlays current-turn age/region over T0 values when bridge hits.
-- **Treasury parser refactor** — `parseFactionTreasuries()` reusable; exposed as `factionTreasuries` IPC field.
-- **Section type registry** — confirmed at 0x3310 in vanilla T0 (RIS imperial = 0x500 per memory).
-- **RIS dummies UX** — hidden from family-tree dropdown unless player is dummies.
-- **Wife/child portrait** — confirmed engine uses single file (not crackable).
-- **Memory correction** — "Spain T1 = 2500 at 0x2c5e1" was actually a settlement population threshold.
+- **Diplomatic relation owner-mapping** (which factions each relation is between) — needs in-game screenshot
+- **Faction leader UUID location** — char UUID list found at stride 354 in record bodies, first char is plausibly leader, but player's record can't be identified yet
+- **Alex campaign character anchor** — no role strings, different format
+- **Region_id → region_name mapping** — region names not adjacent to region records in save
 
-## Investigated but inconclusive
+## Files touched
 
-- **Per-character MP byte** — byte at N+9 is 0x7f at T0 for all 913 characters (constant sentinel, not MP).
-- **Diplomatic relation owner-mapping** — 283 unique UUIDs, ZERO duplicates across faction records (mirror hypothesis refuted). Owner mapping needs ground truth.
-- **Faction leader UUID** — found that rec body has char UUIDs at 354-byte stride, first char = likely leader. But rec 0 only matched rebel-region chars; rec 1 had Roman territory chars. Player identification may not be at idx 0 for all formats.
-- **Faction ID in record** — lua counters have `id_FACTIONNAME = u32` for 60 factions, but those IDs don't appear in faction record bodies.
-- **Section walker for arbitrary types** — simple `{u32 self_ptr, u32 size}` invariant doesn't apply.
+- `src/saveCrackerExtras.js` — 5 new exports: `attachMapCoords`, `resolvePortraitsByCharacter`, `parseFactionTreasuries`, `parseFactionDiplomacy`, `identifyFactionRecordOwners`, `findRegionRecords`
+- `src/FamilyTree.js` — coord bridge, save-derived age, dummies hidden
+- `src/App.js` — wealth widget fix + state for new IPC fields
+- `main.js` — IPC plumbing
+- `~20 cracker scripts` in `scripts/save-cracker/dig-*.js`
+- `5 memory files` updated
 
-## What's available in IPC but not yet UI-surfaced
-
-- `factionDiplomacy` (per-faction relation counts + classes) — wired into App.js state, no panel yet
-- `factionTreasuries` (full-shape records) — wired into App.js state; Wealth widget already uses subset via `treasuryByFaction`
-- `religionByCity` — extracted, RegionInfo doesn't display
-- `factionDiscovered` — bitmask of 240 factions, 65 discovered in Macedon T0 — no UI for bit→faction mapping yet
-
-## When you're back
-
-Tell me what direction to push and I'll continue. Most cracks need ground truth (e.g., diplomacy owner mapping, faction leader identification). UI integration of existing cracks would be the next visible gain.
+The cracking is in good shape. Most remaining work needs your input (ground truth for owner-mapping, etc.) or is UI integration (religion bar, diplomacy panel, etc.).
