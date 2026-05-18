@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.402",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "Per-faction diplomatic relations now extracted via `parseFactionDiplomacy()` in `saveCrackerExtras.js`. Locates the `05 00 24 39` marker at +(244 + 4×regionCount) of each major faction record, reads u32 count + 16-byte entries: `{relationUuid, class (0=ALLIED, 2=WAR), attitudeTier (0-4), tag=0x00010101}`. Macedon T0 vanilla save: 23 records parsed, 240+ relations total across all factions, every tag matches 0x00010101 (100% validation). Exposed as `factionDiplomacy` in IPC return value. LIMITATION: each entry contains the relation UUID but not the OTHER faction's ID — that linkage hasn't been cracked yet (session 108/109 attempted)." },
+    ],
+  },
+  {
     version: "0.9.401",
     date: "2026-05-18",
     items: [

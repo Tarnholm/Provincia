@@ -270,6 +270,45 @@ function parseFactionTreasuries(buf) {
   return out;
 }
 
+// Extract per-faction diplomatic relations. Each major faction record has
+// a `05 00 24 39` marker at offset +(244 + 4 × regionCount), followed by
+// `u32 count` and `count × 16-byte` entries. Each entry:
+//   +0   u32 relationUuid   (globally unique counter — same UUID never
+//                            appears in two different factions' lists)
+//   +4   u32 class          (0 = ALLIED, 1 = ceasefire, 2 = WAR,
+//                            4 = locked alliance — per session 108 memory)
+//   +8   u32 attitudeTier   (0..4)
+//   +12  u32 tag            (constant 0x00010101)
+//
+// LIMITATION: the entry does NOT contain the OTHER faction's identity.
+// Memory session 108/109: the (factionA, factionB) → relation mapping
+// requires an external lookup that hasn't been cracked yet.
+function parseFactionDiplomacy(buf, factionRecords) {
+  const DIPLO_MARKER = 0x39240005; // little-endian "05 00 24 39"
+  const out = [];
+  for (let i = 0; i < factionRecords.length; i += 1) {
+    const r = factionRecords[i];
+    const expectedOff = r.offset + 244 + 4 * r.regionCount;
+    if (expectedOff + 8 > buf.length) { out.push({ relations: [] }); continue; }
+    if (buf.readUInt32LE(expectedOff) !== DIPLO_MARKER) { out.push({ relations: [] }); continue; }
+    const count = buf.readUInt32LE(expectedOff + 4);
+    if (count > 200) { out.push({ relations: [] }); continue; }
+    const relations = [];
+    for (let k = 0; k < count; k += 1) {
+      const o = expectedOff + 8 + k * 16;
+      if (o + 16 > buf.length) break;
+      relations.push({
+        uuid: buf.readUInt32LE(o),
+        class_: buf.readUInt32LE(o + 4),
+        attitude: buf.readUInt32LE(o + 8),
+        tag: buf.readUInt32LE(o + 12),
+      });
+    }
+    out.push({ relations, markerOffset: expectedOff });
+  }
+  return out;
+}
+
 // Walk all region records in the save. Signature found 2026-05-18:
 // region records have paired self-pointers 8 bytes apart, with a region
 // UUID between them and the engine's numeric region ID at +12.
@@ -548,6 +587,7 @@ module.exports = {
   attachMapCoords,
   resolvePortraitsByCharacter,
   parseFactionTreasuries,
+  parseFactionDiplomacy,
   findRegionRecords,
   buildFamilyTreeMaps,
   parseSoldierArray,

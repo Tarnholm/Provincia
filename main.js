@@ -160,6 +160,7 @@ const {
   attachMapCoords: cxAttachMapCoords,
   resolvePortraitsByCharacter: cxResolvePortraits,
   parseFactionTreasuries: cxParseTreasuries,
+  parseFactionDiplomacy: cxParseDiplomacy,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
 } = require("./src/saveCrackerExtras.js");
@@ -4789,10 +4790,18 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   // Crack: parse major-faction records to get per-faction treasury + region count.
   // Works on vanilla imperial saves (Macedon T0 yields 23 records, player at idx 0).
   let factionTreasuries = null;
+  let factionDiplomacy = null;
   try {
     factionTreasuries = cxParseTreasuries(data);
     if (factionTreasuries) console.log(`[treasuries] parsed ${factionTreasuries.length} major-faction records`);
   } catch (err) { console.warn("[treasuries] parse failed:", err && err.message); }
+  try {
+    if (factionTreasuries && factionTreasuries.length > 0) {
+      factionDiplomacy = cxParseDiplomacy(data, factionTreasuries);
+      const total = factionDiplomacy.reduce((s, x) => s + (x.relations ? x.relations.length : 0), 0);
+      console.log(`[diplomacy] parsed ${total} relations across ${factionDiplomacy.length} factions`);
+    }
+  } catch (err) { console.warn("[diplomacy] parse failed:", err && err.message); }
   try {
     if (characterExtras) {
       // v1Chars come from the existing character parser path — wire whatever is
@@ -4814,6 +4823,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     characterExtras,
     religionByCity,
     factionTreasuries,
+    factionDiplomacy,
     familyTreeMaps: familyTreeMaps ? {
       byUuid: Array.from(familyTreeMaps.byUuid.entries()),
       spouseOf: Array.from(familyTreeMaps.spouseOf.entries()),
