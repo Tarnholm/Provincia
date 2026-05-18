@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.403",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree members now show CURRENT-TURN age and region from the loaded save instead of frozen descr_strat T0 values, when the (x, y) coord bridge hits. The descr_strat data still provides the family-relationship structure (who's married to whom, who's whose child), but age/region come from the save. Falls back to descr_strat values when no save is loaded or the coord bridge doesn't match (typical for later-turn saves where characters have moved)." },
+    ],
+  },
+  {
     version: "0.9.402",
     date: "2026-05-18",
     items: [

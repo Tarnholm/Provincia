@@ -154,7 +154,23 @@ function tooltipFor(char) {
   return lines.join("\n");
 }
 
-function MemberCard({ char, culture, modDataDir, portraitSize = 64, compact = false, coordToPortrait }) {
+function MemberCard({ char: rawChar, culture, modDataDir, portraitSize = 64, compact = false, coordToPortrait }) {
+  // When a save is loaded and the descr_strat (x, y) of this character
+  // matches a save char's (extX, extY), overlay the save's current-turn
+  // values — age and region — over the descr_strat T0 values. Lets the
+  // family tree reflect later-turn ages without losing the descr_strat
+  // family-relationship structure.
+  const char = useMemo(() => {
+    if (!coordToPortrait || rawChar.x == null || rawChar.y == null) return rawChar;
+    const hit = coordToPortrait.get(`${rawChar.x},${rawChar.y}`);
+    if (!hit) return rawChar;
+    return {
+      ...rawChar,
+      age: hit.age != null ? hit.age : rawChar.age,
+      region: hit.region || rawChar.region,
+      saveOwnUuid: hit.ownUuid,
+    };
+  }, [rawChar, coordToPortrait]);
   const dead = char.alive === false || char.isDead;
   const isLeader = char.tags && char.tags.includes("leader");
   const fullName = displayFirstName(char.firstName) +
@@ -466,20 +482,25 @@ function GeneralsList({ generals, selectedName, onSelect, culture, modDataDir, c
 export default function FamilyTree({ characterExtras, familyTreeMaps, modFamiliesByFaction, factionDisplayNames, factionCultures, modDataDir, defaultFaction, playerFaction, onClose }) {
   // Coord→portrait-path lookup built from characterExtras when a save is
   // loaded. Lets a descr_strat-derived tree member (which has x, y from
-  // its `character` line) match the save's resolved portrait path.
-  const coordToPortrait = useMemo(() => {
+  // its `character` line) match the save's resolved portrait path AND
+  // current-turn data (age, region, alive/dead).
+  const coordToSave = useMemo(() => {
     const m = new Map();
     if (!characterExtras) return m;
     for (const c of characterExtras) {
-      if (c.portraitCardsPath && c.extX != null && c.extY != null) {
-        m.set(`${c.extX},${c.extY}`, {
-          cards: c.portraitCardsPath,
-          fulls: c.portraitFullPath,
-        });
-      }
+      if (c.extX == null || c.extY == null) continue;
+      m.set(`${c.extX},${c.extY}`, {
+        cards: c.portraitCardsPath || null,
+        fulls: c.portraitFullPath || null,
+        age: c.age != null ? c.age : null,
+        region: c.region || null,
+        ownUuid: c.ownUuid,
+      });
     }
     return m;
   }, [characterExtras]);
+  // Legacy alias — Portrait component still uses coordToPortrait.
+  const coordToPortrait = coordToSave;
   const [selectedFaction, setSelectedFaction] = useState(null);
   const [selectedGeneral, setSelectedGeneral] = useState(null);
 
