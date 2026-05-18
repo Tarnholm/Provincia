@@ -270,6 +270,56 @@ function parseFactionTreasuries(buf) {
   return out;
 }
 
+// Identify each major faction record's owning faction via the embedded
+// `captain_card_FACTIONNAME.tga` paths. Each captain in a faction record
+// has its faction's banner path stored inline, so the dominant banner
+// faction = that record's owner.
+//
+// Crack 2026-05-18: validated on Macedon T0 RIS save. Records are NOT
+// in player-first order — rec 0 in that save is `carthage`, not the
+// player (`antigonid`). Previous App.js code assumed rec 0 == player
+// which is wrong for RIS imperial saves.
+//
+// Returns array `[{ recordIndex, factionName | null, captainCount }, ...]`.
+function identifyFactionRecordOwners(buf, factionRecords) {
+  const out = [];
+  const target = Buffer.from("captain_card_", "ascii");
+  // Collect all captain_card_* positions
+  const positions = [];
+  let p = 0;
+  while ((p = buf.indexOf(target, p)) !== -1) {
+    let end = p + target.length;
+    while (end < p + 80 && buf[end] !== 0x2e /* . */ && buf[end] >= 0x20 && buf[end] < 0x7f) end++;
+    const factionName = buf.slice(p + target.length, end).toString("ascii");
+    positions.push({ at: p, name: factionName });
+    p = end;
+  }
+  // Bucket by record
+  const byRec = new Map();
+  for (const pos of positions) {
+    let recIdx = -1;
+    for (let i = 0; i < factionRecords.length; i += 1) {
+      const next = i + 1 < factionRecords.length ? factionRecords[i + 1].offset : buf.length;
+      if (pos.at >= factionRecords[i].offset && pos.at < next) { recIdx = i; break; }
+    }
+    if (recIdx < 0) continue;
+    if (!byRec.has(recIdx)) byRec.set(recIdx, new Map());
+    const m = byRec.get(recIdx);
+    m.set(pos.name, (m.get(pos.name) || 0) + 1);
+  }
+  // Assign dominant faction per record
+  for (let i = 0; i < factionRecords.length; i += 1) {
+    const m = byRec.get(i);
+    if (!m || m.size === 0) {
+      out.push({ recordIndex: i, factionName: null, captainCount: 0 });
+      continue;
+    }
+    const sorted = [...m.entries()].sort((a, b) => b[1] - a[1]);
+    out.push({ recordIndex: i, factionName: sorted[0][0], captainCount: sorted[0][1] });
+  }
+  return out;
+}
+
 // Extract per-faction diplomatic relations. Each major faction record has
 // a `05 00 24 39` marker at offset +(244 + 4 × regionCount), followed by
 // `u32 count` and `count × 16-byte` entries. Each entry:
@@ -587,6 +637,7 @@ module.exports = {
   attachMapCoords,
   resolvePortraitsByCharacter,
   parseFactionTreasuries,
+  identifyFactionRecordOwners,
   parseFactionDiplomacy,
   findRegionRecords,
   buildFamilyTreeMaps,

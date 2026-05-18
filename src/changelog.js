@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.405",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Wealth widget's live treasury per faction was wrong for RIS imperial saves. The old code assumed the save's 23 major-faction records are in player-first order, but that's NOT true for RIS imperial T0 (rec 0 in a Macedon-player save is actually `carthage`, with `antigonid` somewhere in the unidentified records). New crack: each faction record's body contains `captain_card_FACTIONNAME.tga` paths for its captains, so the most-common faction name inside a record = that record's owner. Backend now extracts `factionRecordOwners` via `identifyFactionRecordOwners()` in `saveCrackerExtras.js`. Wealth widget uses this mapping when available; falls back to the old player-at-idx-0 logic for save formats where banners aren't found. Effect: each NPC faction's wealth row now shows the correct treasury value." },
+    ],
+  },
+  {
     version: "0.9.404",
     date: "2026-05-18",
     items: [

@@ -1560,6 +1560,7 @@ function App() {
   const [factionDiscovered, setFactionDiscovered] = useState(null);
   const [factionDiplomacy, setFactionDiplomacy] = useState(null);
   const [factionTreasuries, setFactionTreasuries] = useState(null);
+  const [factionRecordOwners, setFactionRecordOwners] = useState(null);
   const [factionConfig, setFactionConfig] = useState(null);
   const [modInfo, setModInfo] = useState(null);
   const [characterExtras, setCharacterExtras] = useState(null);
@@ -3410,6 +3411,7 @@ function App() {
       if (data && data.factionDiscovered) setFactionDiscovered(data.factionDiscovered);
       if (data && data.factionDiplomacy) setFactionDiplomacy(data.factionDiplomacy);
       if (data && data.factionTreasuries) setFactionTreasuries(data.factionTreasuries);
+      if (data && data.factionRecordOwners) setFactionRecordOwners(data.factionRecordOwners);
       if (data && data.factionConfig) setFactionConfig(data.factionConfig);
       if (data && data.modInfo) setModInfo(data.modInfo);
       if (data && data.characterExtras) setCharacterExtras(data.characterExtras);
@@ -13831,15 +13833,43 @@ function App() {
             liveRegionsByFaction[owner] = (liveRegionsByFaction[owner] || 0) + 1;
           }
         }
-        // Live treasury: map the raw 23-record scan to faction names using
-        // the descr_strat RIS imperial major-faction order. Player at
-        // index 0 (always), others follow descr_strat with player removed.
-        // Decoded by save-cracker session 5 (CONFIRMED across 14 saves /
-        // 4 campaigns). Falls back gracefully to descr_strat starting
-        // wealth when live data isn't loaded yet or count != 23.
+        // Live treasury: map the raw 23-record scan to faction names. As of
+        // crack 2026-05-18, the records are NOT in player-first order for
+        // RIS imperial saves (rec 0 is whichever faction the save layout
+        // ranks first, often `carthage` or another major NPC). Use the
+        // captain-banner-derived `factionRecordOwners` mapping when
+        // available — it identifies each record's faction by scanning for
+        // `captain_card_FACTIONNAME.tga` paths inside the record body.
+        // Falls back to the legacy player-at-idx-0 assumption when the
+        // banner mapping isn't loaded (e.g. older save formats).
         const liveTreasuryByFaction = (() => {
           const recs = saveTreasuryRecords && saveTreasuryRecords.records;
           if (!recs || recs.length !== 23 || !playerFaction) return null;
+          const out = {};
+          // Captain-banner-derived mapping wins
+          if (factionRecordOwners && factionRecordOwners.length === recs.length) {
+            for (let i = 0; i < recs.length; i += 1) {
+              const owner = factionRecordOwners[i] && factionRecordOwners[i].factionName;
+              if (!owner) continue;
+              out[owner] = { treasury: recs[i].treasury, turnStart: recs[i].turnStart };
+            }
+            // If player still missing (record had no captain banners), fall back to the
+            // first un-identified record as a best-effort guess.
+            if (!out[playerFaction]) {
+              const unidentified = recs.findIndex((_, i) => {
+                const owner = factionRecordOwners[i] && factionRecordOwners[i].factionName;
+                return !owner;
+              });
+              if (unidentified >= 0) {
+                out[playerFaction] = {
+                  treasury: recs[unidentified].treasury,
+                  turnStart: recs[unidentified].turnStart,
+                };
+              }
+            }
+            return out;
+          }
+          // Legacy fallback: assume player at idx 0, others in descr_strat order
           const MAJOR_FACTIONS = [
             "romans_julii", "carthage", "antigonid", "ptolemaic", "seleucid",
             "bactria", "parni", "saka", "armenia", "pontus", "lusitani",
@@ -13847,7 +13877,6 @@ function App() {
             "allobroges", "anatolians", "arevaci", "ardiaei", "argos",
             "arverni",
           ];
-          const out = {};
           const others = MAJOR_FACTIONS.filter(f => f !== playerFaction);
           out[playerFaction] = { treasury: recs[0].treasury, turnStart: recs[0].turnStart };
           for (let k = 0; k < others.length && k + 1 < recs.length; k++) {

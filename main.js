@@ -160,6 +160,7 @@ const {
   attachMapCoords: cxAttachMapCoords,
   resolvePortraitsByCharacter: cxResolvePortraits,
   parseFactionTreasuries: cxParseTreasuries,
+  identifyFactionRecordOwners: cxIdentifyRecordOwners,
   parseFactionDiplomacy: cxParseDiplomacy,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
@@ -4791,10 +4792,18 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   // Works on vanilla imperial saves (Macedon T0 yields 23 records, player at idx 0).
   let factionTreasuries = null;
   let factionDiplomacy = null;
+  let factionRecordOwners = null;
   try {
     factionTreasuries = cxParseTreasuries(data);
     if (factionTreasuries) console.log(`[treasuries] parsed ${factionTreasuries.length} major-faction records`);
   } catch (err) { console.warn("[treasuries] parse failed:", err && err.message); }
+  try {
+    if (factionTreasuries && factionTreasuries.length > 0) {
+      factionRecordOwners = cxIdentifyRecordOwners(data, factionTreasuries);
+      const named = factionRecordOwners.filter(o => o.factionName).length;
+      console.log(`[record-owners] identified ${named}/${factionRecordOwners.length} faction records via captain banners`);
+    }
+  } catch (err) { console.warn("[record-owners] parse failed:", err && err.message); }
   try {
     if (factionTreasuries && factionTreasuries.length > 0) {
       factionDiplomacy = cxParseDiplomacy(data, factionTreasuries);
@@ -4823,6 +4832,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     characterExtras,
     religionByCity,
     factionTreasuries,
+    factionRecordOwners,
     factionDiplomacy,
     familyTreeMaps: familyTreeMaps ? {
       byUuid: Array.from(familyTreeMaps.byUuid.entries()),
