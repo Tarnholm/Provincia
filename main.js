@@ -151,6 +151,15 @@ const { resolveCurrentOwners, findSettlementGovernors } = require("./src/saveOwn
 const { findAllSettlementMarkers } = require("./src/buildingParser.js");
 const { findFactionRecords, summarizeFactionArray } = require("./src/factionRecordParser.js");
 const { findLuaCounters, indexCountersByName } = require("./src/luaCounterParser.js");
+const {
+  parseHeader: cxParseHeader,
+  parseFactionDiscoveredBitmask: cxParseBitmask,
+  parseFactionConfigRecords: cxParseFactionConfig,
+  parseModInfo: cxParseModInfo,
+  parseCharacterExtras: cxParseCharacterExtras,
+  buildFamilyTreeMaps: cxBuildFamilyMaps,
+  parseReligionByCity: cxParseReligion,
+} = require("./src/saveCrackerExtras.js");
 
 // Cache for mod data (names_lookup, traits, surnames). Populated lazily when
 // the renderer calls "characters-init" with the mod data directory.
@@ -189,6 +198,14 @@ let modDescrStratCharByName = null; // "firstName|faction" → { x, y, lastName,
 // or vanilla — the parser only depends on the standard descr_strat
 // `traits Foo 1, ...` / `ancillaries ...` line shape.
 let modDescrStratCharactersByRegion = null;
+// Family tree from descr_strat — used when no live save is loaded. Populated
+// alongside modDescrStratCharactersByRegion. Layout:
+//   { byFaction: { factionId: {
+//       members: [ { firstName, lastName, gender, age, alive, tags, role,
+//                    isCharacter (true if has its own `character` line) } ],
+//       relatives: [ { husband, wife, children: [name, ...] } ]
+//     }} }
+let modDescrStratFamilies = null;
 let modDescrStratCharsByFirstName = null; // "firstName" → [{ x, y, lastName, faction }, ...] (multi-faction lookup)
 let modUnitOfficerCounts = null; // { unitName: officerCount } from EDU — added to in-save soldier counts to match in-game UI
 let modBuildingChains = null;
@@ -314,7 +331,11 @@ function loadModCharacterData(modDataDir) {
       const t = line.trim();
       const factMatch = line.match(/^faction\s+(\S+?),/);
       if (factMatch) { currentFaction = factMatch[1]; currentChar = null; continue; }
-      const charMatch = line.match(/^character\s+([^,]+?),\s*([^,]+?),.*?\bx\s+(\d+),\s*y\s+(\d+)/);
+      // Vanilla uses `character ` (whitespace), RIS uses `character,` (comma) —
+      // accept either separator after the keyword. RIS had 908 character
+      // lines silently dropped before this fix (no live generals in the
+      // family tree because none were ever parsed).
+      const charMatch = line.match(/^character[\s,]+([^,]+?),\s*([^,]+?),.*?\bx\s+(\d+),\s*y\s+(\d+)/);
       if (charMatch) {
         const nameField = charMatch[1].trim();
         const headerRest = charMatch[0]; // entire matched header
@@ -323,13 +344,21 @@ function loadModCharacterData(modDataDir) {
         if (lastName) modDescrStratSurnames.add(lastName);
         const x = parseInt(charMatch[3]);
         const y = parseInt(charMatch[4]);
-        const ageMatch = /\bage\s+(\d+)/.exec(headerRest);
+        // Use the FULL line for trailing-field extraction — `charMatch[0]`
+        // truncates after `y N`, so e.g. `portrait_index 334` is missed.
+        const ageMatch = /\bage\s+(\d+)/.exec(line);
         const ageVal = ageMatch ? parseInt(ageMatch[1]) : null;
         const tags = [];
         if (/\bleader\b/i.test(headerRest)) tags.push("leader");
         if (/\bheir\b/i.test(headerRest)) tags.push("heir");
         if (/\bnamed character\b/i.test(headerRest)) tags.push("named");
         const charSubType = (charMatch[2] || "").trim().toLowerCase();
+        // descr_strat optionally specifies the engine's portrait pool index
+        // explicitly with `portrait_index N`. Only one character per vanilla
+        // descr_strat has this set, but mods (and future-Provincia, once the
+        // save byte is cracked) can fill it in for every character.
+        const portraitIdxMatch = /\bportrait_index\s+(\d+)/.exec(line);
+        const portraitIndex = portraitIdxMatch ? parseInt(portraitIdxMatch[1]) : null;
         const entry = { firstName: first, lastName, x, y, faction: currentFaction };
         const key = first + "|" + (currentFaction || "");
         if (!modDescrStratCharByName.has(key)) modDescrStratCharByName.set(key, entry);
@@ -341,6 +370,7 @@ function loadModCharacterData(modDataDir) {
           age: ageVal,
           tags,
           charSubType,
+          portraitIndex,
           traits: [],
           ancillaries: [],
         };
@@ -378,6 +408,99 @@ function loadModCharacterData(modDataDir) {
   // startingArmiesByRegion (which already has the same coord→region
   // mapping from the bundled JSON OR from the runtime ownership build).
   modDescrStratCharactersByRegion = { byCoord: fullCharRecords };
+  // ── Family tree extraction (descr_strat → byFaction) ──
+  // Re-scan the same paths capturing `character_record` (wives, children,
+  // dead members) and `relative` blocks (the parent/spouse/children graph).
+  // This produces the data behind Provincia's mod-data Family Tree view.
+  {
+    const byFaction = {};
+    const upsertFaction = (f) => {
+      if (!byFaction[f]) byFaction[f] = { members: [], relatives: [], named: {} };
+      return byFaction[f];
+    };
+    // Index named characters (those with `character` lines) so we can
+    // merge in their age/tags when they appear in relatives blocks.
+    for (const c of fullCharRecords) {
+      if (!c.faction) continue;
+      const bucket = upsertFaction(c.faction);
+      bucket.named[c.firstName] = {
+        firstName: c.firstName, lastName: c.lastName,
+        age: c.age, alive: true, gender: "male",
+        tags: c.tags || [], role: c.charSubType || "named_character",
+        isCharacter: true,
+        x: c.x, y: c.y,
+        faction: c.faction,
+        portraitIndex: c.portraitIndex != null ? c.portraitIndex : null,
+        traits: c.traits || [],
+        ancillaries: c.ancillaries || [],
+      };
+    }
+    for (const dsPath of descrStratPaths) {
+      if (!fs.existsSync(dsPath)) continue;
+      let currentFaction = null;
+      const lines = fs.readFileSync(dsPath, "utf8").split(/\r?\n/);
+      for (const rawLine of lines) {
+        const line = rawLine.replace(/\s+$/, "");
+        const factMatch = line.match(/^faction\s+(\S+?),/);
+        if (factMatch) { currentFaction = factMatch[1]; continue; }
+        if (!currentFaction) continue;
+        // character_record lines: `character_record Name, gender, command X, influence X, management X, subterfuge X, age X, alive|dead, never_a_leader|...`
+        const crMatch = line.match(/^\s*character_record\s+([^,]+?),\s*(male|female)\s*,(.*)$/i);
+        if (crMatch) {
+          const nameField = crMatch[1].trim();
+          const gender = crMatch[2].toLowerCase();
+          const rest = crMatch[3];
+          const ageM = /\bage\s+(\d+)/.exec(rest);
+          const aliveM = /\b(alive|dead)\b/.exec(rest);
+          const [first, ...restName] = nameField.split(/\s+/);
+          const lastName = restName.join(" ") || null;
+          const bucket = upsertFaction(currentFaction);
+          // If this character_record refers to a named character we
+          // already recorded, just enrich it. Otherwise add a new member.
+          const existing = bucket.named[first];
+          if (existing) {
+            if (ageM) existing.age = parseInt(ageM[1]);
+            existing.gender = gender;
+            existing.alive = aliveM ? aliveM[1] === "alive" : true;
+          } else {
+            bucket.members.push({
+              firstName: first, lastName,
+              gender,
+              age: ageM ? parseInt(ageM[1]) : null,
+              alive: aliveM ? aliveM[1] === "alive" : true,
+              tags: [],
+              role: "family_member",
+              isCharacter: false,
+              faction: currentFaction,
+            });
+          }
+          continue;
+        }
+        // relative lines: `relative Husband, Wife, Child1, Child2, ... end`
+        const relMatch = line.match(/^\s*relative\s+([^,]+?),\s*([^,]+?),\s*(.*)$/);
+        if (relMatch) {
+          const husband = relMatch[1].trim();
+          const wifeField = relMatch[2].trim();
+          const wife = (/^none$/i.test(wifeField) ? null : wifeField);
+          // Children are comma-separated, terminated by `end`
+          const childrenPart = relMatch[3].replace(/\s+end\s*$/i, "");
+          const children = childrenPart
+            .split(",").map(s => s.trim()).filter(s => s && !/^end$/i.test(s));
+          const bucket = upsertFaction(currentFaction);
+          bucket.relatives.push({ husband, wife, children });
+        }
+      }
+    }
+    // Merge `named` map into members[] for each faction
+    for (const f of Object.keys(byFaction)) {
+      const bucket = byFaction[f];
+      for (const [, c] of Object.entries(bucket.named)) {
+        bucket.members.push(c);
+      }
+      delete bucket.named;
+    }
+    modDescrStratFamilies = { byFaction };
+  }
   // Parse export_descr_unit.txt for officer counts. The save stores only
   // rank-and-file soldiers; the in-game UI shows that count plus any
   // officers/standard-bearers/musicians defined in EDU. Counting `officer`
@@ -1916,6 +2039,163 @@ ipcMain.handle("get-starting-characters", async () => {
     return { ok: false, characters: [] };
   }
   return { ok: true, characters: modDescrStratCharactersByRegion.byCoord };
+});
+
+// IPC: families parsed from descr_strat (`character_record` + `relative`
+// lines) — drives the Family Tree view when no live save is loaded.
+// IPC: resolve a portrait TGA for a given culture + slot. Slots:
+//   "wife", "son", "daughter" — family portraits at
+//     data/ui/<culture>/portraits/family/<slot>.tga
+//   "general" — generic general portrait at data/ui/<culture>/general_portrait.tga
+// Mod dir is searched first, then vanilla. Returns { ok, buffer, path } or { ok:false }.
+// Parse a mod's `descr_cultures.txt` to learn each custom culture's
+// "portrait mapping" base culture (e.g. RIS's `e_hellenistic` → `greek`,
+// `libyan` → `eastern`). Used as the first-choice fallback when the
+// requested culture has no portrait pool of its own.
+const _portraitMappingCache = new Map(); // modDataDir -> { culture: portraitBase }
+function loadPortraitMapping(modDataDir) {
+  if (!modDataDir) return {};
+  if (_portraitMappingCache.has(modDataDir)) return _portraitMappingCache.get(modDataDir);
+  const out = {};
+  const culturesPath = path.join(modDataDir, "descr_cultures.txt");
+  try {
+    if (fs.existsSync(culturesPath)) {
+      const text = fs.readFileSync(culturesPath, "utf8");
+      const lines = text.split(/\r?\n/);
+      let cur = null;
+      for (const raw of lines) {
+        const headerM = /^\t"([a-z_]+)"\s*:\s*$/.exec(raw);
+        if (headerM) { cur = headerM[1].toLowerCase(); continue; }
+        const mapM = /"portrait mapping"\s*:\s*"([a-z_]+)"/.exec(raw);
+        if (mapM && cur) out[cur] = mapM[1].toLowerCase();
+      }
+    }
+  } catch {}
+  _portraitMappingCache.set(modDataDir, out);
+  return out;
+}
+
+// Cache the listing of NNN.tga.dds files in each `portraits/portraits/<age>/generals/`
+// pool, keyed by directory path. Directories are scanned once per process.
+const _portraitPoolCache = new Map(); // dirPath -> string[] (sorted .tga.dds files)
+function listPoolFiles(dir) {
+  if (_portraitPoolCache.has(dir)) return _portraitPoolCache.get(dir);
+  let files = [];
+  try {
+    files = fs.readdirSync(dir).filter((n) => n.toLowerCase().endsWith(".tga.dds")).sort();
+  } catch {}
+  _portraitPoolCache.set(dir, files);
+  return files;
+}
+
+// Deterministic per-character portrait index: DJB2 hash of the character's
+// firstName modulo the pool's file count. Same character always picks the
+// same portrait, regardless of campaign turn or save reload.
+function hashName(name) {
+  let h = 5381;
+  for (let i = 0; i < name.length; i++) h = ((h << 5) + h + name.charCodeAt(i)) | 0;
+  return h >>> 0;
+}
+
+ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, charContext) => {
+  if (!culture || !slot) return { ok: false };
+  const c = String(culture).toLowerCase();
+  const s = String(slot).toLowerCase();
+  const VANILLA_UI = path.join(
+    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data/ui"
+  );
+  const dirs = [
+    modDataDir ? path.join(modDataDir, "ui") : null,
+    VANILLA_UI,
+  ].filter(Boolean);
+  // Try the requested culture first, then the mod's declared
+  // `"portrait mapping"` from descr_cultures.txt (e.g. RIS's `e_hellenistic`
+  // → `greek`), then the six vanilla RTW cultures. The portrait mapping is
+  // what RTW itself uses for character art when the culture doesn't ship
+  // its own pool — without it, e_hellenistic factions would mis-fall-back
+  // to roman (alphabetically first) instead of the intended greek base.
+  const VANILLA_CULTURES = ["roman", "greek", "eastern", "egyptian", "carthaginian", "barbarian"];
+  const mapping = loadPortraitMapping(modDataDir);
+  const mappedBase = mapping[c] || null;
+  const tryCultures = [c];
+  if (mappedBase && mappedBase !== c) tryCultures.push(mappedBase);
+  for (const v of VANILLA_CULTURES) {
+    if (!tryCultures.includes(v)) tryCultures.push(v);
+  }
+
+  // For the "general" slot, prefer the per-character RTW portrait pool
+  // (`<culture>/portraits/portraits/{young,old}/generals/NNN.tga.dds`) so
+  // each general renders with their own face like the in-game family tree,
+  // rather than every general showing the same generic portrait.
+  //
+  // NOTE: the *real* portrait index is stored in the save and (sometimes)
+  // in descr_strat as `portrait_index N`. Until that byte is cracked we
+  // fall back to a deterministic DJB2 hash so the same character always
+  // gets the same face. The hash includes firstName + lastName + faction
+  // so two characters with the same first name don't collide.
+  if (s === "general" && charContext && charContext.name) {
+    // Explicit index from descr_strat wins outright (vanilla uses this).
+    const explicit = (charContext.portraitIndex != null) ? Number(charContext.portraitIndex) | 0 : null;
+    const ageNum = charContext.age != null ? Number(charContext.age) : null;
+    const ageBucket = (ageNum != null && ageNum >= 35) ? "old" : "young";
+    const hashInput = [
+      charContext.name,
+      charContext.lastName || "",
+      charContext.faction || "",
+    ].join("|");
+    const nameHash = hashName(hashInput);
+    for (const tc of tryCultures) {
+      for (const d of dirs) {
+        const poolDir = path.join(d, tc, "portraits", "portraits", ageBucket, "generals");
+        const files = listPoolFiles(poolDir);
+        if (files.length === 0) continue;
+        // Explicit portrait_index (descr_strat / future save) bypasses the
+        // hash. Clamp into the pool's bounds in case the index was written
+        // for a different culture's larger pool.
+        const idx = (explicit != null) ? (explicit % files.length) : (nameHash % files.length);
+        const file = files[idx];
+        try {
+          const buf = fs.readFileSync(path.join(poolDir, file));
+          return {
+            ok: true,
+            buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+            path: path.join(poolDir, file),
+            encoded: "rtw-tga-dds", // signals LZ4+DDS+DXT1 to renderer
+          };
+        } catch {}
+      }
+    }
+    // Fall through to the static general_portrait.tga fallback below.
+  }
+
+  const candidates = [];
+  for (const tc of tryCultures) {
+    for (const d of dirs) {
+      if (s === "wife" || s === "son" || s === "daughter") {
+        candidates.push(path.join(d, tc, "portraits", "family", s + ".tga"));
+      } else if (s === "general") {
+        // Static fallback if no per-character pool was found. Only roman +
+        // barbarian ship this file in vanilla; greek/eastern/etc inherit it.
+        candidates.push(path.join(d, tc, "portraits", "general_portrait.tga"));
+      }
+    }
+  }
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate)) {
+        const buffer = fs.readFileSync(candidate);
+        return { ok: true, buffer: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), path: candidate };
+      }
+    } catch {}
+  }
+  return { ok: false };
+});
+
+ipcMain.handle("get-descr-strat-families", async () => {
+  if (!modDescrStratFamilies || !modDescrStratFamilies.byFaction) {
+    return { ok: false, byFaction: {} };
+  }
+  return { ok: true, byFaction: modDescrStratFamilies.byFaction };
 });
 
 ipcMain.handle("clear-mod-caches", async () => {
@@ -4337,7 +4617,134 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     treasuryByFaction = null;
   }
 
-  return { buildings: buildingsByCity, armies, queues, taxByCity, happinessByCity, populationByCity, incomeByCity, sizeByCity, factionRecords, luaCounters, treasuryByFaction, playerExploration };
+  // ── Short-block settlement stats (added 2026-05-17 via save-cracker) ──
+  // Each settlement carries a ~583-byte stats block that ENDS at the UTF-16
+  // name. Fields sit at known relative offsets within that block. Validated
+  // cross-campaign (Macedon Alex T11 + RIS Spain T1):
+  //   tax_rate    u8  at name-562    (0=very_low, 1=low, 2=normal, 3=high, 4=very_high)
+  //   level       u32 at name-571    (0=village .. 5=huge_city)
+  //   PO          u32 at name-435    (public order %)
+  //   income      u32 at name-127    (denarii / turn)
+  //   population  u32 at name-35
+  //   creator     u32 at name-583    (revolt-to faction; updated to new owner on capture)
+  // settlement.offset (the \x01 marker) sits 1 byte BEFORE the UTF-16-len
+  // prefix, so name_pos = marker + 1 — translating: tax = marker - 561, etc.
+  //
+  // TAX ENUM NOTE: Provincia's older long-block parser (marker-2269) uses
+  // 4 values 0..3 = low/normal/high/very_high. The short-block byte uses 5
+  // values 0..4 = very_low/low/normal/high/very_high. We surface the short
+  // path under the same `taxByCity` key, mapped to the same string labels.
+  // The short-block path fills in cities the long-block path skipped (e.g.
+  // alexander_campaign saves) without changing values where both produced one.
+  const SHORT_TAX_LEVELS = ["very_low", "low", "normal", "high", "very_high"];
+  const SHORT_SIZE_LABELS = ["village", "town", "large_town", "city", "large_city", "huge_city"];
+  try {
+    const ensureObj = (v) => (v && typeof v === "object" ? v : {});
+    taxByCity = ensureObj(taxByCity);
+    populationByCity = ensureObj(populationByCity);
+    incomeByCity = ensureObj(incomeByCity);
+    sizeByCity = ensureObj(sizeByCity);
+    let shortBlockHits = 0;
+    for (const s of settlements) {
+      const namePos = s.offset + 1;  // findUtf16 returns the nchars byte position
+      // Tax rate (single byte, 0..4)
+      if (!(s.name in taxByCity)) {
+        const taxOff = namePos - 562;
+        if (taxOff >= 0 && taxOff < data.length) {
+          const v = data[taxOff];
+          if (v >= 0 && v <= 4) {
+            taxByCity[s.name] = SHORT_TAX_LEVELS[v];
+            shortBlockHits++;
+          }
+        }
+      }
+      // Population (u32, plausible range 100..100000)
+      if (!(s.name in populationByCity)) {
+        const popOff = namePos - 35;
+        if (popOff >= 0 && popOff + 4 <= data.length) {
+          const v = data.readUInt32LE(popOff);
+          if (Number.isFinite(v) && v >= 100 && v <= 100000) {
+            populationByCity[s.name] = v;
+          }
+        }
+      }
+      // Income perTurn (u32, plausible 0..50000 denarii). The short block
+      // doesn't carry a cumulative-income twin near this offset, so leave
+      // cumulative null where only the short path is available.
+      if (!(s.name in incomeByCity)) {
+        const incOff = namePos - 127;
+        if (incOff >= 0 && incOff + 4 <= data.length) {
+          const v = data.readUInt32LE(incOff);
+          if (Number.isFinite(v) && v >= 0 && v <= 50000) {
+            incomeByCity[s.name] = { perTurn: v, cumulative: null };
+          }
+        }
+      }
+      // Settlement level (u32, 0..5)
+      if (!(s.name in sizeByCity)) {
+        const lvlOff = namePos - 571;
+        if (lvlOff >= 0 && lvlOff + 4 <= data.length) {
+          const v = data.readUInt32LE(lvlOff);
+          if (v >= 0 && v <= 5) sizeByCity[s.name] = SHORT_SIZE_LABELS[v];
+        }
+      }
+    }
+    if (shortBlockHits > 0) {
+      console.log("[short-block] filled", shortBlockHits, "settlements with short-block tax data");
+    }
+    // If nothing got populated, drop empty objects back to null so renderer
+    // doesn't show empty tax/pop chips for every region.
+    if (Object.keys(taxByCity).length === 0) taxByCity = null;
+    if (Object.keys(populationByCity).length === 0) populationByCity = null;
+    if (Object.keys(incomeByCity).length === 0) incomeByCity = null;
+    if (Object.keys(sizeByCity).length === 0) sizeByCity = null;
+  } catch (err) {
+    console.warn("[short-block] parsing failed, skipping:", err && err.message);
+  }
+
+  // ── Save-cracker extras (2026-05-18 batch — header / mod / faction-config /
+  //    per-character spouse+age+region) ──
+  // Pure-read; each call is cheap and guarded so a corrupt/old save can't break
+  // the snapshot.
+  let header = null;
+  let factionDiscovered = null;
+  let factionConfig = null;
+  let modInfo = null;
+  let characterExtras = null;
+  let familyTreeMaps = null;
+  let religionByCity = null;
+  try { header = cxParseHeader(data); } catch (err) { console.warn("[header] parse failed:", err && err.message); }
+  try { if (header) factionDiscovered = cxParseBitmask(data, header); } catch (err) { console.warn("[bitmask] parse failed:", err && err.message); }
+  try { if (header && factionDiscovered) factionConfig = cxParseFactionConfig(data, header, factionDiscovered); } catch (err) { console.warn("[faction-config] parse failed:", err && err.message); }
+  try { modInfo = cxParseModInfo(data); } catch (err) { console.warn("[mod-info] parse failed:", err && err.message); }
+  try { characterExtras = cxParseCharacterExtras(data); } catch (err) { console.warn("[character-extras] parse failed:", err && err.message); }
+  try { religionByCity = cxParseReligion(data, settlements); } catch (err) { console.warn("[religion] parse failed:", err && err.message); }
+  try {
+    if (characterExtras) {
+      // v1Chars come from the existing character parser path — wire whatever is
+      // available in this scope. If the caller (renderer) doesn't already pass
+      // them in, the tree maps will still expose byUuid+spouseOf without children.
+      familyTreeMaps = cxBuildFamilyMaps(characterExtras, null);
+    }
+  } catch (err) { console.warn("[family-tree] build failed:", err && err.message); }
+
+  return {
+    buildings: buildingsByCity, armies, queues,
+    taxByCity, happinessByCity, populationByCity, incomeByCity, sizeByCity,
+    factionRecords, luaCounters, treasuryByFaction, playerExploration,
+    // ── Cracker extras (additive — old consumers don't break) ──
+    saveHeader: header,
+    factionDiscovered,
+    factionConfig,
+    modInfo,
+    characterExtras,
+    religionByCity,
+    familyTreeMaps: familyTreeMaps ? {
+      byUuid: Array.from(familyTreeMaps.byUuid.entries()),
+      spouseOf: Array.from(familyTreeMaps.spouseOf.entries()),
+      childrenOf: Array.from(familyTreeMaps.childrenOf.entries()),
+    } : null,
+  };
 }
 
 function diffSaveData(prev, curr) {

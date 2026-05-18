@@ -13,6 +13,7 @@ import "./CustomScrollArea.css";
 import TGA from "./tga";
 import WelcomeScreen from "./WelcomeScreen";
 import UpdateBanner from "./UpdateBanner";
+import FamilyTree from "./FamilyTree";
 import Toasts from "./Toasts";
 import MuteButton from "./MuteButton";
 import {
@@ -1554,6 +1555,18 @@ function App() {
   const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
   const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
   const [saveTreasuryRecords, setSaveTreasuryRecords] = useState(null); // { records: [{ pos, treasury, turnStart, regionCount }, ...] } — raw 23 major-faction treasury records from save (session 5)
+  // 0.9.376 backend extras — every save-cracker finding now exposed for any UI feature
+  const [saveHeader, setSaveHeader] = useState(null);
+  const [factionDiscovered, setFactionDiscovered] = useState(null);
+  const [factionConfig, setFactionConfig] = useState(null);
+  const [modInfo, setModInfo] = useState(null);
+  const [characterExtras, setCharacterExtras] = useState(null);
+  const [familyTreeMaps, setFamilyTreeMaps] = useState(null);
+  const [familyTreeOpen, setFamilyTreeOpen] = useState(false);
+  const [familyTreeDefaultFaction, setFamilyTreeDefaultFaction] = useState(null);
+  // descr_strat families per faction — populated when mod loads, used by
+  // Family Tree when no live save is loaded.
+  const [modFamiliesByFaction, setModFamiliesByFaction] = useState(null);
   const [liveSaveFile, setLiveSaveFile] = useState(null); // filename of the .sav file currently reflected in saveBuildingsData/saveArmiesData
   const [saveCharactersByRegion, setSaveCharactersByRegion] = useState(null); // { region: [character, ...] }
   const [saveScriptedByFaction, setSaveScriptedByFaction] = useState(null); // { faction: [char with x,y, traits, ...] } from v2 parser
@@ -1700,6 +1713,16 @@ function App() {
               if (res?.ok && Array.isArray(res.characters) && res.characters.length) {
                 setStartingCharactersFromMod(res.characters);
                 console.log("[starting-chars] loaded from descr_strat:", res.characters.length);
+              }
+            }).catch(() => {});
+          }
+          // descr_strat families (character_record + relative blocks per faction).
+          // Drives the Family Tree panel when no live save is loaded.
+          if (api.getDescrStratFamilies) {
+            api.getDescrStratFamilies().then(res => {
+              if (res?.ok && res.byFaction) {
+                setModFamiliesByFaction(res.byFaction);
+                console.log("[descr-strat-families] loaded for", Object.keys(res.byFaction).length, "factions");
               }
             }).catch(() => {});
           }
@@ -3381,6 +3404,12 @@ function App() {
       if (data && data.incomeByCity) setSaveIncomeByCity(data.incomeByCity);
       if (data && data.sizeByCity) setSaveSizeByCity(data.sizeByCity);
       if (data && data.treasuryByFaction) setSaveTreasuryRecords(data.treasuryByFaction);
+      if (data && data.saveHeader) setSaveHeader(data.saveHeader);
+      if (data && data.factionDiscovered) setFactionDiscovered(data.factionDiscovered);
+      if (data && data.factionConfig) setFactionConfig(data.factionConfig);
+      if (data && data.modInfo) setModInfo(data.modInfo);
+      if (data && data.characterExtras) setCharacterExtras(data.characterExtras);
+      if (data && data.familyTreeMaps) setFamilyTreeMaps(data.familyTreeMaps);
       if (data && data.charactersByRegion) setSaveCharactersByRegion(data.charactersByRegion);
       if (data && data.unitsByRegion) setSaveUnitsByRegion(data.unitsByRegion);
       if (data && data.scriptedByFaction) setSaveScriptedByFaction(data.scriptedByFaction);
@@ -10166,6 +10195,20 @@ function App() {
         toasts={toasts}
         onDismiss={(id) => setToasts(prev => prev.filter(x => x.id !== id))}
       />
+      {/* Family Tree modal — opened from the Characters widget header in RegionInfo */}
+      {familyTreeOpen && (
+        <FamilyTree
+          characterExtras={characterExtras}
+          familyTreeMaps={familyTreeMaps}
+          modFamiliesByFaction={modFamiliesByFaction}
+          startingCharactersFromMod={startingCharactersFromMod}
+          factionDisplayNames={factionDisplayNames}
+          factionCultures={factionCultures}
+          modDataDir={modDataDir}
+          defaultFaction={familyTreeDefaultFaction}
+          onClose={() => { setFamilyTreeOpen(false); setFamilyTreeDefaultFaction(null); }}
+        />
+      )}
       {/* Live-mode loading banner: shows while the main process parses the
           latest save (5-30s on big mid-game saves). Without this, the user
           sees a frozen window and assumes the app crashed. */}
@@ -11275,6 +11318,25 @@ function App() {
                       modeExtra={getModeExtra(lockedRegionInfo || regionInfo)}
                       devMode={devMode}
                       onShowInfo={setInfoPopup}
+                      onShowFamilyTree={() => {
+                        // Pre-select the clicked province's owning faction so
+                        // the Family Tree opens to *that* house. Prefer the
+                        // live owner from the save; fall back to the descr_strat
+                        // starting owner; finally to whatever the region info
+                        // labels the faction as.
+                        const r = lockedRegionInfo || regionInfo;
+                        const city = r?.city;
+                        const ownerId =
+                          (city && currentOwnerByCity && currentOwnerByCity[city]) ||
+                          (city && initialOwnerByCity && initialOwnerByCity[city]) ||
+                          r?.faction || null;
+                        setFamilyTreeDefaultFaction(ownerId ? String(ownerId).toLowerCase() : null);
+                        setFamilyTreeOpen(true);
+                      }}
+                      hasFamilyTreeData={
+                        (characterExtras && characterExtras.length > 0) ||
+                        (modFamiliesByFaction && Object.keys(modFamiliesByFaction).length > 0)
+                      }
                       modIconsDir={modIconsDir}
                       onFactionRightClick={({ factionId, displayName }) => {
                         setInfoPopup({

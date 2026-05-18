@@ -1,0 +1,366 @@
+// src/saveCrackerExtras.js
+//
+// Consolidates all newly-cracked save-file fields (2026-05-17 / 2026-05-18) so
+// Provincia can use them in any future UI feature.
+//
+// Coverage:
+//   * Header (campaign UUID, mod display name, mod content hash, faction-discovered
+//     bitmask, faction-config 53-byte records)
+//   * Per-character extras (own_uuid, role, region, spouse_uuid, age) anchored on
+//     `<culture> <role>` ASCII pstr16
+//   * Per-settlement extras (already in main.js — re-exported here for completeness)
+//   * Per-soldier weapon byte (9-byte soldier records, byte +0 = weapon_lvl × 4)
+//   * Unit-level stat aggregate slots (3× 14-byte blocks of pattern
+//     `01 00 40 00 XX ...` — weapon/armor/experience aggregates)
+//
+// Each function is pure-read: no side effects, returns plain JS objects.
+//
+// Validated against:
+//   - Spain T1 (vanilla imperial)
+//   - Macedon T0 (RIS imperial, 109 characters)
+//   - Arretium PRE/QUEUE/POST/T2-queued/T3/T4 (RIS imperial)
+//   - Alex Macedon T1/T11/T12 (alexander campaign)
+
+"use strict";
+
+// ── Header ──────────────────────────────────────────────────────────────────
+
+function readCampaignName(buf) {
+  if (buf.length < 0x60) return "";
+  const len = buf.readUInt16LE(0x3a);
+  if (len < 1 || len > 64 || 0x3c + len * 2 > buf.length) return "";
+  let s = "";
+  for (let i = 0; i < len; i++) {
+    const c = buf.readUInt16LE(0x3c + i * 2);
+    if (c >= 0x20 && c <= 0x7e) s += String.fromCharCode(c);
+  }
+  return s;
+}
+
+// Read header essentials. Cheap; safe to call once per save load.
+function parseHeader(buf) {
+  if (buf.length < 0x100) return null;
+  const magic = buf.readUInt32LE(0x00);
+  if (magic !== 0x070a) return null;
+  const campaignUuid = buf.readUInt32LE(0x04);
+  const campaignTypeFlag = buf.readUInt32LE(0x1c);
+  const saveVersion = buf.readUInt32LE(0x20);
+  // 12-byte content hash (3 u32 sub-hashes — campaign / mod / setup variant)
+  const hash = [
+    buf.readUInt32LE(0x24),
+    buf.readUInt32LE(0x28),
+    buf.readUInt32LE(0x2c),
+  ];
+  const sessionTimestamp = buf.readUInt32LE(0x30);
+  const campaignName = readCampaignName(buf);
+  return {
+    magic,
+    campaignUuid,
+    campaignTypeFlag,           // 0x20004 imperial / 0x20204 alexander
+    saveVersion,                // 7 for RR
+    hash,                       // 3 × u32
+    sessionTimestamp,
+    campaignName,
+    nameEnd: 0x3c + campaignName.length * 2,
+  };
+}
+
+// Read the per-faction "discovered by player" bitmask. Layout:
+//   name_end+16..18: 3 constant bytes `9c c7 06`
+//   name_end+19    : u8 bitmask byte count
+//   name_end+20..  : bitmask bytes
+function parseFactionDiscoveredBitmask(buf, hdr) {
+  if (!hdr) return null;
+  const start = hdr.nameEnd + 16;
+  if (start + 4 > buf.length) return null;
+  if (buf[start] !== 0x9c || buf[start + 1] !== 0xc7 || buf[start + 2] !== 0x06) return null;
+  const count = buf[start + 3];
+  if (count < 1 || count > 100) return null;
+  const bits = [];
+  for (let i = 0; i < count; i++) {
+    const b = buf[start + 4 + i];
+    for (let k = 0; k < 8; k++) bits.push((b >> k) & 1);
+  }
+  const discoveredCount = bits.filter(b => b).length;
+  return { byteCount: count, totalFactions: count * 8, bits, discoveredCount };
+}
+
+// Read faction-config 53-byte records. Each record byte +29 = faction roster index
+// (or 21 = slave-merged / disabled). Each record byte +4 = total faction count
+// (redundant — matches header's faction count).
+//
+// First record marker `12 34 de 0a` is at name_end + 146 (RIS-imperial 240-bit
+// bitmask) or name_end + 92 (vanilla 24-bit bitmask). Position depends on
+// bitmask size.
+function parseFactionConfigRecords(buf, hdr, bitmask) {
+  if (!hdr || !bitmask) return null;
+  const MARKER = Buffer.from([0x12, 0x34, 0xde, 0x0a]);
+  // Scan a small range starting from after the bitmask + small trailer
+  const searchStart = hdr.nameEnd + 20 + bitmask.byteCount;
+  const firstMarker = buf.indexOf(MARKER, searchStart);
+  if (firstMarker < 0 || firstMarker - searchStart > 200) return null;
+  const factionCount = buf.readUInt32LE(firstMarker + 4);
+  if (factionCount < 1 || factionCount > 300) return null;
+  // Verify the next few markers are at +53 each
+  const recordSize = 53;
+  for (let i = 0; i < Math.min(5, factionCount); i++) {
+    const ofs = firstMarker + i * recordSize;
+    if (buf[ofs] !== 0x12 || buf[ofs + 1] !== 0x34 || buf[ofs + 2] !== 0xde || buf[ofs + 3] !== 0x0a) {
+      return null;
+    }
+  }
+  const records = [];
+  for (let i = 0; i < factionCount; i++) {
+    const ofs = firstMarker + i * recordSize;
+    if (ofs + recordSize > buf.length) break;
+    records.push({
+      index: i,
+      offset: ofs,
+      factionIndex: buf[ofs + 29],     // descr_strat order, or 21 = slave-merged
+      flag43: buf[ofs + 43],
+      flag47: buf[ofs + 47],
+      flag48: buf[ofs + 48],
+    });
+  }
+  return { firstMarker, recordSize, factionCount, records };
+}
+
+// Try to read the mod display name (UTF-16 LE) located at ~0x326d.
+// Returns null if save was made without an explicit mod path.
+function parseModInfo(buf) {
+  if (buf.length < 0x4500) return null;
+  function readPstr16Utf16At(off) {
+    if (off + 2 > buf.length) return null;
+    const chars = buf.readUInt16LE(off);
+    if (chars < 4 || chars > 200) return null;
+    if (off + 2 + chars * 2 > buf.length) return null;
+    let s = "";
+    for (let i = 0; i < chars; i++) {
+      const c = buf[off + 2 + i * 2];
+      const h = buf[off + 2 + i * 2 + 1];
+      if (h !== 0 || c < 0x20 || c > 0x7e) return null;
+      s += String.fromCharCode(c);
+    }
+    return { str: s, totalLen: 2 + chars * 2 };
+  }
+  const modDisplayName = readPstr16Utf16At(0x326d);
+  const modContentHash = readPstr16Utf16At(0x32c2);
+  const modPath = readPstr16Utf16At(0x43fc);
+  const actionCounter = buf.length >= 0x4400 ? buf.readUInt32LE(0x43f8) : 0;
+  return {
+    modDisplayName: modDisplayName ? modDisplayName.str : null,
+    modContentHash: modContentHash ? modContentHash.str : null,
+    modPath: modPath ? modPath.str : null,
+    actionCounter,
+  };
+}
+
+// ── Per-character extras (anchored on role string) ──────────────────────────
+
+const CULTURES = ["roman", "greek", "barbarian", "eastern", "egyptian", "carthaginian"];
+const ROLES = ["general", "captain", "diplomat", "spy", "assassin", "admiral", "merchant"];
+
+// Find every <culture> <role>\0 ASCII pstr16 in the buffer and extract the
+// per-character fields anchored on it. The character record has:
+//   role+15  u32  own UUID
+//   role+19  u32  bodyguard / commander UUID
+//   role+35  u16  region name char count (L)
+//   role+37  UTF-16 region name (2L bytes)
+//   role+37+2L     u32 ff ff ff ff sentinel
+//   role+37+2L+4   u32 spouse UUID  (0 / 0xffffffff = unmarried)
+//   role+37+2L+8   f32 (unknown semantics)
+//   role+37+2L+12  u32 age in years
+//   role+37+2L+16  u32 second age value (possibly fine-grained sub-counter)
+function parseCharacterExtras(buf) {
+  const out = [];
+  for (const culture of CULTURES) {
+    for (const role of ROLES) {
+      const target = Buffer.from(culture + " " + role + "\0", "ascii");
+      let p = 0;
+      while (true) {
+        const idx = buf.indexOf(target, p);
+        if (idx === -1) break;
+        p = idx + 1;
+        if (idx + 80 > buf.length) continue;
+        const ownUuid = buf.readUInt32LE(idx + 15);
+        if (ownUuid === 0 || ownUuid === 0xffffffff) continue;
+        const bodyguardUuid = buf.readUInt32LE(idx + 19);
+        const regionLen = buf.readUInt16LE(idx + 35);
+        if (regionLen < 1 || regionLen > 32) continue;
+        // Read region name (UTF-16 LE)
+        let region = "";
+        let regionValid = true;
+        for (let i = 0; i < regionLen; i++) {
+          const lo = buf[idx + 37 + i * 2];
+          const hi = buf[idx + 37 + i * 2 + 1];
+          if (hi !== 0 || lo < 0x20 || lo > 0x7e) { regionValid = false; break; }
+          region += String.fromCharCode(lo);
+        }
+        if (!regionValid) continue;
+        const postRegion = idx + 37 + regionLen * 2;
+        // Validate sentinel
+        if (buf.readUInt32LE(postRegion) !== 0xffffffff) continue;
+        const spouseUuid = buf.readUInt32LE(postRegion + 4);
+        const age = buf.readUInt32LE(postRegion + 12);
+        if (age > 200) continue; // sanity
+        out.push({
+          offset: idx,
+          role,
+          culture,
+          ownUuid,
+          bodyguardUuid,
+          region,
+          spouseUuid,
+          isMarried: spouseUuid !== 0 && spouseUuid !== 0xffffffff,
+          age,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+// Build family tree maps. Provincia's existing v1 parser already produces
+// father_uuid; combine with our spouse_uuid to expose parent/spouse/children.
+//
+// Args: characters (from parseCharacterExtras), v1Chars (from existing
+// characterParser.js if available).
+//
+// Returns:
+//   byUuid:       Map(ownUuid → character)
+//   spouseOf:     Map(uuid → spouseUuid)
+//   childrenOf:   Map(parentUuid → [childUuid, ...])
+function buildFamilyTreeMaps(characters, v1Chars) {
+  const byUuid = new Map();
+  for (const c of characters) byUuid.set(c.ownUuid, c);
+  const spouseOf = new Map();
+  for (const c of characters) {
+    if (c.isMarried) spouseOf.set(c.ownUuid, c.spouseUuid);
+  }
+  const childrenOf = new Map();
+  if (v1Chars && Array.isArray(v1Chars)) {
+    for (const c of v1Chars) {
+      const father = c.fatherUuid;
+      if (!father || father === 0xffffffff) continue;
+      if (!childrenOf.has(father)) childrenOf.set(father, []);
+      childrenOf.get(father).push(c.primaryUuid || c.ownUuid || c.uuid);
+    }
+  }
+  return { byUuid, spouseOf, childrenOf };
+}
+
+// ── Per-soldier stats ───────────────────────────────────────────────────────
+
+// Decode soldier records of a unit. Each soldier is 9 bytes:
+//   +0  u8 weapon_lvl (encoded as level × 4; 0x04 = +1, 0x08 = +2, 0x0c = +3)
+//   +1  u8 (zeros for fresh recruits — possibly secondary stat)
+//   +2  u8 (zeros — possibly experience or HP)
+//   +3  u8 (zeros)
+//   +4  u8 (zeros — possibly hit-points-lost or status)
+//   +5..+8  4 bytes soldier UUID (varies per soldier)
+//
+// Returns array of soldier objects + aggregate display weapon level.
+function parseSoldierArray(buf, arrayStart, maxSoldiers = 240) {
+  const soldiers = [];
+  let weaponSum = 0;
+  for (let i = 0; i < maxSoldiers; i++) {
+    const off = arrayStart + i * 9;
+    if (off + 9 > buf.length) break;
+    const w = buf[off];
+    // Stop at the first record where bytes 0..4 are all 0xff (padding/end)
+    if (w === 0xff && buf[off + 1] === 0xff && buf[off + 4] === 0xff) break;
+    soldiers.push({
+      weaponLvl: Math.floor(w / 4),
+      rawWeaponByte: w,
+      uuid: buf.readUInt32LE(off + 5),
+    });
+    weaponSum += Math.floor(w / 4);
+  }
+  return {
+    count: soldiers.length,
+    soldiers,
+    avgWeaponLvl: soldiers.length > 0 ? weaponSum / soldiers.length : 0,
+  };
+}
+
+// Read the 3 unit-level stat aggregate slots that precede the soldier array.
+// Each slot is 14 bytes with pattern `01 00 40 00 XX 00 00 00 00 00 00 00 00 00`
+// where XX (byte +4) holds the level (× 4 encoding).
+//
+// Three slots in order are probably weapon / armor / experience aggregates,
+// but the exact mapping isn't fully validated.
+function parseUnitStatSlots(buf, slotsStart) {
+  if (slotsStart + 42 > buf.length) return null;
+  const slots = [];
+  for (let i = 0; i < 3; i++) {
+    const off = slotsStart + i * 14;
+    if (buf[off] !== 0x01 || buf[off + 1] !== 0x00 || buf[off + 2] !== 0x40 || buf[off + 3] !== 0x00) {
+      return null; // pattern mismatch
+    }
+    slots.push({
+      raw: buf[off + 4],
+      level: Math.floor(buf[off + 4] / 4),
+    });
+  }
+  return { slots, weapon: slots[0], armor: slots[1], experience: slots[2] };
+}
+
+// ── Religion percentages per settlement ────────────────────────────────────
+//
+// Each settlement record contains a 6-byte block of religion-share percentages
+// (one byte per religion in descr_religions). Values are 0..100 and sum to
+// approximately 95..105 (rounding). The offset relative to the settlement
+// name position VARIES per settlement (observed +137 / +139 / +152 across
+// the cracking session); the values themselves never exceed 100 and the
+// row-sum is the reliable signature.
+//
+// scanReligionForSettlement walks a small window forward from the name
+// position looking for a 6-byte run that:
+//   1. Has each byte in [0, 100]
+//   2. Sums to within [90, 110]
+//   3. Contains at least 2 non-zero entries (rules out dominant-100 outliers)
+// Returns the first matching block plus its dx for reproducibility.
+function scanReligionForSettlement(buf, namePos, windowSize = 200) {
+  for (let dx = 0; dx < windowSize; dx++) {
+    const off = namePos + dx;
+    if (off + 6 > buf.length) break;
+    let sum = 0, nonZero = 0, ok = true;
+    for (let i = 0; i < 6; i++) {
+      const b = buf[off + i];
+      if (b > 100) { ok = false; break; }
+      sum += b;
+      if (b > 0) nonZero++;
+    }
+    if (!ok) continue;
+    if (sum < 90 || sum > 110) continue;
+    if (nonZero < 2) continue;
+    return { dx, sum, bytes: Array.from(buf.slice(off, off + 6)) };
+  }
+  return null;
+}
+
+// Parse religion for every settlement marker passed in.
+// Returns Map<settlementName, { dx, sum, bytes }>.
+function parseReligionByCity(buf, settlementMarkers) {
+  const out = {};
+  if (!Array.isArray(settlementMarkers)) return out;
+  for (const s of settlementMarkers) {
+    const namePos = s.offset + 1;
+    const r = scanReligionForSettlement(buf, namePos);
+    if (r) out[s.name] = r;
+  }
+  return out;
+}
+
+module.exports = {
+  parseHeader,
+  parseFactionDiscoveredBitmask,
+  parseFactionConfigRecords,
+  parseModInfo,
+  parseCharacterExtras,
+  buildFamilyTreeMaps,
+  parseSoldierArray,
+  parseUnitStatSlots,
+  scanReligionForSettlement,
+  parseReligionByCity,
+};

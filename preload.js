@@ -65,6 +65,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Character/unit extraction — initialize once the mod data directory is known.
   charactersInit: (modDataDir) => ipcRenderer.invoke("characters-init", modDataDir),
   getStartingCharacters: () => ipcRenderer.invoke("get-starting-characters"),
+  getDescrStratFamilies: () => ipcRenderer.invoke("get-descr-strat-families"),
+  resolvePortrait: (modDataDir, culture, slot, charContext) => ipcRenderer.invoke("resolve-portrait", modDataDir, culture, slot, charContext || null),
   getInitialOwnership: () => ipcRenderer.invoke("get-initial-ownership"),
   getRebelFactions: (modDataDir) => ipcRenderer.invoke("get-rebel-factions", modDataDir),
   findEdbChain: (modDataDir, chainName) => ipcRenderer.invoke("find-edb-chain", modDataDir, chainName),

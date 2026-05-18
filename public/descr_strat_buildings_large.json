@@ -2194,7 +2194,7 @@
         "region": "Xupon_Zaxyir",
         "level": "large_town",
         "population": 1500,
-        "faction_creator": "sidon",
+        "faction_creator": "carthage",
         "buildings": [
           {
             "type": "colony",
@@ -18273,6 +18273,22 @@
             "level": "region_base"
           }
         ]
+      },
+      {
+        "region": "Coisstobocia_Transmontana",
+        "level": "town",
+        "population": 800,
+        "faction_creator": "costoboci",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_house"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          }
+        ]
       }
     ]
   },
@@ -19339,7 +19355,7 @@
         "region": "Rhodetia",
         "level": "town",
         "population": 1500,
-        "faction_creator": "emporion",
+        "faction_creator": "sparta",
         "buildings": [
           {
             "type": "core_building",
@@ -31230,7 +31246,7 @@
         "region": "Turdulorum_Oppida",
         "level": "town",
         "population": 2000,
-        "faction_creator": "basti",
+        "faction_creator": "lusitani",
         "buildings": [
           {
             "type": "core_building",
@@ -31430,7 +31446,7 @@
         "region": "Celticia_Meridionalis",
         "level": "town",
         "population": 1500,
-        "faction_creator": "lusitani",
+        "faction_creator": "celtici",
         "buildings": [
           {
             "type": "core_building",
@@ -35947,22 +35963,6 @@
         "level": "town",
         "population": 1400,
         "faction_creator": "triballi",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_house"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          }
-        ]
-      },
-      {
-        "region": "Coisstobocia_Transmontana",
-        "level": "town",
-        "population": 800,
-        "faction_creator": "costoboci",
         "buildings": [
           {
             "type": "core_building",

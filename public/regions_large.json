@@ -1052,7 +1052,7 @@
   "162,135,142": {
     "region": "Xupon_Zaxyir",
     "city": "Hippo_Diarrhytus",
-    "faction": "tyre",
+    "faction": "carthage",
     "culture": "Phoenicians",
     "tags": "aor_libyan, rel_phoenician_4, rel_libyan_1, Farm8, hills, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
@@ -1552,7 +1552,7 @@
   "205,14,226": {
     "region": "Turdulorum_Oppida",
     "city": "Conimbriga",
-    "faction": "edeta",
+    "faction": "lusitani",
     "culture": "Oppidan_Turdulians",
     "tags": "aor_iberian, rel_celtic_4, rel_iberian_2, Farm6, forest, mediterranean, base_port_level_1, rivertrade, irrigation_river",
     "farm_level": "5",
@@ -2162,7 +2162,7 @@
   "49,165,38": {
     "region": "Rhodetia",
     "city": "Rhode",
-    "faction": "emporion",
+    "faction": "athens",
     "culture": "Rhodetans",
     "tags": "homeland_emporitan, aor_emporitan, aor_greek, aor_euzonoi, rel_ionian_4, rel_iberian_1, Farm7, small_islands_and_rocky_coast, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",

@@ -8,6 +8,174 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.395",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "macOS builds shipping alongside Windows. Provincia is now distributed as both `Provincia Setup X.Y.Z.exe` (Windows installer) and `Provincia-X.Y.Z.dmg` (macOS disk image, universal — x64 + arm64). The Mac build is unsigned (no Apple Developer cert), so first-launch will require a right-click → Open to bypass Gatekeeper." },
+      { type: "improvement", text: "Family Tree hover tooltips now include character traits and ancillaries parsed from descr_strat — see at a glance which generals have which traits without leaving the panel." },
+    ],
+  },
+  {
+    version: "0.9.394",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "Family Tree cards now show a hover tooltip with full details — display name, role, region, age, and deceased/leader/heir status. Backed by the native `title` attribute so it surfaces immediately without an extra render layer." },
+      { type: "improvement", text: "Sibling connector lines redrawn to stop exactly at the centers of the outermost children instead of using a brittle `calc(count * 130px)` width formula that drifted whenever the cards weren't exactly 130 px wide. The horizontal bar is now an absolutely-positioned divider with `left`/`right` insets sized to the child count." },
+      { type: "improvement", text: "Live-save flow upgrade: descr_strat `portrait_index N` is already wired through Portrait → IPC → pool lookup, so vanilla characters that specify it (e.g. Vibius Julius) render with their engine-assigned face. Future save-byte crack will reuse the same `explicit` path." },
+    ],
+  },
+  {
+    version: "0.9.393",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree now auto-fits the tree to the viewport when it opens and whenever you switch faction or selected general. Wide multi-generation lineages that previously had branches clipped off the sides now render fully visible, scaled down to fit; you can still wheel-zoom in to read the cards. The home button (⌂) re-fits any time you've panned/zoomed away. Min zoom dropped from 30 % to 20 % for the biggest trees." },
+    ],
+  },
+  {
+    version: "0.9.392",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "RIS Macedon (and every other non-vanilla `e_hellenistic`/`w_hellenistic`/`libyan`/`iranian`/etc faction) was getting roman portraits because my fallback chain went culture-alphabetical (roman first). RTW itself uses each culture's `\"portrait mapping\"` from `descr_cultures.txt` as the engine-side fallback — `e_hellenistic` → `greek`, `libyan` → `eastern`, `iberian` → `eastern`, etc. Provincia now parses that mapping and uses it as the first-choice fallback when the culture has no portrait pool of its own." },
+    ],
+  },
+  {
+    version: "0.9.391",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Family Tree marble texture was missing — panel rendered as a flat tan fallback. The 0.9.387 `<MarbleBackdrop>` canvas approach hit a load/layout race in production: the cached Image promise resolved to null on first try and stayed null. Reverted to CSS `background-image` (which loads reliably) with the same 12 % black overlay layered via `linear-gradient`. Also fixed a `.//` double-slash in the resolved URL by dropping the leading slash from the concat." },
+    ],
+  },
+  {
+    version: "0.9.390",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Dead family members now render as the SAME portrait, desaturated (grayscale + dim) — matching RTW's in-game family tree convention. Was a solid black silhouette before, which lost the ancestor's identity." },
+      { type: "improvement", text: "Family Tree names strip the descr_strat uniqueness suffix and render with roman numerals — `AntigonosB` → `Antigonos II`, `DemetriosC` → `Demetrios III`, etc. The trailing single uppercase letter (B/C/D/...) is the engine's disambiguator for multiple characters sharing a first name, not part of the display name." },
+      { type: "improvement", text: "Family tree cards now always show an `age` line (renders `age —` instead of nothing when the data lacks an age). Mainly affects family members referenced only in `relative` lines without a corresponding `character_record`." },
+    ],
+  },
+  {
+    version: "0.9.389",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "Per-character portrait assignment is now stable AND unique: hash key changed from `firstName` alone to `firstName|lastName|faction`, so two characters named \"Antigonos\" no longer collide on the same portrait. Same character always picks the same portrait across sessions, no matter how many namesakes exist in the campaign." },
+      { type: "feature", text: "If descr_strat declares `portrait_index N` on a character line (vanilla uses this for `Vibius Julius`; mods can use it for any character), Provincia honors it and picks file `NNN.tga.dds` from the relevant pool directly — bypassing the hash fallback. Same wiring is now in place for the save-stored portrait index once that byte is cracked." },
+    ],
+  },
+  {
+    version: "0.9.388",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "Family Tree generals now use the per-character RTW portrait pool — the actual portraits you see in the in-game family tree. Source files live at `data/ui/<culture>/portraits/portraits/{young,old}/generals/NNN.tga.dds` (188 portraits per culture/age bucket). The `.tga.dds` files are LZ4-frame-compressed DDS containing DXT1 texture data — added a full decoder pipeline (`src/portraitDecoder.js`: LZ4 → DDS header → DXT1 blocks → RGBA). Per-character portrait pick is deterministic (DJB2 hash of firstName modulo pool size), so the same general always gets the same face. Age ≥ 35 picks from the `old/` pool, otherwise `young/`. Falls back through vanilla cultures when the requested culture lacks a pool. Decoded results are cached per character, so each portrait only goes through the decode pipeline once per session." },
+    ],
+  },
+  {
+    version: "0.9.387",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree marble now pixel-matches the main window. Replaced the CSS `linear-gradient + background-image` approach (which couldn't quite line up tile size and overlay opacity vs the body canvas) with an inline `<canvas>` that reuses the exact `drawBackground` logic from App.js: same tiling at native size, same 12 % light / 45 % dark overlay, same image source. Re-paints on resize and on prefers-color-scheme change." },
+    ],
+  },
+  {
+    version: "0.9.386",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Adult-male portraits in the Family Tree were rendering as solid black boxes. Root cause: the `resolve-portrait` IPC looked for `<culture>/general_portrait.tga` but RTW stores it at `<culture>/portraits/general_portrait.tga` — so the file was never found, and the per-culture fallback chain found nothing either. With the path corrected, greek/eastern/egyptian/etc generals fall back through the chain and pick up roman or barbarian's `portraits/general_portrait.tga` (the only two vanilla cultures that ship one)." },
+      { type: "feature", text: "Family Tree button now opens to the CURRENT REGION'S owning faction. Click a province → 👪 → tree opens for that faction (live save owner first, descr_strat starting owner second, region-info faction last). Previously always opened to the faction with the most relatives, requiring a dropdown trip every time." },
+      { type: "improvement", text: "Marble background overlay bumped from 12 % to 18 % black so the Family Tree panel reads as the same desaturated cream as the main window instead of raw yellow marble." },
+    ],
+  },
+  {
+    version: "0.9.385",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Family Tree was missing every live general in RIS-style mods. Root cause: `descr_strat.txt` uses `character,\\t` (comma-separated) instead of vanilla `character ` (whitespace), so my `^character\\s+` regex matched zero of the 908 character lines in RIS. With named characters never parsed, the family tree fell back to character_record entries only — which in starting-position descr_strat files are the recently-deceased ancestors of each ruling house (Ptolemaios age 117, Antigonos age 112, etc.). Loosened the separator to `[\\s,]+` so both formats parse." },
+      { type: "fix", text: "Generals sidebar now strictly shows alive characters only — dropped the previous fall-back-to-everyone behavior that surfaced 100+ year-old dead ancestors when the live generals couldn't be parsed. With the character-line fix above, the alive list now actually populates." },
+      { type: "improvement", text: "Family Tree marble background now matches the rest of the app's hue — added the same 12 % black overlay over `menu_marble_frame.png` that App.js's body canvas applies, so the panel no longer reads as raw-yellow marble. Dropped the gold border frame; Provincia panels don't have one." },
+    ],
+  },
+  {
+    version: "0.9.384",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Family Tree window is now a solid marble panel above the main app, not a see-through `.panel` overlay. Dropped the `className=\"panel\"` translucent-cream approach from 0.9.383 (looked washed-out and let the dimmed map bleed through). The card now uses `menu_marble_frame.png` directly as an opaque tiled background with a dark-gold border frame and a stronger overlay backdrop so the main window is properly dimmed behind it." },
+      { type: "fix", text: "Generals sidebar fell back to empty for some factions when the alive-only filter dropped everyone (entries from descr_strat that lack an explicit alive/dead keyword default to true, but mod-side parsing can still produce edge cases). If the alive filter produces zero generals, the sidebar now falls back to the unfiltered list rather than rendering blank." },
+    ],
+  },
+  {
+    version: "0.9.383",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree restyled to match the rest of Provincia. Switched the modal card to `className=\"panel\"` so it inherits the global cream-translucent look (rgba(232,222,198,0.45)) over the body marble canvas — same as every widget. Dropped the dark `#1a1a1a` + orange palette from 0.9.382 (looked like a dev modal) and the yellow-tinted marble from 0.9.380 (over-saturated). All inner surfaces (sidebar, viewport, member cards, zoom widget, header) now use cream + dark text with subdued gold borders." },
+      { type: "improvement", text: "Member cards now use tall rectangular portraits (in-game family-tree shape) with a thin gold border, name below. Dead members render as solid black silhouettes per RTW's own family-tree convention. The marriage glyph (⚭) renders in the same dark gold as the connector lines." },
+      { type: "improvement", text: "Generals sidebar now shows only ALIVE generals (was including dead ones too)." },
+      { type: "fix", text: "Family-tree portraits worked only for vanilla cultures (roman, greek, eastern, egyptian, carthaginian, barbarian). RIS-style culture folders (e_hellenistic, w_hellenistic, libyan, iranian, …) had no portrait TGAs, so every card showed a `?` placeholder. The `resolve-portrait` IPC now tries the requested culture first, then falls back through the six vanilla cultures so mod-only cultures inherit generic portraits. Vanilla culture names are RTW engine constants, not faction names, so this respects the no-hardcoded-factions rule." },
+    ],
+  },
+  {
+    version: "0.9.382",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Family Tree sidebar was empty for most factions. Cause: the generals list filtered on `isCharacter`, which only flags entries built from descr_strat `character` blocks; family members declared via `character_record` (the vast majority for non-leader generals) were excluded. Dropped the filter so any of-age male family member shows up." },
+      { type: "fix", text: "Family Tree portraits showed `?` placeholders for non-vanilla cultures. The component used a hardcoded faction→culture map (roman/greek/barbarian) that didn't match RIS culture folders (e_hellenistic, w_hellenistic, libyan, …). Now takes the real `factionCultures` map (parsed from descr_sm_factions.txt) as a prop and uses it directly. No more hardcoded faction list — works for any campaign/mod." },
+      { type: "improvement", text: "Family Tree window restyled to match the rest of the app: dark `#1a1a1a` background, orange `#e8a030` accent border + title, light text. Dropped the yellow marble panel that didn't belong. Sidebar, member cards, zoom widget and connector lines all moved to the dark Provincia palette." },
+    ],
+  },
+  {
+    version: "0.9.381",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Fixed Family Tree crash: TypeError reading 'origX' on null when releasing the mouse mid-pan. Cause: the setTransform updater closure read dragging.current.origX, but React runs the updater asynchronously, and mouseup nulled the ref before the updater ran. Snapshot the ref into a local before calling setTransform." },
+    ],
+  },
+  {
+    version: "0.9.380",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree UI overhauled to match the rest of the app. Dropped the gold border / inset frame styling — the panel now uses a flat marble background with the standard small-caps header, the same look as every other modal in Provincia. The marble texture is fully opaque so it shows through behind the tree." },
+      { type: "improvement", text: "Family Tree now uses the actual in-game portrait TGAs. New `resolve-portrait` IPC searches the mod's `data/ui/<culture>/portraits/family/{wife,son,daughter}.tga` first, then falls back to vanilla. RIS reuses the vanilla portraits so RIS factions render with real per-culture portraits. Loaded lazily through the existing TGA decoder + a per-culture/slot cache (src/portraitIcons.js)." },
+      { type: "improvement", text: "Family Tree is now zoomable and pannable. Mouse wheel zooms (30%–250%), click-and-drag pans in any direction. A floating zoom widget in the bottom-right shows the current scale with − / + / home buttons. Big multi-generation trees that previously overflowed off-screen are now fully reachable." },
+      { type: "feature", text: "Family Tree gained a left sidebar listing every of-age male character (generals + faction leader + heir) with a thumbnail portrait, name, and age. Leader 👑 / heir ★ pinned to the top; remaining generals sorted by age desc. Clicking a general focuses the tree on the family branch they belong to — useful for factions with multiple descent chains." },
+    ],
+  },
+  {
+    version: "0.9.379",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree redesigned to look like the in-game RTW family tree. Marble parchment background, ornate gold border, small-caps title bar. Vertical hierarchical layout: root patriarchs at top, spouses next to them with a ⚭ glyph, children rendered below connected by gold lines. Recursive — adult children who are themselves heads of families get their own sub-trees, so multi-generation families (faction founder → heir → grandchild) render top-down. Inline-SVG silhouette portraits per category (adult male / wife / male child / female child) — RTW reuses the same stock portrait for wives and same again for child portraits split by gender, so silhouettes are a faithful placeholder until the portrait-index byte is cracked. Dead family members fade to BLACK (matching the in-game greying-out). Uses faction display names from the mod's `descr_sm_factions.txt` in the picker dropdown so Romans Julii reads as `Republic of Rome`." },
+      { type: "improvement", text: "Backend extracts per-settlement religion-mix bytes (6 bytes = one per religion in descr_religions, sums to ~95-105). Scanner runs forward from each settlement's name position looking for the religion 6-byte signature. Available as `religionByCity` in parseSaveData() — keys settlement names to { dx, sum, bytes[6] }. Per-settlement religion-bar UI to follow." },
+    ],
+  },
+  {
+    version: "0.9.378",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Family Tree now works in mod-data mode too — no live save required. main.js extracts `character_record` + `relative` blocks from descr_strat (per faction), exposed via new get-descr-strat-families IPC. The Family Tree panel shows husband/wife pairs with children grouped under each family card, plus an `unattached characters` section for solo named characters (diplomats, spies, admirals). Faction picker dropdown across the top — defaults to the first faction with relatives. Dead family members render dimmed. Live save data still takes precedence when loaded." },
+      { type: "improvement", text: "Moved the 👪 Family Tree button out of the floating top-right corner and into the Characters widget header, where it belongs. Appears whenever family-tree data is available (live save OR mod-data fallback)." },
+    ],
+  },
+  {
+    version: "0.9.377",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "New Family Tree panel. Floating 👪 button in the top-right opens a modal listing every character extracted from the save — name (via role), age, region, marriage status. Grouped by culture, filterable by region / role / UUID. Marriages show the spouse inline if their record is in the role-string set; otherwise the husband still flags as ⚭ married with the spouse UUID. Reads characterExtras + familyTreeMaps already exposed in 0.9.376's parser. Family-tree row/edge rendering will follow once the v1 character parser is wired into the same map so child-of-father lookups light up." },
+    ],
+  },
+  {
+    version: "0.9.376",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "Backend now extracts every save-file field cracked in the past few days, so future features can use any of them without re-cracking. New src/saveCrackerExtras.js consolidates the readers: save header (magic, campaign UUID, save version, campaign-type flag, 3-part content hash, session timestamp, campaign name), faction-discovered bitmask (per-faction encounter flags, byte-packed at name_end+19, count varies by campaign — 30 bytes for RIS imperial / 3 bytes for vanilla), faction-config 53-byte records (one per faction, byte +29 = roster index or 21 = slave-merged), mod display name (UTF-16 at 0x326d, e.g. \"[BETA] RTR: Imperium Surrectum 0.7.0\"), mod content hash IDs (UTF-16 at 0x32c2), mod path (already had it), action/RNG counter at 0x43f8, per-character anchored on `<culture> <role>` ASCII pstr16 with own_uuid (role+15), bodyguard_uuid (role+19), region name UTF-16 (role+35 length, role+37 chars), spouse_uuid (role+37+2L+4 — variable offset based on region name length), age in years (role+37+2L+12), family-tree maps (byUuid / spouseOf / childrenOf). All exposed in parseSaveData() return value as saveHeader / factionDiscovered / factionConfig / modInfo / characterExtras / familyTreeMaps. Existing parsers untouched; cracker extras are additive." },
+    ],
+  },
+  {
+    version: "0.9.375",
+    date: "2026-05-17",
+    items: [
+      { type: "feature", text: "Alexander campaign now displays per-settlement tax level, public order, population, income and current level — previously only imperial_campaign and ris_classic surfaced these. New offsets from save-cracker session 2026-05-17 sit at the SHORT end of each settlement's stats block (name-562 tax, name-435 PO, name-127 income, name-35 population, name-571 level — all u32 except tax which is u8). Validated against the Macedon turn 1 base vs `taxes increased in Pella` save (Pella tax 1→2) and `taxes lowered in Sparta` save (Sparta 1→0): exactly one byte change at the predicted offset. Cross-checked across 9 Alexander settlements and 5 RIS Spain settlements — same layout works for both, so the new path is unconditional (no campaign-name gate). Existing imperial_campaign / ris_classic offsets are untouched; the short-block reads run in parallel and only fill in when the long-block path didn't already." },
+    ],
+  },
+  {
     version: "0.9.374",
     date: "2026-05-16",
     items: [

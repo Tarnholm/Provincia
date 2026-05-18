@@ -638,7 +638,8 @@
   ],
   "costoboci": [
     "Coisstobocia",
-    "Coisstobocia_Meridionalis"
+    "Coisstobocia_Meridionalis",
+    "Coisstobocia_Transmontana"
   ],
   "crobyzi": [
     "Krobyzia"
@@ -1536,7 +1537,6 @@
     "Korelia",
     "Axios",
     "Treria-Tilataia",
-    "Coisstobocia_Transmontana",
     "Biessia",
     "Albocensia_Orientalis",
     "Dacia",

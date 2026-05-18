@@ -46961,6 +46961,31 @@
     ]
   },
   {
+    "name": "Garrison of Coisstobocia_Transmontana",
+    "charType": "garrison",
+    "armyClass": "garrison",
+    "location": "Coisstobocia_Transmontana",
+    "faction": "costoboci",
+    "x": null,
+    "y": null,
+    "region": "Coisstobocia_Transmontana",
+    "units": [
+      {
+        "name": "getic light infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "getic peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ],
+    "_garrisoned": true
+  },
+  {
     "name": "Dromichaites",
     "charType": "general",
     "armyClass": "garrison",
@@ -87739,31 +87764,6 @@
     "units": [
       {
         "name": "sarmatian archers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Coisstobocia_Transmontana",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Coisstobocia_Transmontana",
-    "faction": "slave",
-    "x": null,
-    "y": null,
-    "region": "Coisstobocia_Transmontana",
-    "units": [
-      {
-        "name": "getic light infantry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "getic peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0

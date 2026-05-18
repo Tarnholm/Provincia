@@ -337,7 +337,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -584,11 +584,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           </div>
         ) : null}
         {taxLevel ? (() => {
-          const colors = { low: "#7ed27e", normal: "#bbb", high: "#e8a030", very_high: "#e85050" };
+          const colors = { very_low: "#5cb85c", low: "#7ed27e", normal: "#bbb", high: "#e8a030", very_high: "#e85050" };
           const label = taxLevel.replace(/_/g, " ");
           return (
             <div style={{ marginBottom: 2 }}
-              title="Current tax rate from the live save (parsed via cracker invariant: byte at settlement_name_offset - 2269)">
+              title="Current tax rate from the live save. Long-block path (imperial_campaign / ris_classic) reads byte at marker-2269; short-block path (all campaigns including alexander) reads byte at settlement_name_pos-562. The two map to the same string labels.">
               <strong>Tax:</strong>{" "}
               <span style={{ color: colors[taxLevel] || "#ccc", textTransform: "capitalize" }}>{label}</span>
             </div>
@@ -892,16 +892,35 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.5720, y: 0.3453, w: 0.2090, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8" }}>
-            Characters:
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
+            <span>Characters:</span>
             {characters && characters.length > 0 && (
               <span
                 title={characters[0]?._source === "starting"
                   ? "Starting roster from descr_strat — turn-1 traits, ancillaries, age. Load a save to switch to live values."
                   : (saveFile ? `As of: ${saveFile}` : "From save file")}
-                style={{ fontSize: "0.65rem", color: "#a98", marginLeft: 6, fontWeight: 400, cursor: "help" }}>
+                style={{ fontSize: "0.65rem", color: "#a98", fontWeight: 400, cursor: "help" }}>
                 {characters[0]?._source === "starting" ? "(starting)" : "(live)"}
               </span>
+            )}
+            {onShowFamilyTree && hasFamilyTreeData && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onShowFamilyTree(); }}
+                title="Show full faction family tree (parents, spouses, children — from descr_strat in mod-data mode or live save when loaded)"
+                style={{
+                  marginLeft: "auto",
+                  padding: "1px 6px",
+                  fontSize: "0.65rem",
+                  background: "rgba(168, 134, 92, 0.18)",
+                  color: "#ffe6a8",
+                  border: "1px solid rgba(168, 134, 92, 0.6)",
+                  borderRadius: 3,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                👪 Family Tree
+              </button>
             )}
           </div>
         </div>
