@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.400",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "New `findRegionRecords(buf)` in `saveCrackerExtras.js` enumerates the save's region records via a paired-self-pointer signature (`u32(P) == P && u32(P + 8) == P + 8`). Returns `{offset, regionUuid, regionId}` per record — region_id matches the IDs in `parseFactionTreasuries`. Macedon T0 yields 426 candidates (375 unique IDs); some are false positives, but the walker unblocks future per-region cracks (population, garrison, building list, etc.)." },
+    ],
+  },
+  {
     version: "0.9.399",
     date: "2026-05-18",
     items: [

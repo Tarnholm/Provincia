@@ -270,6 +270,31 @@ function parseFactionTreasuries(buf) {
   return out;
 }
 
+// Walk all region records in the save. Signature found 2026-05-18:
+// region records have paired self-pointers 8 bytes apart, with a region
+// UUID between them and the engine's numeric region ID at +12.
+//
+//   +0   u32  self_ptr_A == record_offset
+//   +4   u32  region_uuid
+//   +8   u32  self_ptr_B == record_offset + 8
+//   +12  u32  region_id     (matches parseFactionTreasuries.regionIds)
+//   +16  ...  per-region data
+//
+// Returns an array of `{offset, regionUuid, regionId}` per region record.
+function findRegionRecords(buf) {
+  const out = [];
+  for (let off = 0x3000; off + 16 < buf.length; off += 4) {
+    if (buf.readUInt32LE(off) !== off) continue;
+    if (buf.readUInt32LE(off + 8) !== off + 8) continue;
+    out.push({
+      offset: off,
+      regionUuid: buf.readUInt32LE(off + 4),
+      regionId: buf.readUInt32LE(off + 12),
+    });
+  }
+  return out;
+}
+
 // Read the +288 / +292 map coordinates from each character's extended
 // record. Useful for bridging save data ↔ descr_strat data (descr_strat
 // character lines have explicit x,y; the extended record stores the same
@@ -523,6 +548,7 @@ module.exports = {
   attachMapCoords,
   resolvePortraitsByCharacter,
   parseFactionTreasuries,
+  findRegionRecords,
   buildFamilyTreeMaps,
   parseSoldierArray,
   parseUnitStatSlots,
