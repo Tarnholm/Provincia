@@ -9830,6 +9830,34 @@ function App() {
                   }}
                 >Scripts</button>
               )}
+              {/* Victory-conditions helper: pick a region-list CSV → get a CSV of
+                  region,owner_faction from the loaded mod's descr_strat. */}
+              {window.electronAPI?.vcRegionOwnersCsv && (
+                <button
+                  className="dev-btn"
+                  onClick={async () => {
+                    try {
+                      const res = await window.electronAPI.vcRegionOwnersCsv(modDataDir || null, mapCampaign);
+                      if (!res || res.canceled) return;
+                      if (res.error) { pushToast(res.error, "error"); return; }
+                      pushToast(
+                        `Region owners: ${res.found} found, ${res.notFound} not found → ${res.outputPath.split(/[\\/]/).pop()}`,
+                        "info"
+                      );
+                    } catch (e) {
+                      pushToast(`Region owners failed: ${e?.message || e}`, "error");
+                    }
+                  }}
+                  title="Pick a CSV/text list of regions → writes a CSV of each region's owning faction from descr_strat"
+                  style={{
+                    ...btnStyle(false),
+                    background: "rgba(60,60,60,0.7)",
+                    color: "#e8a030",
+                    border: "1px solid #e8a030",
+                    minWidth: 86,
+                  }}
+                >VC Owners</button>
+              )}
               {/* 0.9.469: in Electron, the Save button opens the unified
                   review modal — that's the single entry-point for ALL
                   dev-mode edits (buildings/traits/ancillaries/resources/

@@ -474,6 +474,25 @@ def write_report(path: Path, added: List[dict], removed: List[dict], unchanged: 
     write_text(path, "\n".join(out) + "\n")
 
 # -----------------------------------------------------------------------------
+# Write changelog (one line per changed settlement, in the suite's standard
+# "Region (owner): change" format so the GUI Changelog tab groups it by
+# settlement like every other step).
+# -----------------------------------------------------------------------------
+def write_changelog(path: Path, added: List[dict], removed: List[dict], colony_removed: List[dict], illegal_colony_removals: List[dict], downgraded_colonies: List[dict]):
+    lines = []
+    for item in added:
+        lines.append(f"{item['region']} ({item['owner']}): Added homeland building (gov4)")
+    for item in removed:
+        lines.append(f"{item['region']} ({item['owner']}): Removed homeland building (gov4)")
+    for item in colony_removed:
+        lines.append(f"{item['region']} ({item['owner']}): Removed colony in gov4 homeland city")
+    for item in illegal_colony_removals:
+        lines.append(f"{item['region']} ({item['owner']}): Removed illegal colony ({item.get('colony_tier', '?')}) — {item.get('reason', '')}")
+    for item in downgraded_colonies:
+        lines.append(f"{item['region']} ({item['owner']}): Downgraded colony_2 -> colony_1")
+    write_text(path, ("\n".join(lines) if lines else "No changes were made.") + "\n")
+
+# -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 def main(run_strat=None, run_out=None):
@@ -508,6 +527,7 @@ def main(run_strat=None, run_out=None):
         
         write_text(outdir / "descr_strat.txt", modified_text)
         write_report(outdir / "report.txt", added, removed, unchanged, colony_removed, illegal_colony_removals, downgraded_colonies)
+        write_changelog(outdir / "changelog.txt", added, removed, colony_removed, illegal_colony_removals, downgraded_colonies)
         dbg.write(outdir / "debug.txt")
 
         print(f"Done! Output in '{outdir}/'")

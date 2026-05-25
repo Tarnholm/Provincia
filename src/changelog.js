@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.617",
+    date: "2026-05-25",
+    items: [
+      { type: "feature", text: "**Victory conditions — \"VC Owners\": find who owns a list of regions.** New dev-pill button: pick a CSV/text list of region or city names and it writes out a CSV mapping each one to the faction that owns it in the loaded mod's descr_strat. It resolves both region and city names (e.g. Falerii → Faliscia → romans_julii); anything it can't match comes out as NOT_FOUND. Handy for auditing a victory-condition region list against actual map ownership." },
+      { type: "fix", text: "**Scripts: the Homelands step now writes a changelog** like every other step — its added/removed homeland buildings and colony changes now show up in the Scripts Changelog tab, grouped by settlement." },
+    ],
+  },
+  {
     version: "0.9.616",
     date: "2026-05-25",
     items: [

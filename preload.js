@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronAPI", {
   // Open the embedded Settlement Processor (Scripts) window (dev pill).
   openScriptsWindow: () => ipcRenderer.invoke("sps:open-window"),
+  // Victory-conditions helper: region-list CSV in → region,owner_faction CSV out.
+  vcRegionOwnersCsv: (modDataDir, campaign) => ipcRenderer.invoke("vc-region-owners-csv", modDataDir, campaign),
   selectFolder: () => ipcRenderer.invoke("select-folder"),
   readFile: (filePath) => ipcRenderer.invoke("read-file", filePath),
   readFileBinary: (filePath) => ipcRenderer.invoke("read-file-binary", filePath),
