@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.628",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Family tree bogus members are actually gone now** (the 0.9.626 fix was applied to the wrong parser). The mod-data Family Tree is built by a *separate* descr_strat parser in the app core, and that one never stripped inline `;` comments — so the Antigonid `relative Antipatros, Daphne, …, end;Iolaos, …, end` line still produced a card literally named \"end;Iolaos\" plus a string of age-less ghosts (Pleistarchos / Philippos / Nikanor / Alexarchos / Perilaos) from the commented-out tail. That parser now ignores inline comments too, so only the real household shows (Antipatros + Daphne + Kassandros/Nikaia/Phila/Eurydike). Verified against the live RIS file: 0 bogus tokens across every `relative` line." },
+      { type: "feature", text: "**Migrate Building Chain now ships seeded with the `herds` migration** (→ the 5 new pastoral chains: sedentary_animal_husbandry + highland/nomadic/forest/wetland_pastoralism). Running it removes the old `herds` EDB block and clears the 74 leftover `herds` prebuilts across the imperial map; the Farms step then assigns the right food chain per terrain. (The EDB pass now removes the old block *before* re-pointing references, so a chain whose only references are internal self-checks — like herds — produces a clean report with no false \"unmapped\" warnings.)" },
+      { type: "improvement", text: "**The Farms step now recognises old `herds` prebuilts, not just old `farms`** — so if you run it before the migration, it replaces them with the correct new chain instead of leaving them behind. Audited every Scripts step: none ever writes an old `farms`/`herds` building (the chain actually placed always comes from the new-chain whitelist), and both old chains are now detected for removal." },
+    ],
+  },
+  {
     version: "0.9.627",
     date: "2026-05-26",
     items: [

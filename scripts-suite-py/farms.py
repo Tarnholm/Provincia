@@ -24,11 +24,16 @@ LEVEL_TO_TIER = {
 
 TIER_TO_LEVEL = {v: k for k, v in LEVEL_TO_TIER.items()}
 
+# Chains that occupy the single exclusive food slot (no_other_farm). The 10 new
+# crop/pastoral chains are the only ones ever ASSIGNED (see pick_chain). The old
+# defunct chains `farms` and `herds` are listed ONLY so existing prebuilts are
+# detected and replaced — they are never emitted (BLOCKED_FARM_LEVELS + the
+# pick_chain whitelist guarantee it).
 FARM_CHAINS = [
     "irrigated_farming", "rainfed_farming", "qanat_farming", "highland_pastoralism",
     "sedentary_animal_husbandry", "marsh_reclamation", "wetland_pastoralism",
     "nomadic_pastoralism", "forest_pastoralism", "shifting_cultivation",
-    "farms"
+    "farms", "herds"
 ]
 
 BUMP_AMOUNT = 1  # Extra tiers required above building minimum (set to 0 to disable bump)

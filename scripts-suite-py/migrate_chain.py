@@ -316,15 +316,18 @@ def main() -> None:
             "edb_block_removed": [],      # old
         }
 
-        # --- EDB: re-point first (so old block's own refs are irrelevant), then remove ---
+        # --- EDB: remove the old block FIRST (so its own self-references go with
+        #     it and aren't counted/flagged), then re-point any EXTERNAL refs that
+        #     survive. parse_edb_chains runs on the original so new-chain levels
+        #     are still available for the localization/alias report. ---
         edb_text = read_text(edb_path)
         edb_orig = edb_text
         edb_chains = parse_edb_chains(edb_text)
         for mig in migs:
-            edb_text = repoint_edb(edb_text, mig, stats)
-        for mig in migs:
             if mig.old_chain in edb_chains:
                 edb_text = remove_edb_block(edb_text, mig.old_chain, stats)
+        for mig in migs:
+            edb_text = repoint_edb(edb_text, mig, stats)
         edb_changed = edb_text != edb_orig
 
         changelog: List[str] = []

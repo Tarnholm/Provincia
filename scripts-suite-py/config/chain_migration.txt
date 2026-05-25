@@ -29,10 +29,13 @@ new_chains  = irrigated_farming rainfed_farming shifting_cultivation qanat_farmi
 remap       = farms->cropfarming_level_1 farms+1->cropfarming_level_2 farms+2->cropfarming_level_3 farms+3->cropfarming_level_4 farms+4->cropfarming_level_5
 descr_strat = remove
 
-; --- Example: add the next chain when you're ready (uncomment + fill in) ---
-; [migration]
-; old_chain   = herds
-; old_levels  = herds herds+1 herds+2
-; new_chains  = <new_chain_a> <new_chain_b>
-; remap       = herds-><alias_level_1> herds+1-><alias_level_2> herds+2-><alias_level_3>
-; descr_strat = remove
+[migration]
+old_chain   = herds
+old_levels  = herds herds+1 herds+2 herds+3
+new_chains  = sedentary_animal_husbandry highland_pastoralism nomadic_pastoralism forest_pastoralism wetland_pastoralism
+; No remap: nothing in the EDB references `herds` from outside its own block
+; (its only building_present refs are internal self-checks, removed with the
+; block) and there is no pastoralism_*_level alias yet. The Farms step (farms.py)
+; reassigns the right food chain — crop OR pastoral — per terrain, so the old
+; herds prebuilts are simply removed.
+descr_strat = remove

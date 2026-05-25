@@ -731,7 +731,14 @@ function loadModCharacterData(modDataDir) {
       let currentFaction = null;
       const lines = fs.readFileSync(dsPath, "utf8").split(/\r?\n/);
       for (const rawLine of lines) {
-        const line = rawLine.replace(/\s+$/, "");
+        // Strip inline `;` comments (a `;` anywhere starts a comment in
+        // descr_strat) BEFORE parsing, so a commented-out tail on a `relative`
+        // line — e.g. `…, end;Iolaos, …, end` — isn't read as real family
+        // members (it was yielding a bogus "end;Iolaos" card plus stray
+        // age-less children). Mirrors the descrStratGeneral.js fix; THIS is the
+        // parser behind the mod-data Family Tree view.
+        const noComment = rawLine.includes(";") ? rawLine.slice(0, rawLine.indexOf(";")) : rawLine;
+        const line = noComment.replace(/\s+$/, "");
         const factMatch = line.match(/^faction\s+(\S+?),/);
         if (factMatch) { currentFaction = factMatch[1]; continue; }
         if (!currentFaction) continue;
