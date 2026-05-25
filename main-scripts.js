@@ -72,6 +72,7 @@ function seedProject() {
 
 // Pipeline step definitions
 const PIPELINE_STEPS = [
+  { id: 'remove_defunct', name: 'Remove Defunct Buildings', script: 'remove_defunct.py', color: '#a8a29e' },
   { id: 'hidden_resources', name: 'Hidden Resources', script: 'hidden_resources.py', color: '#e879f9' },
   { id: 'farms', name: 'Farms', script: 'farms.py', color: '#4ade80' },
   { id: 'heavy_industry', name: 'Heavy Industry', script: 'heavy_industry.py', color: '#9ca3af' },

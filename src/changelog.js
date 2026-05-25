@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.624",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**New Scripts step: \"Remove Defunct Buildings.\"** Strips old/defunct building chains out of every settlement in descr_strat so the chain can then be deleted from the EDB. It auto-detects what's defunct from the EDB's own markers (`building <chain> ;;remove this chain after removing prebuilts`) — e.g. the old `herds`/`farms` lines — and you can list extra chains in config/defunct_buildings.txt. (On the RIS imperial map it cleared 74 leftover `herds` prebuilts, including Saka's.) Writes a changelog of exactly what it removed, like every other step." },
+    ],
+  },
+  {
     version: "0.9.623",
     date: "2026-05-26",
     items: [
