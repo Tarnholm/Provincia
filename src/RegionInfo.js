@@ -626,27 +626,34 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     };
   }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
 
-  // ── Diplomacy list rendering helpers (faction-coloured names + click-to-
-  // highlight). A faction's primary colour, lightened if it'd be too dark to
-  // read on the panel's dark background.
-  const factionTextColor = (id) => {
+  // ── Diplomacy list rendering helpers. Each faction name renders as a
+  // coloured "pill" (chip) for legibility: a translucent tint of the faction's
+  // colour with a matching border and a brightened-for-contrast label.
+  const factionPillStyle = (id) => {
     const c = factionColors && (factionColors[id] || factionColors[String(id).toLowerCase()]);
     const rgb = c && c.primary;
-    if (!rgb || rgb.length < 3) return "#ddd";
-    let [r, g, b] = rgb;
+    if (!rgb || rgb.length < 3) {
+      return { color: "#e0e0e0", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)" };
+    }
+    const [r, g, b] = rgb;
+    let lr = r, lg = g, lb = b;
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    if (lum < 95) { const f = ((95 - lum) / 95) * 0.72; r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; }
-    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+    if (lum < 150) { const f = ((150 - lum) / 150) * 0.78; lr += (255 - r) * f; lg += (255 - g) * f; lb += (255 - b) * f; }
+    return {
+      color: `rgb(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)})`,
+      background: `rgba(${r},${g},${b},0.20)`,
+      border: `1px solid rgba(${r},${g},${b},0.55)`,
+    };
   };
   // One diplomacy line: clickable label (highlights all those factions on the
-  // map) + each faction name in its own colour. `entries` = [{id, name}].
+  // map) + each faction name as a coloured pill. `entries` = [{id, name}].
   const diploLine = (emoji, label, labelColor, entries, allText) => {
     if (!entries || entries.length === 0) return null;
     const ids = entries.map((e) => e.id).filter(Boolean);
     const clickable = !!onHighlightFactions && ids.length > 0;
     return (
       <div
-        style={{ fontSize: "0.66rem", color: labelColor, marginBottom: 1, cursor: clickable ? "pointer" : "default" }}
+        style={{ fontSize: "0.66rem", color: labelColor, marginBottom: 3, cursor: clickable ? "pointer" : "default", lineHeight: 1.6 }}
         onClick={clickable ? () => onHighlightFactions(ids) : undefined}
         title={clickable ? `Highlight these ${entries.length} faction${entries.length === 1 ? "" : "s"} on the map` : undefined}
       >
@@ -655,9 +662,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           <span style={{ color: "#ddd" }}>{allText}</span>
         ) : (
           entries.map((e, i) => (
-            <span key={e.id || i}>
-              <span style={{ color: factionTextColor(e.id) }}>{e.name}</span>{i < entries.length - 1 ? ", " : ""}
-            </span>
+            <span
+              key={e.id || i}
+              style={{ display: "inline-block", padding: "0px 5px", margin: "0 3px 0 0", borderRadius: "8px", whiteSpace: "nowrap", fontWeight: 600, ...factionPillStyle(e.id) }}
+            >{e.name}</span>
           ))
         )}
       </div>
@@ -1948,7 +1956,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   </div>
                 ) : factionState.hasLiveNamed ? (
                   <>
-                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#4a8" }}>(live)</span> <span style={{ color: "#677", fontSize: "0.58rem" }}>· click a line to highlight on map</span></div>
+                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#4a8" }}>(live)</span></div>
                     {diploLine("⚔", "at war", "#e8a0a0", factionState.liveWar, factionState.atWarWithAll ? "all factions (independent — no peace possible)" : null)}
                     {diploLine("🤝", "allied", "#9ed09e", factionState.liveAllied)}
                     {diploLine("⚠", "hostile", "#e0c080", factionState.liveHostile)}

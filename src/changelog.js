@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.623",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Character Command / Management / Influence stats were misread for many generals.** The save parser located the stat block at a fixed offset whose record layout could be mis-detected, reading the values 4 bytes off — so e.g. Antigonos II showed 0/1/0 instead of his real 7/6/5. Stats are now found by their byte-frame signature, which is layout-independent. Verified + locked with a regression test (Antigonos II Gonatas = Command 7 / Influence 6 / Management 5). Re-sync from your save to pick it up." },
+      { type: "improvement", text: "**Diplomacy widget: faction names now render as colour-coded pills** for legibility (a tinted chip in each faction's colour) instead of plain coloured text." },
+    ],
+  },
+  {
     version: "0.9.622",
     date: "2026-05-26",
     items: [

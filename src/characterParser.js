@@ -361,18 +361,27 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
   // LAYOUT_B offsets follow the same -4 shift convention as other fields.
   let management = null, command = null, influence = null, loyalty = null;
   {
-    const base = layoutB ? -4 : 0;
-    const statOff = offset + 102 + base;
-    if (statOff >= 0 && statOff + 28 <= buf.length) {
-      command    = buf.readUInt32LE(statOff);
-      influence  = buf.readUInt32LE(statOff + 4);
-      management = buf.readUInt32LE(statOff + 8);
-      loyalty    = buf.readUInt32LE(statOff + 24);
-      // Sanity gate: session 91 found stats in the 0..15 range, but
-      // trait-stacked late-game generals can push command/influence well
-      // past that. Widen to 30 so legit veteran stats survive while
-      // garbage reads (offset drift = 4-byte values in the 10^6+ range)
-      // still get filtered.
+    // Locate the stat cluster by its frame signature [u16=23][u32=50] rather
+    // than a fixed offset. The frame's exact position drifts ±4 by record
+    // layout, and the old fixed +102 (±4 by layoutB flag) mis-read records
+    // whose layout was detected wrong — reading the stats 4 bytes off, which
+    // produced garbage like Antigonos II's 0/1/0 instead of the real 7/6/5.
+    // Verified vs Macedon T0 (Antigonos II Gonatas, age 50): frame at +94, so
+    // command=frame+4 (=7), influence=+8 (=6), management=+12 (=5),
+    // loyalty=frame+28. command/influence/management labels per 2026-05-19.
+    let frameP = -1;
+    for (let p = 90; p <= 104; p++) {
+      const o = offset + p;
+      if (o - 2 >= 0 && o + 12 <= buf.length &&
+          buf.readUInt16LE(o - 2) === 23 && buf.readUInt32LE(o) === 50) { frameP = o; break; }
+    }
+    if (frameP >= 0 && frameP + 28 + 4 <= buf.length) {
+      command    = buf.readUInt32LE(frameP + 4);
+      influence  = buf.readUInt32LE(frameP + 8);
+      management = buf.readUInt32LE(frameP + 12);
+      loyalty    = buf.readUInt32LE(frameP + 28);
+      // Sanity gate: legit veteran stats can exceed the base 0..10, but a
+      // garbage read lands in the 10^6+ range — filter those.
       if (management > 30 || command > 30 || influence > 30 || loyalty > 30) {
         management = command = influence = loyalty = null;
       }
