@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.619",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**The independent \"Free Peoples\" (rebels) no longer shows as allied with everyone.** The engine keeps no real diplomacy for the rebel faction, so its decoded attitude row defaulted to Allied toward all factions — the Diplomacy widget was showing the rebels with ~92 allies. It now correctly shows them at war with all factions and with no allies, matching RTW's no-peace-with-rebels rule." },
+    ],
+  },
+  {
     version: "0.9.618",
     date: "2026-05-25",
     items: [

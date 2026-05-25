@@ -542,9 +542,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     // implicit default (verified: even an NPC's matrix row omits slave). Surface
     // it so the war list reflects reality (user request 2026-05-24). Skip when
     // viewing the rebel faction itself.
+    let atWarWithAll = false;
     if (!/(_rebels|_rebels2|^slave$|^rebels$)/.test(fidLower)) {
       const fp = nameOf("slave");
       if (fp && !liveWar.includes(fp)) liveWar.push(fp);
+    } else {
+      // Viewing the independent "Free Peoples" (rebel/slave) faction ITSELF. The
+      // engine keeps no real diplomacy for it, so its decoded matrix row defaults
+      // to Allied (0) toward everyone — bogus (this showed "92 allies"). Rebels
+      // are permanently AT WAR with every faction, never allied: replace the noise.
+      liveAllied = [];
+      liveHostile = [];
+      const everyone = diplomacyMatrix
+        ? Object.keys(diplomacyMatrix).filter((n) => n !== "_meta" && isRealFaction(n) && n !== fidLower)
+        : [];
+      liveWar = everyone.map(nameOf).sort((a, b) => a.localeCompare(b));
+      atWarWithAll = liveWar.length > 0;
     }
     // Starting-treasury fallback (descr_strat) so EVERY region shows
     // something — the live treasury records only exist for the ~23 major
@@ -581,7 +594,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       ceasefires: liveDiplo ? liveDiplo.ceasefires : 0,
       locked: liveDiplo ? liveDiplo.locked : 0,
       // 0.9.546: NAMED live diplomacy from the attitude matrix.
-      hasLiveNamed, liveWar, liveAllied, liveHostile,
+      hasLiveNamed, liveWar, liveAllied, liveHostile, atWarWithAll,
       startAllies, startWars, startProtects, startProtectedBy,
     };
   }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
@@ -1868,7 +1881,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#4a8" }}>(live)</span></div>
                     {factionState.liveWar && factionState.liveWar.length > 0 && (
                       <div style={{ fontSize: "0.66rem", color: "#e8a0a0", marginBottom: 1 }}>
-                        ⚔ at war ({factionState.liveWar.length}): <span style={{ color: "#ddd" }}>{factionState.liveWar.join(", ")}</span>
+                        ⚔ at war ({factionState.liveWar.length}): <span style={{ color: "#ddd" }}>{factionState.atWarWithAll ? "all factions (independent — no peace possible)" : factionState.liveWar.join(", ")}</span>
                       </div>
                     )}
                     {factionState.liveAllied && factionState.liveAllied.length > 0 && (
