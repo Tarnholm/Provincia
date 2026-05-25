@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.627",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**New Scripts step: \"Migrate Building Chain.\"** A reusable, config-driven tool for retiring an old EDB building chain in favour of new one(s). For each `[migration]` block in `config/chain_migration.txt` it re-points every `building_present[_min_level] <old> <level>` reference onto a replacement token (point it at an alias that ORs all the new chains — e.g. the `cropfarming_level_N` aliases — to \"tie it to all\" at once), removes the old `building <old> { … }` block from the EDB, and strips the old chain's `building { type <old> <level> }` prebuilts from every settlement. It's **idempotent** (re-running is a no-op) and **never fabricates** localization or art — instead it scans traits, ancillaries and `text/export_buildings.txt` and **reports** what to finish by hand (missing new-chain text keys, per-culture `.tga`, trigger rewrites), plus suggested alias bodies. Ships seeded with the `farms` → 5 crop-farm chains migration; add more blocks for the next chains. \"Save to Mod\" now also writes the migrated `export_descr_buildings.txt` back (with a backup, guarded so a stale output is never pushed)." },
+    ],
+  },
+  {
     version: "0.9.626",
     date: "2026-05-26",
     items: [

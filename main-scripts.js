@@ -73,6 +73,7 @@ function seedProject() {
 // Pipeline step definitions
 const PIPELINE_STEPS = [
   { id: 'remove_defunct', name: 'Remove Defunct Buildings', script: 'remove_defunct.py', color: '#a8a29e' },
+  { id: 'migrate_chain', name: 'Migrate Building Chain', script: 'migrate_chain.py', color: '#c084fc' },
   { id: 'hidden_resources', name: 'Hidden Resources', script: 'hidden_resources.py', color: '#e879f9' },
   { id: 'farms', name: 'Farms', script: 'farms.py', color: '#4ade80' },
   { id: 'heavy_industry', name: 'Heavy Industry', script: 'heavy_industry.py', color: '#9ca3af' },
@@ -131,6 +132,10 @@ const MOD_FILE_MAP = [
   { name: 'export_descr_buildings.txt', dirs: ['.'] },
   { name: 'descr_sm_factions.txt', dirs: ['.'] },
   { name: 'descr_win_conditions.txt', dirs: ['campaign'] },
+  // Loaded read-only so Migrate Building Chain can scan them for old-chain refs.
+  { name: 'export_descr_character_traits.txt', dirs: ['.'] },
+  { name: 'export_descr_ancillaries.txt', dirs: ['.'] },
+  { name: 'export_buildings.txt', dirs: ['text'] },
 ];
 
 const PREFS_FILE = path.join(PROJECT_ROOT, '.gui_prefs.json');
@@ -346,7 +351,11 @@ ipcMain.handle('sps:load-mod-files', async (_, dataDir, campaignName) => {
     // New mod loaded → invalidate icon index so it rescans on next request
     _resetIconIndex();
 
-    const criticalMissing = missing.filter(f => !['descr_win_conditions.txt', 'map_regions.tga'].includes(f));
+    const criticalMissing = missing.filter(f => ![
+      'descr_win_conditions.txt', 'map_regions.tga',
+      // Migration-scan inputs: optional, never block import if absent.
+      'export_descr_character_traits.txt', 'export_descr_ancillaries.txt', 'export_buildings.txt',
+    ].includes(f));
 
     console.log(`[load-mod-files] copied: ${copied.length}, missing: ${missing.length}, critical: ${criticalMissing.length}`);
 
@@ -488,6 +497,29 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
         fs.copyFileSync(regionsSrc, regionsDest);
         saved.push(`descr_regions.txt → ${path.dirname(regionsDest)}`);
         console.log(`[save-back] Saved descr_regions.txt to: ${regionsDest}`);
+      }
+    }
+
+    // --- Save export_descr_buildings.txt (from migrate_chain step) ---
+    // EDB lives at the data root (not a campaign file). Only push it when the
+    // migration produced a NEWER output than the current import, so a stale EDB
+    // left in processed_output by a previous mod/import is never written back.
+    const edbSrc = findLatestOutputFile('export_descr_buildings.txt');
+    if (edbSrc) {
+      const edbConfig = path.join(configDir, 'export_descr_buildings.txt');
+      const importMtime = fs.existsSync(edbConfig) ? fs.statSync(edbConfig).mtimeMs : 0;
+      if (fs.statSync(edbSrc).mtimeMs >= importMtime) {
+        const edbDest = path.join(dataDir, 'export_descr_buildings.txt');
+        if (fs.existsSync(edbDest)) {
+          const edbBackupDir = path.join(dataDir, '_backups');
+          fs.mkdirSync(edbBackupDir, { recursive: true });
+          fs.copyFileSync(edbDest, path.join(edbBackupDir, `export_descr_buildings_${timestamp}.txt`));
+          fs.copyFileSync(edbSrc, edbDest);
+          saved.push(`export_descr_buildings.txt → ${dataDir}`);
+          console.log(`[save-back] Saved export_descr_buildings.txt to: ${edbDest}`);
+        }
+      } else {
+        console.log('[save-back] Skipped EDB (output older than current import — stale).');
       }
     }
 
