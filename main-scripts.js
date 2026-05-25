@@ -1291,6 +1291,110 @@ function parseEDB(content) {
   return buildings;
 }
 
+// ── Migrate Building Chain: UI data + config read/write ─────────────────
+// Backs the Scripts window's chain-picker. The Python step (migrate_chain.py)
+// still reads config/chain_migration.txt as its source of truth; the UI just
+// edits that file with chains/aliases discovered from the loaded EDB.
+
+function parseMigrationConfig(text) {
+  const migs = [];
+  let cur = null;
+  for (const raw of text.split('\n')) {
+    const line = raw.split(';')[0].trim();   // allow ; comments
+    if (!line) continue;
+    if (line.toLowerCase() === '[migration]') {
+      cur = { old_chain: '', old_levels: [], new_chains: [], remap: {}, descr_strat: 'remove' };
+      migs.push(cur);
+      continue;
+    }
+    if (!cur || !line.includes('=')) continue;
+    const eq = line.indexOf('=');
+    const k = line.slice(0, eq).trim().toLowerCase();
+    const v = line.slice(eq + 1).trim();
+    if (k === 'old_chain') cur.old_chain = v;
+    else if (k === 'old_levels') cur.old_levels = v.split(/\s+/).filter(Boolean);
+    else if (k === 'new_chains') cur.new_chains = v.split(/\s+/).filter(Boolean);
+    else if (k === 'descr_strat') cur.descr_strat = v.toLowerCase();
+    else if (k === 'remap') {
+      for (const p of v.split(/\s+/)) {
+        const i = p.indexOf('->');
+        if (i > 0) cur.remap[p.slice(0, i)] = p.slice(i + 2);
+      }
+    }
+  }
+  return migs.filter(m => m.old_chain);
+}
+
+function serializeMigrationConfig(migrations) {
+  const header = [
+    '; ============================================================================',
+    '; Building-chain migration config  (used by the "Migrate Building Chain" step)',
+    '; Edited from the Scripts UI chain picker — you can also hand-edit it here.',
+    '; One [migration] block per OLD chain being retired. See migrate_chain.py.',
+    '; ============================================================================',
+    '',
+  ].join('\n');
+  const blocks = (migrations || []).filter(m => m && m.old_chain).map(m => {
+    const lines = ['[migration]'];
+    lines.push(`old_chain   = ${m.old_chain}`);
+    lines.push(`old_levels  = ${(m.old_levels || []).join(' ')}`);
+    lines.push(`new_chains  = ${(m.new_chains || []).join(' ')}`);
+    const remapPairs = Object.entries(m.remap || {}).map(([a, b]) => `${a}->${b}`);
+    if (remapPairs.length) lines.push(`remap       = ${remapPairs.join(' ')}`);
+    lines.push(`descr_strat = ${m.descr_strat || 'remove'}`);
+    return lines.join('\n');
+  });
+  return header + '\n' + blocks.join('\n\n') + '\n';
+}
+
+// Return EDB chains (+ their levels), `*_level_N` alias groups, and the current
+// migrations parsed from config/chain_migration.txt — everything the picker needs.
+ipcMain.handle('sps:migrate-get-data', async () => {
+  const configDir = path.join(PROJECT_ROOT, 'config');
+  const edbPath = path.join(configDir, 'export_descr_buildings.txt');
+  const cfgPath = path.join(configDir, 'chain_migration.txt');
+  try {
+    const out = { chains: [], aliasGroups: [], migrations: [] };
+    if (fs.existsSync(edbPath)) {
+      const content = fs.readFileSync(edbPath, 'utf-8');
+      const buildings = parseEDB(content);
+      out.chains = buildings.map(b => ({
+        name: b.name,
+        levels: b.rawLevelsLine ? b.rawLevelsLine.split(/\s+/).filter(Boolean)
+                                : b.levels.map(l => l.name),
+      }));
+      // alias groups: `alias <prefix>_level_<n>` (OR-of-chains helpers, e.g.
+      // cropfarming_level_1..5) → usable as remap targets ("tie to all").
+      const groups = {};
+      const re = /^[ \t]*alias[ \t]+(\S+_level)_(\d+)[ \t]*$/gm;
+      let m;
+      while ((m = re.exec(content))) {
+        (groups[m[1]] = groups[m[1]] || new Set()).add(parseInt(m[2], 10));
+      }
+      out.aliasGroups = Object.entries(groups)
+        .map(([prefix, tiers]) => ({ prefix, tiers: [...tiers].sort((a, b) => a - b) }))
+        .sort((a, b) => a.prefix.localeCompare(b.prefix));
+    }
+    if (fs.existsSync(cfgPath)) {
+      out.migrations = parseMigrationConfig(fs.readFileSync(cfgPath, 'utf-8'));
+    }
+    return out;
+  } catch (e) {
+    return { error: e.message };
+  }
+});
+
+// Persist the picker's migrations array back to config/chain_migration.txt.
+ipcMain.handle('sps:migrate-save', async (_, migrations) => {
+  try {
+    const p = path.join(PROJECT_ROOT, 'config', 'chain_migration.txt');
+    fs.writeFileSync(p, serializeMigrationConfig(migrations));
+    return { success: true, count: (migrations || []).filter(m => m && m.old_chain).length };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ── Building icon resolver (ported from Provincia) ─────────────────────
 // RTW/M2TW ship icons as `#<culture>_<level>.tga` in `data/ui/<c>/buildings/`.
 // The resolver tries 7 progressively-broader passes, parsing

@@ -247,6 +247,116 @@ async function showSubmodDialog(alreadyCopied, missingFiles, submodCampaign) {
   });
 }
 
+// ── Migrate Building Chain picker ───────────────────────────────────────
+let _migData = { chains: [], aliasGroups: [], migrations: [] };
+
+async function openMigrateDialog() {
+  const overlay = document.getElementById('migrate-overlay');
+  const data = await window.api.migrateGetData();
+  if (!data || data.error) {
+    appendConsole(`Migrate: could not read the EDB (${(data && data.error) || 'no data'}). Import a mod first.\n`, 'stderr');
+    return;
+  }
+  _migData = { chains: data.chains || [], aliasGroups: data.aliasGroups || [], migrations: data.migrations || [] };
+
+  const oldSel = document.getElementById('migrate-old');
+  oldSel.innerHTML = _migData.chains
+    .map(c => `<option value="${c.name}">${c.name} (${c.levels.length} level${c.levels.length === 1 ? '' : 's'})</option>`)
+    .join('');
+
+  const aliasSel = document.getElementById('migrate-alias');
+  aliasSel.innerHTML = `<option value="">(none — just remove the chain)</option>` +
+    _migData.aliasGroups.map(g => `<option value="${g.prefix}|${g.tiers.length}">${g.prefix}_N (${g.tiers.length} tiers)</option>`).join('');
+
+  document.getElementById('migrate-new-filter').value = '';
+  document.getElementById('migrate-add-err').textContent =
+    _migData.chains.length ? '' : 'No building chains loaded — import a mod first (you can still view/remove existing migrations).';
+  document.getElementById('migrate-strat').value = 'remove';
+  renderMigrateNewList();
+  renderMigrateList();
+
+  oldSel.onchange = renderMigrateNewList;
+  document.getElementById('migrate-new-filter').oninput = renderMigrateNewList;
+  document.getElementById('migrate-add').onclick = onMigrateAdd;
+  overlay.onclick = (e) => {
+    if (e.target === overlay || e.target.id === 'migrate-close') overlay.classList.remove('visible');
+  };
+  overlay.classList.add('visible');
+}
+
+function renderMigrateNewList() {
+  const old = document.getElementById('migrate-old').value;
+  const filter = (document.getElementById('migrate-new-filter').value || '').toLowerCase();
+  const box = document.getElementById('migrate-new');
+  const checked = new Set([...box.querySelectorAll('input:checked')].map(i => i.value));
+  const items = _migData.chains.filter(c => c.name !== old && c.name.toLowerCase().includes(filter));
+  box.innerHTML = items.map(c =>
+    `<label class="migrate-check"><input type="checkbox" value="${c.name}" ${checked.has(c.name) ? 'checked' : ''}> ${c.name} <span class="migrate-dim">(${c.levels.length})</span></label>`
+  ).join('') || `<div class="migrate-dim" style="padding:6px">No matching chains.</div>`;
+  box.querySelectorAll('input').forEach(i => i.onchange = updateMigrateNewCount);
+  updateMigrateNewCount();
+}
+
+function updateMigrateNewCount() {
+  const n = document.querySelectorAll('#migrate-new input:checked').length;
+  document.getElementById('migrate-new-count').textContent = n ? `(${n} selected)` : '';
+}
+
+function renderMigrateList() {
+  const list = document.getElementById('migrate-list');
+  if (!_migData.migrations.length) {
+    list.innerHTML = `<div class="migrate-dim" style="padding:6px">None yet — add one below.</div>`;
+    return;
+  }
+  list.innerHTML = _migData.migrations.map((m, idx) => {
+    const remap = Object.keys(m.remap || {}).length ? ' · alias remap' : '';
+    const strat = m.descr_strat === 'keep' ? ' · keep prebuilts' : '';
+    return `<div class="migrate-row">
+      <div class="migrate-row-main"><b>${m.old_chain}</b> → ${(m.new_chains || []).join(', ') || '(none)'}<span class="migrate-dim">${remap}${strat}</span></div>
+      <button class="migrate-del" data-idx="${idx}" title="Remove this migration">×</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.migrate-del').forEach(b => b.onclick = () => onMigrateDelete(+b.dataset.idx));
+}
+
+async function onMigrateDelete(idx) {
+  _migData.migrations.splice(idx, 1);
+  await window.api.migrateSave(_migData.migrations);
+  renderMigrateList();
+}
+
+async function onMigrateAdd() {
+  const err = document.getElementById('migrate-add-err');
+  err.textContent = '';
+  const old = document.getElementById('migrate-old').value;
+  const oldChain = _migData.chains.find(c => c.name === old);
+  const newChains = [...document.querySelectorAll('#migrate-new input:checked')].map(i => i.value);
+  if (!old || !oldChain) { err.textContent = 'Pick a chain to remove.'; return; }
+  if (!newChains.length) { err.textContent = 'Pick at least one replacement chain.'; return; }
+
+  const remap = {};
+  const aliasVal = document.getElementById('migrate-alias').value; // "prefix|tiers" or ""
+  if (aliasVal) {
+    const [prefix, tiersStr] = aliasVal.split('|');
+    const tiers = parseInt(tiersStr, 10);
+    oldChain.levels.forEach((lvl, i) => { if (i < tiers) remap[lvl] = `${prefix}_${i + 1}`; });
+  }
+
+  const mig = {
+    old_chain: old, old_levels: oldChain.levels, new_chains: newChains,
+    remap, descr_strat: document.getElementById('migrate-strat').value,
+  };
+  const existing = _migData.migrations.findIndex(m => m.old_chain === old);
+  if (existing >= 0) _migData.migrations[existing] = mig; else _migData.migrations.push(mig);
+
+  const res = await window.api.migrateSave(_migData.migrations);
+  if (!res || !res.success) { err.textContent = `Save failed: ${(res && res.error) || 'unknown'}`; return; }
+  document.querySelectorAll('#migrate-new input:checked').forEach(i => { i.checked = false; });
+  updateMigrateNewCount();
+  renderMigrateList();
+  appendConsole(`Migrate: saved ${_migData.migrations.length} migration(s) to config/chain_migration.txt\n`, 'success');
+}
+
 async function saveBackToMod() {
   if (!currentModData) {
     appendConsole('No mod loaded. Import files first.\n', 'stderr');
@@ -260,7 +370,7 @@ async function saveBackToMod() {
     `Save processed files back to the mod?\n\n` +
     `Mod: ${modName}\n` +
     `Campaign: ${campaign}\n\n` +
-    `Files: descr_strat.txt (campaign) + descr_regions.txt (base, if updated)\n` +
+    `Files: descr_strat.txt (campaign) + descr_regions.txt (base) + export_descr_buildings.txt (if a migration changed it)\n` +
     `Backups of originals will be created in _backups folders.\n\n` +
     `This will OVERWRITE the mod files. Continue?`
   );
@@ -385,6 +495,19 @@ function initPipeline() {
       });
       importRow.appendChild(importBtn);
       card.querySelector('.step-info').appendChild(importRow);
+    }
+
+    // Configure button for the migrate_chain step — opens the chain picker
+    if (step.id === 'migrate_chain') {
+      const row = document.createElement('div');
+      row.className = 'step-import-col';
+      const btn = document.createElement('button');
+      btn.className = 'step-import-btn';
+      btn.textContent = 'Configure…';
+      btn.title = 'Choose which chain to remove and what to replace it with';
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openMigrateDialog(); });
+      row.appendChild(btn);
+      card.querySelector('.step-info').appendChild(row);
     }
 
     card.addEventListener('click', (e) => {

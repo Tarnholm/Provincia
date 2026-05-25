@@ -45,6 +45,10 @@ contextBridge.exposeInMainWorld("api", {
   // EDB parsing
   parseEdbBuildings: () => invoke("parse-edb-buildings"),
 
+  // Migrate Building Chain picker
+  migrateGetData: () => invoke("migrate-get-data"),
+  migrateSave: (migrations) => invoke("migrate-save", migrations),
+
   // Master / building allowlist
   loadAllowlist: () => invoke("load-allowlist"),
   saveAllowlist: (data) => invoke("save-allowlist", data),

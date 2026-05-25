@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.629",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Migrate Building Chain now has a visual picker** — no more hand-editing the config file. In the Scripts window, the step has a **Configure…** button that opens a dialog where you pick **which chain to remove** (dropdown of every chain in the loaded EDB, with its level count) and **what to replace it with** (a filterable checklist of chains). Optionally choose an alias group (e.g. `cropfarming_level_N`) to re-point references onto all the new chains at once, and whether to remove or keep existing prebuilts. Each migration is listed with a one-click ✕ to delete, and everything is saved straight to `config/chain_migration.txt` (which you can still edit by hand). Auto-fills the old chain's levels from the EDB so you don't have to type them." },
+    ],
+  },
+  {
     version: "0.9.628",
     date: "2026-05-26",
     items: [

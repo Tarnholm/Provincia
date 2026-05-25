@@ -365,6 +365,49 @@
     </div>
   </div>
 
+  <!-- Migrate Building Chain picker -->
+  <div id="migrate-overlay" class="dialog-overlay">
+    <div class="dialog-panel" style="width:560px; max-width:92vw;">
+      <div class="dialog-header">
+        <h3>Migrate Building Chain</h3>
+        <p>Retire an old building chain and replace it with one or more new ones. The chosen migrations are written to <code>config/chain_migration.txt</code> and applied when you run the step.</p>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-section-label">Current migrations</div>
+        <div id="migrate-list" class="migrate-list"></div>
+
+        <div class="dialog-section-label" style="margin-top:14px">Add a migration</div>
+        <div class="migrate-form">
+          <label class="migrate-field">
+            <span>Remove this chain</span>
+            <select id="migrate-old"></select>
+          </label>
+          <label class="migrate-field">
+            <span>Replace with <em id="migrate-new-count"></em></span>
+            <input id="migrate-new-filter" type="text" placeholder="filter chains…" class="migrate-filter">
+            <div id="migrate-new" class="migrate-checklist"></div>
+          </label>
+          <label class="migrate-field">
+            <span>Re-point references via alias <em>(optional — "tie to all")</em></span>
+            <select id="migrate-alias"></select>
+          </label>
+          <label class="migrate-field">
+            <span>Existing prebuilts in settlements</span>
+            <select id="migrate-strat">
+              <option value="remove">Remove them (the Farms step re-assigns)</option>
+              <option value="keep">Keep them</option>
+            </select>
+          </label>
+          <div id="migrate-add-err" class="migrate-err"></div>
+          <button id="migrate-add" class="toolbar-btn primary">Add migration</button>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button id="migrate-close" class="toolbar-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="tga.js"></script>
   <script src="changelog.js"></script>
   <script src="renderer.js" type="module"></script>

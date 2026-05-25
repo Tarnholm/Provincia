@@ -250,3 +250,41 @@
 .console-panel .log-removed { color: var(--red); }
 .console-panel .log-added { color: var(--green); }
 .console-panel .log-warning { color: var(--yellow, #facc15); }
+
+/* ── Migrate Building Chain picker ─────────────────────────────────────── */
+.migrate-list { display: flex; flex-direction: column; gap: 4px; }
+.migrate-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 5px 8px; border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-sm); background: rgba(255,255,255,0.04);
+  font-size: 12px;
+}
+.migrate-row-main { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.migrate-del {
+  flex-shrink: 0; width: 20px; height: 20px; line-height: 1; border: none;
+  border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--text-secondary);
+  cursor: pointer; font-size: 14px;
+}
+.migrate-del:hover { background: var(--red, #f87171); color: #fff; }
+.migrate-dim { color: var(--text-secondary); opacity: 0.75; }
+
+.migrate-form { display: flex; flex-direction: column; gap: 10px; }
+.migrate-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.migrate-field > span { color: var(--text-secondary); }
+.migrate-field > span em { font-style: normal; opacity: 0.7; }
+.migrate-field select, .migrate-filter {
+  background: #1e1e1e; color: var(--text-primary);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-sm);
+  padding: 5px 8px; font-size: 12px; width: 100%;
+}
+.migrate-checklist {
+  max-height: 160px; overflow-y: auto; display: flex; flex-direction: column;
+  border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.18); padding: 4px;
+}
+.migrate-check {
+  display: flex; align-items: center; gap: 7px; padding: 3px 5px;
+  font-size: 12px; cursor: pointer; border-radius: 3px;
+}
+.migrate-check:hover { background: rgba(255,255,255,0.06); }
+.migrate-err { color: var(--red, #f87171); font-size: 11px; min-height: 13px; }
