@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.622",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**Diplomacy widget: colour-coded faction names + click-to-highlight on the map.** Each war / allied / trade / protectorate name now shows in that faction's own colour (auto-lightened where it'd be too dark to read). And clicking any diplomacy line — \"at war\", \"allied\", \"trade\", etc. — highlights all of those factions' regions on the map at once." },
+    ],
+  },
+  {
     version: "0.9.621",
     date: "2026-05-26",
     items: [

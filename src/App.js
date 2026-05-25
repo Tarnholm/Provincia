@@ -13934,6 +13934,14 @@ function App() {
                       victoryConditions={victoryConditions}
                       devMode={devMode}
                       onShowInfo={setInfoPopup}
+                      factionColors={factionColors}
+                      onHighlightFactions={(ids) => {
+                        // Diplomacy widget: click a war/allied/trade line to
+                        // highlight those factions' regions on the map (drives
+                        // selectedFactions → selectedProvinces highlight).
+                        const set = new Set((ids || []).map((s) => String(s).toLowerCase()).filter(Boolean));
+                        if (set.size) setSelectedFactions(set);
+                      }}
                       modDataDir={modDataDir}
                       factionCultures={factionCultures}
                       statsCache={statsCache}

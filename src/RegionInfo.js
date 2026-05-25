@@ -478,7 +478,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -505,14 +505,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const fidLower = String(ownerFactionId).toLowerCase();
     // 0.9.536: named STARTING diplomacy from descr_strat (the live save can't
     // name partners). Lists who this faction began allied / at war with.
+    // Each diplomacy entry is { id, name } so the widget can colour names by
+    // faction and highlight a faction's regions on click.
     let startAllies = [], startWars = [], startProtects = [], startProtectedBy = [];
     if (factionRelationships && factionRelationships[fidLower]) {
       for (const e of factionRelationships[fidLower]) {
         const nm = (factionDisplayNames && factionDisplayNames[e.to]) || String(e.to).replace(/_/g, " ");
-        if (e.kind === "ally") startAllies.push(nm);
-        else if (e.kind === "war") startWars.push(nm);
-        else if (e.kind === "protects") startProtects.push(nm);
-        else if (e.kind === "protected_by") startProtectedBy.push(nm);
+        const entry = { id: e.to, name: nm };
+        if (e.kind === "ally") startAllies.push(entry);
+        else if (e.kind === "war") startWars.push(entry);
+        else if (e.kind === "protects") startProtects.push(entry);
+        else if (e.kind === "protected_by") startProtectedBy.push(entry);
       }
     }
     const idx = Array.isArray(factionRecordOwners)
@@ -536,15 +539,16 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const isRealFaction = (n) => n && !PLACEHOLDER_RE.test(n);
     const isFreePeoples = (n) => /^(slave|slaves|rebels)$/.test(n);
     const nameOf = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
+    const entryOf = (id) => ({ id, name: nameOf(id) });
     const mtxRow = (diplomacyMatrix && diplomacyMatrix[fidLower]) || null;
     let liveWar = [], liveAllied = [], liveHostile = [], liveTrade = [];
     if (mtxRow) {
-      liveWar = (mtxRow.war || []).filter(isRealFaction).map(nameOf);
-      liveAllied = (mtxRow.allied || []).filter(isRealFaction).map(nameOf);
-      liveHostile = (mtxRow.hostile || []).filter(isRealFaction).map(nameOf);
+      liveWar = (mtxRow.war || []).filter(isRealFaction).map(entryOf);
+      liveAllied = (mtxRow.allied || []).filter(isRealFaction).map(entryOf);
+      liveHostile = (mtxRow.hostile || []).filter(isRealFaction).map(entryOf);
       // Trade = the alliance bond (descr_strat's 199 = "Ally/Trade" + scripted
       // protectorates). Decoded from the matrix bond field. Includes protectorates.
-      liveTrade = (mtxRow.trade || []).filter(isRealFaction).map(nameOf);
+      liveTrade = (mtxRow.trade || []).filter(isRealFaction).map(entryOf);
     }
     let atWarWithAll = false;
     let isPlaceholderFaction = false;
@@ -553,8 +557,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       // "Free Peoples" (slave). The save's matrix only encodes DECLARED faction
       // wars, not this implicit default (verified: NPC rows omit slave), so
       // surface it explicitly (user request 2026-05-24).
-      const fp = nameOf("slave");
-      if (fp && !liveWar.includes(fp)) liveWar.push(fp);
+      if (!liveWar.some((e) => e.id === "slave")) liveWar.push(entryOf("slave"));
     } else if (isFreePeoples(fidLower)) {
       // The independent "Free Peoples" itself — permanently AT WAR with every
       // faction, never allied. The engine keeps no real diplomacy for it, so its
@@ -565,7 +568,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       const everyone = diplomacyMatrix
         ? Object.keys(diplomacyMatrix).filter((n) => n !== "_meta" && isRealFaction(n) && n !== fidLower)
         : [];
-      liveWar = everyone.map(nameOf).sort((a, b) => a.localeCompare(b));
+      liveWar = everyone.map(entryOf).sort((a, b) => a.name.localeCompare(b.name));
       atWarWithAll = liveWar.length > 0;
     } else {
       // `dummies` / per-faction respawn markers — engine placeholders with no
@@ -580,8 +583,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     // allied list to avoid double-listing (e.g. Macedon: Argos/Megalopolis are
     // protectorates, not plain allies).
     if (startProtects.length || startProtectedBy.length) {
-      const protSet = new Set([...startProtects, ...startProtectedBy]);
-      liveAllied = liveAllied.filter((n) => !protSet.has(n));
+      const protSet = new Set([...startProtects, ...startProtectedBy].map((p) => p.id));
+      liveAllied = liveAllied.filter((a) => !protSet.has(a.id));
     }
     // Starting-treasury fallback (descr_strat) so EVERY region shows
     // something — the live treasury records only exist for the ~23 major
@@ -622,6 +625,45 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       startAllies, startWars, startProtects, startProtectedBy,
     };
   }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
+
+  // ── Diplomacy list rendering helpers (faction-coloured names + click-to-
+  // highlight). A faction's primary colour, lightened if it'd be too dark to
+  // read on the panel's dark background.
+  const factionTextColor = (id) => {
+    const c = factionColors && (factionColors[id] || factionColors[String(id).toLowerCase()]);
+    const rgb = c && c.primary;
+    if (!rgb || rgb.length < 3) return "#ddd";
+    let [r, g, b] = rgb;
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (lum < 95) { const f = ((95 - lum) / 95) * 0.72; r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; }
+    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+  };
+  // One diplomacy line: clickable label (highlights all those factions on the
+  // map) + each faction name in its own colour. `entries` = [{id, name}].
+  const diploLine = (emoji, label, labelColor, entries, allText) => {
+    if (!entries || entries.length === 0) return null;
+    const ids = entries.map((e) => e.id).filter(Boolean);
+    const clickable = !!onHighlightFactions && ids.length > 0;
+    return (
+      <div
+        style={{ fontSize: "0.66rem", color: labelColor, marginBottom: 1, cursor: clickable ? "pointer" : "default" }}
+        onClick={clickable ? () => onHighlightFactions(ids) : undefined}
+        title={clickable ? `Highlight these ${entries.length} faction${entries.length === 1 ? "" : "s"} on the map` : undefined}
+      >
+        {emoji} {label} ({entries.length}):{" "}
+        {allText ? (
+          <span style={{ color: "#ddd" }}>{allText}</span>
+        ) : (
+          entries.map((e, i) => (
+            <span key={e.id || i}>
+              <span style={{ color: factionTextColor(e.id) }}>{e.name}</span>{i < entries.length - 1 ? ", " : ""}
+            </span>
+          ))
+        )}
+      </div>
+    );
+  };
+
   // 0.9.541: diagnostic — log how the Diplomacy & Treasury widget resolved
   // the selected region's owner, so "doesn't load for faction X" reports are
   // debuggable. Logs once per owner change: the owner id, whether it matched
@@ -1906,61 +1948,21 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   </div>
                 ) : factionState.hasLiveNamed ? (
                   <>
-                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#4a8" }}>(live)</span></div>
-                    {factionState.liveWar && factionState.liveWar.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#e8a0a0", marginBottom: 1 }}>
-                        ⚔ at war ({factionState.liveWar.length}): <span style={{ color: "#ddd" }}>{factionState.atWarWithAll ? "all factions (independent — no peace possible)" : factionState.liveWar.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.liveAllied && factionState.liveAllied.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#9ed09e", marginBottom: 1 }}>
-                        🤝 allied ({factionState.liveAllied.length}): <span style={{ color: "#ddd" }}>{factionState.liveAllied.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.liveHostile && factionState.liveHostile.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#e0c080", marginBottom: 1 }}>
-                        ⚠ hostile ({factionState.liveHostile.length}): <span style={{ color: "#ddd" }}>{factionState.liveHostile.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.liveTrade && factionState.liveTrade.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#8fc9d6", marginBottom: 1 }}>
-                        🔄 trade ({factionState.liveTrade.length}): <span style={{ color: "#ddd" }}>{factionState.liveTrade.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.startProtects && factionState.startProtects.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0", marginBottom: 1 }}>
-                        🛡 protects: <span style={{ color: "#ddd" }}>{factionState.startProtects.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.startProtectedBy && factionState.startProtectedBy.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0" }}>
-                        🛡 protectorate of: <span style={{ color: "#ddd" }}>{factionState.startProtectedBy.join(", ")}</span>
-                      </div>
-                    )}
+                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#4a8" }}>(live)</span> <span style={{ color: "#677", fontSize: "0.58rem" }}>· click a line to highlight on map</span></div>
+                    {diploLine("⚔", "at war", "#e8a0a0", factionState.liveWar, factionState.atWarWithAll ? "all factions (independent — no peace possible)" : null)}
+                    {diploLine("🤝", "allied", "#9ed09e", factionState.liveAllied)}
+                    {diploLine("⚠", "hostile", "#e0c080", factionState.liveHostile)}
+                    {diploLine("🔄", "trade", "#8fc9d6", factionState.liveTrade)}
+                    {diploLine("🛡", "protects", "#9cc0e0", factionState.startProtects)}
+                    {diploLine("🛡", "protectorate of", "#9cc0e0", factionState.startProtectedBy)}
                   </>
                 ) : ((factionState.startWars && factionState.startWars.length) || (factionState.startAllies && factionState.startAllies.length) || (factionState.startProtects && factionState.startProtects.length) || (factionState.startProtectedBy && factionState.startProtectedBy.length)) ? (
                   <>
                     <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#777" }}>(at campaign start)</span></div>
-                    {factionState.startWars && factionState.startWars.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#e8a0a0", marginBottom: 1 }}>
-                        ⚔ war: <span style={{ color: "#ddd" }}>{factionState.startWars.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.startAllies && factionState.startAllies.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#9ed09e", marginBottom: 1 }}>
-                        🤝 allied: <span style={{ color: "#ddd" }}>{factionState.startAllies.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.startProtects && factionState.startProtects.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0", marginBottom: 1 }}>
-                        🛡 protects: <span style={{ color: "#ddd" }}>{factionState.startProtects.join(", ")}</span>
-                      </div>
-                    )}
-                    {factionState.startProtectedBy && factionState.startProtectedBy.length > 0 && (
-                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0" }}>
-                        🛡 protectorate of: <span style={{ color: "#ddd" }}>{factionState.startProtectedBy.join(", ")}</span>
-                      </div>
-                    )}
+                    {diploLine("⚔", "war", "#e8a0a0", factionState.startWars)}
+                    {diploLine("🤝", "allied", "#9ed09e", factionState.startAllies)}
+                    {diploLine("🛡", "protects", "#9cc0e0", factionState.startProtects)}
+                    {diploLine("🛡", "protectorate of", "#9cc0e0", factionState.startProtectedBy)}
                   </>
                 ) : (
                   <div style={{ color: "#888", fontSize: "0.68rem", fontStyle: "italic" }}>Starts neutral — no declared alliances, wars, or protectorates.</div>
