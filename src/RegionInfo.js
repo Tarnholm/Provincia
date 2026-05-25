@@ -649,24 +649,38 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // map) + each faction name as a coloured pill. `entries` = [{id, name}].
   const diploLine = (emoji, label, labelColor, entries, allText) => {
     if (!entries || entries.length === 0) return null;
-    const ids = entries.map((e) => e.id).filter(Boolean);
-    const clickable = !!onHighlightFactions && ids.length > 0;
+    // Exclude the independent "Free Peoples" (slave/rebels) from the map
+    // highlight — they own scattered regions everywhere, so highlighting them
+    // floods the whole map. They still show in the list (just not highlighted).
+    const highlightIds = entries
+      .map((e) => e.id)
+      .filter((id) => id && !/^(slave|slaves|rebels)$/.test(String(id).toLowerCase()));
+    const clickable = !!onHighlightFactions && highlightIds.length > 0;
     return (
       <div
         style={{ fontSize: "0.66rem", color: labelColor, marginBottom: 3, cursor: clickable ? "pointer" : "default", lineHeight: 1.6 }}
-        onClick={clickable ? () => onHighlightFactions(ids) : undefined}
-        title={clickable ? `Highlight these ${entries.length} faction${entries.length === 1 ? "" : "s"} on the map` : undefined}
+        onClick={clickable ? () => onHighlightFactions(highlightIds) : undefined}
+        title={clickable ? `Highlight these ${highlightIds.length} faction${highlightIds.length === 1 ? "" : "s"} on the map` : undefined}
       >
         {emoji} {label} ({entries.length}):{" "}
         {allText ? (
           <span style={{ color: "#ddd" }}>{allText}</span>
         ) : (
-          entries.map((e, i) => (
-            <span
-              key={e.id || i}
-              style={{ display: "inline-block", padding: "0px 5px", margin: "0 3px 0 0", borderRadius: "8px", whiteSpace: "nowrap", fontWeight: 600, ...factionPillStyle(e.id) }}
-            >{e.name}</span>
-          ))
+          entries.map((e, i) => {
+            // Clicking an individual pill highlights ONLY that faction (and
+            // stops the line-click that highlights the whole category). The
+            // Free Peoples pill isn't clickable — it owns regions everywhere.
+            const isFP = /^(slave|slaves|rebels)$/.test(String(e.id || "").toLowerCase());
+            const pillClickable = !!onHighlightFactions && !!e.id && !isFP;
+            return (
+              <span
+                key={e.id || i}
+                onClick={pillClickable ? (ev) => { ev.stopPropagation(); onHighlightFactions([e.id]); } : undefined}
+                title={pillClickable ? `Highlight ${e.name} on the map` : undefined}
+                style={{ display: "inline-block", padding: "0px 5px", margin: "0 3px 0 0", borderRadius: "8px", whiteSpace: "nowrap", fontWeight: 600, cursor: pillClickable ? "pointer" : "default", ...factionPillStyle(e.id) }}
+              >{e.name}</span>
+            );
+          })
         )}
       </div>
     );

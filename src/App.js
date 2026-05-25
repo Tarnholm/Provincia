@@ -2643,11 +2643,11 @@ function App() {
   // so we only wipe once per upgrade.
   useEffect(() => {
     const stamp = localStorage.getItem("statsCacheGen") || "";
-    if (stamp !== "0.9.461") {
+    if (stamp !== "0.9.625") {
       try { localStorage.removeItem("statsCache"); } catch {}
       try { localStorage.removeItem("statsCacheCharCount"); } catch {}
-      try { localStorage.setItem("statsCacheGen", "0.9.461"); } catch {}
-      console.log("[stats-cache] cleared stale localStorage entries (0.9.461 reset). Recalibrate from save to repopulate.");
+      try { localStorage.setItem("statsCacheGen", "0.9.625"); } catch {}
+      console.log("[stats-cache] cleared stale localStorage entries (0.9.625 reset — character stat-offset fix). Recalibrate from save to repopulate.");
     }
   }, []);
   const [infoPopup, setInfoPopup] = useState(null); // { type, faction, name, chainName?, culture?, label? }

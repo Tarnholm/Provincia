@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.625",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Character stats were showing stale cached values** (e.g. Antigonos II still reading 0/1/0 even after the 0.9.623 parse fix). The widget reads a local stats cache that wasn't regenerated; it's now wiped on this update so it rebuilds with the corrected values — **re-calibrate from your save** and Antigonos II reads the right 7/6/5." },
+      { type: "improvement", text: "**Diplomacy highlight: click a single faction pill to highlight just that faction**, or click the rest of the line to highlight the whole category. And the \"at war\" highlight no longer includes the Free Peoples (they hold scattered regions everywhere, which flooded the map)." },
+    ],
+  },
+  {
     version: "0.9.624",
     date: "2026-05-26",
     items: [
