@@ -8324,6 +8324,16 @@ app.whenReady().then(() => {
     autoUpdater.checkForUpdates().catch(err =>
       console.warn("[updater] startup check failed:", err.message)
     );
+    // Re-check periodically so a long-running app picks up releases published
+    // AFTER launch (we ship frequently). electron-updater only checked at
+    // startup before, so an already-open app never noticed new versions until
+    // it was restarted. Downloads in the background (autoDownload); applied on
+    // quit (autoInstallOnAppQuit) or via the "Restart & install" banner.
+    setInterval(() => {
+      autoUpdater.checkForUpdates().catch(err =>
+        console.warn("[updater] periodic check failed:", err.message)
+      );
+    }, 10 * 60 * 1000); // every 10 minutes
   }
 });
 

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.618",
+    date: "2026-05-25",
+    items: [
+      { type: "fix", text: "**Auto-update now also checks while the app is open.** Previously Provincia only checked for a new version at startup, so if a release went out while you had the app running, it wouldn't notice until the next launch. It now re-checks every 10 minutes too — new versions download in the background and install on quit (or via the \"Restart & install\" banner). (To get onto this build, restart once.)" },
+    ],
+  },
+  {
     version: "0.9.617",
     date: "2026-05-25",
     items: [
