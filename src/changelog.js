@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.620",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Diplomacy is now consistent for all factions — engine placeholder factions are excluded everywhere.** RIS has non-diplomatic placeholder slots (the independent rebels/slave, the bankrupt `dummies` slot, and per-faction respawn markers like `seleucid_rebels`). Their attitude data is meaningless but was leaking into real factions' lists — e.g. \"dummies at war with Macedon.\" They're now filtered at the source (the decoded attitude matrix) and uniformly across the widget, the dev raw-attitudes view, and the diplomacy editor. The independent rebels show at war with all factions; placeholders show no diplomacy; real factions are unaffected." },
+      { type: "fix", text: "**Protectorates are no longer double-listed as plain allies.** A protectorate scores as Allied (attitude 0) in the save's matrix, so it appeared under both \"allied\" and \"protects.\" The Diplomacy widget now lists it only as a protectorate. Validated against Macedon's turn-0 ground truth: allies Seleucid / Cabyle / Knossos / Messene, protectorates Argos / Megalopolis, at war with Epirus / Galatians / the Free Peoples." },
+    ],
+  },
+  {
     version: "0.9.619",
     date: "2026-05-26",
     items: [

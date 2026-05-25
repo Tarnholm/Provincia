@@ -156,8 +156,12 @@ describeIfSaveAndOrder("saveCrackerExtras — factionId + all-faction diplomacy"
     // Matrix must be near-perfectly symmetric (att(A,B)==att(B,A)) — the
     // self-calibration relies on this and it's the integrity signal.
     expect(m._meta.symmetry).toBeGreaterThanOrEqual(0.99);
-    // Sensible scale: hundreds of war pairs, not zero or everything.
-    expect(m._meta.warPairs).toBeGreaterThan(50);
+    // Real-faction war pairs only. Placeholder factions (slave/rebels, dummies,
+    // *_rebels respawn markers) are excluded from the decoded matrix, so this is
+    // the genuine inter-faction war count — a handful at turn 0, NOT the ~90+
+    // that every faction's permanent war with the independent rebels would add.
+    expect(m._meta.warPairs).toBeGreaterThan(5);
+    expect(m._meta.warPairs).toBeLessThan(60);
   });
 
   test("parseDiplomacyMatrix names the right turn-0 wars and allies", () => {
@@ -171,5 +175,26 @@ describeIfSaveAndOrder("saveCrackerExtras — factionId + all-faction diplomacy"
     expect(m.seleucid.war).toContain("bithynia");
     // Symmetry sanity: if A is at war with B, B is at war with A.
     expect(m.epirus.war).toContain("antigonid");
+  });
+
+  // Full Macedon ground truth (user-verified 2026-05-26). Allies + protectorates
+  // both score as Allied (att 0) in the matrix; the protectorate split is a
+  // display concern (descr_strat/script). The matrix war list must be EXACTLY
+  // the two real wars — no placeholder/rebel noise (slave/dummies excluded).
+  test("parseDiplomacyMatrix — full Macedon (antigonid) ground truth", () => {
+    const m = parseDiplomacyMatrix(macedonT0, factionOrder);
+    const a = m.antigonid;
+    for (const ally of ["seleucid", "cabyle", "knossos", "messene", "argos", "megalopolis"]) {
+      expect(a.allied).toContain(ally);
+    }
+    expect([...a.war].sort()).toEqual(["epirus", "galatians"]);
+    // Placeholder factions never appear in a real faction's lists.
+    for (const ph of ["slave", "dummies"]) {
+      expect(a.war).not.toContain(ph);
+      expect(a.allied).not.toContain(ph);
+    }
+    // And no placeholder faction has a row of its own in the matrix.
+    expect(m.slave).toBeUndefined();
+    expect(m.dummies).toBeUndefined();
   });
 });

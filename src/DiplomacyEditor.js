@@ -129,7 +129,7 @@ export default function DiplomacyEditor({ ownerFactionId, factionLabel, factionD
   const rows = useMemo(() => {
     if (!data) return [];
     return data.factions
-      .filter((f) => f !== fid && !isSubRebel(f))
+      .filter((f) => f !== fid && !isSubRebel(f) && f !== "dummies")
       .map(makeRow)
       .sort((a, b) => (a.sortBy - b.sortBy) || a.name.localeCompare(b.name));
   }, [data, fid, pendingDiplo, reverse]); // eslint-disable-line

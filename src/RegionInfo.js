@@ -527,7 +527,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     // diplomacy source. Lists who this faction is CURRENTLY at war / allied /
     // hostile with, BY NAME (matrix position = faction pair). Excludes rebel/
     // slave pseudo-factions from the display lists (always-at-war noise).
-    const isRealFaction = (n) => n && !/(_rebels|_rebels2|^slave$|^rebels$)/.test(n);
+    // Engine placeholder / non-diplomatic factions — generic rebels (slave),
+    // the bankrupt `dummies` slot, and per-faction respawn markers (*_rebels).
+    // KEEP IN SYNC with saveCrackerExtras.DIPLO_PLACEHOLDER_RE (the decoder uses
+    // the same rule to keep these out of the matrix; this is the display-side
+    // safety net so an already-cached matrix also renders correctly).
+    const PLACEHOLDER_RE = /(_rebels|^slave$|^slaves$|^rebels$|^dummies$)/;
+    const isRealFaction = (n) => n && !PLACEHOLDER_RE.test(n);
+    const isFreePeoples = (n) => /^(slave|slaves|rebels)$/.test(n);
     const nameOf = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
     const mtxRow = (diplomacyMatrix && diplomacyMatrix[fidLower]) || null;
     let liveWar = [], liveAllied = [], liveHostile = [];
@@ -536,21 +543,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       liveAllied = (mtxRow.allied || []).filter(isRealFaction).map(nameOf);
       liveHostile = (mtxRow.hostile || []).filter(isRealFaction).map(nameOf);
     }
-    // Every real faction is permanently at war with the independent
-    // "Free Peoples" (slave) faction — RTW allows no peace with rebels — but the
-    // save's attitude matrix only encodes DECLARED faction wars, not this
-    // implicit default (verified: even an NPC's matrix row omits slave). Surface
-    // it so the war list reflects reality (user request 2026-05-24). Skip when
-    // viewing the rebel faction itself.
     let atWarWithAll = false;
-    if (!/(_rebels|_rebels2|^slave$|^rebels$)/.test(fidLower)) {
+    let isPlaceholderFaction = false;
+    if (!PLACEHOLDER_RE.test(fidLower)) {
+      // A real faction: it's also permanently at war with the independent
+      // "Free Peoples" (slave). The save's matrix only encodes DECLARED faction
+      // wars, not this implicit default (verified: NPC rows omit slave), so
+      // surface it explicitly (user request 2026-05-24).
       const fp = nameOf("slave");
       if (fp && !liveWar.includes(fp)) liveWar.push(fp);
-    } else {
-      // Viewing the independent "Free Peoples" (rebel/slave) faction ITSELF. The
-      // engine keeps no real diplomacy for it, so its decoded matrix row defaults
-      // to Allied (0) toward everyone — bogus (this showed "92 allies"). Rebels
-      // are permanently AT WAR with every faction, never allied: replace the noise.
+    } else if (isFreePeoples(fidLower)) {
+      // The independent "Free Peoples" itself — permanently AT WAR with every
+      // faction, never allied. The engine keeps no real diplomacy for it, so its
+      // raw row decodes as Allied toward everyone (the old "92 allies" bug).
       liveAllied = [];
       liveHostile = [];
       const everyone = diplomacyMatrix
@@ -558,6 +563,21 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         : [];
       liveWar = everyone.map(nameOf).sort((a, b) => a.localeCompare(b));
       atWarWithAll = liveWar.length > 0;
+    } else {
+      // `dummies` / per-faction respawn markers — engine placeholders with no
+      // real diplomacy. Show nothing rather than garbage (e.g. the bogus
+      // "dummies at war with Macedon").
+      liveWar = []; liveAllied = []; liveHostile = [];
+      isPlaceholderFaction = true;
+    }
+    // Protectorates score as Allied (attitude 0) in the matrix, so they show up
+    // in liveAllied too. We list them separately under "protects/protectorate
+    // of" (from descr_strat + campaign script), so drop them from the plain
+    // allied list to avoid double-listing (e.g. Macedon: Argos/Megalopolis are
+    // protectorates, not plain allies).
+    if (startProtects.length || startProtectedBy.length) {
+      const protSet = new Set([...startProtects, ...startProtectedBy]);
+      liveAllied = liveAllied.filter((n) => !protSet.has(n));
     }
     // Starting-treasury fallback (descr_strat) so EVERY region shows
     // something — the live treasury records only exist for the ~23 major
@@ -594,7 +614,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       ceasefires: liveDiplo ? liveDiplo.ceasefires : 0,
       locked: liveDiplo ? liveDiplo.locked : 0,
       // 0.9.546: NAMED live diplomacy from the attitude matrix.
-      hasLiveNamed, liveWar, liveAllied, liveHostile, atWarWithAll,
+      hasLiveNamed, liveWar, liveAllied, liveHostile, atWarWithAll, isPlaceholderFaction,
       startAllies, startWars, startProtects, startProtectedBy,
     };
   }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
@@ -1876,7 +1896,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     protectorate distinction comes from the campaign-start data,
                     shown as a supplement. Falls back to campaign-start named
                     diplomacy (descr_strat + script) when no save is synced. */}
-                {factionState.hasLiveNamed ? (
+                {factionState.isPlaceholderFaction ? (
+                  <div style={{ color: "#888", fontSize: "0.68rem", fontStyle: "italic" }}>
+                    Engine placeholder faction — no diplomacy.
+                  </div>
+                ) : factionState.hasLiveNamed ? (
                   <>
                     <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#4a8" }}>(live)</span></div>
                     {factionState.liveWar && factionState.liveWar.length > 0 && (
@@ -1939,7 +1963,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   const fid = String(ownerFactionId).toLowerCase();
                   const row = diplomacyMatrix[fid];
                   if (!row || !Array.isArray(row.rel) || row.rel.length === 0) return null;
-                  const isReal = (n) => n && !/(_rebels|_rebels2|^slave$|^rebels$)/.test(n);
+                  const isReal = (n) => n && !/(_rebels|^slave$|^slaves$|^rebels$|^dummies$)/.test(n);
                   const nm = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
                   const rels = row.rel
                     .filter((r) => r.to && isReal(String(r.to).toLowerCase()))

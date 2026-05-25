@@ -673,6 +673,18 @@ function stanceOf(v) {
   return "neutral";                  // 200 and anything below 400
 }
 
+// Engine placeholder / non-diplomatic factions whose attitude cells are
+// meaningless engine defaults and must never appear in decoded diplomacy:
+//   • slave / rebels  — the generic independent "Free Peoples"
+//   • dummies         — RIS's bankrupt placeholder slot (-50000 denari, dies T2)
+//   • *_rebels        — per-faction respawn markers (roman_rebels_1, seleucid_rebels2, …)
+// SINGLE SOURCE OF TRUTH — exported so the renderer uses the exact same rule
+// (avoids each consumer filtering differently, which let `dummies` leak through).
+const DIPLO_PLACEHOLDER_RE = /(_rebels|^slave$|^slaves$|^rebels$|^dummies$)/;
+function isDiplomaticFaction(name) {
+  return !!name && !DIPLO_PLACEHOLDER_RE.test(String(name).toLowerCase());
+}
+
 // Locate the matrix: scan for the cell signature, measure the smallest stride
 // giving a full-row run (avoids 2×stride aliasing). Returns {base, stride, key}.
 function locateDiplomacyMatrix(buf, N) {
@@ -748,20 +760,22 @@ function parseDiplomacyMatrix(buf, factionOrder) {
   let warPairs = 0;
   for (let A = 0; A < N; A++) {
     const name = factionOrder[A];
-    if (!name) continue;
+    if (!name || !isDiplomaticFaction(name)) continue; // skip placeholder rows
     // `rel` carries the RAW numbers for every non-neutral cell — consumed by
     // the dev-mode "raw diplomacy numbers" view (right-click the widget).
     const rec = { war: [], allied: [], hostile: [], rel: [] };
     for (let B = 0; B < N; B++) {
       if (B === A) continue;
+      const bName = factionOrder[B];
+      if (!isDiplomaticFaction(bName)) continue; // skip placeholder columns
       const c = cellAt(A, B);
       if (c == null) continue;
       const v = c.att;
       const s = stanceOf(v);
-      if (s === "war") { rec.war.push(factionOrder[B]); warPairs++; }
-      else if (s === "allied") rec.allied.push(factionOrder[B]);
-      else if (s === "hostile") rec.hostile.push(factionOrder[B]);
-      if (v !== 200 || c.bond !== 6) rec.rel.push({ to: factionOrder[B], att: v, bond: c.bond, agg: c.agg });
+      if (s === "war") { rec.war.push(bName); warPairs++; }
+      else if (s === "allied") rec.allied.push(bName);
+      else if (s === "hostile") rec.hostile.push(bName);
+      if (v !== 200 || c.bond !== 6) rec.rel.push({ to: bName, att: v, bond: c.bond, agg: c.agg });
     }
     out[name.toLowerCase()] = rec;
   }
@@ -1204,6 +1218,7 @@ module.exports = {
   parseFactionDiplomacy,
   parseAllFactionDiplomacy,
   parseDiplomacyMatrix,
+  isDiplomaticFaction,
   findRegionRecords,
   buildFamilyTreeMaps,
   parseSoldierArray,
