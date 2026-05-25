@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.626",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Family tree no longer shows bogus members** (e.g. \"end;Iolaos\", plus stray \"age —\" cards like Pleistarchos / Philippos / Nikanor / Alexarchos / Perilaos). The descr_strat parser only stripped whole-line comments, so an *inline* comment on a `relative` line — `relative …, end;Iolaos, …, end` — had its commented-out tail parsed as real family members. Inline `;` comments are now ignored everywhere, so only the actual household shows (with correct ages)." },
+    ],
+  },
+  {
     version: "0.9.625",
     date: "2026-05-26",
     items: [

@@ -69,11 +69,16 @@ function parseDescrStrat(text) {
     let lastComment = null;
     for (let i = start; i < end; i++) {
       const line = lines[i];
-      const t = line.trim();
+      const rawT = line.trim();
       // ;CityName comment lines precede a settlement's governor character — they
       // are how descr_strat encodes each settlement's tile (the governor's x,y).
-      const cm0 = t.match(/^;\s*(.+?)\s*$/);
+      const cm0 = rawT.match(/^;\s*(.+?)\s*$/);
       if (cm0) { lastComment = cm0[1]; continue; }
+      // Strip INLINE comments (a `;` anywhere starts a comment in descr_strat) so
+      // a commented-out tail isn't parsed as data — e.g. a `relative …, end;Iolaos,
+      // …, end` line was yielding a bogus family member literally named "end;Iolaos".
+      const t = rawT.includes(";") ? rawT.slice(0, rawT.indexOf(";")).trim() : rawT;
+      if (!t) continue;
       // character, <First> <Family>, named character, [leader|heir|male|female], age N, , x X, y Y
       // Tolerant of every descr_strat dialect: optional comma after `character`,
       // optional leader/heir tag OR command/influence/… stat fields between
