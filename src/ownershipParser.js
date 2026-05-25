@@ -87,17 +87,24 @@ function parseDescrRegions(filePath) {
   return regionToSettlement;
 }
 
-// Parse descr_strat.txt extracting { factionId: [regionName, ...] }.
+// Parse descr_strat.txt extracting { factionId: [regionName, ...] } plus a
+// per-region `faction_creator` map.
 // Structure:
 //   faction <faction_id>, <ai_type>
-//   ... various lines including settlement { ... region <R> ... } blocks
+//   ... various lines including settlement { ... region <R> ... faction_creator <F> ... } blocks
 //   (blocks continue until the next `faction <id>` line)
+// Returns: { factionRegions, regionCreator }
+// regionCreator maps regionName → faction_creator id (descr_strat rebel-
+// default per settlement). Used by loyalist map mode to compare descr_strat
+// rebel-default to descr_regions rebel-default (field 3).
 function parseDescrStrat(filePath) {
   const text = fs.readFileSync(filePath, "utf8");
   const lines = text.split(/\r?\n/);
   const factionRegions = {};
+  const regionCreator = {};
   let currentFaction = null;
   let inSettlement = false;
+  let curRegion = null;
   for (const raw of lines) {
     const line = raw.replace(/;.*$/, "").trim();
     if (!line) continue;
@@ -106,19 +113,27 @@ function parseDescrStrat(filePath) {
       currentFaction = fmatch[1];
       if (!factionRegions[currentFaction]) factionRegions[currentFaction] = [];
       inSettlement = false;
+      curRegion = null;
       continue;
     }
-    if (line === "settlement") { inSettlement = true; continue; }
-    // Any non-indented top-level line that isn't `region` ends the settlement block
-    // (though the actual ending is `}` — we just guard against junk attribution).
-    // Only count `region X` lines when we're actively inside a settlement block.
-    const rmatch = line.match(/^region\s+([A-Za-z][A-Za-z0-9_\-]*)/);
-    if (rmatch && currentFaction && inSettlement) {
-      factionRegions[currentFaction].push(rmatch[1]);
-      inSettlement = false; // one region per settlement; reset
+    if (line === "settlement") { inSettlement = true; curRegion = null; continue; }
+    if (inSettlement) {
+      const rmatch = line.match(/^region\s+([A-Za-z][A-Za-z0-9_\-]*)/);
+      if (rmatch && currentFaction) {
+        factionRegions[currentFaction].push(rmatch[1]);
+        curRegion = rmatch[1];
+        continue;
+      }
+      const cmatch = line.match(/^faction_creator\s+([A-Za-z0-9_]+)/);
+      if (cmatch && curRegion) {
+        regionCreator[curRegion] = cmatch[1];
+        continue;
+      }
+      // End-of-block on closing brace.
+      if (line === "}") { inSettlement = false; curRegion = null; }
     }
   }
-  return factionRegions;
+  return { factionRegions, regionCreator };
 }
 
 // Build { settlementName: factionId } using descr_strat ownership and
@@ -134,7 +149,8 @@ function buildInitialOwnership(modDataDir) {
     return { ownerByCity: {}, error: `descr_strat=${!!stratPath} descr_regions=${!!regionsPath}` };
   }
   const regionToSettlement = parseDescrRegions(regionsPath);
-  const factionRegions = parseDescrStrat(stratPath);
+  const stratParsed = parseDescrStrat(stratPath);
+  const { factionRegions, regionCreator } = stratParsed;
   const ownerByCity = {};
   for (const [faction, regions] of Object.entries(factionRegions)) {
     for (const r of regions) {
@@ -142,12 +158,23 @@ function buildInitialOwnership(modDataDir) {
       if (s) ownerByCity[s] = faction;
     }
   }
+  // 0.9.437: per-settlement `faction_creator` (descr_strat rebel-default).
+  // Loyalist map mode compares this to descr_regions field 3 (also a rebel-
+  // default) to determine when a settlement's REAL homeland matches the
+  // rebellion target — if they agree, the settlement is loyal.
+  const creatorByCity = {};
+  for (const [region, creator] of Object.entries(regionCreator || {})) {
+    const s = regionToSettlement[region];
+    if (s) creatorByCity[s] = creator;
+  }
   return {
     ownerByCity,
+    creatorByCity,
     stats: {
       regions: Object.keys(regionToSettlement).length,
       factionsWithSettlements: Object.keys(factionRegions).filter((f) => factionRegions[f].length > 0).length,
       settlementsOwned: Object.keys(ownerByCity).length,
+      creatorsRecorded: Object.keys(creatorByCity).length,
     },
     stratPath,
     regionsPath,

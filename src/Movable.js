@@ -126,7 +126,7 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 10;
+const LAYOUT_VERSION = 14;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -137,12 +137,17 @@ const CANONICAL_V4 = {
   // Uniform 9-PIXEL gaps everywhere at 1920×1080. Horizontal fraction
   // ≈ 9/1920 = 0.0047; vertical fraction ≈ 9/1080 = 0.0083. Bottom
   // strip widgets sit 9 px below the map's bottom edge.
-  "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3287 },
+  // 0.9.551 (LAYOUT_VERSION 12): diplomacy widget grew (now holds NAMED live
+  // war/ally lists + treasury + wealth sparkline), so region.characters and
+  // region.buildings moved DOWN; region.buildings shrunk to just fit the fixed
+  // 5×4 = 20 building grid, freeing the reclaimed vertical space for diplomacy.
+  "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.2600 },
   "region.recruit":     { x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 },
-  "region.characters":  { x: 0.5720, y: 0.3453, w: 0.2090, h: 0.1550 },
+  "region.diplomacy":   { x: 0.5720, y: 0.2770, w: 0.2090, h: 0.1900 },
+  "region.characters":  { x: 0.5720, y: 0.4760, w: 0.2090, h: 0.2690 },
   "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
   "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
-  "region.buildings":   { x: 0.5720, y: 0.5086, w: 0.2090, h: 0.4864 },
+  "region.buildings":   { x: 0.5720, y: 0.7530, w: 0.2090, h: 0.2360 },
   "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1340 },
   "region.fieldArmies": { x: 0.7857, y: 0.6509, w: 0.2090, h: 0.3441 },
   // Bottom-strip widgets — 9 px below the map's bottom edge (map
@@ -396,6 +401,15 @@ function snapAlign(myId, np, lock = {}, nosnap = false) {
   return { pos: out, guides };
 }
 
+// Design right-column geometry (matches CANONICAL_V4: region widgets start at
+// x=0.572 and span to the right edge). `colBox` re-maps this design range into
+// the actual right column [colBox.left, colBox.left+colBox.width] so the widgets
+// always meet the map's right edge — closes the gap when the map is
+// height-constrained on wide/4K screens. On screens where the map fills its
+// column this is essentially identity (colBox.width ≈ RIGHT_COL_SPAN·vw).
+const RIGHT_COL_X0 = 0.572;
+const RIGHT_COL_SPAN = 0.428;
+
 export function Movable({
   id,
   defaultPct,
@@ -404,6 +418,8 @@ export function Movable({
   style,
   title,
   zIndex = 2,
+  colBox = null,
+  posOverride = null,
 }) {
   const [pos, setPos] = useWidgetPos(id, defaultPct);
   // `isDragging` toggles position transitions off during active drag/
@@ -423,10 +439,27 @@ export function Movable({
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  const left = Math.round(pos.x * vp.w);
-  const top = Math.round(pos.y * vp.h);
-  const width = Math.max(40, Math.round(pos.w * vp.w));
-  const height = Math.max(40, Math.round(pos.h * vp.h));
+  // posOverride temporarily expands a widget for render only (e.g. the Characters
+  // panel grows over Diplomacy while Add-General is open) without touching the
+  // persisted/draggable position.
+  const ePos = posOverride ? { ...pos, ...posOverride } : pos;
+  // A `box` re-maps a widget's design x/width into an actual pixel column so it
+  // tracks the map: the right column (default x0/span) for region widgets, or
+  // the bottom-left map column for the search/factions/selected strip (which
+  // pass x0:0, span:0.572). Without x0/span it uses the right-column defaults.
+  const boxX0 = colBox && colBox.x0 != null ? colBox.x0 : RIGHT_COL_X0;
+  const boxSpan = colBox && colBox.span != null ? colBox.span : RIGHT_COL_SPAN;
+  let left, width;
+  if (colBox) {
+    const relX = (ePos.x - boxX0) / boxSpan;
+    left = Math.round(colBox.left + relX * colBox.width);
+    width = Math.max(40, Math.round((ePos.w / boxSpan) * colBox.width));
+  } else {
+    left = Math.round(ePos.x * vp.w);
+    width = Math.max(40, Math.round(ePos.w * vp.w));
+  }
+  const top = Math.round(ePos.y * vp.h);
+  const height = Math.max(40, Math.round(ePos.h * vp.h));
 
   const startDrag = (e) => {
     if (!designMode) return;
@@ -438,7 +471,7 @@ export function Movable({
     const startY = e.clientY;
     const startPos = { ...pos };
     function onMove(ev) {
-      const dx = (ev.clientX - startX) / vp.w;
+      const dx = colBox ? ((ev.clientX - startX) / colBox.width) * boxSpan : (ev.clientX - startX) / vp.w;
       const dy = (ev.clientY - startY) / vp.h;
       let np = {
         x: Math.max(0, Math.min(1 - startPos.w, startPos.x + dx)),
@@ -470,7 +503,7 @@ export function Movable({
     const startY = e.clientY;
     const startPos = { ...pos };
     function onMove(ev) {
-      const dx = (ev.clientX - startX) / vp.w;
+      const dx = colBox ? ((ev.clientX - startX) / colBox.width) * boxSpan : (ev.clientX - startX) / vp.w;
       const dy = (ev.clientY - startY) / vp.h;
       const np = { ...startPos };
       const lock = {};

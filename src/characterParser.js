@@ -15,11 +15,39 @@
 // `descr_names_lookup.txt` and `export_descr_character_traits.txt` are
 // pre-loaded and passed in as arrays (index → name).
 
+// Walk the 354-byte coord/state record table to extract every bodyguard
+// uuid in the save. Records have layout: +0 secondaryUuid, +8 x, +12 y,
+// +16 fractional marker (low 16 bits == 0x7fff for land AND naval — naval
+// chars have high bit set at +18 marking "is_at_sea"). This index is the
+// authoritative set of valid character bodyguard uuids; we use it to gate
+// tc=0 admiral records (which have no trait-list anchor for the main scan).
+function buildSecUuidIndex(buf) {
+  const set = new Set();
+  // The coord table sits in the upper half of the save. Byte-by-byte
+  // scan is ~80ms on a 32 MB save — acceptable for a one-shot pass.
+  const start = Math.max(0, Math.floor(buf.length / 2));
+  for (let p = start; p + 20 < buf.length; p += 1) {
+    if (buf.readUInt16LE(p + 16) !== 0x7fff) continue;
+    const x = buf.readUInt32LE(p + 8);
+    const y = buf.readUInt32LE(p + 12);
+    if (x < 1 || x > 2047 || y < 1 || y > 2047) continue;
+    const sec = buf.readUInt32LE(p);
+    if (sec === 0 || sec === 0xffffffff || sec < 0x10000) continue;
+    set.add(sec);
+  }
+  return set;
+}
+
 function findCharacterRecords(buf, nameLookup, traitNames, surnamesFilter) {
   // If a surnamesFilter is provided, only match characters whose last name is in it.
   // If null/undefined, do a broad scan using structural heuristics.
   const records = [];
   const seen = new Set();
+  // 2026-05-20: pre-compute valid bodyguard uuid set for the tc=0 gate.
+  // Lets tryParseAt accept admiral records (traitCount=0) when their
+  // secondaryUuid is a known bodyguard — eliminates ~2000 false-positives
+  // that the broad tc=0 path would otherwise produce.
+  const secUuidIndex = buildSecUuidIndex(buf);
 
   if (surnamesFilter) {
     const surnameIdx = new Map();
@@ -30,14 +58,14 @@ function findCharacterRecords(buf, nameLookup, traitNames, surnamesFilter) {
     for (const [sn, idx] of surnameIdx) {
       for (let i = 0; i < buf.length - 308; i++) {
         if (buf.readUInt32LE(i + 5) !== idx) continue;
-        const cand = tryParseAt(buf, i, nameLookup, traitNames);
+        const cand = tryParseAt(buf, i, nameLookup, traitNames, secUuidIndex);
         if (cand && !seen.has(i)) { seen.add(i); records.push(cand); }
       }
     }
   } else {
     // Broad scan using structural validation only
     for (let i = 47; i < buf.length - 308; i++) {
-      const cand = tryParseAt(buf, i, nameLookup, traitNames);
+      const cand = tryParseAt(buf, i, nameLookup, traitNames, secUuidIndex);
       if (cand && !seen.has(i)) {
         seen.add(i);
         records.push(cand);
@@ -79,9 +107,15 @@ function findCharacterRecords(buf, nameLookup, traitNames, surnamesFilter) {
   return records.sort((a, b) => a.offset - b.offset);
 }
 
-function tryParseAt(buf, i, nameLookup, traitNames) {
+function tryParseAt(buf, i, nameLookup, traitNames, secUuidIndex = null) {
   const first = buf.readUInt32LE(i);
-  if (first < 50 || first >= nameLookup.length) return null;
+  // 0.9.502: dropped the `first < 50` gate. It was a heuristic to filter
+  // junk byte patterns but happened to reject every legitimate character
+  // whose nameLookup index falls in 0..49 — including Achaios (idx 46),
+  // Aaron (0), Achaeus (45), Achilleus (50)*, etc. With the other gates
+  // (length ≥ 3, A-Z first char, valid trait list, valid age, etc.)
+  // doing the actual filtering, this low-index cutoff was pure regression.
+  if (first >= nameLookup.length) return null;
   const firstName = nameLookup[first];
   if (!firstName || firstName.length < 3) return null;
   if (firstName[0] < "A" || firstName[0] > "Z") return null;
@@ -109,7 +143,20 @@ function tryParseAt(buf, i, nameLookup, traitNames) {
     const tsAt = off === 0 ? 308 : 304;
     if (i + tcAt + 2 > buf.length) return false;
     const tc = buf.readUInt16LE(i + tcAt);
-    if (tc < 1 || tc > 200) return false;
+    if (tc > 200) return false;
+    // 2026-05-20: tc=0 admiral case. RTW admirals have traitCount=0 (no
+    // traits), so the trait-list anchor below can't validate them. Accept
+    // tc=0 ONLY when the secondaryUuid (offset-43 from i) is in the
+    // coord-table index — that's strong proof the record is a real
+    // character. Without this gate, a broad tc=0 scan produces 2000+
+    // false positives in Macedon T0 RIS.
+    if (tc === 0) {
+      if (!secUuidIndex) return false;
+      if (i < 43) return false;
+      const sec = buf.readUInt32LE(i - 43);
+      return secUuidIndex.has(sec);
+    }
+    if (tc < 1) return false;
     if (i + tsAt + 8 > buf.length) return false;
     const tid0 = buf.readUInt32LE(i + tsAt);
     if (tid0 >= traitNames.length || !traitNames[tid0]) return false;
@@ -150,6 +197,65 @@ function tryParseAt(buf, i, nameLookup, traitNames) {
   if (role > 10) return null;
   const tc = buf.readUInt16LE(i + off.traitCount);
   if (tc > 200) return null;
+  // 2026-05-20 cracker session 2: reject records where BOTH primaryUuid
+  // (at offset-47) AND secondaryUuid (at offset-43) are 0. Real characters
+  // always have at least one of these uuids set — primaryUuid is the
+  // character's identity and is always non-zero; secondaryUuid is the
+  // bodyguard unit uuid and is also non-zero for most chars. The 362
+  // false-positive "Aaron" records in Macedon T0 RIS (vs 0 real Aarons in
+  // descr_strat) all had both uuids = 0; this filter eliminates them
+  // without affecting any real character. Verified via
+  // scripts/save-cracker/dig-descr-strat-audit.js.
+  if (i >= 47) {
+    const primaryUuid = buf.readUInt32LE(i - 47);
+    const secondaryUuid = buf.readUInt32LE(i - 43);
+    // 2026-05-20: real characters have at least ONE uuid >= 0x10000 (most
+    // real uuids are in the millions; small values like 2048 / 9728 are
+    // partial-byte interpretations of unrelated regions). 362 false-positive
+    // Aaron records in Macedon T0 RIS — none of them satisfied this gate,
+    // while 0 real chars were rejected by it. Verified against descr_strat
+    // (Aaron not present in any starting character list).
+    const FF = 0xffffffff;
+    const pBig = primaryUuid > 0xffff && primaryUuid !== FF;
+    const sBig = secondaryUuid > 0xffff && secondaryUuid !== FF;
+    if (!pBig && !sBig) return null;
+    // Additional gate: real character records always have non-zero bytes
+    // within the first 8 bytes (firstName + gender + pad + start of next
+    // field). Fake records caused by zero-byte regions have 8 zero bytes,
+    // which is what allows index 0 ("Aaron") to be incorrectly parsed as
+    // a character. Verified across Macedon T0 RIS: 100% of fake Aarons
+    // have all-zero head8; 0 real chars have all-zero head8.
+    if (i + 8 <= buf.length) {
+      let head8Zero = true;
+      for (let k = 0; k < 8; k++) if (buf[i + k] !== 0) { head8Zero = false; break; }
+      if (head8Zero) return null;
+    }
+    // 0.9.524: post-children "system constants" gate. Cracked layout shows
+    // real chars have a 20-byte constant block at +66..+85 (LAYOUT_B) /
+    // +70..+89 (LAYOUT_A) starting with the end-of-children u32 sentinel
+    // (0xFFFFFFFF) and containing the RTW constant `2` u32 four slots
+    // later. Validating EITHER of these two slots eliminates Appuleius_
+    // Saturninus and 7 other false-positive records hitting the parser at
+    // offsets that happen to satisfy the firstName/age/uuid gates but live
+    // outside the character-records section (relationship tables, name-
+    // pool zones). Verified against Macedon T0 RIS: 861/861 descr_strat-
+    // resident chars pass this gate (zero false-negatives), and 8/8 known
+    // false-positives are filtered. Runtime-spawned chars (105 of them in
+    // Macedon T0 RIS, not in descr_strat) all pass too — they live in the
+    // real character section with the constant layout intact.
+    const sentinelOff = layoutB ? 66 : 70;
+    const const2Off = layoutB ? 74 : 78;
+    if (i + const2Off + 4 <= buf.length) {
+      const sentinel = buf.readUInt32LE(i + sentinelOff);
+      const k2 = buf.readUInt32LE(i + const2Off);
+      if (sentinel !== 0xFFFFFFFF && k2 !== 2) return null;
+    }
+  } else {
+    // Records below offset 47 can't have pre-header uuids in-buffer.
+    // The first ~5000 bytes are the save header / mod info, never
+    // contains real character records.
+    return null;
+  }
   return parseCharacter(buf, i, nameLookup, traitNames, layoutB);
 }
 
@@ -216,28 +322,52 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
       if (u && u !== 0xffffffff) childUuids.push(u);
     }
   }
+  // spouseUuid at +46 (LAYOUT_B) / +50 (LAYOUT_A) — CONFIRMED 2026-05-20
+  // by cross-referencing every char's +46 against the global set of all
+  // v1.childUuids. 14 dynastic marriages verified where slot46 == primaryUuid
+  // of a daughter held in another char's child slot — proven cases include
+  // AntigonosB ↔ PhilaB (Seleukos's daughter), Magas ↔ Apame (Seleukos's
+  // daughter), Antiochos ↔ StratonikeB (Demetrios's daughter), AlexandrosB
+  // ↔ daughter-of-Pyrrhos, etc. The earlier "3% match" finding was caused
+  // by a disambiguation bug (the descr_strat young Seleukos at age 23 was
+  // being preferred over v1's dynastic-ancestor Seleukos at age 88 who
+  // actually holds the children list). With the proper "is slot46 a child
+  // of ANYONE?" test, +46 is confirmed as spouseUuid. The 610 non-matching
+  // values are chars whose wives aren't anyone's daughter in v1 (female
+  // wives with no traits don't get v1 records).
+  let spouseUuid = 0;
+  {
+    const spouseOff = layoutB ? 46 : 50;
+    if (offset + spouseOff + 4 <= buf.length) {
+      const u = buf.readUInt32LE(offset + spouseOff);
+      if (u && u !== 0xffffffff) spouseUuid = u;
+    }
+  }
   // Primary/secondary UUIDs sit BEFORE the record start (offset -47 / -43
   // for LAYOUT_A, -43 / -39 for LAYOUT_B). The shift is the same -4
   // pattern as the in-record fields.
   const primaryUuid = offset + off.primaryUuid >= 0 ? buf.readUInt32LE(offset + off.primaryUuid) : 0;
   const secondaryUuid = offset + off.secondaryUuid >= 0 ? buf.readUInt32LE(offset + off.secondaryUuid) : 0;
-  // Character stats (save-cracker session 91, STRONG). Cluster framed by
-  // u16=23 at +96 and u32=50 at +98, then four u32 LE stat fields.
-  // Mapping (each STRONG; final assignment needs in-game screenshot):
-  //   +102 → management (range 0..5, correlates with trait count)
-  //   +106 → command    (range 1..7, correlates with age + traits)
-  //   +110 → influence  (range 2..7, correlates with age)
-  //   +126 → loyalty    (range 5..11, default 5 = RTW base)
+  // Character stats. Cluster framed by u16=23 at +96 and u32=50 at +98,
+  // then four u32 LE stat fields.
+  // Label assignment corrected 2026-05-19 against in-game ground truth
+  // (Antigonos II Gonatas in RIS Macedon T0: Command 7, Influence 6,
+  // Management 5 — user verified). Session 91 had the labels wrong:
+  //   +102 → command    (was labeled "management")
+  //   +106 → influence  (was labeled "command")
+  //   +110 → management (was labeled "influence")
+  //   +126 → loyalty    (unchanged)
+  // The byte offsets are unchanged; only the field labels rotate.
   // LAYOUT_B offsets follow the same -4 shift convention as other fields.
   let management = null, command = null, influence = null, loyalty = null;
   {
     const base = layoutB ? -4 : 0;
-    const mgmtOff = offset + 102 + base;
-    if (mgmtOff >= 0 && mgmtOff + 28 <= buf.length) {
-      management = buf.readUInt32LE(mgmtOff);
-      command    = buf.readUInt32LE(mgmtOff + 4);
-      influence  = buf.readUInt32LE(mgmtOff + 8);
-      loyalty    = buf.readUInt32LE(mgmtOff + 24);
+    const statOff = offset + 102 + base;
+    if (statOff >= 0 && statOff + 28 <= buf.length) {
+      command    = buf.readUInt32LE(statOff);
+      influence  = buf.readUInt32LE(statOff + 4);
+      management = buf.readUInt32LE(statOff + 8);
+      loyalty    = buf.readUInt32LE(statOff + 24);
       // Sanity gate: session 91 found stats in the 0..15 range, but
       // trait-stacked late-game generals can push command/influence well
       // past that. Widen to 30 so legit veteran stats survive while
@@ -251,59 +381,74 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
   const traitCount = buf.readUInt16LE(offset + off.traitCount);
 
   const traits = [];
-  for (let i = 0; i < traitCount - 1; i++) { // last slot is terminator
+  // 0.9.551: the last slot is a REAL trait, not a terminator — verified
+  // 890/890 in macedon t0 (dig-traitanc-discriminator.js). The old
+  // `i < traitCount - 1` dropped one real trait per character (TurnsAlive,
+  // STRating, GoodCommander, Factionheir, …). trEnd below still uses the full
+  // traitCount, so the ancillary boundary is unaffected by this fix.
+  for (let i = 0; i < traitCount; i++) {
     const tid = buf.readUInt32LE(offset + off.traitsStart + i * 8);
-    const level = buf.readUInt16LE(offset + off.traitsStart + i * 8 + 4);
+    // 0.9.521: u16 at trait+4 is accumulated POINTS, not displayed level.
+    // E.g. Quintus's "Estates 2" in descr_strat = 26 points in save.
+    // Engine derives displayed level via threshold lookup. Caller (main.js)
+    // post-processes to attach the resolved display level when modTraitLevels
+    // is available. Field name `points` is the byte value; `level` is the
+    // engine's displayed level after threshold lookup (filled in by caller).
+    const points = buf.readUInt16LE(offset + off.traitsStart + i * 8 + 4);
     if (tid >= traitNames.length) break;
     if (!traitNames[tid]) continue;
-    traits.push({ id: tid, name: traitNames[tid], level });
+    traits.push({ id: tid, name: traitNames[tid], points, level: points });
   }
 
-  // Ancillaries — save-cracker session 6 (2026-05-10) located them inline
-  // in the character record between the trait block and the portrait
-  // ASCII paths. Layout: after `traitCount*8` trait bytes, zero or more
-  // `[u16=0, u16=ancId]` pairs followed by a single `[u16=0]` sentinel
-  // and then the portrait length prefix. Sub-case A (most chars: ~68% in
-  // save_rome6) has gap=-2 meaning the last trait slot's flag u16
-  // overlaps with the portrait length prefix and there are 0 ancillaries
-  // — we detect this by scanning for "data/" right at trait_end. The
-  // 9-line parser (cross-validated 892/936 on save_rome6, 1237/1341 on
-  // Sparta T4 End): find "data/" within 200 bytes, gap = position of
-  // "data/" relative to trait_end, ancCount = (gap - 2 - 2) / 4.
+  // Ancillaries — 0.9.551 CORRECTED layout (byte-verified via
+  // dig-anc-boundary.js). The ancillary block sits at `trEnd - 4` (i.e. it
+  // OVERLAPS the last trait slot's points/pad fields), as:
+  //   [u16 ancCount][ancCount × u32 ancId]
+  // followed by the portrait pstr16 (`[u16 len][data/...]`). The OLD code read
+  // `[u16 pad][u16 id]` pairs starting at trEnd, which dropped the FIRST
+  // ancillary of every character (e.g. Antigonos II's poet) and could misread
+  // the rest. Detection: scan for "data/" from ancStart; count = (dataPos-4)/4
+  // must be a non-negative integer and equal the u16 at ancStart. Validated:
+  // poet/historian/tutor etc. all resolve; no-ancillary chars give count 0.
   const ancillaries = [];
+  let ancCountFound = 0;
   {
     const trEnd = offset + off.traitsStart + traitCount * 8;
-    // Scan up to 200 bytes for the "data/" portrait path prefix.
+    const ancStart = trEnd - 4;
     let dataPos = -1;
-    for (let i = 0; i < 200 && trEnd + i + 4 < buf.length; i++) {
-      if (buf[trEnd + i] === 0x64 && buf[trEnd + i + 1] === 0x61 &&
-          buf[trEnd + i + 2] === 0x74 && buf[trEnd + i + 3] === 0x61 &&
-          buf[trEnd + i + 4] === 0x2f) { dataPos = i; break; }
+    for (let i = 0; i < 220 && ancStart + i + 4 < buf.length; i++) {
+      if (buf[ancStart + i] === 0x64 && buf[ancStart + i + 1] === 0x61 &&
+          buf[ancStart + i + 2] === 0x74 && buf[ancStart + i + 3] === 0x61 &&
+          buf[ancStart + i + 4] === 0x2f) { dataPos = i; break; }
     }
-    if (dataPos === 0) {
-      // gap == -2 sub-case: 0 ancillaries, last trait's flag overlaps.
-    } else if (dataPos > 0 && (dataPos - 2) % 4 === 2) {
-      // gap >= 2 sub-case: parse N = (gap-4)/4 entries.
-      const ancCount = (dataPos - 2 - 2) / 4;
-      let valid = true;
-      const ids = [];
-      for (let i = 0; i < ancCount; i++) {
-        // Each entry: [u16=0 padding][u16 ancId]
-        if (buf.readUInt16LE(trEnd + i * 4) !== 0) { valid = false; break; }
-        ids.push(buf.readUInt16LE(trEnd + i * 4 + 2));
-      }
-      if (valid) {
-        for (const id of ids) ancillaries.push({ id });
+    if (dataPos >= 4 && (dataPos - 4) % 4 === 0) {
+      const n = (dataPos - 4) / 4;
+      if (n >= 0 && n <= 16 && buf.readUInt16LE(ancStart) === n) {
+        for (let i = 0; i < n; i++) ancillaries.push({ id: buf.readUInt32LE(ancStart + 2 + i * 4) });
+        ancCountFound = n;
       }
     }
-    // dataPos < 0 or malformed → leave ancillaries empty (5-7% of chars
-    // in the corpus, mostly captain records with non-data/ portrait paths)
+  }
+  // The ancillary block reuses the LAST trait's points slot (ancStart == that
+  // slot's +4), so when ancillaries exist the last trait's `points` we read
+  // above is actually the ancCount — not a real level. Null it out so the UI
+  // doesn't show a bogus level on the final trait.
+  if (ancCountFound > 0 && traits.length > 0) {
+    const last = traits[traits.length - 1];
+    last.points = 0; last.level = 0;
   }
 
-  // Portraits: scan forward from trait end for length-prefixed ASCII paths
+  // Portraits: scan forward from trait end for length-prefixed ASCII paths.
+  // Capture up to 4 candidates so we can pick the best one, since the engine
+  // sometimes stashes a captain banner (`data/ui/captain banners/captain_
+  // portrait_*.tga`) BEFORE the actual general/family portrait. Picking
+  // portraits[0] blindly then renders Dionysios with the Syracuse captain
+  // banner — which is not what the family tree shows. 0.9.447: filter out
+  // captain-banner paths so the first kept entry is always a true portrait
+  // (`/portraits/portraits/` or `/portraits/cards/` substring).
   let cursor = offset + off.traitsStart + traitCount * 8;
   const portraits = [];
-  for (let tries = 0; tries < 400 && portraits.length < 2; tries++) {
+  for (let tries = 0; tries < 400 && portraits.length < 4; tries++) {
     if (cursor + 3 > buf.length) break;
     const len = buf.readUInt16LE(cursor);
     if (len > 10 && len < 200) {
@@ -313,7 +458,14 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
         if (c < 0x20 || c > 0x7e) { ok = false; break; }
       }
       if (ok && buf[cursor + 2 + len - 1] === 0x00) {
-        portraits.push(buf.slice(cursor + 2, cursor + 2 + len - 1).toString("ascii"));
+        const s = buf.slice(cursor + 2, cursor + 2 + len - 1).toString("ascii");
+        // Reject captain banners outright — the engine writes them as
+        // sibling fields for some characters but they're not the
+        // character's actual rendered portrait. Family tree resolves to
+        // the per-culture pool; the unit card should too.
+        if (!/captain[\s_]*banner|captain_portrait/i.test(s)) {
+          portraits.push(s);
+        }
         cursor += 2 + len;
         continue;
       }
@@ -355,6 +507,7 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
     primaryUuid,
     secondaryUuid,
     fatherUuid: fatherUuid === 0 ? null : fatherUuid,
+    spouseUuid: spouseUuid === 0 ? null : spouseUuid,
     portraits,
     traits,
     ancillaries,

@@ -79,7 +79,7 @@
 			"defeat": "data/fmv/lose/romans_julii.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -371,7 +371,7 @@
 			"defeat": "data/fmv/lose/carthage.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "phoenician",
 		"default battle ai personality": "default_personality",
@@ -864,7 +864,7 @@
 			"defeat": "data/fmv/lose/parthia_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iranian",
 		"default battle ai personality": "default_personality",
@@ -968,7 +968,7 @@
 			"defeat": "data/fmv/lose/saka.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -1042,7 +1042,7 @@
 			"defeat": "data/fmv/lose/armenia.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "armenian",
 		"default battle ai personality": "default_personality",
@@ -1208,7 +1208,7 @@
 			"defeat": "data/fmv/lose/lusitani.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -1281,7 +1281,7 @@
 			"defeat": "data/fmv/lose/getae.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -1377,7 +1377,7 @@
 			"defeat": "data/fmv/lose/acarnania.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -1637,7 +1637,7 @@
 			"defeat": "data/fmv/lose/aedui.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -2439,7 +2439,7 @@
 			"defeat": "data/fmv/lose/arevaci.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -2856,7 +2856,7 @@
 			"defeat": "data/fmv/lose/arverni.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -3024,7 +3024,7 @@
 			"defeat": "data/fmv/lose/asti.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -3628,7 +3628,7 @@
 			"defeat": "data/fmv/lose/belgae.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -4725,7 +4725,7 @@
 			"defeat": "data/fmv/lose/cabyle.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -5878,7 +5878,7 @@
 			"defeat": "data/fmv/lose/chersonesos.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -6044,7 +6044,7 @@
 			"defeat": "data/fmv/lose/chios.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -6241,7 +6241,7 @@
 			"defeat": "data/fmv/lose/chrysaoria.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "carian",
 		"default battle ai personality": "default_personality",
@@ -6572,7 +6572,7 @@
 			"defeat": "data/fmv/lose/cius.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -7126,7 +7126,7 @@
 			"defeat": "data/fmv/lose/cyzicus.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -7500,7 +7500,7 @@
 			"defeat": "data/fmv/lose/dentheletae.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -7792,7 +7792,7 @@
 			"defeat": "data/fmv/lose/edeta.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -7885,7 +7885,7 @@
 			"defeat": "data/fmv/lose/egypt.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "egyptian",
 		"default battle ai personality": "default_personality",
@@ -7979,7 +7979,7 @@
 			"defeat": "data/fmv/lose/elis.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "northwest_greek",
 		"default battle ai personality": "default_personality",
@@ -8071,7 +8071,7 @@
 			"defeat": "data/fmv/lose/emporion.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -8460,7 +8460,7 @@
 			"defeat": "data/fmv/lose/galatians.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -10608,7 +10608,7 @@
 			"defeat": "data/fmv/lose/issa.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -11044,7 +11044,7 @@
 			"defeat": "data/fmv/lose/kush.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ethiopian",
 		"default battle ai personality": "default_personality",
@@ -11876,7 +11876,7 @@
 			"defeat": "data/fmv/lose/lycia.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "lycian",
 		"default battle ai personality": "default_personality",
@@ -12619,7 +12619,7 @@
 			"defeat": "data/fmv/lose/massylii.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
@@ -12765,7 +12765,7 @@
 			"defeat": "data/fmv/lose/armenia_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "indian",
 		"default battle ai personality": "default_personality",
@@ -13410,7 +13410,7 @@
 			"defeat": "data/fmv/lose/nabataea.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -14371,7 +14371,7 @@
 			"defeat": "data/fmv/lose/paphlagonia.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "paphlagonian",
 		"default battle ai personality": "default_personality",
@@ -15422,7 +15422,7 @@
 			"defeat": "data/fmv/lose/saba.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -15733,7 +15733,7 @@
 			"defeat": "data/fmv/lose/edeta.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -16463,7 +16463,7 @@
 			"defeat": "data/fmv/lose/siraces.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -16775,7 +16775,7 @@
 			"defeat": "data/fmv/lose/germania_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -17035,7 +17035,7 @@
 			"defeat": "data/fmv/lose/taras.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -17422,7 +17422,7 @@
 			"defeat": "data/fmv/lose/thessaly.wmv",
 		},
 
-		"available in custom battles": true,
+		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "aeolian",
 		"default battle ai personality": "default_personality",
@@ -17828,7 +17828,7 @@
 			"defeat": "data/fmv/lose/britons_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",

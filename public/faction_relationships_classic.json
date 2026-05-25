@@ -1,0 +1,434 @@
+{
+  "romans_julii": [
+    {
+      "to": "volsinii",
+      "kind": "protects"
+    },
+    {
+      "to": "massalia",
+      "kind": "ally"
+    },
+    {
+      "to": "issa",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_1",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_senate",
+      "kind": "ally"
+    },
+    {
+      "to": "picentes",
+      "kind": "war"
+    },
+    {
+      "to": "volsinii",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "volsinii": [
+    {
+      "to": "romans_julii",
+      "kind": "protected_by"
+    },
+    {
+      "to": "romans_julii",
+      "kind": "war"
+    }
+  ],
+  "carthage": [
+    {
+      "to": "gades",
+      "kind": "protects"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "war"
+    }
+  ],
+  "gades": [
+    {
+      "to": "carthage",
+      "kind": "protected_by"
+    }
+  ],
+  "antigonid": [
+    {
+      "to": "argos",
+      "kind": "protects"
+    },
+    {
+      "to": "megalopolis",
+      "kind": "protects"
+    },
+    {
+      "to": "epirus",
+      "kind": "war"
+    }
+  ],
+  "argos": [
+    {
+      "to": "antigonid",
+      "kind": "protected_by"
+    }
+  ],
+  "megalopolis": [
+    {
+      "to": "antigonid",
+      "kind": "protected_by"
+    }
+  ],
+  "seleucid": [
+    {
+      "to": "lysiad",
+      "kind": "protects"
+    },
+    {
+      "to": "arados",
+      "kind": "protects"
+    },
+    {
+      "to": "characene",
+      "kind": "protects"
+    },
+    {
+      "to": "persis",
+      "kind": "protects"
+    },
+    {
+      "to": "seleucid_rebels2",
+      "kind": "war"
+    },
+    {
+      "to": "seleucid_rebels",
+      "kind": "war"
+    },
+    {
+      "to": "bithynia",
+      "kind": "war"
+    }
+  ],
+  "lysiad": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "arados": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "characene": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "persis": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "ptolemaic": [
+    {
+      "to": "tyre",
+      "kind": "protects"
+    },
+    {
+      "to": "sidon",
+      "kind": "protects"
+    },
+    {
+      "to": "egypt",
+      "kind": "war"
+    },
+    {
+      "to": "cyrene",
+      "kind": "war"
+    },
+    {
+      "to": "kush",
+      "kind": "war"
+    },
+    {
+      "to": "ptolemaic_rebels",
+      "kind": "war"
+    }
+  ],
+  "tyre": [
+    {
+      "to": "ptolemaic",
+      "kind": "protected_by"
+    }
+  ],
+  "sidon": [
+    {
+      "to": "ptolemaic",
+      "kind": "protected_by"
+    }
+  ],
+  "qataban": [
+    {
+      "to": "himyar",
+      "kind": "protects"
+    }
+  ],
+  "himyar": [
+    {
+      "to": "qataban",
+      "kind": "protected_by"
+    }
+  ],
+  "egypt": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    }
+  ],
+  "seleucid_rebels2": [
+    {
+      "to": "seleucid",
+      "kind": "war"
+    }
+  ],
+  "seleucid_rebels": [
+    {
+      "to": "seleucid",
+      "kind": "war"
+    }
+  ],
+  "massalia": [
+    {
+      "to": "romans_julii",
+      "kind": "ally"
+    }
+  ],
+  "issa": [
+    {
+      "to": "romans_julii",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_1",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "ally"
+    }
+  ],
+  "roman_rebels_1": [
+    {
+      "to": "romans_julii",
+      "kind": "ally"
+    },
+    {
+      "to": "issa",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_senate",
+      "kind": "ally"
+    },
+    {
+      "to": "taras",
+      "kind": "war"
+    },
+    {
+      "to": "messapians",
+      "kind": "war"
+    }
+  ],
+  "roman_rebels_2": [
+    {
+      "to": "romans_julii",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_1",
+      "kind": "ally"
+    },
+    {
+      "to": "issa",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_senate",
+      "kind": "ally"
+    },
+    {
+      "to": "carthage",
+      "kind": "war"
+    }
+  ],
+  "roman_senate": [
+    {
+      "to": "romans_julii",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_1",
+      "kind": "ally"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "ally"
+    }
+  ],
+  "picentes": [
+    {
+      "to": "romans_julii",
+      "kind": "war"
+    }
+  ],
+  "taras": [
+    {
+      "to": "roman_rebels_1",
+      "kind": "war"
+    }
+  ],
+  "epirus": [
+    {
+      "to": "antigonid",
+      "kind": "war"
+    },
+    {
+      "to": "illyrian_kingdom",
+      "kind": "war"
+    }
+  ],
+  "cyrene": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    }
+  ],
+  "bithynia": [
+    {
+      "to": "seleucid",
+      "kind": "war"
+    }
+  ],
+  "pergamon": [
+    {
+      "to": "galatians",
+      "kind": "war"
+    }
+  ],
+  "galatians": [
+    {
+      "to": "pergamon",
+      "kind": "war"
+    },
+    {
+      "to": "priene",
+      "kind": "war"
+    },
+    {
+      "to": "odrysians",
+      "kind": "war"
+    }
+  ],
+  "priene": [
+    {
+      "to": "galatians",
+      "kind": "war"
+    }
+  ],
+  "greeks": [
+    {
+      "to": "illyrian_kingdom",
+      "kind": "war"
+    }
+  ],
+  "illyrian_kingdom": [
+    {
+      "to": "greeks",
+      "kind": "war"
+    },
+    {
+      "to": "epirus",
+      "kind": "war"
+    }
+  ],
+  "odrysians": [
+    {
+      "to": "galatians",
+      "kind": "war"
+    },
+    {
+      "to": "tylis",
+      "kind": "war"
+    }
+  ],
+  "liburni": [
+    {
+      "to": "iapodes",
+      "kind": "war"
+    }
+  ],
+  "iapodes": [
+    {
+      "to": "liburni",
+      "kind": "war"
+    }
+  ],
+  "tylis": [
+    {
+      "to": "odrysians",
+      "kind": "war"
+    },
+    {
+      "to": "getae",
+      "kind": "war"
+    }
+  ],
+  "getae": [
+    {
+      "to": "tylis",
+      "kind": "war"
+    }
+  ],
+  "kush": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    }
+  ],
+  "ptolemaic_rebels": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    }
+  ],
+  "messapians": [
+    {
+      "to": "roman_rebels_1",
+      "kind": "war"
+    }
+  ],
+  "slave": [
+    {
+      "to": "romans_julii",
+      "kind": "war"
+    }
+  ]
+}

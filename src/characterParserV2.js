@@ -148,7 +148,15 @@ function parseAt(buf, off, nameLookup, traitNames) {
     if (!ok) break;
     if (buf[stringEnd - 1] !== 0) break;
     if (s.includes("/") || s.includes(".tga")) {
-      portraits.push(s);
+      // 0.9.448: reject captain-banner paths so the first surviving
+      // portrait is the character's actual rendered art. The engine
+      // sometimes writes a `data/ui/captain banners/captain_portrait_*.tga`
+      // alongside the real general/family portrait — picking portraits[0]
+      // blindly hits the banner for chars like antigonid Dionysios. Mirrors
+      // the same filter in characterParser.js (v1 parser).
+      if (!/captain[\s_]*banner|captain_portrait/i.test(s)) {
+        portraits.push(s);
+      }
     } else if (!culture && /^[a-z_]+$/.test(s)) {
       culture = s;
     }

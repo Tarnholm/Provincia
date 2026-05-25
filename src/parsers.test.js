@@ -216,8 +216,8 @@ resource wine,           1,    100,  50   ; Etruria
 resource olive_oil,      2,    120,  60   ; Umbria
 `;
     const result = parseDescrStratResources(text, 350, null, null);
-    expect(result.Etruria).toEqual([{ type: "wine", amount: 1, x: 100, y: 300 }]);
-    expect(result.Umbria).toEqual([{ type: "olive_oil", amount: 2, x: 120, y: 290 }]);
+    expect(result.Etruria).toEqual([{ type: "wine", amount: 1, x: 100, y: 300, category: "trade" }]);
+    expect(result.Umbria).toEqual([{ type: "olive_oil", amount: 2, x: 120, y: 290, category: "trade" }]);
   });
 
   test("skips resource lines without a region comment when no TGA", () => {
@@ -226,6 +226,22 @@ resource wine, 1, 100, 50
 `;
     const result = parseDescrStratResources(text, 350, null, null);
     expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  test("tags categories from RIS-style section headers", () => {
+    const text = `
+resource wine,           1,    100,  50   ; Etruria
+;;;; SLAVE RESOURCES ;;;;
+resource slaves,         1,    101,  51   ; Etruria
+;;;; AMBIENCE ;;;;
+resource aqueduct,       1,    102,  52   ; Etruria
+`;
+    const result = parseDescrStratResources(text, 350, null, null);
+    expect(result.Etruria.map(r => ({ type: r.type, category: r.category }))).toEqual([
+      { type: "wine", category: "trade" },
+      { type: "slaves", category: "slave" },
+      { type: "aqueduct", category: "ambience" },
+    ]);
   });
 });
 

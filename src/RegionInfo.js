@@ -1,6 +1,94 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import FactionIcon from "./FactionIcon";
 import { Movable } from "./Movable";
+import { loadPortrait, getCachedPortrait } from "./portraitIcons";
+import { displayFirstName, displayFullName } from "./displayName";
+import { loadBuildingIcon, invalidateBuildingIcon } from "./buildingIcons";
+import AddGeneralModal from "./AddGeneralModal";
+import DiplomacyEditor from "./DiplomacyEditor";
+
+// Map a raw core_attitudes value to its descr_strat tier name (see the
+// descr_strat diplomacy legend: -10 Locked Allied … 1000+ Crazy War).
+function dsAttitudeLabel(v) {
+  if (v == null) return "—";
+  if (v < 0) return "Locked Allied";
+  if (v === 0) return "Allied";
+  if (v < 200) return "Suspicious";
+  if (v === 200) return "Neutral";
+  if (v < 400) return "Cooling";
+  if (v < 600) return "Hostile";
+  if (v < 850) return "At War";
+  if (v < 1000) return "Total War";
+  return "Crazy War";
+}
+
+// Inline treasury-over-time sparkline (0.9.549) from the cracked f13 per-turn
+// checkpoint timeline. Green if the faction's wealth ended up vs its start.
+function TreasurySparkline({ series, width = 130, height = 26 }) {
+  if (!Array.isArray(series) || series.length < 2) return null;
+  const min = Math.min(...series), max = Math.max(...series), span = (max - min) || 1;
+  const stepX = width / (series.length - 1);
+  const y = (v) => (height - 2 - ((v - min) / span) * (height - 4));
+  const pts = series.map((v, i) => `${(i * stepX).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const up = series[series.length - 1] >= series[0];
+  const col = up ? "#9ec78a" : "#e89030";
+  return (
+    <svg width={width} height={height} style={{ display: "block" }} aria-hidden="true">
+      <polyline points={pts} fill="none" stroke={col} strokeWidth="1.5" strokeLinejoin="round" />
+      <circle cx={((series.length - 1) * stepX).toFixed(1)} cy={y(series[series.length - 1]).toFixed(1)} r="2" fill={col} />
+    </svg>
+  );
+}
+
+// Renders a character portrait blob. Two paths:
+//   - savePath set (RIS imperial via 0.9.397+ coord bridge → 0.9.406 RIS
+//     cultures) — IPC fast-path loads that exact file. Engine-exact match.
+//   - savePath null (vanilla) — IPC hashes the character name + faction +
+//     age to pick from the right culture's portrait pool. Stable per-char,
+//     matches what RTW would have rendered for the same character.
+// Both flows go through loadPortrait/getCachedPortrait so cache hits across
+// re-renders.
+function CommanderPortraitImg({ charContext, culture, modDataDir, fallback, style }) {
+  const slot = "general";
+  // 0.9.464: TWO BUGS were stacking to produce the "garrison Antigonos II
+  // = Roman portrait" symptom:
+  //   1. Defaulting cultureKey to "roman" when culture was null/undefined.
+  //      The first render of a bodyguard unit (before commanderInfo finishes
+  //      populating) had culture=null → loaded roman/general/038.tga.
+  //   2. useEffect's `if (!url)` guard meant once that wrong URL was set,
+  //      changing cultureKey ("w_hellenistic" when info populated next
+  //      render) didn't trigger a re-load. The roman blob stayed forever.
+  // Fix: no "roman" fallback (return null when culture missing so the
+  // unit-icon fallback shows instead), and re-fetch on every dep change.
+  const cultureKey = culture ? String(culture).toLowerCase() : null;
+  const [url, setUrl] = useState(() => cultureKey ? getCachedPortrait(cultureKey, slot, charContext) : null);
+  useEffect(() => {
+    if (!charContext || !modDataDir || !cultureKey) {
+      // Clear any stale blob URL when ctx/culture goes missing so the
+      // fallback (unit icon) shows instead of a previous wrong portrait.
+      setUrl(null);
+      if (typeof window !== "undefined" && charContext && !window.__bodyguardSwapLogged?.has(`no-ctx|${charContext?.name || "?"}`)) {
+        window.__bodyguardSwapLogged ||= new Set();
+        window.__bodyguardSwapLogged.add(`no-ctx|${charContext?.name || "?"}`);
+        console.log(`[bodyguard-swap] missing culture for "${charContext?.name || "?"}" — falling back to unit icon (no portrait swap)`);
+      }
+      return;
+    }
+    let alive = true;
+    loadPortrait(modDataDir, cultureKey, slot, charContext).then((u) => {
+      if (typeof window !== "undefined" && !window.__bodyguardSwapLogged?.has(`load|${charContext.name}|${cultureKey}`)) {
+        window.__bodyguardSwapLogged ||= new Set();
+        window.__bodyguardSwapLogged.add(`load|${charContext.name}|${cultureKey}`);
+        console.log(`[bodyguard-swap] ${u ? "OK" : "FAIL"} "${charContext.name}" culture="${cultureKey}" savePath="${charContext.savePath || "(none)"}"`);
+      }
+      if (alive) setUrl(u || null);
+    });
+    return () => { alive = false; };
+  }, [charContext, cultureKey, modDataDir]);
+  if (!url) return fallback || null;
+  return <img src={url} alt="" style={style} onError={(e) => { e.currentTarget.style.display = "none"; }} />;
+}
 
 const PUBLIC_URL = import.meta.env.BASE_URL || "./";
 
@@ -58,26 +146,36 @@ function upgradeTier(lvl /* 1..3 */) {
 // SVGs always render regardless of font coverage.
 // Solid SVG icons — no stroke or drop-shadow. At 8px the stroke + black blur
 // dominated the fill and made bronze look gold; clean fills read truer.
-const ShieldIcon = ({ color, size = 8 }) => (
+const ShieldIcon = ({ color, size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block" }}>
     <path d="M8 1 L14 3 L14 8 Q14 13 8 15 Q2 13 2 8 L2 3 Z" fill={color} />
   </svg>
 );
-const SwordIcon = ({ color, size = 8 }) => (
+// 0.9.495: redrawn so the sword actually reads as a sword at 14 px.
+// Tip at upper-left (2.5, 2.5), blade points up-left, crossguard at the
+// blade's mid-bottom, hilt + pommel extend to lower-right (13, 13). The
+// icon sits in the unit card's lower-left so a sword pointing up-left
+// "stabs" upward-into-the-card visually.
+const SwordIcon = ({ color, size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block" }}>
-    <path d="M3 13 L11 5 L13 5 L13 3 L11 3 L3 11 Z" fill={color} />
-    <path d="M2 12 L4 14 M5 11 L7 13" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    {/* blade — thin diamond from tip (2,2) to crossguard (10,10) */}
+    <path d="M2 2 L2.6 3.6 L10.4 11.4 L11.4 10.4 L3.6 2.6 Z" fill={color} />
+    {/* crossguard — short bar perpendicular to blade direction */}
+    <path d="M8.5 12.5 L12.5 8.5 L13.5 9.5 L9.5 13.5 Z" fill={color} />
+    {/* pommel / grip — small bar continuing past crossguard */}
+    <path d="M11 13 L13 11 L14 12 L12 14 Z" fill={color} />
   </svg>
 );
-// SVG chevron — RTW-style angular V. Stack vertically with `count` copies in
-// `color` (the tier colour). Text-glyph chevrons (ˇ, ^) were illegible at the
-// 7-8px sizes the unit cards demand.
+// SVG chevron — RTW-style angular V, point facing DOWN (matches the in-game
+// experience chevrons). Stack vertically with `count` copies in `color` (the
+// tier colour). Text-glyph chevrons (ˇ, ^) were illegible at the 7-8px sizes
+// the unit cards demand.
 const ChevronStack = ({ color, count }) => (
   <svg width="6" height={Math.max(3, count * 3 + 1)} viewBox={`0 0 16 ${count * 7 + 2}`} style={{ display: "block" }}>
     {Array.from({ length: count }).map((_, i) => (
       <path
         key={i}
-        d={`M2 ${i * 7 + 5} L8 ${i * 7 + 1} L14 ${i * 7 + 5}`}
+        d={`M2 ${i * 7 + 1} L8 ${i * 7 + 5} L14 ${i * 7 + 1}`}
         fill="none"
         stroke={color}
         strokeWidth="2.5"
@@ -113,6 +211,49 @@ export function setBuildingsGetter(fn) {
   buildingsGetterVersion++;
 }
 export function getBuildingsGetterVersion() { return buildingsGetterVersion; }
+
+// Module-level cache for the building catalogue (chains + categories). Fetched
+// lazily on first dev-mode open per session; subsequent opens reuse this.
+let __buildingCatalogueCache = null;
+let __buildingCatalogueInflight = null;
+function fetchBuildingCatalogueCached() {
+  if (__buildingCatalogueCache) return Promise.resolve(__buildingCatalogueCache);
+  if (__buildingCatalogueInflight) return __buildingCatalogueInflight;
+  if (typeof window === "undefined" || !window.electronAPI?.getBuildingCatalogue) {
+    return Promise.resolve(null);
+  }
+  __buildingCatalogueInflight = window.electronAPI.getBuildingCatalogue()
+    .then((cat) => {
+      if (cat && cat.chains) {
+        __buildingCatalogueCache = cat;
+        console.log(`[building-edit] catalogue loaded: ${Object.keys(cat.chains).length} chains`);
+      }
+      __buildingCatalogueInflight = null;
+      return __buildingCatalogueCache;
+    })
+    .catch((e) => {
+      console.log(`[building-edit] catalogue fetch failed: ${e?.message || e}`);
+      __buildingCatalogueInflight = null;
+      return null;
+    });
+  return __buildingCatalogueInflight;
+}
+
+// Local inlined editBtnStyle — same look as InfoPopup.js TraitsSection but
+// sized down for the building cards (smaller cards = smaller buttons).
+const buildingEditBtnStyle = {
+  background: "rgba(220,166,74,0.22)",
+  color: "#eee",
+  border: "1px solid rgba(220,166,74,0.45)",
+  borderRadius: 3,
+  padding: 0,
+  width: 14, height: 14,
+  fontSize: "0.65rem",
+  cursor: "pointer",
+  fontWeight: 700,
+  lineHeight: 1,
+  display: "flex", alignItems: "center", justifyContent: "center",
+};
 
 // Categorise a single descr_regions tag token into a logical group so the
 // region-info panel can render tags as labelled chip groups instead of one
@@ -337,7 +478,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -345,7 +486,444 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const dn = factionDisplayNames && factionDisplayNames[fid];
     return dn || String(fid).replace(/_/g, " ");
   };
+  // 0.9.441: building edits flow UP to App.js (via onEditBuildings) so
+  // its getBuildings() can re-run with full icon prefetch + label/tier/
+  // culture resolution. Previously the editor kept a stripped local
+  // mirror, which meant upgraded buildings rendered with stale icons
+  // (kept the old tier's blob URL) and the edits vanished when devMode
+  // toggled off. Lifting the state up restores both: icons refresh
+  // automatically on every edit, and edits survive devMode toggling.
   const buildings = useMemo(() => buildingsProp || buildingsGetter(info) || [], [info, buildingsProp]);
+  // 0.9.533: Diplomacy & Treasury for the selected region's OWNING faction.
+  // Matches the owner's internal id against factionRecordOwners (identified
+  // via the cracked faction_id), then reads its treasury record + diplomacy
+  // relation list. Diplomacy relation entries carry a class enum but NOT the
+  // other faction's identity (still uncracked), so we summarize by class:
+  //   0 = allied, 1 = ceasefire, 2 = at war, 4 = locked alliance.
+  const factionState = useMemo(() => {
+    if (!ownerFactionId) return null;
+    const fidLower = String(ownerFactionId).toLowerCase();
+    // 0.9.536: named STARTING diplomacy from descr_strat (the live save can't
+    // name partners). Lists who this faction began allied / at war with.
+    let startAllies = [], startWars = [], startProtects = [], startProtectedBy = [];
+    if (factionRelationships && factionRelationships[fidLower]) {
+      for (const e of factionRelationships[fidLower]) {
+        const nm = (factionDisplayNames && factionDisplayNames[e.to]) || String(e.to).replace(/_/g, " ");
+        if (e.kind === "ally") startAllies.push(nm);
+        else if (e.kind === "war") startWars.push(nm);
+        else if (e.kind === "protects") startProtects.push(nm);
+        else if (e.kind === "protected_by") startProtectedBy.push(nm);
+      }
+    }
+    const idx = Array.isArray(factionRecordOwners)
+      ? factionRecordOwners.findIndex((o) => o && o.factionName && o.factionName.toLowerCase() === fidLower)
+      : -1;
+    // 0.9.539: live diplomacy COUNTS for ANY faction (incl. player, senate,
+    // minors) from the per-faction diplomacy zones, keyed by faction name.
+    // This replaces the old 23-records-only `factionDiplomacy[idx]` path so
+    // every faction you click shows live war/ally counts.
+    const liveDiplo = (allFactionDiplomacy && allFactionDiplomacy[fidLower]) || null;
+    // 0.9.546: NAMED live diplomacy from the N×N attitude matrix — the real
+    // diplomacy source. Lists who this faction is CURRENTLY at war / allied /
+    // hostile with, BY NAME (matrix position = faction pair). Excludes rebel/
+    // slave pseudo-factions from the display lists (always-at-war noise).
+    const isRealFaction = (n) => n && !/(_rebels|_rebels2|^slave$|^rebels$)/.test(n);
+    const nameOf = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
+    const mtxRow = (diplomacyMatrix && diplomacyMatrix[fidLower]) || null;
+    let liveWar = [], liveAllied = [], liveHostile = [];
+    if (mtxRow) {
+      liveWar = (mtxRow.war || []).filter(isRealFaction).map(nameOf);
+      liveAllied = (mtxRow.allied || []).filter(isRealFaction).map(nameOf);
+      liveHostile = (mtxRow.hostile || []).filter(isRealFaction).map(nameOf);
+    }
+    // Every real faction is permanently at war with the independent
+    // "Free Peoples" (slave) faction — RTW allows no peace with rebels — but the
+    // save's attitude matrix only encodes DECLARED faction wars, not this
+    // implicit default (verified: even an NPC's matrix row omits slave). Surface
+    // it so the war list reflects reality (user request 2026-05-24). Skip when
+    // viewing the rebel faction itself.
+    if (!/(_rebels|_rebels2|^slave$|^rebels$)/.test(fidLower)) {
+      const fp = nameOf("slave");
+      if (fp && !liveWar.includes(fp)) liveWar.push(fp);
+    }
+    // Starting-treasury fallback (descr_strat) so EVERY region shows
+    // something — the live treasury records only exist for the ~23 major
+    // NPC factions, so the player's own provinces and minor/rebel factions
+    // would otherwise go blank. factionWealth is keyed by internal faction id.
+    let startWealth = null;
+    if (factionWealth) {
+      startWealth = factionWealth[ownerFactionId];
+      if (startWealth == null) {
+        // case-insensitive fallback lookup
+        for (const k in factionWealth) { if (k.toLowerCase() === fidLower) { startWealth = factionWealth[k]; break; } }
+      }
+    }
+    const rec = idx >= 0 && Array.isArray(factionTreasuries) ? factionTreasuries[idx] : null;
+    const owner = idx >= 0 ? factionRecordOwners[idx] : null;
+    const treasury = rec ? rec.treasury : (startWealth != null ? startWealth : null);
+    const hasLiveNamed = liveWar.length > 0 || liveAllied.length > 0;
+    // If nothing at all to show, signal noData.
+    if (treasury == null && !liveDiplo && !hasLiveNamed && startAllies.length === 0 && startWars.length === 0
+        && startProtects.length === 0 && startProtectedBy.length === 0) {
+      return { noData: true };
+    }
+    return {
+      treasury,
+      turnStart: rec ? rec.turnStartTreasury : null,
+      isStarting: !rec,
+      aiPersonality: owner ? owner.aiPersonality : null,
+      // Live counts from the all-faction diplomacy map (covers every faction).
+      hasLiveDiplo: !!liveDiplo,
+      noDiplo: !liveDiplo,
+      relationCount: liveDiplo ? liveDiplo.count : 0,
+      wars: liveDiplo ? liveDiplo.wars : 0,
+      allies: liveDiplo ? liveDiplo.allies : 0,
+      ceasefires: liveDiplo ? liveDiplo.ceasefires : 0,
+      locked: liveDiplo ? liveDiplo.locked : 0,
+      // 0.9.546: NAMED live diplomacy from the attitude matrix.
+      hasLiveNamed, liveWar, liveAllied, liveHostile,
+      startAllies, startWars, startProtects, startProtectedBy,
+    };
+  }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
+  // 0.9.541: diagnostic — log how the Diplomacy & Treasury widget resolved
+  // the selected region's owner, so "doesn't load for faction X" reports are
+  // debuggable. Logs once per owner change: the owner id, whether it matched
+  // a live diplomacy zone / a treasury record, and the available-key count.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fid = ownerFactionId ? String(ownerFactionId).toLowerCase() : null;
+    const allKeys = allFactionDiplomacy ? Object.keys(allFactionDiplomacy).length : 0;
+    const liveHit = fid && allFactionDiplomacy ? !!allFactionDiplomacy[fid] : false;
+    // Resolve the treasury-record index the same way the factionState memo does,
+    // so the log shows exactly why the player faction may fall through to the
+    // descr_strat starting-wealth fallback (idx < 0 ⇒ name mismatch).
+    const tIdx = Array.isArray(factionRecordOwners)
+      ? factionRecordOwners.findIndex((o) => o && o.factionName && o.factionName.toLowerCase() === fid)
+      : -2;
+    const tVal = tIdx >= 0 && Array.isArray(factionTreasuries) && factionTreasuries[tIdx]
+      ? factionTreasuries[tIdx].treasury : null;
+    window.__diploWidgetLogged ||= new Set();
+    const k = `${fid}|${liveHit}|${allKeys}|${tIdx}`;
+    if (!window.__diploWidgetLogged.has(k)) {
+      window.__diploWidgetLogged.add(k);
+      console.log(`[diplo-widget] owner="${ownerFactionId || "(none)"}" liveZone=${liveHit} allFactionDiplomacyKeys=${allKeys} factionState=${factionState ? (factionState.noData ? "noData" : "ok") : "null"} treasIdx=${tIdx} treasVal=${tVal} owners=${Array.isArray(factionRecordOwners) ? factionRecordOwners.length : "n/a"} treas=${Array.isArray(factionTreasuries) ? factionTreasuries.length : "n/a"} owner0=${factionRecordOwners && factionRecordOwners[0] ? factionRecordOwners[0].factionName : "n/a"}`);
+    }
+  }, [ownerFactionId, allFactionDiplomacy, factionState, factionRecordOwners, factionTreasuries]);
+  // Dev-mode: right-click the Diplomacy widget to inspect the RAW attitude-matrix
+  // numbers (core_attitudes/bond/aggression) for this faction, both directions.
+  const [diploRawOpen, setDiploRawOpen] = useState(false);
+  const [diploEditOpen, setDiploEditOpen] = useState(false);
+  // Dev-mode "Add General" family-builder (writes to descr_strat for new campaigns).
+  const [addGenOpen, setAddGenOpen] = useState(false);
+  // Staged generals placed at THIS region's settlement — shown atop the roster
+  // until Save writes them. Matched by settlement name (case-insensitive).
+  const pendingHere = (() => {
+    if (!pendingGenerals || pendingGenerals.size === 0) return [];
+    const city = String((info && (info.city || info.name)) || "").toLowerCase().trim();
+    if (!city) return [];
+    return [...pendingGenerals.entries()]
+      .filter(([, e]) => e.settlement && String(e.settlement).toLowerCase().trim() === city)
+      .map(([id, e]) => ({ id, ...e }));
+  })();
+  // Catalogue + edit UI state. Catalogue is only fetched once dev mode is on.
+  const [catalogue, setCatalogue] = useState(__buildingCatalogueCache);
+  useEffect(() => {
+    if (!devMode) return;
+    if (catalogue) return;
+    let alive = true;
+    fetchBuildingCatalogueCached().then((cat) => { if (alive && cat) setCatalogue(cat); });
+    return () => { alive = false; };
+  }, [devMode, catalogue]);
+  const [savingMsg, setSavingMsg] = useState(null);
+  const [showAddPicker, setShowAddPicker] = useState(false);
+  const [addQuery, setAddQuery] = useState("");
+  // 0.9.467: edits stage to the pending-changes registry in App.js (via
+  // onEditBuildings); the descr_strat IPC fires only when the user clicks
+  // Apply in the review modal. logMsg becomes the human-readable line in
+  // the review modal so the user knows what each edit did.
+  const persistBuildings = (newList, logMsg) => {
+    if (logMsg) console.log(`[building-edit] ${logMsg}`);
+    if (!region) return;
+    const payload = newList.map((b) => ({ type: b.type, level: b.level }));
+    if (typeof onEditBuildings === "function") {
+      onEditBuildings(region, payload, { description: logMsg || `edit buildings in ${region}` });
+    }
+    setSavingMsg("Staged — review in toolbar");
+    setTimeout(() => setSavingMsg(null), 2000);
+  };
+  // Strip render-only fields so list ops only carry {type, level} for each
+  // building (matching what we ship to the IPC).
+  const stripBuilding = (b) => ({ type: b.type, level: b.level });
+  // 0.9.441: settlement-tier gating. RTW's `settlement_min` line per EDB
+  // level says e.g. governors_villa requires settlement >= town. The
+  // settlement's effective tier IS the core_building level (= the very
+  // ladder the engine uses for villages → towns → cities). So we look
+  // up the current core_building level, find its index in the chain, and
+  // any candidate-level's settlement_min must be at most that.
+  const currentCoreLevel = useMemo(() => {
+    const core = buildings.find((b) => b?.type === "core_building");
+    return core?.level || null;
+  }, [buildings]);
+  const currentTierIdx = useMemo(() => {
+    if (!catalogue?.settlementTiers || !currentCoreLevel) return -1;
+    return catalogue.settlementTiers.indexOf(currentCoreLevel);
+  }, [catalogue, currentCoreLevel]);
+  const tierOf = (settlementTierName) => {
+    if (!catalogue?.settlementTiers || !settlementTierName) return -1;
+    return catalogue.settlementTiers.indexOf(settlementTierName);
+  };
+  // 0.9.443: region context used by the engine-`requires` evaluator. The
+  // faction we compare against is the CURRENT owner (live or descr_strat),
+  // since `requires factions { x, y }` is evaluated against whoever
+  // currently controls the settlement — not the rebel-default. Tags are
+  // the descr_regions tag list (Farm7, aor_celtic, rel_dorian_1, ...).
+  const regionFactionLower = useMemo(() => {
+    const f = liveOwner || info?.faction || null;
+    return f ? String(f).toLowerCase() : null;
+  }, [liveOwner, info]);
+  const regionTagsLower = useMemo(() => {
+    const t = info?.tags;
+    const blob = typeof t === "string" ? t : (Array.isArray(t) ? t.join(",") : "");
+    return new Set(blob.split(/[,\s]+/).map((s) => s.trim().toLowerCase()).filter(Boolean));
+  }, [info]);
+  // Cheap requires-expression evaluator. Walks the level's `requires` clause
+  // and rejects when a `factions { ... }` constraint excludes the current
+  // region's faction, a `not factions { ... }` rule includes it, or a
+  // `hidden_resource X` / `resource X` rule isn't satisfied by the region's
+  // tag list. Unknown predicates (event_counter, religion, building_present)
+  // are treated as satisfied so we don't over-filter and hide legitimate
+  // options — better permissive than missing.
+  const requiresClauseAllows = (raw) => {
+    if (!raw || typeof raw !== "string") return true;
+    const text = raw.toLowerCase();
+    // Faction allow-lists: `factions { x, y, }` — non-negated occurrences
+    // must include our faction (engine treats multiple unguarded clauses
+    // as ANDed conjunctions, but in practice level requires only have ONE
+    // positive factions clause). We collect ALL positive lists and require
+    // membership in at least one.
+    const positiveFactionLists = [];
+    const negativeFactionLists = [];
+    const factionRegex = /(?:^|\s)(not\s+)?factions\s*\{([^}]*)\}/g;
+    let fm;
+    while ((fm = factionRegex.exec(text)) !== null) {
+      const negated = !!fm[1];
+      const ids = fm[2].split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+      (negated ? negativeFactionLists : positiveFactionLists).push(ids);
+    }
+    if (regionFactionLower && positiveFactionLists.length > 0) {
+      // `factions { all, }` is a WILDCARD (every faction qualifies), not a
+      // literal faction id — treat a list containing "all" as satisfied.
+      // Without this, every government building (governmentA/B/C/D all use
+      // `factions { all }`) was hidden from the add picker, so a removed
+      // government could never be re-added. Mirrors the recruit-filter logic.
+      const inAny = positiveFactionLists.some(list => list.includes("all") || list.includes(regionFactionLower));
+      if (!inAny) return false;
+    }
+    if (regionFactionLower) {
+      for (const list of negativeFactionLists) {
+        if (list.includes(regionFactionLower)) return false;
+      }
+    }
+    // Hidden-resource / resource: `requires hidden_resource X` and
+    // `requires resource X` are essentially the same gate for our purposes
+    // — both check region tags. Engine syntax: `... hidden_resource X ...`
+    // (no list braces, single token).
+    const positiveHRs = [];
+    const negativeHRs = [];
+    const hrRegex = /(?:^|\s)(not\s+)?(?:hidden_resource|resource)\s+([a-z][a-z0-9_]*)/g;
+    let hm;
+    while ((hm = hrRegex.exec(text)) !== null) {
+      const negated = !!hm[1];
+      (negated ? negativeHRs : positiveHRs).push(hm[2]);
+    }
+    if (positiveHRs.length > 0 && regionTagsLower.size > 0) {
+      const haveAny = positiveHRs.some(hr => regionTagsLower.has(hr));
+      if (!haveAny) return false;
+    }
+    if (regionTagsLower.size > 0) {
+      for (const hr of negativeHRs) {
+        if (regionTagsLower.has(hr)) return false;
+      }
+    }
+    return true;
+  };
+  // canUpgradeTo: true when `level` is allowed in the current settlement.
+  // core_building chain is special — it IS the settlement tier ladder, so
+  // settlement_min doesn't apply (you're choosing the tier itself). We still
+  // honour the level's `requires` clause though (some mods gate huge_city
+  // to capital-only or specific factions). Returns { ok, reason, requiredTier }.
+  const canUpgradeToDetail = (chainName, levelName) => {
+    if (chainName === "core_building") {
+      const expr = catalogue?.levelRequires?.[`${chainName}|${levelName}`];
+      if (expr && !requiresClauseAllows(expr)) {
+        return { ok: false, reason: "requires", requiredTier: null };
+      }
+      return { ok: true };
+    }
+    if (!catalogue?.settlementMins) return { ok: true };
+    const req = catalogue.settlementMins[`${chainName}|${levelName}`];
+    if (req) {
+      const reqIdx = tierOf(req);
+      if (reqIdx >= 0 && currentTierIdx < reqIdx) {
+        return { ok: false, reason: "settlement_min", requiredTier: req };
+      }
+    }
+    // 0.9.443: also check the level's `requires` clause for factions /
+    // hidden_resource / resource gates. These don't show up in
+    // settlementMins; they live in levelRequires.
+    const expr = catalogue?.levelRequires?.[`${chainName}|${levelName}`];
+    if (expr && !requiresClauseAllows(expr)) {
+      return { ok: false, reason: "requires", requiredTier: null };
+    }
+    return { ok: true };
+  };
+  const canUpgradeTo = (chainName, levelName) => canUpgradeToDetail(chainName, levelName).ok;
+  // 0.9.473: strict settlement-tier cap. Each building row gets flagged when
+  // its CURRENT level's settlement_min is higher than the current settlement
+  // tier — this happens when the user demolishes the core_building down to a
+  // smaller tier, leaving e.g. a city_barracks stranded on a town. We don't
+  // auto-remove (let the user choose); just decorate the card red.
+  const tierMismatch = (chainName, levelName) => {
+    if (!chainName || !levelName || chainName === "core_building") return null;
+    if (!catalogue?.settlementMins) return null;
+    const req = catalogue.settlementMins[`${chainName}|${levelName}`];
+    if (!req) return null;
+    const reqIdx = tierOf(req);
+    if (reqIdx < 0 || currentTierIdx < 0) return null;
+    if (currentTierIdx >= reqIdx) return null;
+    return { requiredTier: req, currentTier: currentCoreLevel || "(none)" };
+  };
+  const onBuildingUp = (idx) => {
+    const cur = buildings[idx];
+    const chain = catalogue?.chains?.[cur?.type];
+    if (!chain || !cur) return;
+    const ci = chain.indexOf(cur.level);
+    if (ci < 0 || ci >= chain.length - 1) return;
+    const nextLevel = chain[ci + 1];
+    const det = canUpgradeToDetail(cur.type, nextLevel);
+    if (!det.ok) {
+      const why = det.reason === "settlement_min"
+        ? `needs settlement ≥ ${det.requiredTier} (have ${currentCoreLevel || "none"})`
+        : `requires clause excludes this region`;
+      setSavingMsg(`Blocked: ${nextLevel} ${why}`);
+      setTimeout(() => setSavingMsg(null), 3000);
+      console.log(`[building-edit-cap] disabled up: ${cur.type} ${cur.level} → ${nextLevel} (${why})`);
+      return;
+    }
+    if (cur.type === "core_building") {
+      // 0.9.473: core_building IS the settlement tier — upgrading is allowed
+      // regardless of settlement_min (we're moving the tier itself) but
+      // strictly one step at a time (the engine grows settlements one tier
+      // per construction), and the next level's `requires` must be satisfied.
+      console.log(`[building-edit-cap] core_building one-step upgrade: ${cur.level} → ${nextLevel}`);
+    }
+    const next = buildings.map(stripBuilding);
+    next[idx] = { type: cur.type, level: nextLevel };
+    persistBuildings(next, `up ${cur.type} ${cur.level} → ${nextLevel} in region ${region}`);
+  };
+  const onBuildingDown = (idx) => {
+    const cur = buildings[idx];
+    const chain = catalogue?.chains?.[cur?.type];
+    if (!chain || !cur) return;
+    const ci = chain.indexOf(cur.level);
+    if (ci <= 0) return;
+    const prevLevel = chain[ci - 1];
+    const next = buildings.map(stripBuilding);
+    next[idx] = { type: cur.type, level: prevLevel };
+    persistBuildings(next, `down ${cur.type} ${cur.level} → ${prevLevel} in region ${region}`);
+  };
+  const onBuildingRemove = (idx) => {
+    const cur = buildings[idx];
+    if (!cur) return;
+    const next = buildings.map(stripBuilding).filter((_, i) => i !== idx);
+    persistBuildings(next, `remove ${cur.type} ${cur.level} in region ${region}`);
+  };
+  // The engine "slot" a chain occupies (government / temple / civic / port /
+  // heavy_ind / entertainment / …). At most one building per slot; adding a
+  // same-slot chain REPLACES the occupant. Prefer the catalogue's parsed tag;
+  // fall back to the `no_other_<X>` token (negated form stripped) for older
+  // cached catalogues.
+  const chainSlot = (c) => {
+    const t = catalogue?.tags?.[c];
+    if (t) return String(t).toLowerCase();
+    const lvls = catalogue?.chains?.[c] || [];
+    for (const lv of lvls) {
+      const req = (catalogue?.levelRequires?.[`${c}|${lv}`] || "").toLowerCase().replace(/not\s+no_other_\w+/g, "");
+      const m = req.match(/no_other_(\w+)/);
+      if (m) return m[1];
+    }
+    return null;
+  };
+  const onBuildingAdd = (chainName) => {
+    const chain = catalogue?.chains?.[chainName];
+    if (!chain || chain.length === 0) return;
+    const firstLevel = chain[0];
+    // One building per slot: if this chain's slot is already filled by a
+    // DIFFERENT chain, replace it (remove the occupant) instead of stacking.
+    const slot = chainSlot(chainName);
+    let base = buildings.map(stripBuilding);
+    let replaced = null;
+    if (slot) {
+      const occ = base.find((b) => b.type !== chainName && chainSlot(b.type) === slot);
+      if (occ) { replaced = occ.type; base = base.filter((b) => b !== occ); }
+    }
+    const next = [...base, { type: chainName, level: firstLevel }];
+    persistBuildings(next, replaced
+      ? `replace ${replaced} with ${chainName} ${firstLevel} in region ${region}`
+      : `add ${chainName} ${firstLevel} in region ${region}`);
+    setShowAddPicker(false);
+    setAddQuery("");
+  };
+  // Pre-compute available chains for the picker (those not already in the
+  // region — engine forbids duplicate chains). 0.9.473 (strict tier cap):
+  // chains whose first level's settlement_min exceeds the current settlement
+  // tier are still listed but flagged with a "(needs <tier>)" hint and
+  // disabled — so the user can see what's gated without it silently failing.
+  // Chains whose `requires` clause rejects this region (factions /
+  // hidden_resource) are HIDDEN entirely (they will never apply here).
+  // Returns [{ chain, ok, requiredTier, reason }] so the renderer can
+  // decorate disabled entries.
+  const availableChainsForAdd = useMemo(() => {
+    if (!showAddPicker || !catalogue?.chains) return [];
+    const owned = new Set(buildings.map((b) => b.type).filter(Boolean));
+    const q = addQuery.trim().toLowerCase();
+    const all = Object.keys(catalogue.chains).sort();
+    // Show EVERY buildable tree. A settlement holds one building per engine
+    // "slot" (tag), but we no longer HIDE same-slot chains — that made ~50 trees
+    // vanish from a developed settlement (you couldn't browse the 3 entertainment
+    // options, trade buildings, etc.). Instead onBuildingAdd REPLACES the slot's
+    // occupant, and each entry is annotated with what it would replace.
+    const ownedBySlot = new Map();
+    for (const b of buildings) { const s = b.type && chainSlot(b.type); if (s && !ownedBySlot.has(s)) ownedBySlot.set(s, b.type); }
+    const out = [];
+    for (const c of all) {
+      if (owned.has(c)) continue;
+      if (q !== "" && !c.toLowerCase().includes(q)) continue;
+      const lvls = catalogue.chains[c];
+      const firstLevel = lvls && lvls[0];
+      if (!firstLevel) continue;
+      const det = canUpgradeToDetail(c, firstLevel);
+      if (!det.ok && det.reason === "requires") {
+        // Permanently excluded by faction/hidden_resource — don't surface.
+        console.log(`[building-edit-cap] hidden in picker: ${c} (requires clause excludes region)`);
+        continue;
+      }
+      const slot = chainSlot(c);
+      const replaces = slot ? ownedBySlot.get(slot) : null;
+      out.push({
+        chain: c,
+        firstLevel,
+        ok: det.ok,
+        requiredTier: det.requiredTier || null,
+        replaces: replaces && replaces !== c ? replaces : null,
+      });
+      if (!det.ok) {
+        console.log(`[building-edit-cap] disabled in picker: ${c} first level=${firstLevel} (needs ${det.requiredTier}, have ${currentCoreLevel || "none"})`);
+      }
+      if (out.length >= 200) break;
+    }
+    return out;
+  }, [showAddPicker, addQuery, catalogue, buildings, currentTierIdx, currentCoreLevel]);
   // Hover-state readout for unit cards. Shows the same info as the native
   // tooltip (name, soldiers, chevrons, upgrades) but inline next to the
   // panel header, so it's easier to read than the OS tooltip floater.
@@ -359,6 +937,82 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // recruit gated on that HR. Builds on the existing recruit/building
   // cross-link.
   const [hoveredHr, setHoveredHr] = useState(null);
+  // 0.9.473: drag-over state for icon-replace drops. Index into buildingItems
+  // (= idx of the source building) so the card we're hovering with a file
+  // can paint a dashed gold outline. null = no drag in progress.
+  const [dragOverBuildingIdx, setDragOverBuildingIdx] = useState(null);
+  const [iconReplaceMsg, setIconReplaceMsg] = useState(null);
+  // Helper: handle a file drop onto a building icon. Calls the IPC, kicks
+  // off cache invalidation + re-fetch, and pushes a pending-log entry so the
+  // user can review/revert in the unified Save modal.
+  const handleIconDrop = async (idx, file) => {
+    if (!file) return;
+    const cur = buildings[idx];
+    if (!cur) return;
+    const api = window.electronAPI;
+    if (!api?.replaceBuildingIcon) {
+      console.log(`[icon-replace] electronAPI.replaceBuildingIcon unavailable`);
+      return;
+    }
+    const culture = cur.culture || info?.culture || null;
+    if (!culture) {
+      console.log(`[icon-replace] no culture for ${cur.type}/${cur.level} — cannot resolve destination`);
+      setIconReplaceMsg(`No culture for ${cur.type} — drop ignored`);
+      setTimeout(() => setIconReplaceMsg(null), 3000);
+      return;
+    }
+    // Electron's File object exposes `.path` (the absolute path on disk) on
+    // drops. With webSecurity enabled but no sandboxing on the BrowserWindow
+    // we still get it. Validate explicitly so we can log a useful error.
+    const srcPath = file.path;
+    console.log(`[icon-replace] drop: chain=${cur.type} level=${cur.level} culture=${culture} src=${srcPath || "(none)"} name=${file.name} type=${file.type} size=${file.size}`);
+    if (!srcPath) {
+      setIconReplaceMsg("Drop source path unavailable");
+      setTimeout(() => setIconReplaceMsg(null), 3000);
+      return;
+    }
+    const mime = (file.type || "").toLowerCase();
+    const okMime = mime.startsWith("image/") || /\.(png|jpe?g|tga)$/i.test(file.name || "");
+    if (!okMime) {
+      console.log(`[icon-replace] rejected non-image mime: ${mime} name=${file.name}`);
+      setIconReplaceMsg("Only PNG / JPG / TGA accepted");
+      setTimeout(() => setIconReplaceMsg(null), 3000);
+      return;
+    }
+    setIconReplaceMsg(`Replacing icon for ${cur.type} ${cur.level}…`);
+    try {
+      const res = await api.replaceBuildingIcon(modDataDir || null, culture, cur.level, cur.type, srcPath);
+      if (!res || !res.ok) {
+        console.log(`[icon-replace] IPC reported failure: ${res?.error || "(unknown)"}`);
+        setIconReplaceMsg(`Replace failed: ${res?.error || "(unknown)"}`);
+        setTimeout(() => setIconReplaceMsg(null), 4000);
+        return;
+      }
+      console.log(`[icon-replace] success: dest=${res.destPath} backup=${res.backupPath || "(none)"}`);
+      // Invalidate cache and force a re-fetch so the new icon appears.
+      try { invalidateBuildingIcon(culture, cur.level); } catch {}
+      try { await api.clearModCaches?.(); } catch {}
+      try { await loadBuildingIcon(modDataDir || null, culture, cur.level, cur.type); } catch {}
+      // Bump parent's iconCacheVersion so App.js re-runs getBuildings and
+      // picks up the fresh blob URL. Pass through the new IPC result so
+      // App.js can include destPath in the revert payload.
+      if (typeof onIconReplaced === "function") {
+        onIconReplaced(region, {
+          chain: cur.type,
+          level: cur.level,
+          culture,
+          destPath: res.destPath,
+          backupPath: res.backupPath || null,
+        });
+      }
+      setIconReplaceMsg(`Replaced ${cur.type} ${cur.level} icon`);
+      setTimeout(() => setIconReplaceMsg(null), 2500);
+    } catch (e) {
+      console.log(`[icon-replace] threw: ${e?.message || String(e)}`);
+      setIconReplaceMsg(`Replace error: ${e?.message || String(e)}`);
+      setTimeout(() => setIconReplaceMsg(null), 4000);
+    }
+  };
   // Buildings widget — adaptive grid that always reserves 20 slots but
   // picks cols/rows from the container's aspect so cards stay square-ish.
   // We track the container ref + a re-render trigger driven by a
@@ -419,6 +1073,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       null;
     return {
       key: `${label}-${idx}`,
+      idx,
       label,
       icon,
       type: b?.type || "",
@@ -502,8 +1157,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           column shares x=0.5696 / w=0.2243; right half shares x=0.7974 /
           w=0.1991. Row anchors are y=0.0056 / 0.3148 / 0.4573 with a
           common GAP_FRAC≈0.0035 between rows. */}
-      <Movable id="region.info" title="Region info" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3287 }}>
+      <Movable id="region.info" title="Region info" designMode={designMode} colBox={colBox}
+        defaultPct={{ x: 0.5720, y: 0.0083, w: 0.2090, h: 0.2600 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {region && (
@@ -803,34 +1458,63 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           );
         })()}
         {Array.isArray(resources) && resources.length > 0 && (() => {
-          const summed = {};
+          // Bucket by descr_strat category so trade goods stay separated from
+          // slaves (raw commodity) and ambience (aqueducts / shipwrecks). The
+          // parser tags each entry with `category`; older bundles missing the
+          // tag default to "trade" so behaviour is unchanged for vanilla mods.
+          const buckets = { trade: {}, slave: {}, ambience: {} };
           for (const r of resources) {
             const k = String(r.type || "").toLowerCase();
             if (!k) continue;
-            summed[k] = (summed[k] || 0) + (r.amount || 1);
+            const cat = (r.category === "slave" || r.category === "ambience") ? r.category : "trade";
+            const bag = buckets[cat];
+            bag[k] = (bag[k] || 0) + (r.amount || 1);
           }
-          const list = Object.entries(summed).sort((a, b) => b[1] - a[1]);
+          // Preserve descr_strat order: first-seen wins (no sort) so the chip
+          // sequence matches the file. The Map keeps insertion order; we just
+          // re-walk `resources` to seed it.
+          const orderedKeys = { trade: [], slave: [], ambience: [] };
+          for (const r of resources) {
+            const k = String(r.type || "").toLowerCase();
+            if (!k) continue;
+            const cat = (r.category === "slave" || r.category === "ambience") ? r.category : "trade";
+            if (!orderedKeys[cat].includes(k)) orderedKeys[cat].push(k);
+          }
+          const SECTIONS = [
+            { cat: "trade", label: "Resources" },
+            { cat: "slave", label: "Slaves" },
+            { cat: "ambience", label: "Ambience" },
+          ];
+          const visible = SECTIONS.filter(s => orderedKeys[s.cat].length > 0);
+          if (visible.length === 0) return null;
           return (
-            <div style={{ marginTop: 4 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Resources:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px" }}>
-                {list.map(([type, amount]) => (
-                  <span key={type} style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "1px 5px", borderRadius: 4,
-                    background: "rgba(220,166,74,0.16)",
-                    fontSize: "0.7rem", whiteSpace: "nowrap",
-                  }}>
-                    {resourceImages && resourceImages[type] && (
-                      <img src={resourceImages[type].src} alt={type}
-                        style={{ width: 12, height: 12, objectFit: "contain" }} />
-                    )}
-                    {type.replace(/_/g, " ")}
-                    {amount > 1 ? <span style={{ color: "#aaa" }}>×{amount}</span> : null}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <>
+              {visible.map(({ cat, label }) => (
+                <div key={cat} style={{ marginTop: 4 }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>{label}:</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px" }}>
+                    {orderedKeys[cat].map((type) => {
+                      const amount = buckets[cat][type];
+                      return (
+                        <span key={type} style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          padding: "1px 5px", borderRadius: 4,
+                          background: "rgba(220,166,74,0.16)",
+                          fontSize: "0.7rem", whiteSpace: "nowrap",
+                        }}>
+                          {resourceImages && resourceImages[type] && (
+                            <img src={resourceImages[type].src} alt={type}
+                              style={{ width: 12, height: 12, objectFit: "contain" }} />
+                          )}
+                          {type.replace(/_/g, " ")}
+                          {amount > 1 ? <span style={{ color: "#aaa" }}>×{amount}</span> : null}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </>
           );
         })()}
         {tagsList.length > 0 && (() => {
@@ -888,9 +1572,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </Movable>
 
       {/* Characters — Movable widget extracted from buildings */}
-      <Movable id="region.characters" title="Characters" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.3453, w: 0.2090, h: 0.1550 }}>
-      <div className={panelInnerClass} style={panelInner}>
+      <Movable id="region.characters" title="Characters" designMode={designMode} colBox={colBox}
+        posOverride={addGenOpen ? { y: 0.4400, h: 0.3130 } : null}
+        zIndex={addGenOpen ? 6 : 2}
+        defaultPct={{ x: 0.5720, y: 0.4360, w: 0.2090, h: 0.1480 }}>
+      <div className={panelInnerClass} style={addGenOpen ? { ...panelInner, background: "#181b21" } : panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
             <span>Characters:</span>
@@ -922,17 +1608,42 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 👪 Family Tree
               </button>
             )}
+            {devMode && (
+              <button onClick={(e) => { e.stopPropagation(); setAddGenOpen(true); }}
+                title="Add a new named general (+ family) to this faction in descr_strat (new campaigns)"
+                style={{ marginLeft: (onShowFamilyTree && hasFamilyTreeData) ? 4 : "auto", padding: "1px 6px", fontSize: "0.65rem", background: "rgba(92,168,120,0.18)", color: "#bfe8bf", border: "1px solid rgba(92,168,120,0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}>
+                + Add General
+              </button>
+            )}
           </div>
         </div>
         <div style={widgetBody}>
-        {characters && characters.length > 0 ? (() => {
-          return (
+        {addGenOpen ? (
+          <AddGeneralModal
+            settlementName={(info && (info.city || info.name || info.region)) || null}
+            ownerFactionId={ownerFactionId}
+            factionLabel={factionLabel}
+            onStage={onStageGeneral}
+            onClose={() => setAddGenOpen(false)}
+          />
+        ) : (
           <div style={{ fontSize: "0.72rem" }}>
+            {pendingHere.length > 0 && (
+              <div style={{ marginBottom: 6, padding: "4px 7px", background: "rgba(92,168,120,0.12)", border: "1px solid rgba(92,168,120,0.4)", borderRadius: 4 }}>
+                <div style={{ color: "#bfe8bf", fontWeight: 600, fontSize: "0.64rem", marginBottom: 2 }}>Pending — Save to apply (revert under Changes):</div>
+                {pendingHere.map((p) => (
+                  <div key={p.id} style={{ color: "#cdeccd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    + {p.displayName}<span style={{ color: "#8aa88a", marginLeft: 6 }}>· age {p.age != null ? p.age : "?"}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {characters && characters.length > 0 ? (
             <div>
               {characters.map((c, i) => {
                 const sym = c.isLeader ? "👑" : c.isHeir ? "★" : c.gender === "female" ? "♀" : "";
                 const status = c.isDead ? " (dead)" : "";
-                const fullName = `${c.firstName}${c.lastName ? " " + c.lastName.replace(/_/g, " ") : ""}`;
+                const fullName = displayFullName(c.firstName, c.lastName);
                 return (
                   <div key={i}
                     onContextMenu={(e) => {
@@ -946,34 +1657,348 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   >
                     {sym ? sym + " " : ""}{fullName}
                     <span style={{ color: "#999", fontVariantNumeric: "tabular-nums", marginLeft: 6 }}>· age {c.age != null ? c.age : "?"}</span>
-                    {/* Stats always shown after age — render ? for any
-                        missing field rather than hiding the whole block,
-                        so the layout doesn't shift between characters
-                        with/without decoded stats. */}
-                    <span style={{ color: "#9bb1c8", fontVariantNumeric: "tabular-nums", marginLeft: 6, fontSize: "0.66rem" }}
-                      title={`Command ${c.command ?? "?"} · Influence ${c.influence ?? "?"} · Management ${c.management ?? "?"} · Loyalty ${c.loyalty ?? "?"} (save-cracker session 91)`}>
-                      ⚔ {c.command ?? "?"}/{c.influence ?? "?"}/{c.management ?? "?"}/{c.loyalty ?? "?"}
-                    </span>
+                    {/* 0.9.422: stats chip renders if any of the four are
+                        known. Non-live mode: estimated from trait/ancillary
+                        effects in main.js (descr_strat doesn't store stats
+                        inline — the engine derives them). Estimates carry
+                        a leading `~` to flag they're approximate. */}
+                    {(c.command != null || c.influence != null || c.management != null || c.loyalty != null) && (
+                      <span style={{ color: "#9bb1c8", fontVariantNumeric: "tabular-nums", marginLeft: 6, fontSize: "0.66rem" }}
+                        title={`Command ${c.command ?? "?"} · Influence ${c.influence ?? "?"} · Management ${c.management ?? "?"} · Loyalty ${c.loyalty ?? "?"}${c._statsEstimated ? " (estimated from trait+ancillary effects)" : ""}`}>
+                        {c._statsEstimated ? "~" : ""}⚔ {c.command ?? "?"}/{c.influence ?? "?"}/{c.management ?? "?"}/{c.loyalty ?? "?"}
+                      </span>
+                    )}
                     {status && <span style={{ color: "#c66", marginLeft: 4 }}>{status}</span>}
                   </div>
                 );
               })}
             </div>
+            ) : pendingHere.length === 0 ? (
+              <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>No characters</span>
+            ) : null}
           </div>
-          );
-        })() : (
-          <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>No characters</span>
         )}
         </div>
       </div>
       </Movable>
 
+      {/* Diplomacy & Treasury — Movable widget (0.9.533). Shows the selected
+          region's owning faction's live treasury, AI personality archetype,
+          and a diplomacy summary (war/ally counts). Data decoded from the
+          save via the cracked faction_id + treasury + diplomacy records. */}
+      <Movable id="region.diplomacy" title="Diplomacy & Treasury" designMode={designMode} colBox={colBox}
+        defaultPct={{ x: 0.5720, y: 0.2770, w: 0.2090, h: 0.1500 }}>
+      <div className={panelInnerClass} style={panelInner}
+        title={(devMode && ownerFactionId) ? "Right-click to inspect raw diplomacy data" : undefined}
+        onContextMenu={(devMode && ownerFactionId && (diplomacyMatrix || (factionState && !factionState.noData))) ? (e) => { e.preventDefault(); e.stopPropagation(); setDiploRawOpen((v) => !v); } : undefined}>
+        {devMode && diploRawOpen && diplomacyMatrix && ownerFactionId && (() => {
+          const fid = String(ownerFactionId).toLowerCase();
+          const mine = diplomacyMatrix[fid];
+          const relOf = (a, b) => { const r = diplomacyMatrix[a] && diplomacyMatrix[a].rel; return r ? (r.find((e) => e.to && e.to.toLowerCase() === b) || null) : null; };
+          // partners = union of this faction's non-neutral rels (outgoing) and
+          // any faction that has a non-neutral rel toward it (incoming).
+          const partners = new Map();
+          if (mine && mine.rel) for (const e of mine.rel) partners.set(e.to.toLowerCase(), e.to);
+          for (const k in diplomacyMatrix) {
+            if (k === fid || k === "_meta") continue;
+            const r = diplomacyMatrix[k] && diplomacyMatrix[k].rel;
+            if (r && r.some((e) => e.to && e.to.toLowerCase() === fid)) partners.set(k, k);
+          }
+          const rows = [...partners.entries()].map(([pk, pname]) => {
+            const out = relOf(fid, pk) || { att: 200, bond: 6, agg: 200 };
+            const inc = relOf(pk, fid) || { att: 200, bond: 6, agg: 200 };
+            return { name: factionLabel(pname) || pname, pk, out, inc };
+          }).sort((a, b) => (a.out.att - b.out.att) || a.name.localeCompare(b.name));
+          const cell = (c) => `${c.att} (${dsAttitudeLabel(c.att)}) · bond ${c.bond} · agg ${c.agg}`;
+          return createPortal(
+            <div onClick={() => setDiploRawOpen(false)} style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 2147483000,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div onClick={(e) => e.stopPropagation()} style={{
+                background: "#15171c", border: "1px solid #3a3f4a", borderRadius: 6,
+                padding: 14, maxWidth: "70vw", maxHeight: "80vh", overflow: "auto",
+                fontSize: "0.72rem", color: "#ddd", boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
+              }}>
+                <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fd8", marginBottom: 2 }}>
+                  Raw diplomacy numbers — {factionLabel(ownerFactionId) || ownerFactionId}
+                </div>
+                <div style={{ color: "#8a93a8", fontSize: "0.62rem", marginBottom: 8 }}>
+                  core_attitudes: -10 Locked Allied · 0 Allied · 100 Suspicious · 200 Neutral · 400 Hostile · 600 At War · 850 Total War · 1000 Crazy. bond: 6 normal / 54 protectorate-ally / 55 special. agg = faction_aggression (recalc/turn). Pairs not listed are Neutral 200. {diplomacyMatrix._meta ? `[matrix base 0x${(diplomacyMatrix._meta.base||0).toString(16)} stride ${diplomacyMatrix._meta.stride} C ${diplomacyMatrix._meta.C} sym ${Math.round((diplomacyMatrix._meta.symmetry||0)*100)}%]` : ""} — click anywhere to close.
+                </div>
+                {rows.length === 0 ? <div style={{ color: "#888" }}>All-neutral (no non-default relations).</div> : (
+                  <table style={{ borderCollapse: "collapse", width: "100%" }}>
+                    <thead><tr style={{ color: "#9ab", textAlign: "left" }}>
+                      <th style={{ padding: "2px 10px 4px 0" }}>Faction</th>
+                      <th style={{ padding: "2px 10px 4px 0" }}>{factionLabel(ownerFactionId) || "this"} → them</th>
+                      <th style={{ padding: "2px 0 4px 0" }}>them → {factionLabel(ownerFactionId) || "this"}</th>
+                    </tr></thead>
+                    <tbody>
+                      {rows.map((r) => (
+                        <tr key={r.pk} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                          <td style={{ padding: "3px 10px 3px 0", color: "#fff", whiteSpace: "nowrap" }}>{r.name}</td>
+                          <td style={{ padding: "3px 10px 3px 0", color: r.out.att >= 600 ? "#e8a0a0" : r.out.att === 0 ? "#9ed09e" : r.out.att >= 400 ? "#e0c080" : "#bbb", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{cell(r.out)}</td>
+                          <td style={{ padding: "3px 0", color: r.inc.att >= 600 ? "#e8a0a0" : r.inc.att === 0 ? "#9ed09e" : r.inc.att >= 400 ? "#e0c080" : "#bbb", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{cell(r.inc)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>,
+            document.body
+          );
+        })()}
+        {/* Campaign-start raw-inspect — no save loaded, so no numeric attitude
+            matrix exists; show the descr_strat starting stances + treasury. */}
+        {devMode && diploRawOpen && !diplomacyMatrix && factionState && !factionState.noData && ownerFactionId && createPortal(
+          <div onClick={() => setDiploRawOpen(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 2147483000,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <div onClick={(e) => e.stopPropagation()} style={{
+              background: "#15171c", border: "1px solid #3a3f4a", borderRadius: 6,
+              padding: 14, maxWidth: "60vw", maxHeight: "80vh", overflow: "auto",
+              fontSize: "0.78rem", color: "#ddd", boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
+            }}>
+              <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fd8", marginBottom: 2 }}>
+                Raw diplomacy (campaign start) — {factionLabel(ownerFactionId) || ownerFactionId}
+              </div>
+              <div style={{ color: "#8a93a8", fontSize: "0.62rem", marginBottom: 8 }}>
+                These are the engine's STARTING core_attitudes, derived from the descr_strat stances: Allied = 0, At War = 600, and every faction not listed below = Neutral (200). Load a save to see the live per-turn values. Click anywhere to close.
+              </div>
+              {(() => {
+                const sec = (label, arr, color, num) => (arr && arr.length)
+                  ? <div key={label} style={{ marginBottom: 4 }}><span style={{ color }}>{label}:</span> <span style={{ color: "#ddd" }}>{arr.map((n) => `${n} ${num}`).join(", ")}</span></div>
+                  : null;
+                const any = (factionState.startWars && factionState.startWars.length) || (factionState.startAllies && factionState.startAllies.length) || (factionState.startProtects && factionState.startProtects.length) || (factionState.startProtectedBy && factionState.startProtectedBy.length);
+                return <>
+                  {sec("⚔ War", factionState.startWars, "#e8a0a0", 600)}
+                  {sec("🤝 Allied", factionState.startAllies, "#9ed09e", 0)}
+                  {sec("🛡 Protectorate of", factionState.startProtects, "#a0c8e8", 0)}
+                  {sec("🛡 Protected by", factionState.startProtectedBy, "#a0c8e8", 0)}
+                  <div style={{ marginTop: 4, color: "#9aa" }}>Everyone else: <span style={{ color: "#ddd" }}>200 (Neutral)</span></div>
+                  {factionState.treasury != null && <div style={{ marginTop: 6, color: "#bbb" }}>Treasury: <span style={{ color: "#ddd" }}>{factionState.treasury}</span></div>}
+                  {!any && <div style={{ color: "#888" }}>No declared stances — every faction starts at 200 (Neutral).</div>}
+                </>;
+              })()}
+            </div>
+          </div>,
+          document.body
+        )}
+        <div style={widgetHeader}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
+            <span>Diplomacy &amp; Treasury{liveOwner ? <span style={{ fontSize: "0.65rem", color: "#a98", fontWeight: 400, marginLeft: 6 }}>{factionLabel(ownerFactionId) || liveOwner}</span> : null}</span>
+            {devMode && ownerFactionId && (
+              <button onClick={(e) => { e.stopPropagation(); setDiploEditOpen(true); }}
+                title="View / edit every faction's starting attitude toward this faction (writes to descr_strat on Save)"
+                style={{ marginLeft: "auto", padding: "1px 6px", fontSize: "0.62rem", background: "rgba(92,140,200,0.18)", color: "#bcd6f0", border: "1px solid rgba(92,140,200,0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}>
+                ✎ All numbers
+              </button>
+            )}
+          </div>
+        </div>
+        {diploEditOpen && createPortal(
+          <DiplomacyEditor
+            ownerFactionId={ownerFactionId}
+            factionLabel={factionLabel}
+            factionDisplayNames={factionDisplayNames}
+            onStageEdit={onStageDiplomacy}
+            pendingDiplo={pendingDiplomacy}
+            regions={regions}
+            regionCentroids={regionCentroids}
+            victoryConditions={victoryConditions}
+            onClose={() => setDiploEditOpen(false)}
+          />, document.body)}
+        <div style={widgetBody}>
+          {(factionState && !factionState.noData) ? (
+            <div style={{ fontSize: "0.75rem", display: "flex", flexDirection: "column", gap: 5 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ color: "#bbb" }}>Treasury{factionState.isStarting && <span style={{ color: "#a98", fontSize: "0.62rem", marginLeft: 4 }}>(starting)</span>}</span>
+                <span style={{
+                  fontVariantNumeric: "tabular-nums", fontWeight: 700,
+                  color: factionState.treasury == null ? "#888"
+                    : factionState.treasury < 0 ? "#e85050"
+                    : factionState.treasury >= 5000 ? "#9ec78a"
+                    : factionState.treasury >= 1000 ? "#f4cd57" : "#e89030",
+                }} title={factionState.isStarting
+                  ? "Starting denarii from descr_strat. Live treasury isn't available for this faction (player faction or a minor faction without a save treasury record)."
+                  : (factionState.turnStart != null && factionState.turnStart !== factionState.treasury
+                    ? `Started this turn at ${factionState.turnStart.toLocaleString()} (net ${(factionState.treasury - factionState.turnStart >= 0 ? "+" : "") + (factionState.treasury - factionState.turnStart).toLocaleString()})`
+                    : "Current treasury, decoded from the save")}>
+                  {factionState.treasury != null ? factionState.treasury.toLocaleString() + " d" : "—"}
+                  {!factionState.isStarting && <span style={{ color: "#4a8", marginLeft: 4, fontSize: "0.66rem", fontWeight: 400 }}>·live</span>}
+                </span>
+              </div>
+              {(() => {
+                // 0.9.549: treasury-over-time sparkline (f13 per-turn checkpoints).
+                const fid = ownerFactionId ? String(ownerFactionId).toLowerCase() : null;
+                const series = fid && treasuryHistory ? treasuryHistory[fid] : null;
+                if (!series || series.length < 2) return null;
+                const lo = Math.min(...series), hi = Math.max(...series);
+                return (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ color: "#bbb" }}>Wealth trend <span style={{ color: "#777", fontSize: "0.62rem" }}>({series.length} turns)</span></span>
+                    <span title={`per-turn treasury: ${series.join(" → ")}  (min ${lo.toLocaleString()} / max ${hi.toLocaleString()})`}>
+                      <TreasurySparkline series={series} />
+                    </span>
+                  </div>
+                );
+              })()}
+              {factionState.aiPersonality && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ color: "#bbb" }}>AI personality</span>
+                  <span style={{ color: "#8a93a8" }} title={`feral_descr_ai_personality.txt: ${factionState.aiPersonality}`}>
+                    {factionState.aiPersonality.replace(/^ai_/, "").replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 4, marginTop: 1 }}>
+                {/* 0.9.546: NAMED LIVE diplomacy from the N×N attitude matrix
+                    (cracked this session — the real diplomacy source). The
+                    matrix POSITION encodes the faction pair, so we can finally
+                    list WHO each faction is currently at war / allied with, BY
+                    NAME, for every faction on the map. Allied includes
+                    protectorates (the matrix scores both as DS_ALLIED=0); the
+                    protectorate distinction comes from the campaign-start data,
+                    shown as a supplement. Falls back to campaign-start named
+                    diplomacy (descr_strat + script) when no save is synced. */}
+                {factionState.hasLiveNamed ? (
+                  <>
+                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#4a8" }}>(live)</span></div>
+                    {factionState.liveWar && factionState.liveWar.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#e8a0a0", marginBottom: 1 }}>
+                        ⚔ at war ({factionState.liveWar.length}): <span style={{ color: "#ddd" }}>{factionState.liveWar.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.liveAllied && factionState.liveAllied.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#9ed09e", marginBottom: 1 }}>
+                        🤝 allied ({factionState.liveAllied.length}): <span style={{ color: "#ddd" }}>{factionState.liveAllied.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.liveHostile && factionState.liveHostile.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#e0c080", marginBottom: 1 }}>
+                        ⚠ hostile ({factionState.liveHostile.length}): <span style={{ color: "#ddd" }}>{factionState.liveHostile.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.startProtects && factionState.startProtects.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0", marginBottom: 1 }}>
+                        🛡 protects: <span style={{ color: "#ddd" }}>{factionState.startProtects.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.startProtectedBy && factionState.startProtectedBy.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0" }}>
+                        🛡 protectorate of: <span style={{ color: "#ddd" }}>{factionState.startProtectedBy.join(", ")}</span>
+                      </div>
+                    )}
+                  </>
+                ) : ((factionState.startWars && factionState.startWars.length) || (factionState.startAllies && factionState.startAllies.length) || (factionState.startProtects && factionState.startProtects.length) || (factionState.startProtectedBy && factionState.startProtectedBy.length)) ? (
+                  <>
+                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#777" }}>(at campaign start)</span></div>
+                    {factionState.startWars && factionState.startWars.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#e8a0a0", marginBottom: 1 }}>
+                        ⚔ war: <span style={{ color: "#ddd" }}>{factionState.startWars.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.startAllies && factionState.startAllies.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#9ed09e", marginBottom: 1 }}>
+                        🤝 allied: <span style={{ color: "#ddd" }}>{factionState.startAllies.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.startProtects && factionState.startProtects.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0", marginBottom: 1 }}>
+                        🛡 protects: <span style={{ color: "#ddd" }}>{factionState.startProtects.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.startProtectedBy && factionState.startProtectedBy.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#9cc0e0" }}>
+                        🛡 protectorate of: <span style={{ color: "#ddd" }}>{factionState.startProtectedBy.join(", ")}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ color: "#888", fontSize: "0.68rem", fontStyle: "italic" }}>Starts neutral — no declared alliances, wars, or protectorates.</div>
+                )}
+                {/* Dev mode: the raw per-faction attitude numbers the engine uses
+                    to evaluate every relationship (cracked core_attitudes matrix).
+                    Only exists once a save is synced (the engine computes these). */}
+                {devMode && diplomacyMatrix && ownerFactionId && (() => {
+                  const fid = String(ownerFactionId).toLowerCase();
+                  const row = diplomacyMatrix[fid];
+                  if (!row || !Array.isArray(row.rel) || row.rel.length === 0) return null;
+                  const isReal = (n) => n && !/(_rebels|_rebels2|^slave$|^rebels$)/.test(n);
+                  const nm = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
+                  const rels = row.rel
+                    .filter((r) => r.to && isReal(String(r.to).toLowerCase()))
+                    .map((r) => ({ name: nm(String(r.to).toLowerCase()), att: r.att, bond: r.bond, agg: r.agg }))
+                    .sort((a, b) => (a.att - b.att) || a.name.localeCompare(b.name));
+                  if (!rels.length) return null;
+                  const colorFor = (att) => att >= 600 ? "#e8a0a0" : att === 0 ? "#9ed09e" : att >= 400 ? "#e0c080" : "#bbc";
+                  return (
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 4, marginTop: 4 }}>
+                      <div style={{ color: "#8a93a8", fontSize: "0.6rem", marginBottom: 2 }}>Raw attitudes <span style={{ color: "#677" }}>core_attitudes · dev ({rels.length})</span></div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.63rem", fontVariantNumeric: "tabular-nums", maxHeight: 120, overflowY: "auto" }}>
+                        {rels.map((r) => (
+                          <span key={r.name} title={`${r.name}: attitude ${r.att} (${dsAttitudeLabel(r.att)}) · bond ${r.bond} · aggression ${r.agg}`}>
+                            <span style={{ color: "#cdd6e6" }}>{r.name}</span> <span style={{ color: colorFor(r.att), fontWeight: 700 }}>{r.att}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : (
+            <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>
+              {ownerFactionId ? "No treasury data — load a save or 🎯 Calibrate" : "No region selected"}
+            </span>
+          )}
+        </div>
+      </div>
+      </Movable>
+
       {/* Building queue — Movable widget extracted from buildings */}
-      <Movable id="region.queue" title="Build queue" designMode={designMode}
+      <Movable id="region.queue" title="Build queue" designMode={designMode} colBox={colBox}
         defaultPct={{ x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
-        {Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
+        {Array.isArray(buildings?.queuedUpgrades) && buildings.queuedUpgrades.length > 0 ? (
+          // Building upgrades in progress, shown as cards like the Buildings
+          // panel: the target building's icon with a GREEN overlay filling from
+          // the bottom = % complete (50% = bottom half green), matching the
+          // in-game construction visual. The building itself stays at its
+          // current level in the Buildings panel until this finishes.
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))", gap: 4 }}>
+            {buildings.queuedUpgrades.map((u, i) => {
+              const ic = resolveIcon(u.icon) || resolveIcon(u.image) || resolveIcon(u.img);
+              const frac = typeof u.progress === "number" ? Math.min(1, Math.max(0, u.progress)) : 0;
+              return (
+                <div key={i}
+                  title={`${u.fromLabel ? u.fromLabel + " → " : ""}${u.label}${u.percent != null ? ` — ${u.percent}% complete` : ""}`}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "rgba(0,0,0,0.25)", border: "2px solid #e89030", borderRadius: 4, padding: "4px 3px", overflow: "hidden" }}>
+                  <div style={{ position: "relative", width: "100%", height: 44 }}>
+                    {ic && <img src={ic} alt={u.label} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: `${frac * 100}%`, background: "rgba(60,200,80,0.55)", pointerEvents: "none", borderRadius: 2 }} />
+                    {typeof u.turnsRemaining === "number" && (
+                      <div style={{
+                        position: "absolute", top: 0, right: 0,
+                        minWidth: 13, height: 13, padding: "0 2px", boxSizing: "border-box",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: "rgba(0,0,0,0.78)", color: "#fff",
+                        fontSize: "0.62rem", fontWeight: 700, lineHeight: 1,
+                        borderRadius: 2, pointerEvents: "none",
+                      }}>{u.turnsRemaining}</div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: "0.58rem", color: "#cde", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
+                    {u.label}{u.percent != null ? ` ${u.percent}%` : ""}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : Array.isArray(buildingQueue) && buildingQueue.length > 0 ? (
           <div
             title="Construction queue (decoded from save's default_set chain — session 36)"
             style={{
@@ -987,14 +2012,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             }}
           >
             <span style={{ color: "#9fc78a", fontWeight: 700, marginRight: 4 }}>Building:</span>
-            {buildingQueue.map((q, i) => (
-              <span key={i} style={{ color: "#cde" }}>
-                {i > 0 ? ", " : ""}chain #{q.chainId}
-                {Number.isFinite(q.turns) && q.turns > 0 && q.turns < 1000
-                  ? ` — ${q.turns} turn${q.turns === 1 ? "" : "s"}`
-                  : ""}
-              </span>
-            ))}
+            {buildingQueue.map((q, i) => {
+              // Prefer turnsRemaining (cracked 2026-05-21). Fall back to total
+              // for saves parsed by older clients that only have `turns`.
+              const rem = Number.isFinite(q.turnsRemaining) ? q.turnsRemaining : null;
+              const tot = Number.isFinite(q.turnsTotal) ? q.turnsTotal : q.turns;
+              const show = rem != null ? rem : tot;
+              const valid = Number.isFinite(show) && show > 0 && show < 1000;
+              return (
+                <span key={i} style={{ color: "#cde" }}>
+                  {i > 0 ? ", " : ""}chain #{q.chainId}
+                  {valid ? ` — ${show} turn${show === 1 ? "" : "s"} left` : ""}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <span style={{ color: "#888", fontStyle: "italic", fontSize: "0.72rem" }}>No queue</span>
@@ -1005,7 +2036,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Unit queue — Movable widget. Lists units currently being
           recruited in this settlement (recruitingNow from save). */}
-      <Movable id="region.unitQueue" title="Unit queue" designMode={designMode}
+      <Movable id="region.unitQueue" title="Unit queue" designMode={designMode} colBox={colBox}
         defaultPct={{ x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
@@ -1039,27 +2070,38 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </Movable>
 
       {/* Buildings grid — Movable widget */}
-      <Movable id="region.buildings" title="Buildings" designMode={designMode}
-        defaultPct={{ x: 0.5720, y: 0.5086, w: 0.2090, h: 0.4864 }}>
+      <Movable id="region.buildings" title="Buildings" designMode={designMode} colBox={colBox}
+        defaultPct={{ x: 0.5720, y: 0.5940, w: 0.2090, h: 0.4000 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Buildings:</div>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Buildings:{devMode ? " — dev edit" : ""}</div>
+            {savingMsg && (
+              <span style={{ color: "#dca64a", fontSize: "0.66rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{savingMsg}</span>
+            )}
+            {iconReplaceMsg && (
+              <span style={{ color: "#4ab4dc", fontSize: "0.66rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{iconReplaceMsg}</span>
+            )}
+          </div>
         </div>
         <div style={widgetBody}>
-        {buildingItems.length > 0 ? (
+        {(buildingItems.length > 0 || devMode) ? (
           (() => {
-            // 20-slot grid with a minimum card size of 60×80 — cards
-            // reflow into more rows when the widget is narrow and the
-            // container scrolls vertically once 20 cards no longer fit.
-            // Prevents the cards from shrinking past readable.
+            // 0.9.533: fixed 5×4 = 20-slot grid. A region can hold at most
+            // ~20 buildings, so we cap the list at 20 and use exactly 5
+            // columns (4 rows) regardless of widget width — bigger, evenly
+            // sized cards instead of the old width-dependent auto-fill that
+            // reflowed to 6+ narrow columns. In dev mode the "+ Add" tile
+            // takes one slot so the empty-placeholder count is reduced.
             const padded = buildingItems.slice(0, 20);
-            const emptyCount = Math.max(0, 20 - padded.length);
+            const addSlot = devMode ? 1 : 0;
+            const emptyCount = Math.max(0, 20 - padded.length - addSlot);
             return (
           <div
             ref={buildingsBoxRef}
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(60px, 1fr))",
+              gridTemplateColumns: "repeat(5, 1fr)",
               gridAutoRows: "80px",
               gap: 4,
               flex: 1,
@@ -1068,7 +2110,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               alignContent: "start",
             }}
           >
-            {buildingItems.map((b) => {
+            {padded.map((b) => {
               // Overlay: queued buildings get a green bar matching progress;
               // damaged buildings (health < 100) get a red bar matching
               // damage. Fraction = portion of icon covered from the bottom.
@@ -1086,14 +2128,78 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               // the user is hovering a recruit unit that this chain gates.
               const linkedFromRecruit = hoveredRecruit && (recruitGatedBy?.[hoveredRecruit] || []).includes(b.type);
               const isHoveredChain = hoveredChain === b.type;
+              // Dev-mode edit affordances: chain lookup tells us whether
+              // up/down are possible. If catalogue missing or chain absent,
+              // hide arrows (× still works — same defensive pattern as the
+              // trait editor when traitData is missing).
+              const chainLevels = catalogue?.chains?.[b.type];
+              const chainIdx = Array.isArray(chainLevels) ? chainLevels.indexOf(b.level) : -1;
+              const upTargetLevel = (chainIdx >= 0 && chainLevels && chainIdx < chainLevels.length - 1) ? chainLevels[chainIdx + 1] : null;
+              // 0.9.473: strict settlement-tier cap. The ⬆ button still
+              // renders when there's a next level (so the user can see what
+              // the chain offers) but is DISABLED + tooltip explains why
+              // when the candidate level's settlement_min would exceed the
+              // current settlement tier — replaces the prior "silently
+              // hidden" behaviour. requires-clause failures still hide the
+              // button (they're region-permanent rejections, not gateable).
+              const upDetail = upTargetLevel ? canUpgradeToDetail(b.type, upTargetLevel) : { ok: false };
+              const upBlockedByTier = upTargetLevel && !upDetail.ok && upDetail.reason === "settlement_min";
+              const upBlockedByRequires = upTargetLevel && !upDetail.ok && upDetail.reason === "requires";
+              const canUp = devMode && upTargetLevel != null && upDetail.ok;
+              const showUpDisabled = devMode && upTargetLevel != null && upBlockedByTier;
+              const canDown = devMode && chainIdx > 0;
+              if (devMode && upBlockedByRequires) {
+                console.log(`[building-edit-cap] disabled up: ${b.type} ${b.level} → ${upTargetLevel} (requires clause excludes region)`);
+              }
+              if (showUpDisabled) {
+                console.log(`[building-edit-cap] disabled up: ${b.type} ${b.level} → ${upTargetLevel} (needs ${upDetail.requiredTier}, have ${currentCoreLevel || "none"})`);
+              }
+              // 0.9.473: tier-mismatch flag — current level's settlement_min
+              // is higher than current settlement tier (user demolished core
+              // down). Paint a red border + tooltip; user can choose to
+              // demolish/downgrade. We log once per render so the live log
+              // proves enforcement is working.
+              const mismatch = devMode ? tierMismatch(b.type, b.level) : null;
+              if (mismatch) {
+                console.log(`[building-edit-cap] tier-mismatch flagged: ${b.type} ${b.level} (needs ${mismatch.requiredTier}, have ${mismatch.currentTier}) in region ${region}`);
+              }
+              const isDragOver = dragOverBuildingIdx === b.idx;
               return (
               <div key={b.key}
                 onMouseEnter={() => setHoveredChain(b.type)}
                 onMouseLeave={() => setHoveredChain((cur) => cur === b.type ? null : cur)}
                 onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "building", name: b.level, chainName: b.type, culture: b.culture || null, label: b.label }); } }}
-                title={b.type ? `${b.type.replace(/_/g, " ")}: ${b.label}${b.queued ? " (in construction)" : ""}` : b.label} style={{
+                onDragOver={devMode ? (e) => {
+                  // Accept drops of image files. dataTransfer.types is the
+                  // safest filter (file MIME isn't readable yet during
+                  // dragOver) — "Files" means at least one file is present.
+                  if (!e.dataTransfer) return;
+                  if (!Array.from(e.dataTransfer.types || []).includes("Files")) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "copy";
+                  if (dragOverBuildingIdx !== b.idx) setDragOverBuildingIdx(b.idx);
+                } : undefined}
+                onDragLeave={devMode ? () => {
+                  setDragOverBuildingIdx((cur) => cur === b.idx ? null : cur);
+                } : undefined}
+                onDrop={devMode ? (e) => {
+                  e.preventDefault();
+                  setDragOverBuildingIdx(null);
+                  const files = e.dataTransfer?.files;
+                  if (!files || files.length === 0) return;
+                  handleIconDrop(b.idx, files[0]);
+                } : undefined}
+                title={(() => {
+                  const base = b.type ? `${b.type.replace(/_/g, " ")}: ${b.label}${b.queued ? " (in construction)" : ""}` : b.label;
+                  if (mismatch) return `${base}\nSettlement tier ${mismatch.requiredTier} too low for this building.\n(current: ${mismatch.currentTier})`;
+                  if (devMode) return `${base}\n(drop a PNG / JPG / TGA to replace the icon)`;
+                  return base;
+                })()} style={{
+                position: "relative",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                background: linkedFromRecruit ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.25)",
+                background: isDragOver
+                  ? "rgba(74,180,220,0.28)"
+                  : (mismatch ? "rgba(220,60,60,0.16)" : (linkedFromRecruit ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.25)")),
                 borderRadius: 4,
                 padding: "4px 3px",
                 minWidth: 0,
@@ -1102,11 +2208,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 boxSizing: "border-box",
                 overflow: "hidden",
                 transition: "background 150ms var(--ease-mac-out), border-color 150ms var(--ease-mac-out)",
-                border: b.queued
-                  ? "2px solid #e89030"
-                  : (linkedFromRecruit || isHoveredChain)
-                    ? "2px solid #dca64a"
-                    : "2px solid transparent",
+                border: isDragOver
+                  ? "2px dashed #4ab4dc"
+                  : (mismatch
+                    ? "2px solid #dc6060"
+                    : (b.queued
+                      ? "2px solid #e89030"
+                      : ((linkedFromRecruit || isHoveredChain)
+                        ? "2px solid #dca64a"
+                        : "2px solid transparent"))),
               }}>
                 <div style={{ position: "relative", width: "100%", flex: "1 1 0", minHeight: 0 }}>
                   {b.icon && (
@@ -1132,13 +2242,85 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     }} />
                   )}
                 </div>
-                <span style={{ color: "#f4f4f4", fontSize: "0.7rem", textAlign: "center", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", wordBreak: "break-word", hyphens: "auto", width: "100%" }}>
-                  {b.tierRoman && <span style={{ color: "#dca64a", fontWeight: 700, marginRight: 4 }}>{b.tierRoman}</span>}
+                {devMode && (
+                  // Edit affordances overlay — small gold buttons stacked in
+                  // the top-right corner. stopPropagation on each click so we
+                  // don't trigger the card's hover/context handlers. Positioned
+                  // absolutely so the icon + label keep their flex layout.
+                  <div
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onContextMenu={(e) => e.stopPropagation()}
+                    style={{
+                      position: "absolute", top: 1, right: 1,
+                      display: "flex", flexDirection: "column", gap: 1,
+                      zIndex: 2,
+                    }}
+                  >
+                    {canUp && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onBuildingUp(b.idx); }}
+                        title={`Upgrade to ${chainLevels[chainIdx + 1]}`}
+                        style={buildingEditBtnStyle}
+                      >{'⬆'}</button>
+                    )}
+                    {showUpDisabled && (
+                      <button
+                        disabled
+                        onClick={(e) => { e.stopPropagation(); }}
+                        title={`Cannot upgrade to ${chainLevels[chainIdx + 1]} — needs settlement ≥ ${upDetail.requiredTier} (current: ${currentCoreLevel || "(none)"})`}
+                        style={{ ...buildingEditBtnStyle, opacity: 0.4, cursor: "not-allowed", color: "#888", borderColor: "rgba(120,120,120,0.35)" }}
+                      >{'⬆'}</button>
+                    )}
+                    {canDown && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onBuildingDown(b.idx); }}
+                        title={`Downgrade to ${chainLevels[chainIdx - 1]}`}
+                        style={buildingEditBtnStyle}
+                      >{'⬇'}</button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onBuildingRemove(b.idx); }}
+                      title="Remove this building"
+                      style={{ ...buildingEditBtnStyle, color: "#dc7f7f", borderColor: "rgba(220,127,127,0.45)" }}
+                    >{'×'}</button>
+                  </div>
+                )}
+                <span style={{ color: "#f4f4f4", fontSize: "0.58rem", textAlign: "center", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word", hyphens: "auto", width: "100%", flexShrink: 0 }}>
+                  {b.tierRoman && <span style={{ color: "#dca64a", fontWeight: 700, marginRight: 3 }}>{b.tierRoman}</span>}
                   {b.label}
                 </span>
               </div>
               );
             })}
+            {/* Dev-mode: + Add Building tile. Always takes one of the 20
+                slots so the grid shape stays predictable. Clicking it opens
+                the chain picker (full-grid overlay below). */}
+            {devMode && (
+              <div
+                key="add-building"
+                onClick={() => { setShowAddPicker(true); setAddQuery(""); }}
+                title="Add a new building chain to this region"
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  gap: 4,
+                  background: "rgba(220,166,74,0.10)",
+                  border: "2px dashed rgba(220,166,74,0.45)",
+                  color: "#dca64a",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  width: "100%", height: "100%",
+                  boxSizing: "border-box",
+                  textAlign: "center",
+                  padding: "4px 3px",
+                  lineHeight: 1.1,
+                }}
+              >
+                <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>+</span>
+                <span>Add building</span>
+              </div>
+            )}
             {/* Empty-slot placeholders so the 20-slot grid keeps a stable
                 shape as the user adds/removes buildings. Faint dashed
                 outline, no fill. */}
@@ -1156,12 +2338,96 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         ) : (
           <span style={{ color: "#bbb", fontStyle: "italic" }}>No buildings</span>
         )}
+        {/* Dev-mode: building-chain picker. Renders below the grid as an
+            inline panel — search + list of chains not already in the region.
+            Cap at 200 visible (engine has ~150 chains across mods). */}
+        {devMode && showAddPicker && (
+          <div style={{
+            marginTop: 6, padding: "6px 8px",
+            background: "rgba(0,0,0,0.4)",
+            border: "1px solid rgba(220,166,74,0.3)",
+            borderRadius: 4,
+            fontSize: "0.72rem",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <span style={{ color: "#9ab" }}>Add building chain</span>
+              <button
+                onClick={() => { setShowAddPicker(false); setAddQuery(""); }}
+                style={{ ...buildingEditBtnStyle, width: "auto", height: "auto", padding: "1px 6px", marginLeft: "auto" }}
+              >cancel</button>
+            </div>
+            <input
+              autoFocus
+              placeholder="search chain…"
+              value={addQuery}
+              onChange={(e) => setAddQuery(e.target.value)}
+              style={{
+                width: "100%", boxSizing: "border-box",
+                background: "rgba(0,0,0,0.4)", color: "#eee",
+                border: "1px solid rgba(220,166,74,0.3)", borderRadius: 3,
+                padding: "3px 6px", fontSize: "0.72rem",
+              }}
+            />
+            {!catalogue && (
+              <div style={{ color: "#888", marginTop: 4 }}>Loading catalogue…</div>
+            )}
+            {catalogue && (
+              <div style={{ maxHeight: 220, overflowY: "auto", marginTop: 4, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                {availableChainsForAdd.map((entry) => {
+                  const c = entry.chain;
+                  const cat = catalogue?.categories?.[c];
+                  const disabled = !entry.ok;
+                  const needsHint = disabled && entry.requiredTier
+                    ? ` (needs ${entry.requiredTier.replace(/_/g, " ")})`
+                    : "";
+                  const title = disabled && entry.requiredTier
+                    ? `Settlement tier ${entry.requiredTier} required — current tier is ${currentCoreLevel || "(none)"}`
+                    : entry.replaces
+                      ? `Adding this replaces ${entry.replaces.replace(/_/g, " ")} (same building slot)`
+                      : (cat ? `category: ${cat}` : c);
+                  return (
+                    <button key={c}
+                      onClick={() => {
+                        if (disabled) {
+                          console.log(`[building-edit-cap] picker-click ignored: ${c} (needs ${entry.requiredTier})`);
+                          return;
+                        }
+                        onBuildingAdd(c);
+                      }}
+                      disabled={disabled}
+                      title={title}
+                      style={{
+                        textAlign: "left", padding: "2px 5px",
+                        background: disabled ? "rgba(120,120,120,0.08)" : "rgba(255,255,255,0.05)",
+                        color: disabled ? "#888" : "#eee",
+                        border: "1px solid transparent", borderRadius: 2,
+                        fontSize: "0.7rem", cursor: disabled ? "not-allowed" : "pointer",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        opacity: disabled ? 0.6 : 1,
+                      }}>
+                      {c.replace(/_/g, " ")}
+                      {needsHint && (
+                        <span style={{ color: "#dca64a", fontSize: "0.62rem", marginLeft: 4 }}>{needsHint}</span>
+                      )}
+                      {!needsHint && entry.replaces && (
+                        <span style={{ color: "#7fae7f", fontSize: "0.6rem", marginLeft: 4 }}>↔ replaces</span>
+                      )}
+                    </button>
+                  );
+                })}
+                {availableChainsForAdd.length === 0 && (
+                  <span style={{ color: "#888", fontSize: "0.7rem" }}>(no matches)</span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         </div>
       </div>
       </Movable>
 
       {/* Recruitable — Movable widget */}
-      <Movable id="region.recruit" title="Recruitable" designMode={designMode}
+      <Movable id="region.recruit" title="Recruitable" designMode={designMode} colBox={colBox}
         defaultPct={{ x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
@@ -1255,7 +2521,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </Movable>
 
       {/* Garrison — Movable widget */}
-      <Movable id="region.garrison" title="Garrison" designMode={designMode}
+      <Movable id="region.garrison" title="Garrison" designMode={designMode} colBox={colBox}
         defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1340 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
@@ -1289,7 +2555,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             justifyContent: "start",
             alignContent: "start",
           }}>
-            {garrison.map((u, i) => {
+            {(() => {
+              // 0.9.442: generals first. Any unit that will swap to a face
+              // card (has commanderUuid in live mode, or commanderName in
+              // non-live) goes to the front so multi-general armies show
+              // the portraits side-by-side instead of bookending the row.
+              // Stable sort preserves relative order of other units.
+              const sorted = garrison.slice().map((u, idx) => ({ u, idx }));
+              sorted.sort((a, b) => {
+                const aGen = (a.u.commanderUuid || a.u.commanderName) ? 1 : 0;
+                const bGen = (b.u.commanderUuid || b.u.commanderName) ? 1 : 0;
+                if (aGen !== bGen) return bGen - aGen;
+                return a.idx - b.idx;
+              });
+              return sorted.map(({ u }, i) => {
               const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
               // RTW chevron count = exp - 1 (descr_strat exp 1 → 0 chevrons,
               // exp 2 → 1 bronze, etc.). The first visible chevron appears
@@ -1297,9 +2576,21 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               // Chevron level = exp value directly. exp 0 → no chevron,
               // exp 1 → 1 bronze, exp 2 → 2 bronze, exp 3 → 3 bronze,
               // exp 4 → 1 silver … exp 9 → 3 gold.
-              const chevrons = u.xp || 0;
+              const chevrons = u.xp ?? u.exp ?? 0;
               const armour = u.armour || 0;
               const weapon = u.weapon || 0;
+              // 0.9.493: one-shot log per unit so we can verify in the
+              // log file that the upgrade values are flowing to the
+              // renderer. If this fires "weapon=1" but the user sees no
+              // sword icon, the issue is the SVG render — not data.
+              if (typeof window !== "undefined" && (chevrons || armour || weapon)) {
+                window.__unitUpgradeLogged ||= new Set();
+                const k = `${u.unit}|${chevrons}|${armour}|${weapon}|${u.commanderName || ""}`;
+                if (!window.__unitUpgradeLogged.has(k)) {
+                  window.__unitUpgradeLogged.add(k);
+                  console.log(`[unit-upgrade] ${u.unit} → xp=${chevrons} armour=${armour} weapon=${weapon}${u.commanderName ? " cmd=" + u.commanderName : ""}`);
+                }
+              }
               const tooltipParts = [u.unit.replace(/_/g, " ")];
               if (u.soldiers != null) tooltipParts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
               if (chevrons > 0) {
@@ -1325,13 +2616,122 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   background: "rgba(0,0,0,0.35)", borderRadius: 2,
                   minWidth: 0,
                 }}>
-                  {u.icon ? (
-                    <img src={u.icon} alt={u.unit}
-                      style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 1 }}
-                      onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                  ) : (
-                    <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 1 }} />
-                  )}
+                  {(() => {
+                    // 0.9.410+ swap: same general-face-card swap as field-army
+                    // path, applied to garrison bodyguard units.
+                    let info = u.commanderUuid && commanderInfo ? commanderInfo.get(u.commanderUuid) : null;
+                    // 0.9.429: non-live fallback via commanderName + statsCache.
+                    if (!info && u.commanderName && statsCache) {
+                      const fn = u.commanderName.toLowerCase();
+                      const fac = (u.commanderFaction || "").toLowerCase();
+                      const cached = statsCache[`${fn}||${fac}`] || statsCache[`${fn}||`] || null;
+                      if (cached) {
+                        info = {
+                          firstName: u.commanderName,
+                          // 0.9.505: surface cached lastName so epithet
+                          // suffixes like "the Elder" / "the Wallbreaker"
+                          // appear under the bodyguard portrait.
+                          lastName: cached.lastName || null,
+                          // 0.9.537: the LIVE garrison unit's faction wins over
+                          // the cache entry's faction. The statsCache lookup can
+                          // fall back to the faction-agnostic `name||` key, whose
+                          // stored faction may belong to a same-named character
+                          // in a DIFFERENT faction (e.g. a seleucid Demophanes
+                          // was being shown as "ptolemaic"). For cross-culture
+                          // name collisions that also pulled the wrong portrait
+                          // pool. u.commanderFaction is authoritative for who's
+                          // actually garrisoned here.
+                          faction: u.commanderFaction || cached.faction || null,
+                          age: typeof cached.age === "number" ? cached.age : null,
+                          // 0.9.505: use cached.portrait. The 0.9.460
+                          // workaround forced this to null because v1's
+                          // c.portraits[0] occasionally cross-contaminated
+                          // (Demetrios III case). With main.js's 0.9.504
+                          // re-enable of v1 portraits + the existing
+                          // captain-banner filter, this path is the only
+                          // way for save-cracked characters like Achaios
+                          // (who v2 misses, see characterParserV2 missing
+                          // type=3 signature for some records) to get their
+                          // engine-assigned portrait through to the
+                          // garrison/army cards.
+                          savePath: cached.portrait || null,
+                        };
+                      }
+                    }
+                    // 0.9.490: last-ditch fallback via descr_strat characters.
+                    // Some named generals (e.g. Achaios in Sardis) aren't in
+                    // the save-derived statsCache — the save's stats table
+                    // tracks generals who've earned stats, but a turn-0 NPC
+                    // general with all-zero stats can be missing. The
+                    // descr_strat parse (in `characters`) has every starting
+                    // character regardless, so match by firstName + faction
+                    // and synthesize a minimal info object so the portrait
+                    // swap still runs.
+                    if (!info && u.commanderName && Array.isArray(characters)) {
+                      const fn = u.commanderName.toLowerCase();
+                      const fac = (u.commanderFaction || "").toLowerCase();
+                      const ds = characters.find((c) =>
+                        c && typeof c.firstName === "string" &&
+                        c.firstName.toLowerCase() === fn &&
+                        (!fac || !c.faction || c.faction.toLowerCase() === fac)
+                      );
+                      if (ds) {
+                        info = {
+                          firstName: ds.firstName,
+                          lastName: ds.lastName || null,
+                          faction: ds.faction || u.commanderFaction || null,
+                          age: typeof ds.age === "number" ? ds.age : null,
+                          savePath: null,
+                        };
+                        // 0.9.526: dedup this log. It was unguarded and fired
+                        // once per render per garrison unit — a multi-unit
+                        // stack led by one descr_strat-fallback commander
+                        // (e.g. Zamir's 30-unit Minaean garrison) spammed the
+                        // same line 30+ times every frame. Throttle per
+                        // commander name like the sibling logs below.
+                        if (typeof window !== "undefined") {
+                          window.__bgFallbackLogged ||= new Set();
+                          if (!window.__bgFallbackLogged.has(u.commanderName)) {
+                            window.__bgFallbackLogged.add(u.commanderName);
+                            console.log(`[bodyguard-swap garr] descr_strat fallback hit for "${u.commanderName}" — using starting character data (faction="${info.faction}", age=${info.age})`);
+                          }
+                        }
+                      }
+                    }
+                    const culture = info && info.faction && factionCultures
+                      ? (factionCultures[String(info.faction).toLowerCase()] || factionCultures[info.faction])
+                      : null;
+                    if (typeof window !== "undefined" && (u.commanderUuid || u.commanderName)) {
+                      window.__bgGarrisonLogged ||= new Set();
+                      const k = u.commanderUuid ? u.commanderUuid.toString(16) : `name:${u.commanderName}`;
+                      if (!window.__bgGarrisonLogged.has(k)) {
+                        window.__bgGarrisonLogged.add(k);
+                        if (!info) {
+                          console.log(`[bodyguard-swap garr] no info for ${k}. unit="${u.unit}" cmdMapSize=${commanderInfo?.size ?? 0} cacheSize=${statsCache ? Object.keys(statsCache).length : 0}`);
+                        } else {
+                          console.log(`[bodyguard-swap garr] ${k} → ${info.firstName} faction="${info.faction}" savePath="${info.savePath || "(none)"}" cultureLookup="${culture || "(missing)"}"`);
+                        }
+                      }
+                    }
+                    const imgStyle = { width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 1 };
+                    const fallback = u.icon ? (
+                      <img src={u.icon} alt={u.unit} style={imgStyle}
+                        onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                    ) : (
+                      <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 1 }} />
+                    );
+                    if (info && modDataDir && (info.savePath || info.firstName)) {
+                      const ctx = {
+                        name: info.firstName || "",
+                        lastName: info.lastName || "",
+                        faction: info.faction || "",
+                        age: info.age != null ? Number(info.age) : null,
+                        savePath: info.savePath || undefined,
+                      };
+                      return <CommanderPortraitImg charContext={ctx} culture={culture || info.faction} modDataDir={modDataDir} fallback={fallback} style={imgStyle} />;
+                    }
+                    return fallback;
+                  })()}
                   {pct != null && (
                     <div style={{ width: "100%", height: 3, background: "rgba(0,0,0,0.6)", marginTop: 1, borderRadius: 1, overflow: "hidden" }}>
                       <div style={{
@@ -1363,6 +2763,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       position: "absolute", bottom: 1, left: 1,
                       display: "flex", flexDirection: "row", gap: 1,
                       pointerEvents: "none",
+                      // 0.9.498: black drop-shadow outline so the bronze/
+                      // silver/gold icons read clearly against any unit-
+                      // card background. Same approach as ChevronStack.
+                      filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                     }}>
                       {armour > 0 && <ShieldIcon color={upgradeTier(armour)} />}
                       {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
@@ -1370,7 +2774,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   )}
                 </div>
               );
-            })}
+              });
+            })()}
             {/* Fill out to 20 slots so the 10×2 grid stays a stable shape
                 as garrison size changes. Empty cells render as faint
                 dashed placeholders. */}
@@ -1393,7 +2798,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </Movable>
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
-      <Movable id="region.fieldArmies" title="Field armies" designMode={designMode}
+      <Movable id="region.fieldArmies" title="Field armies" designMode={designMode} colBox={colBox}
         defaultPct={{ x: 0.7857, y: 0.6509, w: 0.2090, h: 0.3441 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
@@ -1435,12 +2840,21 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     gap: 2,
                     justifyContent: "start",
                   }}>
-                    {a.units.map((u, ui) => {
+                    {(() => {
+                      // 0.9.442: generals first (same as garrison).
+                      const sortedUnits = a.units.slice().map((u, idx) => ({ u, idx }));
+                      sortedUnits.sort((x, y) => {
+                        const xGen = (x.u.commanderUuid || x.u.commanderName) ? 1 : 0;
+                        const yGen = (y.u.commanderUuid || y.u.commanderName) ? 1 : 0;
+                        if (xGen !== yGen) return yGen - xGen;
+                        return x.idx - y.idx;
+                      });
+                      return sortedUnits.map(({ u }, ui) => {
                       const pct = u.max && u.max > 0 ? Math.max(0, Math.min(1, u.soldiers / u.max)) : null;
                       // Chevron level = exp value directly. exp 0 → no chevron,
               // exp 1 → 1 bronze, exp 2 → 2 bronze, exp 3 → 3 bronze,
               // exp 4 → 1 silver … exp 9 → 3 gold.
-              const chevrons = u.xp || 0;
+              const chevrons = u.xp ?? u.exp ?? 0;
                       const armour = u.armour || 0;
                       const weapon = u.weapon || 0;
                       const tooltipParts = [u.unit.replace(/_/g, " ")];
@@ -1458,13 +2872,89 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         position: "relative", padding: 1,
                         background: "rgba(0,0,0,0.35)", borderRadius: 2,
                       }}>
-                        {u.icon ? (
-                          <img src={u.icon} alt={u.unit}
-                            style={{ width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 1 }}
-                            onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                        ) : (
-                          <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 1 }} />
-                        )}
+                        {(() => {
+                          // 0.9.410+ swap: bodyguard unit card → general's face card.
+                          let info = u.commanderUuid && commanderInfo ? commanderInfo.get(u.commanderUuid) : null;
+                          // 0.9.429: non-live fallback via commanderName +
+                          // statsCache portrait. Lets the swap fire in
+                          // (starting) mode using the calibrated portrait.
+                          if (!info && u.commanderName && statsCache) {
+                            const fn = u.commanderName.toLowerCase();
+                            const fac = (u.commanderFaction || "").toLowerCase();
+                            const cached = statsCache[`${fn}||${fac}`] || statsCache[`${fn}||`] || null;
+                            if (cached) {
+                              info = {
+                                firstName: u.commanderName,
+                                lastName: null,
+                                faction: u.commanderFaction || null,
+                                age: null,
+                                savePath: cached.portrait || null,
+                              };
+                            }
+                          }
+                          // 0.9.490: descr_strat fallback for generals
+                          // missing from statsCache (e.g. all-zero-stat
+                          // turn-0 NPC generals like Achaios in Sardis).
+                          if (!info && u.commanderName && Array.isArray(characters)) {
+                            const fn = u.commanderName.toLowerCase();
+                            const fac = (u.commanderFaction || "").toLowerCase();
+                            const ds = characters.find((c) =>
+                              c && typeof c.firstName === "string" &&
+                              c.firstName.toLowerCase() === fn &&
+                              (!fac || !c.faction || c.faction.toLowerCase() === fac)
+                            );
+                            if (ds) {
+                              info = {
+                                firstName: ds.firstName,
+                                lastName: ds.lastName || null,
+                                faction: ds.faction || u.commanderFaction || null,
+                                age: typeof ds.age === "number" ? ds.age : null,
+                                savePath: null,
+                              };
+                              // 0.9.526: dedup (see garrison path above).
+                              if (typeof window !== "undefined") {
+                                window.__bgFallbackLogged ||= new Set();
+                                if (!window.__bgFallbackLogged.has(u.commanderName)) {
+                                  window.__bgFallbackLogged.add(u.commanderName);
+                                  console.log(`[bodyguard-swap field] descr_strat fallback hit for "${u.commanderName}" — using starting character data (faction="${info.faction}", age=${info.age})`);
+                                }
+                              }
+                            }
+                          }
+                          const culture = info && info.faction && factionCultures
+                            ? (factionCultures[String(info.faction).toLowerCase()] || factionCultures[info.faction])
+                            : null;
+                          if (typeof window !== "undefined" && (u.commanderUuid || u.commanderName)) {
+                            window.__bgFieldLogged ||= new Set();
+                            const k = u.commanderUuid ? u.commanderUuid.toString(16) : `name:${u.commanderName}`;
+                            if (!window.__bgFieldLogged.has(k)) {
+                              window.__bgFieldLogged.add(k);
+                              if (!info) {
+                                console.log(`[bodyguard-swap field] no info for ${k}. unit="${u.unit}" cmdMapSize=${commanderInfo?.size ?? 0} cacheSize=${statsCache ? Object.keys(statsCache).length : 0}`);
+                              } else {
+                                console.log(`[bodyguard-swap field] ${k} → ${info.firstName} faction="${info.faction}" savePath="${info.savePath || "(none)"}" cultureLookup="${culture || "(missing)"}"`);
+                              }
+                            }
+                          }
+                          const imgStyle = { width: "100%", aspectRatio: "164 / 224", objectFit: "cover", display: "block", borderRadius: 1 };
+                          const fallback = u.icon ? (
+                            <img src={u.icon} alt={u.unit} style={imgStyle}
+                              onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                          ) : (
+                            <div style={{ width: "100%", aspectRatio: "164 / 224", background: "rgba(255,255,255,0.06)", borderRadius: 1 }} />
+                          );
+                          if (info && modDataDir && (info.savePath || info.firstName)) {
+                            const ctx = {
+                              name: info.firstName || "",
+                              lastName: info.lastName || "",
+                              faction: info.faction || "",
+                              age: info.age != null ? Number(info.age) : null,
+                              savePath: info.savePath || undefined,
+                            };
+                            return <CommanderPortraitImg charContext={ctx} culture={culture || info.faction} modDataDir={modDataDir} fallback={fallback} style={imgStyle} />;
+                          }
+                          return fallback;
+                        })()}
                         {pct != null && (
                           <div style={{ width: "100%", height: 3, background: "rgba(0,0,0,0.6)", marginTop: 1, borderRadius: 1, overflow: "hidden" }}>
                             <div style={{
@@ -1496,6 +2986,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                             position: "absolute", top: 1, left: 0, right: 0,
                             display: "flex", justifyContent: "center", gap: 2,
                             pointerEvents: "none",
+                            filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                           }}>
                             {armour > 0 && <ShieldIcon color={upgradeTier(armour)} />}
                             {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
@@ -1503,7 +2994,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         )}
                       </div>
                       );
-                    })}
+                      });
+                    })()}
                   </div>
                 </div>
               ))}

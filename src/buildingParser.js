@@ -47,15 +47,18 @@ function findAllSettlementMarkers(buf) {
 }
 
 function isChainName(buf, ns, ne) {
-  // Real EDB chain names are all lowercase + underscores + digits.
-  // Anything with uppercase (e.g., game-state strings like "siegeTurnsInSetSiege")
-  // is NOT a building chain — reject it.
+  // Chain names start lowercase and contain letters/digits/underscores. A few
+  // legit chains carry an UPPERCASE suffix letter — notably governmentA/B/C/D
+  // (the "direct rule" etc. buildings). The old all-lowercase rule dropped every
+  // government building from every settlement (e.g. a freshly-built direct-rule
+  // gov in a conquered town never showed). Allow uppercase and rely on the
+  // caller's validChainNames whitelist to reject non-chain game-state strings.
   if (ne - ns < 3) return false;
   const first = buf[ns];
   if (!(first >= 0x61 && first <= 0x7a)) return false;
   for (let k = ns; k < ne; k++) {
     const c = buf[k];
-    const okc = (c >= 0x61 && c <= 0x7a) || c === 0x5f || (c >= 0x30 && c <= 0x39);
+    const okc = (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a) || c === 0x5f || (c >= 0x30 && c <= 0x39);
     if (!okc) return false;
   }
   return true;
@@ -172,12 +175,20 @@ function parseSettlements(buf, validChainNames, chainMaxLevels) {
       if (seenQueued.has(name)) continue;
       seenQueued.add(name);
       // Read the progress fields if they fit within the scan window.
-      let percent = null;
+      //   +24 u32 total turns, +28 u32 elapsed turns, +32 u32 percent (0..100)
+      let percent = null, turnsTotal = null, turnsElapsed = null, turnsRemaining = null;
       if (p + 36 <= queueScanEnd) {
         const pct = buf.readUInt32LE(p + 32);
         if (pct >= 0 && pct <= 100) percent = pct;
+        const tot = buf.readUInt32LE(p + 24);
+        const ela = buf.readUInt32LE(p + 28);
+        if (tot > 0 && tot < 1000) turnsTotal = tot;
+        if (ela >= 0 && ela < 1000) turnsElapsed = ela;
+        if (turnsTotal != null && turnsElapsed != null) {
+          turnsRemaining = Math.max(0, turnsTotal - turnsElapsed);
+        }
       }
-      queued.push({ name, percent });
+      queued.push({ name, percent, turnsTotal, turnsElapsed, turnsRemaining });
       // Skip past this 36-byte queue record to avoid matching inside it.
       p += 35;
     }

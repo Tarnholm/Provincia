@@ -134,6 +134,64 @@ body.dark-mode .panel {
   color: #e6e6e6 !important;
   box-shadow: 0 2px 16px rgba(0,0,0,0.25);
 }
+
+/* Family-tree theme tokens. Inline styles in FamilyTree.js read these via
+   var(--ft-…) so the modal follows the same dark/light toggle as the rest
+   of the app. The modal is a fixed overlay (not a .panel), so it's not
+   covered by the panel CSS or the inline-color contrast fix; CSS vars are
+   the cleanest cross-cut. */
+:root {
+  --ft-card-bg: #c4b896;
+  --ft-card-overlay: rgba(0,0,0,0.12);
+  --ft-text: #221f1a;
+  --ft-text-muted: #4a3a20;
+  --ft-text-faint: #5a4a30;
+  --ft-border: rgba(90,69,48,0.55);
+  --ft-border-soft: rgba(90,69,48,0.4);
+  --ft-sidebar-bg: rgba(58,42,8,0.12);
+  --ft-tree-bg: rgba(58,42,8,0.05);
+  --ft-member-bg: rgba(245,238,220,0.78);
+  --ft-member-bg-dead: rgba(10,10,10,0.55);
+  --ft-member-border: rgba(90,69,48,0.45);
+  --ft-member-text-dead: #666;
+  --ft-leader-name: #7a4a10;
+  --ft-input-bg: rgba(255,255,235,0.85);
+  --ft-btn-bg: rgba(168,134,92,0.18);
+  --ft-connector: #8a6429;
+  --ft-portrait-frame: #a8893a;
+  --ft-portrait-frame-dead: #3a3328;
+  --ft-portrait-empty: #2a2218;
+  --ft-portrait-empty-text: #bba874;
+  --ft-zoom-btn-bg: rgba(168,134,92,0.25);
+  --ft-zoom-btn-text: #3a2a08;
+  --ft-zoom-btn-border: rgba(90,69,48,0.4);
+}
+body.dark-mode {
+  --ft-card-bg: #1c1d1f;
+  --ft-card-overlay: rgba(0,0,0,0.55);
+  --ft-text: #e6e6e6;
+  --ft-text-muted: #b8b0a0;
+  --ft-text-faint: #9a948a;
+  --ft-border: rgba(220,166,74,0.35);
+  --ft-border-soft: rgba(220,166,74,0.22);
+  --ft-sidebar-bg: rgba(255,255,255,0.04);
+  --ft-tree-bg: rgba(255,255,255,0.02);
+  --ft-member-bg: rgba(40,42,44,0.85);
+  --ft-member-bg-dead: rgba(8,8,8,0.7);
+  --ft-member-border: rgba(220,166,74,0.25);
+  --ft-member-text-dead: #555;
+  --ft-leader-name: #dca64a;
+  --ft-input-bg: rgba(35,38,42,0.85);
+  --ft-btn-bg: rgba(220,166,74,0.18);
+  --ft-connector: #6a5a3a;
+  --ft-portrait-frame: #7a5e25;
+  --ft-portrait-frame-dead: #2a2620;
+  --ft-portrait-empty: #1a1a1a;
+  --ft-portrait-empty-text: #6a5e3a;
+  --ft-zoom-btn-bg: rgba(220,166,74,0.18);
+  --ft-zoom-btn-text: #e8d8b0;
+  --ft-zoom-btn-border: rgba(220,166,74,0.35);
+}
 body.dark-mode .tooltip { background: #111 !important; color: #eee !important; }
 body.dark-mode .zoom-controls .zoom-btn {
   background: rgba(35,39,43,0.86);
@@ -160,10 +218,75 @@ body.dark-mode .zoom-controls .zoom-btn {
 
 /* --- Dev toolbar button hover --- */
 .dev-btn {
-  transition: all 0.15s ease !important;
+  /* Spring-y cubic-bezier with overshoot — mimics macOS's NSAnimation
+     defaults. Background / color stay on the snappier linear curve so
+     the toggle colour-change doesn't ghost behind the transform. */
+  transition:
+    transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 220ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    filter 180ms ease !important;
+  will-change: transform, box-shadow;
 }
 .dev-btn:hover:not(:disabled) {
   filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+.dev-btn:active:not(:disabled) {
+  /* Press-in feedback — quick scale-down, no overshoot on the way down */
+  transform: scale(0.94) translateY(0);
+  transition:
+    transform 80ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 80ms ease,
+    background 80ms ease,
+    color 80ms ease,
+    border-color 80ms ease,
+    filter 80ms ease !important;
+}
+
+/* Dev button: active (on) state — animated breathing glow + a one-shot
+   wiggle the moment it flips on. The wiggle key is rebound every time
+   we mount the element with key={devMode} so the animation replays. */
+.dev-btn--active {
+  animation:
+    dev-btn-pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 1,
+    dev-btn-glow 2.4s ease-in-out infinite 520ms;
+}
+@keyframes dev-btn-pop {
+  /* macOS dock-style spring: snap up past the target, settle back */
+  0%   { transform: scale(1) rotate(0deg); }
+  35%  { transform: scale(1.22) rotate(-3deg); }
+  55%  { transform: scale(0.94) rotate(2deg); }
+  75%  { transform: scale(1.06) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes dev-btn-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0   rgba(232,160,48,0.0),
+      0 2px 8px rgba(232,160,48,0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 14px rgba(232,160,48,0.55),
+      0 2px 12px rgba(232,160,48,0.45);
+  }
+}
+
+/* Number inputs flagged .no-spin hide the up/down spinner arrows — the user
+   types the value rather than clicking increment/decrement. */
+.no-spin::-webkit-inner-spin-button,
+.no-spin::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+.no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* --- Search input focus glow --- */
@@ -324,6 +447,15 @@ body.dark-mode .zoom-controls .zoom-btn {
   animation: mac-progress-shimmer 600ms linear infinite;
 }
 
+/* Gentle blink while the version label is watching for updates in the bg. */
+.update-watch-pulse {
+  animation: update-watch-blink 1.4s ease-in-out infinite;
+}
+@keyframes update-watch-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 /* Respect users who've asked the OS to reduce motion. */
 @media (prefers-reduced-motion: reduce) {
   .faction-tile,
@@ -331,7 +463,8 @@ body.dark-mode .zoom-controls .zoom-btn {
   .map-mode-btn--active,
   .toast-item,
   .popover-pop-in,
-  .update-progress-strip {
+  .update-progress-strip,
+  .update-watch-pulse {
     animation: none !important;
   }
 }

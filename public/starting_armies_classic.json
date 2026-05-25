@@ -8,39 +8,7 @@
     }
   },
   "Megabaria": {
-    "garrison": [
-      {
-        "character": "sub faction kush",
-        "faction": "slave",
-        "x": 303,
-        "y": 4,
-        "units": [
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 303,
@@ -370,39 +338,7 @@
     }
   },
   "Mosyllia": {
-    "garrison": [
-      {
-        "character": "sub faction kush",
-        "faction": "slave",
-        "x": 414,
-        "y": 22,
-        "units": [
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 414,
@@ -410,39 +346,7 @@
     }
   },
   "Oponis": {
-    "garrison": [
-      {
-        "character": "sub faction kush",
-        "faction": "slave",
-        "x": 436,
-        "y": 24,
-        "units": [
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 436,
@@ -450,39 +354,7 @@
     }
   },
   "Mapharitis": {
-    "garrison": [
-      {
-        "character": "sub faction saba",
-        "faction": "slave",
-        "x": 374,
-        "y": 25,
-        "units": [
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 374,
@@ -602,39 +474,7 @@
     }
   },
   "Trogodytike": {
-    "garrison": [
-      {
-        "character": "sub faction kush",
-        "faction": "slave",
-        "x": 335,
-        "y": 33,
-        "units": [
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 335,
@@ -642,60 +482,7 @@
     }
   },
   "Homeritis": {
-    "garrison": [
-      {
-        "character": "sub faction himyar",
-        "faction": "slave",
-        "x": 376,
-        "y": 33,
-        "units": [
-          {
-            "name": "sabaean general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sabaean light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingArab",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 376,
@@ -703,39 +490,7 @@
     }
   },
   "Noubaia": {
-    "garrison": [
-      {
-        "character": "sub faction kush",
-        "faction": "slave",
-        "x": 286,
-        "y": 37,
-        "units": [
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kushite javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 286,
@@ -798,96 +553,7 @@
     }
   },
   "Kattabaneia": {
-    "garrison": [
-      {
-        "character": "sub faction qataban",
-        "faction": "slave",
-        "x": 384,
-        "y": 42,
-        "units": [
-          {
-            "name": "sabaean general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab warriors",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab warriors",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sabaean light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sabaean light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingArab",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 384,
@@ -1122,60 +788,7 @@
     }
   },
   "Qarnawu": {
-    "garrison": [
-      {
-        "character": "sub faction minaeans",
-        "faction": "slave",
-        "x": 376,
-        "y": 53,
-        "units": [
-          {
-            "name": "sabaean general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab warriors",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sabaean light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingArab",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 376,
@@ -1993,39 +1606,7 @@
     }
   },
   "Yathrib": {
-    "garrison": [
-      {
-        "character": "sub faction nabataea",
-        "faction": "slave",
-        "x": 320,
-        "y": 98,
-        "units": [
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 320,
@@ -2397,66 +1978,7 @@
     }
   },
   "Libya": {
-    "garrison": [
-      {
-        "character": "sub faction nasamones",
-        "faction": "slave",
-        "x": 196,
-        "y": 111,
-        "units": [
-          {
-            "name": "massylian royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 42,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingLibyan",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 196,
@@ -2464,66 +1986,7 @@
     }
   },
   "Lechienia": {
-    "garrison": [
-      {
-        "character": "sub faction lihyan",
-        "faction": "slave",
-        "x": 305,
-        "y": 111,
-        "units": [
-          {
-            "name": "nabataean general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "nabataean light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 26,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingArab",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 305,
@@ -2531,39 +1994,7 @@
     }
   },
   "Ammonia": {
-    "garrison": [
-      {
-        "character": "sub faction massylii",
-        "faction": "slave",
-        "x": 222,
-        "y": 113,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 222,
@@ -2571,39 +2002,7 @@
     }
   },
   "Phazania": {
-    "garrison": [
-      {
-        "character": "sub faction massylii",
-        "faction": "slave",
-        "x": 120,
-        "y": 118,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 120,
@@ -3688,39 +3087,7 @@
     }
   },
   "Katharrheia": {
-    "garrison": [
-      {
-        "character": "sub faction saba",
-        "faction": "slave",
-        "x": 392,
-        "y": 132,
-        "units": [
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 392,
@@ -4170,39 +3537,7 @@
     }
   },
   "Libanophoria": {
-    "garrison": [
-      {
-        "character": "sub faction saba",
-        "faction": "slave",
-        "x": 443,
-        "y": 138,
-        "units": [
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 443,
@@ -4210,39 +3545,7 @@
     }
   },
   "Gaetulia": {
-    "garrison": [
-      {
-        "character": "sub faction musulamii",
-        "faction": "slave",
-        "x": 8,
-        "y": 139,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 8,
@@ -4391,39 +3694,7 @@
     }
   },
   "Omanitis": {
-    "garrison": [
-      {
-        "character": "sub faction saba",
-        "faction": "slave",
-        "x": 418,
-        "y": 141,
-        "units": [
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 418,
@@ -4667,134 +3938,6 @@
   "Rabbat_Amman": {
     "garrison": [
       {
-        "character": "sub faction egypt",
-        "faction": "ptolemaic",
-        "x": 284,
-        "y": 145,
-        "units": [
-          {
-            "name": "ptolemaic cavalry of the court",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 70,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingEgyptian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 3
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 1
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 2
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 6
-          },
-          {
-            "name": "Selflessness",
-            "level": 2
-          },
-          {
-            "name": "Temperament",
-            "level": 4
-          },
-          {
-            "name": "Wealthy",
-            "level": 1
-          },
-          {
-            "name": "BadCommander",
-            "level": 1
-          },
-          {
-            "name": "BadTrader",
-            "level": 2
-          },
-          {
-            "name": "Unjust",
-            "level": 1
-          },
-          {
-            "name": "HarshJustice",
-            "level": 1
-          },
-          {
-            "name": "Miserly",
-            "level": 1
-          },
-          {
-            "name": "Ugly",
-            "level": 3
-          },
-          {
-            "name": "Infertile",
-            "level": 3
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 1
-          },
-          {
-            "name": "Cheapskate",
-            "level": 2
-          },
-          {
-            "name": "Hypochondriac",
-            "level": 2
-          },
-          {
-            "name": "Rabblerouser",
-            "level": 1
-          },
-          {
-            "name": "HighPersonalSecurity",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 7
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      },
-      {
         "character": "Diagoras",
         "faction": "ptolemaic",
         "x": 284,
@@ -4844,39 +3987,7 @@
     }
   },
   "Auseia": {
-    "garrison": [
-      {
-        "character": "sub faction musulamii",
-        "faction": "slave",
-        "x": 118,
-        "y": 149,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 118,
@@ -4884,39 +3995,7 @@
     }
   },
   "Aouranitis": {
-    "garrison": [
-      {
-        "character": "sub faction nabataea",
-        "faction": "slave",
-        "x": 286,
-        "y": 149,
-        "units": [
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 286,
@@ -5450,39 +4529,7 @@
     }
   },
   "Hekatompyle": {
-    "garrison": [
-      {
-        "character": "sub faction massylii",
-        "faction": "slave",
-        "x": 115,
-        "y": 156,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 115,
@@ -5605,89 +4652,7 @@
     }
   },
   "Orchoe": {
-    "garrison": [
-      {
-        "character": "sub faction parni",
-        "faction": "seleucid",
-        "x": 343,
-        "y": 157,
-        "units": [
-          {
-            "name": "seleucid general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 24,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingMesopotamian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodBuilder",
-            "level": 1
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "HarshJustice",
-            "level": 1
-          },
-          {
-            "name": "Authoritarian",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "Sobriety",
-            "level": 1
-          },
-          {
-            "name": "Miserly",
-            "level": 1
-          },
-          {
-            "name": "BoringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "AssassinMaster",
-            "level": 3
-          },
-          {
-            "name": "LogisticalSkill",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [
-          "drillmaster",
-          "decorated_hero"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 343,
@@ -5760,162 +4725,7 @@
     }
   },
   "Kydoniatis": {
-    "garrison": [
-      {
-        "character": "sub faction kydonia",
-        "faction": "slave",
-        "x": 209,
-        "y": 158,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kretan hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kretan hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kretan hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kydonian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kydonian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "cretan slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "cretan slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 65,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDorian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Kydonia",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "RhetoricSkill",
-            "level": 1
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 2
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 2
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "KindRuler",
-            "level": 2
-          },
-          {
-            "name": "Upright",
-            "level": 2
-          },
-          {
-            "name": "Coward",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "PhlegmHumour",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 4
-          },
-          {
-            "name": "Wealthy",
-            "level": 2
-          },
-          {
-            "name": "VictorOthersVirtue",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 6
-          }
-        ],
-        "ancillaries": [
-          "mercenary_captain"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 209,
@@ -6370,39 +5180,7 @@
     }
   },
   "Numidia_Occidentalis": {
-    "garrison": [
-      {
-        "character": "sub faction massylii",
-        "faction": "slave",
-        "x": 75,
-        "y": 159,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 75,
@@ -6935,39 +5713,7 @@
     }
   },
   "Auzica": {
-    "garrison": [
-      {
-        "character": "sub faction massylii",
-        "faction": "slave",
-        "x": 90,
-        "y": 164,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 90,
@@ -6975,39 +5721,7 @@
     }
   },
   "Kirtan": {
-    "garrison": [
-      {
-        "character": "sub faction massylii",
-        "faction": "slave",
-        "x": 106,
-        "y": 164,
-        "units": [
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "numidian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 106,
@@ -7192,98 +5906,7 @@
     }
   },
   "Arwad": {
-    "garrison": [
-      {
-        "character": "sub faction carthage",
-        "faction": "seleucid",
-        "x": 278,
-        "y": 164,
-        "units": [
-          {
-            "name": "seleucid general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian light spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 33,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingPhoenician",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodTrader",
-            "level": 1
-          },
-          {
-            "name": "Xenophilia",
-            "level": 1
-          },
-          {
-            "name": "InspiringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 1
-          },
-          {
-            "name": "PublicFaith",
-            "level": 2
-          },
-          {
-            "name": "Philhellene",
-            "level": 1
-          },
-          {
-            "name": "MathematicsSkill",
-            "level": 2
-          },
-          {
-            "name": "LogisticalSkill",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 3
-          }
-        ],
-        "ancillaries": [
-          "merchant"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 278,
@@ -7850,78 +6473,7 @@
     }
   },
   "Palmyrene": {
-    "garrison": [
-      {
-        "character": "sub faction palmyra",
-        "faction": "slave",
-        "x": 293,
-        "y": 166,
-        "units": [
-          {
-            "name": "nabataean general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab warriors",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab warriors",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "arab skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "nabataean light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "nabataean light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingArab",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 293,
@@ -9288,124 +7840,7 @@
     }
   },
   "Akragas": {
-    "garrison": [
-      {
-        "character": "sub faction acragas",
-        "faction": "slave",
-        "x": 147,
-        "y": 169,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sicel thureophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sicel peltophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sicel peltophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 55,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDorian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Acragas",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 1
-          },
-          {
-            "name": "RhetoricSkill",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 1
-          },
-          {
-            "name": "Disciplinarian",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "FearsSyracuse",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 147,
@@ -9669,39 +8104,7 @@
     }
   },
   "Sikelia": {
-    "garrison": [
-      {
-        "character": "sub faction italics",
-        "faction": "slave",
-        "x": 151,
-        "y": 170,
-        "units": [
-          {
-            "name": "sicel peltophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sicel peltophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sicel peltophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 151,
@@ -10483,130 +8886,7 @@
     }
   },
   "Argolis": {
-    "garrison": [
-      {
-        "character": "sub faction argos",
-        "faction": "slave",
-        "x": 200,
-        "y": 172,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "argive epilektoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 45,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDorian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Argos",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 4
-          },
-          {
-            "name": "GoodFarmer",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "Scholarly",
-            "level": 2
-          },
-          {
-            "name": "DramasFanGreekVice",
-            "level": 1
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "Superstitious",
-            "level": 2
-          },
-          {
-            "name": "Wealthy",
-            "level": 2
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 1
-          },
-          {
-            "name": "Interested_Humanities",
-            "level": 2
-          },
-          {
-            "name": "Greed",
-            "level": 2
-          },
-          {
-            "name": "HarshRuler",
-            "level": 1
-          },
-          {
-            "name": "Embezzler",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 200,
@@ -11080,122 +9360,7 @@
     }
   },
   "Elis": {
-    "garrison": [
-      {
-        "character": "sub faction elis",
-        "faction": "slave",
-        "x": 192,
-        "y": 174,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "elian hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 39,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingNorthwestGreek",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Elis",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 2
-          },
-          {
-            "name": "GoodCommander",
-            "level": 1
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 3
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 4
-          },
-          {
-            "name": "GoodInfantryGeneral",
-            "level": 1
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 2
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 5
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 5
-          },
-          {
-            "name": "Energetic",
-            "level": 2
-          },
-          {
-            "name": "Greek_Aristocrat",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 6
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 3
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 192,
@@ -11203,90 +9368,7 @@
     }
   },
   "Mamertina": {
-    "garrison": [
-      {
-        "character": "sub faction mamertines",
-        "faction": "slave",
-        "x": 158,
-        "y": 175,
-        "units": [
-          {
-            "name": "tribunus militum",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "campanian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "samnite hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "samnite hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 43,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingItalic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Superstitious",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 2
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 158,
@@ -11294,39 +9376,7 @@
     }
   },
   "Rhegion": {
-    "garrison": [
-      {
-        "character": "sub faction italics",
-        "faction": "slave",
-        "x": 160,
-        "y": 175,
-        "units": [
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 43,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [
       {
         "character": "Gnaeus Cornelius Scipio",
@@ -12590,39 +10640,7 @@
     }
   },
   "Isauria": {
-    "garrison": [
-      {
-        "character": "sub faction selge",
-        "faction": "slave",
-        "x": 254,
-        "y": 177,
-        "units": [
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 31,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 254,
@@ -12774,178 +10792,7 @@
     }
   },
   "Pisidia": {
-    "garrison": [
-      {
-        "character": "sub faction seleucid",
-        "faction": "slave",
-        "x": 244,
-        "y": 178,
-        "units": [
-          {
-            "name": "seleucid general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor pisidian javelinmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor phrygian spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek peltasts",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 44,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingPisidian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 4
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 2
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "Temperament",
-            "level": 4
-          },
-          {
-            "name": "Selflessness",
-            "level": 4
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 2
-          },
-          {
-            "name": "VictorOthersVirtue",
-            "level": 2
-          },
-          {
-            "name": "Ugly",
-            "level": 2
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 1
-          },
-          {
-            "name": "StrategicSkill",
-            "level": 1
-          },
-          {
-            "name": "Fertile",
-            "level": 2
-          },
-          {
-            "name": "GoodRiskyAttacker",
-            "level": 1
-          },
-          {
-            "name": "Superstitious",
-            "level": 2
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "PublicFaith",
-            "level": 1
-          },
-          {
-            "name": "BadDefender",
-            "level": 1
-          },
-          {
-            "name": "Upright",
-            "level": 1
-          },
-          {
-            "name": "Prim",
-            "level": 2
-          },
-          {
-            "name": "Girls",
-            "level": 1
-          },
-          {
-            "name": "Despoiler",
-            "level": 1
-          },
-          {
-            "name": "PublicFaith",
-            "level": 2
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 1
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 3
-          },
-          {
-            "name": "BoringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [
-          "priest_of_Zeus"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 244,
@@ -13180,54 +11027,7 @@
     }
   },
   "Bastetania": {
-    "garrison": [
-      {
-        "character": "sub faction basti",
-        "faction": "slave",
-        "x": 54,
-        "y": 179,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 28,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIberian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 54,
@@ -15107,54 +12907,7 @@
     }
   },
   "Oretania": {
-    "garrison": [
-      {
-        "character": "sub faction oretani",
-        "faction": "slave",
-        "x": 50,
-        "y": 185,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "iberian heavy swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "iberian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 37,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIberian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 50,
@@ -16236,72 +13989,7 @@
     }
   },
   "Iliensia": {
-    "garrison": [
-      {
-        "character": "sub faction sardinians",
-        "faction": "slave",
-        "x": 122,
-        "y": 188,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "iberian heavy swordsmen",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "merc sardinian archers",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "merc sardinian archers",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "merc sardinian archers",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIberian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 122,
@@ -16732,96 +14420,7 @@
     }
   },
   "Taras": {
-    "garrison": [
-      {
-        "character": "sub faction epirus",
-        "faction": "roman_rebels_1",
-        "x": 168,
-        "y": 191,
-        "units": [
-          {
-            "name": "tribunus militum",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor italiote hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 53,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingEpirote",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Corrupt",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 2
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 1
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 3
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 168,
@@ -16829,100 +14428,7 @@
     }
   },
   "Pessinountis": {
-    "garrison": [
-      {
-        "character": "sub faction galatians",
-        "faction": "seleucid",
-        "x": 247,
-        "y": 191,
-        "units": [
-          {
-            "name": "seleucid general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor phrygian spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor phrygian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 60,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 2
-          },
-          {
-            "name": "TacticalSkill",
-            "level": 1
-          },
-          {
-            "name": "Xenophilia",
-            "level": 1
-          },
-          {
-            "name": "Just",
-            "level": 1
-          },
-          {
-            "name": "LogisticalSkill",
-            "level": 1
-          },
-          {
-            "name": "Austere",
-            "level": 1
-          },
-          {
-            "name": "InspiringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "BadAdministrator",
-            "level": 1
-          },
-          {
-            "name": "Scout",
-            "level": 1
-          },
-          {
-            "name": "Generous",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 6
-          }
-        ],
-        "ancillaries": [
-          "priest_of_Demeter"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 247,
@@ -16930,60 +14436,7 @@
     }
   },
   "Calabria": {
-    "garrison": [
-      {
-        "character": "sub faction messapians",
-        "faction": "slave",
-        "x": 172,
-        "y": 192,
-        "units": [
-          {
-            "name": "tribunus militum",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "samnite hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "samnite hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingItalic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 172,
@@ -17322,54 +14775,7 @@
     }
   },
   "Celticia": {
-    "garrison": [
-      {
-        "character": "sub faction celtici",
-        "faction": "slave",
-        "x": 27,
-        "y": 193,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 27,
@@ -17878,45 +15284,7 @@
     }
   },
   "Gylakeia": {
-    "garrison": [
-      {
-        "character": "sub faction greeks",
-        "faction": "slave",
-        "x": 180,
-        "y": 194,
-        "units": [
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 40,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 180,
@@ -18970,54 +16338,7 @@
     }
   },
   "Carpetania": {
-    "garrison": [
-      {
-        "character": "sub faction carpetani",
-        "faction": "slave",
-        "x": 50,
-        "y": 197,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "iberian heavy swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 57,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 50,
@@ -19025,182 +16346,7 @@
     }
   },
   "Kianos_Kolpos": {
-    "garrison": [
-      {
-        "character": "sub faction cius",
-        "faction": "slave",
-        "x": 233,
-        "y": 197,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "kian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 52,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Kios",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 1
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "Coward",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "Selflessness",
-            "level": 2
-          },
-          {
-            "name": "Temperament",
-            "level": 3
-          },
-          {
-            "name": "Wealthy",
-            "level": 1
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 3
-          },
-          {
-            "name": "GoodTrader",
-            "level": 2
-          },
-          {
-            "name": "Epicurean",
-            "level": 2
-          },
-          {
-            "name": "Aesthetic",
-            "level": 2
-          },
-          {
-            "name": "Scholarly",
-            "level": 2
-          },
-          {
-            "name": "Gambling",
-            "level": 1
-          },
-          {
-            "name": "IanR",
-            "level": 2
-          },
-          {
-            "name": "AssassinCatcher",
-            "level": 1
-          },
-          {
-            "name": "Paranoia",
-            "level": 2
-          },
-          {
-            "name": "ArchitectSkill",
-            "level": 1
-          },
-          {
-            "name": "Pompous",
-            "level": 1
-          },
-          {
-            "name": "Unknown",
-            "level": 2
-          },
-          {
-            "name": "Ugly",
-            "level": 1
-          },
-          {
-            "name": "BadRiskyAttacker",
-            "level": 2
-          },
-          {
-            "name": "Superstitious",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [
-          "merchant"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 233,
@@ -19358,39 +16504,7 @@
     }
   },
   "Tagia": {
-    "garrison": [
-      {
-        "character": "sub faction lusitani",
-        "faction": "slave",
-        "x": 20,
-        "y": 198,
-        "units": [
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 20,
@@ -19614,39 +16728,7 @@
     }
   },
   "Kappadoxia": {
-    "garrison": [
-      {
-        "character": "sub faction pontus",
-        "faction": "slave",
-        "x": 262,
-        "y": 198,
-        "units": [
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 34,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 262,
@@ -20981,39 +18063,7 @@
     }
   },
   "Cessetania": {
-    "garrison": [
-      {
-        "character": "sub faction lacetani",
-        "faction": "slave",
-        "x": 81,
-        "y": 202,
-        "units": [
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 81,
@@ -21447,184 +18497,7 @@
     }
   },
   "Paphlagonia": {
-    "garrison": [
-      {
-        "character": "sub faction paphlagonia",
-        "faction": "slave",
-        "x": 257,
-        "y": 203,
-        "units": [
-          {
-            "name": "paphlagonian general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "paphlagonian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "paphlagonian levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "paphlagonian levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "paphlagonian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "paphlagonian cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 45,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingPaphlagonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Gangra",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "Pylaimenian",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "Disciplinarian",
-            "level": 2
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 5
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 3
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 3
-          },
-          {
-            "name": "Selflessness",
-            "level": 2
-          },
-          {
-            "name": "Temperament",
-            "level": 3
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 2
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 2
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "GoodSiegeAttacker",
-            "level": 2
-          },
-          {
-            "name": "LogisticalSkill",
-            "level": 1
-          },
-          {
-            "name": "GoodTrader",
-            "level": 1
-          },
-          {
-            "name": "Austere",
-            "level": 1
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "Upright",
-            "level": 1
-          },
-          {
-            "name": "PublicFaith",
-            "level": 2
-          },
-          {
-            "name": "BoringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "GloriousFool",
-            "level": 2
-          },
-          {
-            "name": "Just",
-            "level": 2
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 3
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 257,
@@ -21632,66 +18505,7 @@
     }
   },
   "Mikra_Armenia": {
-    "garrison": [
-      {
-        "character": "sub faction armenia minor",
-        "faction": "slave",
-        "x": 288,
-        "y": 203,
-        "units": [
-          {
-            "name": "armenian royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caucasian hillmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "armenian heavy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "persian foot archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "armenian horse archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingArmenian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 288,
@@ -21699,150 +18513,7 @@
     }
   },
   "Labeataia": {
-    "garrison": [
-      {
-        "character": "sub faction labeatae",
-        "faction": "slave",
-        "x": 180,
-        "y": 204,
-        "units": [
-          {
-            "name": "illyrian warlords bodyguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "labeataean light infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "labeataean light infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "southern illyrian axemen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 26,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIllyrian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Labeatai",
-            "level": 1
-          },
-          {
-            "name": "TribalAssigned",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "HatesDardania",
-            "level": 1
-          },
-          {
-            "name": "FearsAntigonid",
-            "level": 2
-          },
-          {
-            "name": "Wealthy",
-            "level": 1
-          },
-          {
-            "name": "GoodBuilder",
-            "level": 2
-          },
-          {
-            "name": "Generous",
-            "level": 2
-          },
-          {
-            "name": "Paranoia",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "Energetic",
-            "level": 2
-          },
-          {
-            "name": "StrategicSkill",
-            "level": 2
-          },
-          {
-            "name": "GoodCavalryGeneral",
-            "level": 1
-          },
-          {
-            "name": "Energetic",
-            "level": 2
-          },
-          {
-            "name": "Just",
-            "level": 2
-          },
-          {
-            "name": "Pious",
-            "level": 2
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "Selflessness",
-            "level": 5
-          },
-          {
-            "name": "Temperament",
-            "level": 3
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [
-          "illyrian_snake"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 180,
@@ -22103,103 +18774,7 @@
     }
   },
   "Hieratikos_Pontos": {
-    "garrison": [
-      {
-        "character": "sub faction odrysians",
-        "faction": "pontus",
-        "x": 273,
-        "y": 204,
-        "units": [
-          {
-            "name": "cappadocian general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "cappadocian levy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 44,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingThracian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Komana_Pontos",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "PublicFaith",
-            "level": 2
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "Miserly",
-            "level": 1
-          },
-          {
-            "name": "Sobriety",
-            "level": 1
-          },
-          {
-            "name": "GoodTrader",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 1
-          },
-          {
-            "name": "NightBattleCapable",
-            "level": 1
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 3
-          },
-          {
-            "name": "HarshJustice",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [
-          "priest_of_Apollo",
-          "drillmaster"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [
       {
         "character": "Ariobarzanes",
@@ -22450,54 +19025,7 @@
     }
   },
   "Bellia": {
-    "garrison": [
-      {
-        "character": "sub faction belli",
-        "faction": "slave",
-        "x": 66,
-        "y": 205,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIberian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 66,
@@ -22602,45 +19130,7 @@
     }
   },
   "Anatolike_Bessike": {
-    "garrison": [
-      {
-        "character": "sub faction odrysians",
-        "faction": "slave",
-        "x": 208,
-        "y": 205,
-        "units": [
-          {
-            "name": "thracian royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thracian longspearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thracian longspearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thracian longspearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 65,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 208,
@@ -22985,49 +19475,7 @@
     }
   },
   "Corsica": {
-    "garrison": [
-      {
-        "character": "sub faction sardinians",
-        "faction": "slave",
-        "x": 124,
-        "y": 206,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "leader",
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 124,
@@ -23260,39 +19708,7 @@
     }
   },
   "Helmantike": {
-    "garrison": [
-      {
-        "character": "sub faction vettones",
-        "faction": "slave",
-        "x": 44,
-        "y": 207,
-        "units": [
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 44,
@@ -23300,131 +19716,7 @@
     }
   },
   "Emporitia": {
-    "garrison": [
-      {
-        "character": "sub faction emporion",
-        "faction": "slave",
-        "x": 92,
-        "y": 207,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "emporionite hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "emporionite hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 38,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Emporion",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "GoodBuilder",
-            "level": 1
-          },
-          {
-            "name": "Pious",
-            "level": 2
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 2
-          },
-          {
-            "name": "Fertile",
-            "level": 2
-          },
-          {
-            "name": "Handsome",
-            "level": 2
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 4
-          },
-          {
-            "name": "InspiringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "BeingGreek",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 3
-          }
-        ],
-        "ancillaries": [
-          "merchant",
-          "judge"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 92,
@@ -23854,54 +20146,7 @@
     }
   },
   "Picenum": {
-    "garrison": [
-      {
-        "character": "sub faction picentes",
-        "faction": "slave",
-        "x": 148,
-        "y": 209,
-        "units": [
-          {
-            "name": "tribunus militum",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "samnite hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingItalic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 148,
@@ -23909,116 +20154,7 @@
     }
   },
   "Antheia": {
-    "garrison": [
-      {
-        "character": "sub faction pentapolis",
-        "faction": "slave",
-        "x": 224,
-        "y": 209,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek peltasts",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "xystophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 23,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Apollonia_Pontos",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodTrader",
-            "level": 3
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 2
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 6
-          },
-          {
-            "name": "Wealthy",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 5
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 5
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "RhetoricSkill",
-            "level": 3
-          },
-          {
-            "name": "PoeticSkill",
-            "level": 2
-          },
-          {
-            "name": "Rabblerouser",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 224,
@@ -24236,39 +20372,7 @@
     }
   },
   "Serdia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 200,
-        "y": 210,
-        "units": [
-          {
-            "name": "galato-thracian warband",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "galato-thracian warband",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "galato-thracian warband",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [
       {
         "character": "Rhabokentos",
@@ -24390,39 +20494,7 @@
     }
   },
   "Saramene": {
-    "garrison": [
-      {
-        "character": "sub faction greeks",
-        "faction": "slave",
-        "x": 271,
-        "y": 210,
-        "units": [
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 37,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 271,
@@ -24539,54 +20611,7 @@
     }
   },
   "Vaccaea": {
-    "garrison": [
-      {
-        "character": "sub faction vaccaei",
-        "faction": "slave",
-        "x": 51,
-        "y": 213,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "iberian heavy swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 55,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 51,
@@ -25035,172 +21060,7 @@
     }
   },
   "Hellenike_Makronia": {
-    "garrison": [
-      {
-        "character": "sub faction trapezus",
-        "faction": "slave",
-        "x": 289,
-        "y": 213,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek peltasts",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 45,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Trapezous",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "Miserly",
-            "level": 1
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 2
-          },
-          {
-            "name": "Fertile",
-            "level": 2
-          },
-          {
-            "name": "Pious",
-            "level": 1
-          },
-          {
-            "name": "Xenophilia",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 5
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 2
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 4
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 8
-          },
-          {
-            "name": "Selflessness",
-            "level": 4
-          },
-          {
-            "name": "Temperament",
-            "level": 4
-          },
-          {
-            "name": "Wealthy",
-            "level": 1
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 2
-          },
-          {
-            "name": "VictorOthersVirtue",
-            "level": 1
-          },
-          {
-            "name": "Fertile",
-            "level": 1
-          },
-          {
-            "name": "Energetic",
-            "level": 1
-          },
-          {
-            "name": "Scout",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "Anger",
-            "level": 1
-          },
-          {
-            "name": "Just",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 2
-          },
-          {
-            "name": "IndecisiveAttacker",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [
-          "merchant"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 289,
@@ -25208,114 +21068,7 @@
     }
   },
   "Hyrkania": {
-    "garrison": [
-      {
-        "character": "sub faction parni",
-        "faction": "seleucid",
-        "x": 376,
-        "y": 213,
-        "units": [
-          {
-            "name": "seleucid general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 1
-          }
-        ],
-        "age": 30,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIranian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Xenophilia",
-            "level": 3
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "DeceiverVirtue",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 4
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 3
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 3
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "Temperament",
-            "level": 3
-          },
-          {
-            "name": "Selflessness",
-            "level": 3
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "Andragoras_Biography",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 3
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 376,
@@ -25566,134 +21319,7 @@
     }
   },
   "Epetia-Salonitis": {
-    "garrison": [
-      {
-        "character": "sub faction issa",
-        "faction": "slave",
-        "x": 163,
-        "y": 214,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "issaian hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "issaian epibatai",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 55,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDorian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Salona",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "InspiringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "Greek_Aristocrat",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "Aesthetic",
-            "level": 1
-          },
-          {
-            "name": "Authoritarian",
-            "level": 1
-          },
-          {
-            "name": "Noctophilia",
-            "level": 1
-          },
-          {
-            "name": "Hypochondriac",
-            "level": 1
-          },
-          {
-            "name": "Disciplinarian",
-            "level": 2
-          },
-          {
-            "name": "Pious",
-            "level": 2
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 4
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 163,
@@ -25861,171 +21487,7 @@
     }
   },
   "Sinopeia": {
-    "garrison": [
-      {
-        "character": "sub faction sinope",
-        "faction": "slave",
-        "x": 263,
-        "y": 214,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sinopian epilektoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sinopian epibatai",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sinopian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 45,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Sinope",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "NaturalMilitarySkill",
-            "level": 1
-          },
-          {
-            "name": "Pious",
-            "level": 2
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "GoodBuilder",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 5
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 2
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 4
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "Selflessness",
-            "level": 3
-          },
-          {
-            "name": "Temperament",
-            "level": 4
-          },
-          {
-            "name": "Wealthy",
-            "level": 2
-          },
-          {
-            "name": "VictorOthersVirtue",
-            "level": 1
-          },
-          {
-            "name": "BattleScarred",
-            "level": 2
-          },
-          {
-            "name": "PhlegmHumour",
-            "level": 1
-          },
-          {
-            "name": "KindRuler",
-            "level": 2
-          },
-          {
-            "name": "Just",
-            "level": 2
-          },
-          {
-            "name": "BadFarmer",
-            "level": 2
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 3
-          },
-          {
-            "name": "StrategicSkill",
-            "level": 1
-          },
-          {
-            "name": "GoodCavalryGeneral",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 1
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 1
-          },
-          {
-            "name": "IndecisiveAttacker",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [
-          "poet",
-          "merchant"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 263,
@@ -26193,39 +21655,7 @@
     }
   },
   "Bracarensia": {
-    "garrison": [
-      {
-        "character": "sub faction gallaeci",
-        "faction": "slave",
-        "x": 31,
-        "y": 215,
-        "units": [
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 31,
@@ -26233,39 +21663,7 @@
     }
   },
   "Elysicea": {
-    "garrison": [
-      {
-        "character": "sub faction lacetani",
-        "faction": "slave",
-        "x": 92,
-        "y": 215,
-        "units": [
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 92,
@@ -26750,54 +22148,7 @@
     }
   },
   "Vasconia": {
-    "garrison": [
-      {
-        "character": "sub faction vascones",
-        "faction": "slave",
-        "x": 68,
-        "y": 216,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 42,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 68,
@@ -26805,39 +22156,7 @@
     }
   },
   "Moesia": {
-    "garrison": [
-      {
-        "character": "sub faction odrysians",
-        "faction": "slave",
-        "x": 197,
-        "y": 216,
-        "units": [
-          {
-            "name": "thracian longspearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thracian longspearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thracian longspearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 21,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 197,
@@ -26900,39 +22219,7 @@
     }
   },
   "Autariataia": {
-    "garrison": [
-      {
-        "character": "sub faction illyrian kingdom",
-        "faction": "slave",
-        "x": 181,
-        "y": 217,
-        "units": [
-          {
-            "name": "illyrian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "illyrian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "illyrian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 36,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 181,
@@ -27535,39 +22822,7 @@
     }
   },
   "Kaspiane": {
-    "garrison": [
-      {
-        "character": "sub faction albanians",
-        "faction": "slave",
-        "x": 338,
-        "y": 218,
-        "units": [
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 338,
@@ -28065,54 +23320,7 @@
     }
   },
   "Asturia": {
-    "garrison": [
-      {
-        "character": "sub faction astures",
-        "faction": "slave",
-        "x": 46,
-        "y": 220,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 40,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 46,
@@ -28249,140 +23457,7 @@
     }
   },
   "Kallatisia": {
-    "garrison": [
-      {
-        "character": "sub faction pentapolis",
-        "faction": "slave",
-        "x": 226,
-        "y": 220,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 35,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDorian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Kallatis",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "Fertile",
-            "level": 2
-          },
-          {
-            "name": "KindRuler",
-            "level": 2
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "RhetoricSkill",
-            "level": 2
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 2
-          },
-          {
-            "name": "GoodTrader",
-            "level": 2
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 5
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 4
-          },
-          {
-            "name": "Selflessness",
-            "level": 5
-          },
-          {
-            "name": "Temperament",
-            "level": 5
-          },
-          {
-            "name": "Intelligent",
-            "level": 2
-          },
-          {
-            "name": "Wealthy",
-            "level": 2
-          },
-          {
-            "name": "VictorOthersVirtue",
-            "level": 1
-          },
-          {
-            "name": "Rabblerouser",
-            "level": 4
-          },
-          {
-            "name": "Epicurean",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 3
-          }
-        ],
-        "ancillaries": [
-          "merchant"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 226,
@@ -28494,39 +23569,7 @@
     }
   },
   "Vocontia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 108,
-        "y": 221,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 108,
@@ -28534,39 +23577,7 @@
     }
   },
   "Genuatea": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 124,
-        "y": 221,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 124,
@@ -28875,146 +23886,7 @@
     }
   },
   "Histria": {
-    "garrison": [
-      {
-        "character": "sub faction histri",
-        "faction": "slave",
-        "x": 150,
-        "y": 223,
-        "units": [
-          {
-            "name": "northern illyrian general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "northern illyrian spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "histri swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "iapodian skirmisher cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 50,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingVenetic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Histri",
-            "level": 1
-          },
-          {
-            "name": "TribalAssigned",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 4
-          },
-          {
-            "name": "Factionleader",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 2
-          },
-          {
-            "name": "GoodFarmer",
-            "level": 1
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 2
-          },
-          {
-            "name": "InspiringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 3
-          },
-          {
-            "name": "Just",
-            "level": 2
-          },
-          {
-            "name": "Warlord",
-            "level": 2
-          },
-          {
-            "name": "GoodCommander",
-            "level": 1
-          },
-          {
-            "name": "BattleScarred",
-            "level": 1
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 2
-          },
-          {
-            "name": "Handsome",
-            "level": 1
-          },
-          {
-            "name": "Fertile",
-            "level": 3
-          },
-          {
-            "name": "LivestockHerds",
-            "level": 3
-          },
-          {
-            "name": "Dalmatian_Carrot",
-            "level": 1
-          },
-          {
-            "name": "GoodRaider",
-            "level": 2
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [
-          "merchant"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 150,
@@ -29345,39 +24217,7 @@
     }
   },
   "Taurinia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 118,
-        "y": 226,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 118,
@@ -29385,156 +24225,7 @@
     }
   },
   "Halmyris": {
-    "garrison": [
-      {
-        "character": "sub faction histria",
-        "faction": "slave",
-        "x": 226,
-        "y": 226,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "istrian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "istrian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 58,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Istrie",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodBuilder",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 3
-          },
-          {
-            "name": "GoodDefender",
-            "level": 2
-          },
-          {
-            "name": "Rabblerouser",
-            "level": 2
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 5
-          },
-          {
-            "name": "CounterSpy",
-            "level": 1
-          },
-          {
-            "name": "HarshJustice",
-            "level": 2
-          },
-          {
-            "name": "Selflessness",
-            "level": 4
-          },
-          {
-            "name": "Temperament",
-            "level": 5
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 2
-          },
-          {
-            "name": "Epicurean",
-            "level": 1
-          },
-          {
-            "name": "DramasFanGreekVice",
-            "level": 2
-          },
-          {
-            "name": "Wealthy",
-            "level": 3
-          },
-          {
-            "name": "Generous",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [
-          "merchant"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 226,
@@ -29542,39 +24233,7 @@
     }
   },
   "Kolchis": {
-    "garrison": [
-      {
-        "character": "sub faction albanians",
-        "faction": "slave",
-        "x": 304,
-        "y": 226,
-        "units": [
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 304,
@@ -29710,60 +24369,7 @@
     }
   },
   "Albania": {
-    "garrison": [
-      {
-        "character": "sub faction albanians",
-        "faction": "slave",
-        "x": 331,
-        "y": 226,
-        "units": [
-          {
-            "name": "armenian royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caucasian hillmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "asian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 66,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingArmenian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 331,
@@ -29771,39 +24377,7 @@
     }
   },
   "Savia": {
-    "garrison": [
-      {
-        "character": "sub faction illyrian kingdom",
-        "faction": "slave",
-        "x": 162,
-        "y": 227,
-        "units": [
-          {
-            "name": "illyrian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "illyrian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "illyrian slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 29,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 162,
@@ -30075,60 +24649,7 @@
     }
   },
   "Durania": {
-    "garrison": [
-      {
-        "character": "sub faction cadurci",
-        "faction": "slave",
-        "x": 87,
-        "y": 229,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 87,
@@ -30136,39 +24657,7 @@
     }
   },
   "Cenomania": {
-    "garrison": [
-      {
-        "character": "sub faction cenomani",
-        "faction": "slave",
-        "x": 131,
-        "y": 229,
-        "units": [
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 131,
@@ -30176,39 +24665,7 @@
     }
   },
   "Koraxia": {
-    "garrison": [
-      {
-        "character": "sub faction greeks",
-        "faction": "slave",
-        "x": 291,
-        "y": 229,
-        "units": [
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 31,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 291,
@@ -30314,160 +24771,7 @@
     }
   },
   "Mikra_Chersonesos": {
-    "garrison": [
-      {
-        "character": "sub faction chersonesus",
-        "faction": "slave",
-        "x": 250,
-        "y": 231,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "chersonesian hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "chersonesian hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 67,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDorian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Chersonesos",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "GoodDefender",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 1
-          },
-          {
-            "name": "GoodBuilder",
-            "level": 1
-          },
-          {
-            "name": "Generous",
-            "level": 1
-          },
-          {
-            "name": "Upright",
-            "level": 2
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 4
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 4
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 5
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 8
-          },
-          {
-            "name": "Rabblerouser",
-            "level": 2
-          },
-          {
-            "name": "Selflessness",
-            "level": 4
-          },
-          {
-            "name": "Temperament",
-            "level": 5
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "LenientJustice",
-            "level": 1
-          },
-          {
-            "name": "Pious",
-            "level": 2
-          },
-          {
-            "name": "Disciplinarian",
-            "level": 1
-          },
-          {
-            "name": "DramasFanGreekVice",
-            "level": 2
-          },
-          {
-            "name": "Wealthy",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 6
-          }
-        ],
-        "ancillaries": [
-          "philosopher"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 250,
@@ -30594,39 +24898,7 @@
     }
   },
   "Lepontia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 121,
-        "y": 233,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 121,
@@ -31234,39 +25506,7 @@
     }
   },
   "Isarcia-Brixentia": {
-    "garrison": [
-      {
-        "character": "sub faction cenomani",
-        "faction": "slave",
-        "x": 138,
-        "y": 236,
-        "units": [
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 138,
@@ -31274,64 +25514,7 @@
     }
   },
   "Noricum": {
-    "garrison": [
-      {
-        "character": "sub faction norici",
-        "faction": "slave",
-        "x": 152,
-        "y": 237,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 152,
@@ -31500,45 +25683,7 @@
     }
   },
   "Napocaea": {
-    "garrison": [
-      {
-        "character": "sub faction getae",
-        "faction": "slave",
-        "x": 198,
-        "y": 239,
-        "units": [
-          {
-            "name": "getic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 198,
@@ -31546,39 +25691,7 @@
     }
   },
   "Tyrasia": {
-    "garrison": [
-      {
-        "character": "sub faction greeks",
-        "faction": "slave",
-        "x": 231,
-        "y": 239,
-        "units": [
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 56,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 231,
@@ -32298,45 +26411,7 @@
     }
   },
   "Dacia": {
-    "garrison": [
-      {
-        "character": "sub faction getae",
-        "faction": "slave",
-        "x": 189,
-        "y": 241,
-        "units": [
-          {
-            "name": "getic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 189,
@@ -32401,39 +26476,7 @@
     }
   },
   "Pictonia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 82,
-        "y": 242,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 82,
@@ -32621,60 +26664,7 @@
     }
   },
   "Sequania": {
-    "garrison": [
-      {
-        "character": "sub faction sequani",
-        "faction": "slave",
-        "x": 111,
-        "y": 243,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 21,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 111,
@@ -32682,70 +26672,7 @@
     }
   },
   "Eraviscia": {
-    "garrison": [
-      {
-        "character": "sub faction eravisci",
-        "faction": "slave",
-        "x": 175,
-        "y": 243,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scordiscian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 175,
@@ -32870,60 +26797,7 @@
     }
   },
   "Biturigia": {
-    "garrison": [
-      {
-        "character": "sub faction bituriges",
-        "faction": "slave",
-        "x": 93,
-        "y": 244,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 27,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 93,
@@ -33133,45 +27007,7 @@
     }
   },
   "Carsia": {
-    "garrison": [
-      {
-        "character": "sub faction getae",
-        "faction": "slave",
-        "x": 217,
-        "y": 245,
-        "units": [
-          {
-            "name": "getic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 217,
@@ -33434,39 +27270,7 @@
     }
   },
   "Lingonia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 108,
-        "y": 247,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 108,
@@ -33889,60 +27693,7 @@
     }
   },
   "Senonia": {
-    "garrison": [
-      {
-        "character": "sub faction senones",
-        "faction": "slave",
-        "x": 98,
-        "y": 251,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 98,
@@ -33950,60 +27701,7 @@
     }
   },
   "Rucinatea": {
-    "garrison": [
-      {
-        "character": "sub faction vindelici",
-        "faction": "slave",
-        "x": 138,
-        "y": 251,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 138,
@@ -34011,39 +27709,7 @@
     }
   },
   "Cenomania-Aulercia": {
-    "garrison": [
-      {
-        "character": "sub faction volcae",
-        "faction": "slave",
-        "x": 84,
-        "y": 252,
-        "units": [
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 84,
@@ -34051,39 +27717,7 @@
     }
   },
   "Borysthenes": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 252,
-        "y": 252,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 252,
@@ -34377,39 +28011,7 @@
     }
   },
   "Cotinia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 172,
-        "y": 254,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 172,
@@ -34417,39 +28019,7 @@
     }
   },
   "Alazonia": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 230,
-        "y": 254,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 230,
@@ -34504,39 +28074,7 @@
     }
   },
   "Tanaitis": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 275,
-        "y": 256,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 39,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 275,
@@ -34666,39 +28204,7 @@
     }
   },
   "Remia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 102,
-        "y": 258,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 102,
@@ -34706,39 +28212,7 @@
     }
   },
   "Anatolike_Chorasmene": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 417,
-        "y": 258,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 417,
@@ -35066,66 +28540,7 @@
     }
   },
   "Chorasmene": {
-    "garrison": [
-      {
-        "character": "sub faction chorasmia",
-        "faction": "slave",
-        "x": 393,
-        "y": 263,
-        "units": [
-          {
-            "name": "armoured sarmatian general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sarmatian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian axemen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingScythian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 393,
@@ -35285,66 +28700,7 @@
     }
   },
   "Aorsia": {
-    "garrison": [
-      {
-        "character": "sub faction aorsia",
-        "faction": "slave",
-        "x": 287,
-        "y": 265,
-        "units": [
-          {
-            "name": "armoured sarmatian general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "sarmatian archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian axemen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingScythian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [
       {
         "character": "Abaikos",
@@ -35535,60 +28891,7 @@
     }
   },
   "Nervia": {
-    "garrison": [
-      {
-        "character": "sub faction cadurci",
-        "faction": "slave",
-        "x": 103,
-        "y": 266,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 63,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 6
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 103,
@@ -35596,54 +28899,7 @@
     }
   },
   "Ubia_Vetus": {
-    "garrison": [
-      {
-        "character": "sub faction ubii",
-        "faction": "slave",
-        "x": 125,
-        "y": 267,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 125,
@@ -35651,72 +28907,7 @@
     }
   },
   "Eburonia": {
-    "garrison": [
-      {
-        "character": "sub faction eburones",
-        "faction": "slave",
-        "x": 111,
-        "y": 269,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "gallic light cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 64,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 111,
@@ -35724,39 +28915,7 @@
     }
   },
   "Menapia": {
-    "garrison": [
-      {
-        "character": "sub faction arverni",
-        "faction": "slave",
-        "x": 97,
-        "y": 271,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 97,
@@ -35764,60 +28923,7 @@
     }
   },
   "Marcomannia_Vetus": {
-    "garrison": [
-      {
-        "character": "sub faction marcomanni",
-        "faction": "slave",
-        "x": 151,
-        "y": 271,
-        "units": [
-          {
-            "name": "bodyguard frameae sword",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "outsider skirmisher rabble",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingGermanic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 151,
@@ -35853,54 +28959,7 @@
     }
   },
   "Dumnonia": {
-    "garrison": [
-      {
-        "character": "sub faction dumnonii",
-        "faction": "slave",
-        "x": 64,
-        "y": 273,
-        "units": [
-          {
-            "name": "brittonic bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 64,
@@ -35908,54 +28967,7 @@
     }
   },
   "Durotrigia": {
-    "garrison": [
-      {
-        "character": "sub faction durotriges",
-        "faction": "slave",
-        "x": 75,
-        "y": 274,
-        "units": [
-          {
-            "name": "brittonic bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic heavy spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 75,
@@ -37076,54 +30088,7 @@
     }
   },
   "Catuvellaunia": {
-    "garrison": [
-      {
-        "character": "sub faction catuvellauni",
-        "faction": "slave",
-        "x": 85,
-        "y": 280,
-        "units": [
-          {
-            "name": "brittonic bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 85,
@@ -37131,72 +30096,7 @@
     }
   },
   "Trinobantia": {
-    "garrison": [
-      {
-        "character": "sub faction trinovantes",
-        "faction": "slave",
-        "x": 91,
-        "y": 280,
-        "units": [
-          {
-            "name": "brittonic bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 50,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 1
-          },
-          {
-            "name": "Austere",
-            "level": 2
-          },
-          {
-            "name": "PublicFaith",
-            "level": 2
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [
-          "druid"
-        ],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 91,
@@ -37302,39 +30202,7 @@
     }
   },
   "Tsatsene": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 434,
-        "y": 282,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 434,
@@ -37342,54 +30210,7 @@
     }
   },
   "Frisia": {
-    "garrison": [
-      {
-        "character": "sub faction frisii",
-        "faction": "slave",
-        "x": 109,
-        "y": 283,
-        "units": [
-          {
-            "name": "gallic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "celtic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 46,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 109,
@@ -37397,66 +30218,7 @@
     }
   },
   "Langobardia": {
-    "garrison": [
-      {
-        "character": "sub faction langobardi",
-        "faction": "slave",
-        "x": 136,
-        "y": 287,
-        "units": [
-          {
-            "name": "bodyguard frameae sword",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen hundred",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "outsider skirmisher rabble",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 56,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingGermanic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 136,
@@ -37464,60 +30226,7 @@
     }
   },
   "Chaucia": {
-    "garrison": [
-      {
-        "character": "sub faction chauci",
-        "faction": "slave",
-        "x": 128,
-        "y": 288,
-        "units": [
-          {
-            "name": "bodyguard frameae sword",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "outsider skirmisher rabble",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 26,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingGermanic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 128,
@@ -37733,54 +30442,7 @@
     }
   },
   "Ordovicia": {
-    "garrison": [
-      {
-        "character": "sub faction ordovices",
-        "faction": "slave",
-        "x": 69,
-        "y": 291,
-        "units": [
-          {
-            "name": "brittonic bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic spearmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 69,
@@ -37788,39 +30450,7 @@
     }
   },
   "Avionia": {
-    "garrison": [
-      {
-        "character": "sub faction suebi",
-        "faction": "slave",
-        "x": 133,
-        "y": 294,
-        "units": [
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 133,
@@ -37828,39 +30458,7 @@
     }
   },
   "Kasiane": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 471,
-        "y": 294,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 471,
@@ -37972,39 +30570,7 @@
     }
   },
   "Aestia": {
-    "garrison": [
-      {
-        "character": "sub faction suebi",
-        "faction": "slave",
-        "x": 180,
-        "y": 297,
-        "units": [
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 180,
@@ -38012,39 +30578,7 @@
     }
   },
   "Eblania": {
-    "garrison": [
-      {
-        "character": "sub faction trinovantes",
-        "faction": "slave",
-        "x": 61,
-        "y": 298,
-        "units": [
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 61,
@@ -38052,39 +30586,7 @@
     }
   },
   "Hillevionia": {
-    "garrison": [
-      {
-        "character": "sub faction suebi",
-        "faction": "slave",
-        "x": 147,
-        "y": 302,
-        "units": [
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 147,
@@ -38092,39 +30594,7 @@
     }
   },
   "Talatsia": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 440,
-        "y": 302,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 440,
@@ -38132,39 +30602,7 @@
     }
   },
   "Magnatia": {
-    "garrison": [
-      {
-        "character": "sub faction trinovantes",
-        "faction": "slave",
-        "x": 53,
-        "y": 305,
-        "units": [
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 53,
@@ -38282,39 +30720,7 @@
     }
   },
   "Massagetaia": {
-    "garrison": [
-      {
-        "character": "sub faction siraces",
-        "faction": "slave",
-        "x": 363,
-        "y": 306,
-        "units": [
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "scythian medium cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 363,
@@ -38322,39 +30728,7 @@
     }
   },
   "Otadinia": {
-    "garrison": [
-      {
-        "character": "sub faction trinovantes",
-        "faction": "slave",
-        "x": 80,
-        "y": 310,
-        "units": [
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "brittonic skirmishers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 80,
@@ -39024,39 +31398,7 @@
     }
   },
   "Rugia": {
-    "garrison": [
-      {
-        "character": "sub faction suebi",
-        "faction": "slave",
-        "x": 120,
-        "y": 329,
-        "units": [
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 120,
@@ -39064,39 +31406,7 @@
     }
   },
   "Finnia": {
-    "garrison": [
-      {
-        "character": "sub faction suebi",
-        "faction": "slave",
-        "x": 195,
-        "y": 334,
-        "units": [
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen vanguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 195,
@@ -39104,138 +31414,11 @@
     }
   },
   "Suionia": {
-    "garrison": [
-      {
-        "character": "sub faction suebi",
-        "faction": "slave",
-        "x": 165,
-        "y": 335,
-        "units": [
-          {
-            "name": "celtic swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "outsider skirmisher rabble",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "freemen cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [],
     "settlement": {
       "x": 165,
       "y": 335
     }
-  },
-  "Sargetiaea": {
-    "garrison": [],
-    "field": [
-      {
-        "character": "sub faction getae",
-        "faction": "slave",
-        "x": 196,
-        "y": 231,
-        "units": [
-          {
-            "name": "getic royal bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "getic archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 20,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
-    "settlement": null
-  },
-  "Contestania": {
-    "garrison": [],
-    "field": [
-      {
-        "character": "sub faction ilici",
-        "faction": "slave",
-        "x": 66,
-        "y": 187,
-        "units": [
-          {
-            "name": "celtiberian noble bodyguards",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "caetrati cavalry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "iberian heavy swordsmen",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 36,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIberian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
-    "settlement": null
   }
 }

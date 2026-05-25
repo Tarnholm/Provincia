@@ -134,6 +134,95 @@ function parseDescrStratFactionWealth(text) {
   return out;
 }
 
+// 0.9.536: starting diplomacy from descr_strat `faction_relationships`
+// lines: `faction_relationships <from>, <value> <to>`. Value encodes the
+// stance: <=199 ally, 200 neutral, >=201 war. This is the only NAMED
+// pairwise diplomacy available — the live save stores relation classes but
+// NOT the partner faction (verified uncrackable 2026-05-22). Starting-state
+// only; won't reflect mid-campaign changes. Returns
+// { fromFaction: [{ to, kind }] } with kind in {"ally","war"} (neutral
+// pairs are dropped as noise — neutral is the default).
+function parseDescrStratFactionRelationships(text) {
+  const out = {};
+  const add = (a, b, kind) => {
+    if (!out[a]) out[a] = [];
+    if (!out[a].some((e) => e.to === b)) out[a].push({ to: b, kind });
+  };
+  for (const raw of text.split(/\r?\n/)) {
+    const m = raw.match(/^\s*faction_relationships\s+([a-z0-9_]+),?\s+(\d+)\s+([a-z0-9_]+)/i);
+    if (!m) continue;
+    const from = m[1].toLowerCase();
+    const value = parseInt(m[2], 10);
+    const to = m[3].toLowerCase();
+    if (to === "slave" || from === to) continue; // global rebel-war / self — skip
+    const kind = value <= 199 ? "ally" : (value === 200 ? "neutral" : "war");
+    if (kind === "neutral") continue;
+    // 0.9.538: store the relationship on BOTH parties. descr_strat usually
+    // declares a pair only from one side (e.g. "antigonid, 201 romans_julii"
+    // appears under antigonid but not romans_julii). Without the reverse,
+    // romans_julii / carthage / etc. had no entry and the region Diplomacy
+    // widget showed nothing for them. A relationship is symmetric, so the
+    // target faction gets the mirrored entry too.
+    add(from, to, kind);
+    add(to, from, kind);
+  }
+  return out;
+}
+
+// 0.9.543: starting diplomacy declared in the CAMPAIGN SCRIPT (not
+// descr_strat). RIS sets protectorates and some war/alliance stances via
+// `console_command become_protector <protector> <protectorate>` and
+// `console_command diplomatic_stance <a> <b> <war|allied>`. descr_strat even
+// notes "Protectorate set with Scripting". Without this, factions whose only
+// starting relations are scripted (e.g. romans_julii's 6 Italian
+// protectorates) showed nothing. Skips commented (`;`) lines. Returns the
+// same { factionId: [{ to, kind }] } shape (kinds: protects / protected_by /
+// war / ally), merged into the descr_strat relations by the bundler.
+function parseCampaignScriptDiplomacy(text) {
+  const out = {};
+  const add = (a, b, kind) => {
+    if (a === b) return;
+    if (!out[a]) out[a] = [];
+    if (!out[a].some((e) => e.to === b && e.kind === kind)) out[a].push({ to: b, kind });
+  };
+  for (const raw of text.split(/\r?\n/)) {
+    const s = raw.trim();
+    if (!s || s.startsWith(";")) continue;
+    let m = s.match(/^console_command\s+become_protector\s+([a-z0-9_]+)\s+([a-z0-9_]+)/i);
+    if (m) {
+      const a = m[1].toLowerCase(), b = m[2].toLowerCase();
+      add(a, b, "protects");       // a is the protector of b
+      add(b, a, "protected_by");   // b is a's protectorate
+      continue;
+    }
+    m = s.match(/^console_command\s+diplomatic_stance\s+([a-z0-9_]+)\s+([a-z0-9_]+)\s+([a-z_]+)/i);
+    if (m) {
+      const a = m[1].toLowerCase(), b = m[2].toLowerCase(), st = m[3].toLowerCase();
+      const kind = st === "war" ? "war" : ((st === "allied" || st === "alliance") ? "ally" : null);
+      if (kind) { add(a, b, kind); add(b, a, kind); }
+      continue;
+    }
+  }
+  return out;
+}
+
+// Merge two { faction: [{to,kind}] } relation maps (descr_strat + script),
+// de-duplicating by (to, kind). Script protectorates take precedence in
+// ordering (pushed first) since they're the more notable relationship.
+function mergeFactionRelationships(...maps) {
+  const out = {};
+  for (const m of maps) {
+    if (!m) continue;
+    for (const f of Object.keys(m)) {
+      if (!out[f]) out[f] = [];
+      for (const e of m[f]) {
+        if (!out[f].some((x) => x.to === e.to && x.kind === e.kind)) out[f].push(e);
+      }
+    }
+  }
+  return out;
+}
+
 function parseDescrStratBuildings(text) {
   const lines = text.split(/\r?\n/);
   let startIdx = 0;
@@ -184,8 +273,16 @@ function parseDescrStratBuildings(text) {
   return factions;
 }
 
-// Parse resource lines from descr_strat.txt → { regionName: [{ type, amount, x, y }] }
+// Parse resource lines from descr_strat.txt → { regionName: [{ type, amount, x, y, category }] }
 // mapHeight is used to flip Y from strat coords (origin bottom) to TGA coords (origin top)
+//
+// Categories follow RIS's `;;;; HEADER ;;;;` sub-section markers in the
+// resources block (see project memo on RIS resource organization):
+//   - default (before any header)            → "trade"   (regular tradeable goods)
+//   - after `;;;; SLAVE RESOURCES ;;;;`      → "slave"   (raw slaves commodity)
+//   - after `;;;; AMBIENCE ;;;;`             → "ambience" (aqueducts, shipwrecks — decorative)
+// Vanilla descr_strats without these headers just produce all-"trade" output,
+// which matches prior behaviour.
 function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
   let pixelLookup = null;
   if (tgaBuf && regionsMap) {
@@ -212,8 +309,20 @@ function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
   }
 
   const result = {};
+  let category = "trade";
   for (const line of text.split(/\r?\n/)) {
     const s = line.trim();
+    // Section-header switch. Comment lines like `;;;; SLAVE RESOURCES ;;;;`
+    // or `;;;; AMBIENCE ;;;;` reset the active category for everything that
+    // follows (including commented-out `;resource` lines we would otherwise
+    // skip — those don't actually emit entries, but the header still flips
+    // state). Match defensively on the words rather than exact punctuation.
+    if (s.startsWith(";")) {
+      const up = s.toUpperCase();
+      if (/\bSLAVE\s+RESOURCES?\b/.test(up)) category = "slave";
+      else if (/\bAMBIENCE\b/.test(up)) category = "ambience";
+      continue;
+    }
     if (!s.startsWith("resource")) continue;
     const m = s.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
     if (!m) continue;
@@ -230,7 +339,7 @@ function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
     }
     if (!region) continue;
     if (!result[region]) result[region] = [];
-    result[region].push({ type, amount, x, y });
+    result[region].push({ type, amount, x, y, category });
   }
   return result;
 }
@@ -387,4 +496,7 @@ export {
   parseDescrStratResources,
   parseDescrStratArmies,
   parseDescrStratFactionWealth,
+  parseDescrStratFactionRelationships,
+  parseCampaignScriptDiplomacy,
+  mergeFactionRelationships,
 };

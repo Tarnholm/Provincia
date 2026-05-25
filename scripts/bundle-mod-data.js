@@ -18,7 +18,7 @@ const path = require("path");
 // parsers.js is ESM (consumed by src/App.js via Vite). Load it via dynamic
 // import from this CJS script. The load is async, so the whole pipeline runs
 // inside an async main() at the bottom of this file.
-let parseDescrRegions, parseDescrStratFactions, parseDescrStratBuildings, parseDescrStratResources, parseDescrStratFactionWealth;
+let parseDescrRegions, parseDescrStratFactions, parseDescrStratBuildings, parseDescrStratResources, parseDescrStratFactionWealth, parseDescrStratFactionRelationships, parseCampaignScriptDiplomacy, mergeFactionRelationships;
 async function loadParsers() {
   const mod = await import("../src/parsers.js");
   parseDescrRegions = mod.parseDescrRegions;
@@ -26,6 +26,30 @@ async function loadParsers() {
   parseDescrStratBuildings = mod.parseDescrStratBuildings;
   parseDescrStratResources = mod.parseDescrStratResources;
   parseDescrStratFactionWealth = mod.parseDescrStratFactionWealth;
+  parseDescrStratFactionRelationships = mod.parseDescrStratFactionRelationships;
+  parseCampaignScriptDiplomacy = mod.parseCampaignScriptDiplomacy;
+  mergeFactionRelationships = mod.mergeFactionRelationships;
+}
+
+// Find the campaign script in a campaign dir (RIS_Campaign_Script.txt,
+// campaign_script.txt, etc.) — any *.txt whose name contains "script" and
+// whose content uses `console_command`. Returns its text, or "".
+function readCampaignScript(campaign) {
+  const dirs = [campaign.stratDir, campaign.baseDir].filter(Boolean);
+  for (const dir of dirs) {
+    let entries = [];
+    try { entries = fs.readdirSync(dir); } catch { continue; }
+    const candidates = entries.filter((f) => /\.txt$/i.test(f) && /script/i.test(f));
+    // prefer names containing "campaign"
+    candidates.sort((a, b) => (/campaign/i.test(b) ? 1 : 0) - (/campaign/i.test(a) ? 1 : 0));
+    for (const f of candidates) {
+      try {
+        const t = fs.readFileSync(path.join(dir, f), "utf8");
+        if (/console_command/i.test(t)) { log(`campaign script: ${f}`); return t; }
+      } catch {}
+    }
+  }
+  return "";
 }
 
 const MOD_ROOT = process.env.RIS_MOD_ROOT || "C:\\RIS\\RIS";
@@ -337,6 +361,21 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
       if (!coord) { current = null; prevComment = ""; continue; }
       const sx = parseInt(coord[1]), sy = parseInt(coord[2]);
       const name = rest.split(",")[0].trim().replace(/_/g, " ");
+      // 0.9.506: skip `character sub_faction <id>` lines. RIS's descr_strat
+      // uses this form to mark sub-faction territories — the line has no
+      // real character name, the engine assigns one at runtime (Omanes,
+      // etc.). Treating it as a character produced "sub faction parni" in
+      // the Smyrna garrison's character popup. With the line skipped, the
+      // army goes through the army-without-character path and the live
+      // save's commander uuid resolution surfaces the real name when a
+      // save is loaded; in starting mode, the garrison just shows the
+      // unit cards without a synthetic name.
+      if (/^sub[ _]faction\b/i.test(name)) {
+        console.log(`[bundle] skipped sub_faction marker at ${prevComment.trim() || `(${sx},${sy})`}`);
+        current = null;
+        prevComment = "";
+        continue;
+      }
       const [ac, snapX, snapY] = armyClass(rest, prevComment, sx, sy, getPixel);
       const loc = prevComment.startsWith(";") ? prevComment.replace(/^;/, "").trim() : "";
       // descr_strat header tags: parse `age N`, leader/heir flags, and the
@@ -480,6 +519,12 @@ function run() {
 
     const wealth = parseDescrStratFactionWealth(stratText);
     writeJson(`faction_wealth_${c.suffix}.json`, wealth);
+
+    const stratRelationships = parseDescrStratFactionRelationships(stratText);
+    const scriptText = readCampaignScript(c);
+    const scriptRelationships = scriptText ? parseCampaignScriptDiplomacy(scriptText) : null;
+    const relationships = mergeFactionRelationships(scriptRelationships, stratRelationships);
+    writeJson(`faction_relationships_${c.suffix}.json`, relationships);
 
     const stratBuildings = parseDescrStratBuildings(stratText);
     writeJson(`descr_strat_buildings_${c.suffix}.json`, stratBuildings);

@@ -1,0 +1,1160 @@
+{
+  "romans_julii": [
+    {
+      "to": "volsinii",
+      "kind": "protects"
+    },
+    {
+      "to": "capua",
+      "kind": "protects"
+    },
+    {
+      "to": "samnites",
+      "kind": "protects"
+    },
+    {
+      "to": "lucanians",
+      "kind": "protects"
+    },
+    {
+      "to": "bruttians",
+      "kind": "protects"
+    },
+    {
+      "to": "taras",
+      "kind": "protects"
+    }
+  ],
+  "volsinii": [
+    {
+      "to": "romans_julii",
+      "kind": "protected_by"
+    }
+  ],
+  "capua": [
+    {
+      "to": "romans_julii",
+      "kind": "protected_by"
+    }
+  ],
+  "samnites": [
+    {
+      "to": "romans_julii",
+      "kind": "protected_by"
+    }
+  ],
+  "lucanians": [
+    {
+      "to": "romans_julii",
+      "kind": "protected_by"
+    }
+  ],
+  "bruttians": [
+    {
+      "to": "romans_julii",
+      "kind": "protected_by"
+    }
+  ],
+  "taras": [
+    {
+      "to": "romans_julii",
+      "kind": "protected_by"
+    }
+  ],
+  "carthage": [
+    {
+      "to": "gades",
+      "kind": "protects"
+    }
+  ],
+  "gades": [
+    {
+      "to": "carthage",
+      "kind": "protected_by"
+    }
+  ],
+  "antigonid": [
+    {
+      "to": "argos",
+      "kind": "protects"
+    },
+    {
+      "to": "megalopolis",
+      "kind": "protects"
+    },
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "knossos",
+      "kind": "ally"
+    },
+    {
+      "to": "messene",
+      "kind": "ally"
+    },
+    {
+      "to": "cabyle",
+      "kind": "ally"
+    },
+    {
+      "to": "epirus",
+      "kind": "war"
+    },
+    {
+      "to": "galatians",
+      "kind": "war"
+    }
+  ],
+  "argos": [
+    {
+      "to": "antigonid",
+      "kind": "protected_by"
+    }
+  ],
+  "megalopolis": [
+    {
+      "to": "antigonid",
+      "kind": "protected_by"
+    }
+  ],
+  "seleucid": [
+    {
+      "to": "lysiad",
+      "kind": "protects"
+    },
+    {
+      "to": "arados",
+      "kind": "protects"
+    },
+    {
+      "to": "characene",
+      "kind": "protects"
+    },
+    {
+      "to": "persis",
+      "kind": "protects"
+    },
+    {
+      "to": "seleucid_rebels2",
+      "kind": "war"
+    },
+    {
+      "to": "seleucid_rebels",
+      "kind": "war"
+    },
+    {
+      "to": "antigonid",
+      "kind": "ally"
+    },
+    {
+      "to": "pergamon",
+      "kind": "ally"
+    },
+    {
+      "to": "cappadocia",
+      "kind": "ally"
+    },
+    {
+      "to": "bactria",
+      "kind": "ally"
+    },
+    {
+      "to": "armenia",
+      "kind": "ally"
+    },
+    {
+      "to": "cyrene",
+      "kind": "ally"
+    },
+    {
+      "to": "odrysians",
+      "kind": "ally"
+    },
+    {
+      "to": "priene",
+      "kind": "ally"
+    },
+    {
+      "to": "cyzicus",
+      "kind": "ally"
+    },
+    {
+      "to": "paphlagonia",
+      "kind": "ally"
+    },
+    {
+      "to": "bithynia",
+      "kind": "war"
+    }
+  ],
+  "lysiad": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "arados": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "characene": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "persis": [
+    {
+      "to": "seleucid",
+      "kind": "protected_by"
+    }
+  ],
+  "ptolemaic": [
+    {
+      "to": "tyre",
+      "kind": "protects"
+    },
+    {
+      "to": "sidon",
+      "kind": "protects"
+    },
+    {
+      "to": "egypt",
+      "kind": "war"
+    },
+    {
+      "to": "achaea",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "bithynia",
+      "kind": "ally"
+    },
+    {
+      "to": "nabataea",
+      "kind": "ally"
+    },
+    {
+      "to": "miletus",
+      "kind": "ally"
+    },
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "lyttos",
+      "kind": "ally"
+    },
+    {
+      "to": "sparta",
+      "kind": "ally"
+    },
+    {
+      "to": "chios",
+      "kind": "ally"
+    },
+    {
+      "to": "elis",
+      "kind": "ally"
+    },
+    {
+      "to": "cyrene",
+      "kind": "war"
+    },
+    {
+      "to": "kush",
+      "kind": "war"
+    },
+    {
+      "to": "ptolemaic_rebels",
+      "kind": "war"
+    }
+  ],
+  "tyre": [
+    {
+      "to": "ptolemaic",
+      "kind": "protected_by"
+    }
+  ],
+  "sidon": [
+    {
+      "to": "ptolemaic",
+      "kind": "protected_by"
+    }
+  ],
+  "qataban": [
+    {
+      "to": "himyar",
+      "kind": "protects"
+    }
+  ],
+  "himyar": [
+    {
+      "to": "qataban",
+      "kind": "protected_by"
+    }
+  ],
+  "egypt": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    }
+  ],
+  "seleucid_rebels2": [
+    {
+      "to": "seleucid",
+      "kind": "war"
+    }
+  ],
+  "seleucid_rebels": [
+    {
+      "to": "seleucid",
+      "kind": "war"
+    }
+  ],
+  "syracuse": [
+    {
+      "to": "issa",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "mamertines",
+      "kind": "war"
+    }
+  ],
+  "issa": [
+    {
+      "to": "syracuse",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    }
+  ],
+  "greeks": [
+    {
+      "to": "syracuse",
+      "kind": "ally"
+    },
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "epirus",
+      "kind": "ally"
+    },
+    {
+      "to": "sparta",
+      "kind": "ally"
+    },
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "achaea",
+      "kind": "ally"
+    },
+    {
+      "to": "massalia",
+      "kind": "ally"
+    },
+    {
+      "to": "issa",
+      "kind": "ally"
+    },
+    {
+      "to": "elis",
+      "kind": "ally"
+    },
+    {
+      "to": "lyttos",
+      "kind": "ally"
+    },
+    {
+      "to": "histria",
+      "kind": "ally"
+    },
+    {
+      "to": "illyrian_kingdom",
+      "kind": "war"
+    }
+  ],
+  "mamertines": [
+    {
+      "to": "syracuse",
+      "kind": "war"
+    }
+  ],
+  "knossos": [
+    {
+      "to": "antigonid",
+      "kind": "ally"
+    }
+  ],
+  "messene": [
+    {
+      "to": "antigonid",
+      "kind": "ally"
+    }
+  ],
+  "cabyle": [
+    {
+      "to": "antigonid",
+      "kind": "ally"
+    }
+  ],
+  "epirus": [
+    {
+      "to": "antigonid",
+      "kind": "war"
+    },
+    {
+      "to": "aetolia",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "acarnania",
+      "kind": "ally"
+    },
+    {
+      "to": "illyrian_kingdom",
+      "kind": "war"
+    }
+  ],
+  "galatians": [
+    {
+      "to": "antigonid",
+      "kind": "war"
+    },
+    {
+      "to": "pergamon",
+      "kind": "war"
+    },
+    {
+      "to": "priene",
+      "kind": "war"
+    },
+    {
+      "to": "odrysians",
+      "kind": "war"
+    },
+    {
+      "to": "bithynia",
+      "kind": "ally"
+    },
+    {
+      "to": "tylis",
+      "kind": "ally"
+    }
+  ],
+  "achaea": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "sparta",
+      "kind": "ally"
+    },
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "elis",
+      "kind": "ally"
+    },
+    {
+      "to": "lyttos",
+      "kind": "ally"
+    }
+  ],
+  "bithynia": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "seleucid",
+      "kind": "war"
+    },
+    {
+      "to": "byzantium",
+      "kind": "ally"
+    },
+    {
+      "to": "cius",
+      "kind": "ally"
+    },
+    {
+      "to": "heraclea_pontica",
+      "kind": "ally"
+    },
+    {
+      "to": "galatians",
+      "kind": "ally"
+    }
+  ],
+  "nabataea": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    }
+  ],
+  "miletus": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "olbia",
+      "kind": "ally"
+    },
+    {
+      "to": "sinope",
+      "kind": "ally"
+    }
+  ],
+  "athens": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "sparta",
+      "kind": "ally"
+    },
+    {
+      "to": "boeotia",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "lyttos",
+      "kind": "ally"
+    },
+    {
+      "to": "sinope",
+      "kind": "ally"
+    },
+    {
+      "to": "miletus",
+      "kind": "ally"
+    },
+    {
+      "to": "achaea",
+      "kind": "ally"
+    },
+    {
+      "to": "elis",
+      "kind": "ally"
+    }
+  ],
+  "lyttos": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "sparta",
+      "kind": "ally"
+    },
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "achaea",
+      "kind": "ally"
+    },
+    {
+      "to": "elis",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    }
+  ],
+  "sparta": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "gortyn",
+      "kind": "ally"
+    },
+    {
+      "to": "lyttos",
+      "kind": "ally"
+    },
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "achaea",
+      "kind": "ally"
+    },
+    {
+      "to": "elis",
+      "kind": "ally"
+    }
+  ],
+  "chios": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    }
+  ],
+  "elis": [
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
+    },
+    {
+      "to": "sparta",
+      "kind": "ally"
+    },
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "achaea",
+      "kind": "ally"
+    },
+    {
+      "to": "aetolia",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "lyttos",
+      "kind": "ally"
+    }
+  ],
+  "cyrene": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    },
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "gortyn",
+      "kind": "ally"
+    }
+  ],
+  "kush": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    }
+  ],
+  "ptolemaic_rebels": [
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    }
+  ],
+  "pergamon": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "cyzicus",
+      "kind": "ally"
+    },
+    {
+      "to": "galatians",
+      "kind": "war"
+    }
+  ],
+  "cappadocia": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    }
+  ],
+  "bactria": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    }
+  ],
+  "armenia": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    }
+  ],
+  "odrysians": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "galatians",
+      "kind": "war"
+    },
+    {
+      "to": "tylis",
+      "kind": "war"
+    }
+  ],
+  "priene": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "galatians",
+      "kind": "war"
+    }
+  ],
+  "cyzicus": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "pergamon",
+      "kind": "ally"
+    }
+  ],
+  "paphlagonia": [
+    {
+      "to": "seleucid",
+      "kind": "ally"
+    }
+  ],
+  "aetolia": [
+    {
+      "to": "epirus",
+      "kind": "ally"
+    },
+    {
+      "to": "acarnania",
+      "kind": "ally"
+    },
+    {
+      "to": "elis",
+      "kind": "ally"
+    }
+  ],
+  "acarnania": [
+    {
+      "to": "epirus",
+      "kind": "ally"
+    },
+    {
+      "to": "aetolia",
+      "kind": "ally"
+    }
+  ],
+  "illyrian_kingdom": [
+    {
+      "to": "epirus",
+      "kind": "war"
+    },
+    {
+      "to": "greeks",
+      "kind": "war"
+    },
+    {
+      "to": "ardiaei",
+      "kind": "ally"
+    },
+    {
+      "to": "labeatae",
+      "kind": "ally"
+    }
+  ],
+  "gortyn": [
+    {
+      "to": "cyrene",
+      "kind": "ally"
+    },
+    {
+      "to": "sparta",
+      "kind": "ally"
+    }
+  ],
+  "bosporan": [
+    {
+      "to": "olbia",
+      "kind": "ally"
+    }
+  ],
+  "olbia": [
+    {
+      "to": "bosporan",
+      "kind": "ally"
+    },
+    {
+      "to": "pentapolis",
+      "kind": "ally"
+    },
+    {
+      "to": "histria",
+      "kind": "ally"
+    },
+    {
+      "to": "chersonesus",
+      "kind": "ally"
+    },
+    {
+      "to": "sinope",
+      "kind": "ally"
+    },
+    {
+      "to": "miletus",
+      "kind": "ally"
+    }
+  ],
+  "boeotia": [
+    {
+      "to": "athens",
+      "kind": "ally"
+    }
+  ],
+  "sinope": [
+    {
+      "to": "athens",
+      "kind": "ally"
+    },
+    {
+      "to": "rhodes",
+      "kind": "ally"
+    },
+    {
+      "to": "byzantium",
+      "kind": "ally"
+    },
+    {
+      "to": "olbia",
+      "kind": "ally"
+    },
+    {
+      "to": "miletus",
+      "kind": "ally"
+    },
+    {
+      "to": "heraclea_pontica",
+      "kind": "ally"
+    },
+    {
+      "to": "trapezus",
+      "kind": "ally"
+    }
+  ],
+  "rhodes": [
+    {
+      "to": "sinope",
+      "kind": "ally"
+    }
+  ],
+  "massalia": [
+    {
+      "to": "emporion",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    }
+  ],
+  "emporion": [
+    {
+      "to": "massalia",
+      "kind": "ally"
+    }
+  ],
+  "byzantium": [
+    {
+      "to": "cius",
+      "kind": "ally"
+    },
+    {
+      "to": "bithynia",
+      "kind": "ally"
+    },
+    {
+      "to": "heraclea_pontica",
+      "kind": "ally"
+    },
+    {
+      "to": "tylis",
+      "kind": "ally"
+    },
+    {
+      "to": "sinope",
+      "kind": "ally"
+    },
+    {
+      "to": "asti",
+      "kind": "ally"
+    }
+  ],
+  "cius": [
+    {
+      "to": "byzantium",
+      "kind": "ally"
+    },
+    {
+      "to": "bithynia",
+      "kind": "ally"
+    },
+    {
+      "to": "heraclea_pontica",
+      "kind": "ally"
+    }
+  ],
+  "heraclea_pontica": [
+    {
+      "to": "byzantium",
+      "kind": "ally"
+    },
+    {
+      "to": "chersonesus",
+      "kind": "ally"
+    },
+    {
+      "to": "cius",
+      "kind": "ally"
+    },
+    {
+      "to": "bithynia",
+      "kind": "ally"
+    },
+    {
+      "to": "sinope",
+      "kind": "ally"
+    }
+  ],
+  "tylis": [
+    {
+      "to": "byzantium",
+      "kind": "ally"
+    },
+    {
+      "to": "odrysians",
+      "kind": "war"
+    },
+    {
+      "to": "galatians",
+      "kind": "ally"
+    },
+    {
+      "to": "getae",
+      "kind": "war"
+    }
+  ],
+  "asti": [
+    {
+      "to": "byzantium",
+      "kind": "ally"
+    }
+  ],
+  "pentapolis": [
+    {
+      "to": "olbia",
+      "kind": "ally"
+    },
+    {
+      "to": "histria",
+      "kind": "ally"
+    },
+    {
+      "to": "getae",
+      "kind": "ally"
+    }
+  ],
+  "histria": [
+    {
+      "to": "pentapolis",
+      "kind": "ally"
+    },
+    {
+      "to": "olbia",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "getae",
+      "kind": "ally"
+    }
+  ],
+  "getae": [
+    {
+      "to": "pentapolis",
+      "kind": "ally"
+    },
+    {
+      "to": "tylis",
+      "kind": "war"
+    },
+    {
+      "to": "histria",
+      "kind": "ally"
+    }
+  ],
+  "chersonesus": [
+    {
+      "to": "olbia",
+      "kind": "ally"
+    },
+    {
+      "to": "heraclea_pontica",
+      "kind": "ally"
+    }
+  ],
+  "trapezus": [
+    {
+      "to": "sinope",
+      "kind": "ally"
+    }
+  ],
+  "ardiaei": [
+    {
+      "to": "illyrian_kingdom",
+      "kind": "ally"
+    },
+    {
+      "to": "labeatae",
+      "kind": "ally"
+    }
+  ],
+  "labeatae": [
+    {
+      "to": "ardiaei",
+      "kind": "ally"
+    },
+    {
+      "to": "illyrian_kingdom",
+      "kind": "ally"
+    }
+  ],
+  "liburni": [
+    {
+      "to": "iapodes",
+      "kind": "war"
+    }
+  ],
+  "iapodes": [
+    {
+      "to": "liburni",
+      "kind": "war"
+    }
+  ],
+  "scordisci": [
+    {
+      "to": "lugii",
+      "kind": "ally"
+    },
+    {
+      "to": "boii",
+      "kind": "ally"
+    }
+  ],
+  "lugii": [
+    {
+      "to": "scordisci",
+      "kind": "ally"
+    },
+    {
+      "to": "boii",
+      "kind": "ally"
+    }
+  ],
+  "boii": [
+    {
+      "to": "scordisci",
+      "kind": "ally"
+    },
+    {
+      "to": "lugii",
+      "kind": "ally"
+    },
+    {
+      "to": "insubres",
+      "kind": "ally"
+    }
+  ],
+  "insubres": [
+    {
+      "to": "boii",
+      "kind": "ally"
+    }
+  ],
+  "aedui": [
+    {
+      "to": "belgae",
+      "kind": "ally"
+    }
+  ],
+  "belgae": [
+    {
+      "to": "aedui",
+      "kind": "ally"
+    }
+  ],
+  "suebi": [
+    {
+      "to": "cimbri",
+      "kind": "ally"
+    }
+  ],
+  "cimbri": [
+    {
+      "to": "suebi",
+      "kind": "ally"
+    }
+  ]
+}

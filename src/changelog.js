@@ -8,6 +8,1423 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.616",
+    date: "2026-05-25",
+    items: [
+      { type: "feature", text: "**The Settlement Processor Suite is now built into Provincia.** A new **\"Scripts\"** button in the dev pill opens the full Suite — Pipeline, Editor, Master, and Compare — in its own window, no separate install. It bundles its own Python runtime (with Pillow), so nothing extra is needed on your machine, and it auto-loads whichever mod Provincia currently has open (no second folder picker). Run any of the 16 processing steps, edit scripts/config, and Save back to your mod. The standalone Suite app is superseded by this." },
+    ],
+  },
+  {
+    version: "0.9.615",
+    date: "2026-05-25",
+    items: [
+      { type: "feature", text: "**Faster victory-conditions editing: \"Clear all\" + click-to-add.** In Victory map mode (dev) with a faction selected, a plain left-click on a region now toggles it straight in/out of that faction's victory conditions — no right-click menu — so you can rapidly click region after region. A new **\"Clear all\"** button in the Victory panel empties the selected faction's hold-regions in one go. Both are fully Ctrl+Z-undoable." },
+      { type: "fix", text: "**Faction starting treasury now shows the real per-faction value — no fabricated defaults.** The Faction Wealth panel was reading stale bundled data (every faction looked like ~10,000). Starting denarii are now re-bundled from descr_strat at build time, and a faction with no treasury data shows \"—\" instead of a made-up 0." },
+    ],
+  },
+  {
+    version: "0.9.614",
+    date: "2026-05-25",
+    items: [
+      { type: "feature", text: "**One-click \"All Warring (600)\" preset for victory-target diplomacy.** In the diplomacy editor's Victory-targets panel, alongside the distance-based \"Split\", there's now a flat preset that sets every faction owning one of your victory-condition regions to Neutral attitude (200) + Warring aggression (600), one-way (you → them). It deliberately leaves the war/ally relationship state untouched — that's a per-faction modder decision. Automates the manual descr_strat / descr_win_conditions / descr_regions cross-reference workflow." },
+    ],
+  },
+  {
+    version: "0.9.613",
+    date: "2026-05-25",
+    items: [
+      { type: "fix", text: "**Diplomacy number fields no longer blank out when you click away.** A staged edit is kept as a small record internally, but the editor was reading that whole record back into the number box instead of just the number — so on blur the field rendered empty (the value was actually still staged, just invisible). The editor now unwraps the staged value correctly, so your typed number stays visible after you click out." },
+    ],
+  },
+  {
+    version: "0.9.612",
+    date: "2026-05-25",
+    items: [
+      { type: "improvement", text: "**Hovering a region in the right-hand list now highlights it on the map.** When you hover an entry in the \"Victory target regions\" / \"Selected Provinces\" list, that region's outline lights up in bright gold on the map (and the list row tints) so you can instantly see where it is — especially handy in victory-conditions map mode." },
+    ],
+  },
+  {
+    version: "0.9.611",
+    date: "2026-05-25",
+    items: [
+      { type: "fix", text: "**The diplomacy \"All numbers\" editor fields are now properly editable.** Each value field was fully controlled with an instant parse, so clearing it snapped back to 0 and you couldn't type a value manually. The fields now keep a local draft while you type — you can clear them, type partial/negative numbers, and the parsed value is staged live (with the final value committed, empty → 0, on blur or Enter)." },
+    ],
+  },
+  {
+    version: "0.9.610",
+    date: "2026-05-25",
+    items: [
+      { type: "feature", text: "**Backup + restore safety net for mod edits.** Every Apply now snapshots descr_strat (+ names.txt, descr_names_lookup, descr_win_conditions) to timestamped backups *before* writing. A new **\"Restore last backup\"** button in the Pending changes dialog rolls the files back to the snapshot from before your last Save — your undo for the whole batch. Keeps the newest 10 snapshots." },
+      { type: "improvement", text: "**Pre-Save validation.** The Pending changes dialog now flags likely-bad edits (an army left with 0 units, two Faction Leaders for one faction) before you Apply." },
+      { type: "improvement", text: "**Dev-tools cheatsheet.** A collapsible \"Dev tools\" panel (bottom-left, dev mode) lists the hidden gestures: drag to move generals, drag a garrison to relocate it, Shift+click to edit units, right-click a character to edit, Ctrl+Z to undo, double-click the version to auto-update." },
+    ],
+  },
+  {
+    version: "0.9.609",
+    date: "2026-05-24",
+    items: [
+      { type: "feature", text: "**Edit the units in any starting army or garrison — including leaderless ones.** Shift+click an army/garrison marker on the map (dev mode, starting view) to open a unit editor: remove units (×) and add any unit from the owning faction's full roster. Works for general-led armies, captains, AND leaderless `garrisoned_army` garrisons. Bodyguard units are protected from removal. On Save the army's unit lines are rewritten in descr_strat; staged + revertable + Ctrl+Z like every other edit." },
+    ],
+  },
+  {
+    version: "0.9.608",
+    date: "2026-05-24",
+    items: [
+      { type: "feature", text: "**Rename a starting general.** The right-click \"Edit starting general\" box now has a First-name field (alongside age + rank). On Save it renames the general everywhere in descr_strat — the `character` line AND any `relative`/family lines — keeping the surname, adds the new first name to names.txt + descr_names_lookup if it's not already there, and refuses a rename that would duplicate an existing full name in the faction. With age/rank/traits/ancillaries/move, the starting-general editor is now complete." },
+    ],
+  },
+  {
+    version: "0.9.607",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Live diplomacy faction names + non-player treasuries are now correct.** The engine enumerates factions in a different order than descr_sm_factions — the first rebel slot is moved to the end — so this campaign's faction records and the diplomacy attitude-matrix rows were mislabeled by one past the start (your \"at war\" list showed *Megalopolis* when it was really *Messapians*, and non-player treasuries were wrong too). Cracked the engine's true order and applied it: war/ally names and every faction's treasury now resolve to the right faction. Validated against the live save (Rome's war = Messapians; Messapian, slave, and rebel records all line up)." },
+    ],
+  },
+  {
+    version: "0.9.606",
+    date: "2026-05-24",
+    items: [
+      { type: "feature", text: "**Drag a leaderless town garrison out to the map — it becomes a captain-led army.** Grab a `garrisoned_army` marker (dev mode, starting view) and drop it on a field tile. On Save, the settlement's `garrisoned_army` block is removed and a captain army is created at the tile with those units — using the verified vanilla syntax (`character <Name>, general, …` = captain; the name is borrowed from the faction so it's valid in names.txt). Staged like every other edit (shows green while staged, revertable, Ctrl+Z)." },
+    ],
+  },
+  {
+    version: "0.9.605",
+    date: "2026-05-24",
+    items: [
+      { type: "improvement", text: "Leaderless town garrisons (the `garrisoned_army` markers now shown on the map) aren't draggable — they have no general/character to relocate, so dragging is disabled to avoid staging a move that would fail. General-led armies (including garrisoned ones) stay fully movable." },
+    ],
+  },
+  {
+    version: "0.9.604",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Leaderless town garrisons now show on the map.** RIS places many garrisons as `garrisoned_army` blocks — loose units inside a settlement with no general/character — which carry no coordinates, so they never drew a map marker. They're now pinned to their settlement tile and rendered like any other army (they were already listed in the Garrison panel). Naval fleets (admiral-led, no \"general\" unit) already render — toggle the Navies layer to see them." },
+    ],
+  },
+  {
+    version: "0.9.603",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**A moved starting general can now be moved again.** After dragging a general to a new tile, its marker showed at the new spot but the drag grab-zone stayed on the old town, so you couldn't pick it up a second time. The hit-test now follows the marker to its staged tile (re-dragging updates the same move), and after Save the army snapshot's coordinates update to the new tile so further moves keep working." },
+      { type: "feature", text: "**Ctrl+Z reverts your last edit.** Undo now pops the most recent staged dev edit — building add/upgrade/replace, general move, age/rank change, trait, ancillary, diplomacy, resource, or victory-condition — with a toast confirming what was reverted. When nothing is staged it falls back to the existing region/resource/population undo." },
+    ],
+  },
+  {
+    version: "0.9.602",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**The building editor no longer hides building trees.** The previous one-per-slot rule HID every chain whose slot was already filled, which made ~50 trees vanish from a developed settlement (you couldn't browse the entertainment options, trade/resource buildings, civic alternatives, etc.). Now **all** buildable trees show. Adding a building whose slot is already occupied (another temple, government, entertainment building, …) **replaces** the current occupant instead of stacking a second — the picker marks those entries \"↔ replaces\" and the change log says \"replace X with Y\". This keeps the no-double-government behaviour while letting you freely browse and switch buildings." },
+    ],
+  },
+  {
+    version: "0.9.601",
+    date: "2026-05-24",
+    items: [
+      { type: "feature", text: "**Edit a starting general's age and rank.** Right-click a general (dev mode) to open the info popup — a new \"Edit starting general\" box lets you change their age and rank (General / Heir / Faction Leader). Staged like every other dev edit and written to the general's descr_strat `character` line on Save (name, coords, and inline stats are preserved). Complements the existing drag-to-move, trait, and ancillary editing. Name editing + garrison relocation are coming next." },
+    ],
+  },
+  {
+    version: "0.9.600",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**The building editor now respects every one-per-settlement slot, not just governments.** RTW allows only one building per \"tag\" (temple, government, civic, port, heavy industry, metals, sanitation, entertainment, the farm/exploit slots, etc. — enforced by the engine's `no_other_<tag>` rule). The Add-building picker now hides any chain whose slot is already filled by a built building, so you can't stack a second temple, government, market and so on — you replace the existing one. Generalises the previous government-only fix." },
+    ],
+  },
+  {
+    version: "0.9.599",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**The building editor no longer offers a second government.** Governments (governmentA/B/C/D) are mutually exclusive — only one per settlement (the engine's `no_other_government` rule). After the previous fix made them addable again, the picker was offering ALL of them even when one was already built. Now, once a settlement has a government, the other government chains are hidden — you must replace the existing one rather than stack a second." },
+    ],
+  },
+  {
+    version: "0.9.598",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Government buildings can be re-added in the building editor.** Chains whose requirement uses the `factions { all }` wildcard (every government building — governmentA/B/C/D) were hidden from the Add-building picker because \"all\" was treated as a literal faction name, so a removed government could never be added back. The wildcard is now recognised (any other chain using `factions { all }` that was wrongly hidden also reappears)." },
+    ],
+  },
+  {
+    version: "0.9.597",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Live treasury (and diplomacy) now populate the moment you enter Live mode.** The real cause of the stuck \"10,000 d\": the cracker-extras (faction treasuries, record owners, the diplomacy matrix, etc.) were only wired into the save-CHANGE handler, never the initial Live-load path — so until you ended a turn and wrote a new save, the player treasury fell back to descr_strat starting cash and diplomacy showed stale data. The initial load now sets them immediately." },
+      { type: "improvement", text: "Double-clicking the version to watch for updates now **auto-installs** the update the moment it finishes downloading — no \"Restart & install\" click needed. Double-click again to cancel before one appears." },
+    ],
+  },
+  {
+    version: "0.9.596",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Live treasury no longer gets stuck on the descr_strat starting cash (e.g. Rome showing 10,000 d).** Two faction-record states were being seeded from stale localStorage left by a much older app version (23 imperial records + empty treasuries) and an empty/partial live snapshot could overwrite a good 239-record parse with nothing — so the player's record was never found and the panel fell back to starting denarii. These states now start clean and only accept non-empty live data, and a `[save-snapshot]` log records exactly what each snapshot carries." },
+      { type: "improvement", text: "Build-queue cards now show the **number of turns left** in the top-right corner (e.g. a 4 on the Venusia farm upgrade), decoded from the save's construction record." },
+    ],
+  },
+  {
+    version: "0.9.595",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Government buildings now show in live mode.** The save's building parser rejected any chain name containing an uppercase letter, which silently dropped every government building (`governmentA/B/C/D` — the \"direct rule\" etc. tiers) from every settlement. So a freshly-built government in a just-conquered town never appeared. Uppercase suffixes are now allowed, validated against a conquered settlement that built a new government between turns." },
+      { type: "improvement", text: "**Build queue now shows upgrades as building cards with a green progress overlay.** Each in-progress construction is rendered like a Buildings-panel card (the target building's icon) with a green fill rising from the bottom = % complete (50% = bottom half green), matching the in-game construction visual." },
+      { type: "fix", text: "Unit experience chevrons now point downward, matching the in-game chevrons." },
+      { type: "improvement", text: "Live mode hides the developer debug stats on the Factions strip — it now shows just the turn and year." },
+    ],
+  },
+  {
+    version: "0.9.594",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Live treasury now works for this campaign — including the PLAYER faction.** The treasury parser only understood the imperial campaign's faction-record layout (`+44==6`); the \"Republic of Rome\" campaign uses a different one (`+44==8`) with one record per faction (player included), stored in faction order with the current treasury at +0 and the start-of-turn snapshot at +48. Cracked and validated against a live save (the player record holds the exact in-game treasury, and all 239 faction records map cleanly). Every faction's live treasury / net income now shows instead of falling back to descr_strat starting cash." },
+    ],
+  },
+  {
+    version: "0.9.593",
+    date: "2026-05-24",
+    items: [
+      { type: "improvement", text: "The Build queue section now shows the building's icon (like the in-game construction queue) next to the upgrade name and progress %." },
+    ],
+  },
+  {
+    version: "0.9.592",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**A building being upgraded no longer shows its finished form prematurely.** Previously the Buildings panel replaced a building with its in-progress upgrade target (so a settlement appeared to already have the new building even with several turns left). Now the building stays at its current level in the Buildings panel until construction completes, and the upgrade (e.g. \"Trader → Market\") is listed in the Build queue section with its progress %." },
+    ],
+  },
+  {
+    version: "0.9.591",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Settlement buildings no longer show a neighbouring settlement's buildings in live mode.** The save building parser's block boundary could bleed an adjacent settlement's chain records into a settlement, e.g. besieged Brundisium was listing the neighbouring Arcadian city's temple + theatres + sewers + irrigated farming on top of its own. Provincia now detects this (a settlement can only have one temple complex) and falls back to the descr_strat building list — which is also the correct, current set for an unchanged/besieged settlement." },
+    ],
+  },
+  {
+    version: "0.9.590",
+    date: "2026-05-24",
+    items: [
+      { type: "improvement", text: "Added a one-per-region `[bld-dbg]` dump to provincia.log (static vs live-parsed vs merged building lists) to trace live-mode settlement-building mismatches." },
+    ],
+  },
+  {
+    version: "0.9.589",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Besieging armies now appear in the besieged region's Field armies panel** (the 0.9.588 attempt relied on a \"moved\" flag that isn't actually decodable). A stack sitting immediately adjacent to a settlement tile is now attributed to that settlement's region, so Aulus besieging Brundisium shows under Calabria instead of his stale \"Taras\" tag. The governor case stays correct (his nearest settlement is his own city, or he falls through to his reliable save tag)." },
+    ],
+  },
+  {
+    version: "0.9.588",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**A moved army (e.g. a besieger) now appears in the correct region's Field armies panel.** The panel bucketed armies by their save unit-record region tag, which the engine never refreshes when a stack moves — so Aulus besieging Brundisium stayed listed under his old region (\"Taras\") even though his map marker and Characters entry were correct. Armies that moved this turn are now bucketed by their actual tile's region. Stationary armies keep the save tag (guards the governor pixel-drift case)." },
+    ],
+  },
+  {
+    version: "0.9.587",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**A general defending his own settlement now shows as the garrison, not a field army.** The garrison detector required the on-tile stack's faction to match the settlement owner, but the army-faction tag (a captain_card heuristic) is sometimes wrong (e.g. a Messapian Titus mis-tagged \"massalia\"), which demoted him to a field army with the garrison reading \"No units stationed\". The faction guard now only applies to live-log-attributed positions (possible besieger mis-snaps); a SAVE-derived stack sitting exactly on a settlement tile is trusted as the garrison regardless of its tag." },
+      { type: "fix", text: "**Diplomacy now shows war with the independent \"Free Peoples\".** Every faction is permanently at war with the rebel/independent faction, but the save's attitude matrix only encodes declared faction-to-faction wars, so that universal state was missing from the list. It's now surfaced for every real faction." },
+    ],
+  },
+  {
+    version: "0.9.586",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Garrison vs field army now re-derived from each army's final position.** Live-log position updates could move an army (e.g. a besieger, or a general defending a city) without re-running the garrison/field classification, so a general garrisoning a settlement could show as a field army. Provincia now reclassifies every land army from its final tile: exactly on a settlement pixel = garrison, anything else (including a besieger one tile away) = field." },
+      { type: "improvement", text: "Added a one-per-save `[army-dbg]` dump to provincia.log (name, faction, position, class, live-tracked, on-settlement-tile) to diagnose remaining live-mode army placement cases." },
+    ],
+  },
+  {
+    version: "0.9.585",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**Removed false weapon/armour upgrade chevrons on live units.** Units were showing a phantom \"+1 sword\" (e.g. all of Aulus Gabinius's Roman infantry). The upgrade was read from a unit byte that, across turn 1/5/7 saves, is only ever 0 or 1 (≈63% of units = 1) and never rises with actual blacksmith upgrades — i.e. it's a static base attribute, not an upgrade level, and there's no EDU weapon_lvl to correct against. Until the real per-unit upgrade source is cracked, Provincia no longer paints these false chevrons. (Unit XP/chevrons are unaffected.)" },
+      { type: "improvement", text: "Added per-stage timing to the live save parse (logged to provincia.log) to pinpoint any remaining load hotspots." },
+    ],
+  },
+  {
+    version: "0.9.584",
+    date: "2026-05-24",
+    items: [
+      { type: "fix", text: "**The big one: live-mode turn-end no longer hangs for ~27 seconds.** The construction-queue parser was running an UNBOUNDED buffer search for each of 19 building chains across all ~1300 settlements — every chain not found near a settlement scanned the entire 33 MB save to the end. That single loop was ~26.5 s on a turn-end parse. Bounding the search to the small window the result is actually restricted to drops it from ~26,500 ms to ~10 ms, with byte-for-byte identical output (profiled against a real save). Combined with the 0.9.583 character-parser fix, live loads should go from ~30 s to a few seconds." },
+    ],
+  },
+  {
+    version: "0.9.583",
+    date: "2026-05-24",
+    items: [
+      { type: "improvement", text: "**Live mode loads ~1 second faster per turn.** The character-data parser was scanning the entire 35 MB save once for every culture×role combination (~200 full passes); it now does a single pass per role (7 total), cutting that step from ~1.1 s to ~45 ms on the main thread. Going into live mode and ending a turn now hangs far less. Output is byte-for-byte identical (verified against a real save)." },
+    ],
+  },
+  {
+    version: "0.9.582",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Crosstalk with Manipula (the recruitment tool).** Provincia now watches the active mod's `export_descr_buildings.txt` and auto-reloads recruitment data the moment Manipula (or any editor) saves it — the recruitment map colour-mode and per-region recruit lists refresh live, no manual re-import. The two tools edit different files in the same `data` folder, so they stay out of each other's way." },
+    ],
+  },
+  {
+    version: "0.9.581",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Diplomacy split can now include Rel (the starting state).** Next to the Aggr-link toggle there's a Rel toggle: when on, the 33/33/33 split also sets faction_relationships so the closest (warring) third actually STARTS AT WAR, while the rest stay neutral. Off by default." },
+      { type: "feature", text: "**Diplomacy: \"how others see you\" reverse view.** A 🔄 toggle flips the whole editor to show (and edit) how every other faction views the selected faction. One-sided pairs are flagged inline with a ⇄ marker showing the opposite direction's attitude, so you can spot asymmetric relationships before saving." },
+      { type: "improvement", text: "**Victory-condition edits are now fully revertable through Save.** Toggling a region in/out of a faction's victory conditions (right-click in Victory colour mode) now appears in the Changes review with a per-item × revert, is undone by Discard all, and writes to descr_win_conditions.txt on Save — matching the diplomacy/add-general flow." },
+      { type: "improvement", text: "**Pre-Save review is now grouped by target file.** The Changes modal lists every staged edit under the mod file it writes to (descr_strat.txt, descr_win_conditions.txt, +names.txt/lookup for new generals), so it's clear exactly what each Save will touch." },
+    ],
+  },
+  {
+    version: "0.9.580",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Diplomacy editor: \"Victory targets by proximity\".** A new section at the top of the diplomacy editor lists every faction that owns a region in your victory conditions, ordered by how close its nearest such region is to your borders (nearest first) — so you can decide each diplomatic stance by threat distance. A **Split 33/33/33** button sets the closest third to Warring (600), the middle third to Hostile (400), and the farthest third to Neutral (200); the rows are tinted red/yellow/green to preview the split before you click. The split sets both Core and Aggr by default (Aggr is the trend a relationship drifts toward) — toggle \"Aggr linked\" off to set Core only. Nothing is locked: every value stays editable afterward." },
+    ],
+  },
+  {
+    version: "0.9.579",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Minor factions with no Classic victory conditions now get a sensible default goal.** Every faction that owns land at campaign start but had no Classic VC (118 of them) now lists its starting regions (capital first, then nearest-to-capital) with a `take_regions` of (starting count + 20) — so they must conquer 20 more settlements to win instead of instantly winning on turn 1. Only the non-playable markers (slave, dummies, roman_rebels_1/2) remain without a VC." },
+    ],
+  },
+  {
+    version: "0.9.578",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Fixed ~94 factions silently showing no victory conditions** (e.g. Macedon/Antigonid, Ptolemaic, Seleucid, Epirus). The victory-conditions parser treated any bare faction-name line as a new block header — so a single-faction `outlive_factions` entry (a lone faction token under `short_campaign outlive_factions`) was mistaken for a new block and RESET that faction's already-parsed VC to empty. The parser now only starts a block when the next line is `hold_regions`/`take_regions`, so Macedon correctly shows its full 161-region goal." },
+    ],
+  },
+  {
+    version: "0.9.577",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Imperial Campaign victory conditions ported from Classic RIS.** Each faction's VC now lists its starting regions first (capital, then nearest-to-capital), followed by the Classic conquest targets in their original hand-made order. Because the big map splits each Classic province into several regions, every split is pulled in (a big-map region is included if it sits mostly inside the old Classic province). Rome combines all four Classic Roman factions (Julii/Senate/Brutii/Scipii) into one and always holds the whole Italian peninsula. E.g. the Achaean League goes from 12 Classic regions to 55 on the big map (3 starting + 52 conquest, Aigion-first)." },
+    ],
+  },
+  {
+    version: "0.9.576",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Diplomacy editor: bidirectional edits.** Toggle '⇄ Bidirectional' (or press Ctrl/⌘+B mid-edit) so changing this faction's stance toward another also sets the reverse (other → this) to the same value — for symmetric relationships in one keystroke. Off by default; works for all three values (Core/Rel/Aggr)." },
+    ],
+  },
+  {
+    version: "0.9.575",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Diplomacy editor now shows & edits all THREE descr_strat values per faction pair**, not just core_attitudes: Core (AI disposition), Rel (faction_relationships — the actual STARTING STATE: ≤199 ally / 200 neutral / ≥201 war), and Aggr (faction_agression — post-turn-1 aggressiveness). All three are editable and written on Save. This resolves the earlier confusion: e.g. Pergamon→Seleucid is Core 600 (warring disposition) but Rel 199 — i.e. actually ALLIED at start, which is why they're not at war in-game." },
+    ],
+  },
+  {
+    version: "0.9.574",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Diplomacy editor labels now match RIS's own terms — and clarify these are attitudes, not declared wars.** A 600 value is the AI's 'Warring' DISPOSITION, not a formal state of war (the descr_strat docs even note 400 = 'Hostile, not warring'). Relabelled the scale verbatim from the descr_strat header: −10 Forced ally · 0 Allied · 100 Suspicious · 200 Neutral · 400 Hostile · 600 Warring · 850 Total war · 1000 Crazy, with a note that core_attitudes is the starting disposition the AI uses for diplomacy decisions, not a declared war." },
+    ],
+  },
+  {
+    version: "0.9.573",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Diplomacy editor: corrected the rebel handling.** Only the generic `slave` faction now defaults to At War (600) — a faction is NOT automatically at war with the per-faction respawn markers (`seleucid_rebels`, `ptolemaic_rebels`, `roman_rebels_1/2`, etc.), which were wrongly shown at 600. Those sub-faction markers are now also hidden from the list (they're spawn placeholders, not real diplomatic factions), so you no longer see duplicate '…rebels' entries. Real per-pair values from core_attitudes are unchanged." },
+    ],
+  },
+  {
+    version: "0.9.572",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Diplomacy editor (dev mode).** A new '✎ All numbers' button on the Diplomacy widget opens a searchable list of EVERY faction with this faction's starting attitude toward it — the real descr_strat core_attitudes value (−10 locked ally / 0 allied / 200 neutral / 400 hostile / 600 at war / …), defaulting unlisted pairs to 200 and rebel/slave factions to 600 (at war). Each value is editable; changes are staged like other dev edits and written to the descr_strat core_attitudes section on Save (revertable under Changes)." },
+    ],
+  },
+  {
+    version: "0.9.571",
+    date: "2026-05-23",
+    items: [
+      { type: "improvement", text: "**Campaign-start diplomacy inspect now shows the actual numbers.** With no save loaded, the right-click raw-diplomacy panel listed only stances; it now shows the engine's starting core_attitudes derived from those stances — Allied = 0, At War = 600, and every other faction = 200 (Neutral) — e.g. 'War: Galatians 600 · Allied: Seleucid Empire 0, Cyzicus 0 · Everyone else: 200'." },
+    ],
+  },
+  {
+    version: "0.9.570",
+    date: "2026-05-23",
+    items: [
+      { type: "improvement", text: "**A saved general now also shows in the Field Armies widget and on the map** (its bodyguard army is injected into the army view on Save), not just the Characters list / Family Tree. (The on-disk descr_strat is permanent; the army map/widget injection is for the current session — a full mod re-import rebuilds the baked army snapshot.)" },
+    ],
+  },
+  {
+    version: "0.9.569",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Diplomacy widget shows the raw attitude numbers in dev mode.** Under the named war/ally lists, a 'Raw attitudes' row now lists every faction with the actual core_attitudes value the engine uses to evaluate the relationship (e.g. Rome 200, Athens 400), colour-coded and sorted, with bond + aggression in the tooltip. Requires a synced save (the engine computes these values at runtime)." },
+    ],
+  },
+  {
+    version: "0.9.568",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**A saved general now appears in the Characters view and Family Tree right away.** Those views read a cached parse of descr_strat that wasn't refreshed after writing the new general; the cache is now re-parsed after Save (and after a character move), so the new general shows up without re-importing the mod." },
+    ],
+  },
+  {
+    version: "0.9.567",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Added generals' names are now registered correctly in names.txt / descr_names_lookup.txt.** The new name tokens were being appended at the very end of those files — after the `ZZZZZ` end-marker — so the engine never read them and couldn't resolve the new general's name. They're now inserted in alphabetical (sorted) position, before `ZZZZZ`, matching how both files are organized. This was the remaining cause of campaign-load errors after adding a general." },
+    ],
+  },
+  {
+    version: "0.9.566",
+    date: "2026-05-23",
+    items: [
+      { type: "improvement", text: "**Added generals get a location comment above them in descr_strat**, matching the game's own style: `;<City>` when placed on the settlement's tile, or `;Outside <City>` when you've dragged them off into the region. Makes the generated entries self-documenting and easy to find in the file." },
+    ],
+  },
+  {
+    version: "0.9.565",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Added generals now load with no descr_strat errors.** Two problems fixed: (1) the new `character_record` lines were written after the faction's `relative` lines, which RTW rejects with \"Unexpected section after relative: character_record\" — they're now inserted before the relatives, in the correct section; (2) the generated lines are written in your mod's actual format (`character, Name, named character, age N, , x, y` and `character_record\tName, gender, age N, alive, never_a_leader`) — the previous build matched a different descr_strat variant that carried command/influence/management/subterfuge stats. The app's parser was also made tolerant of both descr_strat dialects." },
+    ],
+  },
+  {
+    version: "0.9.564",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Critical: added generals no longer break the campaign.** The generated descr_strat entries were missing the required `command/influence/management/subterfuge` stats and wrote an invalid gender field on the `character`/`character_record` lines, and the bodyguard unit name was truncated (e.g. `pergamene general` instead of `pergamene general's bodyguard` — a unit that doesn't exist). All fixed, so a saved general now loads cleanly with no game errors. (If you already saved a broken one, restore the `descr_strat.txt.<timestamp>.bak` backup that was written next to it.)" },
+      { type: "feature", text: "**Drag existing characters on the map.** In dev mode (campaign-start view), grab any general's marker and drag it to a new tile; the marker turns green to show the staged move. Written to descr_strat on Save and revertable under Changes." },
+      { type: "improvement", text: "**Saved generals now appear in the Characters roster & Family Tree immediately** after Save (the descr_strat character data is reloaded), not only while pending." },
+    ],
+  },
+  {
+    version: "0.9.563",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Staged generals now appear in the Family Tree** (with a dashed green ‘⏳ pending — Save to apply’ card), including their wife and children, so you can see the addition in context before saving." },
+      { type: "improvement", text: "**Diplomacy raw-inspect moved to a right-click on the widget** (dev mode) with a hover hint. It now also works at campaign start — showing the descr_strat starting stances (war/allied/protectorate) when no save is loaded, and the full numeric attitude matrix once one is." },
+    ],
+  },
+  {
+    version: "0.9.562",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Drag staged generals on the map.** Each general you add now shows as a green ‘+’ marker at its spawn tile; grab it and drag (dev mode) to reposition where it'll appear. Like everything else it's only written to descr_strat on Save, and reverting the staged general removes the marker." },
+      { type: "change", text: "**Removed the hard-to-read ‘right-click: raw #s’ hint** from the Diplomacy & Treasury widget header." },
+    ],
+  },
+  {
+    version: "0.9.561",
+    date: "2026-05-23",
+    items: [
+      { type: "improvement", text: "**Add General now uses the empty space below it first.** The form panel anchors its bottom to the Buildings widget and only grows up over Diplomacy as much as it needs, instead of jumping straight up and leaving a gap underneath. The form was also tightened so it needs less height." },
+    ],
+  },
+  {
+    version: "0.9.560",
+    date: "2026-05-23",
+    items: [
+      { type: "improvement", text: "**Age fields in Add General no longer show up/down spinner arrows** — just type the number (the 🎲 button still rolls a random age)." },
+    ],
+  },
+  {
+    version: "0.9.559",
+    date: "2026-05-23",
+    items: [
+      { type: "change", text: "**Add General now goes through Save and is fully revertable.** Adding a general no longer writes to disk immediately — it's staged like every other dev edit: it shows up in the Characters panel as a green 'Pending — Save to apply' entry, counts toward the Changes/Save badge, and writes to descr_strat + names.txt only when you click Save. You can revert it from the Changes review (or Discard all) before it's written." },
+    ],
+  },
+  {
+    version: "0.9.558",
+    date: "2026-05-23",
+    items: [
+      { type: "improvement", text: "**New dev-pill animation.** Replaced the slow genie emerge/retract with a clean, quick fade + slide (Pill in / Pill out) so toggling dev mode feels snappy and modern." },
+      { type: "change", text: "**Diplomacy & Treasury widget is smaller by default**, and the Characters widget is correspondingly taller — more room for the character roster in the normal layout." },
+    ],
+  },
+  {
+    version: "0.9.557",
+    date: "2026-05-23",
+    items: [
+      { type: "change", text: "**The 'watch for updates' poll is now every 5 seconds** (was 20s) so a freshly-published release is picked up almost immediately after you double-click the version label." },
+    ],
+  },
+  {
+    version: "0.9.556",
+    date: "2026-05-23",
+    items: [
+      { type: "improvement", text: "**Add General now expands the Characters panel up over Diplomacy & Treasury** (with an opaque background) so the whole family-builder form is visible at once. Closing it restores the normal layout." },
+      { type: "improvement", text: "**The dev pill appears and disappears snappily.** Its genie-style emerge/retract animation was slow (540ms); it's now 240ms so dev mode toggles feel instant." },
+      { type: "change", text: "**'Update imminent' instead of an error.** When you check for updates and the new release is still uploading (a 404 on latest.yml), you now get a friendly 'Update imminent — a new release is still uploading' info toast rather than a scary error." },
+    ],
+  },
+  {
+    version: "0.9.555",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Double-click the version label to keep watching for updates.** It then checks every 20 seconds in the background (showing a '👀 watching…' marker) until an update appears — handy right after a new build is published. It stops automatically once one is found, or double-click again to cancel. A single click still does a one-off check." },
+      { type: "fix", text: "**The bottom strip (Search / Factions / Selected Provinces) is now tied to the map width**, like the map itself. On wide/4K screens 'Selected Provinces' used to overshoot to the right past the map; it now scales with the map so the whole left column lines up." },
+      { type: "fix", text: "**Add General no longer covers the Diplomacy panel.** The form now expands downward (over the Buildings panel) instead of upward over Diplomacy, and the panel is fully opaque while open so nothing shows through." },
+      { type: "improvement", text: "**Add General is more compact** — Faction + Bodyguard sit on one row and Place-at + coordinates on the next (two rows instead of four)." },
+    ],
+  },
+  {
+    version: "0.9.554",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**No more gap between the map and the right-side panels at 4K / fullscreen.** On wide screens the map is limited by height, so it didn't reach the column where the region widgets were pinned, leaving an empty vertical strip. The region widgets (info, diplomacy, characters, buildings, recruitment, etc.) now anchor to the map's actual right edge and stretch to fill the remaining width, so the whole space is used at any resolution. Dragging/resizing them still tracks the cursor." },
+      { type: "improvement", text: "**Add General — family picker now shows full regnal names.** 'Join existing' previously listed several identical 'Attalos' entries; it now reads the same as the in-game family tree (Attalos II, Attalos III, …), matching the engine's suffix-letter → numeral convention." },
+      { type: "improvement", text: "**Add General — more options.** The bodyguard/general unit is now a dropdown (when a faction has more than one option); the wife can be marked as dead; a warning lists any pre-existing duplicate names in the chosen faction (these can cause engine issues). The Faction and 'Place at' dropdowns are now the same width, and the unit text is readable. Roman factions correctly offer surnames again." },
+      { type: "improvement", text: "**Add General — the Characters panel expands over the Diplomacy panel while the form is open**, so you can see more of the builder at once; it returns to normal when you close the form." },
+      { type: "fix", text: "**The 'Update check failed' message is now a small toast** instead of a giant stack-trace box. A missing release (404 / latest.yml) reads 'no published release found yet', and any toast body is clamped and scrolls instead of growing without bound." },
+    ],
+  },
+  {
+    version: "0.9.553",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Add General: 'Join existing family' now works for every culture, and lets you pick the parents.** It previously showed no families for single-name cultures (Seleucid, all Hellenistic/Eastern factions) because it only looked for Roman-style surnames — now families are built from the actual relative-line households, so e.g. Seleucid shows 33. 'Join existing' is now a Father picker (showing each father + his wife/mother); the new general is added as that couple's child and inherits the family surname (Roman) or stays single-named (Greek/Eastern). 'New line' only asks for a surname in surname cultures." },
+    ],
+  },
+  {
+    version: "0.9.552",
+    date: "2026-05-23",
+    items: [
+      { type: "change", text: "**Add General is now embedded in the Characters widget** (not a floating window). Clicking '+ Add General' swaps the roster for the family-builder form (with a '← back' to return); the Characters widget was enlarged to hold it. Buildings stays 5×4 at the bottom." },
+    ],
+  },
+  {
+    version: "0.9.551",
+    date: "2026-05-23",
+    items: [
+      { type: "fix", text: "**Character traits & ancillaries: every character now shows its FULL list.** The save parser was dropping the last trait and the first ancillary of every character (verified 890/890 last-slots are real traits; chars-with-ancillaries jumped 65→256 once the first was no longer skipped). Both off-by-ones are fixed, so the character panel and family tree now show complete trait/retinue data." },
+      { type: "improvement", text: "**Add General is now a draggable, non-blocking panel.** Moved into the Characters widget, it floats over the map (drag by its title bar) instead of a full-screen overlay, so the map stays interactive and it no longer renders behind other panels. Added: 🎲 Random at the top of every name list, 🎲 random age (16–82), and the 'Place at' dropdown now lists the faction's actual owned settlements (resolved to exact tiles via the map's settlement pixels). Surname field is labelled and always populated. Files are still backed up before any write, and everything logs under [addgen]." },
+      { type: "change", text: "**Region layout: more room for diplomacy.** The Diplomacy & Treasury widget grew (it now holds named live war/ally lists + the wealth sparkline); the Buildings widget shrank to just fit its 5×4 grid and moved down to free the space." },
+    ],
+  },
+  {
+    version: "0.9.550",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Add General to a settlement (dev mode).** A new '+ Add General' button on the Diplomacy & Treasury widget opens a family-builder: set the general's age + name (from the faction's culture-correct name list), choose a new family line or join an existing family, optionally add a wife and any number of sons/daughters — each with their own name (from the list) and age. It writes a proper named general + family into descr_strat for NEW campaigns, placing them at the chosen settlement's exact tile (verified against the map's settlement pixels — no coordinate guesswork). Names are resolved to UNIQUE tokens the RTW way (e.g. a second 'Gaius' becomes GaiusB), minting new entries into names.txt + descr_names_lookup.txt when needed, and never creating in-faction duplicates. All three files are backed up (.bak) before writing. Start a new campaign to see the general." },
+    ],
+  },
+  {
+    version: "0.9.549",
+    date: "2026-05-23",
+    items: [
+      { type: "feature", text: "**Wealth-trend sparkline in the Diplomacy & Treasury widget.** The save turned out to store a per-faction treasury-over-time history (an end-of-turn treasury checkpoint recorded each turn), so the widget now draws a little sparkline of the selected faction's wealth trajectory across the campaign (green if up overall, orange if down) — hover for the exact per-turn figures. Works for every faction with a save record, in both live and calibrated modes. (Note: a full income/expense *breakdown* can't be shown — the game recomputes that live each turn and never stores it; only the treasury checkpoint timeline is persisted.)" },
+    ],
+  },
+  {
+    version: "0.9.548",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**Dev mode: right-click the Diplomacy widget to inspect the raw attitude-matrix numbers.** Opens a view listing, for the selected faction, every faction it has a non-neutral relationship with — showing the raw numbers in BOTH directions (e.g. Rome → Carthage and Carthage → Rome): core_attitudes value + named tier (Allied/Neutral/Hostile/At War/Total War/Crazy, per the descr_strat legend), the bond class (6 normal / 54 protectorate-ally / 55 special), and faction_aggression. Includes the matrix base/stride/symmetry header for crack verification. Dev-mode only; no change for normal users." },
+    ],
+  },
+  {
+    version: "0.9.547",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Turn number and year now read correctly for all mods, not just RIS.** The turn/year were read from a hardcoded file offset (0x44e3) that only happens to be correct for RIS-imperial saves — its real position shifts by the length of the save's mod path. Vanilla and other-mod saves were reading the wrong bytes and showing \"T1 · 1 AD\" regardless of the actual turn. They're now located via the descr_strat path anchor (turn at +5, year at +9), validated across 29 saves spanning RIS and vanilla. RIS saves are unaffected (same result as before); vanilla Spain Turn 4 now correctly reads T4 · 269 BC instead of T1 · 1 AD." },
+    ],
+  },
+  {
+    version: "0.9.546",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**Live, NAMED diplomacy for every faction — who's at war / allied with whom.** Cracked the save's N×N faction-relationship attitude matrix (the real diplomacy store; the per-faction \"zones\" only held agreement handles with no partner identity). The matrix's POSITION encodes the faction pair, so partner identity is finally recoverable — and it carries the full descr_strat stance scale (allied / neutral / hostile / at-war). Click any faction's settlement and the Diplomacy & Treasury widget now lists, BY NAME, everyone they are currently ⚔ at war with, 🤝 allied with, and ⚠ hostile toward — live, updating as the campaign plays out (falls back to campaign-start diplomacy when no save is synced). The decoder self-locates and self-calibrates per save (validated across RIS turns 0/1/4 and vanilla, 100% matrix symmetry, turn-0 wars/allies matching the mod files exactly)." },
+      { type: "fix", text: "**War state is now read from the save (it was there all along).** Earlier conclusions that \"war isn't in the save\" were wrong — they only applied to the diplomacy zones. The attitude matrix holds it: `attitude ≥ 600` = at war, `0` = allied. This is what makes the live named diplomacy above possible." },
+    ],
+  },
+  {
+    version: "0.9.544",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Diplomacy now shows accurate named relations instead of wrong live counts.** The live per-faction diplomacy zones turned out to encode their class enum inconsistently between the player's own zone and NPC zones (e.g. a faction's protectorates read as class 0 in an NPC zone but class 4 in the player's), so the counts were misread — Rome displayed \"18 at war\" at turn 0 when in-game it only has its 6 protectorates. And the save never stores WHO each live relation is with, so the counts could never be a named list. Dropped the unreliable live counts; the widget now shows only the verified, NAMED campaign-start diplomacy (allies / wars / protects / protectorate-of) from descr_strat + the campaign script. Factions that begin neutral now say so explicitly." },
+    ],
+  },
+  {
+    version: "0.9.543",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**Starting protectorates now shown (Rome's were missing).** descr_strat declares alliances/wars but NOT protectorates — those are set by the campaign script (`console_command become_protector <protector> <protectorate>`), which the relations parser ignored. So Rome (which starts with 6 Italian protectorates — Volsinii, Capua, Samnites, Lucanians, Bruttians, Taras) showed no campaign-start diplomacy at all. The bundler now also parses the campaign script's `become_protector` and `diplomatic_stance` commands and merges them in. The Diplomacy & Treasury widget shows new lines: 🛡 protects: … (this faction's protectorates) and 🛡 protectorate of: … (its protector). Covers every faction with scripted starting diplomacy (Carthage→Gades, Antigonid→Argos/Megalopolis, Seleucid→4, Ptolemaic→Tyre/Sidon, etc.)." },
+    ],
+  },
+  {
+    version: "0.9.542",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Faction diplomacy/treasury now survive app restarts (one sync is enough).** The live all-faction diplomacy, treasury records, and record-owner mapping were React state only — lost on restart. So relaunching into non-live mode dropped every faction's live diplomacy (the `[diplo-widget]` log showed `allFactionDiplomacyKeys=0`), and factions with no descr_strat starting relations — romans_julii, carthage, the senate — showed nothing at all. These are now persisted to localStorage and rehydrated on launch, so after one sync (live snapshot or 🎯 Calibrate) every faction's diplomacy + treasury stays populated across restarts. Values are last-synced snapshots; the next sync refreshes them." },
+    ],
+  },
+  {
+    version: "0.9.541",
+    date: "2026-05-22",
+    items: [
+      { type: "improvement", text: "Added a `[diplo-widget]` diagnostic log that records how the Diplomacy & Treasury widget resolved each selected region's owner (owner id, whether a live diplomacy zone matched, key count). Helps pin down \"diplomacy doesn't load for faction X\" reports — click the affected settlement and the log shows whether it's an owner-resolution miss or a missing zone." },
+    ],
+  },
+  {
+    version: "0.9.540",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Diplomacy relation count now excludes neutral padding.** Your own faction's diplomacy zone lists EVERY discovered faction — most as a neutral 'known' entry (class 5, attitude 5) — so the Seleucid widget showed \"115 relations\" while only 34 were actual wars/alliances/ceasefires. The count now reflects only meaningful relations (war/ally/ceasefire/locked), so it matches the chips shown (e.g. Seleucid: 34, not 115). NPC factions only ever list active relations, so their counts are unchanged." },
+    ],
+  },
+  {
+    version: "0.9.539",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**Live diplomacy now shows for EVERY faction** — including your own, the senate, carthage, romans_julii, and all minor factions, not just the 23 major NPC records. Cracked the per-faction diplomacy zones: the save holds ~221 diplomacy blocks (one per active faction), and the owning faction is identified by the byte 53 bytes before each `0x39240005` marker (index into descr_sm_factions order). Validated across Seleucid + Macedon saves — 220 distinct factions resolve, zero duplicates. Click any settlement and its owner's live war/ally/ceasefire/locked counts appear. (Partners still can't be named — that's genuinely not stored in the save — so it remains counts, with the descr_strat campaign-start named relations shown beneath.)" },
+    ],
+  },
+  {
+    version: "0.9.538",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Diplomacy shows for many more factions.** The starting-relations data is parsed from descr_strat, which usually declares a pair from only ONE side (e.g. \"antigonid, 201 epirus\" is filed under antigonid, not epirus). The widget was therefore blank for any faction that only ever appeared as the *target* of a declaration. Relationships are symmetric, so each pair is now stored on BOTH factions — every faction party to any declared alliance/war now shows its relations when you click its settlement. (A handful of factions — e.g. romans_julii, carthage — start fully neutral with no declared relations and aren't among the save's 23 NPC records, so they still show nothing; full live diplomacy for every minor faction needs a deeper save-crack of the per-faction diplomacy zones.)" },
+    ],
+  },
+  {
+    version: "0.9.537",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Diplomacy widget: clearer message for your own faction.** The save's live diplomacy table only covers the ~23 NPC major factions — your OWN faction is always excluded from it (confirmed: in a Seleucid game the 23 records contain antigonid/ptolemaic/romans_julii… but not seleucid; in a Macedon game antigonid is the one missing). So viewing your own region showed a bare \"Diplomacy not tracked (no save record)\" even though campaign-start relations were available right below. Now it explains \"Live diplomacy isn't stored for your own faction in the save — showing campaign-start relations:\" and leads straight into the named started-allied/at-war list (e.g. Seleucid → allied: Pergamon, Cappadocia, Bactria, Antigonid; war: Bithynia)." },
+      { type: "fix", text: "**Garrison commander faction mislabel fixed.** A garrison bodyguard card could show the wrong faction when the character's name also exists in another faction — the stats-cache fell back to a faction-agnostic key whose stored faction belonged to the same-named character elsewhere (a Seleucid \"Demophanes\" was shown as \"ptolemaic\"). For cross-culture collisions this also pulled the wrong portrait pool. The live garrison unit's own faction is now authoritative." },
+    ],
+  },
+  {
+    version: "0.9.536",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**Named starting diplomacy in the Diplomacy & Treasury widget**. The widget now lists, by name, who each faction *began the campaign* allied with and at war with (e.g. \"At campaign start — allied: Seleucid, Knossos\"). Parsed from descr_strat's `faction_relationships` declarations. This is the only source that names the partner faction: a deep dive (two cross-validating analyses) confirmed the live save stores each relation's class (war/ally/ceasefire) but NOT which faction it's with — the partner simply isn't persisted, so a live who's-at-war-with-whom matrix is impossible from the save. Live relation *counts* are still shown above the named starting list. (Starting state won't reflect mid-campaign diplomacy changes.)" },
+    ],
+  },
+  {
+    version: "0.9.535",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**Hover-to-inspect tile tooltip**. Hovering the map now shows a small cursor-following readout of the tile's region, owning faction, and terrain type. Toggle with the new **Inspect** button in the map controls (on by default, persists). Terrain reads from the corrected geography ground-types data — open Geography mode once (or just leave Inspect on) and the ground-types load so terrain appears in any map mode. The tooltip only updates when the hovered tile actually changes, so it doesn't churn on every pixel of movement." },
+    ],
+  },
+  {
+    version: "0.9.534",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Diplomacy & Treasury widget now works for every region after one sync**. The live treasury records only exist for the ~23 major NPC factions, so panning to your own provinces (or a minor/rebel faction's) made the widget go blank. It now falls back to the descr_strat starting treasury for any faction without a live record — so every region shows its owner's treasury (live ·tag for the 23 majors, '(starting)' for the player and minor factions). Diplomacy still only shows for factions with a save record (player/minor diplomacy isn't in those records). The player's *live* treasury needs a separate record crack (still pending) — until then player provinces show starting wealth." },
+    ],
+  },
+  {
+    version: "0.9.533",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**New Diplomacy & Treasury widget in the region panel**. Shows the selected region's owning faction: current treasury (with this-turn net on hover), AI personality archetype, and a diplomacy summary (counts of wars / alliances / locked alliances / ceasefires). Per-pair detail isn't shown because the relation records don't store the *other* faction's identity (still uncracked) — counts only for now. Populated from Live mode or 🎯 Calibrate." },
+      { type: "improvement", text: "**Region panel layout reflow**. Buildings now use a fixed 5×4 = 20-slot grid (a region's max) with evenly-sized larger cards, instead of the old width-dependent grid that reflowed into 6+ narrow columns. Region info is trimmed shorter, the Characters list sits below it and scrolls past ~10 entries, and the freed space holds the new Diplomacy & Treasury widget. Layout migrates automatically on launch (LAYOUT_VERSION 11) — your widgets reset to the new canonical positions; drag/resize as you like." },
+    ],
+  },
+  {
+    version: "0.9.532",
+    date: "2026-05-22",
+    items: [
+      { type: "feature", text: "**Faction treasury + AI personality now load in non-live mode**. Previously the Wealth panel's live treasuries and AI archetypes only appeared when the save-watcher was active (Live mode). The 🎯 Calibrate button parsed characters/portraits but skipped faction records, so calibrating a save without RTW running left the panel on descr_strat starting values. Calibrate now also parses the 23 major-faction records — treasuries, faction identities (via the cracked faction_id), AI personalities, and diplomacy — and feeds them to the Wealth panel exactly as Live mode does. Pick a save with 🎯 Calibrate and the panel shows live treasuries (·live tags) + AI subtitles." },
+    ],
+  },
+  {
+    version: "0.9.531",
+    date: "2026-05-22",
+    items: [
+      { type: "improvement", text: "**Bigger building icons in the region panel**. Each building card is a fixed-height cell with the icon on top and the name below. The label was 0.7rem and allowed up to 4 lines, which ate most of the card height and left the icon cramped. Shrunk the label to 0.58rem and capped it at 2 lines, handing that vertical space back to the icon — building icons are now noticeably larger. Long names truncate with an ellipsis (full name still shows on hover / right-click info)." },
+    ],
+  },
+  {
+    version: "0.9.530",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Geography mode: desert + oasis labels corrected (no more 'swamps' in the Sahara)**. Two more mislabels found by directly sampling the map: `0,0,0` (previously \"Grassland\") is actually the desert sand — it's 89% of the deep Sahara and absent from northern Europe — now labeled Desert. And `0,255,128` (previously \"Swamp\") is only ~1% of the deep desert (scattered oasis/depression tiles) plus river-delta clusters — it's a wet-lowland/oasis type, not a swamp, which is why teal 'swamps' were dotting the open desert. Relabeled to Oasis / marsh. Also softened the remaining flat-tier names (Steppe/pasture, Semi-arid scrub, Light woodland, Rocky highland/desert). Mountains/hills stay elevation-verified and correct." },
+    ],
+  },
+  {
+    version: "0.9.529",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Geography mode: swamp colour toned down**. Swamp was rendered bright purple, which looked jarring against the corrected earth-toned terrain (and stood out more now that neighbouring flat terrain is no longer mis-painted as red mountains). Changed to a natural murky teal-green. Swamp tile *locations* are unchanged and correct (low coastal/delta areas, elevation ~2/255)." },
+    ],
+  },
+  {
+    version: "0.9.528",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Geography map mode: fixed mislabeled terrain (mountains in Denmark)**. The ground-type colour palette had the wrong names — `0,128,128` was tagged \"Mountain\" and painted red, but cross-referencing every one of the 14 map_ground_types.tga colours against map_heights.tga proved it's actually one of the FLATTEST terrains (avg elevation 3/255). That flat terrain is common across northern Europe, which is why bright-red \"mountains\" showed up in flat Denmark. The real elevation tiers are the red-channel ramp `64,0,0` → `128,0,0` → `196,0,0` (avg height 70 → 78 → 84). Re-derived the whole palette against RTW's authoritative 14 aerial ground types (descr_aerial_map_ground_types.txt): high mountains / mountains / hills are now correct and elevation-verified; farmland, forest, and swamp tiers relabeled accordingly. Map regions (1020×700) and ground-types (2041×1401) share the same aspect ratio, so there was no alignment skew — it was purely the colour labels." },
+    ],
+  },
+  {
+    version: "0.9.527",
+    date: "2026-05-22",
+    items: [
+      { type: "fix", text: "**Faction treasury attribution fixed via cracked faction_id** — the major-faction records were previously matched to factions by the captain-banner heuristic, which only identified ~10 of 23 records (factions with no captain units got no treasury, and a few got the WRONG one from a bleed-over banner). The save's `faction_id` byte (cracked session 174) is an exact index into descr_sm_factions.txt declaration order, so every record is now identified directly. All 23/23 resolve, and the 3 records the banner heuristic mislabeled are corrected — e.g. record 0 is the Rebels faction (30 regions, ai_rome), not 'carthage'; the Iberian 'astures' tribe is no longer mislabeled 'athens'. The captain banner stays as a fallback for saves where faction_id is unavailable." },
+      { type: "feature", text: "**AI personality archetype shown per faction** — the cracked `aiPersonalityIndex` byte indexes feral_descr_ai_personality.txt, so each NPC faction's AI behaviour profile (ai_lusitani, ai_carthage, ai_bactria, …) is now decoded from the save and displayed as a subtitle under each faction in the Faction Wealth panel. Confirms factions behave with culturally-appropriate AI (Iberian astures → ai_lusitani, etc)." },
+    ],
+  },
+  {
+    version: "0.9.526",
+    date: "2026-05-21",
+    items: [
+      { type: "improvement", text: "**Coord→portrait bridge now persists across restarts** — `v1PortraitsByCoord` (the precise tile-keyed portrait map) is now saved to localStorage and rehydrated on launch, like the stats cache. Previously only the name-keyed fallback survived a restart, so a cold launch degraded same-name character disambiguation to the name key until the next save sync. Now the precise coord lookup is available immediately on startup." },
+      { type: "fix", text: "**Stopped live-mode log spam** — the `[bodyguard-swap garr/field] descr_strat fallback hit` line was unguarded and re-logged on every render for every unit in a stack. A multi-unit garrison led by a descr_strat-fallback commander (e.g. Zamir's 30-unit Minaean garrison) spammed the same line 30+ times per frame, bloating provincia.log. Now throttled to once per commander name, matching the sibling logs." },
+    ],
+  },
+  {
+    version: "0.9.525",
+    date: "2026-05-21",
+    items: [
+      { type: "improvement", text: "**Family tree linked to the unit cards' portrait source** — the family tree now resolves portraits from the same persisted `statsCache` the bodyguard/unit cards use, keyed by the identical `name|lastName|faction`. Two consequences: (1) the family-tree card and the bodyguard card for a given character can no longer disagree — they read the same entry by the same key; (2) because `statsCache` is persisted to localStorage and rehydrated on startup, the family tree shows correct portraits immediately on launch with NO recalibration required. Previously the family tree relied solely on `v1PortraitsByCoord`, which is plain React state reset to null every launch — that's why it needed a recalibrate each session while unit cards (reading the persisted cache) did not. The coord bridge stays the precise primary lookup (disambiguates same-name chars by tile); the name-keyed cache is the persisted fallback used when the coord bridge has no hit." },
+    ],
+  },
+  {
+    version: "0.9.524",
+    date: "2026-05-21",
+    items: [
+      { type: "fix", text: "**Filter false-positive character records** — the parser was admitting ~8 phantom \"characters\" per save (Appuleius_Saturninus, ArsinoeC, Banat, several Aarons) that aren't in descr_strat and aren't runtime-spawned. They were byte sequences in unrelated zones (relationship/name-pool tables) that happened to satisfy the firstName/age/uuid gates. Added a post-children system-constants gate: real records have a 20-byte constant block at +66..+85 (LAYOUT_B) / +70..+89 (LAYOUT_A) — the end-of-children sentinel 0xFFFFFFFF and the RTW constant `2` four slots later. Requiring EITHER slot match filters all 8 false positives with ZERO false negatives (verified: 861/861 descr_strat-resident chars pass, and all 105 runtime-spawned non-descr_strat chars still pass since they live in the real character section). Macedon T0 RIS character count: 974 → 966." },
+    ],
+  },
+  {
+    version: "0.9.523",
+    date: "2026-05-21",
+    items: [
+      { type: "fix", text: "**Family-tree portraits actually match the bodyguard cards now** — two bugs were stacking. (1) The Portrait component's `useEffect` had a `if (!url)` guard, so once it picked a hash-pool portrait on first render (which happens before the calibrate IPC has finished parsing the save), it never re-loaded when calibrate later supplied the correct save-derived path. Now the effect always reloads when charContext changes; loadPortrait's cache keeps it cheap and setUrl only fires on a different URL so no flicker. (2) The coord→portrait map was being seeded from `characterExtras` first using the cracker's `extX/extY` fields — but per the 354-byte-coord-record memo those values are scrambled (the real coord table lives at +8/+12 of a separate 354-byte record). The scrambled keys could collide with a real v1 tile and corrupt the portrait there. Inverted priority: v1's correct tileX/tileY entries seed the map first, then cracker fields enrich only matching coords. Symptom this fixes: Antigonos II, Demetrios III, Achaios, Attalos, and every other antigonid char in the family tree was rendering via hash-pool (visible in provincia.log as `savePath=\"(hash)\"` for every entry); now their family-tree portrait matches their bodyguard card." },
+    ],
+  },
+  {
+    version: "0.9.522",
+    date: "2026-05-21",
+    items: [
+      { type: "fix", text: "**Trait threshold lookup uses points, not level** — 0.9.521's introduction of resolved display levels also turned the threshold-walk loop in `parseCharactersAndUnits` into dead code (it was comparing trait-point thresholds like 25/75/150 against the now-resolved display level 1/2/3, so no threshold ever matched). The indexed fallback was producing the correct result anyway, but for clarity and forward-safety the threshold loop now compares against `t.points` (the raw byte value) with a fallback to `t.level` for back-compat." },
+    ],
+  },
+  {
+    version: "0.9.521",
+    date: "2026-05-21",
+    items: [
+      { type: "improvement", text: "**Trait display levels now resolved via threshold lookup** — the u16 at trait+4 in the save is _accumulated trait points_, not the displayed level. Previously Provincia showed the raw point value (\"Estates 26\" instead of \"Estates 2\") because the parser used `points` as-is. main.js's `parseCharactersAndUnits` now walks each parsed trait, looks up the appropriate level threshold from `export_descr_character_traits.txt`, and writes the engine's displayed level (1, 2, 3…) back to `t.level`. Raw points stay accessible as `t.points` for stat-summing." },
+      { type: "improvement", text: "**Build queue shows remaining turns** — `queueParser.js` now emits `turnsTotal`, `turnsElapsed`, and `turnsRemaining` for every BUILDING queue entry (cracked from save bytes: total at +16, elapsed at +20). RegionInfo renders \"N turns left\" using the difference, so the in-progress label matches the in-game tooltip exactly. Verified turn-to-turn across consecutive Arretium saves." },
+      { type: "improvement", text: "**Faction AI personality + faction_id parsed from save** — `parseFactionTreasuries` now returns `factionId` (u8 at midblock+99 = index into descr_sm_factions.txt) and `aiPersonalityIndex` (u8 at midblock+135 = index into feral_descr_ai_personality.txt) for each of the 23 major faction records. 23/23 validated against descr_strat. Replaces the captain-banner heuristic for faction identification, fixing the 13 records that have zero captain banners." },
+      { type: "improvement", text: "**Save-cracker session 174: bulk character-record refinements** — the 172-byte zone at +126..+297 of each character record is now identified as a 43-slot s32 array (likely RTW engine 'Effect' counters); the previously-unknown u16 at +88..+89 is a 4-value enum (likely portrait pool category: family/leader=1, mid=2, generic=3, foreign=0); soldier weapon byte corrected to +7 of the stride-9 record (was incorrectly at +0); Lua counter zone u32 count prefix discovered at firstRecord-4. Birth year and max-MP confirmed NOT stored — both derived from age+turn and EDU+traits respectively. Full byte map updated in cracker docs." },
+    ],
+  },
+  {
+    version: "0.9.520",
+    date: "2026-05-21",
+    items: [
+      { type: "fix", text: "**Removed leader_pic_<faction>.tga override** (added in 0.9.517). `leader_pic_<faction>.tga` files are used by RTW's faction-selection menu, NOT for in-game character portraits. The engine renders faction leaders from the regular portrait pool (`greek/old/generals/NNN.tga`) just like every other char — user-labeled in-game portraits confirmed AntigonosII Gonatas shows pool portrait 000, not the leader_pic file. The override was making Provincia's family tree and bodyguard cards diverge from the game for every faction leader. Cleaned up the corresponding `isLeader` field on FamilyTree's charContext (no longer needed)." },
+    ],
+  },
+  {
+    version: "0.9.519",
+    date: "2026-05-21",
+    items: [
+      { type: "fix", text: "**Faction leaders' portraits now show their actual face**. The 0.9.512 filter that treated `cards/<bucket>/generals/000.tga` as a 'generic placeholder' was based on a wrong assumption — portrait 000 is actually a REAL specific portrait file (used in-game for the antigonid leader's bald-with-gray-beard face). User-labeled in-game portraits confirmed this: AntigonosII Gonatas shows NNN 000 in the family tree. v1's portrait scan already correctly extracts each character's engine-assigned NNN from the save record; my filter was incorrectly rejecting the valid result and falling back to a hash-pool guess. Filter relaxed to only reject `/dead/` paths on alive characters (kept for disambiguating stub-record duplicates). All three call sites in main.js (calibrate, save-watch v1PortraitsByCoord build, ipc trait-bridge) updated." },
+    ],
+  },
+  {
+    version: "0.9.518",
+    date: "2026-05-21",
+    items: [
+      { type: "improvement", text: "**descr_strat resource split into trade / slave / ambience** — the parser now tracks the `;;;; SLAVE RESOURCES ;;;;` and `;;;; AMBIENCE ;;;;` section headers as it walks the strat file and stamps every `resource <name>, x, y` line with a `category: \"trade\" | \"slave\" | \"ambience\"` tag. RegionInfo now renders three separate chip rows (Trade resources / Slave resources / Ambience resources) instead of one mixed list, so cosmetic icons like wine_amph or chickens stop looking like economic trade goods. Faction summary, wealth, and income heatmaps are now restricted to the `trade` subset only — slave/ambience entries no longer skew per-region trade value. Dev-mode `Add resource` infers the category from the resource name (falling back to trade) so newly-placed entries land in the right block, and `patchDescrStrat` rewrites the file as three labeled blocks with the original `;;;; … ;;;;` headers preserved. Bundled `public/resources_large.json` for RIS now contains 4326 trade + 1311 slave + ambience entries (was a flat ~5.6k mixed list)." },
+    ],
+  },
+  {
+    version: "0.9.517",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Faction leaders use `leader_pic_<faction>.tga`** — the engine substitutes a dedicated leader portrait for each faction's current leader, overriding the generic placeholder in the save. AntigonosII Gonatas (Antigonid leader) was correctly bald+gray-beard in-game but Provincia was showing a hash-derived portrait. The `resolve-portrait` IPC now checks `charContext.isLeader` first and, when the faction has a `data/world/maps/campaign/imperial_campaign/leader_pic_<faction>.tga` file, uses it directly. FamilyTree threads `isLeader` through `charContext` (detected from v1's Factionleader trait, descr_strat `role=leader`, or explicit `Factionleader` trait in mod data). Per-character portrait assignment for non-leader named chars (likely positional, per user's hypothesis) tracked as next-step crack." },
+    ],
+  },
+  {
+    version: "0.9.516",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Family tree vs bodyguard card portrait mismatch (calibrate mode)**. Users reported Demetrios III and Seleucid Achaios showing portrait 032/140 on their bodyguard unit card but a different (hash-pool) portrait in the family tree. Root cause: the `v1PortraitsByCoord` bridge (added 0.9.513) was only built in the live save-watch handler, not in the calibrate-from-save IPC. Users in calibrate mode (most users) got the bridge for unit cards via the stats cache but the family tree had no coord → portrait map, so it fell back to hash. Calibrate now builds and returns `v1PortraitsByCoord` in its IPC response; App.js stores it; FamilyTree reads it. Verify in provincia.log: `[calibrate] v1PortraitsByCoord: NN coord entries` should appear after each calibration." },
+    ],
+  },
+  {
+    version: "0.9.515",
+    date: "2026-05-20",
+    items: [
+      { type: "feature", text: "**Admirals now parsed (97.2% → 99.5% descr_strat match)**. RTW admirals have `traitCount=0` so v1's trait-list anchor couldn't validate them — they were the entire 23-char unmatched gap in 0.9.514. New `buildSecUuidIndex(buf)` walks the 354-byte coord/state record table once to extract every valid bodyguard uuid in the save (with `low16(+16) == 0x7fff` mid-tile marker that matches both land and naval records — naval has the high bit set at +18). `tryParseAt` now accepts tc=0 records ONLY when their `secondaryUuid` is in that set — eliminates 2000+ false positives that a naive tc=0 scan would produce. Verified against descr_strat: 820/825 chars matched, including all 46 admirals' position records. The remaining 4 unmatched chars (Azes, Skunkha, and one each of 9 Aripharnes/Abaikos sub-faction copies) appear to be missing from v1's reachable structural region — likely engine-internal state that's not anchored on a trait list, fleet, or coord record." },
+    ],
+  },
+  {
+    version: "0.9.514",
+    date: "2026-05-20",
+    items: [
+      { type: "improvement", text: "**Character parser hardening** — eliminated 352 false-positive 'Aaron' records (28% of v1 output was junk from zero-byte regions). Two new validity gates in `characterParser.js` tryParseAt: (1) reject if both primaryUuid and secondaryUuid are zero or below the uuid-shaped threshold (>0xffff); (2) reject if all 8 head bytes are zero. Verified against descr_strat (`scripts/save-cracker/dig-descr-strat-audit.js`) — 0 real characters rejected, 352 fake Aarons removed. Match rate vs descr_strat now 97.2% (802/825 real characters)." },
+      { type: "feature", text: "**spouseUuid cracked + surfaced** — each parsed character now exposes a `spouseUuid` field (null if unmarried). Located at +46 (LAYOUT_B) / +50 (LAYOUT_A) between fatherUuid and childUuids[0]. Confirmed via three independent lines of evidence: 14 dynasty matches where slot46 = primaryUuid of a daughter held in another char's childUuids; 603 of 610 'miss' cases correlate with explicit `relative HUSBAND, WIFE, ..., end` lines in descr_strat (wives are stub records v1's trait-anchor skips); counter-evidence search found only 3 chars without descr_strat marriages — all 3 are Lua-spawned at runtime. LAYOUT_A's +46 = fatherUuid (verified via sibling pairs: Marcus & Servius Ogulnius_Gallus share +46 pointing to father Quintus). Family-tree UI can now wire husband ↔ wife edges directly from the parser data." },
+      { type: "improvement", text: "**descr_strat sub_faction marker filter** — RIS uses `character, sub_faction parni, named character, age 30, , x 449, y 362` lines as TERRITORIAL OWNERSHIP markers, not real characters. Both `scripts/bundle-mod-data.js` and the family-tree parser now skip `/^sub[_ ]faction\\b/i` lines. Without the filter, 83 phantom 'sub faction' characters polluted the bundled armies and family tree." },
+    ],
+  },
+  {
+    version: "0.9.513",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Family tree portraits use v1 (correct) instead of cracker (scrambled)** — fixes the case where the bodyguard unit card and the family tree showed different portraits for the same character. The cracker's `attachMapCoords` reads `extX/extY` at +288/+292 of the extended record, but those bytes are NOT tile coords — `scripts/diag-portraits.js` confirmed against save_macedon t0.sav that the cracker assigns portraits to wrong characters (Halkyoneus at (394,374) was getting DemetriosC's portrait 032, etc.). Main process now builds a v1-derived `v1PortraitsByCoord` map and passes it to FamilyTree; v1's portrait overrides the cracker's for every coord. FamilyTree also seeds entries for coords the cracker missed entirely. v1 has portraits for 512 coord entries (vs cracker's 395), so coverage actually improves." },
+    ],
+  },
+  {
+    version: "0.9.512",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Attalos picks the real portrait, not the dead stub** (validated against the calibration save via `scripts/diag-portraits.js`). v1 finds TWO records for Attalos: a stub at 0x15126d4 with portrait `dead/074.tga` and the real one at 0x1b78601 with `young/generals/137.tga`. Both have traits, neither has stats — the writeBest scoring tied and the first-encountered stub was winning. Cache builder now sets `chosenPortrait = null` when v1's only candidates are generic `000.tga` or `/dead/` on a live character (instead of falling back to the bad one). The stub then scores 3 vs the real's 4 (portrait +1), and the real wins. AntigonosB still has only generic 000 in the save itself (the save data is broken for him) — needs separate descr_strat `portrait_index` lookup, queued." },
+    ],
+  },
+  {
+    version: "0.9.511",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Antigonos II / Attalos portraits — pick the good candidate from v1's array**. The 0.9.508–0.9.510 v2 bridge attempts all gave 0 hits (cxParseCharacterExtras returns no names, and v1/v2 'primaryUuid' fields are different binary offsets). v1's parser already returns multiple candidates in `c.portraits[]`; cache builder now SCANS that array for a non-generic, non-`/dead/`-on-living entry instead of blindly using `portraits[0]`. Antigonos II should get his face card instead of generic 000, Attalos the live portrait instead of dead/074." },
+    ],
+  },
+  {
+    version: "0.9.510",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Portrait bridge actually wires up now (real fix)**. 0.9.509 keyed on `primaryUuid` but v1 reads that field at offset −47 and v2 reads at offset −12 — they're different binary fields, so the lookup still gave 0 hits (same as the v1-faction-tag pass shows: 0/1287 via uuid). Bridge now keys by `firstName + lastName + faction` (with name-only and no-lastName fallbacks) — the only reliable common identifier both parsers extract. Antigonos II / Attalos / similar generic-000 / dead-but-alive portraits should now pick up the family-tree-correct portrait." },
+    ],
+  },
+  {
+    version: "0.9.509",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Bodyguard portrait bridge actually wires up now**. The 0.9.508 portrait bridge built its uuid map keyed on v2's `ownUuid`, but v1's character record uses `primaryUuid` — two different identifier fields at different offsets in the extended record. The lookup found 0 matches and `v2_coord=0` in every calibrate. Now keyed on `primaryUuid` so Antigonos II and Attalos can actually pick up v2's authoritative portrait when v1 returned a generic `000.tga` or a `/dead/` slot on a live general." },
+    ],
+  },
+  {
+    version: "0.9.508",
+    date: "2026-05-20",
+    items: [
+      { type: "fix", text: "**Bodyguard unit cards no longer show generic / dead portraits** (incomplete — bridge keyed wrong field, see 0.9.509). v1's portrait scan was landing on a generic `cards/<bucket>/generals/000.tga` placeholder for some characters (Antigonos II got generic 000) and on a `/dead/` slot for live characters (Attalos got the dead portrait). Calibrate now uses v2's uuid-bridged portrait (same source the family tree uses) whenever v1's candidate is the generic 000 or a `/dead/` path on an alive character. Achaios's specific v1 portrait (`portraits/young/generals/140.tga`) is preserved." },
+    ],
+  },
+  {
+    version: "0.9.489",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Cmd+K / Ctrl+K **search palette**. Fuzzy-search across regions, factions, characters, buildings, and units — instant jump. Up/Down navigate, Enter activates, Escape closes. Type badges color-code each result. Built as portaled overlay with the popover-in mount animation. New file `src/SearchPalette.js`. `[search-palette]` log lines." },
+      { type: "feature", text: "**Diplomatic web overlay**. Optional toggle draws colored lines between every pair of faction capitals based on current diplomatic class — green=ally, red=war, gold-dashed=protectorate, teal-dashed=trade/vassal, thin gray=neutral (off by default). Pairs decoded via `factionDiplomacy` + `factionRecordOwners`. Gear popover toggles 'Selected faction only' and 'Show neutral'. Persists. `[diplo-overlay]` log lines." },
+      { type: "feature", text: "**Four new heatmap map modes** (dev): Garrison, Happiness, Income, Public Order. Same shape as the existing population / wealth modes — gradient color-fill per region with min/mid/max legend bar. Garrison: navy → teal → gold. Happiness / public order: red → yellow → green. Income: slate → tan → gold. Falls back to a 'requires live save' note + neutral gray when no save is loaded. `[heatmap]` log lines." },
+      { type: "feature", text: "**Building editor: strict settlement-tier level cap + drag-drop icon replace**. Upgrade buttons disable (not silently fail) when the candidate level's `settlement_min` exceeds the current settlement tier; add-picker shows '(needs <tier>)' hints instead of hiding entries; out-of-tier existing buildings get a red border + tooltip. Drag a PNG/JPG/TGA onto any building icon — copies (and decodes if needed) into the mod's `data/ui/<culture>/buildings/` folder, backs up the original to `_backup/`, invalidates the icon cache, and stages a 'Replaced icon for X' entry in the pending changes modal with a working per-item revert. New IPCs `replace-building-icon` / `revert-building-icon`. `[building-edit-cap]` + `[icon-replace]` log lines." },
+      { type: "fix", text: "**Window position persistence across updates**. App now remembers its last position + size + maximized state in `userData/window-state.json`, debounced 500 ms during drag/resize, authoritative save on close. Restores on next launch — including across auto-updater reinstalls because userData survives the installer overwrite. Sanity-checks bounds so a corrupted file can't open the window at negative coordinates." },
+    ],
+  },
+  {
+    version: "0.9.487",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Apple-baseline animation layer: every button now gets subtle SwiftUI-style press feedback (scale 1 → 0.96 → 1 in 140 ms, cubic-bezier(0.4, 0, 0.2, 1)) on click unless the user has explicitly assigned a different click animation in Layout mode. Per-button opt-out via `data-anim-no-press`. Five new entries in the animation library: `press`, `sheet-in`, `popover-in`, `toast-in`, `crossfade` — all available in the picker for assigning to specific elements. Hover-lift extended to `.map-mode-btn` to match the dev pill's tactile shadow." },
+      { type: "improvement", text: "Animation library now includes Apple-feel entrance animations: `sheet-in` (iOS sheet rise + scale, used by modals), `popover-in` (macOS popover scale + fade), `toast-in` (slide from edge), `crossfade` (tab content swap). All restrained durations (140–280 ms) with Apple's standard decelerate curve cubic-bezier(0.32, 0.72, 0, 1)." },
+    ],
+  },
+  {
+    version: "0.9.486",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "New AOR (Areas of Recruitment) map mode. The Hidden Res. button is now tri-state: click once → Hidden Res., click again → AOR, third click exits back to faction view. AOR mode color-fills each region by its first `aor_*` tag (palette shared with cultures so the visual language matches). Regions with multiple AORs get diagonal stripes — same hi-res pattern as the cultures-mode multi-ethnicity stripes — and the stripe color cycles through every additional AOR, so a region with 3+ AORs shows all of them, not just the first two. Legend panel lists every AOR with its color swatch + region count (sorted most-used first). Hover tooltip shows full `aor_X` tag. Detection follows the `aor_` prefix (vanilla / Alex / RIS / Imperial convention) plus the rarer `_aor` suffix used by some mods. New `[aor]` log lines per palette build / stripe pass / legend render." },
+    ],
+  },
+  {
+    version: "0.9.485",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Bottleneck math added to the genie curve — the neck no longer goes razor-sharp at its narrowest point. Each vertex's target Y converges to `50 ± MIN_THICKNESS/2` instead of exactly 50, so the neck holds at ~16% of element height (~5 px) through the body of the animation. The minimum-thickness floor then tapers to 0 over the last 22% of the timeline, so the element still fully disappears by the end. Looks like a tube rather than a knife edge." },
+      { type: "fix", text: "End-of-retract flash fixed. Root cause: `playAnimation`'s `animationend` handler removed the `data-anim-fire` attribute, which made the CSS selector unmatch, the keyframe styles drop, and the full pill flash for one frame before React's setTimeout unmounted it. Added `animation-fill-mode: forwards` to retract so the final keyframe styles stick, and a `keepFinalState: true` option on `playAnimation` that skips the attribute removal for unmount animations. Result: animation seamlessly hands off to React unmount with no flash." },
+    ],
+  },
+  {
+    version: "0.9.484",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Genie animations rewritten with proper math. The flashing was caused by a discontinuity at the seam between the clip-path phase and the scaleX-collapse phase. Removed the scaleX phase entirely — everything is now a single continuous clip-path interpolation. Each polygon has 64 vertices (32 X-slices × 2), each vertex slides toward (100%, 50%) — the right-edge center where the Dev button sits — as its local pinch amount (smoothstep envelope) goes 0 → 1. 17 keyframes per direction so the browser's per-pair linear interpolation tracks the smoothstep curve closely. Generated procedurally by `scripts/generate-genie-keyframes.js` — re-run that script and splice the output into animations.css to tweak the math. Note: pure CSS clip-path can only approximate the real genie (which uses per-vertex mesh transforms in macOS); the curved sine-wave distortion would require WebGL or canvas. This is as close as CSS gets." },
+    ],
+  },
+  {
+    version: "0.9.483",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Emerge / Retract rebuilt with animated 8-point `clip-path` polygons — proper macOS genie behavior. The right side (near the Dev button) pinches into a narrow 'neck' while the left side stays full-height, then the body gets pulled through the neck and sucked into the right edge. Previous scaleY shrunk the whole length uniformly; CSS transforms can't do localized distortion but clip-path polygons can. Retract reverses through wedge → narrow neck → thin strand → collapsed point at the right edge. Emerge plays the same keyframes in reverse." },
+    ],
+  },
+  {
+    version: "0.9.482",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Retract animation rebuilt as a real genie-into-bottle squeeze instead of the flat horizontal collapse it was. Two-stage keyframes: first scaleY shrinks fast (the pill flattens into a thin horizontal strand), then scaleX collapses toward the right edge (the strand gets sucked into the Dev button). A subtle ramping blur smears the trailing edge as it disappears. Duration 440 ms; ANIMATION_DURATIONS table updated so the useEnterExit unmount timer waits the full animation before tearing the element down." },
+    ],
+  },
+  {
+    version: "0.9.481",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Dev pill mount animation (Emerge) wasn't firing at all — log showed `[anim-enterexit] queued` but never the matching `[anim-play] fired`. Root cause was a race in `useEnterExit`: after flipping `shouldRender` to true, we scheduled the playAnimation call in a `requestAnimationFrame` that often fired BEFORE React had committed the pill's mount, so `ref.current` was still null and we returned early. The unmount path was fine because the element is already in the DOM at that point. Split mount-firing into a separate `useEffect([shouldRender])` that runs after React commits — ref is guaranteed populated when we play the queued animation. Added a `[anim-enterexit] firing queued mount anim` log line so the play sequence is now traceable end-to-end." },
+    ],
+  },
+  {
+    version: "0.9.480",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Dev pill still played the old genie animation on disappear (and sometimes appear) because 0.9.477's defaults (`genie` / `geniehide`) had been persisted into the user's `buttonAnimations` localStorage the first time they toggled dev mode under that version. Since saved user-assignments win over defaults, the new emerge/retract defaults never took effect for those users. Shipped a one-time migration that clears ONLY the genie/geniehide values from the dev-pill slot (other animation choices are preserved); tracked by `buttonAnimations.migrationVersion` so it runs once per machine." },
+      { type: "improvement", text: "Animation system now writes diagnostic logs per the standing logging directive: `[anim-enterexit]` on every mount/unmount with the slot value and what default fell through, `[anim-play]` on every fire with the target's `data-anim-id` or tagName, `[anim-layout]` for picker opens / set assignments / design-mode flips / click-trigger fires. Future animation bugs are diagnosable straight from `provincia.log` without console access." },
+    ],
+  },
+  {
+    version: "0.9.479",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Dev and Volume buttons no longer jitter when the dev pill mounts. 0.9.477's `minHeight: 32` wasn't enough because the pill's natural outer height is ~33 px, which still grew the row by 1-2 px on mount and shifted the Dev/Volume vertical centers each toggle. Switched to a fixed `height: 40` — row outer box is now exactly 40 px regardless of pill presence, so the centers don't move." },
+    ],
+  },
+  {
+    version: "0.9.478",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Dev pill default animation replaced. The 0.9.477 Genie effect overshot its final size and didn't feel like 'coming out of the Dev button' — replaced with Emerge (mount) and Retract (unmount). Both use `transform-origin: right center` + scaleX so the right edge stays glued to the Dev button. Emerge grows scaleX 0 → 1 with a heavy ease-out curve and NO overshoot (never exceeds final size). Retract shrinks scaleX 1 → 0 back into the Dev button on toggle-off. Genie is still available in the library for users who want it." },
+    ],
+  },
+  {
+    version: "0.9.477",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Two new animations: Genie in / Genie out (macOS dock-minimize effect). transform-origin = right center so the dev pill visually emerges from / disappears into the Dev button on its right. Uses perspective rotateY + scaleY squish + a hint of blur to approximate the curved-suction feel — CSS can't do the real sine-wave distortion the macOS engine uses but rotateY in perspective gives a passable foreshortened look." },
+      { type: "improvement", text: "Dev pill now defaults to Genie in / Genie out for mount / unmount if the user hasn't picked something else in the animation editor. useEnterExit accepts `defaultMount` / `defaultUnmount` options for this." },
+      { type: "improvement", text: "Dev and Volume buttons are vertically centered with the dev pill again — and no longer jump when the pill mounts. The row uses `alignItems: center` with a fixed `minHeight: 32px` (the pill's outer box height), so the row's height stays constant whether the pill is rendered or not. Earlier ships swung between flex-end (no jump but visually low) and center (centered but jumped); this is the proper fix." },
+    ],
+  },
+  {
+    version: "0.9.476",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Hotfix for 0.9.475: the animation picker was unusable because clicking its own tiles still triggered the design-mode interceptor (= picker opened on top of itself, recursively). Bug was an order-of-checks issue in `findAnimatable` — it returned the first BUTTON it saw, BEFORE walking up the ancestor chain to check for `data-anim-bypass`. Picker tiles are buttons inside a bypass-flagged container, so the bypass never applied. Fixed with a two-pass walk: first scan the whole ancestor chain for any `data-anim-bypass`, then look for the nearest animatable element. Added `data-anim-bypass` to the ↶ Undo and ↺ Reset buttons too so they keep their original behaviour in Layout mode." },
+      { type: "feature", text: "📋 Copy layout button in design mode. Dumps every layout-related localStorage key (splitter percentages, widget positions, animation assignments, audio volume) to clipboard as JSON. Lets the user paste their current layout back into chat so the in-source defaults can be baked in to match — meaning the next ship's ↺ Reset will reset to your layout rather than the original." },
+    ],
+  },
+  {
+    version: "0.9.475",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Animation editor in Layout mode. Toggle Layout on (📐 Layout button in the dev pill) — every button in the app becomes click-to-edit. Clicking opens a popover that lets you pick from a library of 18 animations (Pop, Bounce, Wiggle, Shake, Pulse, Tada, Jelly, Rubber band, Swing, Flip, Rotate, Heartbeat, Glow flash, Squish, Bounce in, Slide bump, Flash, Wobble — hover tiles for a live preview, click to assign). Choices persist in localStorage and replay on every click of that button outside Layout mode. Non-button containers can be tagged with `data-anim-id` and pick separate Appearing and Disappearing animations (the dev pill already has these slots — click the pill in Layout mode to set them)." },
+      { type: "improvement", text: "Dev pill now stays mounted long enough to play its Disappearing animation when Dev mode flips off. useEnterExit hook reads the user-assigned animation, fires it, then unmounts the pill after the animation completes (no animation = immediate unmount). The Appearing animation fires one frame after mount so the user can see the pill appear from whatever shape was chosen (e.g. Bounce in, Slide bump, Pop)." },
+      { type: "improvement", text: "Animations use `data-anim-fire=\"<name>\"` attributes rather than CSS classes — React's reconciler doesn't manage data attributes, so the animation can't be wiped by a re-render that happens during the same click. This was a real risk for the Dev button (its click changes state and re-renders before the animation finishes)." },
+    ],
+  },
+  {
+    version: "0.9.474",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Dev button now has a macOS-style animation. Toggling it on plays a spring-physics pop (slight overshoot + a tiny wiggle) followed by a soft amber breathing glow while dev mode is active. Hover lifts the button ~1px with a drop shadow; press scales it down 6% for tactile feedback. Spring curve uses cubic-bezier(0.34, 1.56, 0.64, 1), matching NSAnimation defaults." },
+      { type: "feature", text: "Volume slider replaces the binary mute button. Click the speaker icon to pop open a vertical slider (drag the knob up/down). Scroll-wheel over the speaker nudges ±5%. The glyph adapts to the level — full at high volume, two waves at mid, single curve at low, X when muted. Volume persists in localStorage so a user who silences the splash doesn't get blasted on the next launch. A Mute / Unmute toggle inside the popover restores to 70% in one click." },
+      { type: "fix", text: "Dev + Volume buttons no longer jump up when dev mode toggles. The dev pill (Import / Save / Layout / …) appears on the same row as Dev + Volume, and the row was previously center-aligned, which shifted the smaller buttons upward when the taller pill flipped in. Row is now bottom-aligned so Dev + Volume stay anchored at the column's bottom edge regardless of whether the pill is visible." },
+    ],
+  },
+  {
+    version: "0.9.473",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Hotfix for 0.9.472 crash on revert. Two bugs combined: (1) the × per-item revert button was still gated on `e.revert` (the old resource-only revert spec) so it never showed for building / trait / ancillary entries — meaning per-item revert silently did nothing for those kinds; (2) Discard All called the new replay-revert path on every entry, and a `prior.after.length` log line threw `Cannot read properties of undefined` when the prior entry was a legacy log row persisted from pre-0.9.472 builds that lacked the `after` field. Fixed both: × shows for every entry with an `id`, and the replay-find now only matches entries that actually carry an `after` array. Legacy entries fall through to 'clear the registry' instead of crashing." },
+    ],
+  },
+  {
+    version: "0.9.472",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Per-item revert in the Pending modal now works for EVERY edit kind, not just resources. Building, trait and ancillary edits each log their full post-edit state, so clicking × on any row replays the prior staged state (or clears the registry when no earlier edit on the same target remains). InfoPopup reads `pendingTraits` / `pendingAncils` directly so a revert snaps the open character popup back instantly — no reload required. RegionInfo already drove buildings off the lifted-state map, so revert there is already instant." },
+      { type: "improvement", text: "Toolbar consolidation: removed the second `Save` (autosave-snapshot) button and the entire Load dropdown menu + timeline scrub slider per user request — the dev pill's `Save` is now the one and only save button. Autosaves still run silently in the background for crash recovery." },
+      { type: "improvement", text: "The Undo/Redo counter in the dev toolbar is now a green `Changes (N)` button. Clicking it opens the same pending-review modal as Save, so the user can see and revert individual staged edits without having to remember undo-stack ordering." },
+      { type: "fix", text: "MuteButton and Dev toggle are now the same height pixel-for-pixel. MuteButton inherits its caller's `btnStyle` padding (3px 8px) instead of overriding with 4px 10px, and its SVG was shrunk from 18px → 14px so it fits inside the smaller padding without cropping." },
+    ],
+  },
+  {
+    version: "0.9.471",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Restore-previous-session banner buttons no longer get covered by the floating Mute / Layout / Dev controls. Bumped its z-index above the bottom-right control column and nudged the bottom anchor up from 52 → 80 so the dev pill row never overlaps it." },
+      { type: "improvement", text: "Layout (📐) toggle moved INTO the dev pill — same row as Import / Save — so it doesn't float above the recovery banner anymore. Mute button moved to the right of the Dev toggle (Dev left, Mute right) so both fit on a single row with the dev pill." },
+    ],
+  },
+  {
+    version: "0.9.470",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Dev pill (Import / Save / Load / autosaves slider / …) and the Dev toggle button are now on the SAME row in the dev toolbar, not stacked vertically. Wrapped both in a single flex-row container with flex-wrap so the pill still wraps on narrow viewports." },
+      { type: "feature", text: "Per-item revert in the Pending modal. Every staged resource edit (move / amount change / add / remove) now stores a `revert` spec — a small × button on its row in the modal undoes just that one edit, restoring the in-memory state. The Discard All button now auto-reverts every revertable entry instead of leaving the resources mutated. Building / trait / ancillary edits don't ship per-item revert yet — they still clear from the registry but the editor UI keeps showing the staged state until reload. Next ship will extend the revert metadata to those too." },
+    ],
+  },
+  {
+    version: "0.9.469",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Single Save button in the dev toolbar replaces both the old Export and the 0.9.467 ✎ Pending button I incorrectly added up top. Save shows the pending count when there's anything staged, opens the review modal on click, and applies via Apply inside. The browser-fallback (download to Downloads folder) still ships in non-Electron builds where the write IPC isn't available." },
+    ],
+  },
+  {
+    version: "0.9.468",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Unified save flow: the old `Export` toolbar button (which downloaded a modified `descr_strat.txt` to your browser Downloads folder) is hidden in Electron builds. Resource / population / ownership / win-condition edits now stage into the SAME `✎ Pending (N)` review modal as building / trait / ancillary edits, with one-click Apply that writes directly into the active mod's data directory. New `write-active-mod-file` IPC (path-safelisted to descr_strat / descr_regions / descr_win_conditions variants) handles the writes. Per-edit human-readable descriptions: e.g. `[resource] move gold in Roma → (245, 412)`, `[resource] Roma: amount 1 → 2`, `[resource] Roma: add wine at (250, 415)`. The Discard button now also clears the dirty-files set (note: it doesn't auto-revert in-memory resource data — use Ctrl+Z to step back through individual edits if you want them undone)." },
+    ],
+  },
+  {
+    version: "0.9.467",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Pending-changes registry for dev-mode edits. Building / trait / ancillary edits no longer write to `descr_strat.txt` on every click — they stage to an in-memory registry instead. A new ✎ Pending (N) toolbar button appears whenever there are staged edits; click it for a review modal that lists every change in colour-coded order (green = buildings, purple = traits, orange = ancillaries) with the final write-target counts. Apply runs the existing `updateRegionBuildings` / `updateCharacterTraits` / `updateCharacterAncillaries` IPCs in sequence and clears the registry on full success. Discard throws everything away after a confirm dialog. Registry persists to localStorage so edits survive a reload. **Not yet integrated**: resource / population / ownership edits still use the older `dirtyFiles` + descr_strat-download flow; future ship will unify them into the same review modal." },
+    ],
+  },
+  {
+    version: "0.9.466",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "EDB-alias regex from 0.9.465 didn't match because the actual format has an explicit `{` line between `alias <name>` and the `requires` clause (I'd assumed they were on consecutive lines). Result in 0.9.465: 0 aliases parsed → `homelandsData[antigonid]` empty → every region grey. Fixed regex now matches all 223 alias blocks across the EDB → 232 factions populated. Verified: antigonid → [\"homeland_macedonian\"], romans_julii → [\"homeland_roman\"]." },
+    ],
+  },
+  {
+    version: "0.9.465",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Homeland map mode rewrite per user spec: four states with a refreshed legend. GREEN = homeland owned by selected faction with correct gov (govD/gov4). YELLOW = homeland not owned by faction. RED = homeland owned but WRONG government (anything other than govD — flags settlements that need a gov rebuild). GREY = not a homeland. Old version showed grey-less, with everything not-homeland in red." },
+      { type: "improvement", text: "Live homelands parsing from the active mod's EDB `alias <X>_homeland` blocks. Bundled `homelands.json` was stale (had antigonid → [\"antigonid\"], matching 9 regions) but RIS actually uses `homeland_macedonian` shared across antigonid / seleucid / ptolemaic (16 regions). New `get-mod-homelands` IPC parses faction → [homeland_<X>] from EDB at mod load. Falls back to bundled JSON for browser/no-IPC scenarios. Sample log: `[homelands] parsed N factions from EDB aliases (e.g. antigonid → [\"homeland_macedonian\"])`." },
+    ],
+  },
+  {
+    version: "0.9.464",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "ACTUAL root cause of garrison Antigonos II → Roman portrait: TWO bugs stacking in `CommanderPortraitImg`. (1) `const cultureKey = String(culture || \"roman\").toLowerCase();` defaulted to 'roman' when `culture` was null. On the FIRST render of a bodyguard unit (before commanderInfo finishes populating), culture is null → cultureKey=\"roman\" → IPC loads roman/general/038.tga and the blob URL caches. (2) The useEffect's `if (!url) { loadPortrait... }` guard meant once that wrong roman URL was set, changing cultureKey to 'w_hellenistic' on the next render didn't re-fetch. The roman blob stayed permanently. Fix: drop the 'roman' fallback (return null → unit-icon fallback shows instead), and always re-fetch when deps change (remove the `if (!url)` short-circuit and the `url` from the dep array, with proper alive-flag guarding for race ordering). Family tree never hit this because its `Portrait` component has no 'roman' default and its useEffect doesn't have the `!url` guard." },
+    ],
+  },
+  {
+    version: "0.9.463",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "0.9.462 shipped with the OLD JS bundle because I ran `electron-builder` without `npm run build` first — so the FamilyNode crash fix from 0.9.462's source never made it into the installer. 0.9.463 forces a fresh bundle rebuild + re-ship." },
+    ],
+  },
+  {
+    version: "0.9.462",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Family tree no longer crashes with `ReferenceError: v1PortraitsByName is not defined`. 0.9.461 stopped passing the prop from App.js but `FamilyNode` was still referencing the variable in its JSX without destructuring it from its own props — an undefined reference at render time. Removed `v1PortraitsByName` references from Portrait, MemberCard, FamilyNode, and the main FamilyTree export. Component is now exactly where it was before the 0.9.459 add — clean revert." },
+    ],
+  },
+  {
+    version: "0.9.461",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Calibrate-button count computed from cache via secondaryUuid set (not Object.keys, which inflates 3× because each char has 3 keys). Old `statsCacheCharCount` state variable was getting out of sync when calibrate ran from different code paths. Now always reflects the actual unique characters in cache." },
+      { type: "fix", text: "Removed `v1PortraitsByName` from the family tree props — it was pulling stale portrait entries from pre-0.9.460 calibrations and risking the family tree (which was already correct) drifting from its proven coord-bridge + hash flow. Family tree is back to exactly what it was before I touched it." },
+      { type: "fix", text: "Wipe pre-0.9.460 stats-cache localStorage on app start (stamped via `statsCacheGen` key). Prior calibrations stored v1's cross-contaminated portrait paths (Demetrios III→woman, etc.); leaving them in localStorage would let those wrong paths leak back through any code that reads `statsCache[k].portrait`. Recalibrate from save to repopulate after install." },
+    ],
+  },
+  {
+    version: "0.9.460",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Garrison cards now use the IPC hash pool unconditionally, matching the family tree's correct rendering. Ground truth via user screenshots: family tree shows the right portraits (e.g. Antigonos II = old bearded with crown helmet, Demetrios III = young helmeted with goatee); garrison was showing a WOMAN for Demetrios III because v1's `c.portraits[0]` forward-scan picks up adjacent records' pstrs (cross-contamination). Family tree's coord-bridge usually misses for player-faction leaders, falling through to hash — that hash result is what RTW Remastered actually displays in-game. Forces savePath=null on every commanderInfo entry so the IPC always hashes; calibrate also stores portrait=null; non-live bodyguard-swap reads cached.portrait but it's now null too. All paths converge on the same hash algorithm the family tree was already using." },
+      { type: "improvement", text: "Calibrate button label tracks the actual character count (state variable `statsCacheCharCount`), not the cache key count. The cache stores 3 keys per char (full + 2 stripped) so `Object.keys(statsCache).length` was inflating the displayed count to ~3× chars. Toaster (`Calibrated 936 characters`) and button (`Calibrate (936)`) now agree on the same total." },
+    ],
+  },
+  {
+    version: "0.9.458",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Dropped the +280 portraitCardsPath bridge entirely. Dig (`scripts/save-cracker/dig-antigonosb.js`) verified that `extX, extY` from `attachMapCoords` are NOT reliable map coords — AntigonosB had extX=409 extY=359 vs his descr_strat (393, 391). The bridge gave correct portraits for chars where the back-ref's +288/+292 bytes happened to equal map coords (~250 chars), but failed for player-faction leaders like Antigonos II whose back-ref landed elsewhere. Use v1's c.portraits[0] directly — verified ~83% unique (745 distinct paths across 894 chars), AntigonosB→000.tga, DemetriosC→032.tga, DemetriosD→146.tga, all distinct. The earlier 'Macedonians get Roman' was caused by the bridge's broken UUID resolver (0.9.452 fixed), not by v1's forward-scan. Captain-banner filter from 0.9.447/448 keeps v1's paths clean." },
+    ],
+  },
+  {
+    version: "0.9.457",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "All Macedonian generals showing Antigonos II's portrait — bridge was colliding all (extX=0, extY=0) characters onto a single map entry. `attachMapCoords` reads bytes at +288/+292 of the back-ref; when the back-ref lands in a non-pool context those bytes are 0/0, AntigonosB happened to be first into the bridge map at key `\"0,0\"`, every save char with c.x/c.y null defaulted to the same key and inherited his portrait. Fix: both sides require valid map coords (0 < x < 2048, RTW's actual map bounds) before adding to / looking up the bridge map. Invalid-coord chars now fall through to hash-pool as designed. New log line `[commander-info] 0.9.457 bridge: N hits, M misses (coord map size=K, extras with valid coords=L)` shows the breakdown — `coord map size` should now reflect real unique positions, not be dominated by one (0,0) bucket." },
+    ],
+  },
+  {
+    version: "0.9.456",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Actually fixed the portrait issue by digging into the .sav bytes properly (`scripts/save-cracker/dig-portrait-truth.js`). Tested 7 candidate offsets (264, 268, 272, 276, 280, 284, 288) against 109 greek-general records, scoring each by `unique paths / resolved chars`. Result: only `+280` produces high uniqueness (86 resolved → 82 unique paths, ~95%); every other offset returns 0-6 unique paths (way too few — they're other fields, not portrait UUIDs). So `+280` IS the engine's portrait UUID, confirmed. The 'Macedonians get Roman portraits' symptom was the v1 parser's `c.portraits[0]` forward-scan grabbing adjacent records' paths (cross-contamination — Antigonid characters whose record neighbours stored Roman pool paths). Fix: garrison commanderInfo and calibrate-from-save both use the +280 bridge result ONLY (via characterExtras.portraitCardsPath); the v1 fallback is dropped entirely. Bridge misses fall through to the renderer's hash pool, which matches the family tree's hash for the same char." },
+    ],
+  },
+  {
+    version: "0.9.455",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Portraits restored to 0.9.449's family-tree result, which the user confirmed was correct. Diagnosis: 0.9.453 dropped lastName from the hash input entirely (changing `name|lastName|faction` to `name|faction`), which shifted every char's idx — AntigonosB went from 038 (correct) to 130 (wrong). 0.9.454 re-enabled the save-cracked UUID bridge but it produced cards/old/000.tga (also wrong). Fix: keep the 3-element hash shape but FORCE lastName to \"\" inside the IPC, regardless of caller. Garrison live mode (which carries the epitheted lastName) and family tree non-live (which doesn't) now both produce the same idx — the one user confirmed was correct in the very first \"family tree was right\" screenshot." },
+      { type: "fix", text: "Calibrate now REPLACES the stats cache instead of merging. Previously the cache size in the button (\"Calibrate (1183)\") drifted above the toaster's reported calibration count (\"Calibrated 936 characters\") because each calibrate run merged with prior entries. Both numbers now agree on the same total." },
+    ],
+  },
+  {
+    version: "0.9.454",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Re-enabled the engine-exact portrait bridge (save's +280 portrait UUID → pool entry → portrait file) now that 0.9.452's tighter resolver eliminates the false-positive collapse. Both garrison commanderInfo and the calibrate-from-save IPC use the bridge with `coordToV2Portrait` (extX,extY → portraitCardsPath, first-wins on collision). Hash fallback only fires for chars without an extras entry. New log line `[commander-info] 0.9.454 bridge: N hits, M misses` shows bridge effectiveness. Same engine-exact path that the family tree was already using when its coord lookup hit. Hash without lastName (0.9.453) stays as the final fallback so any chars missing both bridges still get a deterministic per-name pick." },
+    ],
+  },
+  {
+    version: "0.9.453",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Garrison cards no longer all show the generic bodyguard icon. 0.9.451's calibrate set `chosenPortrait = null`, which combined with the existing `if (!hasStats && !chosenPortrait) drop` filter meant ~282 Macedon chars (the ones who had a portrait but no decoded stats) got DROPPED from the stats cache entirely. Bodyguard-swap then couldn't find them → no `info` → rendered the unit icon fallback → every general looked identical. Now we keep every parsed char (anything with a firstName) in the cache so the bodyguard-swap charContext gets populated, the IPC's hash-pool fallback runs per-name, and each general lands on a distinct portrait. Also lifts the hash-pool log throttle so every pick is visible in the log." },
+    ],
+  },
+  {
+    version: "0.9.452",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Rewrote `resolvePortraitsByCharacter` with the tighter back-scan approach from the original crack script. Previously the resolver scanned 64 bytes AFTER each portrait pair indexing every u32 as a possible UUID (~11k false-positive entries per save, ~80% of chars bridged to the wrong portrait). New approach: for each char's `+280` portrait UUID, find every occurrence of that UUID in the save and look back ≤100 bytes for a pstr16 portrait path; first hit wins. Result on the test Macedon save: 397/465 chars resolve via real UUID lookup (was inflated to all 465 via false positives), 310 unique card paths (was many fewer distinct values due to collisions). Garrison still uses hash-fallback (0.9.451 behaviour) because the descr_strat (x,y) vs save (extX,extY) divergence means the family tree falls back to hash too for some chars; the rewrite is a quality improvement that future bridges can build on once the coord mapping is also tightened." },
+      { type: "improvement", text: "Re-ship 0.9.451's fixes (garrison bodyguard-swap uses hash fallback, age propagated through stats-cache). User on 0.9.450 reported portraits still wrong; auto-updater had downloaded 0.9.451 but the app hadn't been restarted. **Restart the app after install + recalibrate from save** to pick up the fix." },
+    ],
+  },
+  {
+    version: "0.9.451",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Garrison bodyguard-swap portraits now match the family tree. The save-cracked `portraitCardsPath` bridge was bridging chars to the WRONG (cards, fulls) pair — `resolvePortraitsByCharacter`'s 64-byte u32-sweep window indexes ~11k false-positive candidates per save (60 sweep candidates × ~188 portrait pairs), and chars' `+280` portraitUuids coincidentally hit wrong entries. The user's log made it visible: Antigonos II → `savePath=\"cards/old/generals/000.tga\"` (wrong, from bridge) vs `family-tree hash pool pick → 038.tga` (right, hash matches RTW's engine pick for chars without explicit descr_strat `portrait_index`). Both code paths (live `commanderInfo` and non-live `calibrate-from-save`) now drop the bridge entirely and rely on the IPC's hash fallback — same path the family tree already uses. Also propagates `age` from cached entries into the bodyguard-swap charContext so the IPC picks the right age bucket (was hitting `young` for everyone). Until the sweep window is tightened to eliminate false positives, this is the correct call." },
+    ],
+  },
+  {
+    version: "0.9.450",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Garrison bodyguard-swap cards no longer collapse all generals on the same city tile to one portrait. The commander-info builder bridged `characterExtras` → save chars via a `(x,y) → portraitCardsPath` Map, and 6+ Macedon generals stacked on Pella all map to one tile — last-wins overwrote the rest. Family tree spreads chars across the map so the collision was rare there (user-confirmed family tree was correct). Fix: bridge by `primaryUuid` first (unique per character), `(x,y)` only as fallback, and the coord map is now first-wins so even when the UUID bridge misses we keep ONE useful portrait per tile rather than the last one. New `[commander-info] bridge: extras→saveChar uuid_hits=N coord_hits=M v1_fallback=K` log line shows the breakdown after each save load." },
+    ],
+  },
+  {
+    version: "0.9.449",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Heavy diagnostic logging for portrait resolution so we can debug 'all family-tree members show the same portrait' reports. New log lines: `[family-tree] coord-bridge: ...` (once per save load — reports characterExtras count, how many got (x,y), how many have a portraitCardsPath, and lists tile collisions); `[family-tree] portrait OK/FAIL ...` (once per character, reports savePath or `(hash)` source); `[resolve-portrait] fast-path MISS for savePath=...` (logs once when the engine-stored save path points at a file the filesystem doesn't have, forcing hash-pool fallback); `[resolve-portrait] hash pool pick ...` (logs once per hashInput, shows which pool index a char deterministically landed on — so two chars colliding on the same portrait are visible)." },
+    ],
+  },
+  {
+    version: "0.9.448",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Captain-banner portrait filter also applies in the V2 parser. 0.9.447 filtered captain banners out of the v1 parser (`characterParser.js`), but `characterParserV2.js` has its own portrait scan that produces the `c.portraits[]` array consumed by `saveCharactersByRegion` → bodyguard-swap. Symptom: even after recalibrating on 0.9.447, antigonid Dionysios still showed `data/ui/captain banners/captain_portrait_syracuse.tga`. The v2 filter mirrors v1's regex. **Recalibrate again** (Calibrate button → pick save) after install to refresh the stats-cache portraits." },
+      { type: "improvement", text: "Throttled the `[building-edit] applying override` log so it only fires once per (region, building-signature) pair instead of on every icon-prefetch-driven re-render. Was producing 19 identical lines per region open." },
+    ],
+  },
+  {
+    version: "0.9.447",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Bodyguard-swap unit cards no longer pick up a captain-banner image instead of the character's portrait. The v1 character parser scans forward from the trait block for length-prefixed ASCII paths and stores them in `c.portraits[]` — but the engine sometimes writes a `data/ui/captain banners/captain_portrait_<faction>.tga` path inline before the real portrait, and `portraits[0]` was hitting that first. Symptom in the log: `Dionysios → savePath=\"data/ui/captain banners/captain_portrait_syracuse.tga\"`. Fix filters captain-banner paths out of `portraits[]` during extraction, so the first surviving entry is the actual general/family portrait. **You'll need to recalibrate from a save** (Calibrate button → pick a save) for the cached stats-cache portraits to refresh." },
+    ],
+  },
+  {
+    version: "0.9.446",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Save-faction-discovered bitmask now parses on late-campaign autosaves where the first sentinel byte is `9e` instead of `9c`. ImHex headless cross-save diff (Bactria T964 vs Dummies T900/T1134) revealed a one-bit flip in that byte — it's a flags nibble, not a fixed magic — so the parser was rejecting Bactria's bitmask outright and the discovered-by-player faction list never populated. Now we mask the low nibble and require the rest of the sentinel (`c7 06`) to match, which preserves the integrity check while accepting both observed variants. Other top-nibble values still get rejected so we don't widen the gate too far." },
+    ],
+  },
+  {
+    version: "0.9.445",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Bodyguard-swap unit cards now show the same character portrait as the family tree. The family tree resolves portraits through the v2 role-anchored parser (`portraitCardsPath`, the engine-exact rendered art); non-live bodyguard swaps were resolving through the v1 name-pool/trait parser (`c.portraits[0]`), which could pick a different file for the same character. The `calibrate-from-save` IPC now runs the v2 character-extras parser, attaches map coordinates, resolves portraits via `resolvePortraitsByCharacter`, and bridges to v1 calibrated chars by (x, y). When the coord bridge hits, the v2 portrait wins; v1's portrait is the fallback. Adds `[calibrate] portrait source breakdown: v2_coord=N v1_fallback=M none=K` log line so the dominant source is visible." },
+    ],
+  },
+  {
+    version: "0.9.444",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "CRITICAL: dev-mode building editor was corrupting `descr_strat.txt` on every save. The `update-region-buildings` IPC's settlement-close detection treated the FIRST `}` inside the settlement (which closes a building block) as the settlement-closing brace — so the building-range scanner saw zero closed blocks, removed nothing, and appended N new ones. Each edit doubled the building list; after a few clicks a region's `descr_strat` block ballooned to 30+ entries with orphaned `building {` headers and stray `}`s. Fix tracks brace depth properly: depth 1 = inside settlement, depth ≥2 = inside building, settlement only closes when depth drops back to 0. If your `descr_strat.txt` is already corrupted, restore via `git checkout` or your backup before re-editing." },
+    ],
+  },
+  {
+    version: "0.9.443",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Building dev-editor now respects EDB `requires` clauses on each level. Catalogue captures the per-level `requires` expression and the renderer evaluates it against the region's current faction + descr_regions tag list. Filters applied to both the Add Building picker and the ⬆ upgrade button: `requires factions { x, y, }` hides chains/levels not allowed for the current owner; `not factions { ... }` mirrors that the other way; `hidden_resource X` / `resource X` requires the tag in the region's tag list (and the `not` variants too). Unknown predicates (event_counter, religion, building_present) still pass through — better to surface a few extras than hide legit options. Combined with the existing settlement_min gate, the picker now closely mirrors the engine's accept/reject behaviour." },
+      { type: "fix", text: "EDB level-header regex now matches the `<level> requires <expr>` single-line declaration form used by RIS (e.g. `farms+2 requires factions { …, } and resource grain`) and allows `+` / `-` in level names. Previously only bare-line `farms+2` opened a per-level block, so `settlement_min` values inside levels declared with inline `requires` were lost — meaning the farm chain was always unrestricted in the picker." },
+    ],
+  },
+  {
+    version: "0.9.442",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Multi-general armies + garrisons now show all general face cards at the START of the row, side-by-side. Previously the bodyguard→face-card swap fired per-unit in descr_strat/save order, so two generals in the same army bookended the row with units in between. Stable sort: face-card-eligible units (those with `commanderUuid` in live mode or `commanderName` in non-live) hoist to the front, everything else keeps its relative order." },
+      { type: "fix", text: "Dev-mode building override now preserves bundled-data fields (culture, label hints, tier) when applied. Previously the override was stripped to `{type, level}` before getBuildings consumed it, so on certain regions the merge starved icon + label resolution. Now each override entry is merged onto the bundled static entry for that chain (when present), so the post-resolution pipeline always has enough context to render. New `[building-edit] applying override` log line shows the count each time an override applies." },
+      { type: "improvement", text: "Add Building picker now hides chains whose first-level `settlement_min` exceeds the current settlement tier. Previously the picker would let you add e.g. `barracks` to a village even though the engine would refuse — now those chains drop out of the list and reappear when you upgrade the core_building (settlement tier). Other engine requirements (factions, culture, hidden_resources) aren't checked yet." },
+    ],
+  },
+  {
+    version: "0.9.441",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Dev-mode building edits now show the correct artwork on upgrade and persist when devMode toggles off. The previous editor kept a stripped local mirror so upgraded chains rendered with the OLD tier's icon, and devMode-off reverted to the bundled prop. The edit state lifts up to App.js as a per-region override that getBuildings consults, so the existing icon-prefetch + label-resolution pipeline runs over the new list — new tier = new artwork, automatically, every time." },
+      { type: "feature", text: "Settlement-tier gating for the dev-mode ⬆ button. The catalogue now parses every level's `settlement_min` from `export_descr_buildings.txt` (plus the `core_building` chain's level list, which IS the settlement ladder). When the settlement's core_building level is too low, the ⬆ on a chain whose next-tier requires more is hidden and the click is blocked with a toast — `Blocked: <level> needs settlement ≥ <tier>`. Upgrade the core_building (governor's house → governor's villa → proconsuls_palace → ...) and the gates on every other chain unlock together. core_building itself bypasses the check because it defines the ladder." },
+    ],
+  },
+  {
+    version: "0.9.440",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Stats-cache calibration no longer clobbers the right portrait with the wrong one. 0.9.438's relaxed filter let portrait-only chars into the cache, but the stripped lookup key (`firstName||faction`) collides when a faction has multiple characters with the same first name (RIS antigonid has many `Dionysios` / `Perdikkas` / etc.). Last writer was winning, usually a stat-less captain — so the governor's face on the bodyguard-swap card came out wrong. Calibrate now scores each candidate (stats=2, portrait=1) and only overwrites a stripped-key slot when the new entry strictly beats the existing one. The full key (firstName + lastName + faction) is still written unconditionally because it's unique. Also writes the `firstName||` (no-faction) fallback through the same scorer." },
+    ],
+  },
+  {
+    version: "0.9.439",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Loyalist map mode is now strict: a region paints in its rebel-default colour ONLY when `descr_regions` field 3 and `descr_strat` `faction_creator` actually agree. Everything else paints flat grey. Example: Sikelia (descr_regions = `italics`, descr_strat = `faction_creator capua`) was incorrectly painting in colour under 0.9.437/0.9.438 because emergent-faction and no-creator settlements were being matched permissively — now they fall through to grey like any other disagreement." },
+    ],
+  },
+  {
+    version: "0.9.438",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Stats-cache calibration now also keeps characters whose portrait decoded but whose stats didn't. Previously a save record where the engine assigned a portrait path but Provincia's stat-offset crack came up null was dropped entirely — meaning the bodyguard-swap portrait fallback never had an entry for those characters. Symptom: Leonides (antigonid governor of Pharsalos, RIS turn-0) showed the bodyguard art and approximate stats even after calibration. Fix relaxes the filter to `hasStats OR hasPortrait`. Approximate-stats label stays accurate when the entry's `command/influence/management/loyalty` stay null. New `[calibrate] coverage:` log shows the cached / stats-only / portrait-only / dropped split per save." },
+    ],
+  },
+  {
+    version: "0.9.437",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Loyalist map mode now compares the TWO independent rebel-default declarations: `descr_regions` field 3 vs `descr_strat` `faction_creator`. Previously it compared rebel-default against the current parent-faction owner (the `initialOwnerByCity` map), which is a different concept entirely — so settlements like Eraviscia_Orientalis where descr_regions says `eravisci` and descr_strat says `faction_creator eravisci` were grey-flagged because they currently sit under the anartes parent block. New: descr_strat parser also reads `faction_creator` per settlement, exposed via `get-initial-creators` IPC. The region overlay (which clobbers `r.faction` with the strat owner) now snapshots the descr_regions value as `r.rebelDefault` so loyalist mode has a stable source. Adds `[loyalist]` log line each paint pass with creator/region counts." },
+      { type: "feature", text: "Dev-mode building editor in the right-side Buildings widget. Each building card gets ⬆ / ⬇ / × overlay buttons when devMode is on — ⬆ upgrades to the next level in the EDB chain (hidden at top tier), ⬇ downgrades (hidden at level 0), × removes the building. A `+ Add building` card opens an inline picker listing every chain the region doesn't already have (with search). Persists to `descr_strat.txt` via the new `update-region-buildings` IPC; status toast confirms `Saved (descr_strat:LINE)`. Catalogue (chain → levels) loaded lazily on first dev-mode entry via the new `get-building-catalogue` IPC. Logs every action as `[building-edit] up/down/remove/add <chain> <from> → <to> in region <name>`. **Does NOT modify live saves** — same caveat as the trait editor; takes effect on next non-live load." },
+      { type: "feature", text: "Dev-mode ancillary editor in the right-click character info panel. Mirror of the trait editor — × per row to remove, `+ Add ancillary` picker lists every ancillary in `export_descr_ancillaries.txt` minus what the character already has, filtered by the character's culture (engine `ExcludeCultures`). Persists via the new `update-character-ancillaries` IPC. Logs `[ancillary-edit] wrote N ancillaries for <name>`." },
+      { type: "improvement", text: "Add Trait picker now lists EVERYTHING the engine would accept on the character, not just the first 60 names that happened to match. Three filters applied: (1) `Characters` constraint — trait must allow this character's agent type (family/admiral/spy/assassin/diplomat or `all`), (2) `ExcludeCultures` constraint — trait must not be forbidden on the character's culture, (3) Hidden flag (still hidden outside dev mode). Visible cap raised from 60 to 250 — RIS has 3853 trait definitions so the old cap hid ~98% of options." },
+    ],
+  },
+  {
+    version: "0.9.436",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Loyalist map mode now paints emergent factions (those that didn't exist at campaign start) as MATCH, and treats regions with no creator-faction info as MATCH too. Previously these surfaced as grey mismatches — wrong for any region that didn't appear in the starting `descr_strat.txt`. Only true mismatches (creator faction exists in starting roster AND differs from current owner) get the flat grey overlay now." },
+    ],
+  },
+  {
+    version: "0.9.435",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Trait editor only shows the level buttons that actually do something — + when the trait can still level up (level < max defined level), − when it can still drop (level > 1). Single-level traits get neither button. Removes dead-click UI noise; the × remove button stays visible always." },
+    ],
+  },
+  {
+    version: "0.9.434",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Dev-mode trait editor in the right-click character info panel. Each trait row gets +/−/× buttons to bump the level up/down or remove the trait. An `+ Add trait` button opens a searchable picker (all traits in the mod's `export_descr_character_traits.txt`, minus ones the character already has). Changes persist to `world/maps/campaign/.../descr_strat.txt` — the `traits Foo 2, Bar 1` line on the character's `character` block gets rewritten via the new `update-character-traits` IPC. Status toast confirms write + file:line. **Does NOT modify live saves** — edits affect the next non-live load (and any future new-game). Log: `[trait-edit] wrote N traits for <name> (faction <fac>) to descr_strat.txt:LINE`." },
+    ],
+  },
+  {
+    version: "0.9.433",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Hidden traits (those declared `Hidden` in `export_descr_character_traits.txt`) are now filtered out of the right-click character info panel — engine behaviour matches. Devs still see them: dev-mode shows the full list including hidden ones for cracker work. Trait-data IPC now ships a `hidden` map alongside the level data + epithets + ancillaries." },
+    ],
+  },
+  {
+    version: "0.9.432",
+    date: "2026-05-19",
+    items: [
+      { type: "change", text: "Loyalist map mode mismatch regions now paint in neutral grey instead of a 45%-toward-grey tint of the rebel-default colour. Matches keep their full-saturation rebel-default colour; mismatches go flat grey so the eye focuses on where the rebel-default is correctly configured rather than reading a dim version of the wrong colour as also-faction-coded. (User feedback on the 0.9.371 entry.)" },
+    ],
+  },
+  {
+    version: "0.9.431",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Garrison + field-army commander labels also display the in-game name now. 0.9.430 wired up the displayName util but the three garrison-commander builders (non-live, mid-tile, non-live fallback) and the field-army entry constructor were still passing the raw string. AntigonosB now displays as Antigonos II in the garrison header." },
+    ],
+  },
+  {
+    version: "0.9.430",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Character names now display in their in-game form everywhere (was already done in the Family Tree but not in the region Characters list, garrison/field commander labels, or info-popup titles). Extracted the roman-numeral conversion (`AntigonosB` → `Antigonos II`, `DemetriosC` → `Demetrios III`) into a shared `displayName.js` util used by FamilyTree, RegionInfo, and App.js. The character widget and garrison header both pick it up so AntigonosB stops showing as the raw engine ID." },
+      { type: "improvement", text: "Calibrate log now reports portrait coverage: `[calibrate] parsed 633/936 stat-bearing chars (N with portrait)`. Also dumps the raw `portraits` array for the first 3 chars so we can see whether the v1 parser found portrait paths in your save. Use this to diagnose why AntigonosB's face card was hash-picked instead of save-derived — if portraits=[] for him in the log, the v1 scan missed them; if portraits has entries, the IPC is dropping them somewhere." },
+    ],
+  },
+  {
+    version: "0.9.429",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Bodyguard unit cards now swap for the general's face card in **non-live** mode too — previously gated on `unit.commanderUuid` which only exists in live save data. Now the calibration cache also stores each character's portrait path; in non-live mode each army's first unit gets tagged with `commanderName`/`commanderFaction` and the swap resolves the portrait by name lookup in `statsCache`. After calibrating from a save once, the bundled descr_strat starting-armies widget shows real face cards for Milon, Aulus Gabinius, every general. Field + garrison both covered." },
+      { type: "improvement", text: "Loyalty hide is still active — the auto-detect found 14 trait + 30 ancillary `Effect Loyalty` lines in RIS, so it CAN'T auto-hide (the data references it). If you want it hidden regardless, that needs a manual override (toggle or per-mod config) — let me know and I'll add one." },
+    ],
+  },
+  {
+    version: "0.9.428",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Hide stats the loaded mod doesn't use. main.js now scans every trait level + ancillary's `Effect <Stat>` lines and reports `usesStat = { command, influence, management, loyalty, subterfuge }` via the trait-data IPC. The right-click character info panel reads this and drops columns the mod never references — RIS dropped Loyalty entirely, so it no longer renders. `[trait-data] mod uses stats: Command, Influence, Management` in the log so you can see what was detected." },
+      { type: "improvement", text: "Bodyguard-card-swap logging. Every unit with a `commanderUuid` now logs once per render-pass why the swap fired or fell back: `[bodyguard-swap field] cmd=0x… → AntigonosB faction=\"antigonid\" savePath=\"(none)\" cultureLookup=\"greek\"` on a hit, or `no commanderInfo for cmd=0x… mapSize=N` if commanderInfo missed. `CommanderPortraitImg` itself logs `OK / FAIL` per character with the savePath it tried. Next time bodyguard cards don't swap, the log will say exactly which step missed." },
+    ],
+  },
+  {
+    version: "0.9.427",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Calibration cache lookup still missed because the v1 parser appends trait-derived epithets to lastName (`AntigonosB` → lastName `II Gonatas the Kind`), so the cache stored `\"antigonosb|ii gonatas the kind|\"` but the renderer reads with empty lastName (RIS chars are single-named in descr_strat) and tried `\"antigonosb||antigonid\"` / `\"antigonosb||\"`. Spotted from the new log lines — write side wrote epithet-baked keys, read side had no way to know about them. Fix: cache now writes BOTH variants per character — full key (with epithet lastName) and a stripped key without lastName. The renderer's existing fallback chain hits the stripped variant. Applies to all three write paths: manual 🎯 Calibrate + save-watch + initial-load." },
+    ],
+  },
+  {
+    version: "0.9.426",
+    date: "2026-05-19",
+    items: [
+      { type: "improvement", text: "Logging added to the stats-cache pipeline so the next bug-hunt is just `tail provincia.log` away. Logs now include: `[calibrate]` IPC entry with count of stat-bearing chars + sample key/value rows; `[stats-cache] wrote` on the renderer side with the actual cache-key strings being stored; `[stats-cache] HIT`/`MISS` once-per-character on lookup including all key variants tried + the matched key on hit. Per the new directive (memory: `feedback_log_new_features`), every new feature ships with bracketed log lines that capture what data flowed and what decisions were made." },
+    ],
+  },
+  {
+    version: "0.9.425",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Calibration cache wasn't being read after writing. The v1 character parser returns `faction = undefined` for many characters (the role-byte → faction mapping isn't reliable without descr_strat cross-ref), so the write side ended up with cache keys like `antigonosb||` (empty faction). The read side built keys like `antigonosb||macedon` (faction from descr_strat) and missed. Fix: read tries four key variants in order — full key, key-without-faction, key-without-lastName, name-only. With Antigonos II Gonatas the second variant hits, and the chip shows the real 7/6/5/6 instead of the trait-effect estimate." },
+    ],
+  },
+  {
+    version: "0.9.424",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "🎯 Calibrate button now actively loads a save instead of just showing instructions. Click → file picker opens at the saves folder → pick a save → app parses it in the background (doesn't enter live mode, doesn't touch any other state), extracts every character's command/influence/management/loyalty + faction + name, and writes to the localStorage cache. Manual calibration is treated as the user's explicit intent so it overwrites existing entries regardless of turn (so picking a fresh turn-0 save replaces stale mid-campaign values). Toast confirms how many characters were cached + which turn the save was on." },
+    ],
+  },
+  {
+    version: "0.9.423",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "**Auto-calibrating stat cache.** Every time you load a save with real stats (live mode), Provincia caches each character's command/influence/management/loyalty keyed on `firstName|lastName|faction` into localStorage. Then in non-live (`(starting)`) mode the Characters widget looks up the cached values FIRST — falling back to the trait-effect estimate only for characters the cache hasn't seen yet. Result: after loading any turn-0 save of your mod once, you see real save-read stats in non-live mode for every character that's also in the cache. The cache is persistent (survives reloads) and turn-aware (turn-0 entries outrank later-turn ones to avoid mid-campaign trait gains leaking into the 'starting' display)." },
+      { type: "feature", text: "**🎯 Calibrate button** in the top toolbar. Click it for instructions: 'start a new game in your mod, save immediately at turn 0, load that save here'. After that, non-live mode shows real stats. The badge shows the cached character count, so you can see when calibration is set up. The button isn't required — the cache auto-populates on any save load — it's there so users know the feature exists and can explicitly re-calibrate when needed." },
+    ],
+  },
+  {
+    version: "0.9.422",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Non-live mode now estimates Command/Influence/Management/Subterfuge by summing trait + ancillary Effect lines per character. descr_strat doesn't store stats inline (engine computes them at game start from base + traits + ancillaries + tag bonuses), so the previous `?/?/?/?` was a data gap rather than a parser bug. Sum gives results within 1-2 of in-game (Antigonos II Gonatas estimates 5/5/3, in-game is 7/6/5 — gap is the engine's unmodelled base values + faction-leader tag bonus). Estimates are marked with `~` so they're visually distinct from save-derived stats. Right-click info panel reads the same field." },
+      { type: "feature", text: "Dynamic culture discovery in `parseCharacterExtras` — replaced the hardcoded VANILLA_CULTURES + RIS_CULTURES list with a scan that finds every `<culture> <role>\\0` pstr16 in the save and validates the token. Per the no-hardcoding directive, works for any mod (vanilla, RIS, BI, Alex, custom). On Macedon T0 RIS the count rose from 421 → 465 — the hardcoded list missed `sarmatian`, `illyrian`, and others that the engine assigns to specific characters." },
+    ],
+  },
+  {
+    version: "0.9.421",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Non-live (descr_strat) mode now parses character stats so the `(starting)` Characters widget shows real Command/Influence/Management/Subterfuge instead of `?/?/?/?`. The `command N, influence N, management N, subterfuge N` tokens appear on both `character` lines (the named-character header) and `character_record` lines (family members) in descr_strat — parser now picks them up from both. Stats forward through `byCoord` → `startingCharactersFromMod` → the mapToChar function in App.js → the characters prop. Live mode unchanged (still uses v1 parser's u32 read of the save's stat block)." },
+      { type: "improvement", text: "FamilyTree also gets the descr_strat stats — they ride along on the `bucket.named` records that drive `modFamiliesByFaction`, so right-clicking a tree member without a save loaded still shows the 4-up stat row in the info panel." },
+    ],
+  },
+  {
+    version: "0.9.420",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Ancillary icons resolve correctly now. The descr_strat / save name (e.g. `poet`) is not the image filename — each `Ancillary <name>` block in `export_descr_ancillaries.txt` has an `Image <file>.tga` line that maps to the actual TGA. Parser now captures that mapping and the AncillaryRow uses it. `poet` resolves to `philosopher2.tga`, etc." },
+      { type: "feature", text: "Ancillary rows also show Effects (colored `+1 Influence` badges) + the full description text from `export_vnvs.txt` — same layout as the trait rows." },
+      { type: "fix", text: "Character stat labels were rotated. v1 parser labeled the four u32 fields at character record +102/+106/+110/+126 as management/command/influence/loyalty, but in-game verification (Antigonos II Gonatas in RIS Macedon T0 — Command 7, Influence 6, Management 5) showed the labels were one position off. Corrected: +102 = command, +106 = influence, +110 = management, +126 = loyalty (unchanged). Byte offsets are the same — only the labels rotate." },
+      { type: "feature", text: "Stats row added to the right-click character info panel. Command (orange), Influence (purple), Management (green), Loyalty (gold) shown as 4-up tabular numerics. Reaches characters through the v1 parser → charactersByRegion path AND the FamilyTree coord bridge (so it also fires on descr_strat-rendered tree members)." },
+    ],
+  },
+  {
+    version: "0.9.419",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Ancillaries were STILL rendering as `undefined` in the right-click character info panel after 0.9.418. The 0.9.418 fix handled v1-bridged ancillaries (`{id, name}` objects), but the FamilyTree right-click path renders descr_strat-derived characters where ancillaries are stored as raw STRINGS (one element per token in the descr_strat `ancillaries foo, bar` line — see main.js:466). `AncillaryRow` was reading `ancillary.name` on a string and getting `undefined`. Fix: normalize both shapes — if the input is a string, use it directly; if it's an object, prefer `.name` then fall back to `#id`. Ancillary icons load from the same string either way." },
+      { type: "change", text: "Trait icons confirmed absent from RTW Remastered's data tree. Exhaustive search of both the install directory and the RIS mod tree (every TGA / DDS / PNG) found zero per-trait icons — they were files in vanilla 2004 RTW at `data/ui/<culture>/vnvs/<level_name>.tga`, but Remastered baked them into a compiled UI atlas. The IPC handler still tries the legacy path so a mod-supplied file would render, but stock RTW Remastered / RIS / BI / Alex all return nothing. Trait rows show effects + threshold + description without the icon slot in that case." },
+    ],
+  },
+  {
+    version: "0.9.418",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Ancillaries were rendering as `#undefined` in the right-click character info panel. Root cause: `bridgeV1Traits` copied ancillaries from the raw v1 char array, where they're just `{ id }` — the name-resolution pass (mapping id → name via `export_descr_ancillaries.txt`) runs against `charactersByRegion`, NOT the raw `characters` array we bridge from. Fix: pass `modAncillaryNames` to the bridge and resolve names there. Ancillary icons now render too — RTW Remastered DOES ship these at `data/ui/ancillaries/<name>.tga`, via a new `resolve-ancillary-icon` IPC." },
+      { type: "change", text: "Trait icon column dropped from the info panel because RTW Remastered ships no per-trait icon files (vanilla RTW had `data/ui/<culture>/vnvs/<level_name>.tga`, but Remastered baked trait icons into a compiled UI atlas — no path resolves on disk). The 0.9.417 placeholder slot was just rendering an empty box; it's now hidden unless the mod re-introduces files at the legacy path. Effects, level name, threshold, and description text still render as before." },
+    ],
+  },
+  {
+    version: "0.9.417",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Trait + epithet entries in the right-click character info panel now show their **picture, effects, and description text**. Picture: trait icon TGA loaded from `data/ui/<culture>/vnvs/<level_name>.tga` (with vanilla-culture fallback), decoded the same way as portraits and unit cards. Effects: colored badges per Effect line in `export_descr_character_traits.txt` (`+1 Command` green, `-1 Influence` red, etc.) plus the EffectsDescription text in case the mod wrote a more nuanced one (e.g. `+10 Build Points (required to build siege equipment)`). Description: full italic blurb from `text/export_vnvs.txt`. Parser now handles both vnvs formats — `{key}\\ttext` on one line AND `{key}` then text on next line; the next-line variant was silently dropped before, so trait descriptions never reached the UI. Threshold from the trait file is shown next to the level number so power-users can see when the level kicks in." },
+    ],
+  },
+  {
+    version: "0.9.416",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Per-character traits in RIS now reach the right-click info panel from the Family Tree. Crack: `parseCharacterExtras` (role-anchored, 421 chars in Macedon T0 RIS) doesn't read traits — the post-role layout differs from the v1 character record format. But the v1 parser DOES find these characters at completely different file offsets (UUID namespaces are also different, so direct UUID lookup misses). New `bridgeV1Traits()` joins the two via (x, y) map coords, since each tile can carry at most one character. Bridges 241/421 chars on Macedon T0; bridged entries get `traits`, `ancillaries`, `clanHead`, `firstName`, `lastName`. FamilyTree's coord-to-save map now passes these through to the right-click info panel, so the popup shows real save-state traits (current-turn values, gained epithets) instead of frozen T0 descr_strat values. Wired into the three parseCharactersAndUnits sites in main.js." },
+    ],
+  },
+  {
+    version: "0.9.415",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Family Tree window now follows the app's dark/light mode toggle. It was always rendering with the light parchment palette regardless of system theme — the modal is a fixed overlay, not a `.panel`, so neither the panel CSS rules nor the inline-color contrast-fix mutation observer reached it. Added a set of `--ft-*` CSS variables on `:root` and `body.dark-mode` (card bg, text, borders, sidebar, member cards, portrait frames, connector lines, zoom controls, etc.); the FamilyTree inline styles now read those vars so toggling the OS dark mode re-themes the modal in place." },
+    ],
+  },
+  {
+    version: "0.9.414",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "0.9.412/0.9.413 still missed Milon (and any governor whose v1 char record didn't get a region attached). saveCharactersByRegion is region-keyed — it drops chars whose `c.region` is null. Governors like Milon-in-Taras can hit that path: the engine knows he governs Taras via the marker-1940 settlement governor table, but the v1 parser's region inference for his char record can fail. Solution: augment `commanderInfo` with `saveGovernorByCity` (the authoritative governor→uuid map), which has uuid + firstName + lastName + age. Governors don't carry a portrait path so the IPC falls back to name+faction+age hash-pick from the right culture pool — stable per-character, matches what RTW renders." },
+    ],
+  },
+  {
+    version: "0.9.413",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Culture-key lookup in the bodyguard→face-card swap was case-sensitive; if the live save reported a faction id as `Rome` while `factionCultures` was keyed by lowercase `rome`, the swap fell back to the unit card. Now lowercases the faction id first, then falls back to the raw key. Pure safety net — doesn't change behavior when culture mapping was already hitting." },
+    ],
+  },
+  {
+    version: "0.9.412",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "Bodyguard→face-card swap still didn't fire in 0.9.411 because the lookup keyed via `armiesToRender`, which is field armies only — governors (e.g. Milon in Tarentum) and other characters who aren't commanding a field stack weren't in that list. Switched to `saveCharactersByRegion`, which contains every live character (governor, field general, captain) along with their `secondaryUuid` that matches `unit.commanderUuid` exactly. Now Milon's bodyguard in the garrison and Aulus Gabinius's bodyguard in the field both show their respective face cards. Uses `c.portrait` (the cards path written into the save) as the primary portrait path, with the (x,y)→characterExtras coord bridge layered on top for an engine-exact match when available." },
+    ],
+  },
+  {
+    version: "0.9.411",
+    date: "2026-05-19",
+    items: [
+      { type: "fix", text: "v0.9.410 didn't actually swap the bodyguard unit cards for general face cards in most saves. Root cause: the lookup keyed on `commanderUuid → characterExtras.ownUuid` directly, but those are two **different UUID namespaces** — the unit-record commanderUuid is the character's secondary/commander UUID (matches `unit.commanderUuid` in the save body), whereas `characterExtras.ownUuid` is the role-anchored UUID set after the role pstr16. They don't match. Bridge now goes through (x, y) map coordinates: every army has commander coords, every characterExtras entry has `extX/extY`, and a single tile can't hold more than one character — so the coord match is unambiguous. Falls back to IPC's name+faction+age hash-pick from the culture's portrait pool when no characterExtras hit (covers vanilla saves and any RIS character not yet in the role-string roster). Result: every bodyguard unit now shows the general's face card." },
+    ],
+  },
+  {
+    version: "0.9.410",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Every general's bodyguard unit card in the region's garrison + field-army widgets is now replaced with the general's **face card** — the same save-derived portrait the in-game family tree shows. The swap fires when a unit has a `commanderUuid` (= it's a bodyguard) AND the loaded save provided a portrait path for that commander (`characterExtras` hit, via the 0.9.397 (x,y) coord bridge or 0.9.406 RIS culture unlock). Non-bodyguard units stay as regular unit cards. Falls back to the unit card while the portrait blob loads from disk, so the grid never goes blank." },
+    ],
+  },
+  {
+    version: "0.9.409",
+    date: "2026-05-19",
+    items: [
+      { type: "feature", text: "Family Tree characters are now clickable. **Left-click** a character card to re-center the tree on that person's family (the tree pivots so they're shown in their immediate household — husband+wife row with children beneath). Works for anyone in the tree — leader, heir, wife, child. **Right-click** opens the same character info panel that's available in the region's Characters list, showing traits, ancillaries, clan/family head, and resolved children. Card cursor changes to pointer and the hover tooltip now mentions the new interactions." },
+    ],
+  },
+  {
+    version: "0.9.408",
+    date: "2026-05-18",
+    items: [
+      { type: "improvement", text: "App.js now uses `savePlayerFaction` (cracked in 0.9.407) as a fallback when the save filename doesn't contain a recognizable faction name. Previously, custom-named saves like `My RIS Macedon attempt.sav` showed a `Couldn't identify faction from save name …` toast and required manual picking. Now the player's faction is auto-detected from save bytes regardless of filename. Filename detection still wins when it succeeds (no behavior change for `Autosave Romans_Julii Turn 12.sav` style names)." },
+    ],
+  },
+  {
+    version: "0.9.407",
+    date: "2026-05-18",
+    items: [
+      { type: "feature", text: "New `identifyPlayerFactionFromSave()` cracker function returns the player's faction internal name (e.g. `antigonid`, `romans_julii`, `carthage`) from the save alone — no descr_strat needed. Crack: the player's faction record sits BEFORE the 23 NPC major-faction records in save body order, and embeds its `captain_card_FACTIONNAME.tga` banner just like NPC records do. So the only captain banner whose offset is < `factionRecords[0].offset` belongs to the player. Validated on Macedon T0 RIS: 46 total banners scanned, 41 unique factions, only `antigonid` at 0x150c1cc precedes the first NPC record at 0x1538dd8. Exposed as `savePlayerFaction` in IPC. Useful for future UI auto-detection of the player's faction when no descr_strat is loaded, and for cracker work where ground truth was previously user-supplied." },
+      { type: "improvement", text: "Documented in memory: 216 minor-faction economic records also exist (each with one captain banner, e.g. acarnania, achaea, acragas, etc.) using the same `+8=100` major-class tag but `+44=8` instead of `+44=6`. Total = 23 major + 216 minor = 239 economic-class records. parseFactionTreasuries still only returns the 23 with the regionCount layout — the minor records use a different inner format and aren't yet parsed." },
+    ],
+  },
+  {
+    version: "0.9.406",
+    date: "2026-05-18",
+    items: [
+      { type: "fix", text: "Character-record parser was silently dropping 65% of characters in modded saves. The old `parseCharacterExtras` hardcoded field offsets calibrated for `\"greek general\"` (14-byte role string), but other-length roles like `\"antigonid general\"` (18), `\"barbarian general\"` (18), and `\"carthaginian general\"` (21) shift every subsequent field. Result: in a Macedon T0 RIS save, only 143 of 421 characters were extracted — all the antigonid (player), seleucid, baktrian, cappadocian, sabaean, galatian etc. characters were thrown out at the structural validation step. Fix: compute field offsets relative to `(idx + roleLen)` instead of fixed `idx + 15 / +35 / +37`. Now extracts: 109 greek, 94 seleucid, 34 antigonid (player), 34 roman, 16 cappadocian, 13 sabaean, 12 baktrian, 10 galatian, 10 nabataean, plus 109 more across 22 minor RIS cultures = 421 characters total." },
+      { type: "improvement", text: "Crack progress: confirmed via char-roster cross-match that the player's faction is NOT one of the 23 major faction records. The player's antigonid char UUIDs cluster at save offset 0x1517fe3 in Macedon T0, ~132KB BEFORE the first major-faction record at 0x1538dd8. This explains why `identifyFactionRecordOwners` (captain banner counting) only identifies 10/23 records — the player faction lives in a separate section with a different signature than the class-100 NPC records. Future work will locate the player-record section header to expose player treasury/income directly from the save (current Wealth widget fallback computes it via settlement income subtraction)." },
+    ],
+  },
+  {
     version: "0.9.405",
     date: "2026-05-18",
     items: [

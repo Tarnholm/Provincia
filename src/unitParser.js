@@ -161,10 +161,15 @@ function findUnitRecords(buf) {
       if (!isVariantB) {
         const xpByte = buf[regionEnd + 20];
         if (xpByte != null) xp = xpByte & 0x0f; // strip 0x80 starting-roster flag
-        const w = buf[regionEnd + 17];
-        if (w != null && w <= 3) weaponUpgrade = w;
-        const a = buf[regionEnd + 16];
-        if (a != null && a <= 3) armourUpgrade = a;
+        // NOTE (2026-05-24): bytes +16 (armour) / +17 (weapon) were a session-10
+        // hypothesis that does NOT hold. Across RIS Rome saves t1/t5/t7, +17 is
+        // a STATIC binary attribute (~63% of units = 1, never >1 even at turn 7
+        // after blacksmith upgrades exist) and +16 is always 0 — neither is a
+        // blacksmith upgrade level (those range 0..3). Reading them painted a
+        // false "+1 sword" on every unit that simply has a base weapon (e.g.
+        // all Roman infantry). RIS's EDU has no weapon_lvl to subtract either,
+        // so we leave both at 0 until the real per-unit upgrade source is found.
+        // (xp at +20 stays — it is validated against chevron gains T13→T14.)
       }
     }
     // Sanity: soldiers/max should be 0-2000

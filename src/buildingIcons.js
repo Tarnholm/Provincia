@@ -88,6 +88,20 @@ export function getCachedBuildingIcon(culture, levelName) {
   return v === "none" || !v ? null : v;
 }
 
+// Invalidate a single cache slot so the next loadBuildingIcon() refetches
+// from main.js — used after a dev-mode icon replacement so the new TGA
+// shows up immediately. Revokes the prior blob URL so we don't leak.
+export function invalidateBuildingIcon(culture, levelName) {
+  if (!culture || !levelName) return;
+  const key = `${culture}|${levelName}`;
+  const v = cache.get(key);
+  if (v && v !== "none") {
+    try { URL.revokeObjectURL(v); } catch {}
+  }
+  cache.delete(key);
+  inflight.delete(key);
+}
+
 export function prefetchBuildingIcons(modDataDir, triples, onLoaded) {
   // triples: [culture, level, chainName?][]
   for (const t of triples) {

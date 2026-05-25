@@ -12,6 +12,11 @@
 /build
 /dist
 
+# Bundled runtime artifacts for the embedded Scripts feature — fetched by
+# scripts/fetch-runtime.js (prebuild), not committed. See main-scripts.js.
+/python-runtime
+/scripts-suite/vs
+
 # local working copies / scratch dirs not meant for the repo
 /for claude/
 /cd

@@ -792,7 +792,7 @@
   "Rucinatia": 4000,
   "Cosuanetia": 3000,
   "Catenatia": 1500,
-  "Licatia": 4000,
+  "Licatia-Focunatia": 4000,
   "Volcaea": 5000,
   "Volcaea_Orientalis": 3000,
   "Volcaea_Septentrionalis": 1500,
@@ -981,7 +981,7 @@
   "Catalia": 1500,
   "Ambisontia": 1500,
   "Carnia": 1500,
-  "Alaunia": 2500,
+  "Alaunia-Genaunia": 2500,
   "Marsignia": 5000,
   "Osia": 1400,
   "Racataea-Racatriaea": 1600,
@@ -1303,5 +1303,5 @@
   "Qudsdo": 1500,
   "Bariy": 1500,
   "Cilicians_Region": 400,
-  "Hellenistic_Rebels_Region": 400
+  "Xiongnu_Region": 400
 }

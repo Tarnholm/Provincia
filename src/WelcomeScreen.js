@@ -42,6 +42,37 @@ const ONBOARDING_PAGES = [
     tip: "Imported data is saved locally so you only need to import once per mod version.",
     highlight: "campaigns",
   },
+  {
+    title: "Live Mode \u2014 Watch Your Campaign",
+    body: "Click the \u201cLive\u201d button at the top and point it at your Rome Remastered logs folder. Provincia parses every autosave: armies, characters, owners, buildings, build queues, recruit queues, traits, ancillaries, stats, treasury, diplomacy, and family events all update as you play.",
+    tip: "Your faction gets auto-detected from the autosave filename and the save\u2019s captain banner \u2014 no manual picking needed.",
+    highlight: null,
+  },
+  {
+    title: "Family Tree",
+    body: "Open from the Family Tree button in the Region panel or from a region\u2019s \u201cCharacters\u201d header. Shows every faction\u2019s house with the engine-assigned portrait per character, spouses, children, leader + heir markers, and faded-out deceased members.",
+    tip: "Left-click a character card to re-center the tree on their family. Right-click for the full character info popup.",
+    highlight: null,
+  },
+  {
+    title: "Character Info Panel",
+    body: "Right-click any character anywhere in the app \u2014 region Characters list, family tree members, garrison + field-army commanders. Shows command/influence/management/loyalty stats, every trait with effects + description text, every ancillary with icon + effects, clan links, and resolved children.",
+    tip: "General bodyguard unit cards are replaced with the engine\u2019s face card for the commanding character.",
+    highlight: null,
+  },
+  {
+    title: "Stats Calibration (Non-Live Mode)",
+    body: "descr_strat doesn\u2019t store character stats inline \u2014 the engine derives them at game start. Provincia can cache every character\u2019s real stats from any save and use them in non-live mode. Click below to calibrate now from a turn-0 save (recommended) \u2014 or skip and use the \ud83c\udfaf Calibrate button later.",
+    tip: "Calibration also auto-populates on every save load. The first calibration pass is the most important: it seeds the cache with real values instead of trait-effect estimates.",
+    highlight: null,
+    action: "calibrate",
+  },
+  {
+    title: "Faction Wealth & Diplomacy",
+    body: "Live mode surfaces per-faction treasury, income, settlement size + population, and a 23-faction diplomatic standing breakdown straight from the save bytes. Open the Wealth panel from the toolbar, or click any faction\u2019s flag.",
+    tip: "The Wealth widget identifies each faction record by its embedded captain banner, so the player\u2019s treasury maps correctly even in mods that reorder factions.",
+    highlight: null,
+  },
 ];
 
 /* ── Type badge colours ──────────────────────────────────────────── */
@@ -83,7 +114,7 @@ function displayVersion(v) {
 /* ── Component ───────────────────────────────────────────────────── */
 const FORCE_TEST_MODE = false;
 
-export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboardingDone, forceOnboarding, onPhaseChange, onDone, onHighlight, mapCenterX }) {
+export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboardingDone, forceOnboarding, onPhaseChange, onDone, onHighlight, mapCenterX, onCalibrate, statsCacheCount }) {
   // Persisted state is the source of truth. (We previously had a
   // "stale-saved-version" check that fired whenever lastSeenVersion was
   // higher than the topmost changelog entry — but the saved version is the

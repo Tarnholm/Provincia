@@ -19,8 +19,15 @@
 //     BUILDING tag `02 00 00 00` at body offset 53:
 //       entry+0  u32 type = 2
 //       entry+4  u32 count
-//       entry+8  u32 chain_id
-//       entry+16 u32 turns_remaining
+//       entry+8  u32 chain_id            (duplicated at +36; aids validation)
+//       entry+12 u32 = 0                 (flags / reserved)
+//       entry+16 u32 turns_total         (matches EDB `construction N`)
+//       entry+20 u32 turns_elapsed       (counts up +1 each turn; 0 on T0)
+//       entry+24 u32 gold_paid_in        (cumulative; rises ~cost/turns per turn)
+//       entry+28..+52 trailer            (cached upkeep, copies of chain_id, etc.)
+//       => turns_remaining = turns_total - turns_elapsed
+//          (verified Arretium aT2/aT3/aT4 hinterland_region: +16=6 constant,
+//           +20 = 1,2,3 across consecutive turns. See dig-build-queue-timing*.js)
 //     RECRUIT: u32 == chain_uuid (header's +4) appears at body offset ~50:
 //       entry+0  u32 queue_uuid (matches chain_uuid)
 //       entry+4  u16 nameLen (incl. \0)
@@ -79,12 +86,16 @@ function readQueueAtDefaultSet(buf, defaultSetOff) {
   for (let i = bodyStart + QUEUE_SCAN_FROM; i + 8 <= scanEnd; i++) {
     const u = buf.readUInt32LE(i);
 
-    if (u === 2 && i + 24 <= scanEnd) {
+    if (u === 2 && i + 28 <= scanEnd) {
       const count = buf.readUInt32LE(i + 4);
       if (count < 1 || count > 16) continue;
       const chainId = buf.readUInt32LE(i + 8);
-      const turns = buf.readUInt32LE(i + 16);
+      const turnsTotal = buf.readUInt32LE(i + 16);
+      const turnsElapsed = buf.readUInt32LE(i + 20);
       if (chainId === 0 || chainId > 0xffffff) continue;
+      // Sanity: elapsed should not exceed total by more than 1 (build either
+      // pending or just-completed). Reject obviously corrupt rows.
+      if (turnsTotal > 64 || turnsElapsed > turnsTotal + 1) continue;
       // Validate by chain_id duplication elsewhere in the entry (session 36
       // observed it appears 3x: at +8, mid-entry, and near the trailer).
       let dupFound = false;
@@ -92,7 +103,19 @@ function readQueueAtDefaultSet(buf, defaultSetOff) {
         if (buf.readUInt32LE(d) === chainId) { dupFound = true; break; }
       }
       if (!dupFound) continue;
-      return { type: "building", chainId, turns, count, entryOff: i };
+      const turnsRemaining = Math.max(0, turnsTotal - turnsElapsed);
+      return {
+        type: "building",
+        chainId,
+        // Back-compat: `turns` historically meant the value at +16 (which is
+        // turns_total, NOT remaining — old callers may need updating).
+        turns: turnsTotal,
+        turnsTotal,
+        turnsElapsed,
+        turnsRemaining,
+        count,
+        entryOff: i,
+      };
     }
 
     if (u === chainUuid && chainUuid !== 0 && i + 8 <= scanEnd) {
@@ -156,7 +179,14 @@ function parseQueuesForSettlements(buf, settlementMarkers) {
     if (!owner) continue;
     if (!byCity.has(owner)) byCity.set(owner, { recruiting: [], building: [] });
     const bucket = byCity.get(owner);
-    if (q.type === "building") bucket.building.push({ chainId: q.chainId, turns: q.turns, count: q.count });
+    if (q.type === "building") bucket.building.push({
+      chainId: q.chainId,
+      turns: q.turns,                 // back-compat: == turnsTotal
+      turnsTotal: q.turnsTotal,
+      turnsElapsed: q.turnsElapsed,
+      turnsRemaining: q.turnsRemaining,
+      count: q.count,
+    });
     else if (q.type === "recruit") bucket.recruiting.push({ unit: q.unit });
   }
 

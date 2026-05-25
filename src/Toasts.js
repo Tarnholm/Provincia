@@ -25,7 +25,7 @@ export default function Toasts({ toasts, onDismiss }) {
             display: "flex", alignItems: "flex-start", gap: 8,
           }}
         >
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, maxHeight: 140, overflowY: "auto", overflowWrap: "anywhere", wordBreak: "break-word" }}>
             {t.message}
             <div style={{ fontSize: "0.7rem", opacity: 0.6, marginTop: 4 }}>click to dismiss</div>
           </div>

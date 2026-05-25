@@ -1,5 +1,5 @@
 // main.js
-const { app, BrowserWindow, Menu, session, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, Menu, session, dialog, ipcMain, shell, nativeImage } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
@@ -158,13 +158,20 @@ const {
   parseModInfo: cxParseModInfo,
   parseCharacterExtras: cxParseCharacterExtras,
   attachMapCoords: cxAttachMapCoords,
+  bridgeV1Traits: cxBridgeV1Traits,
   resolvePortraitsByCharacter: cxResolvePortraits,
   parseFactionTreasuries: cxParseTreasuries,
+  parseFactionTreasuryHistory: cxParseTreasuryHistory,
   identifyFactionRecordOwners: cxIdentifyRecordOwners,
+  identifyPlayerFactionFromSave: cxIdentifyPlayerFromSave,
   parseFactionDiplomacy: cxParseDiplomacy,
+  parseAllFactionDiplomacy: cxParseAllDiplomacy,
+  parseDiplomacyMatrix: cxParseDiplomacyMatrix,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
+  deriveEngineFactionOrder: cxDeriveEngineOrder,
 } = require("./src/saveCrackerExtras.js");
+const descrGen = require("./src/descrStratGeneral.js");
 
 // Cache for mod data (names_lookup, traits, surnames). Populated lazily when
 // the renderer calls "characters-init" with the mod data directory.
@@ -216,10 +223,23 @@ let modUnitOfficerCounts = null; // { unitName: officerCount } from EDU — adde
 let modBuildingChains = null;
 let modChainMaxLevels = null; // { chainName: number_of_levels } from EDB
 let modChainCategories = null; // { chainName: "trade" | "government" | ... } from EDB `icon` field
+// 0.9.465: faction → [homeland_<X>, ...] parsed from EDB `alias <X>_homeland`
+// blocks. Used by the Homeland map mode to colour regions by ownership /
+// foreign-held / wrong-gov status. Live data from the mod, not the stale
+// bundled `homelands.json`.
+let modHomelandsByFaction = null;
 let modFactionDisplayMap = null; // { lowercase display name → internal faction id }
 let modFactionDisplayNames = null; // { internal faction id → display name } — used in UI
 let modFactionCultures = null; // { factionId: cultureFolderName } — "roman", "greek", "barbarian", etc.
+let modFactionOrder = null; // [factionId, ...] in descr_sm_factions.txt declaration order — index = save's cracked factionId byte
+let modAiPersonalityOrder = null; // [personalityName, ...] in feral_descr_ai_personality.txt order — index = save's cracked aiPersonalityIndex byte
 let modInitialOwnerByCity = null; // { settlementName → factionId } from descr_strat (turn 0 ground truth)
+// 0.9.437: per-settlement descr_strat `faction_creator` — the rebel-default
+// FOR THAT SETTLEMENT (which faction it joins on rebellion). Distinct from
+// `modInitialOwnerByCity` which captures the CURRENT owner (descr_strat's
+// parent `faction <id>` block). Loyalist map mode compares this to
+// descr_regions field 3 to find settlements whose homelands are loyal.
+let modInitialCreatorByCity = null; // { settlementName → factionId }
 let modRegionToCity = null; // { regionName → settlementName } from descr_regions — used to bridge save's region-keyed unit data to city-keyed owner data
 // Trait → epithet (cognomen) override map. RTW grants an "Epithet" keyword
 // at certain trait levels (e.g. RomanConquerorMessapians L2 → "Messapivs").
@@ -230,14 +250,79 @@ let modRegionToCity = null; // { regionName → settlementName } from descr_regi
 // export_descr_character_traits.txt + text/export_vnvs.txt.
 //   modTraitEpithets[traitName] = [{ level, key, text }, …] in level order
 let modTraitEpithets = null;
+// Per-level trait data parsed from export_descr_character_traits.txt +
+// export_vnvs.txt. Shape: { traitName: [{ levelIdx, levelName, threshold,
+// effects: [{ name, value }], desc, effectsDesc }, ...] }. Loaded once
+// at mod init and shipped to the renderer so the right-click character
+// info panel can show actual trait pictures + effects + descriptions
+// instead of just `level N`. (0.9.417)
+let modTraitLevels = null;
+// 0.9.433: `Hidden` flag per trait from export_descr_character_traits.txt.
+// Set when a trait block declares `Hidden`. Engine doesn't show those in
+// the in-game character info, so the renderer filters them out unless
+// devMode is on.
+let modTraitHidden = null;
+// 0.9.437: which character-types each trait is allowed on (engine
+// `Characters` line — family / admiral / spy / assassin / diplomat / all)
+// and which cultures it's forbidden on (engine `ExcludeCultures`).
+// Used to filter the Add Trait picker so it only offers options the engine
+// would actually accept.
+let modTraitCharacters = null;
+let modTraitExcludeCultures = null;
+// 0.9.434: track the active mod's data dir so trait-edit IPC knows where
+// to find descr_strat.txt to patch.
+let activeModDataDir = null;
 // Ancillary names indexed by id (0-based), loaded from
 // export_descr_ancillaries.txt. ID 0 = labrys_maker, ID 1 = saffron_merchant,
 // ... 1092 entries in RIS imperial. Decoded by save-cracker session 6:
 // ancillary IDs sit inline in the character record between the trait block
 // and portrait paths as [u16=0, u16=ancId] pairs.
 let modAncillaryNames = null;
+// 0.9.420: Per-ancillary metadata parsed from export_descr_ancillaries.txt.
+// Shape: { name: { image, descKey, effectsKey, effects: [{name,value}],
+// desc, effectsDesc } }. The `image` field is the actual TGA filename
+// (without extension) — descr_strat's ancillary name is usually NOT the
+// filename (e.g. `Ancillary poet` uses `Image philosopher2.tga`).
+let modAncillaryData = null;
+
+// File watcher for external edits to the active mod, so Provincia can hot-reload
+// without a manual re-import. The main case is crosstalk with Manipula (the
+// recruitment tool), which writes export_descr_buildings.txt in the same mod
+// folder. We watch the directory (not the file) so atomic save-and-rename keeps
+// firing, and filter by basename. Provincia never writes EDB itself, so there's
+// no self-trigger loop.
+let modFileWatchers = [];
+const modWatchDebounce = {};
+const WATCHED_MOD_FILES = ["export_descr_buildings.txt"];
+function clearModWatchers() {
+  for (const w of modFileWatchers) { try { w.close(); } catch {} }
+  modFileWatchers = [];
+}
+function setupModWatcher(modDataDir) {
+  clearModWatchers();
+  if (!modDataDir || !fs.existsSync(modDataDir)) return;
+  try {
+    const w = fs.watch(modDataDir, (_eventType, filename) => {
+      if (!filename) return;
+      const base = path.basename(String(filename));
+      if (!WATCHED_MOD_FILES.includes(base)) return;
+      clearTimeout(modWatchDebounce[base]);
+      modWatchDebounce[base] = setTimeout(() => {
+        const win = BrowserWindow.getAllWindows()[0];
+        if (win) win.webContents.send("mod-file-changed", { file: base });
+        console.log(`[mod-watch] ${base} changed on disk → notified renderer`);
+      }, 400);
+    });
+    modFileWatchers.push(w);
+    console.log(`[mod-watch] watching ${modDataDir} for ${WATCHED_MOD_FILES.join(", ")}`);
+  } catch (e) {
+    console.warn("[mod-watch] failed to watch", modDataDir, e && e.message);
+  }
+}
 
 function loadModCharacterData(modDataDir) {
+  activeModDataDir = modDataDir;
+  try { setupModWatcher(modDataDir); } catch (e) { console.warn("[mod-watch] setup failed:", e && e.message); }
   const nameLookupPath = path.join(modDataDir, "descr_names_lookup.txt");
   const traitsPath = path.join(modDataDir, "export_descr_character_traits.txt");
   const ancillariesPath = path.join(modDataDir, "export_descr_ancillaries.txt");
@@ -247,12 +332,36 @@ function loadModCharacterData(modDataDir) {
     throw new Error("Mod character data files missing in " + modDataDir);
   }
   // Optional: ancillaries. If missing, ancillary names just render as `#<id>`.
+  // 0.9.420: also capture per-ancillary Image, Description, EffectsDescription,
+  // and Effect lines so the right-click info panel can render the actual icon
+  // file (descr_strat's ancillary name is NOT the image filename — e.g.
+  // `Ancillary poet` has `Image philosopher2.tga`) plus the effects + desc.
   modAncillaryNames = [];
+  modAncillaryData = {}; // { name: { image, descKey, effectsKey, effects: [{name,value}], excludeCultures, unique } }
   if (fs.existsSync(ancillariesPath)) {
     const lines = fs.readFileSync(ancillariesPath, "utf8").split(/\r?\n/);
+    let cur = null;
     for (const line of lines) {
       const m = line.match(/^Ancillary\s+(\S+)/);
-      if (m) modAncillaryNames.push(m[1]);
+      if (m) {
+        modAncillaryNames.push(m[1]);
+        cur = { image: null, descKey: null, effectsKey: null, effects: [], excludeCultures: null, unique: false };
+        modAncillaryData[m[1]] = cur;
+        continue;
+      }
+      if (!cur) continue;
+      const im = line.match(/^\s*Image\s+(\S+)/);
+      if (im) { cur.image = im[1].replace(/\.tga$/i, ""); continue; }
+      const dm = line.match(/^\s*Description\s+(\S+)/);
+      if (dm) { cur.descKey = dm[1]; continue; }
+      const efdm = line.match(/^\s*EffectsDescription\s+(\S+)/);
+      if (efdm) { cur.effectsKey = efdm[1]; continue; }
+      const efm = line.match(/^\s*Effect\s+(\S+)\s+(-?\d+)/);
+      if (efm) { cur.effects.push({ name: efm[1], value: parseInt(efm[2], 10) }); continue; }
+      // 0.9.437: capture engine constraints used by the dev-mode picker.
+      const exm = line.match(/^\s*ExcludeCultures\s+(.+?)\s*$/);
+      if (exm) { cur.excludeCultures = exm[1].split(/\s*,\s*/).map(s => s.toLowerCase()).filter(Boolean); continue; }
+      if (/^\s*Unique\b/.test(line)) { cur.unique = true; continue; }
     }
   }
   modNameLookup = fs.readFileSync(nameLookupPath, "utf8").split(/\r?\n/).map(s => s.trim());
@@ -261,25 +370,91 @@ function loadModCharacterData(modDataDir) {
   // pairs. The first pass through the file gives us the trait→key skeleton;
   // a second pass on text/export_vnvs.txt fills in epithetKey → text.
   modTraitEpithets = {};
+  // 0.9.417: capture FULL per-level data for the right-click character
+  // info panel (description text, effects, threshold). Shape:
+  //   modTraitLevels[traitName] = [
+  //     { levelIdx, levelName, descKey, effectsKey, gainKey,
+  //       threshold, effects: [{ name, value }] }, ...
+  //   ]
+  // The text keys get resolved against export_vnvs.txt below.
+  modTraitLevels = {};
+  modTraitHidden = {};
+  modTraitCharacters = {};
+  modTraitExcludeCultures = {};
   {
     const lines = fs.readFileSync(traitsPath, "utf8").split(/\r?\n/);
     let curTrait = null;
     let curLevel = null;     // level name (e.g. "Roman_Conqueror_Messapians")
     let curLevelIdx = 0;     // 1-indexed level position within current trait
+    let curLevelObj = null;
+    // 0.9.433: track Hidden flag per trait (engine doesn't surface
+    // hidden traits in the in-game character info, so the UI should
+    // hide them unless devMode is on).
+    let curTraitHidden = false;
     for (const line of lines) {
       const tm = line.match(/^Trait\s+(\S+)/);
       if (tm) {
         curTrait = tm[1];
         curLevel = null;
         curLevelIdx = 0;
+        curLevelObj = null;
+        curTraitHidden = false;
         modTraitNames.push(curTrait);
         continue;
+      }
+      if (curTrait && /^\s*Hidden\b/.test(line)) {
+        curTraitHidden = true;
+        if (!modTraitHidden) modTraitHidden = {};
+        modTraitHidden[curTrait] = true;
+        continue;
+      }
+      // 0.9.437: capture engine-enforced constraints so the Add Trait
+      // picker can filter out options the engine would reject. Two cared
+      // about: `Characters` (which agent types can carry the trait —
+      // family / admiral / spy / assassin / diplomat / all) and
+      // `ExcludeCultures` (cultures the trait is forbidden on).
+      if (curTrait) {
+        const chm = line.match(/^\s*Characters\s+(.+?)\s*$/);
+        if (chm) {
+          modTraitCharacters[curTrait] = chm[1].split(/\s*,\s*/).map(s => s.toLowerCase()).filter(Boolean);
+          continue;
+        }
+        const exm = line.match(/^\s*ExcludeCultures\s+(.+?)\s*$/);
+        if (exm) {
+          modTraitExcludeCultures[curTrait] = exm[1].split(/\s*,\s*/).map(s => s.toLowerCase()).filter(Boolean);
+          continue;
+        }
       }
       const lm = line.match(/^\s*Level\s+(\S+)/);
       if (lm) {
         curLevel = lm[1];
         curLevelIdx++;
+        curLevelObj = {
+          levelIdx: curLevelIdx,
+          levelName: curLevel,
+          descKey: null,
+          effectsKey: null,
+          gainKey: null,
+          threshold: null,
+          effects: [],
+          desc: null,    // resolved against export_vnvs.txt
+          effectsDesc: null,
+        };
+        if (!modTraitLevels[curTrait]) modTraitLevels[curTrait] = [];
+        modTraitLevels[curTrait].push(curLevelObj);
         continue;
+      }
+      if (curLevelObj) {
+        const dm = line.match(/^\s*Description\s+(\S+)/);
+        if (dm) { curLevelObj.descKey = dm[1]; continue; }
+        const efdm = line.match(/^\s*EffectsDescription\s+(\S+)/);
+        if (efdm) { curLevelObj.effectsKey = efdm[1]; continue; }
+        const gm = line.match(/^\s*GainMessage\s+(\S+)/);
+        if (gm) { curLevelObj.gainKey = gm[1]; continue; }
+        const thm = line.match(/^\s*Threshold\s+(\d+)/);
+        if (thm) { curLevelObj.threshold = parseInt(thm[1], 10); continue; }
+        const efm = line.match(/^\s*Effect\s+(\S+)\s+(-?\d+)/);
+        if (efm) { curLevelObj.effects.push({ name: efm[1], value: parseInt(efm[2], 10) }); continue; }
       }
       const em = line.match(/^\s*Epithet\s+(\S+)/);
       if (em && curTrait && curLevel) {
@@ -288,25 +463,56 @@ function loadModCharacterData(modDataDir) {
       }
     }
   }
-  // Resolve epithet keys → text by scanning text/export_vnvs.txt. The file
-  // is UTF-16 LE; entries look like `{Roman_Conqueror_Messapians_epithet_desc}\tMessapivs`.
+  // Resolve description/effects/epithet keys → text by scanning export_vnvs.txt.
+  // Two formats coexist:
+  //   A) `{key}\ttext`  (same line — used for short labels like epithets)
+  //   B) `{key}` then text on the next line  (used for long descriptions)
+  // Earlier the parser only handled (A); (B) was silently dropped so
+  // trait descriptions never made it to the UI.
   {
     const vnvsPath = path.join(modDataDir, "text", "export_vnvs.txt");
     if (fs.existsSync(vnvsPath)) {
       const buf3 = fs.readFileSync(vnvsPath);
       const text = (buf3[0] === 0xff && buf3[1] === 0xfe) ? buf3.toString("utf16le", 2) : buf3.toString("utf8");
       const keyToText = new Map();
-      for (const line of text.split(/\r?\n/)) {
+      const lines = text.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Same-line variant
         const m = line.match(/^\{([^}]+)\}\s*(.+?)\s*$/);
-        if (m) keyToText.set(m[1], m[2]);
+        if (m) { keyToText.set(m[1], m[2]); continue; }
+        // Next-line variant: bare `{key}` then text on next non-empty line
+        const mk = line.match(/^\{([^}]+)\}\s*$/);
+        if (mk) {
+          let j = i + 1;
+          while (j < lines.length && lines[j].trim() === "") j++;
+          if (j < lines.length && !lines[j].startsWith("{")) {
+            keyToText.set(mk[1], lines[j].trim());
+          }
+        }
       }
+      // Resolve epithet keys
       for (const trait of Object.keys(modTraitEpithets)) {
         for (const entry of modTraitEpithets[trait]) {
           if (keyToText.has(entry.key)) entry.text = keyToText.get(entry.key);
         }
-        // Drop entries with no resolvable text (rare — typo'd keys).
         modTraitEpithets[trait] = modTraitEpithets[trait].filter(e => e.text);
         if (modTraitEpithets[trait].length === 0) delete modTraitEpithets[trait];
+      }
+      // Resolve trait-level keys (descKey, effectsKey)
+      for (const trait of Object.keys(modTraitLevels)) {
+        for (const lvl of modTraitLevels[trait]) {
+          if (lvl.descKey && keyToText.has(lvl.descKey)) lvl.desc = keyToText.get(lvl.descKey);
+          if (lvl.effectsKey && keyToText.has(lvl.effectsKey)) lvl.effectsDesc = keyToText.get(lvl.effectsKey);
+        }
+      }
+      // Resolve ancillary description keys (0.9.420)
+      if (modAncillaryData) {
+        for (const name of Object.keys(modAncillaryData)) {
+          const a = modAncillaryData[name];
+          if (a.descKey && keyToText.has(a.descKey)) a.desc = keyToText.get(a.descKey);
+          if (a.effectsKey && keyToText.has(a.effectsKey)) a.effectsDesc = keyToText.get(a.effectsKey);
+        }
       }
     }
   }
@@ -344,6 +550,16 @@ function loadModCharacterData(modDataDir) {
       if (charMatch) {
         const nameField = charMatch[1].trim();
         const headerRest = charMatch[0]; // entire matched header
+        // 0.9.507: skip RIS's sub-faction marker lines (`character
+        // sub_faction parni, ...`). Same fix as in bundle-mod-data.js
+        // 0.9.506 — these lines don't name a real character, they tag a
+        // territory for sub-faction spawning. Without this filter the
+        // family tree gets a "sub_faction parni" member with the role
+        // string and zero stats, which then surfaces under the in-game
+        // commander's slot via name-collision lookups.
+        if (/^sub[_\s]faction\b/i.test(nameField)) {
+          continue;
+        }
         const [first, ...rest] = nameField.split(/\s+/);
         const lastName = rest.join(" ") || null;
         if (lastName) modDescrStratSurnames.add(lastName);
@@ -364,6 +580,18 @@ function loadModCharacterData(modDataDir) {
         // save byte is cracked) can fill it in for every character.
         const portraitIdxMatch = /\bportrait_index\s+(\d+)/.exec(line);
         const portraitIndex = portraitIdxMatch ? parseInt(portraitIdxMatch[1]) : null;
+        // 0.9.421: stats from descr_strat — `command N, influence N,
+        // management N, subterfuge N` appear inline on the character line
+        // (and sometimes spill onto continuation lines, but rare). Read
+        // them so non-live mode has the same stat row as live mode.
+        const cmdM = /\bcommand\s+(\d+)/.exec(line);
+        const infM = /\binfluence\s+(\d+)/.exec(line);
+        const mgmtM = /\bmanagement\s+(\d+)/.exec(line);
+        const subM = /\bsubterfuge\s+(\d+)/.exec(line);
+        const command = cmdM ? parseInt(cmdM[1]) : null;
+        const influence = infM ? parseInt(infM[1]) : null;
+        const management = mgmtM ? parseInt(mgmtM[1]) : null;
+        const subterfuge = subM ? parseInt(subM[1]) : null;
         const entry = { firstName: first, lastName, x, y, faction: currentFaction };
         const key = first + "|" + (currentFaction || "");
         if (!modDescrStratCharByName.has(key)) modDescrStratCharByName.set(key, entry);
@@ -378,6 +606,7 @@ function loadModCharacterData(modDataDir) {
           portraitIndex,
           traits: [],
           ancillaries: [],
+          command, influence, management, subterfuge,
         };
         fullCharRecords.push(currentChar);
         continue;
@@ -412,6 +641,57 @@ function loadModCharacterData(modDataDir) {
   // raw list keyed by faction; the renderer joins by coords against
   // startingArmiesByRegion (which already has the same coord→region
   // mapping from the bundled JSON OR from the runtime ownership build).
+  // 0.9.422: Estimate stats from trait + ancillary effects when descr_strat
+  // didn't set them inline. RIS / vanilla descr_strat doesn't store
+  // command/influence/management on the `character` line — the engine
+  // derives them at game start from trait Effect lines + base values + tag
+  // bonuses (faction leader = +1 to several stats, etc). This sum
+  // approximates the in-game values (off by 1-2 because we don't model the
+  // engine's base/tag contributions); flag results with _statsEstimated so
+  // the UI can distinguish them from live-save reads.
+  for (const c of fullCharRecords) {
+    if (c.command != null || c.influence != null || c.management != null) continue;
+    let cmd = 0, inf = 0, mgmt = 0, sub = 0;
+    let touched = false;
+    for (const t of c.traits || []) {
+      const lvls = modTraitLevels && modTraitLevels[t.name];
+      if (!lvls) continue;
+      // Engine activates the highest level whose Threshold <= trait points.
+      // 0.9.521+: t.points is the raw byte value, t.level is the resolved
+      // display level (post-threshold). Use t.points for threshold lookup
+      // (falling back to t.level for back-compat with old parser output).
+      const pts = t.points != null ? t.points : t.level;
+      let chosen = null;
+      for (const lvl of lvls) {
+        if (lvl.threshold != null && lvl.threshold <= pts) chosen = lvl;
+      }
+      if (!chosen) chosen = lvls[Math.min(Math.max(0, t.level - 1), lvls.length - 1)];
+      if (!chosen) continue;
+      for (const e of chosen.effects || []) {
+        if (e.name === "Command") { cmd += e.value; touched = true; }
+        else if (e.name === "Influence") { inf += e.value; touched = true; }
+        else if (e.name === "Management") { mgmt += e.value; touched = true; }
+        else if (e.name === "Subterfuge") { sub += e.value; touched = true; }
+      }
+    }
+    for (const ancName of c.ancillaries || []) {
+      const data = modAncillaryData && modAncillaryData[ancName];
+      if (!data) continue;
+      for (const e of data.effects || []) {
+        if (e.name === "Command") { cmd += e.value; touched = true; }
+        else if (e.name === "Influence") { inf += e.value; touched = true; }
+        else if (e.name === "Management") { mgmt += e.value; touched = true; }
+        else if (e.name === "Subterfuge") { sub += e.value; touched = true; }
+      }
+    }
+    if (touched) {
+      c.command = Math.max(0, cmd);
+      c.influence = Math.max(0, inf);
+      c.management = Math.max(0, mgmt);
+      c.subterfuge = Math.max(0, sub);
+      c._statsEstimated = true;
+    }
+  }
   modDescrStratCharactersByRegion = { byCoord: fullCharRecords };
   // ── Family tree extraction (descr_strat → byFaction) ──
   // Re-scan the same paths capturing `character_record` (wives, children,
@@ -438,6 +718,12 @@ function loadModCharacterData(modDataDir) {
         portraitIndex: c.portraitIndex != null ? c.portraitIndex : null,
         traits: c.traits || [],
         ancillaries: c.ancillaries || [],
+        // 0.9.421: forward stats. _statsEstimated flag (0.9.422) signals
+        // these are summed from trait/ancillary Effect lines, not read
+        // from a save — display layer can mark them as approximate.
+        command: c.command, influence: c.influence,
+        management: c.management, subterfuge: c.subterfuge,
+        _statsEstimated: c._statsEstimated || false,
       };
     }
     for (const dsPath of descrStratPaths) {
@@ -457,6 +743,18 @@ function loadModCharacterData(modDataDir) {
           const rest = crMatch[3];
           const ageM = /\bage\s+(\d+)/.exec(rest);
           const aliveM = /\b(alive|dead)\b/.exec(rest);
+          // 0.9.421: also pull command/influence/management/subterfuge so
+          // the non-live (descr_strat-only) view matches live-mode stats.
+          const cmdM = /\bcommand\s+(\d+)/.exec(rest);
+          const infM = /\binfluence\s+(\d+)/.exec(rest);
+          const mgmtM = /\bmanagement\s+(\d+)/.exec(rest);
+          const subM = /\bsubterfuge\s+(\d+)/.exec(rest);
+          const stats = {
+            command: cmdM ? parseInt(cmdM[1]) : null,
+            influence: infM ? parseInt(infM[1]) : null,
+            management: mgmtM ? parseInt(mgmtM[1]) : null,
+            subterfuge: subM ? parseInt(subM[1]) : null,
+          };
           const [first, ...restName] = nameField.split(/\s+/);
           const lastName = restName.join(" ") || null;
           const bucket = upsertFaction(currentFaction);
@@ -467,6 +765,10 @@ function loadModCharacterData(modDataDir) {
             if (ageM) existing.age = parseInt(ageM[1]);
             existing.gender = gender;
             existing.alive = aliveM ? aliveM[1] === "alive" : true;
+            if (stats.command != null) existing.command = stats.command;
+            if (stats.influence != null) existing.influence = stats.influence;
+            if (stats.management != null) existing.management = stats.management;
+            if (stats.subterfuge != null) existing.subterfuge = stats.subterfuge;
           } else {
             bucket.members.push({
               firstName: first, lastName,
@@ -477,6 +779,7 @@ function loadModCharacterData(modDataDir) {
               role: "family_member",
               isCharacter: false,
               faction: currentFaction,
+              ...stats,
             });
           }
           continue;
@@ -557,6 +860,37 @@ function loadModCharacterData(modDataDir) {
       const iconLine = b.match(/^\s+icon\s+(\w+)/m);
       if (iconLine) modChainCategories[name] = iconLine[1].toLowerCase();
     }
+    // 0.9.465: extract per-faction homeland hidden_resources from EDB
+    // `alias <name>_homeland` blocks. Each alias declares which factions
+    // it covers + which `homeland_<X>` HR they unlock for. We invert to
+    // get faction → Set<homeland_X> for the Homeland map mode. Bundled
+    // homelands.json is stale (says antigonid → ["antigonid"] but RIS
+    // uses shared `homeland_macedonian` across antigonid/seleucid/
+    // ptolemaic) — parsing live keeps it in sync with the mod.
+    modHomelandsByFaction = {};
+    // EDB alias format:
+    //   alias <name>_homeland
+    //   {
+    //       requires factions { <id1>, <id2>, } and hidden_resource homeland_<X>
+    //   }
+    // Capture the full `requires …` line (up to newline) so the inner
+    // `factions { … }` closing brace is included.
+    const aliasRegex = /^alias\s+\S+_homeland\s*\{\s*requires\s+([^\n]+)/gm;
+    let am, aliasMatches = 0;
+    while ((am = aliasRegex.exec(edbText)) !== null) {
+      aliasMatches++;
+      const expr = am[1];
+      const factionsM = expr.match(/factions\s*\{\s*([^}]*)\}/);
+      const hrM = expr.match(/hidden_resource\s+(homeland_\w+)/);
+      if (!factionsM || !hrM) continue;
+      const factions = factionsM[1].split(/\s*,\s*/).map(s => s.trim()).filter(Boolean);
+      const hr = hrM[1];
+      for (const f of factions) {
+        if (!modHomelandsByFaction[f]) modHomelandsByFaction[f] = [];
+        if (!modHomelandsByFaction[f].includes(hr)) modHomelandsByFaction[f].push(hr);
+      }
+    }
+    console.log(`[homelands] parsed ${aliasMatches} EDB alias blocks → ${Object.keys(modHomelandsByFaction).length} factions (e.g. antigonid → ${JSON.stringify(modHomelandsByFaction.antigonid || [])})`);
   }
   // Load faction display-name ↔ internal-id mappings.
   // Two sources matter:
@@ -630,6 +964,13 @@ function loadModCharacterData(modDataDir) {
   // names per settlement. Fully dynamic — works for any mod that ships
   // descr_sm_factions.txt.
   modFactionCultures = {};
+  // 0.9.527: ordered faction list in descr_sm_factions.txt declaration
+  // order. The save's cracked faction_id byte (parseFactionTreasuries) is
+  // an INDEX into this order, so it identifies each major-faction record's
+  // owner directly — replacing the captain-banner heuristic that misses
+  // records with no captains. Populated from the FIRST source that yields
+  // a non-empty list (mod overrides game), in lockstep with the culture map.
+  modFactionOrder = [];
   // Submod + parent mods first (first-wins — mod overrides game).
   const smFactionSources = [];
   for (const d of (findRelatedModDirs ? findRelatedModDirs(modDataDir, "descr_sm_factions.txt") : [modDataDir])) {
@@ -643,6 +984,10 @@ function loadModCharacterData(modDataDir) {
     try {
       const text = fs.readFileSync(src, "utf8");
       let curFaction = null;
+      // Only the FIRST source that actually declares factions seeds the
+      // order array; later sources just fill culture gaps. Otherwise a
+      // parent-mod file appended after the submod would corrupt the index.
+      const seedOrder = modFactionOrder.length === 0;
       for (const line of text.split(/\r?\n/)) {
         // Match `"<faction_id>":` optionally followed by a `;comment`.
         const fm = line.match(/^\s*"([a-z_0-9]+)":\s*(;.*)?$/);
@@ -653,11 +998,45 @@ function loadModCharacterData(modDataDir) {
             if (!(curFaction in modFactionCultures)) {
               modFactionCultures[curFaction] = cm[1];
             }
+            // The culture line marks a REAL faction block (structural keys
+            // like "namelists"/"logos" never have a culture), so commit to
+            // the order array here — declaration order == faction_id index.
+            if (seedOrder) modFactionOrder.push(curFaction);
             curFaction = null;
           }
         }
       }
+      if (modFactionOrder.length > 0 && seedOrder) {
+        console.log(`[sm_factions] order seeded: ${modFactionOrder.length} factions (idx0=${modFactionOrder[0]})`);
+      }
     } catch (e) { console.warn("[sm_factions]", src, e.message); }
+  }
+
+  // 0.9.527: parse feral_descr_ai_personality.txt declaration order. The
+  // save's cracked aiPersonalityIndex byte (parseFactionTreasuries) indexes
+  // into this list, so each major-faction record exposes its AI archetype
+  // (ai_rome, ai_carthage, ai_lusitani, …). First non-empty source wins.
+  modAiPersonalityOrder = [];
+  const aiSources = [];
+  for (const d of (findRelatedModDirs ? findRelatedModDirs(modDataDir, "feral_descr_ai_personality.txt") : [modDataDir])) {
+    aiSources.push(path.join(d, "feral_descr_ai_personality.txt"));
+  }
+  for (const root of getIconSearchRoots()) {
+    aiSources.push(path.join(root, "feral_descr_ai_personality.txt"));
+  }
+  for (const src of aiSources) {
+    if (!fs.existsSync(src)) continue;
+    try {
+      const text = fs.readFileSync(src, "utf8");
+      for (const line of text.split(/\r?\n/)) {
+        const m = line.match(/^\s*personality\s+([A-Za-z0-9_]+)/);
+        if (m) modAiPersonalityOrder.push(m[1]);
+      }
+      if (modAiPersonalityOrder.length > 0) {
+        console.log(`[ai_personality] order seeded: ${modAiPersonalityOrder.length} personalities (idx0=${modAiPersonalityOrder[0]})`);
+        break;
+      }
+    } catch (e) { console.warn("[ai_personality]", src, e.message); }
   }
 
   // Build initial settlement ownership from descr_regions + descr_strat.
@@ -666,10 +1045,13 @@ function loadModCharacterData(modDataDir) {
   try {
     const own = buildInitialOwnership(modDataDir);
     modInitialOwnerByCity = own.ownerByCity;
+    modInitialCreatorByCity = own.creatorByCity || {};
     if (own.error) console.warn("[mod-load] ownership:", own.error);
+    console.log(`[mod-load] ownership owners=${Object.keys(modInitialOwnerByCity).length} creators=${Object.keys(modInitialCreatorByCity).length}`);
   } catch (e) {
     console.warn("[mod-load] ownership parse failed:", e.message);
     modInitialOwnerByCity = {};
+    modInitialCreatorByCity = {};
   }
   // Region → city map (descr_regions.txt). The save tags every unit with
   // its REGION; the owner / governor lookups are CITY-keyed. This bridge
@@ -792,22 +1174,42 @@ function parseCharacterMetadataByUuid(buf) {
 // signed year (negative for BC). Offset 3968 is the turn counter (turn-1)
 // in the same header block. We prefer reading the year directly because
 // it's stored by the engine and works for any campaign configuration.
+// Turn + year live in the header relative to the `descr_strat` path string —
+// turn = u32 at anchorEnd+5, year = i32 at anchorEnd+9 (BC negative). Session
+// 175 (2026-05-22) crack: this is MOD-ROBUST. The old hardcoded 0x44e3/0x44e7
+// only worked for RIS-imperial saves (whose anchorEnd happens to be 0x44de);
+// vanilla/other-mod saves shift the offset by the mod-path length, so the
+// hardcode read zeros/garbage there. Validated 29 saves across RIS + vanilla.
+// (0x44e3 retained as a fallback if the anchor isn't found.)
+function findDescrStratAnchorEnd(saveBuf) {
+  const needle = Buffer.from("d\0e\0s\0c\0r\0_\0s\0t\0r\0a\0t\0", "binary");
+  const lim = Math.min(saveBuf.length, 0x10000);
+  let idx = -1, p = 0;
+  while (true) {
+    const f = saveBuf.indexOf(needle, p);
+    if (f === -1 || f > lim) break;
+    idx = f; p = f + 2;
+  }
+  if (idx < 0) return -1;
+  let e = idx;
+  while (e + 1 < saveBuf.length && saveBuf[e] >= 0x20 && saveBuf[e] <= 0x7e && saveBuf[e + 1] === 0) e += 2;
+  return e;
+}
+
 function readCurrentYearFromSave(saveBuf) {
-  // Session 104 (2026-05-16) refit: the absolute turn + current year live
-  // at file offset 0x44e3 (u32 LE = turn-1) and 0x44e7 (i32 LE = year, BC
-  // is negative). The old offsets (0xf80 / 0xf84 = 3968 / 3972) read all
-  // zeros in RIS imperial saves — badge showed "T1 · 0 AD" for every
-  // loaded save. Confirmed via full-file intersection scan across 10
-  // known-turn saves (ror_t1e..ror_t11e + athens_t21..t22e + T0).
-  if (saveBuf.length < 0x44e3 + 8) return null;
-  const year = saveBuf.readInt32LE(0x44e7);
+  const a = findDescrStratAnchorEnd(saveBuf);
+  const off = (a >= 0 && saveBuf[a + 4] === 0x01) ? a + 9 : 0x44e7;
+  if (saveBuf.length < off + 4) return null;
+  const year = saveBuf.readInt32LE(off);
   if (year < -2000 || year > 3000) return null;
   return year;
 }
 
 function readTurnFromSave(saveBuf) {
-  if (saveBuf.length < 0x44e3 + 4) return null;
-  const turnCounter = saveBuf.readUInt32LE(0x44e3);
+  const a = findDescrStratAnchorEnd(saveBuf);
+  const off = (a >= 0 && saveBuf[a + 4] === 0x01) ? a + 5 : 0x44e3;
+  if (saveBuf.length < off + 4) return null;
+  const turnCounter = saveBuf.readUInt32LE(off);
   if (turnCounter > 10000) return null;
   return turnCounter + 1; // displayed turn number (save stores turn-1)
 }
@@ -853,6 +1255,33 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
   // worker also applies trait-driven epithets, so when we use it we can
   // skip the epithet pass below.
   const characters = precomputedChars || findCharacterRecords(saveBuf, modNameLookup, modTraitNames, null);
+  // 0.9.521: resolve each trait's DISPLAY LEVEL via threshold lookup.
+  // characterParser.js reads the raw u16 at trait+4 as `points` (accumulated
+  // trait points). The engine's displayed level is computed by walking the
+  // trait's level thresholds and picking the highest whose threshold <=
+  // points. Without this pass, UI code that shows `t.level` displays the
+  // raw points (e.g. "Estates 26" instead of "Estates 2").
+  if (modTraitLevels) {
+    for (const c of characters) {
+      if (!c.traits || c.traits.length === 0) continue;
+      for (const t of c.traits) {
+        if (typeof t.points !== "number") continue;
+        const lvls = modTraitLevels[t.name];
+        if (!lvls || lvls.length === 0) continue;
+        let displayLevel = 0;
+        let chosenName = null;
+        for (let i = 0; i < lvls.length; i++) {
+          const thr = lvls[i].threshold;
+          if (thr != null && t.points >= thr) {
+            displayLevel = i + 1;
+            chosenName = lvls[i].name || null;
+          }
+        }
+        t.level = displayLevel;
+        if (chosenName) t.levelName = chosenName;
+      }
+    }
+  }
   // Apply trait-driven cognomen overrides. (Skipped when chars came
   // from the worker — it does this pass itself.)
   if (!precomputedChars && modTraitEpithets) {
@@ -1005,6 +1434,13 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       primaryUuid: c.primaryUuid || null,
       childUuids: Array.isArray(c.childUuids) ? c.childUuids : [],
       portrait: c.portraits[0] || null,
+      // 0.9.420: character stats (command, influence, management, loyalty).
+      // Verified against in-game ground truth for Antigonos II Gonatas
+      // (Macedon T0 RIS: Command 7, Influence 6, Management 5).
+      command: typeof c.command === "number" ? c.command : null,
+      influence: typeof c.influence === "number" ? c.influence : null,
+      management: typeof c.management === "number" ? c.management : null,
+      loyalty: typeof c.loyalty === "number" ? c.loyalty : null,
     });
   }
   // Augment with v2 characters that the v1 parser missed. The UI's
@@ -1347,6 +1783,38 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     return lo > 0 ? factionMarkers[lo - 1].faction : null;
   };
 
+  // 0.9.497: tag every v1 character with their faction via the captain_card
+  // marker preceding their record. The v1 parser doesn't set c.faction
+  // itself (per the TODO at line 1646 before this fix), so every char came
+  // out faction="" — which broke the stats cache because the cache keys
+  // include faction and renderer lookups by `<name>||<faction>` then by
+  // `<name>||` missed every char whose name collides with another faction's
+  // (e.g. Achaios). Also bridges from v2 chars (which DO have faction) by
+  // matching primaryUuid as a higher-confidence source. Tag count is
+  // logged so we can verify in provincia.log.
+  {
+    const v2ByPrimaryUuid = new Map();
+    for (const c of charsV2) {
+      if (c.primaryUuid) v2ByPrimaryUuid.set(c.primaryUuid, c);
+    }
+    let taggedByV2 = 0, taggedByMarker = 0, untagged = 0;
+    for (const c of characters) {
+      if (c.faction) continue;
+      // Prefer v2 match (most authoritative source — v2 picks up the
+      // captain_card markers in its own assignFactions pass).
+      const v2 = c.primaryUuid && v2ByPrimaryUuid.get(c.primaryUuid);
+      if (v2 && v2.faction) { c.faction = v2.faction; taggedByV2++; continue; }
+      // Fall back to the captain_card marker preceding this character's
+      // file offset — same logic the unit-record path uses (line ~1651).
+      if (c.offset != null) {
+        const f = factionAtOffset(c.offset);
+        if (f) { c.faction = f; taggedByMarker++; continue; }
+      }
+      untagged++;
+    }
+    console.log(`[v1-faction-tag] tagged ${taggedByV2}/${characters.length} via v2 uuid match, ${taggedByMarker} via captain_card marker, ${untagged} still untagged`);
+  }
+
   for (const [cmdUuid, armyUnits] of unitsByCommander) {
     const key = "U:" + cmdUuid;
     if (armyMap.has(key)) continue;
@@ -1659,6 +2127,58 @@ function applyContentSecurityPolicy() {
   });
 }
 
+// 0.9.489: window-bounds persistence across app launches (and updates).
+// Stored as JSON in `<userData>/window-state.json`. Saved on `close` (final
+// position + maximized flag) plus on `move`/`resize` (debounced 500 ms so we
+// don't thrash the disk while the user drags). Restored on the next
+// `createWindow()` call — including across auto-update reinstalls because
+// userData survives the installer overwrite.
+const WINDOW_STATE_FILE = "window-state.json";
+
+function readSavedWindowState() {
+  try {
+    const fp = path.join(app.getPath("userData"), WINDOW_STATE_FILE);
+    if (!fs.existsSync(fp)) return null;
+    const data = JSON.parse(fs.readFileSync(fp, "utf8"));
+    // Sanity checks — reject corrupted / unreasonable values so the window
+    // can't open at (-99999, -99999) or 50×50.
+    const okNum = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
+    if (
+      okNum(data.x, -10000, 20000) &&
+      okNum(data.y, -10000, 20000) &&
+      okNum(data.width, 800, 20000) &&
+      okNum(data.height, 600, 20000)
+    ) {
+      console.log("[window-state] restoring", JSON.stringify(data));
+      return data;
+    }
+    console.warn("[window-state] saved state failed sanity check, ignoring:", JSON.stringify(data));
+    return null;
+  } catch (e) {
+    console.warn("[window-state] read failed:", e.message);
+    return null;
+  }
+}
+
+function saveWindowState(win) {
+  if (!win || win.isDestroyed()) return;
+  try {
+    const maximized = win.isMaximized();
+    // When maximized, capture the pre-maximize bounds via getNormalBounds so
+    // un-maximizing on next launch lands the user back at the same place.
+    const bounds = maximized ? win.getNormalBounds() : win.getBounds();
+    const state = {
+      x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+      maximized,
+      savedAt: Date.now(),
+    };
+    const fp = path.join(app.getPath("userData"), WINDOW_STATE_FILE);
+    fs.writeFileSync(fp, JSON.stringify(state, null, 2));
+  } catch (e) {
+    console.warn("[window-state] write failed:", e.message);
+  }
+}
+
 function createWindow() {
   // Drop Electron's default File/Edit/View/Window menu — the app's UI is
   // self-contained and doesn't need it. Done at app level (vs per-window) so
@@ -1666,9 +2186,11 @@ function createWindow() {
   // the menu provided (devtools, reload, fullscreen) still work via the
   // default accelerators in dev; release builds intentionally lose them.
   Menu.setApplicationMenu(null);
-  const win = new BrowserWindow({
-    width: 1920,
-    height: 1080,
+
+  const saved = readSavedWindowState();
+  const winOptions = {
+    width: saved?.width || 1920,
+    height: saved?.height || 1080,
     // useContentSize: width/height refer to the renderer/content area, not
     // the outer window (which would include title bar + frame). Without it
     // the actual canvas the app sees is < 1080p on Windows.
@@ -1682,8 +2204,31 @@ function createWindow() {
       sandbox: false,
       preload: path.join(__dirname, "preload.js"),
     },
-  });
+  };
+  if (saved && typeof saved.x === "number" && typeof saved.y === "number") {
+    winOptions.x = saved.x;
+    winOptions.y = saved.y;
+  }
+  const win = new BrowserWindow(winOptions);
   win.setMenuBarVisibility(false);
+  if (saved?.maximized) win.maximize();
+
+  // Debounced save on move/resize so we capture position changes that
+  // happen while the user is dragging without thrashing the disk. close
+  // also writes — that's the authoritative final state.
+  let saveTimer = null;
+  const scheduleSave = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { saveWindowState(win); saveTimer = null; }, 500);
+  };
+  win.on("move", scheduleSave);
+  win.on("resize", scheduleSave);
+  win.on("maximize", scheduleSave);
+  win.on("unmaximize", scheduleSave);
+  win.on("close", () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveWindowState(win);
+  });
 
   if (useDevServer) {
     // For CRA/Vite HMR (may need eval) — suppress security warning in dev only
@@ -2102,7 +2647,1055 @@ function hashName(name) {
   return h >>> 0;
 }
 
+// 0.9.417: trait-level data (description, effects, threshold) for the
+// right-click character info panel. Renderer fetches once after mod init
+// and caches the result locally.
+ipcMain.handle("get-trait-data", async () => {
+  // 0.9.428: detect which stats the loaded mod actually uses by checking
+  // if any trait level OR ancillary has an `Effect <StatName> N` line for
+  // it. RIS dropped Loyalty entirely — no trait references it — so the
+  // UI should hide that column. Vanilla uses all four. The check generalises
+  // to any future mod that drops or renames stats.
+  const usesStat = { Command: false, Influence: false, Management: false, Loyalty: false, Subterfuge: false };
+  for (const trait of Object.keys(modTraitLevels || {})) {
+    for (const lvl of (modTraitLevels[trait] || [])) {
+      for (const e of (lvl.effects || [])) {
+        if (e.name in usesStat) usesStat[e.name] = true;
+      }
+    }
+  }
+  for (const ancName of Object.keys(modAncillaryData || {})) {
+    for (const e of (modAncillaryData[ancName].effects || [])) {
+      if (e.name in usesStat) usesStat[e.name] = true;
+    }
+  }
+  console.log(`[trait-data] mod uses stats: ${Object.entries(usesStat).filter(([, v]) => v).map(([k]) => k).join(", ") || "(none)"}`);
+  return {
+    levels: modTraitLevels || {},
+    epithets: modTraitEpithets || {},
+    ancillaries: modAncillaryData || {},
+    usesStat: {
+      command: usesStat.Command,
+      influence: usesStat.Influence,
+      management: usesStat.Management,
+      loyalty: usesStat.Loyalty,
+      subterfuge: usesStat.Subterfuge,
+    },
+    // 0.9.433: which traits are flagged `Hidden` in the mod's
+    // export_descr_character_traits.txt — the renderer hides them in the
+    // character info panel unless devMode is on.
+    hidden: modTraitHidden || {},
+    // 0.9.437: engine constraints surfaced for the dev-mode picker — the
+    // renderer filters the Add Trait list by character agent-type and
+    // excluded cultures so users only see options the engine would accept.
+    characters: modTraitCharacters || {},
+    excludeCultures: modTraitExcludeCultures || {},
+  };
+});
+
+// 0.9.434: descr_strat trait editor — rewrite a character's `traits Foo
+// 2, Bar 1` line. Used from the dev-mode trait editor in the right-click
+// character info panel. Persistent; affects next non-live load. Does NOT
+// touch live save data.
+ipcMain.handle("update-character-traits", async (_event, firstName, faction, traits) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (!firstName) return { ok: false, error: "missing firstName" };
+  if (!Array.isArray(traits)) return { ok: false, error: "traits must be an array" };
+  // Try imperial_campaign first, then alex / BI fallbacks (same order as
+  // the loader).
+  const candidates = [
+    path.join(activeModDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  const dsPath = candidates.find((p) => fs.existsSync(p));
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const lines = text.split(/\r?\n/);
+    // Find the `character` line for this firstName + faction. descr_strat
+    // groups characters under `faction <id>,` headers, so we track the
+    // current faction as we scan.
+    const targetFaction = String(faction || "").toLowerCase();
+    let curFaction = null;
+    let charLineIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const fm = lines[i].match(/^faction\s+(\S+?),/);
+      if (fm) { curFaction = fm[1].toLowerCase(); continue; }
+      // Match `character` or `character,` then firstName as first comma-arg.
+      const cm = lines[i].match(/^character[\s,]+([^,]+?),/);
+      if (cm) {
+        const parts = cm[1].trim().split(/\s+/);
+        const fn = parts[0];
+        if (fn === firstName && (!targetFaction || curFaction === targetFaction)) {
+          charLineIdx = i;
+          break;
+        }
+      }
+    }
+    if (charLineIdx < 0) return { ok: false, error: `character "${firstName}" (faction "${faction}") not found in ${path.basename(dsPath)}` };
+    // The `traits …` line typically sits 1-2 lines below the `character`
+    // header. Scan ahead until next blank / next character / next army.
+    let traitsLineIdx = -1;
+    for (let j = charLineIdx + 1; j < Math.min(charLineIdx + 8, lines.length); j++) {
+      if (/^\s*traits\b/.test(lines[j])) { traitsLineIdx = j; break; }
+      if (/^character[\s,]/.test(lines[j]) || /^army\b/.test(lines[j])) break;
+    }
+    // Format new traits line. Empty list → drop the existing line entirely.
+    const newLine = traits.length > 0
+      ? `traits ${traits.map(t => `${t.name} ${t.level}`).join(", ")}`
+      : null;
+    if (traitsLineIdx >= 0) {
+      if (newLine == null) {
+        lines.splice(traitsLineIdx, 1);
+      } else {
+        // Preserve the original indent.
+        const indent = lines[traitsLineIdx].match(/^(\s*)/)[1] || "";
+        lines[traitsLineIdx] = indent + newLine;
+      }
+    } else if (newLine != null) {
+      // Insert traits line right after the character header.
+      lines.splice(charLineIdx + 1, 0, "\t" + newLine);
+    }
+    // Write back. Preserve line endings as found in the file.
+    const usesCRLF = text.includes("\r\n");
+    const out = lines.join(usesCRLF ? "\r\n" : "\n");
+    fs.writeFileSync(dsPath, out, "utf8");
+    console.log(`[trait-edit] wrote ${traits.length} traits for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2}`);
+    return { ok: true, file: dsPath, line: traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2 };
+  } catch (e) {
+    console.warn(`[trait-edit] failed for ${firstName}: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// Move an existing character's spawn tile in descr_strat. Matched by its
+// current (oldX,oldY) within the faction — robust against name/token quirks.
+// Used by the map drag-to-move-character feature; staged + applied on Save.
+ipcMain.handle("update-character-position", async (_event, faction, oldX, oldY, newX, newY) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  const candidates = [
+    path.join(activeModDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  const dsPath = candidates.find((p) => fs.existsSync(p));
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const lines = text.split(/\r?\n/);
+    const targetFaction = String(faction || "").toLowerCase();
+    let curFaction = null, hitIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const fm = lines[i].match(/^faction\s+(\S+?),/);
+      if (fm) { curFaction = fm[1].toLowerCase(); continue; }
+      if (/^character[\s,]/.test(lines[i])) {
+        const cm = lines[i].match(/\bx\s+(-?\d+)\s*,\s*y\s+(-?\d+)/i);
+        if (cm && Number(cm[1]) === Number(oldX) && Number(cm[2]) === Number(oldY) && (!targetFaction || curFaction === targetFaction)) {
+          hitIdx = i; break;
+        }
+      }
+    }
+    if (hitIdx < 0) return { ok: false, error: `no character at (${oldX},${oldY}) in faction "${faction}"` };
+    lines[hitIdx] = lines[hitIdx].replace(/\bx\s+-?\d+\s*,\s*y\s+-?\d+/i, `x ${newX}, y ${newY}`);
+    const usesCRLF = text.includes("\r\n");
+    fs.writeFileSync(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-move] post-write re-parse failed:", e && e.message); }
+    console.log(`[char-move] ${faction} character (${oldX},${oldY}) → (${newX},${newY}) in ${path.basename(dsPath)}:${hitIdx + 1}`);
+    return { ok: true, file: dsPath, line: hitIdx + 1 };
+  } catch (e) {
+    console.warn(`[char-move] failed: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// Edit an existing starting general's scalar fields (age, leader/heir tag) on
+// its descr_strat `character` line. Matched by firstName + faction like the
+// trait/ancillary editors. Surgical string edits preserve everything else on
+// the line (inline stats, coords, the rest of the name). Staged + applied on Save.
+ipcMain.handle("update-character-fields", async (_event, firstName, faction, fields) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (!firstName) return { ok: false, error: "missing firstName" };
+  if (!fields || typeof fields !== "object") return { ok: false, error: "missing fields" };
+  const candidates = [
+    path.join(activeModDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  const dsPath = candidates.find((p) => fs.existsSync(p));
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const lines = text.split(/\r?\n/);
+    const targetFaction = String(faction || "").toLowerCase();
+    let curFaction = null, charLineIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const fm = lines[i].match(/^faction\s+(\S+?),/);
+      if (fm) { curFaction = fm[1].toLowerCase(); continue; }
+      const cm = lines[i].match(/^character[\s,]+([^,]+?),/);
+      if (cm) {
+        const fn = cm[1].trim().split(/\s+/)[0];
+        if (fn === firstName && (!targetFaction || curFaction === targetFaction)) { charLineIdx = i; break; }
+      }
+    }
+    if (charLineIdx < 0) return { ok: false, error: `character "${firstName}" (faction "${faction}") not found in ${path.basename(dsPath)}` };
+    let line = lines[charLineIdx];
+    const applied = [];
+    if (typeof fields.age === "number" && fields.age > 0 && fields.age < 120) {
+      if (/\bage\s+\d+/i.test(line)) { line = line.replace(/\bage\s+\d+/i, `age ${fields.age}`); applied.push(`age=${fields.age}`); }
+    }
+    if (typeof fields.tag === "string") {
+      const tag = fields.tag.toLowerCase();
+      // Drop any existing leader/heir token right after `named character,`…
+      line = line.replace(/(\bnamed character\s*,\s*)(leader|heir)\s*,\s*/i, "$1");
+      // …then re-insert the requested one (empty string = plain general).
+      if (tag === "leader" || tag === "heir") {
+        line = line.replace(/(\bnamed character\s*,\s*)/i, `$1${tag}, `);
+      }
+      applied.push(`tag=${tag || "(none)"}`);
+    }
+    if (!applied.length) return { ok: false, error: "no recognised fields to apply" };
+    lines[charLineIdx] = line;
+    const usesCRLF = text.includes("\r\n");
+    fs.writeFileSync(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-fields] post-write re-parse failed:", e && e.message); }
+    console.log(`[char-fields] ${firstName} (${faction || "?"}): ${applied.join(", ")} in ${path.basename(dsPath)}:${charLineIdx + 1}`);
+    return { ok: true, file: dsPath, line: charLineIdx + 1, applied };
+  } catch (e) {
+    console.warn(`[char-fields] failed for ${firstName}: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// Safety net for the descr_strat editors: back up the campaign text files before
+// a Save writes them, and restore the most recent backup on demand. Backs up
+// descr_strat.txt + names.txt + descr_names_lookup.txt + descr_win_conditions.txt
+// to a single timestamped set; keeps the newest 10 sets (prunes older).
+function backupTargets() {
+  if (!activeModDataDir) return [];
+  const ds = findActiveDescrStratPath();
+  const out = [];
+  if (ds) {
+    out.push(ds);
+    out.push(ds.replace(/descr_strat\.txt$/i, "descr_win_conditions.txt"));
+  }
+  out.push(path.join(activeModDataDir, "text", "names.txt"));
+  out.push(path.join(activeModDataDir, "descr_names_lookup.txt"));
+  return out.filter((p) => { try { return fs.existsSync(p); } catch { return false; } });
+}
+ipcMain.handle("backup-mod-files", async () => {
+  try {
+    const targets = backupTargets();
+    if (!targets.length) return { ok: false, error: "no files to back up" };
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    for (const p of targets) { try { fs.copyFileSync(p, `${p}.provincia-${stamp}.bak`); } catch {} }
+    // Prune: keep newest 10 backup stamps per file.
+    for (const p of targets) {
+      try {
+        const dir = path.dirname(p), base = path.basename(p);
+        const baks = fs.readdirSync(dir).filter((f) => f.startsWith(base + ".provincia-") && f.endsWith(".bak")).sort();
+        while (baks.length > 10) { try { fs.unlinkSync(path.join(dir, baks.shift())); } catch {} }
+      } catch {}
+    }
+    console.log(`[backup] mod files backed up @ ${stamp} (${targets.length} files)`);
+    return { ok: true, stamp, files: targets.length };
+  } catch (e) { return { ok: false, error: e.message }; }
+});
+ipcMain.handle("list-mod-backups", async () => {
+  try {
+    const ds = findActiveDescrStratPath();
+    if (!ds) return { ok: false, backups: [] };
+    const dir = path.dirname(ds), base = path.basename(ds);
+    const stamps = fs.readdirSync(dir)
+      .filter((f) => f.startsWith(base + ".provincia-") && f.endsWith(".bak"))
+      .map((f) => f.slice((base + ".provincia-").length, -4))
+      .sort().reverse();
+    return { ok: true, backups: stamps };
+  } catch (e) { return { ok: false, error: e.message, backups: [] }; }
+});
+ipcMain.handle("restore-mod-backup", async (_event, stamp) => {
+  try {
+    const targets = backupTargets();
+    if (!targets.length) return { ok: false, error: "no active mod" };
+    // Use the latest stamp if none given.
+    let useStamp = stamp;
+    if (!useStamp) {
+      const ds = findActiveDescrStratPath();
+      const dir = path.dirname(ds), base = path.basename(ds);
+      const stamps = fs.readdirSync(dir).filter((f) => f.startsWith(base + ".provincia-") && f.endsWith(".bak")).map((f) => f.slice((base + ".provincia-").length, -4)).sort();
+      useStamp = stamps[stamps.length - 1];
+    }
+    if (!useStamp) return { ok: false, error: "no backups found" };
+    let restored = 0;
+    for (const p of targets) {
+      const bak = `${p}.provincia-${useStamp}.bak`;
+      if (fs.existsSync(bak)) { try { fs.copyFileSync(bak, p); restored++; } catch {} }
+    }
+    try { loadModCharacterData(activeModDataDir); } catch {}
+    console.log(`[backup] restored ${restored} file(s) from ${useStamp}`);
+    return { ok: true, stamp: useStamp, restored };
+  } catch (e) { return { ok: false, error: e.message }; }
+});
+
+// Relocate a settlement's leaderless `garrisoned_army` out to a field tile as a
+// CAPTAIN-led army. Verified vanilla-RR syntax: a captain is `character <Name>,
+// general, age 20, , x N, y N` (type `general` = captain, single first name that
+// must exist in names.txt) followed by `army` + regular `unit` lines (no general
+// bodyguard). We remove the garrisoned_army block from the settlement and emit
+// the captain army in the OWNER faction's section (the section the settlement
+// sits in — NOT faction_creator). The captain name reuses an existing first name
+// from that faction (guaranteed to be in names.txt).
+ipcMain.handle("relocate-garrison", async (_event, faction, region, newX, newY) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (!region) return { ok: false, error: "missing region" };
+  if (typeof newX !== "number" || typeof newY !== "number") return { ok: false, error: "missing coords" };
+  const candidates = [
+    path.join(activeModDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  const dsPath = candidates.find((p) => fs.existsSync(p));
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const usesCRLF = text.includes("\r\n");
+    const lines = text.split(/\r?\n/);
+    const wantFac = String(faction || "").toLowerCase();
+    // Global scan: track the enclosing faction; find the settlement by region
+    // that has a garrisoned_army.
+    let curFac = null, curFacLine = -1;
+    let ownerFacLine = -1, gaLine = -1, unitEnd = -1, ownerFac = null;
+    const units = [];
+    for (let i = 0; i < lines.length; i++) {
+      const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
+      if (fm) { curFac = fm[1].toLowerCase(); curFacLine = i; continue; }
+      if (/^\s*settlement\s*$/.test(lines[i])) {
+        let reg = null, ga = -1, uend = -1; const us = []; let j = i + 1;
+        for (; j < lines.length; j++) {
+          if (/^\s*\}/.test(lines[j])) break;
+          const rm = lines[j].match(/^\s*region\s+(.+?)\s*$/); if (rm) reg = rm[1].trim();
+          if (/^\s*garrisoned_army\s*$/.test(lines[j])) {
+            ga = j; let k = j + 1;
+            while (k < lines.length && /^\s*unit\s+/.test(lines[k])) { us.push(lines[k].replace(/^\s+/, "")); k++; }
+            uend = k;
+          }
+        }
+        if (reg === region && ga >= 0 && (!wantFac || curFac === wantFac)) {
+          ownerFac = curFac; ownerFacLine = curFacLine; gaLine = ga; unitEnd = uend; units.push(...us); break;
+        }
+        i = j;
+      }
+    }
+    if (gaLine < 0) return { ok: false, error: `no garrisoned_army found in region "${region}"${faction ? ` (faction ${faction})` : ""}` };
+    if (units.length === 0) return { ok: false, error: `garrisoned_army in "${region}" has no units` };
+    // Captain name: reuse an existing first name from the owner faction's
+    // characters (already present in names.txt, so guaranteed valid).
+    let captain = null;
+    for (let i = ownerFacLine + 1; i < lines.length; i++) {
+      if (/^faction\s/.test(lines[i])) break;
+      const cm = lines[i].match(/^character[\s,]+([A-Za-z][A-Za-z_]*)\b/);
+      if (cm) { captain = cm[1]; break; }
+    }
+    if (!captain) captain = "Captain";
+    // Remove the garrisoned_army header + its unit lines.
+    lines.splice(gaLine, unitEnd - gaLine);
+    // Insertion point in the owner faction's section: before its first character
+    // (or first settlement, or section end). gaLine > ownerFacLine, so the
+    // removal above doesn't shift ownerFacLine.
+    let insAt = -1;
+    for (let i = ownerFacLine + 1; i < lines.length; i++) {
+      if (/^faction\s/.test(lines[i])) { insAt = i; break; }
+      if (/^character[\s,]/.test(lines[i])) { insAt = i; break; }
+      if (/^\s*settlement\s*$/.test(lines[i])) { insAt = i; break; }
+    }
+    if (insAt < 0) insAt = ownerFacLine + 1;
+    const block = [`character\t${captain}, general, age 20, , x ${newX}, y ${newY}`, "army", ...units, ""];
+    lines.splice(insAt, 0, ...block);
+    fs.writeFileSync(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[garrison-relocate] post-write re-parse failed:", e && e.message); }
+    console.log(`[garrison-relocate] ${ownerFac} ${region}: ${units.length} units → captain "${captain}" at (${newX},${newY}) in ${path.basename(dsPath)}`);
+    return { ok: true, captain, units: units.length, faction: ownerFac };
+  } catch (e) {
+    console.warn(`[garrison-relocate] failed: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// Rename an existing starting character's FIRST name (the family/surname is
+// kept). The name appears in descr_strat as a token on the `character` line AND
+// in any `relative` line that references the character, so we replace the full
+// "<First> <Family>" string everywhere within the character's faction section.
+// The new first name must resolve in names.txt — if its token is missing we mint
+// `{NewFirst}NewFirst` (sorted insert) + add it to descr_names_lookup, mirroring
+// the Add-General writer. Refuses a rename that would duplicate an existing
+// "<New> <Family>" in the faction (the engine dislikes identical full names).
+ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (!oldFirst || !newFirstRaw) return { ok: false, error: "missing name" };
+  const newFirst = String(newFirstRaw).trim().replace(/[^A-Za-z0-9_'-]/g, "");
+  if (!newFirst) return { ok: false, error: "invalid new name" };
+  const dsPath = findActiveDescrStratPath();
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const lines = text.split(/\r?\n/);
+    const wantFac = String(faction || "").toLowerCase();
+    // Locate the character's faction section.
+    let secStart = -1, secEnd = lines.length;
+    for (let i = 0; i < lines.length; i++) {
+      const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
+      if (fm) { if (fm[1].toLowerCase() === wantFac) secStart = i; else if (secStart >= 0) { secEnd = i; break; } }
+    }
+    if (secStart < 0) return { ok: false, error: `faction "${faction}" not found` };
+    // Find the character line + parse its family (surname) token.
+    let charIdx = -1, family = null;
+    for (let i = secStart; i < secEnd; i++) {
+      const cm = lines[i].match(/^character[\s,]+([^,]+),/);
+      if (cm) { const parts = cm[1].trim().split(/\s+/); if (parts[0] === oldFirst) { charIdx = i; family = parts.slice(1).join(" ") || null; break; } }
+    }
+    if (charIdx < 0) return { ok: false, error: `character "${oldFirst}" not found in ${faction}` };
+    const oldFull = family ? `${oldFirst} ${family}` : oldFirst;
+    const newFull = family ? `${newFirst} ${family}` : newFirst;
+    if (oldFull === newFull) return { ok: false, error: "name unchanged" };
+    // Reject duplicates: a different character/relative already named newFull.
+    for (let i = secStart; i < secEnd; i++) {
+      if (i === charIdx) continue;
+      const t = lines[i].trim();
+      if (/^(character|character_record|relative)\b/.test(t) && t.includes(newFull)) {
+        return { ok: false, error: `"${newFull}" already exists in ${faction} — pick a different name` };
+      }
+    }
+    // Replace the full name string everywhere in the section.
+    let count = 0;
+    for (let i = secStart; i < secEnd; i++) {
+      if (lines[i].includes(oldFull)) { lines[i] = lines[i].split(oldFull).join(newFull); count++; }
+    }
+    // Ensure the new first name is a known names.txt token; mint if missing.
+    let minted = false;
+    const namesPath = path.join(activeModDataDir, "text", "names.txt");
+    const lookupPath = path.join(activeModDataDir, "descr_names_lookup.txt");
+    try {
+      if (fs.existsSync(namesPath)) {
+        const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
+        if (!names.tokenToDisplay.has(newFirst)) {
+          const nt = fs.readFileSync(namesPath, "utf16le");
+          const ntEol = nt.includes("\r\n") ? "\r\n" : "\n";
+          const ntLines = nt.split(/\r?\n/);
+          const tokenOf = (l) => { const m = l.match(/^﻿?\{([^}]*)\}/); return m ? m[1].toLowerCase() : null; };
+          const tokLc = newFirst.toLowerCase();
+          const entry = `{${newFirst}}${newFirst}`;
+          let idx = ntLines.findIndex((l) => { const k = tokenOf(l); return k != null && k > tokLc; });
+          if (idx < 0) { while (ntLines.length && ntLines[ntLines.length - 1].trim() === "") ntLines.pop(); ntLines.push(entry); }
+          else ntLines.splice(idx, 0, entry);
+          fs.writeFileSync(namesPath, ntLines.join(ntEol), "utf16le");
+          minted = true;
+          if (fs.existsSync(lookupPath)) {
+            const lk = fs.readFileSync(lookupPath, "utf8");
+            const lkEol = lk.includes("\r\n") ? "\r\n" : "\n";
+            const lkLines = lk.split(/\r?\n/);
+            if (!lkLines.some((l) => l.trim().toLowerCase() === tokLc)) {
+              let li = lkLines.findIndex((l) => l.trim() && l.trim().toLowerCase() > tokLc);
+              if (li < 0) { while (lkLines.length && lkLines[lkLines.length - 1].trim() === "") lkLines.pop(); lkLines.push(newFirst); }
+              else lkLines.splice(li, 0, newFirst);
+              fs.writeFileSync(lookupPath, lkLines.join(lkEol), "utf8");
+            }
+          }
+        }
+      }
+    } catch (ne) { console.warn("[char-rename] names.txt update failed:", ne && ne.message); }
+    fs.writeFileSync(dsPath, lines.join(eol), "utf8");
+    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-rename] re-parse failed:", e && e.message); }
+    console.log(`[char-rename] ${faction}: "${oldFull}" → "${newFull}" (${count} line(s)${minted ? ", minted name token" : ""})`);
+    return { ok: true, count, minted, newFull };
+  } catch (e) {
+    console.warn(`[char-rename] failed: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// Replace the unit list of a starting army block in descr_strat. The army is
+// located either by a character's coords (x,y — a general/captain `army` block)
+// or by a settlement region (a `garrisoned_army` block). `units` is the FULL new
+// list [{name, exp, armour, weapon}] — the caller keeps the bodyguard as unit 0
+// for named generals. Unit-line indentation is copied from the block so the file
+// style is preserved. Staged + applied on Save.
+ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (!Array.isArray(units)) return { ok: false, error: "units must be an array" };
+  const dsPath = findActiveDescrStratPath();
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const lines = text.split(/\r?\n/);
+    const byRegion = locator && locator.region != null;
+    const byCoord = locator && typeof locator.x === "number" && typeof locator.y === "number";
+    if (!byRegion && !byCoord) return { ok: false, error: "locator needs region or x/y" };
+    const wantFac = String(faction || "").toLowerCase();
+    let unitStart = -1, unitEnd = -1, indent = "\t";
+    if (byCoord) {
+      // Find the character at (x,y) [+ faction], then its `army` block's units.
+      let curFac = null;
+      for (let i = 0; i < lines.length; i++) {
+        const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i); if (fm) { curFac = fm[1].toLowerCase(); continue; }
+        if (/^character[\s,]/.test(lines[i])) {
+          const cm = lines[i].match(/\bx\s+(-?\d+)\s*,\s*y\s+(-?\d+)/i);
+          if (cm && Number(cm[1]) === Number(locator.x) && Number(cm[2]) === Number(locator.y) && (!wantFac || curFac === wantFac)) {
+            // Scan to `army`, then unit lines.
+            for (let j = i + 1; j < lines.length && j < i + 12; j++) {
+              if (/^\s*army\b/.test(lines[j])) {
+                let k = j + 1; while (k < lines.length && /^\s*unit\s+/.test(lines[k])) { if (unitStart < 0) { unitStart = k; indent = (lines[k].match(/^(\s*)/) || ["", "\t"])[1]; } k++; }
+                unitEnd = k; break;
+              }
+              if (/^character[\s,]/.test(lines[j])) break;
+            }
+            break;
+          }
+        }
+      }
+    } else {
+      // garrisoned_army for region.
+      let curFac = null;
+      for (let i = 0; i < lines.length; i++) {
+        const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i); if (fm) { curFac = fm[1].toLowerCase(); continue; }
+        if (/^\s*settlement\s*$/.test(lines[i])) {
+          let reg = null, ga = -1, uend = -1, us = -1, ind = "\t"; let j = i + 1;
+          for (; j < lines.length; j++) {
+            if (/^\s*\}/.test(lines[j])) break;
+            const rm = lines[j].match(/^\s*region\s+(.+?)\s*$/); if (rm) reg = rm[1].trim();
+            if (/^\s*garrisoned_army\s*$/.test(lines[j])) { ga = j; let k = j + 1; while (k < lines.length && /^\s*unit\s+/.test(lines[k])) { if (us < 0) { us = k; ind = (lines[k].match(/^(\s*)/) || ["", "\t"])[1]; } k++; } uend = k; }
+          }
+          if (reg === locator.region && ga >= 0 && (!wantFac || curFac === wantFac)) {
+            // If the garrison had units, replace them; else insert right after the header.
+            unitStart = us >= 0 ? us : ga + 1; unitEnd = us >= 0 ? uend : ga + 1; indent = ind;
+            break;
+          }
+          i = j;
+        }
+      }
+    }
+    if (unitStart < 0 && !byRegion) return { ok: false, error: "army block not found" };
+    if (unitStart < 0) return { ok: false, error: "garrison block not found" };
+    const fmtUnit = (u) => `${indent}unit\t\t${u.name}\t\t\texp ${u.exp || 0} armour ${u.armour || 0} weapon_lvl ${u.weapon || 0}`;
+    const newLines = units.filter((u) => u && u.name).map(fmtUnit);
+    lines.splice(unitStart, unitEnd - unitStart, ...newLines);
+    fs.writeFileSync(dsPath, lines.join(eol), "utf8");
+    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[army-units] re-parse failed:", e && e.message); }
+    console.log(`[army-units] ${faction} ${byCoord ? `@(${locator.x},${locator.y})` : locator.region}: wrote ${newLines.length} unit(s)`);
+    return { ok: true, units: newLines.length };
+  } catch (e) {
+    console.warn(`[army-units] failed: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// 0.9.550: Add-General feature — read descr_strat + name lists, return per-
+// faction culture name pools + families + settlement coord index for the UI.
+function findActiveDescrStratPath() {
+  if (!activeModDataDir) return null;
+  const candidates = [
+    path.join(activeModDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  return candidates.find((p) => fs.existsSync(p)) || null;
+}
+ipcMain.handle("addgen-get-data", async () => {
+  try {
+    if (!activeModDataDir) return { ok: false, error: "no active mod" };
+    const dsPath = findActiveDescrStratPath();
+    if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+    const namesPath = path.join(activeModDataDir, "text", "names.txt");
+    const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
+    const parsed = descrGen.parseDescrStrat(fs.readFileSync(dsPath, "utf8"));
+    const settIdx = descrGen.buildSettlementCoordIndex(parsed);
+    const settlements = {};
+    for (const [name, v] of settIdx) settlements[name] = { faction: v.faction, x: v.x, y: v.y, hint: v.hint };
+    // OWNED settlements per faction (every settlement, by city name + coords) —
+    // resolve coords via the map's black settlement pixels + region colours.
+    let owned = {};
+    try {
+      const regPath = path.join(activeModDataDir, "world", "maps", "base", "descr_regions.txt");
+      const tgaPath = path.join(activeModDataDir, "world", "maps", "base", "map_regions.tga");
+      const { regionToCity, rgbToRegion } = descrGen.parseDescrRegions(fs.readFileSync(regPath, "utf8"));
+      const regionCoords = descrGen.buildRegionCoords(fs.readFileSync(tgaPath), rgbToRegion);
+      owned = descrGen.factionOwnedSettlements(parsed, regionToCity, regionCoords, settIdx);
+      const totalOwned = Object.values(owned).reduce((s, l) => s + l.length, 0);
+      const withCoords = Object.values(owned).reduce((s, l) => s + l.filter((x) => x.x != null).length, 0);
+      console.log(`[addgen] owned settlements: ${totalOwned} across ${Object.keys(owned).length} factions, ${withCoords} with coords (${Object.keys(regionCoords).length} regions mapped from TGA)`);
+    } catch (re) { console.warn("[addgen] owned-settlement resolve failed (falling back to governor index):", re && re.message); }
+    const factions = {};
+    for (const fac of parsed.factions) {
+      const pools = descrGen.buildPools(fac, names);
+      factions[fac.name] = {
+        name: fac.name, generalUnit: fac.generalUnit, generalUnits: fac.generalUnits,
+        maleFirst: pools.maleFirst, femaleFirst: pools.femaleFirst, families: pools.families,
+        usesSurnames: pools.usesSurnames,
+        ownedSettlements: owned[fac.name] || [],
+        duplicates: descrGen.findDuplicateNames(fac),
+      };
+    }
+    console.log(`[addgen] data: ${Object.keys(factions).length} factions, ${Object.keys(settlements).length} governor-spots, file=${path.basename(dsPath)}`);
+    return { ok: true, factions, settlements, file: path.basename(dsPath) };
+  } catch (e) { console.warn("[addgen] get-data failed:", e && e.message); return { ok: false, error: e.message }; }
+});
+ipcMain.handle("addgen-apply", async (_event, selection) => {
+  try {
+    if (!activeModDataDir) return { ok: false, error: "no active mod" };
+    const dsPath = findActiveDescrStratPath();
+    if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+    const namesPath = path.join(activeModDataDir, "text", "names.txt");
+    const lookupPath = path.join(activeModDataDir, "descr_names_lookup.txt");
+    const dsRaw = fs.readFileSync(dsPath, "utf8");
+    const eol = dsRaw.includes("\r\n") ? "\r\n" : "\n";
+    const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
+    const parsed = descrGen.parseDescrStrat(dsRaw);
+    const res = descrGen.composeAddGeneral(parsed, names, selection);
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
+    fs.writeFileSync(dsPath, res.lines.join(eol), "utf8");
+    if (res.namesAppend.length) {
+      fs.copyFileSync(namesPath, namesPath + "." + stamp + ".bak");
+      const nt = fs.readFileSync(namesPath, "utf16le");
+      const ntEol = nt.includes("\r\n") ? "\r\n" : "\n";
+      const ntLines = nt.split(/\r?\n/);
+      // names.txt is sorted by token and the {ZZZZZ} entry is an end-marker —
+      // appending AFTER it means the engine never reads the new names. Insert
+      // each mint in its sorted-by-token position (which lands it before ZZZZZ).
+      const tokenOf = (line) => { const m = line.match(/^﻿?\{([^}]*)\}/); return m ? m[1].toLowerCase() : null; };
+      for (const n of res.namesAppend) {
+        const entry = `{${n.token}}${n.display}`;
+        const tokLc = n.token.toLowerCase();
+        let idx = ntLines.findIndex((l) => { const k = tokenOf(l); return k != null && k > tokLc; });
+        if (idx < 0) { while (ntLines.length && ntLines[ntLines.length - 1].trim() === "") ntLines.pop(); ntLines.push(entry); }
+        else ntLines.splice(idx, 0, entry);
+      }
+      fs.writeFileSync(namesPath, ntLines.join(ntEol), "utf16le");
+    }
+    if (res.lookupAppend.length) {
+      fs.copyFileSync(lookupPath, lookupPath + "." + stamp + ".bak");
+      const lk = fs.readFileSync(lookupPath, "utf8");
+      const lkEol = lk.includes("\r\n") ? "\r\n" : "\n";
+      const lkLines = lk.split(/\r?\n/);
+      // descr_names_lookup.txt is alphabetically sorted (and ends with ZZZZZ).
+      // Insert each token in sorted position so the engine's lookup finds it.
+      for (const tok of res.lookupAppend) {
+        const tokLc = tok.toLowerCase();
+        let idx = lkLines.findIndex((l) => l.trim() && l.trim().toLowerCase() > tokLc);
+        if (idx < 0) { while (lkLines.length && lkLines[lkLines.length - 1].trim() === "") lkLines.pop(); lkLines.push(tok); }
+        else lkLines.splice(idx, 0, tok);
+      }
+      fs.writeFileSync(lookupPath, lkLines.join(lkEol), "utf8");
+    }
+    // Re-parse the mod's descr_strat so the new general shows in the Characters
+    // view + Family Tree immediately (these read cached parses).
+    try { loadModCharacterData(activeModDataDir); console.log("[addgen] re-parsed mod character data after write"); }
+    catch (e) { console.warn("[addgen] post-write re-parse failed:", e && e.message); }
+    console.log(`[addgen] added ${res.summary.general} to ${res.summary.faction} @${selection.x},${selection.y}; minted=[${res.summary.minted.join(",")}]; backup ${stamp}`);
+    return { ok: true, summary: res.summary, backupStamp: stamp };
+  } catch (e) { console.warn("[addgen] apply failed:", e && e.message); return { ok: false, error: e.message }; }
+});
+
+// 0.9.437: descr_strat ancillary editor — rewrite the `ancillaries Foo,
+// Bar` line on a character block. Mirrors update-character-traits exactly.
+// Persistent; affects next non-live load. Does NOT touch live save data.
+ipcMain.handle("update-character-ancillaries", async (_event, firstName, faction, ancillaries) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (!firstName) return { ok: false, error: "missing firstName" };
+  if (!Array.isArray(ancillaries)) return { ok: false, error: "ancillaries must be an array" };
+  const candidates = [
+    path.join(activeModDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  const dsPath = candidates.find((p) => fs.existsSync(p));
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const lines = text.split(/\r?\n/);
+    const targetFaction = String(faction || "").toLowerCase();
+    let curFaction = null;
+    let charLineIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const fm = lines[i].match(/^faction\s+(\S+?),/);
+      if (fm) { curFaction = fm[1].toLowerCase(); continue; }
+      const cm = lines[i].match(/^character[\s,]+([^,]+?),/);
+      if (cm) {
+        const parts = cm[1].trim().split(/\s+/);
+        const fn = parts[0];
+        if (fn === firstName && (!targetFaction || curFaction === targetFaction)) {
+          charLineIdx = i;
+          break;
+        }
+      }
+    }
+    if (charLineIdx < 0) return { ok: false, error: `character "${firstName}" (faction "${faction}") not found` };
+    // The `ancillaries …` line sits within ~8 lines below the character
+    // header (alongside `traits …` and before `army`).
+    let ancLineIdx = -1;
+    for (let j = charLineIdx + 1; j < Math.min(charLineIdx + 8, lines.length); j++) {
+      if (/^\s*ancillaries\b/.test(lines[j])) { ancLineIdx = j; break; }
+      if (/^character[\s,]/.test(lines[j]) || /^army\b/.test(lines[j])) break;
+    }
+    const cleaned = ancillaries.map(a => typeof a === "string" ? a : a?.name).filter(Boolean);
+    const newLine = cleaned.length > 0 ? `ancillaries ${cleaned.join(", ")}` : null;
+    if (ancLineIdx >= 0) {
+      if (newLine == null) {
+        lines.splice(ancLineIdx, 1);
+      } else {
+        const indent = lines[ancLineIdx].match(/^(\s*)/)[1] || "";
+        lines[ancLineIdx] = indent + newLine;
+      }
+    } else if (newLine != null) {
+      // Insert just after a `traits` line if present (engine convention),
+      // else right after the character header.
+      let insertAt = charLineIdx + 1;
+      for (let j = charLineIdx + 1; j < Math.min(charLineIdx + 8, lines.length); j++) {
+        if (/^\s*traits\b/.test(lines[j])) { insertAt = j + 1; break; }
+        if (/^character[\s,]/.test(lines[j]) || /^army\b/.test(lines[j])) break;
+      }
+      lines.splice(insertAt, 0, "\t" + newLine);
+    }
+    const usesCRLF = text.includes("\r\n");
+    const out = lines.join(usesCRLF ? "\r\n" : "\n");
+    fs.writeFileSync(dsPath, out, "utf8");
+    const reportLine = ancLineIdx >= 0 ? ancLineIdx + 1 : charLineIdx + 2;
+    console.log(`[ancillary-edit] wrote ${cleaned.length} ancillaries for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${reportLine}`);
+    return { ok: true, file: dsPath, line: reportLine };
+  } catch (e) {
+    console.warn(`[ancillary-edit] failed for ${firstName}: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// 0.9.437: descr_strat region-buildings editor — replace the `building {
+// type X Y }` blocks inside the settlement that has `region <RegionName>`.
+// Persistent; affects next non-live load. Does NOT touch live save data.
+// Input shape: buildings = [{ type: "core_building", level: "village" }, ...]
+ipcMain.handle("update-region-buildings", async (_event, regionName, buildings) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (!regionName) return { ok: false, error: "missing regionName" };
+  if (!Array.isArray(buildings)) return { ok: false, error: "buildings must be an array" };
+  const candidates = [
+    path.join(activeModDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(activeModDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  const dsPath = candidates.find((p) => fs.existsSync(p));
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try {
+    const text = fs.readFileSync(dsPath, "utf8");
+    const lines = text.split(/\r?\n/);
+    // Walk settlement blocks. Each settlement is:
+    //   settlement
+    //   {
+    //     level X
+    //     region <Name>
+    //     ...
+    //     building { type CHAIN LEVEL }
+    //     building { type ... }
+    //   }
+    // Find the settlement whose `region` line equals the regionName, then
+    // splice out every `building { … }` block within the settlement's
+    // braces and write fresh ones at the original first-building position.
+    // 0.9.444: brace-depth tracking. The previous parser treated the FIRST
+    // `}` inside a settlement as the settlement-closing brace — but every
+    // `building { … }` block inside a settlement has its own `}`, so the
+    // settlement was being "ended" at the first building's close. Result:
+    // the building-range scan saw zero closed blocks (only the orphaned
+    // opens), removed nothing, and inserted N new blocks below the orphans.
+    // After a few edits, descr_strat looked like the user's corrupted file
+    // (107 added `+ building` lines, repeating cores, stray `}`s). We now
+    // track brace depth properly: depth 0 = outside braces, depth 1 = inside
+    // the settlement, depth ≥2 = inside a building block. A `}` only closes
+    // the settlement when depth drops back to 0.
+    let settlementLineIdx = -1;
+    let braceStart = -1;
+    let regionLineIdx = -1;
+    let depth = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^settlement\b/.test(line)) {
+        settlementLineIdx = i;
+        braceStart = -1;
+        regionLineIdx = -1;
+        depth = 0;
+        continue;
+      }
+      if (settlementLineIdx < 0) continue;
+      // Count braces on the line (handles single-line `{ ... }` too).
+      const opens = (line.match(/\{/g) || []).length;
+      const closes = (line.match(/\}/g) || []).length;
+      if (braceStart < 0 && opens > 0) {
+        braceStart = i;
+        depth += opens;
+        depth -= closes;
+        if (depth <= 0) {
+          // Pathological: `{}` on a single line w/ no body. Skip.
+          settlementLineIdx = -1;
+          braceStart = -1;
+        }
+        continue;
+      }
+      if (braceStart < 0) continue;
+      const rm = line.match(/^\s*region\s+(\S+)/);
+      if (rm) regionLineIdx = i;
+      depth += opens;
+      depth -= closes;
+      if (depth > 0) continue; // still inside settlement (incl. inside building blocks)
+      // depth === 0 (or below): settlement just closed. Decide if this is the
+      // target region.
+      const matchesRegion = regionLineIdx >= 0 &&
+        (lines[regionLineIdx].match(/^\s*region\s+(\S+)/)?.[1] || "").toLowerCase() === regionName.toLowerCase();
+      if (matchesRegion) {
+        const blockStart = braceStart;
+        const blockEnd = i;
+        // Find building block ranges. Use brace depth (relative to the
+        // settlement = 1) so a building opens at depth 2 and closes back to
+        // depth 1. Records [start, end] inclusive for the building block.
+        const buildingRanges = [];
+        let bDepth = 1; // we re-walk; settlement's `{` already counted
+        let bStart = -1;
+        for (let j = blockStart + 1; j < blockEnd; j++) {
+          const ln = lines[j];
+          const isBuildingHead = /^\s*building\b/.test(ln);
+          const o = (ln.match(/\{/g) || []).length;
+          const c = (ln.match(/\}/g) || []).length;
+          if (isBuildingHead && bDepth === 1 && bStart < 0) bStart = j;
+          bDepth += o;
+          bDepth -= c;
+          if (bStart >= 0 && bDepth === 1 && (c > 0 || o === 0)) {
+            // Close occurred and we're back at settlement-level depth.
+            if (c > 0) {
+              buildingRanges.push([bStart, j]);
+              bStart = -1;
+            }
+          }
+        }
+        let insertAt;
+        let indent;
+        if (buildingRanges.length > 0) {
+          insertAt = buildingRanges[0][0];
+          indent = lines[insertAt].match(/^(\s*)/)[1] || "\t";
+        } else {
+          insertAt = blockEnd;
+          const braceIndent = lines[braceStart].match(/^(\s*)/)[1] || "";
+          indent = braceIndent + "\t";
+        }
+        // Remove building blocks bottom-up so indices stay valid.
+        for (let r = buildingRanges.length - 1; r >= 0; r--) {
+          const [s, e] = buildingRanges[r];
+          lines.splice(s, e - s + 1);
+          if (s < insertAt) insertAt -= (e - s + 1);
+        }
+        const newLines = [];
+        for (const b of buildings) {
+          const chain = String(b.type || "").trim();
+          const level = String(b.level || "").trim();
+          if (!chain || !level) continue;
+          newLines.push(`${indent}building`);
+          newLines.push(`${indent}{`);
+          newLines.push(`${indent}\ttype ${chain} ${level}`);
+          newLines.push(`${indent}}`);
+        }
+        lines.splice(insertAt, 0, ...newLines);
+        const usesCRLF = text.includes("\r\n");
+        const out = lines.join(usesCRLF ? "\r\n" : "\n");
+        fs.writeFileSync(dsPath, out, "utf8");
+        console.log(`[building-edit] wrote ${buildings.length} buildings for region "${regionName}" to ${path.basename(dsPath)}:${insertAt + 1} (replaced ${buildingRanges.length} existing blocks)`);
+        return { ok: true, file: dsPath, line: insertAt + 1 };
+      }
+      // Not our settlement — reset and keep scanning.
+      settlementLineIdx = -1;
+      braceStart = -1;
+      regionLineIdx = -1;
+      depth = 0;
+    }
+    return { ok: false, error: `region "${regionName}" not found in ${path.basename(dsPath)}` };
+  } catch (e) {
+    console.warn(`[building-edit] failed for region ${regionName}: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// 0.9.437: building catalogue IPC — return the mod's full chain → levels
+// map (already parsed in loadModCharacterData via modBuildingChains +
+// modChainMaxLevels) plus the level NAMES per chain (buildingLevelsLookup
+// is renderer-side; main process needs to re-emit chain → levels here).
+// Used by the dev-mode Add Building picker.
+ipcMain.handle("get-building-catalogue", async () => {
+  if (!activeModDataDir) return { chains: {}, categories: {}, settlementMins: {}, settlementTiers: [], levelRequires: {} };
+  const edbPath = path.join(activeModDataDir, "export_descr_buildings.txt");
+  if (!fs.existsSync(edbPath)) return { chains: {}, categories: {}, settlementMins: {}, settlementTiers: [], levelRequires: {} };
+  try {
+    const edbText = fs.readFileSync(edbPath, "utf8");
+    const blocks = edbText.split(/^building\s+/m).slice(1);
+    const chains = {};            // chainName → [levelName, ...]
+    const categories = {};        // chainName → category (icon line)
+    // 0.9.441: per-level settlement_min, keyed by `${chain}|${level}` →
+    // settlement-tier name (e.g. "village", "town", "large_town", ...). The
+    // dev-mode building editor uses this to gate the ⬆ button — you can only
+    // upgrade past a level whose settlement_min is met by the settlement's
+    // core_building level.
+    const settlementMins = {};
+    // 0.9.443: raw `requires` expression per level, keyed by `${chain}|${level}`.
+    // The renderer side parses this into a structured filter (factions /
+    // hidden_resource / resource etc.) so the dev-mode Add Building picker
+    // only shows chains the engine would actually accept for the current
+    // region. Concatenating multiple `and / or` continuation lines means
+    // the renderer gets a single string with the full clause to parse.
+    const levelRequires = {};
+    // 0.9.600: capture each chain's `tag` (government / temple / civic / port /
+    // heavy_ind / …). A settlement holds at most ONE building per tag — the
+    // engine enforces it via the `no_other_<tag>` requirement on every tagged
+    // building — so the Add-building picker uses this to hide a second building
+    // of an already-occupied slot (you must replace, not stack).
+    const tags = {};
+    for (const b of blocks) {
+      const name = b.match(/^(\w+)/)?.[1];
+      if (!name) continue;
+      const lvLine = b.match(/^\s+levels\s+(.+)/m);
+      const chainLevels = lvLine ? lvLine[1].trim().split(/\s+/).filter(Boolean) : [];
+      if (chainLevels.length) chains[name] = chainLevels;
+      const iconLine = b.match(/^\s+icon\s+(\w+)/m);
+      if (iconLine) categories[name] = iconLine[1].toLowerCase();
+      const tagLine = b.match(/^\s+tag\s+(\w+)/m);
+      if (tagLine) tags[name] = tagLine[1].toLowerCase();
+      // Walk the block line-by-line to find each level's settlement_min.
+      // EDB structure inside a `building <chain> { ... }` block:
+      //   levels lvl1 lvl2 lvl3
+      //   { ... }      <- begin levels container
+      //   lvl1
+      //   {
+      //     settlement_min village
+      //     ...
+      //   }
+      //   lvl2
+      //   { ... }
+      const lvlSet = new Set(chainLevels);
+      const blockLines = b.split(/\r?\n/);
+      let curLevel = null;
+      let curLevelHeader = null;
+      for (const ln of blockLines) {
+        // Level header. RTW EDB declares each level as either a bare
+        // identifier or `<name> requires <expr>` on the same line, e.g.
+        //   farms+2
+        //   farms+3 requires factions { romans_julii, } and resource grain
+        //   level core_building
+        // Accept both forms. Level names can include `+`, `-`, digits, etc.
+        const lm = ln.match(/^\s*(?:level\s+)?([A-Za-z][A-Za-z0-9_+\-]*)\b/);
+        if (lm && lvlSet.has(lm[1])) {
+          curLevel = lm[1];
+          curLevelHeader = ln;
+          // 0.9.443: capture per-level `requires` expression so the picker
+          // can hide chains the engine would refuse. We collect the header
+          // line PLUS subsequent lines up until the next sibling level so
+          // multi-line `requires` clauses are captured. Then parse out the
+          // bits we care about (factions / hidden_resource / resource).
+          if (!levelRequires[`${name}|${curLevel}`]) levelRequires[`${name}|${curLevel}`] = "";
+          // Append everything after the level name (handles `farms requires …`)
+          const tail = ln.slice(ln.indexOf(lm[1]) + lm[1].length);
+          levelRequires[`${name}|${curLevel}`] += " " + tail;
+          continue;
+        }
+        if (!curLevel) continue;
+        const sm = ln.match(/^\s*settlement_min\s+(\S+)/);
+        if (sm) {
+          settlementMins[`${name}|${curLevel}`] = sm[1].toLowerCase();
+          continue;
+        }
+        // Pick up multi-line `requires` clauses. They typically start with
+        // `requires …` on the level header but can continue with `and …`
+        // / `or …` lines or appear inside a `capability { … }` block (which
+        // we DON'T want to swallow). Be conservative: only pick up top-level
+        // lines that look like a requires-clause continuation.
+        if (/^\s*requires\s+/.test(ln) || /^\s*and\s+/.test(ln) || /^\s*or\s+/.test(ln)) {
+          levelRequires[`${name}|${curLevel}`] += " " + ln.trim();
+        }
+        // Heuristic block-end: an opening of another top-level directive
+        // resets curLevel so we don't bleed settings between sibling levels.
+        if (/^\s*levels\s+/.test(ln)) { curLevel = null; curLevelHeader = null; }
+      }
+    }
+    // Ordered settlement tier list — derived from the core_building chain
+    // since that IS the settlement-level ladder (village → town → ... →
+    // huge_city). UI uses it to compare settlement_min "is >= " requirements.
+    const settlementTiers = (chains.core_building || []).slice();
+    console.log(`[get-building-catalogue] chains=${Object.keys(chains).length} settlement_min entries=${Object.keys(settlementMins).length} requires entries=${Object.keys(levelRequires).length} tiers=${settlementTiers.length} tags=${Object.keys(tags).length}`);
+    return { chains, categories, settlementMins, settlementTiers, levelRequires, tags };
+  } catch (e) {
+    console.warn(`[get-building-catalogue] failed: ${e.message}`);
+    return { chains: {}, categories: {}, settlementMins: {}, settlementTiers: [], levelRequires: {} };
+  }
+});
+
+// 0.9.418: RTW Remastered ships no per-trait icon files (vanilla RTW had
+// `data/ui/<culture>/vnvs/<level_name>.tga` but Remastered bakes trait
+// icons into a compiled UI atlas instead — no on-disk path resolves).
+// We keep the IPC handler in case a mod adds icons under that path, but
+// it's expected to return `{ ok: false }` for stock RTW Remastered.
+ipcMain.handle("resolve-trait-icon", async (_event, modDataDir, culture, levelName) => {
+  if (!levelName) return { ok: false };
+  const VANILLA_DATA = "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data";
+  const dataDirs = [modDataDir || null, VANILLA_DATA].filter(Boolean);
+  const cultures = [
+    String(culture || "").toLowerCase(),
+    "roman", "greek", "eastern", "egyptian", "carthaginian", "barbarian",
+  ].filter(Boolean);
+  for (const dir of dataDirs) {
+    for (const c of cultures) {
+      const candidate = path.join(dir, "ui", c, "vnvs", `${levelName}.tga`);
+      try {
+        if (fs.existsSync(candidate)) {
+          const buffer = fs.readFileSync(candidate);
+          return {
+            ok: true,
+            buffer: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+            path: candidate,
+          };
+        }
+      } catch {}
+    }
+  }
+  return { ok: false };
+});
+
+// 0.9.418: resolve an ancillary icon TGA. RTW Remastered DOES ship these,
+// at `data/ui/ancillaries/<ancillary_name>.tga` (one big shared dir, not
+// per-culture). Search mod dir first, then vanilla.
+ipcMain.handle("resolve-ancillary-icon", async (_event, modDataDir, ancillaryName) => {
+  if (!ancillaryName) return { ok: false };
+  const VANILLA_DATA = "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data";
+  const dirs = [modDataDir || null, VANILLA_DATA].filter(Boolean);
+  for (const dir of dirs) {
+    for (const sub of ["ancillaries", "ancillaries_cards"]) {
+      const candidate = path.join(dir, "ui", sub, `${ancillaryName}.tga`);
+      try {
+        if (fs.existsSync(candidate)) {
+          const buffer = fs.readFileSync(candidate);
+          return {
+            ok: true,
+            buffer: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+            path: candidate,
+          };
+        }
+      } catch {}
+    }
+  }
+  return { ok: false };
+});
+
+let _savePathMissLogged = null;
+let _hashPickLogged = null;
 ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, charContext) => {
+  // 0.9.520: REMOVED the 0.9.517 leader_pic override. leader_pic_<faction>.tga
+  // is used by RTW's faction-selection menu, NOT for in-game character
+  // portraits. The engine uses the regular portrait pool (greek/old/generals/
+  // NNN.tga) for the leader's family-tree/bodyguard card — same as every
+  // other char. User-labeled in-game portraits confirmed AntigonosII shows
+  // pool portrait 000, not the leader_pic file. Override was making
+  // Provincia diverge from the actual game for every faction leader.
   // Crack 2026-05-18 fast-path: if the caller passes an exact save-derived
   // portrait path (`charContext.savePath` like "data/ui/greek/portraits/
   // cards/young/generals/149.tga"), load it directly — no culture mapping
@@ -2137,7 +3730,16 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
         }
       } catch {}
     }
-    // Fall through to hash-based lookup if save path doesn't find a file
+    // 0.9.449: log fast-path miss once per savePath so we can see which
+    // portrait paths the save points at but the filesystem doesn't have.
+    // Helps diagnose "wrong portrait" reports — when the fast-path file
+    // doesn't exist, we fall through to the deterministic hash pool which
+    // can collide across same-firstName chars.
+    if (!_savePathMissLogged) _savePathMissLogged = new Set();
+    if (!_savePathMissLogged.has(charContext.savePath)) {
+      _savePathMissLogged.add(charContext.savePath);
+      console.log(`[resolve-portrait] fast-path MISS for savePath="${charContext.savePath}" (name="${charContext.name || ""}" faction="${charContext.faction || ""}") — falling back to hash pool`);
+    }
   }
   if (!culture || !slot) return { ok: false };
   const c = String(culture).toLowerCase();
@@ -2179,9 +3781,18 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
     const explicit = (charContext.portraitIndex != null) ? Number(charContext.portraitIndex) | 0 : null;
     const ageNum = charContext.age != null ? Number(charContext.age) : null;
     const ageBucket = (ageNum != null && ageNum >= 35) ? "old" : "young";
+    // 0.9.455: hash input KEEPS the 3-element shape (name|lastName|faction)
+    // but FORCES lastName to "" regardless of what the caller passed. The
+    // 0.9.449 family tree (which user confirmed was correct) hashed with
+    // empty lastName → idx 38 for AntigonosB. Garrison live mode was
+    // passing the epitheted lastName ("II Gonatas the Kind") → different
+    // input → idx 000. By normalising lastName to "" here, both paths
+    // produce idx 38 again, matching the user-confirmed correct portrait.
+    // The 3-element join shape is preserved so the hash result matches
+    // what 0.9.449 produced for the family tree.
     const hashInput = [
       charContext.name,
-      charContext.lastName || "",
+      "",
       charContext.faction || "",
     ].join("|");
     const nameHash = hashName(hashInput);
@@ -2195,6 +3806,12 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
         // for a different culture's larger pool.
         const idx = (explicit != null) ? (explicit % files.length) : (nameHash % files.length);
         const file = files[idx];
+        // 0.9.453: log EVERY hash-pool pick (no throttle) so we can see
+        // when many chars are landing on the same file. Lifting the
+        // throttle from 0.9.449 because user reported "all garrison cards
+        // show the same picture" even after hash fallback — need every
+        // pick visible to find the collision.
+        console.log(`[resolve-portrait] hash pool pick name="${charContext.name}" lastName="${charContext.lastName || ""}" faction="${charContext.faction || ""}" culture=${tc} bucket=${ageBucket} ageRaw=${charContext.age} → idx=${idx}/${files.length} file=${file}`);
         try {
           const buf = fs.readFileSync(path.join(poolDir, file));
           return {
@@ -2237,6 +3854,59 @@ ipcMain.handle("get-descr-strat-families", async () => {
     return { ok: false, byFaction: {} };
   }
   return { ok: true, byFaction: modDescrStratFamilies.byFaction };
+});
+
+// Diplomacy editor: read all three descr_strat diplomacy values per pair
+// (core_attitudes / faction_relationships / faction_agression) →
+// byFaction[from][to] = { core, rel, agg } + the full faction list.
+ipcMain.handle("get-core-attitudes", async () => {
+  try {
+    if (!activeModDataDir) return { ok: false };
+    const dsPath = findActiveDescrStratPath();
+    if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+    const text = fs.readFileSync(dsPath, "utf8");
+    const dip = descrGen.parseDiplomacy(text);
+    const parsed = descrGen.parseDescrStrat(text);
+    const factions = new Set();
+    for (const f of parsed.factions) factions.add(f.name.toLowerCase());
+    for (const from in dip.byFaction) { factions.add(from); for (const to in dip.byFaction[from]) factions.add(to); }
+    return { ok: true, byFaction: dip.byFaction, factions: [...factions].sort(), file: path.basename(dsPath) };
+  } catch (e) { console.warn("[diplo-edit] get failed:", e && e.message); return { ok: false, error: e.message }; }
+});
+
+// Apply a batch of diplomacy edits (called on Save). edits = [{kind,from,to,value}]
+// where kind ∈ core|rel|agg. Updates the matching line in place, or inserts a new
+// one after that kind's section (skipping no-op core/rel inserts of 200). Backs up.
+ipcMain.handle("update-core-attitudes", async (_event, edits) => {
+  try {
+    if (!activeModDataDir) return { ok: false, error: "no active mod" };
+    if (!Array.isArray(edits) || edits.length === 0) return { ok: true, applied: 0 };
+    const dsPath = findActiveDescrStratPath();
+    if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+    const text = fs.readFileSync(dsPath, "utf8");
+    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const lines = text.split(/\r?\n/);
+    const dip = descrGen.parseDiplomacy(text);
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
+    const insertsByKind = { core: [], rel: [], agg: [] };
+    let applied = 0;
+    for (const e of edits) {
+      const kind = (e.kind === "rel" || e.kind === "agg") ? e.kind : "core";
+      const from = String(e.from).toLowerCase(), to = String(e.to).toLowerCase(), val = parseInt(e.value, 10);
+      if (!from || !to || Number.isNaN(val)) continue;
+      const key = `${kind}|${from}|${to}`;
+      const newLine = descrGen.diploLine(kind, from, to, val);
+      if (dip.lineOf[key] != null) { lines[dip.lineOf[key]] = newLine; applied++; }
+      else if (!((kind === "core" || kind === "rel") && val === 200)) { insertsByKind[kind].push({ at: dip.lastLine[kind] != null ? dip.lastLine[kind] : lines.length, line: newLine }); applied++; }
+    }
+    // Insert new lines high index → low so positions stay valid.
+    const allInserts = [...insertsByKind.core, ...insertsByKind.rel, ...insertsByKind.agg].sort((a, b) => b.at - a.at);
+    for (const ins of allInserts) lines.splice(ins.at + 1, 0, ins.line);
+    fs.writeFileSync(dsPath, lines.join(eol), "utf8");
+    console.log(`[diplo-edit] applied ${applied} diplomacy edit(s) to ${path.basename(dsPath)}; backup ${stamp}`);
+    return { ok: true, applied, backupStamp: stamp };
+  } catch (e) { console.warn("[diplo-edit] update failed:", e && e.message); return { ok: false, error: e.message }; }
 });
 
 ipcMain.handle("clear-mod-caches", async () => {
@@ -2659,15 +4329,25 @@ ipcMain.handle("get-unit-stats", async (_event, modDataDir, unitName) => {
           block.hp = p[0] || 1;
           block.mountHp = p[1] || 0;
         } else if (key === "stat_pri") {
+          // stat_pri <attack>, <charge_bonus>, <missile>, <range>, <ammo>, <weapon_type>, <ap?>, <skill>, <sound>, <delay>
           const p = val.split(",").map(x => x.trim());
           block.priAttack = parseInt(p[0]);
           block.priCharge = parseInt(p[1]);
+          block.priMissile = p[2] || "";
+          // Range / ammo are only meaningful for missile units; non-missile
+          // units leave them as 0 in EDU and we want to render "Missile Range"
+          // / "Ammo" bars as empty rather than mid-value bars.
+          block.priRange = parseInt(p[3]) || 0;
+          block.priAmmo = parseInt(p[4]) || 0;
           block.priWeapon = p[5] || "";
         } else if (key === "stat_sec") {
           const p = val.split(",").map(x => x.trim());
           if (p[2] && p[2] !== "no") {
             block.secAttack = parseInt(p[0]);
             block.secCharge = parseInt(p[1]);
+            block.secMissile = p[2] || "";
+            block.secRange = parseInt(p[3]) || 0;
+            block.secAmmo = parseInt(p[4]) || 0;
             block.secWeapon = p[5] || "";
           }
         } else if (key === "stat_pri_armour") {
@@ -3184,6 +4864,155 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
   return null;
 });
 
+// IPC: replace a building icon by dropping a PNG / JPG / TGA file onto its
+// card in the dev-mode region editor. Resolves the same destination filename
+// that `resolve-building-icon` would have read, copies/converts the dropped
+// file into place, and backs up the previous TGA to `_backup/`. RTW only
+// loads TGA so PNG/JPG are decoded via Electron's nativeImage and re-encoded
+// as uncompressed 32-bit BGRA TGAs.
+//
+// Args:
+//   modDataDir   — active mod data dir (where data/ui/<culture>/buildings lives)
+//   culture      — building's culture (greek, roman, eastern, ...)
+//   levelName    — EDB level (e.g. "city_barracks"), used for filename derivation
+//   chainName    — EDB chain name (e.g. "barracks"), used as a fallback suffix
+//   sourceFile   — absolute path of the dropped file on disk
+//
+// Returns: { ok: true, destPath, backupPath } or { ok: false, error }.
+function encodeTga32BGRA(width, height, bgraBuf) {
+  // RTW accepts uncompressed 32-bit TGAs. Layout:
+  //   18-byte header → pixel data (BGRA, bottom-up by default; we flip to
+  //   top-down by setting image-descriptor bit 5).
+  // Header bytes:
+  //   0    idLength       (0 = no image id)
+  //   1    colorMapType   (0 = none)
+  //   2    imageType      (2 = uncompressed true-color)
+  //   3-7  colorMap spec  (5 bytes, all zero)
+  //   8-9  x-origin       (u16 LE, 0)
+  //  10-11 y-origin       (u16 LE, 0)
+  //  12-13 width          (u16 LE)
+  //  14-15 height         (u16 LE)
+  //  16    pixel depth    (32)
+  //  17    image descr    (8 = 8 alpha bits; |0x20 = top-down)
+  const header = Buffer.alloc(18);
+  header.writeUInt16LE(width, 12);
+  header.writeUInt16LE(height, 14);
+  header[2] = 2;
+  header[16] = 32;
+  header[17] = 8 | 0x20;
+  return Buffer.concat([header, bgraBuf]);
+}
+
+ipcMain.handle("replace-building-icon", async (_event, modDataDir, culture, levelName, chainName, sourceFile) => {
+  console.log(`[icon-replace] IPC invoked: culture=${culture} level=${levelName} chain=${chainName || "(none)"} src=${sourceFile || "(none)"}`);
+  if (!culture || !levelName || !sourceFile) {
+    return { ok: false, error: "missing culture / level / source" };
+  }
+  if (!fs.existsSync(sourceFile)) {
+    return { ok: false, error: `source not found: ${sourceFile}` };
+  }
+  // The mod's own data/ui/<culture>/buildings/ is the canonical destination
+  // — that's where the user wants their replacement to live (so it overrides
+  // the Steam fallback). If the mod doesn't have a buildings dir yet, create
+  // it. Filename matches whichever variant the resolver was reading.
+  const c = String(culture).toLowerCase();
+  const l = String(levelName).toLowerCase();
+  const ch = chainName ? String(chainName).toLowerCase() : null;
+  // Filename candidates (no path) — same order the resolver tries first
+  // (per-culture per-level square icon). Whichever filename actually exists
+  // in the mod's buildings dir is the one we overwrite; if NONE exist there,
+  // we fall back to the engine-canonical `#<c>_<level>.tga` so the new file
+  // beats the Steam fallback path.
+  const candidates = [
+    `#${c}_${l}.tga`,
+    `#${c.toUpperCase()}_${l}.tga`,
+    `${c}_${l}.tga`,
+  ];
+  if (ch) {
+    candidates.push(`#${c}_${ch}.tga`);
+    candidates.push(`${c}_${ch}.tga`);
+  }
+  if (!modDataDir || !fs.existsSync(modDataDir)) {
+    return { ok: false, error: "active mod data dir missing — drop into vanilla Steam install is not allowed" };
+  }
+  const destDir = path.join(modDataDir, "ui", c, "buildings");
+  try { fs.mkdirSync(destDir, { recursive: true }); } catch {}
+  // Find existing icon (if any) to back up; otherwise use the canonical name.
+  let destFn = null;
+  for (const fn of candidates) {
+    const full = path.join(destDir, fn);
+    if (fs.existsSync(full)) { destFn = fn; break; }
+  }
+  if (!destFn) destFn = candidates[0]; // engine-canonical fallback
+  const destPath = path.join(destDir, destFn);
+  // Backup existing icon (if present).
+  let backupPath = null;
+  if (fs.existsSync(destPath)) {
+    try {
+      const backupDir = path.join(destDir, "_backup");
+      fs.mkdirSync(backupDir, { recursive: true });
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      backupPath = path.join(backupDir, `${destFn}.bak.${stamp}`);
+      fs.copyFileSync(destPath, backupPath);
+      console.log(`[icon-replace] backup-saved: ${backupPath}`);
+    } catch (e) {
+      console.warn(`[icon-replace] backup failed: ${e.message}`);
+      // Continue — losing the backup is worse than failing the whole replace,
+      // but the user can also just re-drop the original file.
+    }
+  }
+  // Convert source to TGA (or copy directly if already TGA).
+  const ext = path.extname(sourceFile).toLowerCase();
+  try {
+    if (ext === ".tga") {
+      fs.copyFileSync(sourceFile, destPath);
+      console.log(`[icon-replace] success (tga-copy): ${sourceFile} → ${destPath}`);
+    } else if (ext === ".png" || ext === ".jpg" || ext === ".jpeg") {
+      // nativeImage decodes PNG/JPG and gives us BGRA via toBitmap().
+      const img = nativeImage.createFromPath(sourceFile);
+      if (img.isEmpty()) throw new Error("nativeImage decode produced empty image");
+      const size = img.getSize();
+      if (!size.width || !size.height) throw new Error(`invalid size ${size.width}x${size.height}`);
+      const bgra = img.toBitmap(); // BGRA, top-down
+      const tga = encodeTga32BGRA(size.width, size.height, bgra);
+      fs.writeFileSync(destPath, tga);
+      console.log(`[icon-replace] success (png/jpg→tga ${size.width}x${size.height}): ${sourceFile} → ${destPath}`);
+    } else {
+      return { ok: false, error: `unsupported extension: ${ext} (expected .png / .jpg / .tga)` };
+    }
+  } catch (e) {
+    console.warn(`[icon-replace] failed: ${e.message}`);
+    return { ok: false, error: e.message || String(e) };
+  }
+  return { ok: true, destPath, backupPath, destFilename: destFn };
+});
+
+// IPC: revert a previous icon replacement by restoring the backed-up TGA.
+// Called from App.js's revertOnePending when the user removes an icon-replace
+// entry from the pending log. If no backup exists, deletes the dropped icon
+// so the resolver falls back to the original Steam vanilla file.
+ipcMain.handle("revert-building-icon", async (_event, destPath, backupPath) => {
+  console.log(`[icon-replace] revert IPC: dest=${destPath || "(none)"} backup=${backupPath || "(none)"}`);
+  if (!destPath) return { ok: false, error: "no destination path" };
+  try {
+    if (backupPath && fs.existsSync(backupPath)) {
+      fs.copyFileSync(backupPath, destPath);
+      try { fs.unlinkSync(backupPath); } catch {}
+      console.log(`[icon-replace] revert-restored: ${backupPath} → ${destPath}`);
+      return { ok: true, restored: true };
+    }
+    if (fs.existsSync(destPath)) {
+      fs.unlinkSync(destPath);
+      console.log(`[icon-replace] revert-deleted (no backup): ${destPath}`);
+      return { ok: true, restored: false, deleted: true };
+    }
+    return { ok: true, restored: false, deleted: false };
+  } catch (e) {
+    console.warn(`[icon-replace] revert failed: ${e.message}`);
+    return { ok: false, error: e.message || String(e) };
+  }
+});
+
 // IPC: resolve the WIDE `_constructed` building banner (for the right-click
 // info popup). Normal icon resolution picks the small square card — the
 // popup wants the big ~361×163 banner shown in-game's info panel. Priority:
@@ -3605,6 +5434,283 @@ ipcMain.handle("select-log-folder", async () => {
 // IPC: pick a specific .sav to pin Live mode to. Opens the system file
 // dialog in the given saveDir. Returns just the filename (not full path)
 // so the renderer can pass it back to save-watch-start.
+// 0.9.424: One-shot calibration parse. Takes a save path, runs the v1 char
+// parser to extract `(firstName, lastName, faction, command, influence,
+// management, loyalty)` per character, returns the flat list. Doesn't
+// touch live-mode state — the renderer caches the result for non-live
+// stat lookups.
+ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
+  if (!savePath) return { ok: false, error: "no path" };
+  if (!modNameLookup || !modTraitNames) {
+    return { ok: false, error: "mod data not loaded — pick a mod folder first" };
+  }
+  try {
+    const saveBuf = fs.readFileSync(savePath);
+    const extras = parseCharactersAndUnits(saveBuf, null);
+    if (!extras || !extras.characters) return { ok: false, error: "parse returned no characters" };
+    const out = [];
+    const turn = readTurnFromSave(saveBuf);
+
+    // 0.9.454: re-enabled the v2 coord-portrait bridge with the tighter
+    // resolver from 0.9.452. resolvePortraitsByCharacter now uses
+    // back-scan-≤100-bytes from each UUID occurrence (not forward-sweep
+    // of 60 u32 candidates), so the bridge produces accurate per-char
+    // engine portraits instead of all-collapse to 000.tga.
+    const coordToV2Portrait = new Map();
+    const nameToV2Portrait = new Map();
+    let v2CharCount = 0;
+    const VALID_COORD = (v) => typeof v === "number" && v > 0 && v < 2048;
+    const nameKey = (first, last, faction) => `${String(first || "").toLowerCase()}|${String(last || "").toLowerCase()}|${String(faction || "").toLowerCase()}`;
+    try {
+      const v2Chars = cxParseCharacterExtras(saveBuf);
+      if (v2Chars) {
+        cxAttachMapCoords(saveBuf, v2Chars);
+        const portraitMap = cxResolvePortraits(saveBuf, v2Chars);
+        for (const v2c of v2Chars) {
+          const p = portraitMap.get(v2c.ownUuid);
+          if (!p || !p.cards) continue;
+          // 0.9.510: bridge by name+faction. v1's "primaryUuid" (offset-47)
+          // and v2's "primaryUuid" (offset-12) are different binary fields
+          // and don't match — confirmed by the v1-faction-tag log showing
+          // 0/1287 matches via uuid. Name+faction is the only reliable
+          // bridge between the two parsers.
+          if (v2c.firstName) {
+            nameToV2Portrait.set(nameKey(v2c.firstName, v2c.lastName, v2c.faction), p.cards);
+            // Also index without lastName to catch v1's single-name chars.
+            nameToV2Portrait.set(nameKey(v2c.firstName, "", v2c.faction), p.cards);
+            // And without faction so a v1/v2 faction-tag mismatch still bridges.
+            // First-wins so the most-specific entry doesn't get clobbered by ambiguous ones.
+            const noFactionKey = nameKey(v2c.firstName, v2c.lastName, "");
+            if (!nameToV2Portrait.has(noFactionKey)) nameToV2Portrait.set(noFactionKey, p.cards);
+          }
+          if (VALID_COORD(v2c.extX) && VALID_COORD(v2c.extY)) {
+            const k = `${v2c.extX},${v2c.extY}`;
+            if (!coordToV2Portrait.has(k)) coordToV2Portrait.set(k, p.cards);
+          }
+        }
+        v2CharCount = v2Chars.length;
+      }
+    } catch (err) {
+      console.warn("[calibrate] v2 portrait bridge failed:", err && err.message);
+    }
+    console.log(`[calibrate] v2 portrait bridge: ${nameToV2Portrait.size} name entries, ${coordToV2Portrait.size} coord entries from ${v2CharCount} v2 chars`);
+
+    // 0.9.437: relaxed filter — keep characters with EITHER stats OR a
+    // portrait. Previously chars whose stats didn't decode were dropped
+    // entirely, which meant the bodyguard-swap portrait fallback never had
+    // their entry in the cache. Symptom: Leonides (antigonid governor of
+    // Pharsalos) showed bodyguard art + estimated stats even after
+    // calibration, because his save record decoded a portrait but not
+    // stats. Letting his portrait into the cache fixes the swap; the
+    // approximate-stats label stays accurate (and clear) because the
+    // entry's command/influence/management/loyalty stay null.
+    let droppedNoData = 0;
+    let portraitV2Coord = 0;
+    let portraitV1Fallback = 0;
+    let portraitNone = 0;
+    for (const c of extras.characters) {
+      const hasStats = !(c.command == null && c.influence == null && c.management == null);
+      // 0.9.456 / 0.9.460 disabled v1's c.portraits[0] because of a single
+      // case (Demetrios III) where forward-scan picked up an adjacent
+      // record's pstr. 0.9.504: re-enabling because:
+      //   - v2 doesn't find characters like Achaios at all (no type=3
+      //     signature on their record). For those, v1's portrait is the
+      //     ONLY save-derived signal we have. Without it, the renderer
+      //     falls back to a hash pool that doesn't match in-game.
+      //   - The v1 captain-banner filter (in characterParser.js) already
+      //     rejects `data/ui/captain_banners/*` paths, which were the
+      //     primary contamination class.
+      //   - Independent verification on Achaios in both Macedon and
+      //     Seleucid saves: same portrait path emitted from his record,
+      //     consistent with his in-game face (young/generals/140.tga).
+      // If a single cross-contamination case re-surfaces, we can scope
+      // the fallback further (e.g. require the path's `culture`
+      // component to match the character's faction's culture).
+      // 0.9.508: v1's portraits[0] is right for some chars (Achaios →
+      // `portraits/young/generals/140.tga`) and wrong for others where the
+      // forward scan lands on a generic `cards/<bucket>/generals/000.tga`
+      // placeholder (Antigonos II got generic 000 → wrong unit card).
+      // v2's uuid-bridged portrait is authoritative when present (same source
+      // the family tree uses), but doesn't cover every character. Strategy:
+      // if v1 returned a generic 000 path, prefer v2; otherwise keep v1's
+      // specific path. Falls back to v2 when v1 has nothing.
+      // 0.9.511: v1 returns multiple candidate portraits in c.portraits[].
+      // portraits[0] is often the wrong one — for Antigonos II it's a
+      // generic `cards/<bucket>/generals/000.tga` placeholder; for Attalos
+      // (alive) it's a `/dead/074.tga`. Scan c.portraits[] and prefer the
+      // first NON-bad candidate before falling back to the first entry.
+      // The v2 uuid/name bridges above (0.9.508 → 0.9.510) didn't fire —
+      // cxParseCharacterExtras doesn't return names, and the two parsers'
+      // primaryUuid fields are at different binary offsets.
+      // 0.9.512: cracker diagnostic confirmed (scripts/diag-portraits.js
+      // against save_macedon t0.sav):
+      //   - AntigonosB: 1 record; BOTH v1 portraits are generic
+      //     `cards/old/generals/000.tga` + `portraits/old/generals/000.tga`.
+      //     There is no good v1 portrait — fall through to null so the
+      //     bodyguard-swap falls back to the hash pool instead of using
+      //     the generic 000 placeholder.
+      //   - Attalos: TWO records at 0x15126d4 (portrait=dead/074, stub)
+      //     and 0x1b78601 (portrait=young/137, real). Stats are null on
+      //     both, traits 21 vs 23 — score tied. Nulling the bad-portrait
+      //     stub's portrait makes the real record's good portrait win.
+      // 0.9.519: dropped the "/000.tga is generic placeholder" rule. The
+      // user's in-game labeled portraits confirmed 000 is a REAL specific
+      // portrait (used as antigonid leader's bald+beard face). v1's
+      // portrait scan correctly reads each character's NNN from the save;
+      // we just need to trust it. Still reject /dead/ paths on alive chars
+      // — those are usually the stub-record duplicate v1 sometimes finds.
+      const isBadPath = (p) =>
+        !p ||
+        (!c.isDead && /\/dead\//i.test(p));
+      const portraits = Array.isArray(c.portraits) ? c.portraits : [];
+      const goodPortrait = portraits.find((p) => !isBadPath(p));
+      const chosenPortrait = goodPortrait || null;
+      if (goodPortrait) portraitV2Coord++;
+      else if (portraits.length > 0) portraitV1Fallback++;
+      else portraitNone++;
+      // 0.9.453: KEEP every parsed char in the cache, even portrait+stats-
+      // less. Previously this filter dropped them, which collapsed the
+      // garrison bodyguard-swap to the generic icon for ~282 Macedon chars
+      // (the ones who only had portrait, no stats). Symptom: "all garrison
+      // cards show the same picture". Bodyguard-swap needs at least an
+      // info entry (firstName + faction + age) so its IPC call lands in
+      // the hash pool — without an entry it shows the unit icon fallback,
+      // which is the same for every char.
+      // (The drop is now only for chars with NO name at all, which would
+      // give a useless cache entry.)
+      if (!c.firstName) { droppedNoData++; continue; }
+      // 0.9.494: per-character debug. Logs the parsed values for any
+      // character matching a small watchlist of names we know go missing
+      // from the cache, so we can see if the parser is producing them at
+      // all and what their faction/stats look like in the save.
+      const WATCHLIST = new Set(["achaios", "antigonos", "leonides", "omanes"]);
+      if (WATCHLIST.has(String(c.firstName || "").toLowerCase())) {
+        console.log(`[calibrate-watch] "${c.firstName}" lastName="${c.lastName || ""}" faction="${c.faction || ""}" stats=${c.command}/${c.influence}/${c.management}/${c.loyalty} age=${c.age} portraitsCount=${(c.portraits || []).length}`);
+      }
+      out.push({
+        firstName: c.firstName,
+        lastName: c.lastName,
+        faction: c.faction,
+        command: c.command,
+        influence: c.influence,
+        management: c.management,
+        loyalty: c.loyalty,
+        turn,
+        // 0.9.429: also cache the engine-assigned portrait path. Lets
+        // non-live mode swap bodyguard unit cards for the general's
+        // face card without needing to be in live mode.
+        // 0.9.445: prefer v2's coord-bridged portraitCardsPath (the
+        // engine-exact file the family tree uses); fall back to v1's
+        // c.portraits[0] when the coord bridge misses.
+        portrait: chosenPortrait,
+        // 0.9.451: include age so the non-live bodyguard-swap charContext
+        // passes the right age bucket to the IPC. Without this, every
+        // garrison commander hashes into the "young" bucket regardless of
+        // actual age, picking the wrong file for old generals like
+        // antigonid Antigonos II (age 50 → "old" bucket).
+        age: typeof c.age === "number" ? c.age : null,
+        secondaryUuid: c.secondaryUuid || null,
+        // 0.9.503: trait count so the cache builder can prefer the
+        // "real" record when two records exist with the same name
+        // (e.g. Achaios in Seleucid T0: the parser finds two records,
+        // the real one with 21 traits + correct stats and a stub with
+        // 0 traits + zero stats). Without this, the second-encountered
+        // record overwrote the first.
+        traitCount: Array.isArray(c.traits) ? c.traits.length : 0,
+      });
+    }
+    const withPortrait = out.filter(c => c.portrait).length;
+    const withStats = out.filter(c => c.command != null || c.influence != null || c.management != null).length;
+    console.log(`[calibrate] coverage: ${out.length} cached (${withStats} with stats, ${withPortrait} with portrait, ${droppedNoData} dropped with neither) out of ${extras.characters.length} total`);
+    console.log(`[calibrate] portrait source breakdown: v2_coord=${portraitV2Coord} v1_fallback=${portraitV1Fallback} none=${portraitNone}`);
+    const samples = out.slice(0, 5).map(c => `${c.firstName}|${c.lastName || ""}|${c.faction || "?"}=${c.command}/${c.influence}/${c.management}/${c.loyalty} portrait=${c.portrait ? c.portrait.slice(c.portrait.lastIndexOf("/") + 1) : "(none)"}`);
+    // Also sample a char's raw portraits array to see what v1 produced
+    const sampleRaw = extras.characters.slice(0, 3).map(c => `${c.firstName}|portraits=${JSON.stringify(c.portraits || [])}`).join(" | ");
+    console.log(`[calibrate] parsed ${out.length}/${extras.characters.length} stat-bearing chars (${withPortrait} with portrait) from ${path.basename(savePath)} (turn ${turn ?? "?"}). Samples: ${samples.join("  |  ")}`);
+    console.log(`[calibrate] raw portraits sample: ${sampleRaw}`);
+    // 0.9.516: also build the v1PortraitsByCoord bridge here so the family
+    // tree can render correct portraits in CALIBRATE mode (not just live
+    // save-watch). User reported DemetriosC/Achaios showing v1's portrait in
+    // the bodyguard unit card but falling to hash pool in the family tree —
+    // because the calibrate IPC response didn't include this bridge.
+    const v1PortraitsByCoord = {};
+    for (const v of extras.characters) {
+      if (v.tileX == null || v.tileY == null) continue;
+      const ports = Array.isArray(v.portraits) ? v.portraits : [];
+      const isBadPath = (p) =>
+        !p ||
+        (!v.isDead && /\/dead\//i.test(p));
+      const goodLarge = ports.find((p) => !isBadPath(p) && /\/portraits\/portraits\//i.test(p));
+      const goodAny = ports.find((p) => !isBadPath(p));
+      const pick = goodLarge || goodAny;
+      if (!pick) continue;
+      const cards = pick.replace(/\/portraits\/portraits\//i, "/portraits/cards/");
+      const fulls = pick.replace(/\/portraits\/cards\//i, "/portraits/portraits/");
+      v1PortraitsByCoord[`${v.tileX},${v.tileY}`] = { cards, fulls };
+    }
+    console.log(`[calibrate] v1PortraitsByCoord: ${Object.keys(v1PortraitsByCoord).length} coord entries`);
+    // 0.9.532: parse faction-level records here too, so the Wealth panel
+    // (treasuries + AI personality + diplomacy) populates from a manual
+    // Calibrate — previously these only came from the live save-watch path,
+    // so calibrating without RTW running left the panel on descr_strat
+    // starting values. Mirrors the parseSaveExtras faction block.
+    let factionTreasuries = null, factionRecordOwners = null, factionDiplomacy = null, savePlayerFaction = null, allFactionDiplomacy = null, diplomacyMatrix = null, treasuryHistory = null;
+    try {
+      factionTreasuries = cxParseTreasuries(saveBuf);
+      // Engine-order remap for the +44==8 positional layout (see parseSaveData).
+      const calPositional = !!(factionTreasuries && factionTreasuries.length > 30);
+      const calEngineOrder = calPositional ? cxDeriveEngineOrder(modFactionOrder) : modFactionOrder;
+      if (factionTreasuries && factionTreasuries.length > 0) {
+        factionRecordOwners = cxIdentifyRecordOwners(saveBuf, factionTreasuries, calEngineOrder);
+        for (const o of factionRecordOwners) {
+          const rec = factionTreasuries[o.recordIndex];
+          const aiIdx = rec && typeof rec.aiPersonalityIndex === "number" ? rec.aiPersonalityIndex : null;
+          o.aiPersonalityIndex = aiIdx;
+          o.aiPersonality = (modAiPersonalityOrder && aiIdx != null && aiIdx >= 0 && aiIdx < modAiPersonalityOrder.length)
+            ? modAiPersonalityOrder[aiIdx] : null;
+        }
+        savePlayerFaction = cxIdentifyPlayerFromSave(saveBuf, factionTreasuries);
+        factionDiplomacy = cxParseDiplomacy(saveBuf, factionTreasuries);
+        const named = factionRecordOwners.filter(o => o.factionName).length;
+        console.log(`[calibrate] faction records: ${factionTreasuries.length} treasuries, ${named} identified, player="${savePlayerFaction || "?"}"`);
+      }
+      // 0.9.539: live diplomacy counts for ALL factions (independent of the
+      // 23-record set), keyed by faction name.
+      allFactionDiplomacy = cxParseAllDiplomacy(saveBuf, modFactionOrder);
+      console.log(`[calibrate] all-faction diplomacy: ${allFactionDiplomacy ? Object.keys(allFactionDiplomacy).length : 0} factions`);
+      // 0.9.546: the N×N attitude matrix — NAMED live diplomacy (war/ally/
+      // hostile per faction pair). The real diplomacy source (the zones above
+      // only hold agreement handles). See reference_diplomacy_matrix.
+      diplomacyMatrix = cxParseDiplomacyMatrix(saveBuf, calEngineOrder);
+      if (diplomacyMatrix && diplomacyMatrix._meta) {
+        const mt = diplomacyMatrix._meta;
+        console.log(`[diplo-matrix] calibrate: located base=0x${mt.base.toString(16)} stride=${mt.stride} N=${mt.N} C=${mt.C} symmetry=${(mt.symmetry*100).toFixed(0)}% warPairs=${mt.warPairs}`);
+      } else {
+        console.log(`[diplo-matrix] calibrate: NOT located`);
+      }
+      // 0.9.549: per-faction treasury-over-time history (f13 checkpoints).
+      if (factionTreasuries && factionTreasuries.length > 0) {
+        treasuryHistory = cxParseTreasuryHistory(saveBuf, factionTreasuries, calEngineOrder);
+        console.log(`[treasury-history] calibrate: ${treasuryHistory ? Object.keys(treasuryHistory).length : 0} factions`);
+      }
+    } catch (fe) { console.warn("[calibrate] faction parse failed:", fe && fe.message); }
+    // The Wealth panel consumes `saveTreasuryRecords` in `{records:[{pos,
+    // treasury,turnStart,regionCount}]}` shape (same as the live-snapshot
+    // `treasuryByFaction`). Map factionTreasuries into that shape so the
+    // panel populates from Calibrate exactly as it does from Live mode.
+    const treasuryByFaction = (factionTreasuries && factionTreasuries.length > 0)
+      ? { records: factionTreasuries.map(r => ({ pos: r.offset, treasury: r.treasury, turnStart: r.turnStartTreasury, regionCount: r.regionCount })) }
+      : null;
+    return {
+      ok: true, characters: out, turn, total: extras.characters.length, v1PortraitsByCoord,
+      factionTreasuries, factionRecordOwners, factionDiplomacy, savePlayerFaction, treasuryByFaction, allFactionDiplomacy, diplomacyMatrix, treasuryHistory,
+    };
+  } catch (e) {
+    console.warn("[calibrate] failed:", e && e.message);
+    return { ok: false, error: e.message };
+  }
+});
+
 ipcMain.handle("select-save-file", async (_event, saveDir) => {
   // Normalise to the platform's path separator — Electron's defaultPath
   // honours mixed slashes on Windows but forward slashes alone sometimes
@@ -4149,7 +6255,16 @@ function readUtf16Name(data, pos, len) {
 
 async function parseSaveData(filePath, onProgress, providedBuf = null) {
   const _yieldHere = () => new Promise(resolve => setImmediate(resolve));
-  const tick = (stage) => { if (onProgress) onProgress({ stage }); };
+  // [perf] timing: each tick logs how long the PREVIOUS stage took, so a
+  // turn-end parse writes a stage-by-stage breakdown to provincia.log.
+  let _tp = process.hrtime.bigint();
+  let _lastStage = "start";
+  const tick = (stage) => {
+    const now = process.hrtime.bigint();
+    console.log(`[perf] parseSaveData ${_lastStage}: ${(Number(now - _tp) / 1e6).toFixed(0)}ms`);
+    _tp = now; _lastStage = stage;
+    if (onProgress) onProgress({ stage });
+  };
   // Reuse a buffer the caller already has in hand instead of re-reading
   // the file from disk. On a 30MB save that's ~100-300ms saved per
   // parse — both reparseLatestSave and saveWatchStart had already read
@@ -4335,24 +6450,36 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   //   • a hash entry pointing to one of the settlement's existing chain slots.
   // The ASCII case is unambiguous — we can name the building directly. The hash
   // case requires matching against the settlement's chain slot hashes (future work).
+  tick("construction queues + settlement fields");
   const queues = {};
   const knownChains = new Set(['hinterland_region', 'core_building', 'capital_treasury',
     'military_industrial_complex', 'irrigated_farming', 'market', 'port_buildings',
     'textiles_production', 'health', 'hinterland_roads', 'temple_complex_dorian',
     'temple_complex_italic', 'defenses', 'colony', 'highland_pastoralism',
     'olive_cultivation', 'pottery_production', 'smith', 'horse_trainer']);
+  // Precompute needles once instead of re-allocating ~20 Buffers per settlement.
+  const dsNeedle = Buffer.from('default_set', 'ascii');
+  const chainNeedles = [...knownChains].map((cn) => ({ cn, n: Buffer.from('\0' + cn + '\0', 'ascii') }));
   for (const s of settlements) {
-    // Locate "default_set" ASCII marker within 200 bytes after the settlement name
-    const dsIdx = data.indexOf(Buffer.from('default_set', 'ascii'), s.offset);
-    if (dsIdx === -1 || dsIdx > s.offset + 200) continue;
+    // Locate "default_set" within 200 bytes after the settlement name. Search a
+    // BOUNDED window: an unbounded data.indexOf would scan to the end of the
+    // 33 MB buffer for any settlement that has no default_set nearby.
+    const dsRel = data.subarray(s.offset, Math.min(s.offset + 211, data.length)).indexOf(dsNeedle);
+    if (dsRel === -1) continue; // window (211) caps the start at <=200 by construction
+    const dsIdx = s.offset + dsRel;
     const dsDataStart = dsIdx + 11 + 1;
-    // Find end by locating the next known chain record
+    // Find end by locating the next known chain record — but ONLY within the
+    // ~500-byte window we actually accept hits from. The previous code did an
+    // UNBOUNDED data.indexOf per chain, so every chain absent near a settlement
+    // scanned the whole 33 MB buffer: ~1300 settlements × 19 chains = ~26 s of
+    // pure waste on every turn-end parse. Bounding it to a subarray view drops
+    // this from ~26 s to ~10 ms (verified identical, scripts/bench-defaultset.js).
     let dsEnd = -1;
-    for (const cn of knownChains) {
-      const n = Buffer.from('\0' + cn + '\0', 'ascii');
-      const hit = data.indexOf(n, dsDataStart);
-      if (hit !== -1 && hit < dsDataStart + 500) {
-        const recordStart = hit + 1 - cn.length - 1 - 2;
+    const dsWin = data.subarray(dsDataStart, Math.min(dsDataStart + 540, data.length));
+    for (const { cn, n } of chainNeedles) {
+      const rel = dsWin.indexOf(n);
+      if (rel !== -1 && rel < 500) {
+        const recordStart = (dsDataStart + rel) + 1 - cn.length - 1 - 2;
         if (dsEnd === -1 || recordStart < dsEnd) dsEnd = recordStart;
       }
     }
@@ -4545,6 +6672,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   // Lua persistent counters: named u32 values (turn_number, id_<faction>, etc.).
   let factionRecords = null;
   let luaCounters = null;
+  tick("faction records + exploration");
   let playerExploration = null;
   try {
     const fr = findFactionRecords(data);
@@ -4751,6 +6879,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   let factionDiscovered = null;
   let factionConfig = null;
   let modInfo = null;
+  tick("character extras");
   let characterExtras = null;
   let familyTreeMaps = null;
   let religionByCity = null;
@@ -4792,18 +6921,55 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   // Works on vanilla imperial saves (Macedon T0 yields 23 records, player at idx 0).
   let factionTreasuries = null;
   let factionDiplomacy = null;
+  let allFactionDiplomacy = null;
+  let diplomacyMatrix = null;
+  let treasuryHistory = null;
   let factionRecordOwners = null;
   try {
     factionTreasuries = cxParseTreasuries(data);
     if (factionTreasuries) console.log(`[treasuries] parsed ${factionTreasuries.length} major-faction records`);
   } catch (err) { console.warn("[treasuries] parse failed:", err && err.message); }
+  // The +44==8 (Republic of Rome) layout enumerates faction records AND the
+  // diplomacy matrix in the ENGINE's faction order (descr order with the index-1
+  // rebel slot rotated to the end). Name those POSITIONAL lookups with the engine
+  // order. The imperial +44==6 layout uses faction-id bytes (descr index) and
+  // needs no remap — detect by record count (≈23 imperial vs ≈239 republic).
+  // See memory engine-faction-order-permutation (cracked 2026-05-24).
+  const positionalLayout = !!(factionTreasuries && factionTreasuries.length > 30);
+  const engineOrder = positionalLayout ? cxDeriveEngineOrder(modFactionOrder) : modFactionOrder;
+  if (positionalLayout) console.log(`[faction-order] +44==8 layout — using engine order (rotated) for record/matrix naming`);
   try {
     if (factionTreasuries && factionTreasuries.length > 0) {
-      factionRecordOwners = cxIdentifyRecordOwners(data, factionTreasuries);
+      factionRecordOwners = cxIdentifyRecordOwners(data, factionTreasuries, engineOrder);
+      // 0.9.527: attach the resolved AI personality archetype to each
+      // record. aiPersonalityIndex (cracked) indexes the parsed personality
+      // declaration order; expose both the raw index and the human name.
+      for (const o of factionRecordOwners) {
+        const rec = factionTreasuries[o.recordIndex];
+        const aiIdx = rec && typeof rec.aiPersonalityIndex === "number" ? rec.aiPersonalityIndex : null;
+        o.aiPersonalityIndex = aiIdx;
+        o.aiPersonality = (modAiPersonalityOrder && aiIdx != null && aiIdx >= 0 && aiIdx < modAiPersonalityOrder.length)
+          ? modAiPersonalityOrder[aiIdx]
+          : null;
+      }
       const named = factionRecordOwners.filter(o => o.factionName).length;
-      console.log(`[record-owners] identified ${named}/${factionRecordOwners.length} faction records via captain banners`);
+      const byId = factionRecordOwners.filter(o => o.source === "factionId").length;
+      const byBanner = factionRecordOwners.filter(o => o.source === "captainBanner").length;
+      const withAi = factionRecordOwners.filter(o => o.aiPersonality).length;
+      console.log(`[record-owners] identified ${named}/${factionRecordOwners.length} faction records (factionId=${byId}, captainBanner=${byBanner}); AI personality on ${withAi}`);
     }
   } catch (err) { console.warn("[record-owners] parse failed:", err && err.message); }
+  // Identify the player's faction internal name from the save itself —
+  // the only captain banner that appears BEFORE the first major NPC
+  // record belongs to the player. Works for any campaign/mod since
+  // it's purely structural.
+  let savePlayerFaction = null;
+  try {
+    if (factionTreasuries && factionTreasuries.length > 0) {
+      savePlayerFaction = cxIdentifyPlayerFromSave(data, factionTreasuries);
+      if (savePlayerFaction) console.log(`[player-faction] identified player as "${savePlayerFaction}" from save banner`);
+    }
+  } catch (err) { console.warn("[player-faction] identify failed:", err && err.message); }
   try {
     if (factionTreasuries && factionTreasuries.length > 0) {
       factionDiplomacy = cxParseDiplomacy(data, factionTreasuries);
@@ -4811,6 +6977,31 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
       console.log(`[diplomacy] parsed ${total} relations across ${factionDiplomacy.length} factions`);
     }
   } catch (err) { console.warn("[diplomacy] parse failed:", err && err.message); }
+  // 0.9.539: live diplomacy COUNTS for EVERY faction (incl. player, senate,
+  // carthage, minors) via the ~221 0x39240005 zones, keyed by faction name.
+  try {
+    allFactionDiplomacy = cxParseAllDiplomacy(data, modFactionOrder);
+    const n = allFactionDiplomacy ? Object.keys(allFactionDiplomacy).length : 0;
+    console.log(`[diplomacy-all] live counts for ${n} factions`);
+  } catch (err) { console.warn("[diplomacy-all] parse failed:", err && err.message); }
+  // 0.9.546: NAMED live diplomacy from the N×N attitude matrix (the real
+  // diplomacy source — war/ally/hostile per faction PAIR, partner recoverable).
+  try {
+    diplomacyMatrix = cxParseDiplomacyMatrix(data, engineOrder);
+    if (diplomacyMatrix && diplomacyMatrix._meta) {
+      const mt = diplomacyMatrix._meta;
+      console.log(`[diplo-matrix] located base=0x${mt.base.toString(16)} stride=${mt.stride} N=${mt.N} C=${mt.C} symmetry=${(mt.symmetry*100).toFixed(0)}% warPairs=${mt.warPairs}`);
+    } else {
+      console.log(`[diplo-matrix] NOT located`);
+    }
+  } catch (err) { console.warn("[diplo-matrix] parse failed:", err && err.message); }
+  // 0.9.549: per-faction treasury-over-time history (f13 checkpoints).
+  try {
+    if (factionTreasuries && factionTreasuries.length > 0) {
+      treasuryHistory = cxParseTreasuryHistory(data, factionTreasuries, engineOrder);
+      console.log(`[treasury-history] ${treasuryHistory ? Object.keys(treasuryHistory).length : 0} factions`);
+    }
+  } catch (err) { console.warn("[treasury-history] parse failed:", err && err.message); }
   try {
     if (characterExtras) {
       // v1Chars come from the existing character parser path — wire whatever is
@@ -4820,6 +7011,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     }
   } catch (err) { console.warn("[family-tree] build failed:", err && err.message); }
 
+  tick("diplomacy + treasuries + family tree");
   return {
     buildings: buildingsByCity, armies, queues,
     taxByCity, happinessByCity, populationByCity, incomeByCity, sizeByCity,
@@ -4833,7 +7025,11 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     religionByCity,
     factionTreasuries,
     factionRecordOwners,
+    savePlayerFaction,
     factionDiplomacy,
+    allFactionDiplomacy,
+    diplomacyMatrix,
+    treasuryHistory,
     familyTreeMaps: familyTreeMaps ? {
       byUuid: Array.from(familyTreeMaps.byUuid.entries()),
       spouseOf: Array.from(familyTreeMaps.spouseOf.entries()),
@@ -5101,6 +7297,54 @@ async function reparseLatestSave() {
       newData.currentYear = extras.currentYear;
       newData.currentTurn = extras.currentTurn;
       newData.liveArmies = extras.liveArmies;
+      // Bridge v1 chars' traits/ancillaries/firstName/lastName onto the
+      // role-anchored characterExtras entries via (x, y) coord match.
+      // parseCharacterExtras finds RIS chars that v1 misses (different
+      // record format), but it can't read trait lists from the role-
+      // anchored layout — v1 can, just in a different record. Coord match
+      // unites them so right-click character popups show traits.
+      try {
+        if (newData.characterExtras && extras.characters) {
+          const bridged = cxBridgeV1Traits(newData.characterExtras, extras.characters, modAncillaryNames);
+          if (bridged > 0) console.log(`[trait-bridge] attached v1 traits to ${bridged}/${newData.characterExtras.length} characterExtras entries`);
+        }
+      } catch (err) { console.warn("[trait-bridge] failed:", err && err.message); }
+      // 0.9.513: build a v1-derived coord→portrait map for the family tree.
+      // The cracker's extX/extY (read at +288/+292 of the extended record)
+      // are scrambled — diag-portraits.js confirmed against save_macedon t0.sav
+      // that every named character's family-tree portrait via cracker disagrees
+      // with v1's portrait at the same coord (e.g. DemetriosC at (409,359)
+      // gets generic 000 from cracker but specific portrait 032 from v1, and
+      // Halkyoneus at (394,374) gets DemetriosC's 032 from cracker because the
+      // cracker's coord assignment shifts portraits off-by-one). v1's portrait
+      // scan reads the path strings INSIDE the character record, so the
+      // (tile, portrait) pairing is structurally tight. Pass this map to the
+      // renderer so FamilyTree.js can use it before falling back to the
+      // characterExtras coord lookup.
+      try {
+        if (extras.characters) {
+          const v1PortraitsByCoord = {};
+          for (const v of extras.characters) {
+            if (v.tileX == null || v.tileY == null) continue;
+            const ports = Array.isArray(v.portraits) ? v.portraits : [];
+            const isBadPath = (p) =>
+              !p ||
+              (!v.isDead && /\/dead\//i.test(p));
+            // Prefer the large /portraits/portraits/ variant for the family
+            // tree (it shows the large face); the small /cards/ variant is
+            // what unit cards use. Cards path is derived from the chosen one.
+            const goodLarge = ports.find((p) => !isBadPath(p) && /\/portraits\/portraits\//i.test(p));
+            const goodAny = ports.find((p) => !isBadPath(p));
+            const pick = goodLarge || goodAny;
+            if (!pick) continue;
+            const cards = pick.replace(/\/portraits\/portraits\//i, "/portraits/cards/");
+            const fulls = pick.replace(/\/portraits\/cards\//i, "/portraits/portraits/");
+            v1PortraitsByCoord[`${v.tileX},${v.tileY}`] = { cards, fulls };
+          }
+          newData.v1PortraitsByCoord = v1PortraitsByCoord;
+          console.log(`[v1-portrait-bridge] built ${Object.keys(v1PortraitsByCoord).length} coord entries from ${extras.characters.length} v1 chars`);
+        }
+      } catch (err) { console.warn("[v1-portrait-bridge] failed:", err && err.message); }
     }
 
     emitSaveProgress("Parsing built buildings", 80);
@@ -5117,6 +7361,7 @@ async function reparseLatestSave() {
     } catch (e) { console.warn("[save-watch] building parse failed:", e.message); }
 
     if (modInitialOwnerByCity) newData.initialOwnerByCity = modInitialOwnerByCity;
+    if (modInitialCreatorByCity) newData.initialCreatorByCity = modInitialCreatorByCity;
     if (modInitialOwnerByCity) {
       emitSaveProgress("Resolving settlement ownership", 90);
       await _yield();
@@ -5327,6 +7572,12 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
           lastSaveData.currentYear = initialExtras.currentYear;
           lastSaveData.currentTurn = initialExtras.currentTurn;
           lastSaveData.liveArmies = initialExtras.liveArmies;
+          try {
+            if (lastSaveData.characterExtras && initialExtras.characters) {
+              const bridged = cxBridgeV1Traits(lastSaveData.characterExtras, initialExtras.characters, modAncillaryNames);
+              if (bridged > 0) console.log(`[trait-bridge] attached v1 traits to ${bridged}/${lastSaveData.characterExtras.length} characterExtras entries`);
+            }
+          } catch (err) { console.warn("[trait-bridge] failed:", err && err.message); }
         }
       } catch (e) { console.warn("[save-watch] characters/units failed:", e.message); }
 
@@ -5344,6 +7595,7 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
         emitSaveProgress("Resolving settlement ownership", 90);
         await _yield();
         lastSaveData.initialOwnerByCity = modInitialOwnerByCity;
+        if (modInitialCreatorByCity) lastSaveData.initialCreatorByCity = modInitialCreatorByCity;
         try {
           const cur = resolveCurrentOwners(saveBuf, modInitialOwnerByCity);
           lastSaveData.currentOwnerByCity = cur.ownerByCity;
@@ -5613,6 +7865,60 @@ ipcMain.handle("get-initial-ownership", async () => {
   return modInitialOwnerByCity || {};
 });
 
+// 0.9.437: descr_strat `faction_creator` per settlement — the rebel-default
+// recorded by descr_strat. Distinct from the parent-faction current owner
+// returned by get-initial-ownership. Loyalist map mode uses this to compare
+// against descr_regions field 3 (also a rebel-default).
+ipcMain.handle("get-initial-creators", async () => {
+  return modInitialCreatorByCity || {};
+});
+
+// 0.9.468: write a text file directly into the active mod's data dir.
+// Used by the unified pending-changes Apply button for resource /
+// population / descr_regions edits — those generate the full file
+// content client-side (via patchDescrStrat etc) and we just need to
+// persist it. Restricted to a safelist of paths so a misbehaving
+// renderer can't write arbitrary mod files.
+const WRITE_SAFELIST = new Set([
+  "world/maps/campaign/imperial_campaign/descr_strat.txt",
+  "world/maps/campaign/alexander/descr_strat.txt",
+  "world/maps/campaign/barbarian_invasion/descr_strat.txt",
+  "world/maps/campaign/ris_classic/descr_strat.txt",
+  "world/maps/base/descr_regions.txt",
+  "world/maps/imperial_campaign/descr_regions.txt",
+  "world/maps/ris_classic/descr_regions.txt",
+  "world/maps/campaign/imperial_campaign/descr_win_conditions.txt",
+  "world/maps/campaign/alexander/descr_win_conditions.txt",
+]);
+ipcMain.handle("write-active-mod-file", async (_event, relPath, content) => {
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  if (typeof relPath !== "string" || typeof content !== "string") {
+    return { ok: false, error: "bad args" };
+  }
+  const normalised = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!WRITE_SAFELIST.has(normalised)) {
+    return { ok: false, error: `path not in safelist: ${normalised}` };
+  }
+  const full = path.join(activeModDataDir, normalised);
+  try {
+    // Ensure parent dir exists (it should, but be defensive)
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, content, "utf8");
+    console.log(`[write-active-mod-file] wrote ${normalised} (${content.length} bytes)`);
+    return { ok: true, path: full };
+  } catch (e) {
+    console.warn(`[write-active-mod-file] failed for ${normalised}: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// 0.9.465: live homelands (faction → [homeland_<X>, ...]) parsed from the
+// active mod's EDB alias blocks. Used by the Homeland map mode in place
+// of the stale bundled `homelands.json`.
+ipcMain.handle("get-mod-homelands", async () => {
+  return modHomelandsByFaction || {};
+});
+
 // Parse descr_rebel_factions.txt → { rebelType: { units: [name, ...], category,
 // chance, description } }. Slave-owned settlements without an explicit
 // descr_strat garrison spawn rebel garrisons procedurally at game start using
@@ -5694,6 +8000,14 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
         lastSaveData.currentYear = extras.currentYear;
         lastSaveData.currentTurn = extras.currentTurn;
         lastSaveData.liveArmies = extras.liveArmies;
+        // Same bridge as in save-watch path: copy traits from v1 onto the
+        // role-anchored characterExtras entries via (x, y) coord match.
+        try {
+          if (lastSaveData.characterExtras && extras.characters) {
+            const bridged = cxBridgeV1Traits(lastSaveData.characterExtras, extras.characters, modAncillaryNames);
+            if (bridged > 0) console.log(`[trait-bridge] attached v1 traits to ${bridged}/${lastSaveData.characterExtras.length} characterExtras entries`);
+          }
+        } catch (err) { console.warn("[trait-bridge] failed:", err && err.message); }
       }
       // Re-parse buildings now that modBuildingChains (EDB whitelist) is loaded.
       // The first save parse may have happened before mod-init (when the
@@ -5710,6 +8024,7 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
       } catch (e) { console.warn("[characters-init] building re-parse failed:", e.message); }
       if (lastSaveData && modInitialOwnerByCity) {
         lastSaveData.initialOwnerByCity = modInitialOwnerByCity;
+        if (modInitialCreatorByCity) lastSaveData.initialCreatorByCity = modInitialCreatorByCity;
         try {
           const cur = resolveCurrentOwners(saveBuf, modInitialOwnerByCity);
           lastSaveData.currentOwnerByCity = cur.ownerByCity;
@@ -5860,6 +8175,18 @@ ipcMain.handle("updater-quit-and-install", () => {
 app.whenReady().then(() => {
   applyContentSecurityPolicy();
   createWindow();
+  // Embedded Settlement Processor (Scripts) — registers its sps:* IPC handlers
+  // and seeds its working dir. getHostMod feeds the mod Provincia has loaded so
+  // the Scripts window can auto-source it (Phase E). Required here (post-ready)
+  // so its app.getPath('userData') resolves correctly.
+  try {
+    const { registerScriptSuite } = require("./main-scripts");
+    registerScriptSuite({
+      getHostMod: () => (activeModDataDir ? { dataDir: activeModDataDir } : null),
+    });
+  } catch (e) {
+    console.warn("[scripts-suite] registration failed:", e && e.message);
+  }
   // Run one check on startup (packaged builds only — dev builds would 404)
   if (app.isPackaged) {
     autoUpdater.checkForUpdates().catch(err =>

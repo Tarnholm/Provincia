@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.405",
+  "version": "0.9.616",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -9,7 +9,8 @@
   "scripts": {
     "start": "vite",
     "bundle-data": "node scripts/bundle-mod-data.js",
-    "prebuild": "node scripts/bundle-mod-data.js",
+    "fetch-runtime": "node scripts/fetch-runtime.js",
+    "prebuild": "node scripts/bundle-mod-data.js && node scripts/fetch-runtime.js",
     "build": "vite build",
     "test": "vitest run",
     "electron": "electron .",
@@ -46,6 +47,9 @@
       "build/**",
       "main.js",
       "preload.js",
+      "main-scripts.js",
+      "preload-scripts.js",
+      "scripts-suite/**",
       "package.json",
       "src/characterParser.js",
       "src/characterParserV2.js",
@@ -59,12 +63,16 @@
       "src/factionRecordParser.js",
       "src/luaCounterParser.js",
       "src/queueParser.js",
-      "src/saveCrackerExtras.js"
+      "src/saveCrackerExtras.js",
+      "src/descrStratGeneral.js"
     ],
     "extraMetadata": {
       "main": "main.js"
     },
-    "extraResources": [],
+    "extraResources": [
+      { "from": "scripts-suite-py", "to": "app_data" },
+      { "from": "python-runtime", "to": "python-runtime" }
+    ],
     "publish": [
       {
         "provider": "github",
@@ -82,7 +90,13 @@
     "mac": {
       "category": "public.app-category.productivity",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "public/icon.png",
       "identity": null,

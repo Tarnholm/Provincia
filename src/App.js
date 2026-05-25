@@ -2,9 +2,11 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from "react"
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
-import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons } from "./buildingIcons";
+import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, invalidateBuildingIcon } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
+import ArmyUnitsModal from "./ArmyUnitsModal";
+import SearchPalette from "./SearchPalette";
 import FactionIcon, { preloadIcon, preloadModIcon } from "./FactionIcon";
 import Tooltip from "./Tooltip";
 import "./App.css";
@@ -12,10 +14,13 @@ import CustomScrollArea from "./CustomScrollArea";
 import "./CustomScrollArea.css";
 import TGA from "./tga";
 import WelcomeScreen from "./WelcomeScreen";
+import { displayFirstName, displayFullName } from "./displayName";
 import UpdateBanner from "./UpdateBanner";
 import FamilyTree from "./FamilyTree";
 import Toasts from "./Toasts";
-import MuteButton from "./MuteButton";
+import VolumeControl from "./VolumeControl";
+import { AnimationLayoutProvider, useEnterExit } from "./AnimationLayout";
+import "./animations.css";
 import {
   parseSmFactions,
   parseDescrRegions,
@@ -24,6 +29,20 @@ import {
   parseDescrStratResources,
   parseDescrStratArmies,
 } from "./parsers";
+
+// Auto-update errors arrive as full HttpError dumps (URL + headers + stack
+// trace). A toast only wants a short human line. A 404 on latest.yml usually
+// means a new release is mid-publish (assets not all uploaded yet) — that's an
+// "update imminent" info, not an error. Anything else collapses to its first
+// line, capped in length, as an error.
+function updateErrToast(raw) {
+  const s = String(raw || "(unknown)");
+  if (/latest\.yml|HttpError|\b404\b/i.test(s)) {
+    return { text: "Update imminent — a new release is still uploading. Keep watching; it'll install automatically.", kind: "info" };
+  }
+  const first = s.split("\n")[0].trim();
+  return { text: `Update check failed: ${first.length > 140 ? first.slice(0, 137) + "…" : first}`, kind: "error" };
+}
 
 // Layout constants
 const MAP_PADDING = 6;
@@ -473,9 +492,9 @@ function parseVictoryConditions(text) {
   const lines = text.split(/\r?\n/);
   const result = {};
   let current = null;
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line) continue;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line || line.startsWith(";")) continue;
     if (line.startsWith("hold_regions")) {
       if (!current) continue;
       const parts = line.replace("hold_regions", "").trim().split(/[\s,]+/).filter(Boolean);
@@ -484,9 +503,19 @@ function parseVictoryConditions(text) {
       if (!current) continue;
       const num = parseInt(line.replace("take_regions", "").trim(), 10);
       result[current].take_regions = isNaN(num) ? null : num;
-    } else {
-      current = line;
-      result[current] = { hold_regions: [], take_regions: null };
+    } else if (/^[a-z_0-9]+$/.test(line)) {
+      // A faction header is a bare token whose next non-blank line is a
+      // hold_regions/take_regions line. Without this look-ahead, a single-faction
+      // `outlive_factions` entry (a lone faction token sitting under
+      // `short_campaign outlive_factions`, followed by a blank then the next real
+      // header) gets mistaken for a new block and RESETS that faction's already
+      // parsed conditions to empty — which silently wiped ~94 factions' VCs.
+      let next = "";
+      for (let j = i + 1; j < lines.length; j++) { const t = lines[j].trim(); if (t) { next = t; break; } }
+      if (next.startsWith("hold_regions") || next.startsWith("take_regions")) {
+        current = line;
+        result[current] = { hold_regions: [], take_regions: null };
+      }
     }
   }
   return result;
@@ -801,28 +830,66 @@ function getHiddenResources(tags) {
   return out;
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource"]);
+// 0.9.486: Area-of-Recruitment helpers. AOR tags in RTW are conventionally
+// prefixed `aor_` (vanilla / Alex / Imperial / RIS all follow this). We
+// also accept the rarer `_aor` suffix used by a handful of mods, matching
+// `getHiddenResources`'s split-then-classify approach. Returns the bare
+// AOR names (stripped of the prefix) for cleaner display in the legend.
+function getAors(tags) {
+  const out = [];
+  for (const raw of String(tags || "").split(/,\s*/)) {
+    const t = raw.trim();
+    if (!t) continue;
+    if (t.startsWith("aor_")) out.push(t.slice(4));
+    else if (t.endsWith("_aor")) out.push(t.slice(0, -4));
+  }
+  return out;
+}
+
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "garrison", "happiness", "income", "public_order"]);
 
 // Per-tile geography palette. Decoded from RTW's map_ground_types.tga whose
 // pixels carry one of ~14 fixed RGB values. The map_ground_types raw colors
 // are mapped to short display names + UI-distinct overlay colors. The user
 // uses this to spot forest tiles (where armies passively ambush), mountains
 // (impassable, can't put a settlement), swamps, etc.
+// 0.9.528: corrected mapping. RTW's aerial ground types are the 14 listed in
+// `descr_aerial_map_ground_types.txt`: cultivated_{low,medium,high},
+// fertility_{low,medium,high}, forest_{dense,sparse}, hills, mountains_high,
+// mountains_low, swamp, beach, scorched. The old palette mislabeled the
+// colors — e.g. "0,128,128" was tagged "Mountain" and painted red, but
+// cross-referencing every color against map_heights.tga shows it's one of
+// the FLATTEST terrains (avg elevation 3/255) — which is why "mountains"
+// appeared in flat Denmark. The real elevation tiers are the red-channel
+// ramp 64,0,0 → 128,0,0 → 196,0,0 (avg height 70 → 78 → 84). Names below
+// are anchored on that elevation evidence (mountains/hills are solid);
+// the flat farmland/forest/swamp tiers are assigned by colour + elevation.
+// Labels anchored on TWO cross-checks against the real map data:
+//   1. map_heights.tga — the red-channel ramp 64/128/196,0,0 is the genuine
+//      elevation tier (avg height 70/78/84) → hills/mountains/high-mountains.
+//   2. Direct spatial sampling — the deep Sahara is 89% "0,0,0" (so that's
+//      desert sand, NOT grassland as previously labeled), and "0,255,128"
+//      is only ~1% of deep desert + clusters in river deltas → it's an
+//      oasis/wet-lowland type, NOT swamp (which is why "swamps" were
+//      appearing scattered in the open desert).
+// The climate-map (map_climates.tga) cross-ref was consulted but is less
+// reliable for terrain naming because RTW terrain type and climate are
+// orthogonal (a swamp can sit in a desert climate, e.g. the Nile delta).
 const GROUND_TYPE_PALETTE = {
-  "0,0,0":         { name: "Plains",            color: [200, 215, 130] },
-  "64,0,0":        { name: "Fertile lowland",   color: [150, 200, 90] },
-  "196,0,0":       { name: "Highland",          color: [180, 150, 100] },
-  "0,128,128":     { name: "Mountain",          color: [230, 60, 60]   },
-  "101,124,0":     { name: "Shrubland",         color: [170, 180, 90]  },
-  "0,128,0":       { name: "Forest",            color: [40, 160, 60]   },
-  "128,128,64":    { name: "Sand desert",       color: [235, 215, 130] },
-  "128,0,0":       { name: "Rocky",             color: [140, 100, 80]  },
-  "98,65,65":      { name: "Rocky desert",      color: [180, 140, 110] },
-  "0,64,0":        { name: "Dense forest",      color: [25, 110, 35]   },
-  "196,128,128":   { name: "Open scrub",        color: [200, 180, 130] },
-  "0,255,128":     { name: "Swamp",             color: [180, 110, 200] },
-  "96,160,64":     { name: "Light forest",      color: [120, 200, 90]  },
-  "255,255,255":   { name: "Impassable",        color: [80, 80, 80]    },
+  "196,0,0":       { name: "High mountains",    color: [92, 84, 96]    }, // h84 — highest elevation
+  "128,0,0":       { name: "Mountains",         color: [140, 122, 120] }, // h78
+  "64,0,0":        { name: "Hills",             color: [178, 150, 108] }, // h70
+  "196,128,128":   { name: "Rocky highland",    color: [180, 140, 110] }, // h60
+  "98,65,65":      { name: "Rocky desert",      color: [170, 130, 95]  }, // h26
+  "128,128,64":    { name: "Semi-arid scrub",   color: [214, 198, 138] }, // h13
+  "0,0,0":         { name: "Desert",            color: [231, 210, 150] }, // h3.4 — 89% of Sahara (was wrongly "Grassland")
+  "0,64,0":        { name: "Dense forest",      color: [25, 95, 40]    }, // h5
+  "0,128,0":       { name: "Forest",            color: [55, 150, 70]   }, // h5
+  "96,160,64":     { name: "Light woodland",    color: [120, 200, 90]  }, // h3.4
+  "0,128,128":     { name: "Grassland",         color: [170, 205, 120] }, // h3.1 — was wrongly "Mountain"
+  "101,124,0":     { name: "Steppe / pasture",  color: [175, 180, 95]  }, // h3.1
+  "0,255,128":     { name: "Oasis / marsh",     color: [90, 175, 130]  }, // h2.5 — deltas + scattered oases (was wrongly "Swamp")
+  "255,255,255":   { name: "Coast / beach",     color: [235, 225, 170] }, // h1.5 — lowest, rarest
 };
 
 // Parse "dorian 70 italic 30" → [{name:"dorian",pct:70},{name:"italic",pct:30}]
@@ -982,25 +1049,47 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
     }
   }
 
+  // Emit a resource line in the canonical descr_strat format.
+  const fmtResource = (regionName, res) => {
+    const type = (res.type + ",").padEnd(24);
+    const amount = (String(res.amount || 1) + ",").padEnd(5);
+    const x = String(res.x).padStart(5);
+    const stratY = mapHeight ? mapHeight - res.y : res.y;
+    const y = String(stratY).padStart(5);
+    return `resource        ${type}${amount}      ${x},${y}      ; ${regionName}`;
+  };
+
   for (let i = 0; i < lines.length; i++) {
-    // Replace resource block
+    // Replace resource block. Re-emit in three categories so trade / slave /
+    // ambience stay segregated under their respective `;;;; HEADER ;;;;`
+    // markers (RIS convention). Entries with no `category` field fall back to
+    // "trade".
     if (patchResources && firstResourceLine !== -1 && i >= firstResourceLine && i <= lastResourceLine) {
       if (!resourceInsertDone) {
-        // Generate new resource lines from resourcesData
+        const byCat = { trade: [], slave: [], ambience: [] };
         for (const [regionName, entries] of Object.entries(resourcesData)) {
           if (!Array.isArray(entries)) continue;
           for (const res of entries) {
-            const type = (res.type + ",").padEnd(24);
-            const amount = (String(res.amount || 1) + ",").padEnd(5);
-            const x = String(res.x).padStart(5);
-            const stratY = mapHeight ? mapHeight - res.y : res.y;
-            const y = String(stratY).padStart(5);
-            out.push(`resource        ${type}${amount}      ${x},${y}      ; ${regionName}`);
+            const cat = (res.category === "slave" || res.category === "ambience") ? res.category : "trade";
+            byCat[cat].push(fmtResource(regionName, res));
           }
+        }
+        for (const line of byCat.trade) out.push(line);
+        if (byCat.slave.length) {
+          out.push("");
+          out.push(";;;; SLAVE RESOURCES ;;;;");
+          for (const line of byCat.slave) out.push(line);
+        }
+        if (byCat.ambience.length) {
+          out.push("");
+          out.push(";;;; AMBIENCE ;;;;");
+          for (const line of byCat.ambience) out.push(line);
         }
         resourceInsertDone = true;
       }
-      // Skip old resource line
+      // Skip old resource line (including any section-header comments that
+      // sit between the first and last `resource` lines — we re-emit them
+      // ourselves above so they stay attached to the new block).
       continue;
     }
 
@@ -1029,6 +1118,7 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
     const factionIdx = out.findIndex(l => l.includes("; >>>> start of factions section <<<<"));
     const insertAt = factionIdx !== -1 ? factionIdx : out.length;
     const newLines = [];
+    const byCat = { trade: [], slave: [], ambience: [] };
     for (const [regionName, entries] of Object.entries(resourcesData)) {
       if (!Array.isArray(entries)) continue;
       for (const res of entries) {
@@ -1036,9 +1126,13 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
         const amount = (String(res.amount || 1) + ",").padEnd(5);
         const x = String(res.x).padStart(5);
         const y = String(res.y).padStart(5);
-        newLines.push(`resource        ${type}${amount}      ${x},${y}      ; ${regionName}`);
+        const cat = (res.category === "slave" || res.category === "ambience") ? res.category : "trade";
+        byCat[cat].push(`resource        ${type}${amount}      ${x},${y}      ; ${regionName}`);
       }
     }
+    for (const l of byCat.trade) newLines.push(l);
+    if (byCat.slave.length) { newLines.push(""); newLines.push(";;;; SLAVE RESOURCES ;;;;"); for (const l of byCat.slave) newLines.push(l); }
+    if (byCat.ambience.length) { newLines.push(""); newLines.push(";;;; AMBIENCE ;;;;"); for (const l of byCat.ambience) newLines.push(l); }
     out.splice(insertAt, 0, ...newLines);
   }
 
@@ -1131,6 +1225,15 @@ function App() {
 
   const [regions, setRegions] = useState({});
   const [regionInfo, setRegionInfo] = useState(null);
+  // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
+  // Lightweight cursor readout updated only when the hovered tile changes
+  // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
+  const [tileInspect, setTileInspect] = useState(null);
+  const lastInspectKeyRef = useRef("");
+  const [showTileInspect, setShowTileInspect] = useState(() => {
+    try { return localStorage.getItem("showTileInspect") !== "0"; } catch { return true; }
+  });
+  useEffect(() => { try { localStorage.setItem("showTileInspect", showTileInspect ? "1" : "0"); } catch {} }, [showTileInspect]);
   const [lockedRegionInfo, setLockedRegionInfo] = useState(null);
   // Last few region rgb keys the user has locked (most-recent-first, max 5).
   // Powers the "↶ recent" backstack so you can flip between two cities
@@ -1153,6 +1256,9 @@ function App() {
   const [coloredOffscreen, setColoredOffscreen] = useState(null);
   const [stripeOverlay, setStripeOverlay] = useState(null);
   const [selectedProvinces, setSelectedProvinces] = useState([]);
+  // rgbKey of the region currently hovered in the right-hand province/victory
+  // list — draws a bright outline on the map so the user can locate it.
+  const [hoveredVcKey, setHoveredVcKey] = useState(null);
   const [borderPaths, setBorderPaths] = useState({});
   const [coastalRegions, setCoastalRegions] = useState(new Set());
   const [cultureBorderPath, setCultureBorderPath] = useState(null);
@@ -1223,23 +1329,33 @@ function App() {
   const [armyTypesPanelCollapsed, setArmyTypesPanelCollapsed] = useState(false);
   const [resourceSearch, setResourceSearch] = useState("");
   const [showShortcuts, setShowShortcuts] = useState(false);
-  // Start each launch unmuted — mute is a transient per-session preference,
-  // not persisted across restarts.
-  const [audioMuted, setAudioMuted] = useState(false);
-  const currentAudioRef = useRef(null); // active <audio> element — mute flips .muted + .volume
-  const audioOriginalVolumeRef = useRef(0.7);
-  const toggleAudioMuted = useCallback(() => {
-    setAudioMuted(m => {
-      const next = !m;
-      const a = currentAudioRef.current;
-      if (a) {
-        // Belt-and-braces: some Chromium/Electron combinations have surprised me
-        // with .muted only partially silencing WAV playback. Drop volume to 0 too.
-        a.muted = next;
-        a.volume = next ? 0 : audioOriginalVolumeRef.current;
-      }
-      return next;
-    });
+  // 0.9.474: real volume slider (0..1) replacing the binary mute. Persists
+  // across sessions so a user who silences the splash doesn't get blasted
+  // on the next launch. Volume === 0 is the muted state.
+  const [audioVolume, setAudioVolume] = useState(() => {
+    try {
+      const raw = localStorage.getItem("audioVolume");
+      if (raw == null) return 0.7;
+      const n = parseFloat(raw);
+      if (!Number.isFinite(n)) return 0.7;
+      return Math.max(0, Math.min(1, n));
+    } catch { return 0.7; }
+  });
+  const currentAudioRef = useRef(null);
+  // audioOriginalVolumeRef tracks the most recent non-zero level, used by
+  // the toggle-mute restore. Kept in sync below.
+  const audioOriginalVolumeRef = useRef(audioVolume > 0 ? audioVolume : 0.7);
+  const setVolume = useCallback((next) => {
+    const v = Math.max(0, Math.min(1, Number.isFinite(next) ? next : 0));
+    setAudioVolume(v);
+    if (v > 0) audioOriginalVolumeRef.current = v;
+    try { localStorage.setItem("audioVolume", String(v)); } catch {}
+    const a = currentAudioRef.current;
+    if (a) {
+      a.muted = v <= 0.001;
+      a.volume = v;
+    }
+    console.log(`[audio-volume] set to ${Math.round(v * 100)}%`);
   }, []);
   const [collapsedRelGroups, setCollapsedRelGroups] = useState(() => new Set(Object.keys(RELIGION_GROUPS)));
   const [collapsedCulGroups, setCollapsedCulGroups] = useState(new Set(["__all__"])); // sentinel: start all collapsed
@@ -1336,6 +1452,31 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem("showArmies", showArmies ? "1" : "0"); } catch {}
   }, [showArmies]);
+  // Diplomatic-web overlay — toggleable SVG layer over the map that
+  // draws colored lines between every pair of faction capitals based on
+  // their current diplomatic stance. Data joins `factionDiplomacy` (per-
+  // faction relations decoded from the save) with `factionRecordOwners`
+  // (recordIndex→factionName from captain banners) and `regionCentroids`
+  // (capital position from descr_strat / first owned region fallback).
+  const [showDiplomacyOverlay, setShowDiplomacyOverlay] = useState(() => {
+    try { return localStorage.getItem("showDiplomacyOverlay") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showDiplomacyOverlay", showDiplomacyOverlay ? "1" : "0"); } catch {}
+  }, [showDiplomacyOverlay]);
+  const [diploSelectedOnly, setDiploSelectedOnly] = useState(() => {
+    try { return localStorage.getItem("diploSelectedOnly") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("diploSelectedOnly", diploSelectedOnly ? "1" : "0"); } catch {}
+  }, [diploSelectedOnly]);
+  const [diploShowNeutral, setDiploShowNeutral] = useState(() => {
+    try { return localStorage.getItem("diploShowNeutral") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("diploShowNeutral", diploShowNeutral ? "1" : "0"); } catch {}
+  }, [diploShowNeutral]);
+  const [diploConfigOpen, setDiploConfigOpen] = useState(false);
   const [showLabels, setShowLabels] = useState("off"); // "off" | "city" | "region"
   const [cityPixels, setCityPixels] = useState([]); // [{x, y, rgbKey}] — black pixel positions mapped to nearest region
   const [hoveredCity, setHoveredCity] = useState(null); // { city, region, x, y, tier, screenX, screenY }
@@ -1380,6 +1521,16 @@ function App() {
   // background; null when no download is in flight. Drives the progress
   // strip next to the version label.
   const [updateDownloadPct, setUpdateDownloadPct] = useState(null);
+  // Background update-watch: double-clicking the version label polls for updates
+  // every 5s until one is found (then auto-stops), or until the user
+  // double-clicks again to cancel. updateWatchRef holds the setInterval id.
+  const [watchingUpdates, setWatchingUpdates] = useState(false);
+  const updateWatchRef = useRef(null);
+  // Armed when the user double-clicks the version to watch: once an update is
+  // found AND downloaded, install it automatically (quit + silent install +
+  // relaunch) with no further click. Survives past the "available" event that
+  // stops the visible watch loop, and is disarmed if the user cancels watching.
+  const autoInstallRef = useRef(false);
   // Set when the user clicked the version label to manually check; cleared when the result toast fires.
   // Used so we toast "You're on the latest" ONLY for manual checks (not the silent startup check).
   const manualUpdateCheckRef = useRef(false);
@@ -1391,12 +1542,22 @@ function App() {
         pushToast(`Update ${s.version} available — downloading in background.`, "info");
         setUpdateDownloadPct(0);
         manualUpdateCheckRef.current = false;
+        // Found one — the background watch loop's job is done.
+        if (updateWatchRef.current) { clearInterval(updateWatchRef.current); updateWatchRef.current = null; setWatchingUpdates(false); }
       } else if (s.state === "downloading") {
         setUpdateDownloadPct(typeof s.percent === "number" ? s.percent : 0);
       } else if (s.state === "downloaded") {
         setUpdateReady({ version: s.version });
         setUpdateDownloadPct(null);
         manualUpdateCheckRef.current = false;
+        if (updateWatchRef.current) { clearInterval(updateWatchRef.current); updateWatchRef.current = null; setWatchingUpdates(false); }
+        // If the user opted into watching (double-click), install automatically
+        // — no "Restart & install" click required.
+        if (autoInstallRef.current) {
+          autoInstallRef.current = false;
+          pushToast(`Update ${s.version} downloaded — installing now…`, "info");
+          setTimeout(() => { try { window.electronAPI?.updaterQuitAndInstall?.(); } catch (e) { console.warn("[updater] auto-install failed:", e); } }, 600);
+        }
       } else if (s.state === "none") {
         // Only surface "you're on the latest" for manual checks — silent startup checks shouldn't toast.
         if (manualUpdateCheckRef.current) {
@@ -1405,7 +1566,8 @@ function App() {
         }
       } else if (s.state === "error") {
         if (manualUpdateCheckRef.current) {
-          pushToast(`Update check failed: ${s.message || "(unknown)"}`, "error");
+          const t = updateErrToast(s.message);
+          pushToast(t.text, t.kind);
           manualUpdateCheckRef.current = false;
         } else {
           // Auto-check errors are usually noise (placeholder publish feed, no network) — log only.
@@ -1430,15 +1592,290 @@ function App() {
     const r = await window.electronAPI.updaterCheck();
     if (r && !r.ok) {
       manualUpdateCheckRef.current = false;
-      pushToast(`Update check failed: ${r.reason || "(unknown)"}`, "error");
+      const t = updateErrToast(r.reason);
+      pushToast(t.text, t.kind);
     }
   }, [pushToast]);
-  const markDirty = useCallback((...files) => {
+
+  // Background update watch — toggled by double-clicking the version label.
+  // Polls every 5s WITHOUT the manual flag, so "you're on the latest" / errors
+  // stay silent while waiting; the status listener stops the loop once an update
+  // actually appears. Double-clicking again cancels.
+  const stopUpdateWatch = useCallback((silent) => {
+    if (updateWatchRef.current) { clearInterval(updateWatchRef.current); updateWatchRef.current = null; }
+    setWatchingUpdates(false);
+    autoInstallRef.current = false; // user cancelled — disarm auto-install
+    if (!silent) pushToast("Stopped watching for updates.", "info");
+  }, [pushToast]);
+  const toggleUpdateWatch = useCallback(() => {
+    if (updateWatchRef.current) { stopUpdateWatch(false); return; }
+    if (!window.electronAPI?.updaterCheck) return;
+    setWatchingUpdates(true);
+    autoInstallRef.current = true; // arm: auto-install once an update downloads
+    pushToast("Watching for updates — will download and install automatically once one appears.", "info");
+    const poll = () => { try { window.electronAPI.updaterCheck(); } catch (e) { console.warn("[updater] watch poll failed:", e); } };
+    poll(); // check immediately, then on an interval
+    updateWatchRef.current = setInterval(poll, 5000);
+    console.log("[updater] background watch started (5s interval)");
+  }, [pushToast, stopUpdateWatch]);
+  // Clear the interval if the component unmounts mid-watch.
+  useEffect(() => () => { if (updateWatchRef.current) clearInterval(updateWatchRef.current); }, []);
+  // Distinguish a single click (one-off check) from a double click (toggle the
+  // background watch) so the watch gesture doesn't also fire a manual check.
+  const versionClickTimerRef = useRef(null);
+  const onVersionClick = useCallback(() => {
+    if (versionClickTimerRef.current) return;
+    versionClickTimerRef.current = setTimeout(() => { versionClickTimerRef.current = null; onCheckUpdates(); }, 250);
+  }, [onCheckUpdates]);
+  const onVersionDblClick = useCallback(() => {
+    if (versionClickTimerRef.current) { clearTimeout(versionClickTimerRef.current); versionClickTimerRef.current = null; }
+    toggleUpdateWatch();
+  }, [toggleUpdateWatch]);
+  const markDirty = useCallback((...args) => {
     pushUndoRef.current();
     setDevEditsCount(c => c + 1);
+    // 0.9.468: optional final argument is `{ description: string }` —
+    // when present, push it to the pendingLog so the change shows up in
+    // the unified Apply modal.
+    let files = args;
+    let meta = null;
+    if (args.length > 0 && typeof args[args.length - 1] === "object" && args[args.length - 1] !== null) {
+      meta = args[args.length - 1];
+      files = args.slice(0, -1);
+    }
     setDevDirtyFiles(prev => { const s = new Set(prev); files.forEach(f => s.add(f)); return s; });
+    if (meta && meta.description) {
+      setPendingLog((prev) => {
+        const out = [...prev, {
+          id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+          kind: meta.kind || "file",
+          file: files[0] || null,
+          description: meta.description,
+          revert: meta.revert || null,
+          at: Date.now(),
+        }];
+        try { localStorage.setItem("pendingLog", JSON.stringify(out)); } catch {}
+        return out;
+      });
+    }
+  }, []);
+  // 0.9.470: per-item revert handler for the pending modal × button.
+  // Applies the stored `revert` instructions for one log entry, removes
+  // that entry from the log, and (when no log entries reference the
+  // dirty file anymore) clears the file from devDirtyFiles too.
+  //
+  // 0.9.472: extended to handle building/trait/ancillary kinds via
+  // replay-of-prior-`after`. Each staged edit carries the post-edit
+  // full state in `entry.after`; reverting means finding the most recent
+  // remaining entry with the same kind+key and snapping the registry
+  // back to that entry's `after` (or removing the registry entry when
+  // there's no remaining prior entry).
+  const revertOnePending = useCallback((entryId) => {
+    setPendingLog((prevLog) => {
+      const idx = prevLog.findIndex(e => e.id === entryId);
+      if (idx < 0) return prevLog;
+      const entry = prevLog[idx];
+      const r = entry.revert;
+      if (r) {
+        if (r.type === "resource-pos" && r.before) {
+          setResourcesData(prev => {
+            const next = { ...prev };
+            next[r.region] = (next[r.region] || []).map(x =>
+              x.type === r.resourceType ? { ...x, x: r.before.x, y: r.before.y } : x
+            );
+            return next;
+          });
+        } else if (r.type === "resource-amount") {
+          setResourcesData(prev => {
+            const next = { ...prev };
+            next[r.region] = (next[r.region] || []).map(x =>
+              x.type === r.resourceType ? { ...x, amount: r.before } : x
+            );
+            return next;
+          });
+        } else if (r.type === "resource-add") {
+          setResourcesData(prev => {
+            const next = { ...prev };
+            next[r.region] = (next[r.region] || []).filter(x => x.type !== r.resourceType);
+            return next;
+          });
+        } else if (r.type === "resource-remove" && r.before) {
+          setResourcesData(prev => {
+            const next = { ...prev };
+            next[r.region] = [...(next[r.region] || []), r.before];
+            return next;
+          });
+        } else if (r.type === "vc-toggle") {
+          // Undo a victory-condition region toggle: restore the region to the
+          // hold list state it had before the edit (wasHeld).
+          setVictoryConditions(prev => {
+            const vc = { ...prev };
+            const entry = { ...(vc[r.faction] || { hold_regions: [], take_regions: null }) };
+            const has = entry.hold_regions.includes(r.region);
+            if (r.wasHeld && !has) entry.hold_regions = [...entry.hold_regions, r.region];
+            else if (!r.wasHeld && has) entry.hold_regions = entry.hold_regions.filter(x => x !== r.region);
+            vc[r.faction] = entry;
+            return vc;
+          });
+        } else if (r.type === "vc-clear") {
+          // Undo a "Clear all VCs" action: restore the full hold list the
+          // faction had before it was emptied.
+          setVictoryConditions(prev => {
+            const vc = { ...prev };
+            const entry = { ...(vc[r.faction] || { hold_regions: [], take_regions: null }) };
+            entry.hold_regions = [...(r.before || [])];
+            vc[r.faction] = entry;
+            return vc;
+          });
+        } else if (r.type === "icon-replace") {
+          // 0.9.473: revert a building-icon drag-drop by restoring the
+          // backed-up TGA via the revert-building-icon IPC. If no backup
+          // exists (the user dropped an icon onto a slot that didn't have
+          // one), the IPC deletes the dropped file so the resolver falls
+          // back to the original Steam vanilla art.
+          (async () => {
+            try {
+              const api = window.electronAPI;
+              if (api?.revertBuildingIcon) {
+                const result = await api.revertBuildingIcon(r.destPath || null, r.backupPath || null);
+                console.log(`[icon-replace] revert IPC result: ${JSON.stringify(result)}`);
+              }
+              try { invalidateBuildingIcon(r.culture, r.levelName); } catch {}
+              try { await loadBuildingIcon(modDataDir || null, r.culture, r.levelName, r.chainName); } catch {}
+              setIconCacheVersion((v) => v + 1);
+            } catch (e) {
+              console.log(`[icon-replace] revert failed: ${e?.message || String(e)}`);
+            }
+          })();
+        }
+      }
+      const out = [...prevLog.slice(0, idx), ...prevLog.slice(idx + 1)];
+      // Replay-based revert for building/trait/ancillary registries.
+      // 0.9.473: harden against legacy log entries persisted from
+      // pre-0.9.472 builds — those entries lack `after` and sometimes
+      // `id`. We only replay from entries that have a valid `after`
+      // array; otherwise we just drop the registry entry so the UI
+      // falls back to the original un-edited state.
+      const findPriorWithAfter = (kind, key) =>
+        [...out].reverse().find(e =>
+          e && e.kind === kind && e.key === key && Array.isArray(e.after)
+        );
+      if (entry.kind === "building" && entry.key) {
+        const prior = findPriorWithAfter("building", entry.key);
+        setPendingBuildings((prev) => {
+          const next = new Map(prev);
+          if (prior) next.set(entry.key, prior.after);
+          else next.delete(entry.key);
+          persistMap("pendingBuildings", next);
+          return next;
+        });
+        setEditedBuildingsByRegion((prev) => {
+          const next = new Map(prev || new Map());
+          if (prior) next.set(entry.key, prior.after);
+          else next.delete(entry.key);
+          return next;
+        });
+        const priorLen = prior?.after?.length ?? 0;
+        console.log(`[pending-revert] building ${entry.region || entry.key}: ${prior ? `replayed to prior state (${priorLen} bldgs)` : "cleared registry"}`);
+      } else if (entry.kind === "trait" && entry.key) {
+        const prior = findPriorWithAfter("trait", entry.key);
+        setPendingTraits((prev) => {
+          const next = new Map(prev);
+          if (prior) next.set(entry.key, prior.after);
+          else next.delete(entry.key);
+          persistMap("pendingTraits", next);
+          return next;
+        });
+        const priorLen = prior?.after?.length ?? 0;
+        console.log(`[pending-revert] traits ${entry.character || entry.key}: ${prior ? `replayed to prior state (${priorLen} traits)` : "cleared registry"}`);
+      } else if (entry.kind === "ancillary" && entry.key) {
+        const prior = findPriorWithAfter("ancillary", entry.key);
+        setPendingAncils((prev) => {
+          const next = new Map(prev);
+          if (prior) next.set(entry.key, prior.after);
+          else next.delete(entry.key);
+          persistMap("pendingAncils", next);
+          return next;
+        });
+        const priorLen = prior?.after?.length ?? 0;
+        console.log(`[pending-revert] ancillaries ${entry.character || entry.key}: ${prior ? `replayed to prior state (${priorLen} ancs)` : "cleared registry"}`);
+      }
+      if (entry.kind === "general" && entry.key) {
+        // Nothing was written yet (staged-only) — just drop it from the
+        // pending-generals registry so it disappears from the roster.
+        setPendingGenerals((prev) => {
+          const next = new Map(prev);
+          next.delete(entry.key);
+          persistMap("pendingGenerals", next);
+          return next;
+        });
+        console.log(`[pending-revert] general ${entry.description || entry.key}: unstaged`);
+      }
+      if (entry.kind === "charpos" && entry.key) {
+        // Staged-only move — drop it so the marker snaps back to its tile.
+        setPendingCharPos((prev) => {
+          const next = new Map(prev);
+          next.delete(entry.key);
+          persistMap("pendingCharPos", next);
+          return next;
+        });
+        console.log(`[pending-revert] charpos ${entry.description || entry.key}: unstaged`);
+      }
+      if (entry.kind === "charfields" && entry.key) {
+        setPendingCharFields((prev) => {
+          const next = new Map(prev);
+          next.delete(entry.key);
+          persistMap("pendingCharFields", next);
+          return next;
+        });
+        console.log(`[pending-revert] charfields ${entry.description || entry.key}: unstaged`);
+      }
+      if (entry.kind === "garrison" && entry.key) {
+        setPendingGarrisonMoves((prev) => {
+          const next = new Map(prev);
+          next.delete(entry.key);
+          persistMap("pendingGarrisonMoves", next);
+          return next;
+        });
+        console.log(`[pending-revert] garrison ${entry.description || entry.key}: unstaged`);
+      }
+      if (entry.kind === "armyunits" && entry.key) {
+        setPendingArmyUnits((prev) => {
+          const next = new Map(prev);
+          next.delete(entry.key);
+          persistMap("pendingArmyUnits", next);
+          return next;
+        });
+        console.log(`[pending-revert] armyunits ${entry.description || entry.key}: unstaged`);
+      }
+      if (entry.kind === "diplomacy" && entry.key) {
+        setPendingDiplomacy((prev) => {
+          const next = new Map(prev);
+          next.delete(entry.key);
+          persistMap("pendingDiplomacy", next);
+          return next;
+        });
+        console.log(`[pending-revert] diplomacy ${entry.description || entry.key}: unstaged`);
+      }
+      try { localStorage.setItem("pendingLog", JSON.stringify(out)); } catch {}
+      // If no other log entry references this file, clear the dirty flag.
+      const touchedFile = entry.file;
+      if (touchedFile && !out.some(e => e.file === touchedFile)) {
+        setDevDirtyFiles(prev => { const s = new Set(prev); s.delete(touchedFile); return s; });
+      }
+      return out;
+    });
   }, []);
   const [devDragResource, setDevDragResource] = useState(null); // { regionName, type, mx, my }
+  // Dragging a staged "Add General" marker on the map to set its spawn tile.
+  // { id, mx, my } — id keys into pendingGenerals; mx/my follow the cursor.
+  const [devDragGen, setDevDragGen] = useState(null);
+  // Dragging an EXISTING (descr_strat) character marker to a new tile.
+  // { faction, oldX, oldY, label, mx, my } — matched in descr_strat by coord.
+  const [devDragChar, setDevDragChar] = useState(null);
+  // Dragging a leaderless garrisoned_army out of a settlement → captain field
+  // army. { faction, region, units, label, mx, my }.
+  const [devDragGarrison, setDevDragGarrison] = useState(null);
   const devDragJustEndedRef = useRef(false);
   const panJustEndedRef = useRef(false);
   const [devBorderPath, setDevBorderPath] = useState(null);
@@ -1554,16 +1991,62 @@ function App() {
   const [savePopulationByCity, setSavePopulationByCity] = useState(null); // { city: u32 } live population from save parser (u32 at settlement.offset-1494, save-cracker session 2)
   const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
   const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
-  const [saveTreasuryRecords, setSaveTreasuryRecords] = useState(null); // { records: [{ pos, treasury, turnStart, regionCount }, ...] } — raw 23 major-faction treasury records from save (session 5)
+  // 0.9.542: faction-level save data is now PERSISTED to localStorage and
+  // rehydrated on launch, so one sync (live snapshot or 🎯 Calibrate) keeps
+  // the Diplomacy & Treasury widget populated for EVERY faction across app
+  // restarts — without it, restarting into non-live mode dropped all live
+  // diplomacy/treasury (allFactionDiplomacy went empty) and factions with no
+  // descr_strat starting relations (romans_julii, carthage, senate) showed
+  // nothing. Values are last-synced snapshots; a fresh sync overwrites them.
+  const _loadLS = (k) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch { return null; } };
+  const [saveTreasuryRecords, setSaveTreasuryRecords] = useState(() => _loadLS("saveTreasuryRecords")); // { records: [{ pos, treasury, turnStart, regionCount }, ...] }
   // 0.9.376 backend extras — every save-cracker finding now exposed for any UI feature
   const [saveHeader, setSaveHeader] = useState(null);
   const [factionDiscovered, setFactionDiscovered] = useState(null);
   const [factionDiplomacy, setFactionDiplomacy] = useState(null);
+  // 0.9.539: live diplomacy COUNTS for every faction (incl. player/senate/
+  // minors), keyed by faction name. From the ~221 per-faction diplomacy zones.
+  const [allFactionDiplomacy, setAllFactionDiplomacy] = useState(() => _loadLS("allFactionDiplomacy"));
+  // 0.9.546: NAMED live diplomacy from the N×N attitude matrix — { factionName:
+  // { war:[names], allied:[names], hostile:[names] } } + _meta. The real
+  // diplomacy source (war/ally per faction PAIR, partner recoverable).
+  const [diplomacyMatrix, setDiplomacyMatrix] = useState(() => _loadLS("diplomacyMatrix"));
+  // 0.9.549: per-faction treasury-over-time (f13 checkpoint timeline) for the
+  // wealth sparkline. { factionName: [t0, t1, ...] }.
+  const [treasuryHistory, setTreasuryHistory] = useState(() => _loadLS("treasuryHistory"));
+  // NOT persisted to localStorage anymore — a pre-crack app version once saved
+  // these and the stale entries (e.g. 23 imperial records, owner0=roman_rebels_1,
+  // empty treasuries) lingered, masquerading as live data and pinning the player
+  // treasury to the descr_strat fallback. Start clean; the live save-snapshot
+  // populates them from the current save.
   const [factionTreasuries, setFactionTreasuries] = useState(null);
   const [factionRecordOwners, setFactionRecordOwners] = useState(null);
   const [factionConfig, setFactionConfig] = useState(null);
+  // 0.9.542: persist the faction-level save data so one sync survives restarts.
+  useEffect(() => { try { if (allFactionDiplomacy) localStorage.setItem("allFactionDiplomacy", JSON.stringify(allFactionDiplomacy)); } catch {} }, [allFactionDiplomacy]);
+  useEffect(() => { try { if (diplomacyMatrix) localStorage.setItem("diplomacyMatrix", JSON.stringify(diplomacyMatrix)); } catch {} }, [diplomacyMatrix]);
+  useEffect(() => { try { if (treasuryHistory) localStorage.setItem("treasuryHistory", JSON.stringify(treasuryHistory)); } catch {} }, [treasuryHistory]);
+  useEffect(() => { try { if (factionRecordOwners) localStorage.setItem("factionRecordOwners", JSON.stringify(factionRecordOwners)); } catch {} }, [factionRecordOwners]);
+  useEffect(() => { try { if (factionTreasuries) localStorage.setItem("factionTreasuries", JSON.stringify(factionTreasuries)); } catch {} }, [factionTreasuries]);
+  useEffect(() => { try { if (saveTreasuryRecords) localStorage.setItem("saveTreasuryRecords", JSON.stringify(saveTreasuryRecords)); } catch {} }, [saveTreasuryRecords]);
   const [modInfo, setModInfo] = useState(null);
   const [characterExtras, setCharacterExtras] = useState(null);
+  // 0.9.526: persist the coord→portrait bridge to localStorage (like
+  // statsCache) so the family tree's PRECISE coord lookup survives an app
+  // restart too — not just the name-keyed fallback. Without this, a cold
+  // launch degrades same-name disambiguation to the name key until the
+  // next save sync repopulates the coord map.
+  const [v1PortraitsByCoord, setV1PortraitsByCoord] = useState(() => {
+    try {
+      const raw = localStorage.getItem("v1PortraitsByCoord");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  useEffect(() => {
+    try {
+      if (v1PortraitsByCoord) localStorage.setItem("v1PortraitsByCoord", JSON.stringify(v1PortraitsByCoord));
+    } catch { /* quota or serialization failure — non-fatal, falls back to name cache */ }
+  }, [v1PortraitsByCoord]);
   const [familyTreeMaps, setFamilyTreeMaps] = useState(null);
   const [familyTreeOpen, setFamilyTreeOpen] = useState(false);
   const [familyTreeDefaultFaction, setFamilyTreeDefaultFaction] = useState(null);
@@ -1587,6 +2070,218 @@ function App() {
   // field at marker-1940. Surfaces installed governors in the region panel
   // even when they don't command a bodyguard army (= no unit record links).
   const [saveGovernorByCity, setSaveGovernorByCity] = useState(null);
+  // 0.9.441: dev-mode building edits. Per-region override map keyed by
+  // lowercased region name. When non-empty, getBuildings() uses it as
+  // the static-building source instead of the bundled buildingsData,
+  // letting upgrades / removes / adds show up immediately with refreshed
+  // icons + labels (because the existing getBuildings pipeline runs
+  // unchanged on the new list). Cleared on mod re-load.
+  const [editedBuildingsByRegion, setEditedBuildingsByRegion] = useState(null);
+  // 0.9.467: pending-changes registry — every dev-mode edit gets staged
+  // here instead of writing to descr_strat immediately. The user reviews
+  // the full diff via the "Pending changes (N)" toolbar button + modal,
+  // then clicks Apply to commit all pending writes via the existing
+  // update-* IPCs.
+  //   pendingBuildings: Map(regionNameLower → { type, level }[])
+  //   pendingTraits:    Map(`${firstName}|${faction}` → { name, level }[])
+  //   pendingAncils:    Map(`${firstName}|${faction}` → string[])
+  //   pendingLog:       array of human-readable change descriptions for the
+  //                     review modal (newest last). Each entry references
+  //                     the registry slot so reverting one entry undoes
+  //                     just that edit if we add per-row revert later.
+  // The maps are persisted to localStorage so edits survive a reload.
+  const [pendingBuildings, setPendingBuildings] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingBuildings");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  const [pendingTraits, setPendingTraits] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingTraits");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  const [pendingAncils, setPendingAncils] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingAncils");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  // Staged "Add General" entries (id → { selection, displayName, faction,
+  // factionLabel, settlement, region, age }). Written to descr_strat/names.txt
+  // via addgenApply only on Save, so they're revertable like every other dev edit.
+  const [pendingGenerals, setPendingGenerals] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingGenerals");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  // Staged moves of existing characters (key `faction|oldX|oldY` →
+  // { faction, oldX, oldY, newX, newY, label }). Applied via the
+  // update-character-position IPC on Save; revertable like other dev edits.
+  const [pendingCharPos, setPendingCharPos] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingCharPos");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  // Staged garrison relocations (key `faction|region` → { faction, region,
+  // units, newX, newY, label }). Applied via relocate-garrison on Save: removes
+  // the settlement's garrisoned_army and emits a captain field army at the tile.
+  const [pendingGarrisonMoves, setPendingGarrisonMoves] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingGarrisonMoves");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  // Staged army unit-list edits (key `faction|loc` → { faction, locator, units,
+  // label }). Applied via update-army-units on Save: rewrites the army block's
+  // unit lines. Works for character armies (locator {x,y}) + garrisons ({region}).
+  const [pendingArmyUnits, setPendingArmyUnits] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingArmyUnits");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  // Staged scalar-field edits of existing characters (key `firstName|faction` →
+  // { firstName, faction, age?, tag?, label }). Applied via update-character-fields
+  // on Save; revertable like other dev edits.
+  const [pendingCharFields, setPendingCharFields] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingCharFields");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  // Staged diplomacy edits (key `from|to` → { from, to, value, label }).
+  // Written to descr_strat's core_attitudes via update-core-attitudes on Save.
+  const [pendingDiplomacy, setPendingDiplomacy] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingDiplomacy");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
+  const [pendingLog, setPendingLog] = useState(() => {
+    try {
+      const raw = localStorage.getItem("pendingLog");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [pendingReviewOpen, setPendingReviewOpen] = useState(false);
+  const persistMap = (key, map) => {
+    try { localStorage.setItem(key, JSON.stringify([...map.entries()])); } catch {}
+  };
+  const persistArr = (key, arr) => {
+    try { localStorage.setItem(key, JSON.stringify(arr)); } catch {}
+  };
+  // Total pending edit count for the toolbar badge. Includes IPC-bound
+  // edits (buildings/traits/ancillaries) AND the descr_strat/regions
+  // patches tracked in devDirtyFiles (resources/population/ownership/
+  // victory conditions). The Apply button below resolves both.
+  const pendingCount = useMemo(
+    () => pendingBuildings.size + pendingTraits.size + pendingAncils.size + pendingGenerals.size + pendingCharPos.size + pendingCharFields.size + pendingGarrisonMoves.size + pendingArmyUnits.size + pendingDiplomacy.size + (devDirtyFiles?.size || 0),
+    [pendingBuildings, pendingTraits, pendingAncils, pendingGenerals, pendingCharPos, pendingCharFields, pendingGarrisonMoves, pendingArmyUnits, pendingDiplomacy, devDirtyFiles]
+  );
+  // Stage a character scalar-field edit (age / leader-heir tag) from the
+  // InfoPopup. Keyed by firstName|faction (matches the trait/ancillary editors).
+  // Merges into any existing staged fields for the same character.
+  const stageCharFields = useCallback((firstName, faction, patch, label) => {
+    if (!firstName) return;
+    const key = `${firstName}|${(faction || "").toLowerCase()}`;
+    setPendingCharFields((prev) => {
+      const next = new Map(prev);
+      const cur = next.get(key) || { firstName, faction, label };
+      next.set(key, { ...cur, ...patch, firstName, faction, label: label || cur.label });
+      persistMap("pendingCharFields", next);
+      return next;
+    });
+    setPendingLog((prev) => {
+      const merged = { ...(prev.find((en) => en.kind === "charfields" && en.key === key)?._fields || {}), ...patch };
+      const bits = [];
+      if (merged.newFirst != null) bits.push(`rename → ${merged.newFirst}`);
+      if (merged.age != null) bits.push(`age ${merged.age}`);
+      if (merged.tag != null) bits.push(merged.tag ? merged.tag : "no rank");
+      const filtered = prev.filter((en) => !(en.kind === "charfields" && en.key === key));
+      const out = [...filtered, { id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), kind: "charfields", key, _fields: merged, description: `edit ${label || firstName}: ${bits.join(", ")}`, at: Date.now() }];
+      persistArr("pendingLog", out);
+      return out;
+    });
+  }, []);
+  // Stage an army's full unit list (add/remove). locator = {x,y} (character army)
+  // or {region} (garrison). Keyed by faction|locator so re-edits replace.
+  const stageArmyUnits = useCallback((faction, locator, units, label) => {
+    const locKey = locator && locator.region != null ? `r:${locator.region}` : `c:${locator.x},${locator.y}`;
+    const key = `${(faction || "").toLowerCase()}|${locKey}`;
+    setPendingArmyUnits((prev) => {
+      const next = new Map(prev);
+      next.set(key, { faction, locator, units, label });
+      persistMap("pendingArmyUnits", next);
+      return next;
+    });
+    setPendingLog((prev) => {
+      const filtered = prev.filter((en) => !(en.kind === "armyunits" && en.key === key));
+      const out = [...filtered, { id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), kind: "armyunits", key, description: `set ${label || "army"} units (${units.length})`, at: Date.now() }];
+      persistArr("pendingLog", out);
+      return out;
+    });
+  }, []);
+  // Stage a diplomacy edit from the editor. valueKind ∈ core|rel|agg.
+  const stageDiplomacy = useCallback((valueKind, from, to, value, label) => {
+    const key = `${valueKind}|${from}|${to}`;
+    const kindWord = valueKind === "rel" ? "relationship" : valueKind === "agg" ? "aggression" : "attitude";
+    setPendingDiplomacy((prev) => {
+      const next = new Map(prev);
+      next.set(key, { kind: valueKind, from, to, value, label });
+      persistMap("pendingDiplomacy", next);
+      return next;
+    });
+    setPendingLog((prev) => {
+      const filtered = prev.filter((en) => !(en.kind === "diplomacy" && en.key === key));
+      const out = [...filtered, { id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), kind: "diplomacy", key, description: `${from} → ${label || to}: ${kindWord} ${value}`, at: Date.now() }];
+      persistArr("pendingLog", out);
+      return out;
+    });
+  }, []);
+  // Stage an "Add General" edit (called from the Add General form). Records it
+  // in pendingGenerals + the change log so it shows in the Characters roster
+  // and the Changes review, and writes to disk only on Save.
+  const stageGeneral = useCallback((entry) => {
+    const id = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+    setPendingGenerals((prev) => {
+      const next = new Map(prev);
+      next.set(id, entry);
+      persistMap("pendingGenerals", next);
+      return next;
+    });
+    setPendingLog((prev) => {
+      const out = [...prev, {
+        id, kind: "general", key: id,
+        description: `Add ${entry.displayName} to ${entry.factionLabel || entry.faction}${entry.settlement ? ` at ${entry.settlement}` : ""}`,
+        at: Date.now(),
+      }];
+      persistArr("pendingLog", out);
+      return out;
+    });
+    console.log(`[addgen] staged general "${entry.displayName}" → ${entry.faction} @ ${entry.settlement || "?"} (id=${id})`);
+    pushToast(`Staged: add ${entry.displayName}. Review it under Changes, then Save to write it.`, "info");
+  }, [pushToast]);
+  // Re-read descr_strat-derived character + family data from disk. Called after
+  // Save writes a new general so it appears in the Characters roster + Family
+  // Tree as a real (non-pending) entry without a manual mod re-import.
+  const reloadModCharacters = useCallback(() => {
+    const api = window.electronAPI;
+    if (!api) return;
+    if (api.getStartingCharacters) {
+      api.getStartingCharacters().then((res) => {
+        if (res?.ok && Array.isArray(res.characters)) { setStartingCharactersFromMod(res.characters); console.log("[starting-chars] reloaded after save:", res.characters.length); }
+      }).catch(() => {});
+    }
+    if (api.getDescrStratFamilies) {
+      api.getDescrStratFamilies().then((res) => {
+        if (res?.ok && res.byFaction) { setModFamiliesByFaction(res.byFaction); console.log("[descr-strat-families] reloaded after save"); }
+      }).catch(() => {});
+    }
+  }, []);
   // Live-mode parse progress — populated by `save-progress` IPC events.
   // `liveLoading` flips on at click and off when the snapshot lands.
   // `liveLoadingStage` shows the current step ("Parsing characters & armies").
@@ -1620,8 +2315,12 @@ function App() {
   // Session-36 queue parser output: recruitment queue (inline ASCII unit name)
   // and construction queue (chain_id + turns remaining).
   const [recruitingByCity, setRecruitingByCity] = useState(null); // { city: [{unit}] }
-  const [buildingQueueByCity, setBuildingQueueByCity] = useState(null); // { city: [{chainId, turns, count}] }
-  const [initialOwnerByCity, setInitialOwnerByCity] = useState(null); // { city: factionId } — turn-0 ownership from descr_strat
+  const [buildingQueueByCity, setBuildingQueueByCity] = useState(null); // { city: [{chainId, turns(=total, back-compat), turnsTotal, turnsElapsed, turnsRemaining, count}] }
+  const [initialOwnerByCity, setInitialOwnerByCity] = useState(null); // { city: factionId } — turn-0 ownership from descr_strat (parent `faction <id>` block)
+  // 0.9.437: per-settlement `faction_creator` from descr_strat — the
+  // rebel-default for that settlement. Used by loyalist map mode to
+  // compare against descr_regions field 3.
+  const [initialCreatorByCity, setInitialCreatorByCity] = useState(null);
   const [currentOwnerByCity, setCurrentOwnerByCity] = useState(null); // { city: factionId } — current ownership decoded from save
   const [factionDisplayNames, setFactionDisplayNames] = useState(null); // { factionId: displayName } from mod text/expanded_bi.txt
   const [factionCultures, setFactionCultures] = useState(null); // { factionId: cultureFolderName } from descr_sm_factions.txt
@@ -1669,6 +2368,23 @@ function App() {
   const factionDisplayMapRef = useRef({});
 
   const [modDataDir, setModDataDir] = useState(null);
+  // Crosstalk with Manipula (the recruitment tool): both apps edit the same
+  // C:\RIS\RIS\data. When Manipula saves recruitment to
+  // export_descr_buildings.txt, the main process file-watches it and notifies
+  // us — bump modReloadTick so the live recruit/unit data re-reads and the map
+  // recruitment colour-mode updates live, no manual re-import.
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api?.onModFileChanged) return undefined;
+    const off = api.onModFileChanged((data) => {
+      if (data && data.file === "export_descr_buildings.txt") {
+        console.log("[mod-watch] EDB changed externally → reloading recruit data");
+        setModReloadTick((t) => t + 1);
+        pushToast("Recruitment reloaded — Manipula saved the building file.", "info");
+      }
+    });
+    return typeof off === "function" ? off : undefined;
+  }, []);
   const [iconCacheVersion, setIconCacheVersion] = useState(0);
   const [gameDisplayNames, setGameDisplayNames] = useState(null); // from game's export_buildings.txt (culture-aware)
   // Derive the mod's data directory from modIconsDir and initialize the
@@ -1699,11 +2415,31 @@ function App() {
               }
             }).catch(() => {});
           }
+          if (api.getInitialCreators) {
+            api.getInitialCreators().then(map => {
+              if (map && Object.keys(map).length) {
+                setInitialCreatorByCity(map);
+                console.log("[ownership] loaded initial faction_creator map, entries:", Object.keys(map).length);
+              }
+            }).catch(() => {});
+          }
           if (api.getRebelFactions) {
             api.getRebelFactions(dir).then(map => {
               if (map && Object.keys(map).length) {
                 setRebelFactions(map);
                 console.log("[rebel-factions] loaded, types:", Object.keys(map).length);
+              }
+            }).catch(() => {});
+          }
+          // 0.9.417: per-level trait data (description, effects, threshold,
+          // icon level-name) so the right-click character info panel can
+          // render real trait pictures + effects + descriptions.
+          if (api.getTraitData) {
+            api.getTraitData().then(td => {
+              if (td) {
+                setTraitData(td);
+                const lc = td.levels ? Object.keys(td.levels).length : 0;
+                console.log(`[trait-data] loaded ${lc} traits with level data`);
               }
             }).catch(() => {});
           }
@@ -1855,7 +2591,74 @@ function App() {
   // descr_rebel_factions.txt. Used to surface the procedural rebel garrison
   // pool for slave-owned settlements that have no explicit descr_strat army.
   const [rebelFactions, setRebelFactions] = useState(null);
+  // 0.9.417: per-trait level data { levels: {traitName: [{levelIdx, levelName,
+  // threshold, effects, desc, effectsDesc}, ...]}, epithets: ... }
+  const [traitData, setTraitData] = useState(null);
+  // 0.9.423: stat calibration cache. Auto-populates when a save load
+  // provides real (save-read) stats — non-live mode then uses them as
+  // ground truth instead of trait-effect estimates. Scoped by modDataDir
+  // so multiple mods don't share each other's cached numbers.
+  // Shape: { "firstName|lastName|faction": { command, influence, management, loyalty } }
+  const [statsCache, setStatsCache] = useState(() => {
+    try {
+      const raw = localStorage.getItem("statsCache");
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  // 0.9.459: track the actual character count from the last calibration
+  // so the Calibrate-button label matches the toaster ("Calibrated N
+  // characters" + button "(N)" not "Calibrated 936" + button "(2800)").
+  // Object.keys(statsCache).length counts the multi-key indices (full +
+  // 2 stripped per char), not characters.
+  // 0.9.461: compute char count from the stats cache directly using
+  // unique secondaryUuids. Storing the count in a separate state caused
+  // drift when the cache was set via different code paths.
+  const statsCacheCharCount = useMemo(() => {
+    if (!statsCache || typeof statsCache !== "object") return 0;
+    const uuids = new Set();
+    let withoutUuid = 0;
+    for (const k in statsCache) {
+      const e = statsCache[k];
+      if (!e) continue;
+      if (e.secondaryUuid != null) uuids.add(e.secondaryUuid);
+      else withoutUuid++;
+    }
+    // If no secondaryUuids at all, fall back to counting unique
+    // firstName|lastName|faction (full-key entries).
+    if (uuids.size === 0) {
+      const fullKeys = new Set();
+      for (const k in statsCache) {
+        const parts = k.split("|");
+        // Full key has 3 segments and non-empty lastName/faction (heuristic)
+        if (parts.length === 3) fullKeys.add(k);
+      }
+      // Best-effort dedup: count keys that have a non-empty middle OR are unique
+      // to the char. Imperfect but better than 3× inflation.
+      return fullKeys.size > 0 ? Math.floor(fullKeys.size / 3) : Object.keys(statsCache).length;
+    }
+    return uuids.size;
+  }, [statsCache]);
+  // 0.9.461: wipe pre-0.9.460 localStorage cache (had v1's cross-
+  // contaminated portrait paths) on app start. Stamps a generation key
+  // so we only wipe once per upgrade.
+  useEffect(() => {
+    const stamp = localStorage.getItem("statsCacheGen") || "";
+    if (stamp !== "0.9.461") {
+      try { localStorage.removeItem("statsCache"); } catch {}
+      try { localStorage.removeItem("statsCacheCharCount"); } catch {}
+      try { localStorage.setItem("statsCacheGen", "0.9.461"); } catch {}
+      console.log("[stats-cache] cleared stale localStorage entries (0.9.461 reset). Recalibrate from save to repopulate.");
+    }
+  }, []);
   const [infoPopup, setInfoPopup] = useState(null); // { type, faction, name, chainName?, culture?, label? }
+  // Army-units editor (Shift+click an army marker in dev mode). { faction, locator, units, label }
+  const [armyUnitsEditor, setArmyUnitsEditor] = useState(null);
+  // Dev-tools cheatsheet (discoverability for the hidden dev-mode gestures).
+  const [devHelpOpen, setDevHelpOpen] = useState(false);
+  // 0.9.x: Cmd/Ctrl+K search-everywhere palette. Toggled by global
+  // shortcut; the SearchPalette component handles its own query + result
+  // state — App.js only owns visibility + the source list it feeds in.
+  const [searchOpen, setSearchOpen] = useState(false);
   const [buildingDisplayNames, setBuildingDisplayNames] = useState(null); // { levelName: "Display Name" }
   // Load building lookups on mount.
   // NOTE: in Electron with file:// protocol, BASE_URL is "./" and the old
@@ -1921,6 +2724,8 @@ function App() {
   // existing dead-uuid filter in armiesToRender can drop the save's
   // stale army entry without waiting for a save refresh.
   const saveCharactersByRegionRef = useRef(null);
+  // One-shot guard so the army-classification debug dump logs once per save load.
+  const armyDbgSaveRef = useRef(null);
   const [liveCharPositionsVersion, setLiveCharPositionsVersion] = useState(0);
   // User toggle: whether to override save positions with live-log positions.
   // Default ON (pixel-accurate for live play). Turn off when reviewing old
@@ -1984,6 +2789,14 @@ function App() {
       // Try to upgrade (x, y) from live log events. Key lookup tries
       // (firstName, lastNameStub, faction) then (firstName, "", faction).
       let x = a.x, y = a.y;
+      // garrisoned_army blocks (RIS leaderless town garrisons) carry no coords
+      // in the flat army data, so they never drew a map marker. Pin them to
+      // their region's settlement tile — the same world-coord source the
+      // garrison panel uses — so these general-less garrisons are visible.
+      if ((x == null || y == null) && a.region && startingArmiesByRegion?.[a.region]?.settlement) {
+        const st = startingArmiesByRegion[a.region].settlement;
+        if (typeof st.x === "number" && typeof st.y === "number") { x = st.x; y = st.y; }
+      }
       const faction = (a.faction || "").toLowerCase();
       const first = (a.firstName || (a.character || "").split(" ")[0] || "").toLowerCase();
       // Use originalLastName when an epithet trait replaced lastName.
@@ -2341,6 +3154,16 @@ function App() {
         if (onSettlement) a.armyClass = "garrison";
       }
     }
+    // Re-derive garrison/field from the FINAL position after all live-log
+    // overrides. Pass 1 and Pass 2 can move an army's (x, y) without re-running
+    // the classification, leaving the class stale. A land army sitting EXACTLY
+    // on a settlement tile is that settlement's garrison; anything else
+    // (including a besieger one tile away) is a field army.
+    for (const a of result) {
+      if (a.armyClass === "navy") continue;
+      if (typeof a.x !== "number" || typeof a.y !== "number") continue;
+      a.armyClass = settlementTiles.has(`${a.x},${a.y}`) ? "garrison" : "field";
+    }
     // Final filter: drop any army whose commander/character has been
     // reported dead by the live log. Save-derived armies linger
     // otherwise — defeated armies in a siege resolution would still
@@ -2359,8 +3182,18 @@ function App() {
     const filtered = (deadUuids.size === 0 && wiped.size === 0)
       ? result
       : result.filter((a) => !isDeadCmd(a.commanderUuid) && !isDeadCmd(a.primaryUuid) && !inWipedSettlement(a));
+    // [army-dbg] one dump per save load: final class + position for each land
+    // army, so live-mode placement issues (besiegers, garrison vs field) are
+    // diagnosable from provincia.log. onTile=1 means the army sits exactly on a
+    // settlement pixel; live=1 means a live-log entry overrode its save position.
+    if (liveSaveFile && armyDbgSaveRef.current !== liveSaveFile) {
+      armyDbgSaveRef.current = liveSaveFile;
+      const rows = filtered.filter((a) => a.armyClass !== "navy")
+        .map((a) => `${a.character || a.firstName}|${a.faction}|(${a.x},${a.y})|${a.armyClass}|live=${a.liveTracked ? 1 : 0}|onTile=${settlementTiles.has(`${a.x},${a.y}`) ? 1 : 0}|units=${(a.units || []).length}`);
+      console.log(`[army-dbg] ${liveSaveFile} — ${rows.length} land armies:\n` + rows.join("\n"));
+    }
     return filtered;
-  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn, regions, imgSize]);
+  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn, regions, imgSize, startingArmiesByRegion]);
 
   // Live-aware unitsByRegion: re-bucket save-tagged units using the
   // commander's CURRENT region from armiesToRender, so the side panel
@@ -2441,10 +3274,13 @@ function App() {
     // settlement on the map. World-army positions use BOTTOM-UP world y,
     // while cityPixels.y is TOP-DOWN pixel y — flip when comparing.
     const settlementTilesByXy = new Set();
+    const settlementTileToRegion = new Map(); // "x,y"(world) → region of that settlement
     const H_world2 = imgSize.height;
     for (const cp of (cityPixels || [])) {
       const worldY = (H_world2 - 1) - cp.y;
       settlementTilesByXy.add(`${cp.x},${worldY}`);
+      const cpReg = regions[cp.rgbKey] && regions[cp.rgbKey].region;
+      if (cpReg) settlementTileToRegion.set(`${cp.x},${worldY}`, cpReg);
     }
     for (const a of armiesToRender) {
       if (!a.commanderUuid || !a.region) continue;
@@ -2463,6 +3299,24 @@ function App() {
           && settlementTilesByXy.has(`${a.x},${a.y}`)
           && a.region) {
         cmdToLiveRegion.set(a.commanderUuid, a.region);
+      } else if (typeof a.x === "number" && typeof a.y === "number") {
+        // Besieging army: if the stack sits IMMEDIATELY next to a settlement
+        // tile, attribute it to THAT settlement's region. After a move the
+        // engine leaves the unit-record region tag stale (e.g. Aulus besieging
+        // Brundisium is still tagged "Taras"), but his world position is one
+        // tile from Brundisium's settlement tile. Radius-1 (8 neighbours) only:
+        // a besieger must be adjacent to besiege, and the drifted-governor case
+        // (record ~3 tiles off its own settlement) either resolves to that same
+        // settlement's region — still correct — or falls through to the save tag.
+        let best = null, bestD = 99;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            const reg = settlementTileToRegion.get(`${a.x + dx},${a.y + dy}`);
+            if (reg) { const d = dx * dx + dy * dy; if (d < bestD) { bestD = d; best = reg; } }
+          }
+        }
+        if (best) cmdToLiveRegion.set(a.commanderUuid, best);
       }
     }
     const deadUuids = liveDeadCharUuids.current;
@@ -3381,6 +4235,13 @@ function App() {
       // Wall-clock stamp of the latest snapshot — drives the "loaded Xm ago"
       // label, lets the user notice if the watcher's gone quiet.
       setSaveLoadedAt(Date.now());
+      // [save-snapshot] diagnostic — confirms what cracker-extra data each live
+      // snapshot actually carries, so "treasury stays at descr_strat 10k" can be
+      // traced: a 239-record snapshot should land treas/owners; an empty one
+      // (treas=0) must NOT clobber a good prior value (see guards below).
+      try {
+        console.log(`[save-snapshot] file="${file}" treas=${Array.isArray(data?.factionTreasuries) ? data.factionTreasuries.length : "none"} owners=${Array.isArray(data?.factionRecordOwners) ? data.factionRecordOwners.length : "none"} income=${data?.incomeByCity ? Object.keys(data.incomeByCity).length : "none"} diplo=${data?.allFactionDiplomacy ? Object.keys(data.allFactionDiplomacy).length : "none"}`);
+      } catch {}
       // Clear the assault-wiped-settlements list on every save refresh.
       // The wipe was added in 0.9.267 to drop a defender's units from the
       // captured-settlement's panel during the live moment between the
@@ -3410,13 +4271,60 @@ function App() {
       if (data && data.saveHeader) setSaveHeader(data.saveHeader);
       if (data && data.factionDiscovered) setFactionDiscovered(data.factionDiscovered);
       if (data && data.factionDiplomacy) setFactionDiplomacy(data.factionDiplomacy);
-      if (data && data.factionTreasuries) setFactionTreasuries(data.factionTreasuries);
-      if (data && data.factionRecordOwners) setFactionRecordOwners(data.factionRecordOwners);
+      if (data && data.allFactionDiplomacy) setAllFactionDiplomacy(data.allFactionDiplomacy);
+      if (data && data.diplomacyMatrix) setDiplomacyMatrix(data.diplomacyMatrix);
+      if (data && data.treasuryHistory) setTreasuryHistory(data.treasuryHistory);
+      // Only overwrite when the snapshot actually carries records. An empty
+      // array is truthy, so the old `if (data.factionTreasuries)` guard let a
+      // 0-record snapshot wipe a good 239-record parse (leaving the player's
+      // treasury stuck on the descr_strat starting-cash fallback). Require a
+      // non-empty array so a good parse sticks and partial snapshots can't clobber.
+      if (data && Array.isArray(data.factionTreasuries) && data.factionTreasuries.length > 0) setFactionTreasuries(data.factionTreasuries);
+      if (data && Array.isArray(data.factionRecordOwners) && data.factionRecordOwners.length > 0) setFactionRecordOwners(data.factionRecordOwners);
       if (data && data.factionConfig) setFactionConfig(data.factionConfig);
       if (data && data.modInfo) setModInfo(data.modInfo);
       if (data && data.characterExtras) setCharacterExtras(data.characterExtras);
+      if (data && data.v1PortraitsByCoord) setV1PortraitsByCoord(data.v1PortraitsByCoord);
       if (data && data.familyTreeMaps) setFamilyTreeMaps(data.familyTreeMaps);
-      if (data && data.charactersByRegion) setSaveCharactersByRegion(data.charactersByRegion);
+      if (data && data.charactersByRegion) {
+        setSaveCharactersByRegion(data.charactersByRegion);
+        // 0.9.423: auto-cache stats from any save load so non-live mode
+        // can show real numbers instead of trait-effect estimates. Cache
+        // key includes turn so we know if it's a turn-0 (starting-stats)
+        // snapshot or a mid-campaign one — UI prefers turn-0 when both
+        // are present.
+        const turn = data.currentTurn != null ? Number(data.currentTurn) : null;
+        const updates = {};
+        for (const list of Object.values(data.charactersByRegion)) {
+          for (const c of (list || [])) {
+            if (c.command == null && c.influence == null && c.management == null) continue;
+            const entry = {
+              command: c.command, influence: c.influence,
+              management: c.management, loyalty: c.loyalty,
+              turn,
+            };
+            const fnNorm = (c.firstName || "").toLowerCase();
+            const lnNorm = (c.lastName || "").replace(/_/g, " ").toLowerCase();
+            const facNorm = (c.faction || "").toLowerCase();
+            updates[`${fnNorm}|${lnNorm}|${facNorm}`] = entry;
+            updates[`${fnNorm}||${facNorm}`] = entry;
+          }
+        }
+        if (Object.keys(updates).length > 0) {
+          setStatsCache((prev) => {
+            const next = { ...prev };
+            for (const [k, v] of Object.entries(updates)) {
+              const cur = next[k];
+              // Prefer turn-0 entries; otherwise newest write wins.
+              if (!cur || (cur.turn != null && cur.turn > 0 && v.turn === 0) || cur.turn == null) {
+                next[k] = v;
+              }
+            }
+            try { localStorage.setItem("statsCache", JSON.stringify(next)); } catch {}
+            return next;
+          });
+        }
+      }
       if (data && data.unitsByRegion) setSaveUnitsByRegion(data.unitsByRegion);
       if (data && data.scriptedByFaction) setSaveScriptedByFaction(data.scriptedByFaction);
       if (data && data.currentYear != null) setSaveCurrentYear(data.currentYear);
@@ -3431,12 +4339,19 @@ function App() {
       if (data && data.recruitingByCity) setRecruitingByCity(data.recruitingByCity);
       if (data && data.buildingQueueByCity) setBuildingQueueByCity(data.buildingQueueByCity);
       if (data && data.initialOwnerByCity) setInitialOwnerByCity(data.initialOwnerByCity);
+      if (data && data.initialCreatorByCity) setInitialCreatorByCity(data.initialCreatorByCity);
       if (data && data.currentOwnerByCity) setCurrentOwnerByCity(data.currentOwnerByCity);
       if (file) setLiveSaveFile(file);
       // Re-detect faction on every save — catches campaign switches while live
       // mode stays active (e.g. user quits Dummies and loads a Julii save).
       if (file) {
-        const match = detectFactionFromSaveName(file);
+        let match = detectFactionFromSaveName(file);
+        // Fallback: identifyPlayerFactionFromSave() (0.9.407+) extracts the
+        // player's faction internal name straight from save bytes — used when
+        // the save name doesn't include a recognizable faction string.
+        if (!match && data && data.savePlayerFaction) {
+          match = data.savePlayerFaction;
+        }
         if (match && match !== playerFactionRef.current) {
           setPlayerFaction(match);
           try { localStorage.setItem("playerFaction", match); } catch {}
@@ -3466,7 +4381,40 @@ function App() {
         if (d.treasuryByFaction) setSaveTreasuryRecords(d.treasuryByFaction);
         // New parser outputs were missing from the initial-load path — until
         // the user triggered a save, Units / Built / Queued stayed empty.
-        if (d.charactersByRegion) setSaveCharactersByRegion(d.charactersByRegion);
+        if (d.charactersByRegion) {
+          setSaveCharactersByRegion(d.charactersByRegion);
+          // Same auto-cache as the watcher path (0.9.423).
+          const turn = d.currentTurn != null ? Number(d.currentTurn) : null;
+          const updates = {};
+          for (const list of Object.values(d.charactersByRegion)) {
+            for (const c of (list || [])) {
+              if (c.command == null && c.influence == null && c.management == null) continue;
+              const entry = {
+                command: c.command, influence: c.influence,
+                management: c.management, loyalty: c.loyalty,
+                turn,
+              };
+              const fnNorm = (c.firstName || "").toLowerCase();
+              const lnNorm = (c.lastName || "").replace(/_/g, " ").toLowerCase();
+              const facNorm = (c.faction || "").toLowerCase();
+              updates[`${fnNorm}|${lnNorm}|${facNorm}`] = entry;
+              updates[`${fnNorm}||${facNorm}`] = entry;
+            }
+          }
+          if (Object.keys(updates).length > 0) {
+            setStatsCache((prev) => {
+              const next = { ...prev };
+              for (const [k, v] of Object.entries(updates)) {
+                const cur = next[k];
+                if (!cur || (cur.turn != null && cur.turn > 0 && v.turn === 0) || cur.turn == null) {
+                  next[k] = v;
+                }
+              }
+              try { localStorage.setItem("statsCache", JSON.stringify(next)); } catch {}
+              return next;
+            });
+          }
+        }
         if (d.unitsByRegion) setSaveUnitsByRegion(d.unitsByRegion);
         if (d.scriptedByFaction) setSaveScriptedByFaction(d.scriptedByFaction);
         if (d.currentYear != null) setSaveCurrentYear(d.currentYear);
@@ -3480,11 +4428,35 @@ function App() {
         if (d.recruitingByCity) setRecruitingByCity(d.recruitingByCity);
         if (d.buildingQueueByCity) setBuildingQueueByCity(d.buildingQueueByCity);
         if (d.initialOwnerByCity) setInitialOwnerByCity(d.initialOwnerByCity);
+        if (d.initialCreatorByCity) setInitialCreatorByCity(d.initialCreatorByCity);
         if (d.currentOwnerByCity) setCurrentOwnerByCity(d.currentOwnerByCity);
+        // Cracker-extras were ONLY wired into the onSaveSnapshot (file-change)
+        // handler, never the initial live-load path — so on first Live load the
+        // treasury, diplomacy, etc. stayed null/stale (player treasury fell back
+        // to descr_strat 10,000 d) until the user ended a turn and wrote a new
+        // save. Mirror them here so they're populated immediately.
+        if (d.saveHeader) setSaveHeader(d.saveHeader);
+        if (d.factionDiscovered) setFactionDiscovered(d.factionDiscovered);
+        if (d.factionDiplomacy) setFactionDiplomacy(d.factionDiplomacy);
+        if (d.allFactionDiplomacy) setAllFactionDiplomacy(d.allFactionDiplomacy);
+        if (d.diplomacyMatrix) setDiplomacyMatrix(d.diplomacyMatrix);
+        if (d.treasuryHistory) setTreasuryHistory(d.treasuryHistory);
+        if (Array.isArray(d.factionTreasuries) && d.factionTreasuries.length > 0) setFactionTreasuries(d.factionTreasuries);
+        if (Array.isArray(d.factionRecordOwners) && d.factionRecordOwners.length > 0) setFactionRecordOwners(d.factionRecordOwners);
+        if (d.factionConfig) setFactionConfig(d.factionConfig);
+        if (d.modInfo) setModInfo(d.modInfo);
+        if (d.characterExtras) setCharacterExtras(d.characterExtras);
+        if (d.v1PortraitsByCoord) setV1PortraitsByCoord(d.v1PortraitsByCoord);
+        if (d.familyTreeMaps) setFamilyTreeMaps(d.familyTreeMaps);
+        console.log(`[live-init] cracker-extras: treas=${Array.isArray(d.factionTreasuries) ? d.factionTreasuries.length : "none"} owners=${Array.isArray(d.factionRecordOwners) ? d.factionRecordOwners.length : "none"} diplo=${d.allFactionDiplomacy ? Object.keys(d.allFactionDiplomacy).length : "none"}`);
       }
       if (result?.baseline) setLiveSaveFile(result.baseline);
       if (result?.baseline) {
-        const match = detectFactionFromSaveName(result.baseline);
+        let match = detectFactionFromSaveName(result.baseline);
+        // Fallback: save-derived player faction (0.9.407+).
+        if (!match && result.initialData && result.initialData.savePlayerFaction) {
+          match = result.initialData.savePlayerFaction;
+        }
         if (match && match !== playerFactionRef.current) {
           setPlayerFaction(match);
           try { localStorage.setItem("playerFaction", match); } catch {}
@@ -3858,13 +4830,36 @@ function App() {
       .catch(() => setResourcesData({}));
   }, [loadCampaignData, mapCampaign]);
 
-  // Load homelands data (shared across campaigns)
+  // Load homelands data. 0.9.465: prefer LIVE data parsed from the
+  // active mod's EDB alias blocks (via `getModHomelands` IPC); the
+  // bundled `homelands.json` is a stale fallback for browser builds and
+  // when the IPC bridge isn't ready yet. Live keeps RIS's actual mapping
+  // (antigonid → ["homeland_macedonian"] shared with seleucid/ptolemaic)
+  // in sync regardless of when the bundle was last regenerated.
   useEffect(() => {
-    fetch((import.meta.env.BASE_URL || "./") + "/homelands.json")
-      .then(r => r.json())
-      .then(d => setHomelandsData(d))
-      .catch(() => setHomelandsData({}));
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        if (window.electronAPI?.getModHomelands) {
+          const live = await window.electronAPI.getModHomelands();
+          if (!cancelled && live && Object.keys(live).length > 0) {
+            console.log(`[homelands] using LIVE EDB-parsed data for ${Object.keys(live).length} factions`);
+            setHomelandsData(live);
+            return;
+          }
+        }
+      } catch (e) { console.warn("[homelands] live load failed:", e?.message); }
+      try {
+        const r = await fetch((import.meta.env.BASE_URL || "./") + "/homelands.json");
+        const d = await r.json();
+        if (!cancelled) {
+          console.log(`[homelands] falling back to bundled JSON (${Object.keys(d || {}).length} factions)`);
+          setHomelandsData(d);
+        }
+      } catch { if (!cancelled) setHomelandsData({}); }
+    })();
+    return () => { cancelled = true; };
+  }, [modDataDir]);
 
   // Load actual settlement population data
   useEffect(() => {
@@ -3969,6 +4964,45 @@ function App() {
           break;
         }
       }
+      // 0.9.441: dev-mode building override takes precedence over bundled
+      // staticBuildings. The user's edits (via the trait/ancillary/building
+      // editor in the right-click info panel + buildings widget) write to
+      // descr_strat.txt and ALSO populate this in-memory override so the UI
+      // reflects the change without needing a mod re-load. The override is a
+      // bare [{type, level}] list — getBuildings runs the full resolution
+      // pipeline (icon prefetch, label, tier, culture) over it, so upgraded
+      // chains pick up the right new-tier artwork on the next render.
+      if (editedBuildingsByRegion && regionInfo.region) {
+        const override = editedBuildingsByRegion.get(regionInfo.region.toLowerCase());
+        if (Array.isArray(override) && override.length > 0) {
+          // 0.9.442: preserve any fields the user's override carries (type,
+          // level + anything else passed up) and fall back to the bundled
+          // staticBuildings entry's fields for unset ones. This keeps the
+          // post-resolution culture / icon / display name lookups happy even
+          // when the override entry is bare {type, level}.
+          const staticByChain = new Map();
+          for (const b of staticBuildings) {
+            if (b?.type) staticByChain.set(b.type.toLowerCase(), b);
+          }
+          staticBuildings = override.map((ov) => {
+            const base = ov.type ? staticByChain.get(ov.type.toLowerCase()) : null;
+            return base ? { ...base, ...ov } : ov;
+          });
+          // 0.9.448: throttle the override-log so it fires once per (region,
+          // signature) pair, not on every icon-prefetch re-render. The
+          // signature compresses the full list to one comma-joined string;
+          // a new edit changes it, a re-render with the same edit doesn't.
+          if (typeof window !== "undefined") {
+            window.__buildingOverrideLogged ||= new Map();
+            const sig = override.map((b) => `${b.type}:${b.level}`).join(",");
+            const key = regionInfo.region.toLowerCase();
+            if (window.__buildingOverrideLogged.get(key) !== sig) {
+              window.__buildingOverrideLogged.set(key, sig);
+              console.log(`[building-edit] applying override for region=${regionInfo.region} count=${override.length} → ${staticBuildings.length} merged static entries`);
+            }
+          }
+        }
+      }
 
       // Save-file building merge (as of 2026-04-20, parser is reliable).
       // The buildingParser.js inverted-block model correctly identifies each
@@ -3980,7 +5014,22 @@ function App() {
         ? builtBuildingsByCity[cityKey] : null;
 
       let merged = [...staticBuildings];
-      if (saveChains && saveChains.length > 0) {
+      // Guard against the building parser bleeding an adjacent settlement's
+      // chains into this one (inverse-block boundary error). A settlement can
+      // only have ONE temple_complex chain (its culture's); 2+ means two
+      // settlements' records were merged, so the save list is corrupt — fall
+      // back to descr_strat, which is also the correct answer for an unchanged /
+      // besieged settlement. Verified: Brundisium was showing the neighbouring
+      // Arcadian city's temple + theatres + sewers on top of its own buildings.
+      const templeCount = (saveChains || []).filter((e) => {
+        const n = typeof e === "string" ? e : e.name;
+        return n && n.startsWith("temple_complex");
+      }).length;
+      const saveChainsCorrupt = templeCount > 1;
+      if (saveChainsCorrupt) {
+        console.warn(`[buildings] ${regionInfo.region}/${cityKey}: save parse has ${templeCount} temple chains (adjacent-settlement bleed) — using descr_strat instead`);
+      }
+      if (saveChains && saveChains.length > 0 && !saveChainsCorrupt) {
         // Chains present in save = CURRENTLY BUILT. Chains absent = demolished
         // or never built. Replace the static list with save-derived chains
         // using save-derived levels (so upgrades reflect; static data alone
@@ -4012,6 +5061,21 @@ function App() {
           }
         }
       }
+
+      // [bld-dbg] one dump per region (signature-gated) so live-mode building
+      // mismatches can be traced from provincia.log: shows the static
+      // (descr_strat) set, the live save-parsed set, and the merged result.
+      try {
+        window.__bldDbg ||= new Map();
+        const sig = `${liveLogActive}|${merged.map((b) => `${b.type}:${b.level}`).join(",")}`;
+        if (regionInfo.city && window.__bldDbg.get(regionInfo.region) !== sig) {
+          window.__bldDbg.set(regionInfo.region, sig);
+          console.log(`[bld-dbg] ${regionInfo.region}/${cityKey} liveLogActive=${liveLogActive} static=${staticBuildings.length} saveChains=${saveChains ? saveChains.length : "null"} merged=${merged.length}`);
+          console.log(`[bld-dbg]   static: ${staticBuildings.map((b) => `${b.type}=${b.level}`).join(", ")}`);
+          if (saveChains) console.log(`[bld-dbg]   save:   ${saveChains.map((e) => (typeof e === "string" ? e : `${e.name}=L${e.level}`)).join(", ")}`);
+          console.log(`[bld-dbg]   merged: ${merged.map((b) => `${b.type}=${b.level}`).join(", ")}`);
+        }
+      } catch {}
 
       if (raw) return merged;
 
@@ -4151,12 +5215,19 @@ function App() {
       // icon with an orange frame + green progress overlay instead of the
       // old tier's icon — matches how the game itself surfaces upgrades
       // in the construction queue.
-      const queuedChains = (liveLogActive && queuedBuildingsByCity && cityKey)
+      // In-progress upgrades: a queued upgrade must NOT replace the building in
+      // the Buildings list — the settlement keeps its CURRENT building until
+      // construction finishes. Collect the upgrade targets separately so the
+      // Build queue section can show them ("Trader → Market, 4 turns left").
+      // Skipped for corrupt save blocks (their queue data is unreliable too).
+      const queuedChains = (liveLogActive && queuedBuildingsByCity && cityKey && !saveChainsCorrupt)
         ? queuedBuildingsByCity[cityKey] : null;
+      const queuedUpgrades = [];
       if (queuedChains && queuedChains.length > 0 && culture) {
         for (const entry of queuedChains) {
           const chainName = typeof entry === "string" ? entry : entry.name;
           const percent = typeof entry === "object" && entry && typeof entry.percent === "number" ? entry.percent : null;
+          const turnsRemaining = typeof entry === "object" && entry && typeof entry.turnsRemaining === "number" ? entry.turnsRemaining : null;
           const chainLevels = buildingLevelsLookup?.[chainName] || null;
           const rowIdx = resolved.findIndex((b) => b.type === chainName);
           const currLevel = rowIdx >= 0 ? resolved[rowIdx].level : null;
@@ -4181,7 +5252,7 @@ function App() {
           }
           if (!tLabel) tLabel = targetLevelName.replace(/_/g, " ");
           const tIcon = getCachedBuildingIcon(culture, targetLevelName);
-          const row = {
+          queuedUpgrades.push({
             type: chainName,
             level: targetLevelName,
             label: tLabel,
@@ -4189,13 +5260,16 @@ function App() {
             tier: targetTier,
             queued: true,
             progress: percent != null ? percent / 100 : 0,
+            percent,
+            turnsRemaining,
+            fromLabel: rowIdx >= 0 ? (resolved[rowIdx].label || resolved[rowIdx].level) : null,
             culture,
-          };
-          if (rowIdx >= 0) resolved[rowIdx] = row; else resolved.push(row);
+          });
         }
       }
+      resolved.queuedUpgrades = queuedUpgrades;
       return resolved;
-  }, [buildingsData, builtBuildingsByCity, liveLogActive, buildingLevelsLookup, buildingDisplayNames, HIDDEN_CHAINS, modDataDir, iconCacheVersion, gameDisplayNames, factionCultures, currentOwnerByCity, initialOwnerByCity, queuedBuildingsByCity]);
+  }, [buildingsData, builtBuildingsByCity, liveLogActive, buildingLevelsLookup, buildingDisplayNames, HIDDEN_CHAINS, modDataDir, iconCacheVersion, gameDisplayNames, factionCultures, currentOwnerByCity, initialOwnerByCity, queuedBuildingsByCity, editedBuildingsByRegion]);
   // Keep the legacy module-level getter in sync for any code that still calls it.
   useEffect(() => { setBuildingsGetter(getBuildings); }, [getBuildings]);
 
@@ -4371,11 +5445,20 @@ function App() {
           return next;
         });
       }
-      // Ctrl+Z: undo
+      // Ctrl+Z: undo. Prefer reverting the most recent STAGED dev edit (building,
+      // general move, age/rank, trait, ancillary, diplomacy, resource, VC) — that's
+      // what the user is actively doing — then fall back to the region/resource
+      // snapshot undo when nothing is staged.
       if (e.ctrlKey && !e.shiftKey && e.key === "z") {
         if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
         e.preventDefault();
-        popUndo();
+        if (pendingLog.length > 0) {
+          const last = pendingLog[pendingLog.length - 1];
+          revertOnePending(last.id);
+          pushToast(`Reverted: ${last.description || "last edit"}`, "info", 3000);
+        } else {
+          popUndo();
+        }
       }
       // Ctrl+Shift+Z or Ctrl+Y: redo
       if ((e.ctrlKey && e.shiftKey && e.key === "Z") || (e.ctrlKey && !e.shiftKey && e.key === "y")) {
@@ -4386,7 +5469,23 @@ function App() {
     };
     window.addEventListener("keydown", devHandler);
     return () => window.removeEventListener("keydown", devHandler);
-  }, [popUndo, popRedo]);
+  }, [popUndo, popRedo, pendingLog, revertOnePending, pushToast]);
+
+  // Cmd+K / Ctrl+K toggle for the search-everywhere palette. Both
+  // platforms; Ctrl+K is currently unused (Ctrl+F focuses the sidebar
+  // search, Ctrl+Z/Y are undo/redo, Ctrl+Shift+D is dev mode). Works
+  // even from inside input fields so the user can re-toggle without
+  // first blurring.
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setSearchOpen((p) => !p);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Click-away to close Load menu
   useEffect(() => {
@@ -4526,6 +5625,92 @@ function App() {
             const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
             return [Math.max(0,Math.min(255,baseCol[0]+v)), Math.max(0,Math.min(255,baseCol[1]+v)), Math.max(0,Math.min(255,baseCol[2]+v))];
           }));
+      } else if (colorMode === "aor") {
+        // 0.9.486: AOR map mode. Each region's `aor_X` tags are turned
+        // into a color set; the FIRST AOR fills the region, and any
+        // additional AORs overlay as diagonal stripes (cycling through
+        // their colors) at the same hi-res scale used by the cultures-
+        // mode ethnicity stripes. Regions with no AOR fall back to a
+        // muted neutral. Palette is shared with cultures so the visual
+        // language matches.
+        const aorColors = {};
+        let ai = 0;
+        const aorByRegionKey = {};
+        for (const [key, r] of Object.entries(regions)) {
+          const list = getAors(r.tags);
+          if (list.length === 0) continue;
+          for (const a of list) {
+            if (!aorColors[a]) {
+              aorColors[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
+              ai++;
+            }
+          }
+          aorByRegionKey[key] = list;
+        }
+        console.log(`[aor] palette built: ${Object.keys(aorColors).length} unique AORs across ${Object.keys(aorByRegionKey).length} regions`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
+          (r, pr, pg, pb) => {
+            const rgbKey = `${pr},${pg},${pb}`;
+            const list = aorByRegionKey[rgbKey];
+            const base = (list && list.length > 0)
+              ? aorColors[list[0]]
+              : [80, 75, 70]; // muted neutral for regions with no AOR
+            if (devFlatColors) return base;
+            const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
+            return [
+              Math.max(0, Math.min(255, base[0] + v)),
+              Math.max(0, Math.min(255, base[1] + v)),
+              Math.max(0, Math.min(255, base[2] + v)),
+            ];
+          }));
+        // Stripe overlay for multi-AOR regions — same hi-res diagonal
+        // pattern as cultures-mode ethnicities. For regions with 3+ AORs
+        // we cycle through colors based on diagonal phase so all AORs
+        // show up rather than just the first two.
+        const multiAor = Object.entries(aorByRegionKey).filter(([, l]) => l.length >= 2);
+        if (multiAor.length > 0) {
+          const S = 8;
+          const sW = W * S, sH = H * S;
+          const PERIOD = 48;
+          const HALF = 4;
+          const stripeCanvas = document.createElement("canvas");
+          stripeCanvas.width = sW; stripeCanvas.height = sH;
+          const sCtx = stripeCanvas.getContext("2d");
+          const sImg = sCtx.createImageData(sW, sH);
+          const sd = sImg.data;
+          const multiSet = new Map(multiAor); // rgbKey → AOR list
+          for (let y = 0; y < H; y++) {
+            for (let x = 0; x < W; x++) {
+              const i = (y * W + x) * 4;
+              const key = `${pxData[i]},${pxData[i+1]},${pxData[i+2]}`;
+              const list = multiSet.get(key);
+              if (!list || list.length < 2) continue;
+              for (let sy = 0; sy < S; sy++) {
+                for (let sx = 0; sx < S; sx++) {
+                  const hx = x * S + sx, hy = y * S + sy;
+                  const diag = (hx * 2 + hy) / Math.sqrt(5);
+                  const pos = ((diag % PERIOD) + PERIOD) % PERIOD;
+                  const dist = Math.abs(pos - PERIOD / 2);
+                  if (dist < HALF) {
+                    // Pick which non-primary AOR's color to use based on
+                    // the stripe-band index (so regions with 3+ AORs
+                    // show all of them in rotation, not just the second).
+                    const bandIdx = Math.floor(diag / PERIOD) % (list.length - 1);
+                    const colorAor = list[1 + bandIdx];
+                    const col = aorColors[colorAor] || [200, 200, 200];
+                    const di = (hy * sW + hx) * 4;
+                    sd[di] = col[0]; sd[di+1] = col[1]; sd[di+2] = col[2]; sd[di+3] = 230;
+                  }
+                }
+              }
+            }
+          }
+          sCtx.putImageData(sImg, 0, 0);
+          setStripeOverlay(stripeCanvas);
+          console.log(`[aor] stripe overlay drawn for ${multiAor.length} multi-AOR regions`);
+        } else {
+          setStripeOverlay(null);
+        }
       } else if (colorMode === "culture") {
         const cultureColors = {};
         let ci = 0;
@@ -4652,32 +5837,58 @@ function App() {
           ];
         }));
       } else if (colorMode === "loyalist") {
-        // Loyalist mode: colour every region by its `descr_regions` faction
-        // (field 3 = who takes the settlement on rebellion). Reveals the
-        // shadow map of latent claims under current ownership.
+        // Loyalist map mode (0.9.437 rewrite):
         //
-        // Cross-check against descr_strat's `faction_creator` (= the
-        // initial turn-0 owner, available via initialOwnerByCity). When
-        // rebel_default ≠ faction_creator the loyalist revolt is
-        // misconfigured — the settlement would defect to the wrong
-        // faction on rebellion. MATCH regions get full saturation;
-        // MISMATCH regions are mixed toward grey (45 % of original
-        // colour + grey base) so they're visibly dimmed but still keyed
-        // to the rebel-default colour.
-        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          const rebelFac = (r.faction || "").toLowerCase();
-          const fc = rebelFac && factionColors[rebelFac];
-          const base = (fc && fc.primary) || [110, 110, 110];
-          const creator = ((initialOwnerByCity && initialOwnerByCity[r.city]) || "").toLowerCase();
-          const isMatch = !!creator && creator === rebelFac;
-          let final = base;
-          if (!isMatch) {
-            final = [
-              Math.round(base[0] * 0.45 + 60),
-              Math.round(base[1] * 0.45 + 60),
-              Math.round(base[2] * 0.45 + 60),
-            ];
+        // A region is "loyalist" when its TWO independent rebel-default
+        // declarations agree:
+        //   - descr_regions field 3 (= the faction the settlement spawns
+        //     for on rebellion; also the bundled `r.faction` value)
+        //   - descr_strat `faction_creator` (= the settlement's homeland
+        //     faction even if currently owned by someone else)
+        //
+        // Both are independent statements about who SHOULD own this
+        // settlement. When they match, the region is genuinely loyal to
+        // that faction — paint in its colour. When they disagree, it's a
+        // contested or mis-flagged settlement — paint grey.
+        //
+        // The `regions` overlay (further up) overwrites `r.faction` with
+        // the descr_strat current owner, which would destroy the descr_
+        // regions signal. We snapshot the original into `r.rebelDefault`
+        // there so we can still read it here.
+        //
+        // Emergent factions (no starting settlements in descr_strat) +
+        // settlements with no recorded creator still paint as match —
+        // greying them would erase the entire emergent-faction shadow map.
+        const REBEL_GREY = [110, 110, 110];
+        const startingFactions = new Set();
+        if (initialOwnerByCity) {
+          for (const f of Object.values(initialOwnerByCity)) {
+            if (f) startingFactions.add(String(f).toLowerCase());
           }
+        }
+        // 0.9.437: log once per render so we can diagnose mismatches from
+        // the field. Sample size is the count of regions we have a creator
+        // for vs total regions with a rebel-default.
+        const creatorMap = initialCreatorByCity || {};
+        const sampleSize = Object.keys(regions || {}).length;
+        const creatorCount = Object.keys(creatorMap).length;
+        console.log(`[loyalist] paint pass: regions=${sampleSize} creators=${creatorCount} startingFactions=${startingFactions.size}`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          // descr_regions field 3 — preserved by the overlay as
+          // `rebelDefault`; falls back to `r.faction` for any region that
+          // somehow missed the snapshot pass.
+          const rebelFac = ((r.rebelDefault || r.faction) || "").toLowerCase();
+          const fc = rebelFac && factionColors[rebelFac];
+          const base = (fc && fc.primary) || REBEL_GREY;
+          // descr_strat faction_creator — the per-settlement rebel-default
+          // from the strat file (distinct from initialOwnerByCity which is
+          // the parent-faction current owner).
+          const creator = ((creatorMap[r.city]) || "").toLowerCase();
+          // 0.9.439: strict equality only. If descr_regions field 3 and
+          // descr_strat faction_creator disagree (e.g. Sikelia → italics vs
+          // capua), the region paints grey. No emergent / no-creator pass.
+          const isMatch = !!(creator && creator === rebelFac);
+          const final = isMatch ? base : REBEL_GREY;
           if (devFlatColors) return final;
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.8;
           return [
@@ -4774,7 +5985,12 @@ function App() {
         const score = (r) => {
           let s = 0;
           const resList = resourcesData[r.region] || resourcesData[r.city] || [];
-          for (const x of resList) s += (x.amount || 1);
+          // Trade goods only — slaves and ambience don't generate income.
+          for (const x of resList) {
+            const cat = x.category || "trade";
+            if (cat !== "trade") continue;
+            s += (x.amount || 1);
+          }
           const farm = parseInt(r.farm_level || "0", 10) || 0;
           s += farm * 2;
           const portM = String(r.tags || "").match(/\bbase_port_level_(\d+)\b/);
@@ -4877,11 +6093,201 @@ function App() {
             Math.max(0, Math.min(255, blue + v)),
           ];
         }));
+      } else if (colorMode === "garrison") {
+        // Heatmap of garrison soldier counts per region. Sums all units
+        // currently bucketed under a region by the save parser
+        // (commander-less defenders + units whose commander sits on the
+        // settlement tile). saveArmiesData is the legacy flat map keyed
+        // by region and city — adequate for a coarse heatmap; the
+        // precise garrison vs field-army split is only available inside
+        // RegionInfo's per-region pipeline. No-data regions render as
+        // neutral gray.
+        const GREY = [70, 70, 70];
+        const sumSoldiers = (arr) => {
+          if (!Array.isArray(arr)) return 0;
+          let s = 0;
+          for (const u of arr) s += (u.soldiers || 0);
+          return s;
+        };
+        const garrisonByRgb = new Map();
+        let minV = Infinity, maxV = 0, withData = 0;
+        if (saveArmiesData) {
+          for (const [k, r] of Object.entries(regions)) {
+            const arr = saveArmiesData[r.region] || saveArmiesData[r.city];
+            const total = sumSoldiers(arr);
+            if (total > 0) {
+              garrisonByRgb.set(k, total);
+              if (total < minV) minV = total;
+              if (total > maxV) maxV = total;
+              withData++;
+            }
+          }
+        }
+        const hasAnyData = withData > 0;
+        if (!hasAnyData) minV = 0;
+        console.log(`[heatmap] mode garrison: range min=${minV} max=${maxV} (${withData} regions with data)`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          if (!hasAnyData) return GREY;
+          const k = `${pr},${pg},${pb}`;
+          const total = garrisonByRgb.get(k);
+          if (!total) return GREY;
+          const span = Math.max(1, maxV - minV);
+          const t = Math.min(1, Math.max(0, (total - minV) / span));
+          // Dark navy → muted teal → bright gold
+          let red, green, blue;
+          if (t < 0.5) {
+            const u = t * 2;
+            red   = Math.round(20 + u * (60 - 20));
+            green = Math.round(35 + u * (150 - 35));
+            blue  = Math.round(90 + u * (140 - 90));
+          } else {
+            const u = (t - 0.5) * 2;
+            red   = Math.round(60 + u * (240 - 60));
+            green = Math.round(150 + u * (200 - 150));
+            blue  = Math.round(140 + u * (40 - 140));
+          }
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          return [
+            Math.max(0, Math.min(255, red + v)),
+            Math.max(0, Math.min(255, green + v)),
+            Math.max(0, Math.min(255, blue + v)),
+          ];
+        }));
+      } else if (colorMode === "happiness" || colorMode === "public_order") {
+        // Happiness and public order are red→yellow→green gradients over
+        // saveHappinessByCity (f32 at settlement.offset-30, raw 100..200
+        // scale per the save-cracker). Public order ≈ happiness in RTW
+        // today; the modes are kept separate so a future dedicated
+        // public-order source (e.g. parsed from a different settlement
+        // byte) can swap in here without touching callers.
+        const GREY = [70, 70, 70];
+        const happByRgb = new Map();
+        let minV = Infinity, maxV = -Infinity, withData = 0;
+        if (saveHappinessByCity) {
+          for (const [k, r] of Object.entries(regions)) {
+            const v = saveHappinessByCity[r.city];
+            if (typeof v === "number") {
+              happByRgb.set(k, v);
+              if (v < minV) minV = v;
+              if (v > maxV) maxV = v;
+              withData++;
+            }
+          }
+        }
+        const hasAnyData = withData > 0;
+        if (!hasAnyData) { minV = 0; maxV = 0; }
+        console.log(`[heatmap] mode ${colorMode}: range min=${minV} max=${maxV} (${withData} regions with data)`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          if (!hasAnyData) return GREY;
+          const k = `${pr},${pg},${pb}`;
+          const val = happByRgb.get(k);
+          if (typeof val !== "number") return GREY;
+          const span = Math.max(0.001, maxV - minV);
+          const t = Math.min(1, Math.max(0, (val - minV) / span));
+          // Red (sad) → yellow → green (happy)
+          let red, green, blue;
+          if (t < 0.5) {
+            const u = t * 2;
+            red   = Math.round(210 + u * (230 - 210));
+            green = Math.round(40 + u * (200 - 40));
+            blue  = 40;
+          } else {
+            const u = (t - 0.5) * 2;
+            red   = Math.round(230 + u * (50 - 230));
+            green = Math.round(200 + u * (190 - 200));
+            blue  = 40;
+          }
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          return [
+            Math.max(0, Math.min(255, red + v)),
+            Math.max(0, Math.min(255, green + v)),
+            Math.max(0, Math.min(255, blue + v)),
+          ];
+        }));
+      } else if (colorMode === "income") {
+        // Per-turn income heatmap. Prefer the live save-parser value
+        // (saveIncomeByCity, { perTurn, cumulative }); fall back to the
+        // descr_strat-derived wealth proxy (same formula as the wealth
+        // mode) so the map still has a meaningful spread when the live
+        // income field hasn't loaded yet or the user hasn't opened a save.
+        const GREY = [70, 70, 70];
+        const incomeByRgb = new Map();
+        let minV = Infinity, maxV = -Infinity, withData = 0;
+        const liveAvailable = saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0;
+        if (liveAvailable) {
+          for (const [k, r] of Object.entries(regions)) {
+            const entry = saveIncomeByCity[r.city];
+            if (entry && typeof entry.perTurn === "number") {
+              incomeByRgb.set(k, entry.perTurn);
+              if (entry.perTurn < minV) minV = entry.perTurn;
+              if (entry.perTurn > maxV) maxV = entry.perTurn;
+              withData++;
+            }
+          }
+        } else {
+          for (const [k, r] of Object.entries(regions)) {
+            let s = 0;
+            const resList = resourcesData[r.region] || resourcesData[r.city] || [];
+            // Trade goods only — slaves/ambience don't drive income.
+            for (const x of resList) {
+              const cat = x.category || "trade";
+              if (cat !== "trade") continue;
+              s += (x.amount || 1);
+            }
+            const farm = parseInt(r.farm_level || "0", 10) || 0;
+            s += farm * 2;
+            const portM = String(r.tags || "").match(/\bbase_port_level_(\d+)\b/);
+            if (portM) s += parseInt(portM[1], 10) * 4;
+            if (s > 0) {
+              incomeByRgb.set(k, s);
+              if (s < minV) minV = s;
+              if (s > maxV) maxV = s;
+              withData++;
+            }
+          }
+        }
+        const hasAnyData = withData > 0;
+        if (!hasAnyData) { minV = 0; maxV = 0; }
+        console.log(`[heatmap] mode income: range min=${minV} max=${maxV} (${withData} regions with data, source=${liveAvailable ? "live" : "estimated"})`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          if (!hasAnyData) return GREY;
+          const k = `${pr},${pg},${pb}`;
+          const val = incomeByRgb.get(k);
+          if (typeof val !== "number") return GREY;
+          const span = Math.max(0.001, maxV - minV);
+          const t = Math.min(1, Math.max(0, (val - minV) / span));
+          // Dark slate → tan → bright gold
+          let red, green, blue;
+          if (t < 0.5) {
+            const u = t * 2;
+            red   = Math.round(50 + u * (190 - 50));
+            green = Math.round(60 + u * (160 - 60));
+            blue  = Math.round(80 + u * (110 - 80));
+          } else {
+            const u = (t - 0.5) * 2;
+            red   = Math.round(190 + u * (255 - 190));
+            green = Math.round(160 + u * (215 - 160));
+            blue  = Math.round(110 + u * (60 - 110));
+          }
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          return [
+            Math.max(0, Math.min(255, red + v)),
+            Math.max(0, Math.min(255, green + v)),
+            Math.max(0, Math.min(255, blue + v)),
+          ];
+        }));
       } else if (colorMode === "homeland") {
-        // Get the selected faction's homeland hidden resources
+        // 0.9.465: four-state coloring per user spec.
+        //   GREEN  — homeland owned by selected faction with correct gov (gov4 / govD)
+        //   YELLOW — homeland NOT owned by selected faction
+        //   RED    — homeland owned but with the WRONG government (anything other than gov4)
+        //   GREY   — not a homeland for the selected faction
+        // homeland membership comes from `homeland_<x>` hidden resources in
+        // descr_regions (loaded into homelandsData[faction]). gov from
+        // descr_strat's `building { type governmentD govN }` line via the
+        // governmentMap (rgbKey → { level: "gov1".."gov4" }).
         const factionKey = (selectedFaction || "").toLowerCase();
         const homelandResources = new Set((homelandsData[factionKey] || []).map(s => s.toLowerCase()));
-        // Build rgbKey → owner faction from descr_strat
         const rgbToOwner = {};
         for (const [faction, regionNames] of Object.entries(factionRegionsMap)) {
           for (const rn of regionNames) {
@@ -4893,15 +6299,26 @@ function App() {
             }
           }
         }
+        const GREY = [70, 70, 70];
+        const GREEN = [50, 180, 50];
+        const YELLOW = [210, 190, 40];
+        const RED = [200, 60, 60];
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           const rgbKey = `${pr},${pg},${pb}`;
           const tags = String(r.tags || "").split(",").map(s => s.trim().toLowerCase());
           const owner = (rgbToOwner[rgbKey] || r.faction || "").toLowerCase();
           const isHomeland = homelandResources.size > 0 && tags.some(t => homelandResources.has(t));
           let base;
-          if (!isHomeland) base = [180, 50, 50];                          // Red: not their homeland
-          else if (owner === factionKey) base = [50, 180, 50];            // Green: homeland they own
-          else base = [210, 190, 40];                                      // Yellow: homeland someone else owns
+          if (!isHomeland) {
+            base = GREY;
+          } else if (owner !== factionKey) {
+            base = YELLOW;
+          } else {
+            // Homeland owned by the selected faction — check gov.
+            const gov = governmentMap && governmentMap[rgbKey];
+            const govLevel = gov && gov.level;
+            base = (govLevel === "gov4") ? GREEN : RED;
+          }
           if (devFlatColors) return base;
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
@@ -5035,7 +6452,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration]);
+  }, [colorMode, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -5121,7 +6538,18 @@ function App() {
         if (!r || !r.city) continue;
         const realOwner = initialOwnerByCity[r.city];
         if (realOwner && realOwner !== r.faction) {
-          next[rgb] = { ...r, faction: realOwner };
+          // 0.9.437: preserve the descr_regions rebel-default (r.faction
+          // before any overlay) as `rebelDefault` so loyalist map mode can
+          // still compare descr_regions field 3 to descr_strat
+          // faction_creator after the overlay clobbers r.faction with
+          // descr_strat's current parent-faction owner.
+          next[rgb] = { ...r, faction: realOwner, rebelDefault: r.rebelDefault || r.faction };
+          touched = true;
+        } else if (r && !r.rebelDefault) {
+          // No overlay change but still snapshot r.faction so the
+          // loyalist branch has a stable source of truth even when the
+          // bundled value matches the strat owner.
+          next[rgb] = { ...r, rebelDefault: r.faction };
           touched = true;
         }
       }
@@ -5170,11 +6598,12 @@ function App() {
   // Music plays on splash whenever the user is going to see the onboarding flow
   // (test builds, or a release build on a first launch where onboarding hasn't
   // been dismissed). Once started it plays to natural end — nothing stops it
-  // when the cards are dismissed. Mute flips .muted/.volume on the live element
-  // (handled in toggleAudioMuted) so unmuting later picks up at the current playhead.
+  // when the cards are dismissed. The VolumeControl's onChange path
+  // (`setVolume`) updates the live element directly, so the slider
+  // reflects in real time while music is playing.
   const [welcomePhase, setWelcomePhase] = useState(null); // still tracked for future use
-  const audioMutedRef = useRef(audioMuted);
-  useEffect(() => { audioMutedRef.current = audioMuted; }, [audioMuted]);
+  const audioVolumeRef = useRef(audioVolume);
+  useEffect(() => { audioVolumeRef.current = audioVolume; }, [audioVolume]);
   const musicStartedRef = useRef(false);
   useEffect(() => {
     if (!showSplash || musicStartedRef.current) return;
@@ -5183,10 +6612,9 @@ function App() {
     musicStartedRef.current = true;
     try {
       const audio = new Audio((import.meta.env.BASE_URL || ".") + "/startup.wav");
-      audioOriginalVolumeRef.current = 0.7;
-      const mutedAtStart = audioMutedRef.current;
-      audio.volume = mutedAtStart ? 0 : audioOriginalVolumeRef.current;
-      audio.muted = mutedAtStart;
+      const v0 = audioVolumeRef.current;
+      audio.volume = v0;
+      audio.muted = v0 <= 0.001;
       currentAudioRef.current = audio;
       audio.addEventListener("ended", () => {
         if (currentAudioRef.current === audio) currentAudioRef.current = null;
@@ -5312,6 +6740,24 @@ function App() {
       if (border) ctx.stroke(border);
     }
     ctx.restore();
+
+    // Hover-highlight: when the user hovers a region entry in the right-hand
+    // province / victory-target list, trace that region's outline in a bright
+    // glowing colour so it's easy to spot on the map.
+    if (hoveredVcKey && borderPaths[hoveredVcKey]) {
+      ctx.save();
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      // Outer glow
+      ctx.strokeStyle = "rgba(255,221,90,0.55)";
+      ctx.lineWidth = 6 / totalScale;
+      ctx.stroke(borderPaths[hoveredVcKey]);
+      // Bright core line
+      ctx.strokeStyle = "#ffdd33";
+      ctx.lineWidth = 2 / totalScale;
+      ctx.stroke(borderPaths[hoveredVcKey]);
+      ctx.restore();
+    }
 
     // Draw resource icons at their actual map coordinates. Active in the
     // dedicated "resource" colorMode AND whenever the Resources overlay
@@ -5447,16 +6893,31 @@ function App() {
         if (army.armyClass === 'navy'     && !showNavies) continue;
         if (typeof army.x !== 'number' || typeof army.y !== 'number') continue;
         const mapY = (imgSize.height - 1) - army.y;
-        const sx = army.x * totalScale + baseOffsetX + offset.x;
-        const sy = mapY * totalScale + baseOffsetY + offset.y;
+        // Staged move (or active drag) — render the marker where the character
+        // WILL spawn after Save, not its current descr_strat tile.
+        const cpKey = `${(army.faction || "").toLowerCase()}|${army.x}|${army.y}`;
+        const cp = pendingCharPos.get(cpKey);
+        // Leaderless garrison: staged relocation / active drag overrides position.
+        const isGarr = army.charType === "garrison" || army._garrisoned;
+        const gKey = isGarr ? `${(army.faction || "").toLowerCase()}|${army.region || army.location || ""}` : null;
+        const gp = gKey ? pendingGarrisonMoves.get(gKey) : null;
+        const garrDragging = isGarr && devDragGarrison && (devDragGarrison.faction || "").toLowerCase() === (army.faction || "").toLowerCase() && (devDragGarrison.region || "") === (army.region || army.location || "");
+        const charDragging = devDragChar && (devDragChar.faction || "").toLowerCase() === (army.faction || "").toLowerCase() && devDragChar.oldX === army.x && devDragChar.oldY === army.y;
+        let drawX = army.x + 0.5, drawMapY = mapY + 0.5;
+        if (charDragging) { drawX = (devDragChar.mx - baseOffsetX - offset.x) / totalScale; drawMapY = (devDragChar.my - baseOffsetY - offset.y) / totalScale; }
+        else if (garrDragging) { drawX = (devDragGarrison.mx - baseOffsetX - offset.x) / totalScale; drawMapY = (devDragGarrison.my - baseOffsetY - offset.y) / totalScale; }
+        else if (cp) { drawX = cp.newX + 0.5; drawMapY = ((imgSize.height - 1) - cp.newY) + 0.5; }
+        else if (gp) { drawX = gp.newX + 0.5; drawMapY = ((imgSize.height - 1) - gp.newY) + 0.5; }
+        const sx = drawX * totalScale + baseOffsetX + offset.x;
+        const sy = drawMapY * totalScale + baseOffsetY + offset.y;
         const margin = r * totalScale + 4;
         if (sx < -margin || sx > canvasSize.width + margin) continue;
         if (sy < -margin || sy > canvasSize.height + margin) continue;
 
         ctx.save();
         ctx.beginPath();
-        ctx.arc(army.x + 0.5, mapY + 0.5, r, 0, Math.PI * 2);
-        ctx.fillStyle = COLORS[army.armyClass] || COLORS.field;
+        ctx.arc(drawX, drawMapY, r, 0, Math.PI * 2);
+        ctx.fillStyle = (cp || charDragging || gp || garrDragging) ? "rgba(92,200,120,0.95)" : (COLORS[army.armyClass] || COLORS.field);
         ctx.fill();
         // Faction-coloured outline. Wider line than before so it reads
         // as a coloured halo around the dot rather than a hairline.
@@ -5474,13 +6935,50 @@ function App() {
         // army unit. Distinct from an empty ship dot at a glance.
         if (army.armyClass === "navy" && Array.isArray(army.passengerUuids) && army.passengerUuids.length > 0) {
           ctx.beginPath();
-          ctx.arc(army.x + 0.5, mapY + 0.5, r * 0.4, 0, Math.PI * 2);
+          ctx.arc(drawX, drawMapY, r * 0.4, 0, Math.PI * 2);
           ctx.fillStyle = "#ffe066";
           ctx.fill();
           ctx.strokeStyle = "rgba(40,30,0,0.9)";
           ctx.lineWidth = Math.max(0.6 / totalScale, 0.2);
           ctx.stroke();
         }
+        ctx.restore();
+      }
+    }
+
+    // Staged "Add General" markers — a draggable green "+" pin at each pending
+    // general's spawn tile (dev mode). Drawn on top of army markers so they're
+    // easy to grab; follows the cursor while being dragged.
+    if (devMode && pendingGenerals && pendingGenerals.size > 0) {
+      for (const [id, entry] of pendingGenerals.entries()) {
+        const sel = entry.selection;
+        if (!sel || typeof sel.x !== "number" || typeof sel.y !== "number") continue;
+        const dragging = devDragGen && devDragGen.id === id;
+        const cx = dragging
+          ? (devDragGen.mx - baseOffsetX - offset.x) / totalScale
+          : sel.x + 0.5;
+        const cy = dragging
+          ? (devDragGen.my - baseOffsetY - offset.y) / totalScale
+          : (imgSize.height - 1 - sel.y) + 0.5;
+        const sx = cx * totalScale + baseOffsetX + offset.x;
+        const sy = cy * totalScale + baseOffsetY + offset.y;
+        if (sx < -40 || sx > canvasSize.width + 40 || sy < -40 || sy > canvasSize.height + 40) continue;
+        const rad = Math.max(6 / totalScale, 0.7);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(92,200,120,0.95)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(15,55,28,0.95)";
+        ctx.lineWidth = Math.max(1.4 / totalScale, 0.3);
+        ctx.stroke();
+        const cr = rad * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - cr, cy); ctx.lineTo(cx + cr, cy);
+        ctx.moveTo(cx, cy - cr); ctx.lineTo(cx, cy + cr);
+        ctx.strokeStyle = "rgba(255,255,255,0.95)";
+        ctx.lineWidth = Math.max(1.1 / totalScale, 0.25);
+        ctx.stroke();
         ctx.restore();
       }
     }
@@ -5585,6 +7083,7 @@ function App() {
     canvasSize,
     imgSize,
     selectedProvinces,
+    hoveredVcKey,
     borderPaths,
     showSplash,
     assetError,
@@ -5595,6 +7094,12 @@ function App() {
     factionBorderPath,
     devBorderPath,
     devDragResource,
+    devDragGen,
+    devDragChar,
+    devDragGarrison,
+    pendingGenerals,
+    pendingCharPos,
+    pendingGarrisonMoves,
     devGrid,
     devMode,
     borderMode,
@@ -5687,7 +7192,9 @@ function App() {
   // overlay is activated. The TGA is ≈8 MB on the Imperial campaign so we
   // skip it on boot — the user only pays the cost when they actually need it.
   useEffect(() => {
-    if (colorMode !== "geography" && !showGeographyOverlay) return;
+    // 0.9.535: also load when the hover-inspect tooltip is on, so it can
+    // report terrain type outside of Geography mode.
+    if (colorMode !== "geography" && !showGeographyOverlay && !showTileInspect) return;
     if (groundTypesPixels) return;
     if (groundTypesLoadingRef.current) return;
     const campaign = CAMPAIGNS[mapCampaign];
@@ -5711,7 +7218,7 @@ function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [colorMode, showGeographyOverlay, groundTypesPixels, mapCampaign, loadCampaignData]);
+  }, [colorMode, showGeographyOverlay, showTileInspect, groundTypesPixels, mapCampaign, loadCampaignData]);
 
   // Lazy-load map_heights.tga when the Heights overlay is activated.
   useEffect(() => {
@@ -5887,6 +7394,19 @@ function App() {
       } catch { setFactionWealth({}); }
     })();
   }, [loadCampaignData, mapCampaign]);
+  // 0.9.536: starting diplomacy (named pairs) from descr_strat — the only
+  // source that names WHO each faction is allied/at-war with (the live save
+  // stores relation classes but not the partner faction). Starting-state only.
+  const [factionRelationships, setFactionRelationships] = useState({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const fname = mapCampaign === "imperial" ? "faction_relationships_large.json" : "faction_relationships_classic.json";
+        const r = await loadCampaignData(fname);
+        setFactionRelationships(JSON.parse(r.text) || {});
+      } catch { setFactionRelationships({}); }
+    })();
+  }, [loadCampaignData, mapCampaign]);
   const [showWealthPanel, setShowWealthPanel] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
 
@@ -6035,6 +7555,21 @@ function App() {
   // history stack.
   const [undoStackDepth, setUndoStackDepth] = useState(0);
   useEffect(() => subscribeUndo((n) => setUndoStackDepth(n)), []);
+  // 0.9.475: dev pill mount/unmount animations. The pill is identified
+  // by data-anim-id="dev-pill" so users can pick "Appearing" and
+  // "Disappearing" animations in Layout mode. useEnterExit holds the
+  // element in the DOM long enough for the exit animation to play.
+  const devPillRef = useRef(null);
+  // 0.9.478: default mount/unmount = Emerge / Retract. scaleX with
+  // transform-origin: right center so the right edge stays anchored to
+  // the Dev button and the pill physically grows leftward out of it
+  // (and shrinks back in on unmount). No overshoot — the pill never
+  // grows larger than its final size. User said the prior Genie effect
+  // overshot and looked wrong.
+  const { shouldRender: shouldRenderDevPill } = useEnterExit(
+    devMode, devPillRef, "dev-pill",
+    { defaultMount: "pill-in", defaultUnmount: "pill-out" },
+  );
 
   // Register the non-Movable fixtures (map canvas, top toolbar, floating
   // bottom-right buttons) as virtual rects in the widget registry so the
@@ -6077,6 +7612,12 @@ function App() {
       // map, shrink the canvas so the map keeps its GAP_FRAC of air-gap
       // with that widget instead of overlapping it.
       const widgets = getWidgetSnapshot();
+      // 0.9.501: reverted the 0.9.499/0.9.500 widget-override that capped
+      // availableWidth/Height to the map.canvas widget's own box. Symptom
+      // was the map staying small on window-grow because the widget's
+      // fraction × innerWidth grew slower than the original viewport-
+      // minus-sidebar formula. The original viewport-based math is the
+      // right floor for growth.
       const gapPx = 6;
       for (const [id, w] of Object.entries(widgets)) {
         if (id === "map.canvas") continue;
@@ -6148,6 +7689,78 @@ function App() {
   }, []);
 
   function handleMouseDown(e) {
+    // Dev mode: check if grabbing a staged general's map marker to reposition it.
+    if (devMode && pendingGenerals.size > 0 && e.button === 0) {
+      const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
+      const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
+      const HIT = 16;
+      for (const [id, entry] of pendingGenerals.entries()) {
+        const sel = entry.selection;
+        if (!sel || typeof sel.x !== "number" || typeof sel.y !== "number") continue;
+        const sx = (sel.x + 0.5) * totalScale + baseOffsetX + offset.x;
+        const sy = ((imgSize.height - 1 - sel.y) + 0.5) * totalScale + baseOffsetY + offset.y;
+        if (Math.abs(mx - sx) <= HIT && Math.abs(my - sy) <= HIT) {
+          setDevDragGen({ id, mx, my });
+          e.preventDefault();
+          return;
+        }
+      }
+    }
+    // Dev mode (descr_strat / starting view only, so coords match the mod):
+    // grab an existing character's army marker to move its spawn tile.
+    if (devMode && showArmies && !liveLogActive && Array.isArray(armiesToRender) && e.button === 0) {
+      const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
+      const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
+      const HIT = 12;
+      for (const army of armiesToRender) {
+        if (!army || typeof army.x !== "number" || typeof army.y !== "number") continue;
+        // Leaderless `garrisoned_army` blocks — drag relocates them OUT of the
+        // settlement as a captain-led field army (handled on drop). They have a
+        // region (their settlement) but no character to coord-match.
+        if (army.charType === "garrison" || army._garrisoned) {
+          const gKey = `${(army.faction || "").toLowerCase()}|${army.region || army.location || ""}`;
+          const gp = pendingGarrisonMoves.get(gKey);
+          const gx = gp ? gp.newX : army.x;
+          const gy = gp ? gp.newY : army.y;
+          const gMapY = (imgSize.height - 1) - gy;
+          const gsx = (gx + 0.5) * totalScale + baseOffsetX + offset.x;
+          const gsy = (gMapY + 0.5) * totalScale + baseOffsetY + offset.y;
+          if (army.region && Math.abs(mx - gsx) <= HIT && Math.abs(my - gsy) <= HIT) {
+            if (e.shiftKey) {
+              setArmyUnitsEditor({ faction: army.faction, locator: { region: army.region || army.location }, units: army.units || [], label: army.character || `${army.region} garrison` });
+            } else {
+              setDevDragGarrison({ faction: army.faction, region: army.region || army.location, units: army.units, label: army.character || "garrison", mx, my });
+            }
+            e.preventDefault();
+            return;
+          }
+          continue;
+        }
+        // If this general already has a STAGED move, its marker is drawn at the
+        // staged tile (see the canvas render), so hit-test THERE. Keep oldX/oldY
+        // = the original descr_strat tile so re-dragging updates the SAME pending
+        // entry and Save still matches the character by its real coords. Without
+        // this, a moved general's grab-zone stayed on the old town and it
+        // couldn't be moved a second time.
+        const cp = pendingCharPos.get(`${(army.faction || "").toLowerCase()}|${army.x}|${army.y}`);
+        const dispX = cp ? cp.newX : army.x;
+        const dispY = cp ? cp.newY : army.y;
+        const mapY = (imgSize.height - 1) - dispY;
+        const sx = (dispX + 0.5) * totalScale + baseOffsetX + offset.x;
+        const sy = (mapY + 0.5) * totalScale + baseOffsetY + offset.y;
+        if (Math.abs(mx - sx) <= HIT && Math.abs(my - sy) <= HIT) {
+          if (e.shiftKey) {
+            // Shift+click an army marker → edit its units (matched in descr_strat
+            // by the character's real coords, so use army.x/army.y not the staged tile).
+            setArmyUnitsEditor({ faction: army.faction, locator: { x: army.x, y: army.y }, units: army.units || [], label: army.character || army.firstName || "army" });
+          } else {
+            setDevDragChar({ faction: army.faction, oldX: army.x, oldY: army.y, label: army.character || army.firstName || "character", mx, my });
+          }
+          e.preventDefault();
+          return;
+        }
+      }
+    }
     // Dev mode + (resource mode OR resources overlay): check if clicking
     // on a resource icon to drag it.
     if (devMode && (colorMode === "resource" || showResourcesOverlay) && e.button === 0) {
@@ -6170,10 +7783,81 @@ function App() {
     setDrag({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY, ox: offset.x, oy: offset.y, moved: false });
   }
   function handleMouseUp(e) {
+    if (devDragGarrison && e) {
+      const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
+      const nx = Math.round((e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale);
+      const nyTop = Math.round((e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale);
+      const ny = (imgSize.height - 1) - nyTop;
+      const key = `${(devDragGarrison.faction || "").toLowerCase()}|${devDragGarrison.region || ""}`;
+      const uCount = Array.isArray(devDragGarrison.units) ? devDragGarrison.units.length : 0;
+      setPendingGarrisonMoves((prev) => {
+        const next = new Map(prev);
+        next.set(key, { faction: devDragGarrison.faction, region: devDragGarrison.region, units: devDragGarrison.units, newX: nx, newY: ny, label: devDragGarrison.label });
+        persistMap("pendingGarrisonMoves", next);
+        return next;
+      });
+      setPendingLog((prev) => {
+        const filtered = prev.filter((en) => !(en.kind === "garrison" && en.key === key));
+        const out = [...filtered, { id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), kind: "garrison", key, description: `relocate ${devDragGarrison.region} garrison (${uCount} unit${uCount === 1 ? "" : "s"}) → captain at (${nx}, ${ny})`, at: Date.now() }];
+        persistArr("pendingLog", out);
+        return out;
+      });
+      console.log(`[garrison-relocate] staged ${devDragGarrison.region} (${devDragGarrison.faction}) → (${nx},${ny})`);
+      setDevDragGarrison(null);
+      devDragJustEndedRef.current = true;
+      setTimeout(() => { devDragJustEndedRef.current = false; }, 50);
+      return;
+    }
+    if (devDragChar && e) {
+      const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
+      const nx = Math.round((e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale);
+      const nyTop = Math.round((e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale);
+      const ny = (imgSize.height - 1) - nyTop;
+      const key = `${(devDragChar.faction || "").toLowerCase()}|${devDragChar.oldX}|${devDragChar.oldY}`;
+      setPendingCharPos((prev) => {
+        const next = new Map(prev);
+        next.set(key, { faction: devDragChar.faction, oldX: devDragChar.oldX, oldY: devDragChar.oldY, newX: nx, newY: ny, label: devDragChar.label });
+        persistMap("pendingCharPos", next);
+        return next;
+      });
+      setPendingLog((prev) => {
+        const filtered = prev.filter((en) => !(en.kind === "charpos" && en.key === key));
+        const out = [...filtered, { id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), kind: "charpos", key, description: `move ${devDragChar.label} → (${nx}, ${ny})`, at: Date.now() }];
+        persistArr("pendingLog", out);
+        return out;
+      });
+      console.log(`[char-move] staged ${devDragChar.label} (${devDragChar.faction}) (${devDragChar.oldX},${devDragChar.oldY}) → (${nx},${ny})`);
+      setDevDragChar(null);
+      devDragJustEndedRef.current = true;
+      setTimeout(() => { devDragJustEndedRef.current = false; }, 50);
+      return;
+    }
+    if (devDragGen && e) {
+      const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
+      const wx = Math.round((e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale);
+      const wyTop = Math.round((e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale);
+      const wy = (imgSize.height - 1) - wyTop; // flip to descr_strat (bottom-up) coords
+      setPendingGenerals((prev) => {
+        const next = new Map(prev);
+        const entry = next.get(devDragGen.id);
+        if (entry) {
+          next.set(devDragGen.id, { ...entry, selection: { ...entry.selection, x: wx, y: wy } });
+        }
+        persistMap("pendingGenerals", next);
+        return next;
+      });
+      console.log(`[addgen] moved staged general ${devDragGen.id} → (${wx}, ${wy})`);
+      setDevDragGen(null);
+      devDragJustEndedRef.current = true;
+      setTimeout(() => { devDragJustEndedRef.current = false; }, 50);
+      return;
+    }
     if (devDragResource && e) {
       const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
       const mapX = (e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale;
       const mapY = (e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale;
+      const prevRes = resourcesData[devDragResource.regionName]?.find(r => r.type === devDragResource.type);
+      const before = prevRes ? { x: prevRes.x, y: prevRes.y } : null;
       setResourcesData(prev => {
         const next = { ...prev };
         next[devDragResource.regionName] = (next[devDragResource.regionName] || []).map(r =>
@@ -6181,7 +7865,11 @@ function App() {
         );
         return next;
       });
-      markDirty("resources");
+      markDirty("resources", {
+        kind: "resource",
+        description: `move ${devDragResource.type} in ${devDragResource.regionName} → (${Math.floor(mapX)}, ${Math.floor(mapY) + 1})`,
+        revert: { type: "resource-pos", region: devDragResource.regionName, resourceType: devDragResource.type, before },
+      });
       setDevDragResource(null);
       // Prevent the click event that follows from selecting/deselecting
       devDragJustEndedRef.current = true;
@@ -6194,8 +7882,25 @@ function App() {
     }
     setDrag(null);
     setDevDragResource(null);
+    setDevDragGen(null);
+    setDevDragChar(null);
   }
   function handleMouseMove(e) {
+    if (devDragGarrison) {
+      const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
+      setDevDragGarrison((prev) => prev ? { ...prev, mx, my } : null);
+      return;
+    }
+    if (devDragChar) {
+      const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
+      setDevDragChar((prev) => prev ? { ...prev, mx, my } : null);
+      return;
+    }
+    if (devDragGen) {
+      const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
+      setDevDragGen((prev) => prev ? { ...prev, mx, my } : null);
+      return;
+    }
     if (devDragResource) {
       const mx = e.nativeEvent.offsetX, my = e.nativeEvent.offsetY;
       setDevDragResource(prev => prev ? { ...prev, mx, my } : null);
@@ -6245,7 +7950,39 @@ function App() {
           setRegionInfo(prev => prev?.rgb === rgbKey ? prev : { ...regions[rgbKey], rgb: rgbKey });
         }
         else setRegionInfo(prev => prev === null ? prev : null);
-      } else setRegionInfo(prev => prev === null ? prev : null);
+        // 0.9.535: hover-to-inspect tooltip. Sample terrain (ground type) at
+        // the hovered tile + resolve region/owner. Gated on a composite key
+        // (region + ground colour) so we only setState when the tile's
+        // identity actually changes — not on every pixel of mouse-move.
+        if (showTileInspect) {
+          const reg = regions[rgbKey];
+          let terrain = null, gKey = "";
+          if (groundTypesPixels && groundTypesSize.width) {
+            const gx = Math.min(groundTypesSize.width - 1, Math.floor(x / imgSize.width * groundTypesSize.width));
+            const gy = Math.min(groundTypesSize.height - 1, Math.floor(y / imgSize.height * groundTypesSize.height));
+            const gi = (gy * groundTypesSize.width + gx) * 4;
+            gKey = `${groundTypesPixels[gi]},${groundTypesPixels[gi + 1]},${groundTypesPixels[gi + 2]}`;
+            terrain = (GROUND_TYPE_PALETTE[gKey] && GROUND_TYPE_PALETTE[gKey].name) || null;
+          }
+          const inspectKey = `${rgbKey}|${gKey}`;
+          if (inspectKey !== lastInspectKeyRef.current) {
+            lastInspectKeyRef.current = inspectKey;
+            if (reg) {
+              const city = reg.city;
+              const ownerId = (currentOwnerByCity && currentOwnerByCity[city])
+                || (initialOwnerByCity && initialOwnerByCity[city]) || null;
+              const ownerName = ownerId ? ((factionDisplayNames && factionDisplayNames[ownerId]) || String(ownerId).replace(/_/g, " ")) : null;
+              setTileInspect({
+                sx: mouseScreenX, sy: mouseScreenY,
+                region: reg.name || reg.city || null,
+                owner: ownerName, terrain,
+              });
+            } else {
+              setTileInspect(prev => prev === null ? prev : null);
+            }
+          }
+        }
+      } else { setRegionInfo(prev => prev === null ? prev : null); if (tileInspect) { lastInspectKeyRef.current = ""; setTileInspect(null); } }
 
       // Resource icon hover detection — active in dedicated mode OR overlay
       if (colorMode === "resource" || showResourcesOverlay) {
@@ -6468,6 +8205,29 @@ function App() {
       const i = (y * imgSize.width + x) * 4;
       const rgbKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
       if (regions[rgbKey]) {
+        // Victory paint mode: in dev mode + Victory colorMode with a faction
+        // selected, a plain left-click toggles the clicked region in/out of
+        // that faction's hold_regions — no right-click menu needed, so you
+        // can rapidly click region after region. Mirrors the context-menu
+        // toggle at the Victory branch of the dev menu (and its undo entry).
+        if (colorMode === "victory" && devMode && selectedFaction) {
+          const region = regions[rgbKey];
+          const isHeld = (victoryConditions[selectedFaction]?.hold_regions || []).includes(region.region);
+          setVictoryConditions(prev => {
+            const vc = { ...prev };
+            const entry = { ...(vc[selectedFaction] || { hold_regions: [], take_regions: null }) };
+            if (isHeld) entry.hold_regions = entry.hold_regions.filter(r => r !== region.region);
+            else entry.hold_regions = [...entry.hold_regions, region.region];
+            vc[selectedFaction] = entry;
+            return vc;
+          });
+          markDirty("descr_win_conditions.txt", {
+            kind: "victory",
+            description: `${selectedFaction.replace(/_/g, " ")} VC: ${isHeld ? "remove" : "add"} ${region.region}`,
+            revert: { type: "vc-toggle", faction: selectedFaction, region: region.region, wasHeld: isHeld },
+          });
+          return;
+        }
         // Lock info panel to clicked region (click same region again to unlock)
         setLockedRegionInfo((prev) => {
           if (prev?.rgb === rgbKey) return null;
@@ -6997,7 +8757,7 @@ function App() {
             )}
             {/* Faction-record + Lua-counter badges added 2026-05-09 — show
                 live the new structures decoded by rtw-sav-parser. */}
-            {liveLogActive && saveFactionRecords && saveFactionRecords.count > 0 && (
+            {liveLogActive && devMode && saveFactionRecords && saveFactionRecords.count > 0 && (
               <span
                 title={`Faction record array: ${saveFactionRecords.count} records, ${(saveFactionRecords.arraySpan?.totalBytes / 1024).toFixed(0)} KB total. Grows ~90 B/turn/faction — the dominant bloat source. Magic ff 0a af f0.`}
                 style={{
@@ -7011,7 +8771,7 @@ function App() {
                 {saveFactionRecords.count}fr · {(saveFactionRecords.arraySpan?.totalBytes / 1024).toFixed(0)}KB
               </span>
             )}
-            {liveLogActive && saveLuaCounters && saveLuaCounters.count > 0 && (
+            {liveLogActive && devMode && saveLuaCounters && saveLuaCounters.count > 0 && (
               <span
                 title={
                   `Lua persistent counters: ${saveLuaCounters.count} entries.\n` +
@@ -7035,7 +8795,7 @@ function App() {
             {/* Parser-stats badge — quick-glance health check. Hover to see
                 all per-pass counts. Lights up red when any expected count
                 is suspiciously low (e.g. 0 units in a populated save). */}
-            {liveLogActive && saveUnitsByRegion && (() => {
+            {liveLogActive && devMode && saveUnitsByRegion && (() => {
               const unitTotal = Object.values(saveUnitsByRegion).reduce((s, arr) => s + arr.length, 0);
               const regionCount = Object.keys(saveUnitsByRegion).length;
               const charCount = Object.values(saveCharactersByRegion || {}).reduce((s, arr) => s + arr.length, 0);
@@ -7097,18 +8857,19 @@ function App() {
             })()}
             {appVersion && appVersion !== "0.0.0" && (
               <span
-                onClick={onCheckUpdates}
-                title={updateDownloadPct != null ? `Downloading update… ${updateDownloadPct}%` : "Click to check for updates"}
+                onClick={onVersionClick}
+                onDoubleClick={onVersionDblClick}
+                title={updateDownloadPct != null ? `Downloading update… ${updateDownloadPct}%` : watchingUpdates ? "Watching for updates every 5s — double-click to stop" : "Click to check for updates · double-click to keep watching until one appears"}
                 style={{
                   position: "relative",
-                  fontSize: "0.65rem", fontWeight: 400, opacity: 0.55,
+                  fontSize: "0.65rem", fontWeight: 400, opacity: watchingUpdates ? 0.95 : 0.55,
                   fontFamily: "Consolas, monospace", letterSpacing: 0,
                   cursor: "pointer", padding: "0 4px", borderRadius: 3,
                   transition: "opacity 0.15s, background 0.12s",
                   overflow: "hidden",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.95; e.currentTarget.style.background = "rgba(220,166,74,0.18)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.55; e.currentTarget.style.background = ""; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = watchingUpdates ? 0.95 : 0.55; e.currentTarget.style.background = ""; }}
               >
                 {/* Progress strip — bottom underline that fills as the
                     update downloads. Goes away on completion. */}
@@ -7124,6 +8885,11 @@ function App() {
                 {updateDownloadPct != null && (
                   <span style={{ marginLeft: 4, color: "#dca64a", fontWeight: 600 }}>
                     {updateDownloadPct}%
+                  </span>
+                )}
+                {updateDownloadPct == null && watchingUpdates && (
+                  <span style={{ marginLeft: 5, color: "#dca64a", fontWeight: 600 }} className="update-watch-pulse">
+                    👀 watching…
                   </span>
                 )}
               </span>
@@ -7299,6 +9065,32 @@ function App() {
           <div style={{ marginBottom: 8, fontSize: "0.95rem" }}>
             Goal: hold {victoryMeta.hold_regions?.length || 0} regions, conquer at least{" "}
             {victoryMeta.take_regions ?? "?"} total.
+            {devMode && (victoryMeta.hold_regions?.length || 0) > 0 && (
+              <button
+                onClick={() => {
+                  const before = [...(victoryConditions[selectedFaction]?.hold_regions || [])];
+                  if (!before.length) return;
+                  setVictoryConditions(prev => {
+                    const vc = { ...prev };
+                    const entry = { ...(vc[selectedFaction] || { hold_regions: [], take_regions: null }) };
+                    entry.hold_regions = [];
+                    vc[selectedFaction] = entry;
+                    return vc;
+                  });
+                  markDirty("descr_win_conditions.txt", {
+                    kind: "victory",
+                    description: `${selectedFaction.replace(/_/g, " ")} VC: clear all ${before.length} region${before.length === 1 ? "" : "s"}`,
+                    revert: { type: "vc-clear", faction: selectedFaction, before },
+                  });
+                }}
+                title="Remove every region from this faction's victory conditions"
+                style={{
+                  marginLeft: 8, padding: "2px 8px", borderRadius: 4,
+                  border: "1px solid #a33", background: "transparent", color: "#e88",
+                  fontSize: "0.78rem", cursor: "pointer", fontWeight: 600,
+                }}
+              >Clear all</button>
+            )}
           </div>
         )}
 
@@ -7323,13 +9115,15 @@ function App() {
                 onDragOver={(e) => onDragOver(idx, e)}
                 onDrop={(e) => onDrop(idx, e)}
                 onDragEnd={onDragEnd}
+                onMouseEnter={() => setHoveredVcKey(rgbKey)}
+                onMouseLeave={() => setHoveredVcKey((k) => (k === rgbKey ? null : k))}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                   padding: "2px 6px",
                   borderRadius: 5,
-                  background: "rgba(255,255,255,0.05)",
+                  background: hoveredVcKey === rgbKey ? "rgba(255,221,51,0.18)" : "rgba(255,255,255,0.05)",
                   cursor: devDragResource ? "grabbing" : "grab",
                   whiteSpace: "nowrap",
                   flexShrink: 0,
@@ -7601,7 +9395,11 @@ function App() {
     }
     const sorted = Object.entries(buildingCounts).sort((a, b) => b[1] - a[1]);
 
-    // Population & resource stats
+    // Population & resource stats. The faction summary surfaces trade goods
+    // only — slaves (commodity) and ambience (aqueducts/shipwrecks) live in
+    // their own descr_strat sub-sections and shouldn't pollute the
+    // tradeable-goods rollup. Entries without `category` (older bundles or
+    // mods missing the section markers) are treated as trade.
     const SKIP = new Set([]);
     let totalPop = 0;
     const resourceCounts = {}; // type → location count
@@ -7612,6 +9410,8 @@ function App() {
       const entries = resourcesData[prov.region] || resourcesData[prov.city] || [];
       for (const r of entries) {
         if (SKIP.has(r.type)) continue;
+        const cat = r.category || "trade";
+        if (cat !== "trade") continue;
         resourceCounts[r.type] = (resourceCounts[r.type] || 0) + 1;
         totalResourceAmount += r.amount || 1;
       }
@@ -7833,6 +9633,10 @@ function App() {
       { key: "pop_growth", label: "Pop Headroom" },
       { key: "wealth", label: "Wealth" },
       { key: "recruitment", label: "Recruitment" },
+      { key: "garrison", label: "Garrison" },
+      { key: "happiness", label: "Happiness" },
+      { key: "income", label: "Income" },
+      { key: "public_order", label: "Public Order" },
     ];
 
     return (
@@ -7846,11 +9650,32 @@ function App() {
           ))}
           {devMode && (<>
             <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
-            {devColorModes.map((m) => (
-              <button key={m.key} onClick={() => setColorMode(m.key)}
-                className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
-                disabled={colorMode === m.key} style={btnStyle(colorMode === m.key)}>{m.label}</button>
-            ))}
+            {devColorModes.map((m) => {
+              // 0.9.486: Hidden Res. button is tri-state: click cycles
+              // HR → AOR → off (= back to faction). One button doubles
+              // as the AOR mode entry per the user's tab-replacement
+              // request. Label flips to "AOR" when in that state so
+              // it's obvious which mode is active.
+              if (m.key === "hidden_resource") {
+                const isHR = colorMode === "hidden_resource";
+                const isAOR = colorMode === "aor";
+                const isActive = isHR || isAOR;
+                const label = isAOR ? "AOR" : "Hidden Res.";
+                const next = isHR ? "aor" : isAOR ? "faction" : "hidden_resource";
+                return (
+                  <button key={m.key}
+                    onClick={() => { console.log(`[aor-toggle] ${colorMode} → ${next}`); setColorMode(next); }}
+                    className={"map-mode-btn" + (isActive ? " map-mode-btn--active" : "")}
+                    title={isHR ? "Currently: Hidden Resources. Click for AOR." : isAOR ? "Currently: Areas of Recruitment. Click to exit." : "Click for Hidden Resources, again for AOR."}
+                    style={btnStyle(isActive)}>{label}</button>
+                );
+              }
+              return (
+                <button key={m.key} onClick={() => setColorMode(m.key)}
+                  className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
+                  disabled={colorMode === m.key} style={btnStyle(colorMode === m.key)}>{m.label}</button>
+              );
+            })}
             <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
             <button className="map-mode-btn"
               onClick={() => setPaintMode(prev => !prev)}
@@ -7868,25 +9693,13 @@ function App() {
             below the welcome overlay. */}
         {createPortal(
         <div style={{ position: "fixed", bottom: 12, right: 12, zIndex: 10003, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, pointerEvents: "auto" }}>
-          <MuteButton
-            muted={audioMuted}
-            onToggle={toggleAudioMuted}
-            buttonStyle={btnStyle(false)}
-          />
-          <button
-            onClick={() => setDesignMode((d) => !d)}
-            title={designMode
-              ? "Layout design mode ON. Drag a widget body to move; grab the edges/corners to resize. Hold Shift to bypass snap-to-align. Cyan guide lines show alignments. Click again to lock."
-              : "Toggle layout design mode — widgets become draggable/resizable. Shift while dragging bypasses snap."}
-            style={{
-              ...btnStyle(designMode),
-              background: designMode ? "rgba(220,166,74,0.85)" : "rgba(40,40,40,0.7)",
-              color: designMode ? "#221" : "#ccc",
-              border: "1px solid #888",
-              fontSize: "0.78rem",
-            }}>📐 {designMode ? "Layout ON" : "Layout"}</button>
+          {/* 0.9.471: Mute and Layout buttons moved. Mute now sits next
+              to the Dev button in the bottom row (Dev left, Mute right).
+              Layout moved into the dev pill so it only shows in dev mode.
+              Original positions removed. */}
           {designMode && (
             <button
+              data-anim-bypass
               onClick={() => undoLayout()}
               disabled={!canUndo()}
               title={canUndo()
@@ -7903,6 +9716,7 @@ function App() {
           )}
           {designMode && (
             <button
+              data-anim-bypass
               onClick={() => {
                 if (!window.confirm("Reset every layout override (widget positions + splitters) to defaults? This cannot be undone.")) return;
                 setBottomStripPct(0); setRightColPct(0); setFactionColPct(0);
@@ -7921,14 +9735,73 @@ function App() {
                 fontSize: "0.72rem",
               }}>↺ Reset</button>
           )}
-          {devMode && (<>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "4px 8px", borderRadius: 10,
-              background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-            }}>
+          {designMode && (
+            <button
+              data-anim-bypass
+              onClick={async () => {
+                // 0.9.476: dump every layout-related localStorage key
+                // (splitter percentages + widget positions + animation
+                // assignments + audio volume) to the clipboard as JSON.
+                // Used to bake the user's current layout in as the new
+                // app default in source.
+                const out = {};
+                try {
+                  for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (!k) continue;
+                    if (k.startsWith("layout.") || k.startsWith("widget.") || k === "buttonAnimations" || k === "audioVolume") {
+                      out[k] = localStorage.getItem(k);
+                    }
+                  }
+                } catch (e) {
+                  pushToast(`Couldn't read localStorage: ${e.message}`, "error", 6000);
+                  return;
+                }
+                const json = JSON.stringify(out, null, 2);
+                try {
+                  await navigator.clipboard.writeText(json);
+                  pushToast(`Copied ${Object.keys(out).length} layout entries to clipboard. Paste into chat so I can bake them in as new defaults.`, "info", 8000);
+                  console.log("[layout-export]\n" + json);
+                } catch (e) {
+                  console.log("[layout-export] clipboard failed, dump below:\n" + json);
+                  pushToast(`Clipboard write failed (${e.message}) — full JSON is in DevTools console. Open Ctrl+Shift+I and copy from there.`, "warning", 12000);
+                }
+              }}
+              title="Copy every layout / widget / animation override to clipboard. Paste it into chat and I can bake your current layout in as the app's new default."
+              style={{
+                ...btnStyle(false),
+                background: "rgba(60,140,80,0.55)",
+                color: "#fff",
+                border: "1px solid #5a8",
+                fontSize: "0.72rem",
+              }}>📋 Copy layout</button>
+          )}
+          {/* 0.9.470: dev pill + Dev toggle on the SAME row.
+              0.9.479: row uses a fixed `height: 40` (not minHeight) so
+              the row's outer box is EXACTLY 40 px whether the pill is
+              mounted or not. With minHeight the natural pill height
+              (~33 px) still grew the row by 1-2 px on mount, which
+              shifted Dev/Volume's vertical center by ~1 px each toggle.
+              Fixed height kills the jitter completely; the pill fits
+              with breathing room inside the 40 px row. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", height: 40 }}>
+          {/* 0.9.475: shouldRenderDevPill is driven by useEnterExit so the
+              pill stays mounted long enough for the user-assigned exit
+              animation to finish. data-anim-id="dev-pill" makes it
+              targetable in Layout mode (click to set Appearing /
+              Disappearing animations from the 18-animation library). */}
+          {shouldRenderDevPill && (<>
+            <div
+              ref={devPillRef}
+              data-anim-id="dev-pill"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "4px 8px", borderRadius: 10,
+                background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+              }}
+            >
               <button
                 className="dev-btn"
                 onClick={() => { setShowFileImport(true); setFileImportDone(false); }}
@@ -7940,6 +9813,49 @@ function App() {
                   minWidth: 80,
                 }}
               >Import</button>
+              {/* Embedded Settlement Processor (Scripts) — opens the bundled
+                  Suite window (Pipeline / Editor / Master / Compare). Electron
+                  only; the IPC bridge is absent in browser builds. */}
+              {window.electronAPI?.openScriptsWindow && (
+                <button
+                  className="dev-btn"
+                  onClick={() => window.electronAPI.openScriptsWindow()}
+                  title="Open the Settlement Processor scripts (Pipeline, Editor, Master, Compare)"
+                  style={{
+                    ...btnStyle(false),
+                    background: "rgba(60,60,60,0.7)",
+                    color: "#7fd1b9",
+                    border: "1px solid #2dd4bf",
+                    minWidth: 72,
+                  }}
+                >Scripts</button>
+              )}
+              {/* 0.9.469: in Electron, the Save button opens the unified
+                  review modal — that's the single entry-point for ALL
+                  dev-mode edits (buildings/traits/ancillaries/resources/
+                  population/ownership/win-conditions). Apply inside the
+                  modal writes directly to the active mod via IPCs. The
+                  legacy download-style flow only runs in browser builds
+                  where the writeActiveModFile IPC is unavailable. */}
+              {window.electronAPI?.writeActiveModFile ? (
+                <button
+                  className="dev-btn"
+                  onClick={() => setPendingReviewOpen(true)}
+                  disabled={pendingCount === 0}
+                  title={pendingCount === 0
+                    ? "No staged changes."
+                    : `Review and apply ${pendingCount} staged change${pendingCount === 1 ? "" : "s"}.`}
+                  style={{
+                    ...btnStyle(false),
+                    background: pendingCount > 0 ? "#4a9" : "rgba(60,60,60,0.7)",
+                    color: pendingCount > 0 ? "#fff" : "#aaa",
+                    border: "1px solid " + (pendingCount > 0 ? "#4a9" : "#555"),
+                    minWidth: 60,
+                    cursor: pendingCount > 0 ? "pointer" : "default",
+                    opacity: pendingCount > 0 ? 1 : 0.55,
+                  }}
+                >Save{pendingCount > 0 ? ` (${pendingCount})` : ""}</button>
+              ) : (
               <button
                 onClick={() => {
                   const download = (name, content) => {
@@ -8106,13 +10022,43 @@ function App() {
                   minWidth: 60,
                 }}
               >Export{devDirtyFiles.size > 0 ? ` (${devDirtyFiles.size} file${devDirtyFiles.size > 1 ? "s" : ""})` : ""}</button>
+              )}
+              {/* 0.9.471: Layout toggle moved into the dev pill.
+                  0.9.475: data-anim-bypass so the user can always click
+                  Layout (to exit design mode) — the animation picker's
+                  click-interceptor skips elements flagged this way. */}
+              <button
+                data-anim-bypass
+                onClick={() => setDesignMode((d) => !d)}
+                title={designMode
+                  ? "Layout design mode ON. Click any button to pick its click animation; click the dev pill itself to set its appearing/disappearing animations. Click Layout again to exit."
+                  : "Toggle layout design mode — every button becomes click-to-edit-animation. Click the dev pill to set its appear/disappear animations."}
+                style={{
+                  ...btnStyle(designMode),
+                  background: designMode ? "rgba(220,166,74,0.85)" : "rgba(40,40,40,0.7)",
+                  color: designMode ? "#221" : "#ccc",
+                  border: "1px solid #888",
+                  fontSize: "0.72rem",
+                  minWidth: 0, padding: "3px 8px",
+                }}>📐 {designMode ? "Layout ON" : "Layout"}</button>
               {exportConfirm && <span style={{ color: "#7c4", fontSize: "0.78rem", fontWeight: 600 }}>Exported!</span>}
-              {(undoStackRef.current.length > 0 || redoStackRef.current.length > 0) && (
-                <span style={{ color: "#aaa", fontSize: "0.72rem" }} title="Ctrl+Z undo / Ctrl+Shift+Z redo">
-                  {undoStackRef.current.length > 0 && `Undo: ${undoStackRef.current.length}`}
-                  {undoStackRef.current.length > 0 && redoStackRef.current.length > 0 && " · "}
-                  {redoStackRef.current.length > 0 && `Redo: ${redoStackRef.current.length}`}
-                </span>
+              {/* 0.9.472: Undo/Redo counter replaced with a "Changes (N)"
+                  button — clicking opens the same pending-review modal as
+                  the Save button so the user can see and revert individual
+                  staged edits. Hidden when there are no pending changes. */}
+              {pendingCount > 0 && (
+                <button
+                  onClick={() => setPendingReviewOpen(true)}
+                  title={`Click to review and apply ${pendingCount} staged change${pendingCount === 1 ? "" : "s"}.`}
+                  style={{
+                    ...btnStyle(false),
+                    background: "rgba(60,60,60,0.7)",
+                    color: "#4a9",
+                    border: "1px solid #4a9",
+                    minWidth: 0, padding: "3px 8px", fontSize: "0.72rem", fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >Changes ({pendingCount})</button>
               )}
               <button
                 onClick={() => setShowShortcuts(p => !p)}
@@ -8125,155 +10071,19 @@ function App() {
                   minWidth: 0, padding: "3px 7px", fontSize: "0.72rem", fontWeight: 700,
                 }}
               >?</button>
-              <button
-                onClick={() => { saveAutosaveSnapshot(); }}
-                title="Save snapshot now"
-                style={{
-                  ...btnStyle(false),
-                  background: "rgba(60,60,60,0.7)",
-                  color: "#8bf",
-                  border: "1px solid #68a",
-                  minWidth: 0, padding: "3px 8px", fontSize: "0.72rem",
-                }}
-              >Save</button>
-              <div ref={loadMenuRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setShowLoadMenu(p => !p)}
-                  title="Load a saved snapshot"
-                  style={{
-                    ...btnStyle(showLoadMenu),
-                    background: showLoadMenu ? "#68a" : "rgba(60,60,60,0.7)",
-                    color: showLoadMenu ? "#fff" : "#8bf",
-                    border: "1px solid #68a",
-                    minWidth: 0, padding: "3px 8px", fontSize: "0.72rem",
-                  }}
-                >Load{autosaves.length > 0 ? ` (${autosaves.length})` : ""}</button>
-                {showLoadMenu && (
-                  <div style={{
-                    position: "absolute", bottom: "100%", right: 0, marginBottom: 4,
-                    background: "rgba(20,25,35,0.95)", backdropFilter: "blur(10px)",
-                    border: "1px solid #68a", borderRadius: 8,
-                    padding: "6px 0", minWidth: 240, maxHeight: 300, overflowY: "auto",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.5)", zIndex: 20,
-                  }}>
-                    {autosaves.length === 0 ? (
-                      <div style={{ padding: "8px 12px", color: "#888", fontSize: "0.72rem" }}>No saves yet</div>
-                    ) : (
-                      [...autosaves].reverse().map((snap, ri) => {
-                        const idx = autosaves.length - 1 - ri;
-                        const d = new Date(snap.ts);
-                        const isActive = timelineIndex === idx;
-                        // Compute diff vs previous save
-                        let diffText = "";
-                        if (idx > 0) {
-                          const prev = autosaves[idx - 1];
-                          let regionChanges = 0, resourceChanges = 0;
-                          if (prev.regions && snap.regions) {
-                            for (const k of Object.keys(snap.regions)) {
-                              const a = prev.regions[k], b = snap.regions[k];
-                              if (!a || a.faction !== b.faction || a.culture !== b.culture) regionChanges++;
-                            }
-                          }
-                          const prevRes = prev.resourcesData || {}, curRes = snap.resourcesData || {};
-                          const allResKeys = new Set([...Object.keys(prevRes), ...Object.keys(curRes)]);
-                          for (const k of allResKeys) {
-                            if (JSON.stringify(prevRes[k]) !== JSON.stringify(curRes[k])) resourceChanges++;
-                          }
-                          const parts = [];
-                          if (regionChanges) parts.push(`${regionChanges} region(s) changed`);
-                          if (resourceChanges) parts.push(`${resourceChanges} resource region(s) changed`);
-                          diffText = parts.length ? parts.join(", ") : "no changes from previous";
-                        } else {
-                          diffText = "initial save";
-                        }
-                        return (
-                          <button key={snap.ts} title={diffText} onClick={() => {
-                            restoreAutosave(idx);
-                            setShowLoadMenu(false);
-                          }} style={{
-                            display: "block", width: "100%", textAlign: "left",
-                            padding: "5px 12px", border: "none", cursor: "pointer",
-                            background: isActive ? "rgba(104,170,220,0.25)" : "transparent",
-                            color: isActive ? "#8bf" : "#ccd",
-                            fontSize: "0.72rem",
-                          }}
-                          onMouseEnter={e => e.target.style.background = "rgba(104,170,220,0.15)"}
-                          onMouseLeave={e => e.target.style.background = isActive ? "rgba(104,170,220,0.25)" : "transparent"}
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            const name = window.prompt("Name this save:", snap.name || "");
-                            if (name !== null) {
-                              setAutosaves(prev => {
-                                const next = [...prev];
-                                next[idx] = { ...next[idx], name: name || undefined };
-                                try { localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(next)); } catch {}
-                                return next;
-                              });
-                            }
-                          }}
-                          >
-                            <span style={{ fontWeight: 600 }}>#{idx + 1}</span>
-                            {snap.checkpoint && <span style={{ color: "#6a8", fontSize: "0.6rem", marginLeft: 4 }}>checkpoint</span>}
-                            {snap.name && <span style={{ color: "#da6", fontSize: "0.65rem", marginLeft: 4 }}>{snap.name}</span>}
-                            {" — "}
-                            <span>{d.toLocaleDateString()} {d.toLocaleTimeString()}</span>
-                          </button>
-                        );
-                      })
-                    )}
-                    {autosaves.length > 0 && (<>
-                      <div style={{ borderTop: "1px solid #444", margin: "4px 0" }} />
-                      <button onClick={() => {
-                        if (window.confirm("Clear all autosave history?")) {
-                          setAutosaves([]);
-                          setTimelineIndex(null);
-                          timelineStashRef.current = null;
-                          try { localStorage.removeItem(AUTOSAVE_KEY); } catch {}
-                          setShowLoadMenu(false);
-                        }
-                      }} style={{
-                        display: "block", width: "100%", textAlign: "left",
-                        padding: "5px 12px", border: "none", cursor: "pointer",
-                        background: "transparent", color: "#c88", fontSize: "0.72rem",
-                      }}
-                      onMouseEnter={e => e.target.style.background = "rgba(100,40,40,0.3)"}
-                      onMouseLeave={e => e.target.style.background = "transparent"}
-                      >Clear All Saves</button>
-                    </>)}
-                  </div>
-                )}
-              </div>
-              {autosaves.length > 0 && (<>
-                <span style={{ color: "#68a", fontSize: "0.65rem", opacity: 0.5 }}>|</span>
-                <span style={{ color: "#888", fontSize: "0.65rem", flexShrink: 0 }}>1</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={autosaves.length}
-                  value={timelineIndex !== null ? timelineIndex : autosaves.length}
-                  onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
-                    if (v >= autosaves.length) {
-                      returnToLive();
-                    } else {
-                      restoreAutosave(v);
-                    }
-                  }}
-                  title={timelineIndex !== null
-                    ? `Viewing #${timelineIndex + 1} — ${new Date(autosaves[timelineIndex].ts).toLocaleTimeString()}`
-                    : "Live (latest)"}
-                  style={{ width: 120, accentColor: "#68a", cursor: "pointer" }}
-                />
-                <span style={{ color: "#888", fontSize: "0.65rem", flexShrink: 0 }}>
-                  {timelineIndex !== null
-                    ? new Date(autosaves[timelineIndex].ts).toLocaleTimeString()
-                    : "Live"}
-                </span>
-              </>)}
+              {/* 0.9.472: removed the autosave-snapshot "Save" button, the
+                  "Load" snapshot menu, and the timeline scrub slider per
+                  user request — the unified pending Save in the dev pill
+                  above is the one and only save button now. Autosaves keep
+                  running silently in the background for crash recovery. */}
             </div>
           </>)}
+          {/* 0.9.474: keyed on devMode so toggling re-mounts the element
+              and replays the macOS-style spring pop + glow animation in
+              `.dev-btn--active`. */}
           <button
-            className="dev-btn"
+            key={`dev-btn-${devMode ? "on" : "off"}`}
+            className={`dev-btn${devMode ? " dev-btn--active" : ""}`}
             onClick={() => setDevMode(prev => {
               const next = !prev;
               if (!next) setColorMode(cm => DEV_COLOR_MODES.has(cm) ? "faction" : cm);
@@ -8287,6 +10097,15 @@ function App() {
               minWidth: 40,
             }}
           >Dev</button>
+          {/* 0.9.474: real volume control replaces the binary mute. Click
+              the speaker to open a vertical slider; scroll-wheel over the
+              icon nudges volume by 5% steps. Persists across sessions. */}
+          <VolumeControl
+            volume={audioVolume}
+            onChange={setVolume}
+            buttonStyle={btnStyle(false)}
+          />
+          </div>{/* 0.9.470 dev pill + Dev button row */}
         </div>,
         document.body
         )}
@@ -8325,10 +10144,15 @@ function App() {
             }}>Close</button>
           </div>
         )}
-        {/* Recovery banner — shown when dev mode opens with existing autosaves */}
+        {/* Recovery banner — shown when dev mode opens with existing
+            autosaves. 0.9.471: zIndex bumped above 10003 (the bottom-
+            right control column) so its buttons aren't covered by Mute /
+            Layout / Dev — user reported clicks landing on the wrong
+            element. Also nudged up from `bottom: 52` to clear the dev
+            pill row entirely now that Mute is anchored next to Dev. */}
         {devRecoveryPrompt && autosaves.length > 0 && (
           <div style={{
-            position: "fixed", bottom: 52, right: 12, zIndex: 10,
+            position: "fixed", bottom: 80, right: 12, zIndex: 10010,
             background: "rgba(30,40,60,0.92)", backdropFilter: "blur(10px)",
             border: "1px solid #68a", borderRadius: 10,
             padding: "10px 14px", maxWidth: 340,
@@ -8408,6 +10232,9 @@ function App() {
             style={{ ...btnStyle(showResourcesOverlay), minWidth: 0 }}>Resources</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
             style={{ ...btnStyle(showArmies), minWidth: 0 }}>Armies</button>
+          <button className="map-mode-btn" onClick={() => setShowTileInspect(prev => !prev)}
+            title="Hover-to-inspect: show a small tooltip with the hovered tile's region, owner, and terrain type. Terrain shows once the geography data is loaded (open Geography mode once)."
+            style={{ ...btnStyle(showTileInspect), minWidth: 0 }}>Inspect</button>
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
             style={{ ...btnStyle(showLabels !== "off"), minWidth: 0 }}>{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
           {modDataDir && (
@@ -8599,6 +10426,135 @@ function App() {
             }
           }}
             style={{ ...btnStyle(liveLogActive), minWidth: 0, color: liveLogActive ? "#4f8" : undefined }}>Live</button>
+          {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
+              a new game + save at turn 0 so the auto-cache pass picks up
+              real save-read stats and uses them in non-live mode. The
+              cache populates automatically on any save load; this button
+              is the human-readable explainer. */}
+          <button
+            className="map-mode-btn"
+            onClick={async () => {
+              try {
+                if (!window.electronAPI?.selectSaveFile || !window.electronAPI?.calibrateFromSave) {
+                  pushToast("Calibration unavailable — older app build.", "warning");
+                  return;
+                }
+                const pick = await window.electronAPI.selectSaveFile(liveSaveDir || undefined);
+                if (!pick || !pick.path) return; // user cancelled
+                pushToast("Calibrating from save…", "info", 3000);
+                const res = await window.electronAPI.calibrateFromSave(pick.path);
+                if (!res || !res.ok) {
+                  pushToast("Calibration failed: " + (res?.error || "unknown"), "warning");
+                  return;
+                }
+                // 0.9.516: thread v1PortraitsByCoord through so the family
+                // tree picks up v1 portraits in calibrate mode (not just
+                // live save-watch). Without this, the family tree falls to
+                // hash pool while the bodyguard card uses v1's portrait,
+                // producing two different icons for the same character.
+                if (res.v1PortraitsByCoord) setV1PortraitsByCoord(res.v1PortraitsByCoord);
+                // 0.9.532: faction data now comes back from Calibrate too, so
+                // the Wealth panel (treasuries + AI personality + diplomacy)
+                // populates without needing Live mode.
+                if (res.factionTreasuries) setFactionTreasuries(res.factionTreasuries);
+                if (res.treasuryByFaction) setSaveTreasuryRecords(res.treasuryByFaction);
+                if (res.factionRecordOwners) setFactionRecordOwners(res.factionRecordOwners);
+                if (res.factionDiplomacy) setFactionDiplomacy(res.factionDiplomacy);
+                if (res.allFactionDiplomacy) setAllFactionDiplomacy(res.allFactionDiplomacy);
+                if (res.diplomacyMatrix) setDiplomacyMatrix(res.diplomacyMatrix);
+                if (res.treasuryHistory) setTreasuryHistory(res.treasuryHistory);
+                // Only adopt the save-derived player faction if one isn't
+                // already set (don't override the user's pick or save-name detect).
+                if (res.savePlayerFaction) setPlayerFaction(prev => prev || res.savePlayerFaction);
+                const updates = {};
+                const sampleKeys = [];
+                // 0.9.440: prevent same-firstName collision on the stripped
+                // key. After 0.9.438 relaxed the filter to keep portrait-
+                // only chars, every "Dionysios" / "Perdikkas" / etc. in a
+                // faction wrote to the same `dionysios||antigonid` slot.
+                // Last writer won — usually a stat-less captain — and the
+                // governor / general's portrait got clobbered.
+                //
+                // Fix: score each entry (traits=3, stats=2, portrait=1)
+                // and only overwrite an existing slot when the new entry's
+                // score is STRICTLY HIGHER. ALSO uses writeBest for the
+                // full key (0.9.503) — previously the full key was written
+                // unconditionally, so when the parser found two records
+                // with the same name (e.g. Achaios at age 47 with real
+                // stats + 21 traits, AND a stub at age 51 with 0 traits +
+                // bogus 0/1/0/0 stats), the stub overwrote the real one.
+                const score = (e) => {
+                  let s = 0;
+                  if (e.command != null || e.influence != null || e.management != null) s += 2;
+                  if (e.portrait) s += 1;
+                  // 0.9.503: trait count is the strongest signal of a
+                  // real character (stub records have 0 traits).
+                  if (e.traitCount && e.traitCount > 0) s += 3;
+                  return s;
+                };
+                const writeBest = (k, entry) => {
+                  const cur = updates[k];
+                  if (!cur || score(entry) > score(cur)) updates[k] = entry;
+                };
+                for (const c of res.characters || []) {
+                  const entry = {
+                    command: c.command, influence: c.influence,
+                    management: c.management, loyalty: c.loyalty,
+                    turn: c.turn,
+                    portrait: c.portrait || null,
+                    // 0.9.451: cache age so the non-live bodyguard-swap
+                    // can pass the right age bucket to the IPC hash.
+                    age: typeof c.age === "number" ? c.age : null,
+                    secondaryUuid: c.secondaryUuid || null,
+                    // 0.9.503: forward trait count so the scoring above
+                    // can favor records with full trait lists over
+                    // 0-trait stub records that share the same name.
+                    traitCount: typeof c.traitCount === "number" ? c.traitCount : 0,
+                    // 0.9.505: epithet/cognomen lastName (e.g. "the Elder"
+                    // for Achaios after the trait-epithet pass in main.js).
+                    // Without this, bodyguard-swap shows just "Achaios"
+                    // when the in-game and tooltip both say "Achaios the
+                    // Elder". The cache entry now carries it through.
+                    lastName: c.lastName || null,
+                    faction: c.faction || null,
+                  };
+                  const fnNorm = (c.firstName || "").toLowerCase();
+                  const lnNorm = (c.lastName || "").replace(/_/g, " ").toLowerCase();
+                  const facNorm = (c.faction || "").toLowerCase();
+                  // 0.9.503: writeBest for the full key too — same reason
+                  // as the stripped keys: the parser sometimes returns
+                  // duplicate records for the same character, and the
+                  // earlier code's unconditional write let the stub win.
+                  writeBest(`${fnNorm}|${lnNorm}|${facNorm}`, entry);
+                  // Stripped keys are collision-prone — use writeBest so a
+                  // stats-bearing entry isn't overwritten by a portrait-only
+                  // entry that happens to share firstName.
+                  writeBest(`${fnNorm}||${facNorm}`, entry);
+                  writeBest(`${fnNorm}||`, entry);
+                  if (sampleKeys.length < 8) sampleKeys.push(`"${fnNorm}|${lnNorm}|${facNorm}"=${c.command}/${c.influence}/${c.management}/${c.loyalty} portrait=${c.portrait ? "Y" : "N"}`);
+                }
+                setStatsCache(() => {
+                  // 0.9.455: REPLACE the cache instead of merging.
+                  try { localStorage.setItem("statsCache", JSON.stringify(updates)); } catch {}
+                  console.log(`[stats-cache] REPLACED cache with ${Object.keys(updates).length} keys (${(res.characters || []).length} chars) from ${pick.file} (turn ${res.turn ?? "?"}). Sample: ${sampleKeys.join("  |  ")}`);
+                  return updates;
+                });
+                // 0.9.461: statsCacheCharCount is now a useMemo over the cache.
+                const turnLabel = res.turn != null ? ` (turn ${res.turn})` : "";
+                pushToast(`Calibrated ${res.characters.length} characters from ${pick.file}${turnLabel}.`, "info", 6000);
+              } catch (e) {
+                pushToast("Calibration error: " + e.message, "warning");
+              }
+            }}
+            title={(() => {
+              const n = statsCacheCharCount || 0;
+              return n === 0
+                ? "Pick a save to calibrate stats for non-live mode. For accurate 'starting' stats, pick a turn-0 save."
+                : `${n} characters cached. Click to recalibrate from a different save.`;
+            })()}
+            style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px" }}>
+            🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
+          </button>
           {liveLogActive && (
             <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
               title={saveLuaCounters && saveLuaCounters.count
@@ -8944,6 +10900,41 @@ function App() {
       // recruitable list shown in the bottom region-info panel.
       return { label: "Recruitment", value: "See bottom panel for details" };
     }
+    if (colorMode === "garrison") {
+      if (!saveArmiesData) return { label: "Garrison", value: "Live save required" };
+      const arr = saveArmiesData[info.region] || saveArmiesData[info.city];
+      if (!Array.isArray(arr) || arr.length === 0) return { label: "Garrison", value: "None" };
+      let total = 0;
+      for (const u of arr) total += (u.soldiers || 0);
+      return { label: "Garrison", value: `${total.toLocaleString()} soldiers` };
+    }
+    if (colorMode === "happiness") {
+      if (!saveHappinessByCity) return { label: "Happiness", value: "Live save required" };
+      const v = saveHappinessByCity[info.city];
+      if (typeof v !== "number") return { label: "Happiness", value: "No data" };
+      return { label: "Happiness", value: `${Math.round(v)} / 200` };
+    }
+    if (colorMode === "public_order") {
+      if (!saveHappinessByCity) return { label: "Public Order", value: "Live save required" };
+      const v = saveHappinessByCity[info.city];
+      if (typeof v !== "number") return { label: "Public Order", value: "No data" };
+      return { label: "Public Order", value: `${Math.round(v)} / 200` };
+    }
+    if (colorMode === "income") {
+      if (saveIncomeByCity && saveIncomeByCity[info.city] && typeof saveIncomeByCity[info.city].perTurn === "number") {
+        const pt = saveIncomeByCity[info.city].perTurn;
+        return { label: "Income", value: `${pt.toLocaleString()} / turn` };
+      }
+      // Fall back to wealth-proxy estimate so the hover row stays useful.
+      const resList = resourcesData[info.region] || resourcesData[info.city] || [];
+      let resSum = 0;
+      for (const x of resList) resSum += (x.amount || 1);
+      const farm = parseInt(info.farm_level || "0", 10) || 0;
+      const portM = String(info.tags || "").match(/\bbase_port_level_(\d+)\b/);
+      const port = portM ? parseInt(portM[1], 10) : 0;
+      const total = resSum + farm * 2 + port * 4;
+      return { label: "Income (est.)", value: `${total.toLocaleString()} / turn` };
+    }
     // Dev modes
     if (colorMode === "terrain") {
       const t = getTagValue(info.tags, TERRAIN_TAGS);
@@ -8978,6 +10969,10 @@ function App() {
         return { label: `Has '${selectedHiddenResource}'`, value: has ? "Yes" : "No" };
       }
       return { label: "Hidden Resources", value: hrs.length ? hrs.join(", ") : "None" };
+    }
+    if (colorMode === "aor") {
+      const aors = getAors(info.tags);
+      return { label: aors.length === 1 ? "AOR" : `AORs (${aors.length})`, value: aors.length ? aors.join(", ") : "None" };
     }
     return null;
   }
@@ -9081,6 +11076,130 @@ function App() {
         </div>
       );
     }
+    if (colorMode === "garrison") {
+      const sumSoldiers = (arr) => {
+        if (!Array.isArray(arr)) return 0;
+        let s = 0;
+        for (const u of arr) s += (u.soldiers || 0);
+        return s;
+      };
+      const vals = [];
+      if (saveArmiesData) {
+        for (const r of Object.values(regions)) {
+          const t = sumSoldiers(saveArmiesData[r.region] || saveArmiesData[r.city]);
+          if (t > 0) vals.push(t);
+        }
+      }
+      const hasData = vals.length > 0;
+      const minV = hasData ? Math.min(...vals) : 0;
+      const maxV = hasData ? Math.max(...vals) : 0;
+      const midV = hasData ? Math.round((minV + maxV) / 2) : 0;
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Garrison <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            {hasData ? <>
+              <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(20,35,90), rgb(60,150,140), rgb(240,200,40))" }} />
+              <div style={labelRow}>
+                <span>{minV.toLocaleString()}</span>
+                <span>{midV.toLocaleString()}</span>
+                <span>{maxV.toLocaleString()}</span>
+              </div>
+              <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Soldiers in regional garrison (live save).</div>
+            </> : (
+              <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+                Heatmap requires a live save game.
+              </div>
+            )}
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "happiness" || colorMode === "public_order") {
+      const title = colorMode === "happiness" ? "Happiness" : "Public Order";
+      const vals = [];
+      if (saveHappinessByCity) {
+        for (const r of Object.values(regions)) {
+          const v = saveHappinessByCity[r.city];
+          if (typeof v === "number") vals.push(v);
+        }
+      }
+      const hasData = vals.length > 0;
+      const minV = hasData ? Math.min(...vals) : 0;
+      const maxV = hasData ? Math.max(...vals) : 0;
+      const midV = hasData ? (minV + maxV) / 2 : 0;
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>{title} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            {hasData ? <>
+              <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(210,40,40), rgb(230,200,40), rgb(50,190,40))" }} />
+              <div style={labelRow}>
+                <span>{Math.round(minV)}</span>
+                <span>{Math.round(midV)}</span>
+                <span>{Math.round(maxV)}</span>
+              </div>
+              <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>
+                {colorMode === "happiness"
+                  ? "Settlement happiness (raw 100..200 scale)."
+                  : "Public order ≈ happiness in RTW; separate mode for future split."}
+              </div>
+            </> : (
+              <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+                Heatmap requires a live save game.
+              </div>
+            )}
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "income") {
+      const liveAvailable = saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0;
+      const vals = [];
+      if (liveAvailable) {
+        for (const r of Object.values(regions)) {
+          const e = saveIncomeByCity[r.city];
+          if (e && typeof e.perTurn === "number") vals.push(e.perTurn);
+        }
+      } else {
+        for (const r of Object.values(regions)) {
+          let s = 0;
+          const resList = resourcesData[r.region] || resourcesData[r.city] || [];
+          for (const x of resList) s += (x.amount || 1);
+          const farm = parseInt(r.farm_level || "0", 10) || 0;
+          s += farm * 2;
+          const portM = String(r.tags || "").match(/\bbase_port_level_(\d+)\b/);
+          if (portM) s += parseInt(portM[1], 10) * 4;
+          if (s > 0) vals.push(s);
+        }
+      }
+      const hasData = vals.length > 0;
+      const minV = hasData ? Math.min(...vals) : 0;
+      const maxV = hasData ? Math.max(...vals) : 0;
+      const midV = hasData ? Math.round((minV + maxV) / 2) : 0;
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Income <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            {hasData ? <>
+              <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(50,60,80), rgb(190,160,110), rgb(255,215,60))" }} />
+              <div style={labelRow}>
+                <span>{minV.toLocaleString()}</span>
+                <span>{midV.toLocaleString()}</span>
+                <span>{maxV.toLocaleString()}</span>
+              </div>
+              <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>
+                {liveAvailable ? "Per-turn settlement income (live save)." : "Estimated from resources/farm/port (no live save)."}
+              </div>
+            </> : (
+              <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+                Heatmap requires a live save game.
+              </div>
+            )}
+          </>}
+        </div>
+      );
+    }
 
     if (colorMode === "government") {
       const GOV_LEGEND = [
@@ -9107,6 +11226,73 @@ function App() {
               <span style={{ marginLeft: "auto", color: "#aaa", fontSize: "0.7rem" }}>{govCounts[g.level] || 0}</span>
             </div>
           ))}
+        </div>
+      );
+    }
+
+    if (colorMode === "aor") {
+      // 0.9.486: AOR legend. Lists every aor_X tag found across regions,
+      // with the same color it gets in the map render. Sorted by region
+      // count (most-used AORs at the top) so the user can see at a glance
+      // which AOR is the most common (helps spot dominant recruitment
+      // zones). Multi-AOR regions get a small "+N" marker on each AOR
+      // they belong to in the future click-to-filter pass.
+      const seen = {};
+      const counts = {};
+      let ai = 0;
+      for (const r of Object.values(regions)) {
+        const list = getAors(r.tags);
+        for (const a of list) {
+          if (!seen[a]) {
+            seen[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
+            ai++;
+          }
+          counts[a] = (counts[a] || 0) + 1;
+        }
+      }
+      const entries = Object.entries(seen).sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));
+      if (entries.length === 0) {
+        return (
+          <div style={panelStyle}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Areas of Recruitment</div>
+            <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+              No `aor_*` tags found in the current campaign's descr_regions.txt.
+            </div>
+          </div>
+        );
+      }
+      console.log(`[aor] legend: ${entries.length} unique AORs across ${Object.values(counts).reduce((a, b) => a + b, 0)} region-tags`);
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
+            Areas of Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "30vh", overflowY: "auto" }}>
+              {entries.map(([name, col]) => (
+                <div key={name} style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "1px 0", fontSize: "0.72rem",
+                }} title={`${counts[name]} region(s) tagged with aor_${name}`}>
+                  <span style={{
+                    width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                    background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
+                    border: "1px solid rgba(0,0,0,0.35)",
+                  }} />
+                  <span style={{ flex: 1, textTransform: "capitalize", color: "#eee" }}>
+                    {name.replace(/_/g, " ")}
+                  </span>
+                  <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
+                    {counts[name]}
+                  </span>
+                </div>
+              ))}
+              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
+                Stripes = regions with multiple AORs (each AOR's color appears in rotation).
+                <br />Click button again to exit AOR mode.
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -10179,8 +12365,223 @@ function App() {
     );
   }
 
+  // ----------------------------------------------------------------
+  // Search-palette source list. Recomputed only when underlying state
+  // changes — flattening happens once, the SearchPalette component then
+  // does cheap subsequence matching per keystroke.
+  // ----------------------------------------------------------------
+  const searchSources = useMemo(() => {
+    const out = [];
+
+    // Regions — every entry from the `regions` state. Payload carries
+    // both the region object AND the rgbKey so the activator can
+    // setLockedRegionInfo / setSelectedProvinces.
+    if (regions && typeof regions === "object") {
+      for (const rgbKey of Object.keys(regions)) {
+        const r = regions[rgbKey];
+        if (!r || !r.region) continue;
+        out.push({
+          type: "region",
+          id: "rg:" + rgbKey,
+          label: r.region,
+          subtitle: [r.city, r.faction ? ((factionDisplayNames && factionDisplayNames[r.faction]) || r.faction.replace(/_/g, " ")) : null]
+            .filter(Boolean).join(" · "),
+          payload: { region: r, rgbKey },
+        });
+      }
+    }
+
+    // Factions — prefer the runtime factionDisplayNames map (covers
+    // every mod's localised names); fall back to the `factions` array
+    // of raw faction-ids.
+    const seenFactions = new Set();
+    if (factionDisplayNames && typeof factionDisplayNames === "object") {
+      for (const fid of Object.keys(factionDisplayNames)) {
+        if (!fid) continue;
+        seenFactions.add(fid);
+        out.push({
+          type: "faction",
+          id: "fa:" + fid,
+          label: factionDisplayNames[fid] || fid.replace(/_/g, " "),
+          subtitle: "Faction · " + fid,
+          payload: { factionId: fid },
+        });
+      }
+    }
+    if (Array.isArray(factions)) {
+      for (const fid of factions) {
+        if (!fid || seenFactions.has(fid)) continue;
+        out.push({
+          type: "faction",
+          id: "fa:" + fid,
+          label: fid.replace(/_/g, " "),
+          subtitle: "Faction · " + fid,
+          payload: { factionId: fid },
+        });
+      }
+    }
+
+    // Characters — starting characters from descr_strat + live
+    // characters from the save (if loaded). Dedupe by
+    // firstName+lastName+faction.
+    const seenChars = new Set();
+    const pushChar = (c, factionFallback) => {
+      if (!c) return;
+      const fn = c.firstName || c.first_name || "";
+      const ln = c.lastName || c.last_name || "";
+      if (!fn) return;
+      const fac = c.faction || factionFallback || "";
+      const key = (fn + "|" + ln + "|" + fac).toLowerCase();
+      if (seenChars.has(key)) return;
+      seenChars.add(key);
+      const role = c.isLeader ? "Faction Leader"
+        : c.isHeir ? "Faction Heir"
+        : c.gender === "female" ? "Princess"
+        : c.role || (c.type === "spy" ? "Spy" : c.type === "diplomat" ? "Diplomat" : c.type === "assassin" ? "Assassin" : c.type === "admiral" ? "Admiral" : "General");
+      const facDisp = fac
+        ? ((factionDisplayNames && factionDisplayNames[fac]) || fac.replace(/_/g, " "))
+        : null;
+      const ageStr = c.age != null ? ("age " + c.age) : null;
+      const subtitle = [facDisp, ageStr, role].filter(Boolean).join(" · ");
+      const label = (fn + " " + (ln || "")).replace(/_/g, " ").trim();
+      out.push({
+        type: "character",
+        id: "ch:" + key,
+        label,
+        subtitle,
+        payload: { character: { ...c, firstName: fn, lastName: ln, faction: fac }, label, faction: fac },
+      });
+    };
+    if (Array.isArray(startingCharactersFromMod)) {
+      for (const c of startingCharactersFromMod) pushChar(c);
+    }
+    if (saveCharactersByRegion && typeof saveCharactersByRegion === "object") {
+      for (const arr of Object.values(saveCharactersByRegion)) {
+        if (!Array.isArray(arr)) continue;
+        for (const c of arr) pushChar(c);
+      }
+    }
+
+    // Buildings — display-name map. Keys are level names; values are
+    // display names. Payload carries both so InfoPopup can resolve
+    // descriptions either way.
+    if (buildingDisplayNames && typeof buildingDisplayNames === "object") {
+      for (const lvlName of Object.keys(buildingDisplayNames)) {
+        const disp = buildingDisplayNames[lvlName] || lvlName;
+        out.push({
+          type: "building",
+          id: "bd:" + lvlName,
+          label: disp,
+          subtitle: "Building",
+          payload: { name: lvlName, label: disp },
+        });
+      }
+    }
+
+    // Units — unitOwnership keys (skip the __dictionary sidecar). The
+    // owner list lets us pick a faction so InfoPopup can resolve the
+    // unit-info TGA.
+    if (unitOwnership && typeof unitOwnership === "object") {
+      for (const unitName of Object.keys(unitOwnership)) {
+        if (unitName === "__dictionary") continue;
+        const owners = unitOwnership[unitName];
+        if (!Array.isArray(owners) || owners.length === 0) continue;
+        const label = unitName.replace(/_/g, " ");
+        out.push({
+          type: "unit",
+          id: "un:" + unitName,
+          label,
+          subtitle: "Unit",
+          payload: { name: unitName, faction: owners[0], label },
+        });
+      }
+    }
+
+    return out;
+  }, [regions, factions, factionDisplayNames, startingCharactersFromMod, saveCharactersByRegion, buildingDisplayNames, unitOwnership]);
+
+  // Activation dispatcher for the search palette. Each source type
+  // jumps to the right place in the app; SearchPalette closes itself
+  // after onActivate returns.
+  const onSearchActivate = useCallback((src) => {
+    if (!src || !src.type) return;
+    switch (src.type) {
+      case "region": {
+        const { region, rgbKey } = src.payload || {};
+        if (region && rgbKey) {
+          setLockedRegionInfo({ ...region, rgb: rgbKey });
+          setSelectedProvinces([rgbKey]);
+          // Recenter the canvas on the region centroid so the user
+          // actually sees the jump (same flow as jumpToPin).
+          const centroid = regionCentroids[rgbKey];
+          if (centroid) {
+            const { scale } = computeTransform();
+            const ts = scale * zoom;
+            const bx = (canvasSize.width - imgSize.width * ts) / 2;
+            const by = (canvasSize.height - imgSize.height * ts) / 2;
+            setOffset(clampOffset({
+              x: canvasSize.width / 2 - centroid.x * ts - bx,
+              y: canvasSize.height / 2 - centroid.y * ts - by,
+            }));
+          }
+        }
+        break;
+      }
+      case "faction": {
+        const fid = src.payload?.factionId;
+        if (fid) setSelectedFaction(fid);
+        break;
+      }
+      case "character": {
+        const { character, label, faction } = src.payload || {};
+        setInfoPopup({
+          type: "character",
+          character,
+          label,
+          faction,
+        });
+        break;
+      }
+      case "building": {
+        const { name, label } = src.payload || {};
+        // Pick a culture if we can — InfoPopup's TGA resolver wants
+        // one. Use the currently-selected faction's culture if
+        // available, else fall back to the first known culture.
+        let culture = null;
+        if (factionCultures && typeof factionCultures === "object") {
+          if (selectedFaction && factionCultures[selectedFaction]) {
+            culture = factionCultures[selectedFaction];
+          } else {
+            const firstFac = Object.keys(factionCultures)[0];
+            if (firstFac) culture = factionCultures[firstFac];
+          }
+        }
+        setInfoPopup({
+          type: "building",
+          name,
+          label: label || name,
+          culture,
+          chainName: null,
+        });
+        break;
+      }
+      case "unit": {
+        const { name, faction, label } = src.payload || {};
+        setInfoPopup({
+          type: "unit",
+          name,
+          faction,
+          label: label || (name || "").replace(/_/g, " "),
+        });
+        break;
+      }
+      default:
+        break;
+    }
+  }, [regionCentroids, zoom, canvasSize, imgSize, computeTransform, clampOffset, factionCultures, selectedFaction]);
+
   return (
-    <>
+    <AnimationLayoutProvider designMode={designMode}>
       <style>{globalScrollbarKill}</style>
       <canvas
         ref={bgCanvasRef}
@@ -10205,14 +12606,27 @@ function App() {
       {familyTreeOpen && (
         <FamilyTree
           characterExtras={characterExtras}
+          v1PortraitsByCoord={v1PortraitsByCoord}
           familyTreeMaps={familyTreeMaps}
           modFamiliesByFaction={modFamiliesByFaction}
+          pendingGenerals={pendingGenerals}
           startingCharactersFromMod={startingCharactersFromMod}
           factionDisplayNames={factionDisplayNames}
+          // 0.9.525: pass the persisted statsCache so the family tree
+          // resolves portraits from the SAME name-keyed source as the unit
+          // cards (bodyguard-swap). statsCache.portrait carries the
+          // engine-assigned save path (re-enabled 0.9.504) and is persisted
+          // to localStorage + rehydrated on startup — so the family tree
+          // shows correct portraits on launch without a recalibration, and
+          // can never diverge from the bodyguard card for the same char.
+          statsCache={statsCache}
           factionCultures={factionCultures}
           modDataDir={modDataDir}
           defaultFaction={familyTreeDefaultFaction}
           playerFaction={playerFaction}
+          currentTurn={saveCurrentTurn}
+          currentYear={saveCurrentYear}
+          onShowInfo={setInfoPopup}
           onClose={() => { setFamilyTreeOpen(false); setFamilyTreeDefaultFaction(null); }}
         />
       )}
@@ -10459,6 +12873,54 @@ function App() {
                 onboardingDone={onboardingDone}
                 forceOnboarding={isTestBuild}
                 onPhaseChange={setWelcomePhase}
+                statsCacheCount={Object.keys(statsCache || {}).length}
+                onCalibrate={async () => {
+                  // 0.9.425: invoked from the Calibration onboarding page.
+                  // Same flow as the toolbar 🎯 Calibrate button.
+                  try {
+                    if (!window.electronAPI?.selectSaveFile || !window.electronAPI?.calibrateFromSave) {
+                      pushToast("Calibration unavailable — older app build.", "warning");
+                      return { ok: false };
+                    }
+                    const pick = await window.electronAPI.selectSaveFile(liveSaveDir || undefined);
+                    if (!pick || !pick.path) return { ok: false, cancelled: true };
+                    pushToast("Calibrating…", "info", 3000);
+                    const res = await window.electronAPI.calibrateFromSave(pick.path);
+                    if (!res || !res.ok) {
+                      pushToast("Calibration failed: " + (res?.error || "unknown"), "warning");
+                      return { ok: false };
+                    }
+                    if (res.v1PortraitsByCoord) setV1PortraitsByCoord(res.v1PortraitsByCoord);
+                    // 0.9.532: faction data from Calibrate (non-live) too.
+                    if (res.factionTreasuries) setFactionTreasuries(res.factionTreasuries);
+                    if (res.treasuryByFaction) setSaveTreasuryRecords(res.treasuryByFaction);
+                    if (res.factionRecordOwners) setFactionRecordOwners(res.factionRecordOwners);
+                    if (res.factionDiplomacy) setFactionDiplomacy(res.factionDiplomacy);
+                    if (res.allFactionDiplomacy) setAllFactionDiplomacy(res.allFactionDiplomacy);
+                    if (res.diplomacyMatrix) setDiplomacyMatrix(res.diplomacyMatrix);
+                    if (res.treasuryHistory) setTreasuryHistory(res.treasuryHistory);
+                    if (res.savePlayerFaction) setPlayerFaction(prev => prev || res.savePlayerFaction);
+                    const updates = {};
+                    for (const c of res.characters || []) {
+                      const key = `${c.firstName || ""}|${(c.lastName || "").replace(/_/g, " ")}|${c.faction || ""}`.toLowerCase();
+                      updates[key] = {
+                        command: c.command, influence: c.influence,
+                        management: c.management, loyalty: c.loyalty,
+                        turn: c.turn,
+                      };
+                    }
+                    setStatsCache((prev) => {
+                      const next = { ...prev, ...updates };
+                      try { localStorage.setItem("statsCache", JSON.stringify(next)); } catch {}
+                      return next;
+                    });
+                    pushToast(`Calibrated ${res.characters.length} characters from ${pick.file}${res.turn != null ? ` (turn ${res.turn})` : ""}.`, "info", 6000);
+                    return { ok: true, count: res.characters.length, turn: res.turn };
+                  } catch (e) {
+                    pushToast("Calibration error: " + e.message, "warning");
+                    return { ok: false };
+                  }
+                }}
                 onDone={(savedVersion) => {
                   setShowWelcome(false);
                   setWelcomePhase(null);
@@ -10667,9 +13129,10 @@ function App() {
                       {!homelandPanelCollapsed && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                           {[
-                            { color: "rgb(50,180,50)", label: "Homeland — owned" },
+                            { color: "rgb(50,180,50)", label: "Homeland — owned (govD)" },
                             { color: "rgb(210,190,40)", label: "Homeland — foreign-held" },
-                            { color: "rgb(180,50,50)", label: "Not homeland" },
+                            { color: "rgb(200,60,60)", label: "Homeland — wrong gov (≠ govD)" },
+                            { color: "rgb(70,70,70)", label: "Not homeland" },
                           ].map(({ color, label }) => (
                             <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <span style={{ width: 12, height: 12, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
@@ -10732,7 +13195,7 @@ function App() {
                   onMouseMove={handleMouseMove}
                   onMouseDown={handleMouseDown}
                   onMouseUp={handleMouseUp}
-                  onMouseLeave={() => { handleMouseUp(); setHoveredResource(null); setHoveredArmy(null); setHoveredCity(null); }}
+                  onMouseLeave={() => { handleMouseUp(); setHoveredResource(null); setHoveredArmy(null); setHoveredCity(null); lastInspectKeyRef.current = ""; setTileInspect(null); }}
                   onDoubleClick={handleDoubleClick}
                   tabIndex={0}
                   width={canvasSize.width}
@@ -10750,6 +13213,112 @@ function App() {
                   }}
                   aria-label={`Interactive map (${variantLabel})`}
                 />
+
+                {/* 0.9.535: hover-to-inspect tooltip. Cursor-following readout
+                    of the hovered tile's region / owner / terrain. pointer-
+                    events:none so it never blocks map interaction. Positioned
+                    from the canvas-relative offset coords captured in
+                    handleMouseMove; flips to the left of the cursor near the
+                    right edge so it doesn't clip. */}
+                {showTileInspect && tileInspect && (tileInspect.region || tileInspect.terrain) && (
+                  <div style={{
+                    position: "absolute",
+                    left: Math.min(tileInspect.sx + 16, canvasSize.width - 180),
+                    top: Math.min(tileInspect.sy + 16, canvasSize.height - 70),
+                    pointerEvents: "none",
+                    zIndex: 6,
+                    background: "rgba(20,18,14,0.92)",
+                    border: "1px solid rgba(220,166,74,0.4)",
+                    borderRadius: 6,
+                    padding: "5px 9px",
+                    fontSize: "0.72rem",
+                    color: "#f4f4f4",
+                    lineHeight: 1.35,
+                    maxWidth: 220,
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {tileInspect.region && <div style={{ fontWeight: 700, color: "#ffe6a8" }}>{tileInspect.region}</div>}
+                    {tileInspect.owner && <div style={{ color: "#b8c8d8" }}>{tileInspect.owner}</div>}
+                    {tileInspect.terrain && <div style={{ color: "#9ec78a" }}>⛰ {tileInspect.terrain}</div>}
+                  </div>
+                )}
+
+                {/* Diplomatic-web overlay — absolutely positioned SVG over
+                    the map canvas. pointer-events:none so clicks fall
+                    through to the canvas. z-index 2 keeps it above the
+                    canvas (which has no explicit zIndex, so its default
+                    stacking is below) but below the legend-panel sidebar
+                    (z=3), UI tooltips (z=11+), and modals. */}
+                {showDiplomacyOverlay && diploPairs.length > 0 && (() => {
+                  const { totalScale: ts, baseOffsetX: bx, baseOffsetY: by } = computeTransform();
+                  const toScreenX = (ix) => ix * ts + bx + offset.x;
+                  const toScreenY = (iy) => iy * ts + by + offset.y;
+                  const selFac = (selectedFaction || "").toString().toLowerCase();
+                  // Filter: skip neutrals unless toggled, and restrict to
+                  // selected-faction pairs if that toggle is on.
+                  const visible = diploPairs.filter(p => {
+                    if (p.isNeutral && !diploShowNeutral) return false;
+                    if (diploSelectedOnly && selFac) {
+                      const a = (p.a.faction || "").toString().toLowerCase();
+                      const b = (p.b.faction || "").toString().toLowerCase();
+                      if (a !== selFac && b !== selFac) return false;
+                    }
+                    return true;
+                  });
+                  try {
+                    console.log(`[diplo-overlay] render ${visible.length} lines (${diploSelectedOnly && selFac ? "selected only" : "all"})`);
+                  } catch {}
+                  return (
+                    <svg
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        width: canvasSize.width,
+                        height: canvasSize.height,
+                        pointerEvents: "none",
+                        zIndex: 2,
+                        overflow: "hidden",
+                      }}
+                      width={canvasSize.width}
+                      height={canvasSize.height}
+                      aria-hidden="true"
+                    >
+                      <defs>
+                        <filter id="diplo-line-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                          <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#000" floodOpacity="0.55" />
+                        </filter>
+                      </defs>
+                      <g filter="url(#diplo-line-shadow)">
+                        {/* Two passes — neutrals first (under), then
+                            colored pairs (on top) so wars/alliances aren't
+                            buried under gray spaghetti. */}
+                        {visible.filter(p => p.isNeutral).map((p, idx) => (
+                          <line
+                            key={`n-${idx}`}
+                            x1={toScreenX(p.a.x)} y1={toScreenY(p.a.y)}
+                            x2={toScreenX(p.b.x)} y2={toScreenY(p.b.y)}
+                            stroke={p.color}
+                            strokeWidth={0.8}
+                            strokeLinecap="round"
+                          />
+                        ))}
+                        {visible.filter(p => !p.isNeutral).map((p, idx) => (
+                          <line
+                            key={`c-${idx}`}
+                            x1={toScreenX(p.a.x)} y1={toScreenY(p.a.y)}
+                            x2={toScreenX(p.b.x)} y2={toScreenY(p.b.y)}
+                            stroke={p.color}
+                            strokeWidth={1.5}
+                            strokeLinecap="round"
+                            strokeDasharray={p.dash || undefined}
+                          />
+                        ))}
+                      </g>
+                    </svg>
+                  );
+                })()}
 
                 {/* Paint brush hover preview — outline rectangle showing
                     the exact pixels that will be painted on click. */}
@@ -11100,6 +13669,7 @@ function App() {
                 in design mode. Headers/buttons stay put; only inner
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
               defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
@@ -11124,6 +13694,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
               defaultPct={{ x: 0.0047, y: 0.7492, w: 0.2076, h: 0.2458 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
@@ -11138,6 +13709,7 @@ function App() {
 
             {pinnedRegions.length > 0 && (
               <Movable id="bottom.pinned" title="Pinned" designMode={designMode}
+                colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
                 defaultPct={{ x: 0.190, y: 0.755, w: 0.375, h: 0.040 }}>
                 <div className="panel" style={{ width: "100%", height: "100%", padding: "8px 10px", boxSizing: "border-box", overflow: "auto" }}>
                   <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 5, color: "#dca64a" }}>📌 Pinned Regions</div>
@@ -11167,6 +13739,7 @@ function App() {
             )}
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
               defaultPct={{ x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 }}>
               {/* Three sections in this widget:
                     1) Recent regions chips + Summary toggle (fixed row)
@@ -11323,8 +13896,102 @@ function App() {
                     <RegionInfo
                       info={lockedRegionInfo || regionInfo}
                       modeExtra={getModeExtra(lockedRegionInfo || regionInfo)}
+                      colBox={{ left: MAP_PADDING + canvasSize.width + PANELS_GAP, width: rightColWidth }}
+                      onStageGeneral={stageGeneral}
+                      pendingGenerals={pendingGenerals}
+                      onStageDiplomacy={stageDiplomacy}
+                      pendingDiplomacy={pendingDiplomacy}
+                      regions={regions}
+                      regionCentroids={regionCentroids}
+                      victoryConditions={victoryConditions}
                       devMode={devMode}
                       onShowInfo={setInfoPopup}
+                      modDataDir={modDataDir}
+                      factionCultures={factionCultures}
+                      statsCache={statsCache}
+                      commanderInfo={(() => {
+                        // Map unit.commanderUuid → commander metadata used to
+                        // render a face card in place of bodyguard unit cards
+                        // (0.9.411+). Primary source: saveCharactersByRegion,
+                        // which contains every live character (governors,
+                        // field generals, captains) with `secondaryUuid` that
+                        // matches `unit.commanderUuid` exactly. That's the
+                        // reliable bridge between parsers — the old approach
+                        // of trying to match characterExtras.ownUuid to
+                        // commanderUuid keyed on different UUID namespaces and
+                        // never hit.
+                        const m = new Map();
+                        // characterExtras.portraitCardsPath is the engine-
+                        // exact portrait when present. Bridge to chars via
+                        // (x, y) coords since the role-anchored uuid is a
+                        // different namespace from secondaryUuid.
+                        // 0.9.456: re-enable bridge using coord, drop v1
+                        // fallback. dig-portrait-truth.js verified +280
+                        // IS the portrait UUID (86/109 resolved → 82
+                        // unique paths = real per-char uniqueness; only
+                        // offset that scores high). The "Macedonians get
+                        // Roman portraits" symptom was the v1 parser's
+                        // forward-scan grabbing adjacent records' paths
+                        // — drop v1 c.portraits[0] entirely, use only
+                        // characterExtras.portraitCardsPath (from +280).
+                        // Bridge misses (coord mismatch) → savePath=null
+                        // → renderer's hash pool (matches family tree
+                        // for its own misses).
+                        // 0.9.460: user confirmed family tree IS correct,
+                        // garrison IS wrong. Family tree uses coordToPortrait
+                        // (mostly misses) → hash fallback. The HASH RESULT
+                        // is what the user wants in-game. Garrison should
+                        // use the SAME hash. Force savePath=null on every
+                        // entry so the IPC's hash pool always fires — same
+                        // algorithm as family tree for chars where its
+                        // coord misses (which is most). v1's c.portrait is
+                        // cross-contaminated (Demetrios III's record's
+                        // forward-scan grabbed a woman's portrait path);
+                        // don't use it.
+                        if (saveCharactersByRegion && typeof saveCharactersByRegion === "object") {
+                          for (const region of Object.keys(saveCharactersByRegion)) {
+                            for (const c of (saveCharactersByRegion[region] || [])) {
+                              if (!c.secondaryUuid) continue;
+                              m.set(c.secondaryUuid, {
+                                firstName: c.firstName || null,
+                                lastName: c.lastName || null,
+                                faction: c.faction || null,
+                                age: typeof c.age === "number" ? c.age : null,
+                                savePath: null,
+                              });
+                            }
+                          }
+                          if (typeof window !== "undefined" && !window.__commanderInfoLogged) {
+                            window.__commanderInfoLogged = true;
+                            console.log(`[commander-info] 0.9.460: forced savePath=null on all entries; all garrison portraits go through IPC hash pool (matches family tree for chars where its coord misses)`);
+                          }
+                        }
+                        // Augment with governors. saveGovernorByCity is the
+                        // authoritative governor-uuid map; saveCharactersByRegion
+                        // can MISS governors whose v1 char record didn't get a
+                        // region attached (Milon-in-Taras was the reported case
+                        // — name visible in the garrison panel via the governor
+                        // map but not in saveCharactersByRegion → no portrait
+                        // swap). Governors don't carry portrait data themselves
+                        // so we leave savePath null; the IPC's name+faction
+                        // hash-pick from the right culture pool fills in.
+                        if (saveGovernorByCity && typeof saveGovernorByCity === "object") {
+                          for (const city of Object.keys(saveGovernorByCity)) {
+                            const g = saveGovernorByCity[city];
+                            if (!g || !g.uuid || g.unresolved) continue;
+                            if (m.has(g.uuid)) continue; // already covered by saveCharactersByRegion
+                            const owner = (currentOwnerByCity && currentOwnerByCity[city]) || null;
+                            m.set(g.uuid, {
+                              firstName: g.firstName || null,
+                              lastName: g.lastName || null,
+                              faction: owner || null,
+                              age: typeof g.age === "number" ? g.age : null,
+                              savePath: null,
+                            });
+                          }
+                        }
+                        return m;
+                      })()}
                       onShowFamilyTree={() => {
                         // Pre-select the clicked province's owning faction so
                         // the Family Tree opens to *that* house. Prefer the
@@ -11344,6 +14011,78 @@ function App() {
                         (characterExtras && characterExtras.length > 0) ||
                         (modFamiliesByFaction && Object.keys(modFamiliesByFaction).length > 0)
                       }
+                      onEditBuildings={(regionName, newList, opMeta) => {
+                        // 0.9.472: log entry now carries `after` (full new
+                        // list) so revertOnePending can pop just this edit
+                        // and replay the prior state for the same region.
+                        if (!regionName) return;
+                        const key = regionName.toLowerCase();
+                        const after = Array.isArray(newList) ? newList : [];
+                        setEditedBuildingsByRegion((prev) => {
+                          const next = new Map(prev || new Map());
+                          next.set(key, after);
+                          return next;
+                        });
+                        setPendingBuildings((prev) => {
+                          const next = new Map(prev);
+                          next.set(key, after);
+                          persistMap("pendingBuildings", next);
+                          return next;
+                        });
+                        if (opMeta && opMeta.description) {
+                          setPendingLog((prev) => {
+                            const entry = {
+                              id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+                              kind: "building",
+                              region: regionName,
+                              key,
+                              description: opMeta.description,
+                              after,
+                              at: Date.now(),
+                            };
+                            const next = [...prev, entry];
+                            persistArr("pendingLog", next);
+                            return next;
+                          });
+                        }
+                        console.log(`[pending-edit] building staged: region=${regionName} count=${after.length}${opMeta?.description ? " — " + opMeta.description : ""}`);
+                      }}
+                      onIconReplaced={(regionName, info) => {
+                        // 0.9.473: building-icon drag-drop replacement.
+                        // RegionInfo already wrote the new TGA via the
+                        // replace-building-icon IPC and invalidated the
+                        // renderer cache; here we (a) bump iconCacheVersion
+                        // so getBuildings() reruns and picks up the fresh
+                        // blob URL and (b) push a pending-log entry so the
+                        // user can review/revert via the unified Save modal.
+                        // Revert is handled by restoring the backup TGA via
+                        // the revert-building-icon IPC (see revertOnePending).
+                        if (!info) return;
+                        setIconCacheVersion((v) => v + 1);
+                        const desc = `Replaced icon for ${info.chain} ${info.level} in region ${regionName || "(unknown)"}`;
+                        setPendingLog((prev) => {
+                          const entry = {
+                            id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+                            kind: "icon",
+                            region: regionName || null,
+                            file: info.destPath || null,
+                            description: desc,
+                            revert: {
+                              type: "icon-replace",
+                              culture: info.culture,
+                              levelName: info.level,
+                              chainName: info.chain,
+                              destPath: info.destPath || null,
+                              backupPath: info.backupPath || null,
+                            },
+                            at: Date.now(),
+                          };
+                          const next = [...prev, entry];
+                          persistArr("pendingLog", next);
+                          return next;
+                        });
+                        console.log(`[icon-replace] pending logged: ${desc} (backup=${info.backupPath || "(none)"})`);
+                      }}
                       modIconsDir={modIconsDir}
                       onFactionRightClick={({ factionId, displayName }) => {
                         setInfoPopup({
@@ -11396,8 +14135,16 @@ function App() {
                             return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
                           });
                           if (!gar) return null;
+                          // 0.9.431: convert engine name "AntigonosB" to
+                          // display form "Antigonos II". gar.character is
+                          // a single string (raw from descr_strat army
+                          // data) — split on whitespace and run the first
+                          // token through displayFirstName.
+                          const parts = (gar.character || "").split(/\s+/);
+                          const fn = parts[0] || "";
+                          const ln = parts.slice(1).join(" ");
                           return {
-                            character: gar.character,
+                            character: displayFullName(fn, ln || null),
                             faction: gar.faction || null,
                             age: gar.age ?? null,
                             isLeader: Array.isArray(gar.tags) && gar.tags.includes("leader"),
@@ -11451,9 +14198,7 @@ function App() {
                               }
                             }
                             return {
-                              character: g.lastName
-                                ? `${g.firstName} ${g.lastName.replace(/_/g, " ")}`
-                                : g.firstName,
+                              character: displayFullName(g.firstName, g.lastName),
                               faction: owner,
                               age: g.age,
                               isLeader: g.isLeader,
@@ -11478,8 +14223,9 @@ function App() {
                               return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
                             });
                             if (gar) {
+                              const parts2 = (gar.character || "").split(/\s+/);
                               return {
-                                character: gar.character,
+                                character: displayFullName(parts2[0] || "", parts2.slice(1).join(" ") || null),
                                 faction: gar.faction || (currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || null,
                                 age: gar.age ?? null,
                                 isLeader: Array.isArray(gar.tags) && gar.tags.includes("leader"),
@@ -11504,9 +14250,7 @@ function App() {
                           for (const c of list) {
                             if (c.x === settlementTile.x && c.y === settlementTile.y && c.secondaryUuid) {
                               return {
-                                character: c.lastName
-                                  ? `${c.firstName} ${c.lastName.replace(/_/g, " ")}`
-                                  : c.firstName,
+                                character: displayFullName(c.firstName, c.lastName),
                                 faction: c.faction || null,
                               };
                             }
@@ -11591,7 +14335,15 @@ function App() {
                               for (const a of (armiesToRender || [])) {
                                 if (!a.commanderUuid) continue;
                                 if (a.x !== settlementTile.x || a.y !== settlementTile.y) continue;
-                                if (ownerFaction && a.faction && a.faction.toLowerCase() !== ownerFaction) continue;
+                                // Faction guard only for LIVE-tracked positions:
+                                // those can be mis-attributed by the log onto a
+                                // settlement tile (foreign besieger). A SAVE-
+                                // derived position exactly on the tile is the
+                                // engine's own placement — only the owner can
+                                // occupy a settlement tile — so trust it even if
+                                // the captain_card faction tag is wrong (e.g.
+                                // messapian Titus mis-tagged "massalia").
+                                if (a.liveTracked && ownerFaction && a.faction && a.faction.toLowerCase() !== ownerFaction) continue;
                                 cmdsAtSettlement.add(a.commanderUuid);
                               }
                             }
@@ -11631,6 +14383,10 @@ function App() {
                                 xp: u.xp || 0,
                                 weapon: u.weapon || 0,
                                 armour: u.armour || 0,
+                                // Preserved so RegionInfo can swap the unit
+                                // card for the commander's portrait card
+                                // (0.9.410). Only set on bodyguard units.
+                                commanderUuid: u.commanderUuid || null,
                               }));
                           } else if (legacy) {
                             normalised = legacy.map((u) => ({
@@ -11676,14 +14432,21 @@ function App() {
                           if (garrisonArmies.length > 0) {
                             normalised = [];
                             for (const a of garrisonArmies) {
-                              for (const u of a.units || []) {
+                              // 0.9.429: tag first unit per army with the
+                              // commander's firstName so non-live bodyguard
+                              // swap can resolve a face card via statsCache.
+                              const cmdFirstName = a.character ? String(a.character).split(/\s+/)[0] : null;
+                              const cmdFac = (a.faction || "").toLowerCase();
+                              (a.units || []).forEach((u, ui) => {
                                 normalised.push({
                                   unit: u.name,
                                   xp: u.exp || 0,
                                   armour: u.armour || 0,
                                   weapon: u.weapon || 0,
+                                  commanderName: ui === 0 && cmdFirstName ? cmdFirstName : null,
+                                  commanderFaction: ui === 0 && cmdFirstName ? cmdFac : null,
                                 });
-                              }
+                              });
                             }
                           }
                         }
@@ -11716,8 +14479,18 @@ function App() {
                         if (!r) return null;
                         const list = resourcesData[r.region] || resourcesData[r.city] || null;
                         if (!list) return null;
-                        // Non-dev users don't see the raw "slaves" commodity.
-                        if (!devMode) return list.filter(x => x.type !== "slaves");
+                        // Non-dev users see trade goods only — the slave
+                        // commodity and ambience decorations live in their own
+                        // descr_strat sub-sections and aren't part of the
+                        // tradeable-goods rollup. Dev mode shows everything so
+                        // mod authors can edit any category.
+                        if (!devMode) return list.filter(x => {
+                          const cat = x.category || "trade";
+                          if (cat !== "trade") return false;
+                          // Legacy guard: even if a bundle is missing the
+                          // category field, hide the raw `slaves` type.
+                          return x.type !== "slaves";
+                        });
                         return list;
                       })()}
                       resourceImages={resourceImages}
@@ -12185,7 +14958,10 @@ function App() {
                               // Faction guard: only OWN-faction stacks on
                               // the tile count as garrison and get
                               // skipped here.
-                              if (ownerId && a.faction && a.faction.toLowerCase() !== ownerId.toLowerCase()) continue;
+                              // See Garrison panel: only gate save-derived
+                              // on-tile stacks by faction when the position is
+                              // live-attributed (possible besieger mis-snap).
+                              if (a.liveTracked && ownerId && a.faction && a.faction.toLowerCase() !== ownerId.toLowerCase()) continue;
                               cmdsAtSettlementFA.add(a.commanderUuid);
                             }
                           }
@@ -12233,11 +15009,7 @@ function App() {
                               : factionGuess === "own";
                             const fac = isOwnFieldArmy ? ownerId : (commanderFaction || factionGuess || "");
                             const entry = {
-                              character: commander
-                                ? (commander.lastName
-                                    ? `${commander.firstName} ${commander.lastName.replace(/_/g, " ")}`
-                                    : commander.firstName)
-                                : null,
+                              character: commander ? displayFullName(commander.firstName, commander.lastName) : null,
                               faction: fac,
                               _units: units,
                               _pos: cmdPos.get(cmd) || null,
@@ -12362,6 +15134,7 @@ function App() {
                                   max: typeof u.maxSoldiers === "number" ? u.maxSoldiers : null,
                                   faction: e.faction,
                                   icon: e.faction ? getCachedUnitIcon(e.faction, u.name) : null,
+                                  commanderUuid: u.commanderUuid || null,
                                 };
                               }),
                             };
@@ -12397,14 +15170,29 @@ function App() {
                         const others = [];
                         for (const a of armies) {
                           const fac = (a.faction || "").toLowerCase();
+                          // 0.9.429: tag the first unit of each army with
+                          // commanderName so RegionInfo's bodyguard-swap path
+                          // can render the general's face card in non-live
+                          // mode. Live mode uses unit.commanderUuid (from the
+                          // save); non-live falls back to commanderName +
+                          // statsCache lookup.
+                          const cmdParts = a.character ? String(a.character).split(/\s+/) : [];
+                          const cmdFirstName = cmdParts[0] || null;
+                          const cmdLastName = cmdParts.slice(1).join(" ") || null;
                           const entry = {
-                            character: a.character,
+                            // 0.9.431: display-form name for the army label
+                            // (AntigonosB → Antigonos II). Live path goes
+                            // through saveCharactersByRegion which is
+                            // already display-converted at the build site.
+                            character: cmdFirstName ? displayFullName(cmdFirstName, cmdLastName) : a.character,
                             faction: fac,
-                            units: (a.units || []).map((u) => ({
+                            units: (a.units || []).map((u, ui) => ({
                               unit: u.name, xp: u.exp || 0,
                               armour: u.armour || 0, weapon: u.weapon || 0,
                               faction: fac || null,
                               icon: fac ? getCachedUnitIcon(fac, u.name) : null,
+                              commanderName: ui === 0 && cmdFirstName ? cmdFirstName : null,
+                              commanderFaction: ui === 0 && cmdFirstName ? fac : null,
                             })),
                           };
                           (fac && ownerFaction && fac === ownerFaction ? own : others).push(entry);
@@ -12509,6 +15297,49 @@ function App() {
                               ? rt.tags
                               : (Array.isArray(g.tags) ? g.tags : []);
                             const age = rt && rt.age != null ? rt.age : (g.age ?? null);
+                            // 0.9.421: forward stats from the runtime descr_strat
+                            // record (rt) if present, else from the bundled
+                            // starting-armies seed (g). Either source has
+                            // command/influence/management/subterfuge parsed
+                            // from the `character` or `character_record` line.
+                            const pickStat = (k) => rt && rt[k] != null ? rt[k] : (g[k] != null ? g[k] : null);
+                            // 0.9.425: cache key lookup with faction
+                            // fallback. v1 parser sometimes returns
+                            // faction=null while the renderer always has
+                            // g.faction from descr_strat. So write side
+                            // had an empty faction component; read side
+                            // tries the FULL key first, then a fallback
+                            // with empty faction, then a name-only key.
+                            const lnNorm = (lastName || "").replace(/_/g, " ");
+                            const cacheKeys = [
+                              `${firstName}|${lnNorm}|${g.faction || ""}`,
+                              `${firstName}|${lnNorm}|`,
+                              `${firstName}||${g.faction || ""}`,
+                              `${firstName}||`,
+                            ].map((k) => k.toLowerCase());
+                            let cached = null;
+                            let hitKey = null;
+                            if (statsCache) {
+                              for (const k of cacheKeys) {
+                                if (statsCache[k]) { cached = statsCache[k]; hitKey = k; break; }
+                              }
+                            }
+                            const useCache = cached != null;
+                            // 0.9.426: log lookup outcome ONCE per char per
+                            // session — sampled to avoid log spam on every
+                            // re-render. Keyed off firstName so each char
+                            // logs only once.
+                            if (typeof window !== "undefined") {
+                              window.__statsCacheLogged ||= new Set();
+                              if (!window.__statsCacheLogged.has(firstName)) {
+                                window.__statsCacheLogged.add(firstName);
+                                if (useCache) {
+                                  console.log(`[stats-cache] HIT ${firstName}|${g.faction || ""} via "${hitKey}" → ${cached.command}/${cached.influence}/${cached.management}/${cached.loyalty}`);
+                                } else if (statsCache && Object.keys(statsCache).length > 0) {
+                                  console.log(`[stats-cache] MISS ${firstName}|${g.faction || ""} (tried ${cacheKeys.length} key variants: ${cacheKeys.map(k => `"${k}"`).join(", ")}). Cache size: ${Object.keys(statsCache).length}.`);
+                                }
+                              }
+                            }
                             return {
                               firstName,
                               lastName,
@@ -12520,6 +15351,15 @@ function App() {
                               faction: g.faction || null,
                               traits,
                               ancillaries: ancRaw.map((a) => (typeof a === "string" ? { name: a } : a)),
+                              command: useCache ? cached.command : pickStat("command"),
+                              influence: useCache ? cached.influence : pickStat("influence"),
+                              management: useCache ? cached.management : pickStat("management"),
+                              loyalty: useCache ? cached.loyalty : null,
+                              subterfuge: useCache ? null : pickStat("subterfuge"),
+                              // Estimate marker only when no cache hit AND
+                              // the value comes from trait summing.
+                              _statsEstimated: !useCache && (rt && rt._statsEstimated) || false,
+                              _statsCached: useCache,
                               _source: "starting",
                             };
                           };
@@ -12689,6 +15529,23 @@ function App() {
                         // (e.g., "roman_rebels_2" → "The House of Cornelii").
                         return (factionDisplayNames && factionDisplayNames[id]) || id;
                       })()}
+                      // 0.9.533: internal owner id + faction-level data for the
+                      // new Diplomacy & Treasury widget.
+                      ownerFactionId={(() => {
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !r.city) return null;
+                        return (currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (initialOwnerByCity && initialOwnerByCity[r.city])
+                          || null;
+                      })()}
+                      factionTreasuries={factionTreasuries}
+                      factionRecordOwners={factionRecordOwners}
+                      factionDiplomacy={factionDiplomacy}
+                      allFactionDiplomacy={allFactionDiplomacy}
+                      diplomacyMatrix={diplomacyMatrix}
+                      treasuryHistory={treasuryHistory}
+                      factionWealth={factionWealth}
+                      factionRelationships={factionRelationships}
                       taxLevel={(() => {
                         try {
                           if (!liveLogActive || !saveTaxByCity) return null;
@@ -13059,7 +15916,11 @@ function App() {
                   vc[selectedFaction] = entry;
                   return vc;
                 });
-                markDirty("descr_win_conditions.txt");
+                markDirty("descr_win_conditions.txt", {
+                  kind: "victory",
+                  description: `${selectedFaction.replace(/_/g, " ")} VC: ${isHeld ? "remove" : "add"} ${region.region}`,
+                  revert: { type: "vc-toggle", faction: selectedFaction, region: region.region, wasHeld: isHeld },
+                });
                 setDevContextMenu(null);
               }} style={{
                 padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
@@ -13141,33 +16002,38 @@ function App() {
                 }}>
                   <span style={{ flex: 1, fontWeight: 600 }}>{res.type.replace(/_/g, " ")}</span>
                   <button onClick={() => {
+                    const newAmount = Math.max(1, (res.amount || 1) - 1);
+                    const before = res.amount || 1;
                     setResourcesData(prev => {
                       const next = { ...prev };
                       next[region.region] = (next[region.region] || []).map(r =>
-                        r.type === res.type ? { ...r, amount: Math.max(1, (r.amount || 1) - 1) } : r
+                        r.type === res.type ? { ...r, amount: newAmount } : r
                       );
                       return next;
                     });
-                    markDirty("resources");
+                    markDirty("resources", { kind: "resource", description: `${region.region}: ${res.type} amount ${before} → ${newAmount}`, revert: { type: "resource-amount", region: region.region, resourceType: res.type, before } });
                   }} style={{ background: "#333", border: "1px solid #555", color: "#ccc", borderRadius: 3, cursor: "pointer", padding: "1px 6px", fontSize: "0.8rem" }}>-</button>
                   <span style={{ minWidth: 18, textAlign: "center", fontWeight: 700 }}>{res.amount || 1}</span>
                   <button onClick={() => {
+                    const newAmount = (res.amount || 1) + 1;
+                    const before = res.amount || 1;
                     setResourcesData(prev => {
                       const next = { ...prev };
                       next[region.region] = (next[region.region] || []).map(r =>
-                        r.type === res.type ? { ...r, amount: (r.amount || 1) + 1 } : r
+                        r.type === res.type ? { ...r, amount: newAmount } : r
                       );
                       return next;
                     });
-                    markDirty("resources");
+                    markDirty("resources", { kind: "resource", description: `${region.region}: ${res.type} amount ${before} → ${newAmount}`, revert: { type: "resource-amount", region: region.region, resourceType: res.type, before } });
                   }} style={{ background: "#333", border: "1px solid #555", color: "#ccc", borderRadius: 3, cursor: "pointer", padding: "1px 6px", fontSize: "0.8rem" }}>+</button>
                   <button onClick={() => {
+                    const removedRes = { ...res };
                     setResourcesData(prev => {
                       const next = { ...prev };
                       next[region.region] = (next[region.region] || []).filter(r => r.type !== res.type);
                       return next;
                     });
-                    markDirty("resources");
+                    markDirty("resources", { kind: "resource", description: `${region.region}: remove ${res.type}`, revert: { type: "resource-remove", region: region.region, before: removedRes } });
                   }} style={{ background: "#633", border: "1px solid #855", color: "#faa", borderRadius: 3, cursor: "pointer", padding: "1px 6px", fontSize: "0.8rem" }}>x</button>
                 </div>
               );
@@ -13182,12 +16048,23 @@ function App() {
                 <div key={`add-${type}`} onClick={() => {
                   const cx = regionCentroids[rgbKey]?.x || 0;
                   const cy = regionCentroids[rgbKey]?.y || 0;
+                  // Mirror the category of an existing entry of this type so a
+                  // re-added `slaves` row lands in the SLAVE sub-section.
+                  // Falls back to "trade" — the default for tradeable goods.
+                  let inferredCategory = "trade";
+                  if (type === "slaves") inferredCategory = "slave";
+                  else if (type === "aqueduct" || type === "shipwrecks") inferredCategory = "ambience";
+                  for (const entries of Object.values(resourcesData)) {
+                    if (!Array.isArray(entries)) continue;
+                    const sample = entries.find(e => e.type === type && e.category);
+                    if (sample) { inferredCategory = sample.category; break; }
+                  }
                   setResourcesData(prev => {
                     const next = { ...prev };
-                    next[region.region] = [...(next[region.region] || []), { type, x: cx, y: cy, amount: 1 }];
+                    next[region.region] = [...(next[region.region] || []), { type, x: cx, y: cy, amount: 1, category: inferredCategory }];
                     return next;
                   });
-                  markDirty("resources");
+                  markDirty("resources", { kind: "resource", description: `${region.region}: add ${type} at (${cx}, ${cy})`, revert: { type: "resource-add", region: region.region, resourceType: type } });
                 }} style={{
                   padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
                   background: "transparent", color: "#aaa",
@@ -13802,14 +16679,548 @@ function App() {
           </div>
         );
       })()}
+      {devMode && (
+        <div style={{ position: "fixed", left: 10, bottom: 10, zIndex: 9990, font: "12px/1.45 system-ui, sans-serif", maxWidth: 320 }}>
+          <button onClick={() => setDevHelpOpen((v) => !v)}
+            style={{ background: "rgba(40,55,75,0.92)", color: "#9bf", border: "1px solid rgba(110,140,190,0.5)", borderRadius: devHelpOpen ? "6px 6px 0 0" : 6, padding: "4px 10px", cursor: "pointer", fontSize: "0.72rem", fontWeight: 700 }}>
+            {devHelpOpen ? "▾" : "▸"} Dev tools
+          </button>
+          {devHelpOpen && (
+            <div style={{ background: "rgba(26,29,35,0.96)", color: "#cdd6e0", border: "1px solid rgba(110,140,190,0.5)", borderTop: "none", borderRadius: "0 6px 6px 6px", padding: "8px 12px" }}>
+              <div style={{ color: "#888", fontSize: "0.66rem", marginBottom: 5 }}>Starting (non-live) view, dev mode:</div>
+              <ul style={{ margin: 0, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 3 }}>
+                <li><b>Drag</b> a general's army marker → move it (re-drag to adjust)</li>
+                <li><b>Drag</b> a leaderless garrison marker → relocate it as a captain army</li>
+                <li><b>Shift+click</b> any army/garrison → add/remove its units</li>
+                <li><b>Right-click</b> a character → info + edit name / age / rank / traits / ancillaries</li>
+                <li>Right-click a building card → edit; <b>+ Add building</b> to place chains</li>
+                <li><b>Ctrl+Z</b> → undo the last staged edit</li>
+                <li><b>Double-click</b> the version label → watch + auto-install updates</li>
+                <li>Edits stage in <b>Pending changes</b>; <b>Restore last backup</b> rolls back a Save</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+      {armyUnitsEditor && (
+        <ArmyUnitsModal
+          army={armyUnitsEditor}
+          roster={(() => {
+            const fac = (armyUnitsEditor.faction || "").toLowerCase();
+            const cult = (factionCultures && factionCultures[fac]) ? String(factionCultures[fac]).toLowerCase() : null;
+            if (!unitOwnership) return [];
+            const out = [];
+            for (const [unit, owners] of Object.entries(unitOwnership)) {
+              if (!Array.isArray(owners)) continue;
+              const lc = owners.map((o) => String(o).toLowerCase());
+              if (lc.includes(fac) || lc.includes("all") || (cult && lc.includes(cult))) out.push(unit);
+            }
+            return out;
+          })()}
+          onStage={stageArmyUnits}
+          onClose={() => setArmyUnitsEditor(null)}
+        />
+      )}
       {infoPopup && (
         <InfoPopup
           payload={infoPopup}
           modDataDir={modDataDir}
           factionDisplayNames={factionDisplayNames}
           devMode={devMode}
+          traitData={traitData}
           onClose={() => setInfoPopup(null)}
+          pendingTraits={pendingTraits}
+          pendingAncils={pendingAncils}
+          pendingCharFields={pendingCharFields}
+          onStageCharFields={stageCharFields}
+          onStageTraits={(firstName, faction, newTraits, descriptionFragment) => {
+            if (!firstName) return;
+            const key = `${firstName.toLowerCase()}|${(faction || "").toLowerCase()}`;
+            const after = Array.isArray(newTraits) ? newTraits : [];
+            setPendingTraits((prev) => {
+              const next = new Map(prev);
+              next.set(key, after);
+              persistMap("pendingTraits", next);
+              return next;
+            });
+            if (descriptionFragment) {
+              setPendingLog((prev) => {
+                const entry = {
+                  id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+                  kind: "trait",
+                  character: firstName,
+                  faction,
+                  key,
+                  description: descriptionFragment,
+                  after,
+                  at: Date.now(),
+                };
+                const out = [...prev, entry];
+                persistArr("pendingLog", out);
+                return out;
+              });
+            }
+            console.log(`[pending-edit] traits staged: ${firstName}|${faction} (${after.length} traits)`);
+          }}
+          onStageAncillaries={(firstName, faction, newList, descriptionFragment) => {
+            if (!firstName) return;
+            const key = `${firstName.toLowerCase()}|${(faction || "").toLowerCase()}`;
+            const after = Array.isArray(newList) ? newList : [];
+            setPendingAncils((prev) => {
+              const next = new Map(prev);
+              next.set(key, after);
+              persistMap("pendingAncils", next);
+              return next;
+            });
+            if (descriptionFragment) {
+              setPendingLog((prev) => {
+                const entry = {
+                  id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+                  kind: "ancillary",
+                  character: firstName,
+                  faction,
+                  key,
+                  description: descriptionFragment,
+                  after,
+                  at: Date.now(),
+                };
+                const out = [...prev, entry];
+                persistArr("pendingLog", out);
+                return out;
+              });
+            }
+            console.log(`[pending-edit] ancillaries staged: ${firstName}|${faction} (${after.length} ancs)`);
+          }}
         />
+      )}
+      {pendingReviewOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 11000,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={() => setPendingReviewOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "#1a1a1a", color: "#eee",
+            borderRadius: 10, padding: "16px 18px",
+            maxWidth: "70vw", maxHeight: "80vh",
+            display: "flex", flexDirection: "column", gap: 10,
+            border: "1px solid rgba(220,166,74,0.4)",
+            boxShadow: "0 12px 48px rgba(0,0,0,0.7)",
+            minWidth: 480,
+          }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+              <h2 style={{ margin: 0, fontSize: "1rem", color: "#dca64a" }}>Pending changes ({pendingCount})</h2>
+              <button onClick={() => setPendingReviewOpen(false)} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "#aaa", lineHeight: 1.4 }}>
+              These edits are staged in memory only, grouped below by the mod file each writes to. Click <b>Apply</b> to write them all. Click <b>Discard all</b> to throw them away.
+            </div>
+            {(() => {
+              // Pre-Save validation — surface likely-bad edits before they're written.
+              const warns = [];
+              for (const [, au] of pendingArmyUnits.entries()) {
+                const n = Array.isArray(au.units) ? au.units.length : 0;
+                if (n === 0) warns.push(`${au.label || "An army"} would have 0 units — the engine needs at least one (keep the bodyguard for generals).`);
+              }
+              const leaderFacs = {};
+              for (const [, cf] of pendingCharFields.entries()) {
+                if (cf.tag === "leader") { const f = (cf.faction || "").toLowerCase(); leaderFacs[f] = (leaderFacs[f] || 0) + 1; }
+              }
+              for (const [f, c] of Object.entries(leaderFacs)) if (c > 1) warns.push(`${c} characters set as Faction Leader for ${f.replace(/_/g, " ")} — a faction can have only one.`);
+              if (warns.length === 0) return null;
+              return (
+                <div style={{ background: "rgba(200,140,40,0.12)", border: "1px solid rgba(220,166,74,0.5)", borderRadius: 6, padding: "7px 10px", fontSize: "0.74rem", color: "#e8c98a" }}>
+                  <div style={{ fontWeight: 700, marginBottom: 3 }}>⚠ {warns.length} potential issue{warns.length === 1 ? "" : "s"} — Apply still works, but review:</div>
+                  <ul style={{ margin: "2px 0 0 16px", padding: 0 }}>{warns.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                </div>
+              );
+            })()}
+            <div style={{ overflow: "auto", flex: 1, minHeight: 0, background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "8px 10px", fontSize: "0.78rem" }}>
+              {pendingLog.length === 0 ? (
+                <div style={{ color: "#888", fontStyle: "italic" }}>(no detailed change log — only the latest state per target is staged)</div>
+              ) : (
+                (() => {
+                  // Group every staged change by the mod file it writes to, so
+                  // the review reads as a per-file diff of what Save will touch.
+                  const FILE_FOR_KIND = { building: "descr_strat.txt", trait: "descr_strat.txt", ancillary: "descr_strat.txt", diplomacy: "descr_strat.txt", charpos: "descr_strat.txt", charfields: "descr_strat.txt", garrison: "descr_strat.txt", armyunits: "descr_strat.txt", general: "descr_strat.txt", victory: "descr_win_conditions.txt" };
+                  const fileForEntry = (e) => {
+                    if (e.kind && FILE_FOR_KIND[e.kind]) return FILE_FOR_KIND[e.kind];
+                    const f = e.file || "";
+                    if (f === "resources" || f === "population") return "descr_strat.txt";
+                    return f || "descr_strat.txt";
+                  };
+                  const groups = {};
+                  pendingLog.forEach((e, i) => { const f = fileForEntry(e); (groups[f] = groups[f] || []).push({ e, i }); });
+                  const KIND_COLOR = { building: "#9fc78a", trait: "#c896d8", ancillary: "#e0a96c", victory: "#e0c080", general: "#9fc7e0", diplomacy: "#88c2e0" };
+                  return Object.keys(groups).sort().map((file) => (
+                    <div key={file} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#dca64a", borderBottom: "1px solid rgba(220,166,74,0.25)", paddingBottom: 2, marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                        <code>{file}</code><span style={{ color: "#888", fontWeight: 400 }}>{groups[file].length} change{groups[file].length === 1 ? "" : "s"}{file === "descr_strat.txt" && pendingGenerals.size > 0 ? " · +names.txt, lookup" : ""}</span>
+                      </div>
+                      <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.5 }}>
+                        {groups[file].map(({ e, i }) => {
+                          const canRevert = !!e.id;
+                          return (
+                            <li key={e.id || i} style={{ color: KIND_COLOR[e.kind] || "#88c2e0", display: "flex", alignItems: "baseline", gap: 6 }}>
+                              <span style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ color: "#888", fontSize: "0.7rem" }}>[{e.kind}]</span> {e.description}
+                              </span>
+                              {canRevert && (
+                                <button
+                                  onClick={() => revertOnePending(e.id)}
+                                  title="Revert just this edit"
+                                  style={{
+                                    flexShrink: 0,
+                                    background: "rgba(220,127,127,0.15)", color: "#dc7f7f",
+                                    border: "1px solid rgba(220,127,127,0.4)", borderRadius: 3,
+                                    cursor: "pointer", padding: "0 6px", fontSize: "0.7rem", lineHeight: 1.5,
+                                  }}>×</button>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  ));
+                })()
+              )}
+              <div style={{ marginTop: 12, fontSize: "0.7rem", color: "#888" }}>
+                Final write targets: {pendingBuildings.size} region{pendingBuildings.size === 1 ? "" : "s"} of buildings, {pendingTraits.size} character{pendingTraits.size === 1 ? "" : "s"} of traits, {pendingAncils.size} character{pendingAncils.size === 1 ? "" : "s"} of ancillaries{pendingGenerals.size > 0 ? `, ${pendingGenerals.size} new general${pendingGenerals.size === 1 ? "" : "s"}` : ""}{devDirtyFiles.size > 0 ? `; descr_strat / descr_regions changes for ${[...devDirtyFiles].join(", ")}` : ""}.
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => {
+                if (!confirm(`Discard all ${pendingCount} pending edits?\n\nEvery staged change will be reverted in the UI immediately.`)) return;
+                // 0.9.472: walk newest→oldest so each revert sees a clean
+                // "no later entry of same kind+key" replay and restores
+                // the registry to the original pre-edit state. All four
+                // kinds (resource/building/trait/ancillary) now revert in
+                // memory immediately via revertOnePending.
+                for (const e of [...pendingLog].reverse()) {
+                  revertOnePending(e.id);
+                }
+                setPendingBuildings(new Map());
+                setPendingTraits(new Map());
+                setPendingAncils(new Map());
+                setPendingGenerals(new Map());
+                setPendingCharPos(new Map());
+                setPendingCharFields(new Map());
+                setPendingGarrisonMoves(new Map());
+                setPendingArmyUnits(new Map());
+                setPendingDiplomacy(new Map());
+                setPendingLog([]);
+                setDevDirtyFiles(new Set());
+                try {
+                  localStorage.removeItem("pendingBuildings");
+                  localStorage.removeItem("pendingTraits");
+                  localStorage.removeItem("pendingAncils");
+                  localStorage.removeItem("pendingGenerals");
+                  localStorage.removeItem("pendingCharPos");
+                  localStorage.removeItem("pendingCharFields");
+                  localStorage.removeItem("pendingGarrisonMoves");
+                  localStorage.removeItem("pendingArmyUnits");
+                  localStorage.removeItem("pendingDiplomacy");
+                  localStorage.removeItem("pendingLog");
+                } catch {}
+                setPendingReviewOpen(false);
+              }} style={{ padding: "5px 12px", background: "rgba(220,127,127,0.15)", color: "#dc7f7f", border: "1px solid rgba(220,127,127,0.4)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}>
+                Discard all
+              </button>
+              <button title="Roll the mod's descr_strat (+ names.txt / lookup / win-conditions) back to the snapshot taken before your last Apply."
+                onClick={async () => {
+                const api = window.electronAPI;
+                if (!api?.restoreModBackup) { pushToast("Backup restore unavailable.", "warning"); return; }
+                if (!confirm("Restore the mod's descr_strat files to the snapshot from before your last Save?\n\nThis overwrites the current files with the most recent backup.")) return;
+                try {
+                  const r = await api.restoreModBackup(null);
+                  if (r?.ok) { pushToast(`Restored ${r.restored} file(s) from backup ${r.stamp}.`, "info", 6000); if (reloadModCharacters) reloadModCharacters(); }
+                  else pushToast(`Restore failed: ${r?.error || "no backup found"}`, "warning", 8000);
+                } catch (e) { pushToast(`Restore failed: ${e.message}`, "warning", 8000); }
+              }} style={{ padding: "5px 12px", background: "rgba(110,140,190,0.15)", color: "#9bf", border: "1px solid rgba(110,140,190,0.45)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}>
+                Restore last backup
+              </button>
+              <button onClick={async () => {
+                const api = window.electronAPI;
+                if (!api) { pushToast("Electron IPC unavailable.", "warning"); return; }
+                let okCount = 0, failCount = 0;
+                const errors = [];
+                // Safety net: snapshot the campaign text files before any write,
+                // so a bad edit can be rolled back via "Restore last backup".
+                try { if (api.backupModFiles) await api.backupModFiles(); } catch (e) { console.warn("[backup] pre-save backup failed:", e); }
+                for (const [regionKey, buildings] of pendingBuildings.entries()) {
+                  try {
+                    // We have lowercased key but the IPC expects the
+                    // exact region name — recover it from the change-log
+                    // (last building entry for this key).
+                    const logEntry = [...pendingLog].reverse().find(e => e.kind === "building" && e.key === regionKey);
+                    const regionName = logEntry?.region || regionKey;
+                    const res = await api.updateRegionBuildings(regionName, buildings);
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`buildings ${regionName}: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`buildings ${regionKey}: ${e.message}`); }
+                }
+                for (const [key, traits] of pendingTraits.entries()) {
+                  const [firstName, faction] = key.split("|");
+                  try {
+                    const res = await api.updateCharacterTraits(firstName, faction, traits);
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`traits ${firstName}: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`traits ${firstName}: ${e.message}`); }
+                }
+                for (const [key, ancs] of pendingAncils.entries()) {
+                  const [firstName, faction] = key.split("|");
+                  try {
+                    const res = await api.updateCharacterAncillaries(firstName, faction, ancs);
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`ancillaries ${firstName}: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`ancillaries ${firstName}: ${e.message}`); }
+                }
+                // Staged "Add General" entries — applied sequentially (each
+                // addgenApply re-reads descr_strat, so order-safe). Writes
+                // descr_strat + names.txt + lookup, backing them up first.
+                for (const [, entry] of pendingGenerals.entries()) {
+                  try {
+                    const res = await api.addgenApply(entry.selection);
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`general ${entry.displayName}: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`general ${entry.displayName}: ${e.message}`); }
+                }
+                // Staged character moves — reposition existing descr_strat chars.
+                for (const [, mv] of pendingCharPos.entries()) {
+                  try {
+                    const res = await api.updateCharacterPosition(mv.faction, mv.oldX, mv.oldY, mv.newX, mv.newY);
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`move ${mv.label}: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`move ${mv.label}: ${e.message}`); }
+                }
+                // Staged character field edits (age / leader-heir tag).
+                for (const [, cf] of pendingCharFields.entries()) {
+                  // Age / leader-heir tag edit the character line (only if set).
+                  if (cf.age != null || cf.tag != null) {
+                    try {
+                      const patch = {}; if (cf.age != null) patch.age = cf.age; if (cf.tag != null) patch.tag = cf.tag;
+                      const res = await api.updateCharacterFields(cf.firstName, cf.faction, patch);
+                      if (res?.ok) okCount++; else { failCount++; errors.push(`edit ${cf.label || cf.firstName}: ${res?.error || "?"}`); }
+                    } catch (e) { failCount++; errors.push(`edit ${cf.label || cf.firstName}: ${e.message}`); }
+                  }
+                  // Rename LAST (it changes the first name the others matched on).
+                  if (cf.newFirst && cf.newFirst !== cf.firstName) {
+                    try {
+                      const res = await api.renameCharacter(cf.faction, cf.firstName, cf.newFirst);
+                      if (res?.ok) okCount++; else { failCount++; errors.push(`rename ${cf.firstName}→${cf.newFirst}: ${res?.error || "?"}`); }
+                    } catch (e) { failCount++; errors.push(`rename ${cf.firstName}→${cf.newFirst}: ${e.message}`); }
+                  }
+                }
+                // Staged garrison relocations (garrisoned_army → captain field army).
+                for (const [, gm] of pendingGarrisonMoves.entries()) {
+                  try {
+                    const res = await api.relocateGarrison(gm.faction, gm.region, gm.newX, gm.newY);
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`relocate ${gm.region} garrison: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`relocate ${gm.region} garrison: ${e.message}`); }
+                }
+                // Staged army unit-list edits (add/remove units).
+                for (const [, au] of pendingArmyUnits.entries()) {
+                  try {
+                    const res = await api.updateArmyUnits(au.faction, au.locator, au.units);
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`units ${au.label || ""}: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`units ${au.label || ""}: ${e.message}`); }
+                }
+                // Staged diplomacy edits — batch-write core_attitudes.
+                if (pendingDiplomacy.size > 0) {
+                  try {
+                    const res = await api.updateCoreAttitudes([...pendingDiplomacy.values()].map((d) => ({ kind: d.kind || "core", from: d.from, to: d.to, value: d.value })));
+                    if (res?.ok) okCount += res.applied || 1; else { failCount++; errors.push(`diplomacy: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`diplomacy: ${e.message}`); }
+                }
+                // 0.9.468: resources / population / ownership / victory
+                // conditions all write to descr_strat.txt or
+                // descr_regions.txt — patch the original text in memory
+                // and ship it through the safelist write IPC. Old Export
+                // button (download into Downloads folder) used the same
+                // patcher; Apply just routes the bytes into the active
+                // mod dir instead.
+                const stratNeeded = devDirtyFiles.has("resources") || devDirtyFiles.has("population") || devDirtyFiles.has("descr_strat.txt");
+                if (stratNeeded) {
+                  if (devOrigStratRef.current && api.writeActiveModFile) {
+                    try {
+                      const patched = patchDescrStrat(devOrigStratRef.current, resourcesData, populationData, devDirtyFiles, imgSize.height, factionOwnerChanges);
+                      const camp = CAMPAIGNS[mapCampaign];
+                      const relPath = camp?.stratPath || "world/maps/campaign/imperial_campaign/descr_strat.txt";
+                      const res = await api.writeActiveModFile(relPath, patched);
+                      if (res?.ok) okCount++; else { failCount++; errors.push(`descr_strat: ${res?.error || "?"}`); }
+                    } catch (e) { failCount++; errors.push(`descr_strat: ${e.message}`); }
+                  } else {
+                    failCount++;
+                    errors.push("descr_strat: original text not loaded; reimport the mod folder first");
+                  }
+                }
+                if (devDirtyFiles.has("descr_regions.txt")) {
+                  try {
+                    const regLines = [];
+                    for (const [rgbKey, r] of Object.entries(regions)) {
+                      const rgb = rgbKey.split(",").join(" ");
+                      regLines.push(r.region, r.city, r.faction, r.culture, rgb, r.tags, r.farm_level, r.pop_level, r.ethnicities);
+                    }
+                    const camp = CAMPAIGNS[mapCampaign];
+                    const relPath = camp?.regionsPath || "world/maps/base/descr_regions.txt";
+                    const res = await api.writeActiveModFile(relPath, regLines.join("\n") + "\n");
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`descr_regions: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`descr_regions: ${e.message}`); }
+                }
+                if (devDirtyFiles.has("descr_win_conditions.txt")) {
+                  try {
+                    const vcLines = [];
+                    for (const [faction, vc] of Object.entries(victoryConditions)) {
+                      vcLines.push(faction);
+                      if (vc.hold_regions?.length) vcLines.push("hold_regions " + vc.hold_regions.join(", "));
+                      if (vc.take_regions != null) vcLines.push("take_regions " + vc.take_regions);
+                      vcLines.push("");
+                    }
+                    const camp = CAMPAIGNS[mapCampaign];
+                    const relPath = (camp?.stratPath || "world/maps/campaign/imperial_campaign/descr_strat.txt").replace("descr_strat.txt", "descr_win_conditions.txt");
+                    const res = await api.writeActiveModFile(relPath, vcLines.join("\n"));
+                    if (res?.ok) okCount++; else { failCount++; errors.push(`descr_win_conditions: ${res?.error || "?"}`); }
+                  } catch (e) { failCount++; errors.push(`descr_win_conditions: ${e.message}`); }
+                }
+                if (failCount === 0) {
+                  const hadGenerals = pendingGenerals.size > 0 || pendingCharPos.size > 0 || pendingCharFields.size > 0 || pendingGarrisonMoves.size > 0;
+                  // Capture applied generals BEFORE clearing so we can inject
+                  // them into the army snapshots (map markers + field-armies
+                  // widget) for this session — the bundled JSON snapshots aren't
+                  // re-derived per edit, so without this the new general would
+                  // only appear in the Characters view until a full re-import.
+                  const appliedGens = [...pendingGenerals.values()];
+                  // Capture moves too, so we can update the army snapshot's coords
+                  // to the new tile — otherwise the marker snaps back to the old
+                  // town after Save (stale snapshot) and a second move fails to
+                  // match the character (now relocated in descr_strat).
+                  const appliedMoves = [...pendingCharPos.values()];
+                  const appliedGarrison = [...pendingGarrisonMoves.values()];
+                  const appliedUnits = [...pendingArmyUnits.values()];
+                  setPendingBuildings(new Map());
+                  setPendingTraits(new Map());
+                  setPendingAncils(new Map());
+                  setPendingGenerals(new Map());
+                  setPendingCharPos(new Map());
+                  setPendingCharFields(new Map());
+                  setPendingGarrisonMoves(new Map());
+                  setPendingArmyUnits(new Map());
+                  setPendingDiplomacy(new Map());
+                  setPendingLog([]);
+                  setDevDirtyFiles(new Set());
+                  try {
+                    localStorage.removeItem("pendingBuildings");
+                    localStorage.removeItem("pendingTraits");
+                    localStorage.removeItem("pendingAncils");
+                    localStorage.removeItem("pendingGenerals");
+                    localStorage.removeItem("pendingCharPos");
+                    localStorage.removeItem("pendingCharFields");
+                    localStorage.removeItem("pendingGarrisonMoves");
+                    localStorage.removeItem("pendingArmyUnits");
+                    localStorage.removeItem("pendingDiplomacy");
+                    localStorage.removeItem("pendingLog");
+                  } catch {}
+                  setPendingReviewOpen(false);
+                  // Reload descr_strat-derived character data so a freshly-saved
+                  // general shows in the Characters roster + family tree as a
+                  // real (non-pending) entry, without a manual re-import.
+                  if (hadGenerals && reloadModCharacters) reloadModCharacters();
+                  // Inject the saved generals into the army snapshots so they
+                  // show in the Field Armies widget + on the map this session.
+                  if (appliedGens.length) {
+                    const synthArmy = (g) => ({
+                      character: g.displayName,
+                      firstName: g.selection?.general?.firstDisplay || g.displayName,
+                      faction: g.faction,
+                      x: g.selection?.x, y: g.selection?.y,
+                      armyClass: "field",
+                      units: [{ name: g.selection?.generalUnit || "general", exp: 0, armour: 0, weapon: 0 }],
+                      _added: true,
+                    });
+                    setArmiesData((prev) => ([...(Array.isArray(prev) ? prev : []), ...appliedGens.map(synthArmy)]));
+                    setStartingArmiesByRegion((prev) => {
+                      const next = { ...(prev || {}) };
+                      for (const g of appliedGens) {
+                        const reg = g.region;
+                        if (!reg) continue;
+                        const cur = next[reg] || { garrison: [], field: [], settlement: null };
+                        next[reg] = { ...cur, field: [...(cur.field || []), synthArmy(g)] };
+                      }
+                      return next;
+                    });
+                    console.log(`[addgen] injected ${appliedGens.length} general(s) into army snapshots for this session`);
+                  }
+                  // Update the army snapshot's coords for moved generals so the
+                  // marker stays at the new tile (and is movable again) without a
+                  // full re-import. Match by faction + old tile.
+                  if (appliedMoves.length) {
+                    const moveKey = (f, x, y) => `${(f || "").toLowerCase()}|${x}|${y}`;
+                    const moveMap = new Map(appliedMoves.map((m) => [moveKey(m.faction, m.oldX, m.oldY), m]));
+                    const relocate = (arr) => Array.isArray(arr) ? arr.map((a) => {
+                      const mv = a && typeof a.x === "number" ? moveMap.get(moveKey(a.faction, a.x, a.y)) : null;
+                      return mv ? { ...a, x: mv.newX, y: mv.newY } : a;
+                    }) : arr;
+                    setArmiesData((prev) => relocate(prev));
+                    setStartingArmiesByRegion((prev) => {
+                      if (!prev) return prev;
+                      const next = {};
+                      for (const [reg, v] of Object.entries(prev)) {
+                        next[reg] = v ? { ...v, garrison: relocate(v.garrison), field: relocate(v.field) } : v;
+                      }
+                      return next;
+                    });
+                    console.log(`[char-move] relocated ${appliedMoves.length} general(s) in army snapshots for this session`);
+                  }
+                  // Garrison relocations: in the army snapshot, turn the moved
+                  // garrisoned_army into a field army at the new tile (so it shows
+                  // as a captain stack there instead of snapping back to the town).
+                  if (appliedGarrison.length) {
+                    const gKey = (f, reg) => `${(f || "").toLowerCase()}|${reg || ""}`;
+                    const gMap = new Map(appliedGarrison.map((g) => [gKey(g.faction, g.region), g]));
+                    const reloc = (arr) => Array.isArray(arr) ? arr.map((a) => {
+                      const g = (a && (a.charType === "garrison" || a._garrisoned)) ? gMap.get(gKey(a.faction, a.region || a.location)) : null;
+                      return g ? { ...a, x: g.newX, y: g.newY, armyClass: "field", charType: "general", _garrisoned: false, character: "Captain" } : a;
+                    }) : arr;
+                    setArmiesData((prev) => reloc(prev));
+                    setStartingArmiesByRegion((prev) => {
+                      if (!prev) return prev;
+                      const next = {};
+                      for (const [reg, v] of Object.entries(prev)) {
+                        next[reg] = v ? { ...v, garrison: reloc(v.garrison), field: reloc(v.field) } : v;
+                      }
+                      return next;
+                    });
+                    console.log(`[garrison-relocate] relocated ${appliedGarrison.length} garrison(s) to field in army snapshots for this session`);
+                  }
+                  // Unit-list edits: refresh the army's units in the snapshot so
+                  // the cards reflect add/remove without a re-import. Match by
+                  // faction + locator (coords or region).
+                  if (appliedUnits.length) {
+                    const norm = (us) => (us || []).map((u) => (typeof u === "string" ? { name: u, exp: 0, armour: 0, weapon: 0 } : u));
+                    const matches = (a, au) => {
+                      if ((a.faction || "").toLowerCase() !== (au.faction || "").toLowerCase()) return false;
+                      if (au.locator.region != null) return (a.charType === "garrison" || a._garrisoned) && (a.region || a.location) === au.locator.region;
+                      return a.x === au.locator.x && a.y === au.locator.y;
+                    };
+                    const apply = (arr) => Array.isArray(arr) ? arr.map((a) => {
+                      const au = appliedUnits.find((u) => matches(a, u));
+                      return au ? { ...a, units: norm(au.units) } : a;
+                    }) : arr;
+                    setArmiesData((prev) => apply(prev));
+                    setStartingArmiesByRegion((prev) => {
+                      if (!prev) return prev;
+                      const next = {};
+                      for (const [reg, v] of Object.entries(prev)) next[reg] = v ? { ...v, garrison: apply(v.garrison), field: apply(v.field) } : v;
+                      return next;
+                    });
+                    console.log(`[army-units] refreshed ${appliedUnits.length} army unit-list(s) in snapshots for this session`);
+                  }
+                  pushToast(`Applied ${okCount} write${okCount === 1 ? "" : "s"} to mod files.`, "info", 6000);
+                } else {
+                  pushToast(`Applied ${okCount}, ${failCount} failed: ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "…" : ""}`, "warning", 10000);
+                }
+                console.log(`[pending-apply] ok=${okCount} fail=${failCount}${errors.length ? " errors=" + errors.join("; ") : ""}`);
+              }} style={{ padding: "5px 12px", background: "rgba(95,200,80,0.2)", color: "#9fc78a", border: "1px solid rgba(95,200,80,0.5)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem", fontWeight: 700 }}>
+                Apply {pendingCount} change{pendingCount === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {showWealthPanel && (() => {
         // Faction Wealth panel — sortable list of factions with starting
@@ -13884,16 +17295,32 @@ function App() {
           }
           return out;
         })();
+        // 0.9.527: faction → AI personality archetype, decoded from the save
+        // via the cracked aiPersonalityIndex (factionRecordOwners carries the
+        // resolved name). Lets the summary show each NPC's AI behaviour.
+        const aiPersonalityByFaction = (() => {
+          if (!factionRecordOwners) return null;
+          const out = {};
+          for (const o of factionRecordOwners) {
+            if (o && o.factionName && o.aiPersonality) {
+              out[o.factionName.toLowerCase()] = o.aiPersonality;
+            }
+          }
+          return out;
+        })();
         const rows = factions.map(f => {
           const lf = f.toLowerCase();
           const liveRegions = liveRegionsByFaction[lf];
           const liveArmies = liveArmiesByFaction[lf];
           const startRegions = (factionRegionsMap[f] || []).length;
-          // Prefer live treasury when available; fall back to descr_strat
-          // starting wealth. The live value carries a sign (bankruptcy
-          // shows as negative).
+          // Prefer live treasury when available; otherwise the descr_strat
+          // starting wealth. The live value carries a sign (bankruptcy shows
+          // as negative). No fabricated default: a faction with neither a live
+          // treasury nor a descr_strat denari shows as unknown ("—"), never a
+          // made-up 0.
           const liveTreasury = liveTreasuryByFaction && liveTreasuryByFaction[lf];
-          const wealth = liveTreasury ? liveTreasury.treasury : (factionWealth[f] ?? 0);
+          const startWealth = factionWealth[f] != null ? factionWealth[f] : (factionWealth[lf] != null ? factionWealth[lf] : null);
+          const wealth = liveTreasury ? liveTreasury.treasury : startWealth;
           return {
             faction: f,
             wealth,
@@ -13903,10 +17330,12 @@ function App() {
             startingRegions: startRegions,
             armies: liveArmies || 0,
             isLive: liveLogActive && liveRegions != null,
+            // AI archetype (e.g. "ai_lusitani"); humanized for display below.
+            aiPersonality: aiPersonalityByFaction ? (aiPersonalityByFaction[lf] || null) : null,
             name: (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " "),
           };
-        }).filter(r => r.regions > 0 || r.wealth !== 0);
-        rows.sort((a, b) => b.regions - a.regions || b.wealth - a.wealth);
+        }).filter(r => r.regions > 0 || (r.wealth != null && r.wealth !== 0));
+        rows.sort((a, b) => b.regions - a.regions || (b.wealth ?? -Infinity) - (a.wealth ?? -Infinity));
         const jumpToFaction = (f) => {
           const keys = regionNamesToKeys(regionsForFaction(f));
           const pts = keys.map(k => regionCentroids[k]).filter(Boolean);
@@ -13990,12 +17419,22 @@ function App() {
                     onMouseLeave={(e) => { if (selectedFaction !== r.faction) e.currentTarget.style.background = "transparent"; }}
                   >
                     <span style={{ color: "#888", textAlign: "right", paddingRight: 4, fontSize: "0.75rem" }}>{i + 1}</span>
-                    <span style={{ textTransform: "capitalize" }}>{r.name}</span>
-                    <span style={{ textAlign: "right", color: r.wealth < 0 ? "#e85050" : r.wealth >= 5000 ? "#9ec78a" : r.wealth >= 1000 ? "#f4cd57" : "#e89030", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}
-                      title={r.wealthIsLive
+                    <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                      <span style={{ textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                      {r.aiPersonality && (
+                        <span style={{ fontSize: "0.62rem", color: "#8a93a8", letterSpacing: "0.02em" }}
+                          title={`AI personality archetype decoded from save (feral_descr_ai_personality.txt): ${r.aiPersonality}`}>
+                          {r.aiPersonality.replace(/^ai_/, "").replace(/_/g, " ")}
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ textAlign: "right", color: r.wealth == null ? "#555" : r.wealth < 0 ? "#e85050" : r.wealth >= 5000 ? "#9ec78a" : r.wealth >= 1000 ? "#f4cd57" : "#e89030", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}
+                      title={r.wealth == null
+                        ? "No starting denarii found in descr_strat for this faction."
+                        : r.wealthIsLive
                         ? `Live treasury from save (decoded 2026-05-10 via save-cracker session 5). ${typeof r.wealthTurnStart === "number" && r.wealthTurnStart !== r.wealth ? `Started this turn at ${r.wealthTurnStart.toLocaleString()}, mid-turn delta ${(r.wealth - r.wealthTurnStart >= 0 ? "+" : "") + (r.wealth - r.wealthTurnStart).toLocaleString()}.` : ""}`
                         : "Starting denarii from descr_strat. Live treasury not loaded (no save active, or non-RIS-imperial campaign)."}>
-                      {r.wealth.toLocaleString()}
+                      {r.wealth == null ? "—" : r.wealth.toLocaleString()}
                       {r.wealthIsLive && <span style={{ color: "#4a8", marginLeft: 4, fontSize: "0.7rem", fontWeight: 400 }}>·live</span>}
                     </span>
                     <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums",
@@ -14140,7 +17579,15 @@ function App() {
           document.body
         );
       })()}
-    </>
+      {/* Cmd+K / Ctrl+K search palette. Rendered last so its portal
+          sits above every other overlay. */}
+      <SearchPalette
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        sources={searchSources}
+        onActivate={onSearchActivate}
+      />
+    </AnimationLayoutProvider>
   );
 }
 
