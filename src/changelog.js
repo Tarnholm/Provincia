@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.621",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Live diplomacy was showing the wrong factions for everyone — root-caused and fixed.** The attitude matrix is indexed by descr_sm_factions declaration order and self-calibrates, but it was being fed the engine-*derived* order (which moves the rebel slot to the end). That double-corrected and mislabeled every pair, so e.g. Macedon's allies/wars came out as unrelated factions. It now uses the raw order, validated against Macedon's turn-0 ground truth: allies Seleucid / Cabyle / Knossos / Messene, protectorates Argos / Megalopolis, at war with Epirus / Galatians / the Free Peoples. **Re-sync from your save** (load it / let the save-watch refresh) to pick up the corrected diplomacy." },
+      { type: "feature", text: "**Diplomacy widget now shows trade partners (🔄).** Cracked the alliance/trade \"bond\" field in the save's attitude matrix — each faction's trade partners are now listed alongside war / allied / protectorate. (RTW's descr_strat folds Ally + Trade into one relationship, and protectorates trade too, so trade = the bonded set.)" },
+    ],
+  },
+  {
     version: "0.9.620",
     date: "2026-05-26",
     items: [

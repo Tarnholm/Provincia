@@ -5681,10 +5681,19 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
       // 0.9.546: the N×N attitude matrix — NAMED live diplomacy (war/ally/
       // hostile per faction pair). The real diplomacy source (the zones above
       // only hold agreement handles). See reference_diplomacy_matrix.
-      diplomacyMatrix = cxParseDiplomacyMatrix(saveBuf, calEngineOrder);
+      // The attitude matrix is indexed by descr_sm_factions DECLARATION order and
+      // self-calibrates its index offset C from symmetry — so it needs the RAW
+      // modFactionOrder, NOT the engine-derived order the record parsers use.
+      // Passing the derived order double-applies the rebel-slot shift and
+      // mislabels every pair (Macedon decoded as war:none/allied:galatians
+      // instead of war:epirus,galatians). Verified vs Macedon T0 ground truth.
+      diplomacyMatrix = cxParseDiplomacyMatrix(saveBuf, modFactionOrder);
       if (diplomacyMatrix && diplomacyMatrix._meta) {
         const mt = diplomacyMatrix._meta;
         console.log(`[diplo-matrix] calibrate: located base=0x${mt.base.toString(16)} stride=${mt.stride} N=${mt.N} C=${mt.C} symmetry=${(mt.symmetry*100).toFixed(0)}% warPairs=${mt.warPairs}`);
+        const pf = (savePlayerFaction || "").toLowerCase();
+        const row = pf && diplomacyMatrix[pf];
+        if (row) console.log(`[diplo-matrix] ${pf}: war=[${(row.war||[]).join(", ")}] allied=[${(row.allied||[]).join(", ")}] trade=[${(row.trade||[]).join(", ")}]`);
       } else {
         console.log(`[diplo-matrix] calibrate: NOT located`);
       }
@@ -6987,10 +6996,15 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   // 0.9.546: NAMED live diplomacy from the N×N attitude matrix (the real
   // diplomacy source — war/ally/hostile per faction PAIR, partner recoverable).
   try {
-    diplomacyMatrix = cxParseDiplomacyMatrix(data, engineOrder);
+    // RAW modFactionOrder (NOT engineOrder) — the matrix is descr_sm-indexed and
+    // self-calibrates C; the derived engine order would mislabel every pair.
+    diplomacyMatrix = cxParseDiplomacyMatrix(data, modFactionOrder);
     if (diplomacyMatrix && diplomacyMatrix._meta) {
       const mt = diplomacyMatrix._meta;
       console.log(`[diplo-matrix] located base=0x${mt.base.toString(16)} stride=${mt.stride} N=${mt.N} C=${mt.C} symmetry=${(mt.symmetry*100).toFixed(0)}% warPairs=${mt.warPairs}`);
+      const pf = (savePlayerFaction || "").toLowerCase();
+      const row = pf && diplomacyMatrix[pf];
+      if (row) console.log(`[diplo-matrix] ${pf}: war=[${(row.war||[]).join(", ")}] allied=[${(row.allied||[]).join(", ")}] trade=[${(row.trade||[]).join(", ")}]`);
     } else {
       console.log(`[diplo-matrix] NOT located`);
     }

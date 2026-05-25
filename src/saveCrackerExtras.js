@@ -763,7 +763,7 @@ function parseDiplomacyMatrix(buf, factionOrder) {
     if (!name || !isDiplomaticFaction(name)) continue; // skip placeholder rows
     // `rel` carries the RAW numbers for every non-neutral cell — consumed by
     // the dev-mode "raw diplomacy numbers" view (right-click the widget).
-    const rec = { war: [], allied: [], hostile: [], rel: [] };
+    const rec = { war: [], allied: [], hostile: [], trade: [], rel: [] };
     for (let B = 0; B < N; B++) {
       if (B === A) continue;
       const bName = factionOrder[B];
@@ -775,6 +775,11 @@ function parseDiplomacyMatrix(buf, factionOrder) {
       if (s === "war") { rec.war.push(bName); warPairs++; }
       else if (s === "allied") rec.allied.push(bName);
       else if (s === "hostile") rec.hostile.push(bName);
+      // Trade rights = the alliance "bond" (descr_strat folds Ally + Trade into
+      // one 199 relationship; protectorates, also bonded, are scripted). The
+      // engine records that bond at cell +12: 6 = none, 54 = alliance/protectorate,
+      // 55 = special. Verified bond>=54 == the exact trade-partner set (Macedon T0).
+      if (c.bond >= 54) rec.trade.push(bName);
       if (v !== 200 || c.bond !== 6) rec.rel.push({ to: bName, att: v, bond: c.bond, agg: c.agg });
     }
     out[name.toLowerCase()] = rec;

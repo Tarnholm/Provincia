@@ -187,6 +187,11 @@ describeIfSaveAndOrder("saveCrackerExtras — factionId + all-faction diplomacy"
     for (const ally of ["seleucid", "cabyle", "knossos", "messene", "argos", "megalopolis"]) {
       expect(a.allied).toContain(ally);
     }
+    // Trade partners (alliance bond, descr_strat "Ally/Trade" + scripted
+    // protectorates) = the same six.
+    for (const t of ["seleucid", "cabyle", "knossos", "messene", "argos", "megalopolis"]) {
+      expect(a.trade).toContain(t);
+    }
     expect([...a.war].sort()).toEqual(["epirus", "galatians"]);
     // Placeholder factions never appear in a real faction's lists.
     for (const ph of ["slave", "dummies"]) {

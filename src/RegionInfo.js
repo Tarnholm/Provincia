@@ -537,11 +537,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const isFreePeoples = (n) => /^(slave|slaves|rebels)$/.test(n);
     const nameOf = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
     const mtxRow = (diplomacyMatrix && diplomacyMatrix[fidLower]) || null;
-    let liveWar = [], liveAllied = [], liveHostile = [];
+    let liveWar = [], liveAllied = [], liveHostile = [], liveTrade = [];
     if (mtxRow) {
       liveWar = (mtxRow.war || []).filter(isRealFaction).map(nameOf);
       liveAllied = (mtxRow.allied || []).filter(isRealFaction).map(nameOf);
       liveHostile = (mtxRow.hostile || []).filter(isRealFaction).map(nameOf);
+      // Trade = the alliance bond (descr_strat's 199 = "Ally/Trade" + scripted
+      // protectorates). Decoded from the matrix bond field. Includes protectorates.
+      liveTrade = (mtxRow.trade || []).filter(isRealFaction).map(nameOf);
     }
     let atWarWithAll = false;
     let isPlaceholderFaction = false;
@@ -558,6 +561,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       // raw row decodes as Allied toward everyone (the old "92 allies" bug).
       liveAllied = [];
       liveHostile = [];
+      liveTrade = [];
       const everyone = diplomacyMatrix
         ? Object.keys(diplomacyMatrix).filter((n) => n !== "_meta" && isRealFaction(n) && n !== fidLower)
         : [];
@@ -567,7 +571,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       // `dummies` / per-faction respawn markers — engine placeholders with no
       // real diplomacy. Show nothing rather than garbage (e.g. the bogus
       // "dummies at war with Macedon").
-      liveWar = []; liveAllied = []; liveHostile = [];
+      liveWar = []; liveAllied = []; liveHostile = []; liveTrade = [];
       isPlaceholderFaction = true;
     }
     // Protectorates score as Allied (attitude 0) in the matrix, so they show up
@@ -594,7 +598,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const rec = idx >= 0 && Array.isArray(factionTreasuries) ? factionTreasuries[idx] : null;
     const owner = idx >= 0 ? factionRecordOwners[idx] : null;
     const treasury = rec ? rec.treasury : (startWealth != null ? startWealth : null);
-    const hasLiveNamed = liveWar.length > 0 || liveAllied.length > 0;
+    const hasLiveNamed = liveWar.length > 0 || liveAllied.length > 0 || liveTrade.length > 0;
     // If nothing at all to show, signal noData.
     if (treasury == null && !liveDiplo && !hasLiveNamed && startAllies.length === 0 && startWars.length === 0
         && startProtects.length === 0 && startProtectedBy.length === 0) {
@@ -614,7 +618,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       ceasefires: liveDiplo ? liveDiplo.ceasefires : 0,
       locked: liveDiplo ? liveDiplo.locked : 0,
       // 0.9.546: NAMED live diplomacy from the attitude matrix.
-      hasLiveNamed, liveWar, liveAllied, liveHostile, atWarWithAll, isPlaceholderFaction,
+      hasLiveNamed, liveWar, liveAllied, liveHostile, liveTrade, atWarWithAll, isPlaceholderFaction,
       startAllies, startWars, startProtects, startProtectedBy,
     };
   }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
@@ -1916,6 +1920,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     {factionState.liveHostile && factionState.liveHostile.length > 0 && (
                       <div style={{ fontSize: "0.66rem", color: "#e0c080", marginBottom: 1 }}>
                         ⚠ hostile ({factionState.liveHostile.length}): <span style={{ color: "#ddd" }}>{factionState.liveHostile.join(", ")}</span>
+                      </div>
+                    )}
+                    {factionState.liveTrade && factionState.liveTrade.length > 0 && (
+                      <div style={{ fontSize: "0.66rem", color: "#8fc9d6", marginBottom: 1 }}>
+                        🔄 trade ({factionState.liveTrade.length}): <span style={{ color: "#ddd" }}>{factionState.liveTrade.join(", ")}</span>
                       </div>
                     )}
                     {factionState.startProtects && factionState.startProtects.length > 0 && (
