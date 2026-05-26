@@ -15261,11 +15261,34 @@ function App() {
                             }
                           }
                         }
-                        if (!normalised || normalised.length === 0) return null;
                         const ownerId =
                           (currentOwnerByCity && currentOwnerByCity[r.city])
                           || (initialOwnerByCity && initialOwnerByCity[r.city])
                           || r.faction;
+                        // 0.9.649: merge pendingArmyUnits for THIS garrison so
+                        // recruit-clicks and × removes show up in the panel
+                        // immediately, not just after Save to Mod. Key matches
+                        // armyKey(faction, {region}) — same hash stageArmyUnits uses.
+                        const pendingKey = ownerId && r.region
+                          ? `${String(ownerId).toLowerCase()}|r:${r.region}`
+                          : null;
+                        const pendingEntry = pendingKey ? pendingArmyUnits.get(pendingKey) : null;
+                        if (pendingEntry) {
+                          normalised = (pendingEntry.units || []).map((u) => ({
+                            unit: u.unit,
+                            xp: u.exp || 0,
+                            armour: u.armour || 0,
+                            weapon: u.weapon || 0,
+                          }));
+                        }
+                        if (!normalised || normalised.length === 0) {
+                          // Empty pending state is still a valid display: an
+                          // empty garrison the user is editing toward. Return
+                          // an empty array (NOT null) so the panel still
+                          // renders the "click to select" affordance.
+                          if (pendingEntry) return [];
+                          return null;
+                        }
                         if (ownerId) {
                           const dictMap = unitOwnership?.__dictionary || {};
                           const triples = normalised.map((u) => [ownerId, u.unit, dictMap[u.unit]]).filter(([, n]) => n);

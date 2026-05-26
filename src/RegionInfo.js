@@ -2710,26 +2710,39 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   onMouseLeave={() => setHoveredUnit((cur) => cur === u ? null : cur)}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
                   onClick={(e) => {
-                    // 0.9.648 dev: shift-click → remove this unit from the selected army;
-                    // plain click → select this garrison as the edit target.
-                    if (!devMode) return;
-                    if (e.shiftKey && isGarrisonSelected && onRemoveUnitFromSelectedArmy) {
-                      e.preventDefault();
-                      // Index in the ORIGINAL garrison array (not the sorted view).
-                      const origIdx = garrison.indexOf(u);
-                      if (origIdx >= 0) onRemoveUnitFromSelectedArmy(origIdx);
-                    } else if (onSelectArmy) {
-                      e.preventDefault();
-                      onSelectArmy(garrisonArmyDesc);
-                    }
+                    // 0.9.649: select this garrison as the edit target on click.
+                    // Removal is now a × button (rendered below) so plain click
+                    // is unambiguous.
+                    if (!devMode || !onSelectArmy) return;
+                    e.preventDefault();
+                    onSelectArmy(garrisonArmyDesc);
                   }}
-                  title={devMode ? `${tooltip}\n[dev] click = select army for editing · shift-click = remove unit` : tooltip} style={{
+                  title={devMode ? `${tooltip}\n[dev] click → select army for editing (× to remove)` : tooltip} style={{
                   position: "relative", padding: 1,
                   background: "rgba(0,0,0,0.35)", borderRadius: 2,
                   minWidth: 0,
                   cursor: devMode ? "pointer" : "default",
                   outline: isGarrisonSelected ? "1px solid rgba(250,204,21,0.55)" : "none",
                 }}>
+                  {isGarrisonSelected && onRemoveUnitFromSelectedArmy && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const origIdx = garrison.indexOf(u);
+                        if (origIdx >= 0) onRemoveUnitFromSelectedArmy(origIdx);
+                      }}
+                      title="Remove this unit"
+                      style={{
+                        position: "absolute", top: -4, right: -4, zIndex: 5,
+                        width: 13, height: 13, padding: 0, lineHeight: 1,
+                        background: "rgba(248,113,113,0.95)", color: "#fff",
+                        border: "1px solid rgba(0,0,0,0.4)", borderRadius: "50%",
+                        cursor: "pointer", fontSize: "10px", fontWeight: 700,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >×</button>
+                  )}
                   {(() => {
                     // 0.9.410+ swap: same general-face-card swap as field-army
                     // path, applied to garrison bodyguard units.

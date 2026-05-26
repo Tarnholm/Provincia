@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.649",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**Army edits show up immediately + × button replaces shift-click.** When the garrison is your edit target, every unit card now shows a small red **×** in the top-right (same pattern as the buildings widget) — click it to remove the unit. And the panel re-renders live as you add (click in Recruitable) or remove (×): the new card appears or the removed one vanishes the moment you click, not after Save to Mod. The garrison's `pendingArmyUnits` entry is merged into the panel's display data on each render, so what you see is what will be written when you save. Field-army cards still use the existing click-the-title-to-select pattern; their live-merge + × is queued for the next ship." },
+    ],
+  },
+  {
     version: "0.9.648",
     date: "2026-05-26",
     items: [
