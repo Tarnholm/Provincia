@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.657",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Pending changes count no longer stuck after Save.** 0.9.654 fixed the silent-revert bug by *not* clearing `pendingArmyUnits` on a successful Save (the garrison/field-army panels need the overlay because `liveUnitsByRegion` is built from the save buffer and can't be refreshed without a re-import). Trade-off: the badge stayed at \"N changes\" even though everything was on disk — so \"Pending changes (4)\" with \"0 regions, 0 traits, 0 ancillaries\" looked like the body and header disagreed. Now: on a successful Save the entries move from `pendingArmyUnits` → a new `appliedArmyUnits` registry, the badge drops to 0, and the merge sites read from BOTH (pending first, applied as fallback) so the panel keeps showing the saved truth. `appliedArmyUnits` clears when Restore Last Backup rolls descr_strat back." },
+      { type: "improvement", text: "**Pending Changes dialog body now surfaces every staged category.** Was \"X regions of buildings, Y characters of traits, Z characters of ancillaries\" + (optional) new generals + dev-dirty files only. Now also shows army-unit edits, character moves, character field edits (age/rank/rename), garrison relocations, and diplomacy edits — so a \"4 changes\" header always has a corresponding row in the body summary." },
+    ],
+  },
+  {
     version: "0.9.656",
     date: "2026-05-26",
     items: [

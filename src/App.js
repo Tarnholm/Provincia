@@ -2228,6 +2228,22 @@ function App() {
       return raw ? new Map(JSON.parse(raw)) : new Map();
     } catch { return new Map(); }
   });
+  // 0.9.657: already-saved army-unit edits. Mirrors `pendingArmyUnits`'s
+  // shape but does NOT contribute to `pendingCount` — these are committed
+  // to descr_strat already. They live here because the live garrison /
+  // field-army panels read from `liveUnitsByRegion` (built from the save
+  // buffer, not descr_strat) which can't be refreshed mid-session, and
+  // `startingArmiesByRegion`'s post-Save refresh skips character-name
+  // locators. So the merge sites overlay `applied` as a fallback after
+  // `pending` to keep the panel showing the saved-truth units. Cleared
+  // when the user reloads the live save (fresh authoritative state) or
+  // Restore Last Backup (descr_strat reverted).
+  const [appliedArmyUnits, setAppliedArmyUnits] = useState(() => {
+    try {
+      const raw = localStorage.getItem("appliedArmyUnits");
+      return raw ? new Map(JSON.parse(raw)) : new Map();
+    } catch { return new Map(); }
+  });
   // Staged scalar-field edits of existing characters (key `firstName|faction` →
   // { firstName, faction, age?, tag?, label }). Applied via update-character-fields
   // on Save; revertable like other dev edits.
@@ -2336,20 +2352,24 @@ function App() {
   // Click → add a recruitable unit to the currently-selected army.
   const onAddUnitToSelectedArmy = useCallback((unitName) => {
     if (!selectedArmyKey || !selectedArmyDesc || !unitName) return;
-    const pending = pendingArmyUnits.get(selectedArmyKey);
+    // 0.9.657: baseline = pending → applied → originalUnits, so a follow-up
+    // edit after a Save still starts from the saved state, not the stale
+    // selectedArmyDesc.originalUnits snapshot.
+    const pending = pendingArmyUnits.get(selectedArmyKey) || appliedArmyUnits.get(selectedArmyKey);
     const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
     const next = [...(cur || []), { unit: unitName, exp: 0, armour: 0, weapon_lvl: 0 }];
     stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
-  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, stageArmyUnits]);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
 
   // Click × → remove the unit at index from the currently-selected army.
   const onRemoveUnitFromSelectedArmy = useCallback((idx) => {
     if (!selectedArmyKey || !selectedArmyDesc) return;
-    const pending = pendingArmyUnits.get(selectedArmyKey);
+    // 0.9.657: baseline = pending → applied → originalUnits (see onAdd above).
+    const pending = pendingArmyUnits.get(selectedArmyKey) || appliedArmyUnits.get(selectedArmyKey);
     const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
     const next = (cur || []).filter((_, i) => i !== idx);
     stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
-  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, stageArmyUnits]);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
 
   // Stage a diplomacy edit from the editor. valueKind ∈ core|rel|agg.
   const stageDiplomacy = useCallback((valueKind, from, to, value, label) => {
@@ -15436,9 +15456,14 @@ function App() {
                         const pendingKey2 = ownerId && r.region && ownerId !== r.faction
                           ? `${String(ownerId).toLowerCase()}|r:${r.region}`
                           : null;
+                        // 0.9.657: fall back to appliedArmyUnits after pending
+                        // so already-saved edits keep overlaying the stale live
+                        // garrison without inflating pendingCount.
                         const pendingEntry =
                           (pendingKey1 && pendingArmyUnits.get(pendingKey1))
                           || (pendingKey2 && pendingArmyUnits.get(pendingKey2))
+                          || (pendingKey1 && appliedArmyUnits.get(pendingKey1))
+                          || (pendingKey2 && appliedArmyUnits.get(pendingKey2))
                           || null;
                         if (pendingEntry) {
                           normalised = (pendingEntry.units || []).map((u) => ({
@@ -16163,7 +16188,8 @@ function App() {
                           const mergeFieldPending = (army) => {
                             if (!army || army.x == null || army.y == null || !army.faction) return army;
                             const key = `${String(army.faction).toLowerCase()}|c:${army.x},${army.y}`;
-                            const pending = pendingArmyUnits.get(key);
+                            // 0.9.657: pending first, then applied (already-saved overlay).
+                            const pending = pendingArmyUnits.get(key) || appliedArmyUnits.get(key);
                             if (!pending) return army;
                             return {
                               ...army,
@@ -16246,7 +16272,8 @@ function App() {
                         const mergeFieldPending = (army) => {
                           if (!army || army.x == null || army.y == null || !army.faction) return army;
                           const key = `${String(army.faction).toLowerCase()}|c:${army.x},${army.y}`;
-                          const pending = pendingArmyUnits.get(key);
+                          // 0.9.657: pending first, then applied (already-saved overlay).
+                          const pending = pendingArmyUnits.get(key) || appliedArmyUnits.get(key);
                           if (!pending) return army;
                           return {
                             ...army,
@@ -17967,7 +17994,7 @@ function App() {
                 })()
               )}
               <div style={{ marginTop: 12, fontSize: "0.7rem", color: "#888" }}>
-                Final write targets: {pendingBuildings.size} region{pendingBuildings.size === 1 ? "" : "s"} of buildings, {pendingTraits.size} character{pendingTraits.size === 1 ? "" : "s"} of traits, {pendingAncils.size} character{pendingAncils.size === 1 ? "" : "s"} of ancillaries{pendingGenerals.size > 0 ? `, ${pendingGenerals.size} new general${pendingGenerals.size === 1 ? "" : "s"}` : ""}{devDirtyFiles.size > 0 ? `; descr_strat / descr_regions changes for ${[...devDirtyFiles].join(", ")}` : ""}.
+                Final write targets: {pendingBuildings.size} region{pendingBuildings.size === 1 ? "" : "s"} of buildings, {pendingTraits.size} character{pendingTraits.size === 1 ? "" : "s"} of traits, {pendingAncils.size} character{pendingAncils.size === 1 ? "" : "s"} of ancillaries{pendingGenerals.size > 0 ? `, ${pendingGenerals.size} new general${pendingGenerals.size === 1 ? "" : "s"}` : ""}{pendingArmyUnits.size > 0 ? `, ${pendingArmyUnits.size} army${pendingArmyUnits.size === 1 ? "" : " units"} edit${pendingArmyUnits.size === 1 ? "" : "s"}` : ""}{pendingCharPos.size > 0 ? `, ${pendingCharPos.size} character move${pendingCharPos.size === 1 ? "" : "s"}` : ""}{pendingCharFields.size > 0 ? `, ${pendingCharFields.size} character field edit${pendingCharFields.size === 1 ? "" : "s"}` : ""}{pendingGarrisonMoves.size > 0 ? `, ${pendingGarrisonMoves.size} garrison relocation${pendingGarrisonMoves.size === 1 ? "" : "s"}` : ""}{pendingDiplomacy.size > 0 ? `, ${pendingDiplomacy.size} diplomacy edit${pendingDiplomacy.size === 1 ? "" : "s"}` : ""}{devDirtyFiles.size > 0 ? `; descr_strat / descr_regions changes for ${[...devDirtyFiles].join(", ")}` : ""}.
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -18015,8 +18042,15 @@ function App() {
                 if (!confirm("Restore the mod's descr_strat files to the snapshot from before your last Save?\n\nThis overwrites the current files with the most recent backup.")) return;
                 try {
                   const r = await api.restoreModBackup(null);
-                  if (r?.ok) { pushToast(`Restored ${r.restored} file(s) from backup ${r.stamp}.`, "info", 6000); if (reloadModCharacters) reloadModCharacters(); }
-                  else pushToast(`Restore failed: ${r?.error || "no backup found"}`, "warning", 8000);
+                  if (r?.ok) {
+                    // 0.9.657: descr_strat reverted → drop any applied
+                    // army-unit overlay so the panel reflects the restored
+                    // (= pre-Save) file truth.
+                    setAppliedArmyUnits(new Map());
+                    try { localStorage.removeItem("appliedArmyUnits"); } catch {}
+                    pushToast(`Restored ${r.restored} file(s) from backup ${r.stamp}.`, "info", 6000);
+                    if (reloadModCharacters) reloadModCharacters();
+                  } else pushToast(`Restore failed: ${r?.error || "no backup found"}`, "warning", 8000);
                 } catch (e) { pushToast(`Restore failed: ${e.message}`, "warning", 8000); }
               }} style={{ padding: "5px 12px", background: "rgba(110,140,190,0.15)", color: "#9bf", border: "1px solid rgba(110,140,190,0.45)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}>
                 Restore last backup
@@ -18181,20 +18215,20 @@ function App() {
                   setPendingCharPos(new Map());
                   setPendingCharFields(new Map());
                   setPendingGarrisonMoves(new Map());
-                  // 0.9.654: DO NOT clear pendingArmyUnits on Save. The
-                  // garrison + field-army panels read from liveUnitsByRegion
-                  // (live mode) or startingArmiesByRegion (non-live) — the
-                  // post-save apply() refreshes startingArmiesByRegion via
-                  // matches() but can't refresh liveUnitsByRegion because
-                  // that's derived from the save buffer (not descr_strat),
-                  // and matches() doesn't grok character-name locators.
-                  // Net effect: clearing pendingArmyUnits made the UI revert
-                  // to the pre-edit live garrison. Keeping the entries lets
-                  // the garrison merge continue to overlay the applied state.
-                  // Tradeoff: the Pending Changes count will keep showing the
-                  // army-unit edits until the user clicks "Discard all" or
-                  // re-imports the mod. Worth it vs the silent revert bug.
-                  // setPendingArmyUnits(new Map());     // intentionally kept
+                  // 0.9.657: move staged army-unit edits → appliedArmyUnits so
+                  // the count drops to 0 (they're saved now) but the merge
+                  // sites still overlay them on top of the stale
+                  // liveUnitsByRegion / startingArmiesByRegion data the panel
+                  // reads from. v0.9.654 left them in pendingArmyUnits which
+                  // kept the badge stuck at N — same overlay behaviour, but
+                  // the count was wrong.
+                  setAppliedArmyUnits((prev) => {
+                    const next = new Map(prev);
+                    for (const [k, v] of pendingArmyUnits.entries()) next.set(k, v);
+                    try { localStorage.setItem("appliedArmyUnits", JSON.stringify([...next.entries()])); } catch {}
+                    return next;
+                  });
+                  setPendingArmyUnits(new Map());
                   setPendingDiplomacy(new Map());
                   setPendingLog([]);
                   setDevDirtyFiles(new Set());
@@ -18206,7 +18240,7 @@ function App() {
                     localStorage.removeItem("pendingCharPos");
                     localStorage.removeItem("pendingCharFields");
                     localStorage.removeItem("pendingGarrisonMoves");
-                    // localStorage.removeItem("pendingArmyUnits");  // intentionally kept (see above)
+                    localStorage.removeItem("pendingArmyUnits");
                     localStorage.removeItem("pendingDiplomacy");
                     localStorage.removeItem("pendingLog");
                   } catch {}
