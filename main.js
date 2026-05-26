@@ -8153,8 +8153,13 @@ autoUpdater.logger = { info: console.log, warn: console.warn, error: console.err
 let lastUpdateStatus = null;
 function sendUpdateEvent(channel, payload) {
   if (channel === "update-status") lastUpdateStatus = payload;
-  const win = BrowserWindow.getAllWindows()[0];
-  if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
+  // Broadcast to EVERY window, not just getAllWindows()[0]. With the Scripts
+  // child window open, [0] could be that window (which has no updater UI), so
+  // the main renderer's watch loop never saw "downloaded" — it polled forever
+  // and never auto-installed. Extra windows that don't listen just ignore it.
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
+  }
 }
 
 ipcMain.handle("get-update-status", async () => lastUpdateStatus);

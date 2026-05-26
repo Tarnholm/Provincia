@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.630",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Auto-update could get stuck \"downloaded but never installs\" when the Scripts window was open.** Update status events were only sent to one window (`getAllWindows()[0]`), which — with the Scripts child window open — could be that window instead of the main UI. So the main window's update-watch never received the \"downloaded\" event: it polled every 5 seconds forever and never auto-installed, and the \"Restart & install\" banner didn't appear. Events are now broadcast to **all** windows, so the watch loop stops and auto-installs as intended (and the banner always shows). Note: an *open child window also keeps the app alive*, which blocks the install-on-quit — fully quitting (Scripts window included) installs a staged update. (To get onto this build: fully quit Provincia and relaunch.)" },
+    ],
+  },
+  {
     version: "0.9.629",
     date: "2026-05-26",
     items: [
