@@ -1384,6 +1384,82 @@ ipcMain.handle('sps:migrate-get-data', async () => {
   }
 });
 
+// 0.9.636: Migration preview — count what would change WITHOUT touching anything.
+// Counts EDB references that would be re-pointed (excluding the chain's own
+// self-refs, which get removed with the block), descr_strat prebuilts that
+// would be removed, and missing new-chain localization keys in the loaded
+// text/export_buildings.txt. Lets the dialog show "Will re-point N refs,
+// remove M prebuilts, K of L locale keys missing" before the user commits.
+ipcMain.handle('sps:migrate-preview', async (_, mig) => {
+  const out = {
+    edbRefsTotal: 0, edbRefsByLevel: {}, edbRefsUnmappedCount: 0, unmappedLevels: [],
+    stratPrebuilts: 0, missingLocaleKeys: 0, totalLocaleKeysNeeded: 0, edbBlockFound: false,
+  };
+  try {
+    if (!mig || !mig.old_chain) return out;
+    const configDir = path.join(PROJECT_ROOT, 'config');
+    const old = mig.old_chain;
+    const oldLevels = mig.old_levels || [];
+    const remap = mig.remap || {};
+
+    // EDB: remove the chain's own block first so internal self-refs don't count.
+    const edbPath = path.join(configDir, 'export_descr_buildings.txt');
+    const edb = fs.existsSync(edbPath) ? fs.readFileSync(edbPath, 'utf-8') : '';
+    if (edb) {
+      const esc = old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Match `building <old>` ... up to next top-level `building`/`alias` or EOF.
+      const blockRe = new RegExp(`^building[ \\t]+${esc}\\b[\\s\\S]*?(?=^building[ \\t]|^alias[ \\t]|$)`, 'gm');
+      out.edbBlockFound = blockRe.test(edb);
+      blockRe.lastIndex = 0;
+      const outsideBlock = edb.replace(blockRe, '');
+      // Count `building_present_min_level <old> <level>` references.
+      const mlRe = new RegExp(`building_present_min_level[ \\t]+${esc}[ \\t]+(\\S+)`, 'g');
+      let m;
+      while ((m = mlRe.exec(outsideBlock))) {
+        const lvl = m[1];
+        out.edbRefsTotal++;
+        out.edbRefsByLevel[lvl] = (out.edbRefsByLevel[lvl] || 0) + 1;
+        if (!remap[lvl]) out.edbRefsUnmappedCount++;
+      }
+      // Also count bare `building_present <old>` (no _min_level form).
+      const bareRe = new RegExp(`building_present[ \\t]+${esc}\\b`, 'g');
+      const bareHits = (outsideBlock.match(bareRe) || []).length;
+      out.edbRefsTotal += bareHits;
+      if (bareHits && oldLevels.length && !remap[oldLevels[0]]) out.edbRefsUnmappedCount += bareHits;
+      out.unmappedLevels = oldLevels.filter(lvl => !remap[lvl]);
+    }
+
+    // descr_strat prebuilts referencing the old chain.
+    const stratPath = path.join(configDir, 'descr_strat.txt');
+    if (fs.existsSync(stratPath)) {
+      const strat = fs.readFileSync(stratPath, 'utf-8');
+      const esc = old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const stratRe = new RegExp(`^\\s*type[ \\t]+${esc}[ \\t]+\\S+`, 'gm');
+      out.stratPrebuilts = (strat.match(stratRe) || []).length;
+    }
+
+    // Localization: how many of the new chains' level keys are missing in
+    // text/export_buildings.txt (the tool never fabricates these).
+    const textPath = path.join(configDir, 'export_buildings.txt');
+    if (fs.existsSync(textPath) && edb) {
+      const text = fs.readFileSync(textPath, 'utf-8');
+      const buildings = parseEDB(edb);
+      const newSet = new Set(mig.new_chains || []);
+      const newLevels = [];
+      for (const b of buildings) {
+        if (!newSet.has(b.name)) continue;
+        const lvls = b.rawLevelsLine ? b.rawLevelsLine.split(/\s+/).filter(Boolean) : b.levels.map(l => l.name);
+        newLevels.push(...lvls);
+      }
+      out.totalLocaleKeysNeeded = newLevels.length;
+      out.missingLocaleKeys = newLevels.filter(l => !text.includes(`{${l}}`)).length;
+    }
+    return out;
+  } catch (e) {
+    return { ...out, error: e.message };
+  }
+});
+
 // Persist the picker's migrations array back to config/chain_migration.txt.
 ipcMain.handle('sps:migrate-save', async (_, migrations) => {
   try {

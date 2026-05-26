@@ -275,10 +275,14 @@ async function openMigrateDialog() {
   renderMigrateNewList();
   renderMigrateList();
 
-  oldSel.onchange = renderMigrateNewList;
+  oldSel.onchange = () => { renderMigrateNewList(); schedulePreview(); };
   document.getElementById('migrate-new-filter').oninput = renderMigrateNewList;
+  document.getElementById('migrate-alias').onchange = schedulePreview;
+  document.getElementById('migrate-strat').onchange = schedulePreview;
+  document.getElementById('migrate-new').onchange = schedulePreview;   // bubbles from checkboxes
   document.getElementById('migrate-add').onclick = onMigrateAdd;
   document.getElementById('migrate-run').onclick = runMigrateNow;
+  schedulePreview();
   overlay.onclick = (e) => {
     if (e.target === overlay || e.target.id === 'migrate-close') overlay.classList.remove('visible');
   };
@@ -345,6 +349,58 @@ async function onMigrateDelete(idx) {
   _migData.migrations.splice(idx, 1);
   await window.api.migrateSave(_migData.migrations);
   renderMigrateList();
+}
+
+// 0.9.636: live preview of what running THIS form's migration would do —
+// count of EDB refs that would be re-pointed (with unmapped breakdown),
+// descr_strat prebuilts that would be removed, and missing localization
+// keys for the new chains. Debounced so picking many new chains in a row
+// doesn't fire one IPC per click.
+let _migPreviewTimer = null;
+function schedulePreview() {
+  if (_migPreviewTimer) clearTimeout(_migPreviewTimer);
+  _migPreviewTimer = setTimeout(runMigratePreview, 200);
+}
+async function runMigratePreview() {
+  const out = document.getElementById('migrate-preview');
+  if (!out) return;
+  const old = document.getElementById('migrate-old').value;
+  const oldChain = _migData.chains.find(c => c.name === old);
+  if (!old || !oldChain) { out.textContent = ''; return; }
+  const newChains = [...document.querySelectorAll('#migrate-new input:checked')].map(i => i.value);
+  const remap = {};
+  const aliasVal = document.getElementById('migrate-alias').value;
+  if (aliasVal) {
+    const [prefix, tiersStr] = aliasVal.split('|');
+    const tiers = parseInt(tiersStr, 10);
+    oldChain.levels.forEach((lvl, i) => { if (i < tiers) remap[lvl] = `${prefix}_${i + 1}`; });
+  }
+  const mig = { old_chain: old, old_levels: oldChain.levels, new_chains: newChains, remap };
+  let p;
+  try { p = await window.api.migratePreview(mig); } catch (e) { out.textContent = `preview error: ${e.message}`; return; }
+  if (!p || p.error) { out.textContent = p?.error ? `preview error: ${p.error}` : ''; return; }
+  // Build a clean inline summary. Each chunk is independent so the user
+  // sees zero-counts too (e.g. "0 prebuilts" is informative for farms).
+  const bits = [];
+  bits.push(`<b>EDB block</b>: ${p.edbBlockFound ? 'will be removed' : '<span class="migrate-dim">not found</span>'}`);
+  if (p.edbRefsTotal > 0) {
+    const um = p.edbRefsUnmappedCount > 0
+      ? ` (<span style="color:var(--yellow,#facc15)">${p.edbRefsUnmappedCount} unmapped — left as-is</span>)`
+      : '';
+    bits.push(`<b>EDB refs</b>: ${p.edbRefsTotal} will be re-pointed${um}`);
+  } else {
+    bits.push(`<b>EDB refs</b>: <span class="migrate-dim">none outside the block</span>`);
+  }
+  bits.push(`<b>Prebuilts</b>: ${p.stratPrebuilts} will be removed from descr_strat`);
+  if (p.totalLocaleKeysNeeded > 0) {
+    const tone = p.missingLocaleKeys > 0 ? 'color:var(--yellow,#facc15)' : '';
+    bits.push(`<b>Localization</b>: <span style="${tone}">${p.missingLocaleKeys} of ${p.totalLocaleKeysNeeded}</span> new-chain text keys missing`);
+  }
+  if (p.unmappedLevels && p.unmappedLevels.length) {
+    bits.push(`<span class="migrate-dim">no remap for: ${p.unmappedLevels.join(', ')}</span>`);
+  }
+  out.innerHTML = `<div class="migrate-preview-title">If you Add + Run this now:</div>` +
+    bits.map(b => `<div class="migrate-preview-row">• ${b}</div>`).join('');
 }
 
 async function onMigrateAdd() {

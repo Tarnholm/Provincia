@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.636",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**Migrate Building Chain: live preview** in the Configure dialog. As you pick the old chain, the new chains, and the optional alias, a small panel underneath tells you what running this migration *would actually do* — \"EDB block: will be removed · EDB refs: N will be re-pointed (X unmapped — left as-is) · Prebuilts: M will be removed from descr_strat · Localization: K of L new-chain text keys missing.\" Counts come from a new read-only `migrate-preview` IPC that scans EDB / descr_strat / `text/export_buildings.txt` exactly the way the Python step would, without writing anything. Debounced so picking many chains in a row only fires one IPC. (#8 open-in-editor moves to the next batch — it's a bigger plumbing change than it looked.)" },
+    ],
+  },
+  {
     version: "0.9.635",
     date: "2026-05-26",
     items: [

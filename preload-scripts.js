@@ -48,6 +48,7 @@ contextBridge.exposeInMainWorld("api", {
   // Migrate Building Chain picker
   migrateGetData: () => invoke("migrate-get-data"),
   migrateSave: (migrations) => invoke("migrate-save", migrations),
+  migratePreview: (mig) => invoke("migrate-preview", mig),
 
   // Master / building allowlist
   loadAllowlist: () => invoke("load-allowlist"),

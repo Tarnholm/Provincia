@@ -295,3 +295,16 @@
 }
 .migrate-steps b { color: var(--text-primary); font-weight: 600; }
 .migrate-run-hint { margin-right: auto; font-size: 11px; color: var(--text-secondary); align-self: center; }
+
+.migrate-preview {
+  font-size: 11px; line-height: 1.5; color: var(--text-primary);
+  background: rgba(110,180,255,0.06); border: 1px solid rgba(110,180,255,0.18);
+  border-radius: var(--radius-sm); padding: 6px 10px; min-height: 0;
+}
+.migrate-preview:empty { padding: 0; border: none; background: transparent; }
+.migrate-preview-title {
+  font-size: 10.5px; color: var(--text-secondary); margin-bottom: 3px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.migrate-preview-row { padding: 1px 0; }
+.migrate-preview-row b { color: var(--text-primary); font-weight: 600; }
