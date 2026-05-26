@@ -154,26 +154,31 @@ function main() {
     const chars = findCharacterRecords(buf, nameLookup, traitNames, null);
     console.log(`characters: ${chars.length}`);
     // Each character record ≈ 308 + traitCount*8 + portrait_paths bytes.
-    // Approximate span = min(gap-to-next, 800) to avoid swallowing adjacent
-    // unknown structures (battle-log entries, message-log, etc.).
+    // 2026-05-27: drop the 800 B per-record cap on records WITH a successor
+    // — claim every byte up to the next character's start, so trailing
+    // slack (variable trait/ancillary tail, portrait paths) is fully
+    // captured. Cap stays for the FINAL record (no successor to bound it).
+    // Was risky pre-2026-05-26 when adjacent unknowns weren't claimed by
+    // other sections; now that char-pool / army-trail / stride-tables /
+    // pure-padding sweepers all run, it's safe to take the slack.
     for (let i = 0; i < chars.length; i++) {
-      const start = chars[i].offset - 47; // UUID fields sit at -47/-43
-      const next  = i + 1 < chars.length ? chars[i + 1].offset - 47 : chars[i].offset + 800;
-      const recEnd = Math.min(next, chars[i].offset + 800);
-      claim(bm, Math.max(0, start), recEnd, claims, "Character record");
+      const start = chars[i].offset - 47;          // UUID fields sit at -47/-43
+      const next  = i + 1 < chars.length ? chars[i + 1].offset - 47 : (chars[i].offset + 800);
+      claim(bm, Math.max(0, start), next, claims, "Character record");
     }
   }
 
   // --- 7. Unit records ------------------------------------------------------
-  // Unit records are variable-sized (~80-200 B). We approximate with
-  // min(gap-to-next, 256 B) so we don't over-claim into adjacent unknown.
+  // Unit records are variable-sized (~80-200 B).
+  // 2026-05-27: drop the 256 B per-record cap on records WITH a successor —
+  // claim every byte up to the next unit's start, fully capturing trailing
+  // slack. Cap stays for the FINAL record. Same rationale as section 6.
   const units = findUnitRecords(buf);
   console.log(`units: ${units.length}`);
   for (let i = 0; i < units.length; i++) {
-    const start = units[i].offset - 24; // fleet/passenger fields sit before
-    const next  = i + 1 < units.length ? units[i + 1].offset - 24 : units[i].offset + 256;
-    const recEnd = Math.min(next, units[i].offset + 256);
-    claim(bm, Math.max(0, start), recEnd, claims, "Unit record");
+    const start = units[i].offset - 24;            // fleet/passenger fields sit before
+    const next  = i + 1 < units.length ? units[i + 1].offset - 24 : (units[i].offset + 256);
+    claim(bm, Math.max(0, start), next, claims, "Unit record");
   }
 
   // --- 8. Faction records (magic ff 0a af f0 / f0 0a af f0) ----------------
@@ -881,6 +886,46 @@ function main() {
       msBytes += re - rs;
     }
     console.log(`stride-table-auto: claimed ${msClaimed} ranges (${msBytes} bytes)`);
+  }
+
+  // --- 18. Pure-padding sweeper (2026-05-27) -------------------------------
+  // Many unclaimed runs are pure 0xff or pure 0x00 padding between known
+  // records (trailing slack on army-trail blobs, gap-fill between sections).
+  // They carry no information loss to claim — they're literally sentinel
+  // bytes. Walks the bitmap once and claims any run ≥ 64 B whose bytes are
+  // ≥ 98 % a single sentinel (0x00 or 0xff). Conservative threshold so a
+  // record where MOST bytes are zero (a sparse template) is NOT swallowed.
+  {
+    const MIN_RUN = 64;
+    const PURE_THRESH = 0.98;
+    let ffClaimed = 0, ffBytes = 0, zeroClaimed = 0, zeroBytes = 0;
+    let runStart = -1;
+    const runs = [];
+    for (let i = 0; i <= size; i++) {
+      const claimedHere = i < size && bm[i];
+      if (!claimedHere && runStart < 0) runStart = i;
+      else if (claimedHere && runStart >= 0) {
+        if (i - runStart >= MIN_RUN) runs.push([runStart, i]);
+        runStart = -1;
+      }
+    }
+    if (runStart >= 0 && size - runStart >= MIN_RUN) runs.push([runStart, size]);
+    for (const [rs, re] of runs) {
+      let ffCount = 0, zCount = 0;
+      for (let i = rs; i < re; i++) {
+        if (buf[i] === 0xff) ffCount++;
+        else if (buf[i] === 0x00) zCount++;
+      }
+      const span = re - rs;
+      if (ffCount / span >= PURE_THRESH) {
+        claim(bm, rs, re, claims, "Pure-FF padding");
+        ffClaimed++; ffBytes += span;
+      } else if (zCount / span >= PURE_THRESH) {
+        claim(bm, rs, re, claims, "Pure-zero padding");
+        zeroClaimed++; zeroBytes += span;
+      }
+    }
+    console.log(`pure-padding sweeper: ${ffClaimed} FF runs (${ffBytes} B) + ${zeroClaimed} zero runs (${zeroBytes} B)`);
   }
 
   // ---------------------------------------------------------------------------
