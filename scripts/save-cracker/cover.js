@@ -490,10 +490,12 @@ function main() {
   //      "Hillfort") AND ends with `1e 00 00 00` followed by >= 16 zeros.
   {
     const ZONE_START = 0x14e5ac6;
-    // Extend zone slightly past the canonical settlement-zone end — a few
-    // army-trail blobs sit right at the boundary (the very last army before
-    // the faction array starts at 0x1f1fc14 for save_1.2.sav).
-    const ZONE_END   = Math.min(0x1f1fc14, size);
+    // 2026-05-26: dynamic ZONE_END anchored to faction-array start (same fix
+    // pattern as section 13's char-pool). Hardcoded 0x1f1fc14 was sized for
+    // save_1.2.sav; larger saves have army-trail blobs much further into the
+    // body region. Fallback to the old constant if faction parser found
+    // nothing.
+    const ZONE_END   = (factions && factions[0]) ? factions[0].offset : Math.min(0x1f1fc14, size);
     const MIN_GAP    = 1024;        // smaller minimum — these blobs can be 1-2 KB
     let trailClaimed = 0;
     let trailBytes   = 0;
@@ -607,7 +609,8 @@ function main() {
   // match this pattern.
   {
     const ZONE_START = 0x14e5ac6;
-    const ZONE_END   = Math.min(0x1f1fc14, size);
+    // 2026-05-26: dynamic ZONE_END (see section 13/14 fix).
+    const ZONE_END   = (factions && factions[0]) ? factions[0].offset : Math.min(0x1f1fc14, size);
     const MIN_RUN    = 100;
     let zfClaimed = 0;
     let zfBytes   = 0;
@@ -674,7 +677,12 @@ function main() {
   // claimed army-trail blobs, but those bytes are already taken).
   {
     const ZONE_START = 0x14e5ac6;
-    const ZONE_END   = Math.min(0x20e6e8e, size); // up to lua-counter footer
+    // 2026-05-26: dynamic ZONE_END (see section 13/14 fix). The original
+    // "up to lua-counter footer" comment was misleading — the stride-9
+    // tables end at the faction-array start, not at the lua-counter footer
+    // (which sits at the very end of the file). 0x20e6e8e was a save_1.2-
+    // specific value that lands inside the body region.
+    const ZONE_END   = (factions && factions[0]) ? factions[0].offset : Math.min(0x20e6e8e, size);
     const MIN_RUN    = 100;
     let upClaimed = 0;
     let upBytes   = 0;
@@ -761,7 +769,8 @@ function main() {
   // to "army-record-blob" semantically.
   {
     const ZONE_START = 0x14e5ac6;
-    const ZONE_END   = Math.min(0x1f1fc14, size);
+    // 2026-05-26: dynamic ZONE_END (see section 13/14 fix).
+    const ZONE_END   = (factions && factions[0]) ? factions[0].offset : Math.min(0x1f1fc14, size);
     let armyCount = 0;
     let stride9_240Count = 0;
     let efHeaderBytes = 0;
@@ -824,7 +833,8 @@ function main() {
   // appears to pad these tables with 0xff sentinels between sub-blocks.
   {
     const ZONE_START = 0x14e5ac6;
-    const ZONE_END   = Math.min(0x20e6e8e, size);
+    // 2026-05-26: dynamic ZONE_END (see section 13/14 fix).
+    const ZONE_END   = (factions && factions[0]) ? factions[0].offset : Math.min(0x20e6e8e, size);
     const MIN_RUN    = 80;
     let msClaimed = 0;
     let msBytes   = 0;
