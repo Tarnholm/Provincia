@@ -139,12 +139,59 @@ ipcMain.handle('sps:get-project-root', () => PROJECT_ROOT);
 // the request is queued and replayed once the renderer is ready — so the
 // first-open + jump-to path works in one click.
 let _pendingScriptsJump = null;
-ipcMain.handle('sps:jump-to', async (_, fileName, searchText) => {
+// 0.9.641: Cross-reference scan. "Where is this used?" Given a token
+// (chain name, level name, trait name, ancillary name, region name, …),
+// walks every config file loaded into config/ and returns every line that
+// matches it as a whole word. Used by the X-Ref dev-pill modal AND by the
+// upcoming mod-validation dashboard to find dangling references.
+ipcMain.handle('sps:xref-find', async (_, name) => {
+  const empty = { byFile: {}, totalMatches: 0 };
+  if (!name || typeof name !== 'string') return empty;
+  const configDir = path.join(PROJECT_ROOT, 'config');
+  // Loaded by MOD_FILE_MAP (+ migration extras). Each file gets its own
+  // grouping in the result so the UI can show file → lines hierarchy.
+  const FILES = [
+    'export_descr_buildings.txt',
+    'descr_strat.txt',
+    'export_descr_character_traits.txt',
+    'export_descr_ancillaries.txt',
+    'export_buildings.txt',             // text/export_buildings.txt (localization)
+    'descr_sm_factions.txt',
+    'descr_regions.txt',
+    'descr_win_conditions.txt',
+    'chain_migration.txt',
+    'defunct_buildings.txt',
+  ];
+  const safe = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Token names use [A-Za-z0-9_]; \b works. Case-sensitive to match RTW's
+  // own treatment (engines are case-sensitive on these tokens).
+  const re = new RegExp(`\\b${safe}\\b`);
+  const byFile = {};
+  let total = 0;
+  for (const f of FILES) {
+    const p = path.join(configDir, f);
+    if (!fs.existsSync(p)) continue;
+    const lines = fs.readFileSync(p, 'utf-8').split(/\r?\n/);
+    const hits = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (re.test(lines[i])) {
+        // Strip leading whitespace, trim long lines so the UI stays scannable.
+        const text = lines[i].replace(/^\s+/, '');
+        hits.push({ line: i + 1, text: text.length > 220 ? text.slice(0, 217) + '…' : text });
+      }
+    }
+    if (hits.length) { byFile[f] = hits; total += hits.length; }
+  }
+  return { byFile, totalMatches: total };
+});
+
+ipcMain.handle('sps:jump-to', async (_, fileName, searchText, line) => {
+  const payload = { fileName, searchText, line: typeof line === 'number' ? line : null };
   const ready = scriptsWin && !scriptsWin.isDestroyed() && !scriptsWin.webContents.isLoading();
   if (ready) {
-    scriptsWin.webContents.send('sps:jump-to', { fileName, searchText });
+    scriptsWin.webContents.send('sps:jump-to', payload);
   } else {
-    _pendingScriptsJump = { fileName, searchText };
+    _pendingScriptsJump = payload;
     openScriptsWindow();
   }
   return { ok: true };

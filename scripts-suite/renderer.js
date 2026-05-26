@@ -3750,12 +3750,10 @@ function setupEventListeners() {
   // 0.9.637: sps:jump-to handler — open a config file in Monaco and (if
   // searchText given) scroll to the first match. Fired by the main Provincia
   // app's "Open in editor" buttons.
-  if (window.api.onJumpTo) window.api.onJumpTo(async ({ fileName, searchText }) => {
+  if (window.api.onJumpTo) window.api.onJumpTo(async ({ fileName, searchText, line }) => {
     try {
-      // Make sure the Editor tab is foregrounded so Monaco lays out properly.
       const editorSeg = document.querySelector('.segmented-control .segment[data-tab="editor"]');
       if (editorSeg && !editorSeg.classList.contains('active')) editorSeg.click();
-      // Look up the file path by name.
       const files = await window.api.listConfigFiles();
       const f = (files || []).find(x => x.name === fileName);
       if (!f) {
@@ -3763,8 +3761,12 @@ function setupEventListeners() {
         return;
       }
       await openFile(f.path, f.name);
-      // openFile populates Monaco synchronously via setValue; reveal first match.
-      if (searchText && monacoEditor) {
+      if (!monacoEditor) return;
+      // Precise line wins (X-Ref clicks); otherwise fall back to text search.
+      if (typeof line === 'number' && line > 0) {
+        monacoEditor.revealLineInCenter(line);
+        monacoEditor.setPosition({ lineNumber: line, column: 1 });
+      } else if (searchText) {
         const model = monacoEditor.getModel();
         const matches = model.findMatches(searchText, false, false, false, null, false);
         if (matches && matches.length) {

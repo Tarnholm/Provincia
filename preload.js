@@ -6,7 +6,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Open a config file in the Scripts window's Monaco editor and (if
   // searchText given) scroll to the first match. Opens the Scripts window
   // on demand. Used by "Open in editor" buttons in the main app.
-  scriptsJumpTo: (fileName, searchText) => ipcRenderer.invoke("sps:jump-to", fileName, searchText),
+  scriptsJumpTo: (fileName, searchText, line) => ipcRenderer.invoke("sps:jump-to", fileName, searchText, line),
+  // X-Ref scan: "where is this used?" Returns { byFile: { fileName: [{line, text}] }, totalMatches }.
+  xrefFind: (name) => ipcRenderer.invoke("sps:xref-find", name),
   // Mac dev-pill button: load the bundled RIS subset + sample save so the
   // app works without the game installed. Returns { ok, dataDir, saveDir,
   // saveFile, campaign }.

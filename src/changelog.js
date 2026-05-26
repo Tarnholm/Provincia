@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.641",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Cross-reference / \"Where is this used?\" panel** (#3 of the 8 improvements). New **X-Ref** button in the dev pill opens a search modal — type any token (chain name, level, trait, ancillary, region, anything else from the EDB / descr_strat / traits / ancillaries / localization) and see every file:line that mentions it, grouped by file. Whole-word, case-sensitive, debounced 220ms. Click a result and it jumps to that exact line in the Scripts editor (Monaco). Also extends `scriptsJumpTo` to accept an explicit `line` argument — precise line wins over text search, so X-Ref clicks land on the right line even when the snippet text appears multiple times. This was the missing tool for migration work (\"find every reference to old `farms` before I delete it\") and is the foundation for the upcoming Mod-Validation Dashboard (#2). 7/8 improvements shipped — last one coming." },
+    ],
+  },
+  {
     version: "0.9.640",
     date: "2026-05-26",
     items: [
