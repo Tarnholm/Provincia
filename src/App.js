@@ -2224,6 +2224,20 @@ function App() {
   // unit lines. Works for character armies (locator {x,y}) + garrisons ({region}).
   const [pendingArmyUnits, setPendingArmyUnits] = useState(() => {
     try {
+      // 0.9.663 one-shot: 0.9.654..0.9.660 had a chain of bugs (duplicate
+      // first-name, underscore/space mismatch, region-vs-city locator) that
+      // made every Apply fail with `ok:false`, leaving the entries stuck in
+      // pendingArmyUnits forever. The panel overlay then masked the real
+      // file state — Reate showed 1 unit even though descr_strat held 3.
+      // 0.9.659..0.9.662 fixed the underlying writes; this clear discards
+      // any pending entries that were staged before the fixes shipped, so
+      // the panel returns to honest "file truth" until the user stages new
+      // edits.
+      if (!localStorage.getItem("pendingArmyUnits_cleared_663")) {
+        localStorage.removeItem("pendingArmyUnits");
+        localStorage.setItem("pendingArmyUnits_cleared_663", "1");
+        return new Map();
+      }
       const raw = localStorage.getItem("pendingArmyUnits");
       return raw ? new Map(JSON.parse(raw)) : new Map();
     } catch { return new Map(); }

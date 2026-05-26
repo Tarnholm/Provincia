@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.663",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**One-shot clear of stale `pendingArmyUnits` from the broken-era Apply failures.** 0.9.654..0.9.660 had a chain of bugs (duplicate first-name → wrong character; underscore vs space → no match; region-vs-city locator → no fallback hit) that made every army-unit Apply silently return `ok:false`. That meant the staged entries never moved out of `pendingArmyUnits` and the panel kept overlaying them on top of the file truth — Reate showed 1 unit (the staged post-removal state) even though descr_strat still held 3 (general + 2 hastati). 0.9.659..0.9.662 fixed the underlying writes; this release clears the stale pending entries on first launch so the panel reflects honest file truth again. If you had any legitimate unsaved army-unit edits, you'll need to re-stage them — but those are very unlikely given the bug only let failing entries accumulate." },
+    ],
+  },
+  {
     version: "0.9.662",
     date: "2026-05-26",
     items: [
