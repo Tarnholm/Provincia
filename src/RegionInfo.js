@@ -478,7 +478,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -2536,17 +2536,26 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 const isHoveredHere = hoveredRecruit === u.unit;
                 const upgradeOnly = u.available === false;
                 const isRecruiting = recruitingSet.has(norm(u.unit));
+                const canAddToArmy = devMode && selectedArmyKey && onAddUnitToSelectedArmy;
                 return (
                   <div key={i}
                     onMouseEnter={() => setHoveredRecruit(u.unit)}
                     onMouseLeave={() => setHoveredRecruit((cur) => cur === u.unit ? null : cur)}
                     onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
+                    onClick={(e) => {
+                      // 0.9.648 dev: click a recruitable unit to append it to
+                      // the currently-selected army (garrison or field army).
+                      if (!canAddToArmy) return;
+                      e.preventDefault();
+                      onAddUnitToSelectedArmy(u.unit);
+                    }}
                     title={
                       u.unit.replace(/_/g, " ")
                       + (isRecruiting ? "\nCurrently being recruited" : "")
                       + (upgradeOnly
                         ? "\n" + (u.upgradeHint || "Needs building upgrade")
                         : "")
+                      + (canAddToArmy ? "\n[dev] click → add to selected army" : "")
                     } style={{
                     position: "relative",
                     padding: 2,
@@ -2562,6 +2571,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     opacity: upgradeOnly ? 0.45 : 1,
                     filter: upgradeOnly ? "grayscale(0.4)" : "none",
                     transition: "background 150ms var(--ease-mac-out), opacity 150ms var(--ease-mac-out), filter 150ms var(--ease-mac-out)",
+                    cursor: canAddToArmy ? "copy" : "default",
                   }}>
                     {u.icon ? (
                       <img src={u.icon} alt={u.unit}
@@ -2613,6 +2623,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           </div>
         )}
         {garrison && garrison.length > 0 ? (
+          (() => {
+            // 0.9.648: army-unit-edit selection. Dev-mode click on a garrison
+            // unit card → selects THIS army (faction + region). Selected army
+            // gets a yellow ring and per-unit × overlay to remove; subsequent
+            // Recruitable clicks append to it.
+            const garrisonArmyDesc = {
+              faction: info && info.faction,
+              locator: { region: (info && info.region) || null },
+              units: garrison,
+              label: `${(info && (info.city || info.name || info.region)) || "settlement"} garrison`,
+            };
+            const garrisonKey = armyKeyOf ? armyKeyOf(garrisonArmyDesc.faction, garrisonArmyDesc.locator) : null;
+            const isGarrisonSelected = devMode && garrisonKey && garrisonKey === selectedArmyKey;
+            return (
           <div style={{
             display: "grid",
             // Cards capped at 32 px wide so they stay compact (10×2 = 20
@@ -2624,6 +2648,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             gap: 2,
             justifyContent: "start",
             alignContent: "start",
+            // 0.9.648: highlight box when this army is the selected edit target.
+            outline: isGarrisonSelected ? "2px solid #facc15" : "none",
+            outlineOffset: 2,
+            borderRadius: 3,
           }}>
             {(() => {
               // 0.9.442: generals first. Any unit that will swap to a face
@@ -2681,10 +2709,26 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   onMouseEnter={() => setHoveredUnit(u)}
                   onMouseLeave={() => setHoveredUnit((cur) => cur === u ? null : cur)}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
-                  title={tooltip} style={{
+                  onClick={(e) => {
+                    // 0.9.648 dev: shift-click → remove this unit from the selected army;
+                    // plain click → select this garrison as the edit target.
+                    if (!devMode) return;
+                    if (e.shiftKey && isGarrisonSelected && onRemoveUnitFromSelectedArmy) {
+                      e.preventDefault();
+                      // Index in the ORIGINAL garrison array (not the sorted view).
+                      const origIdx = garrison.indexOf(u);
+                      if (origIdx >= 0) onRemoveUnitFromSelectedArmy(origIdx);
+                    } else if (onSelectArmy) {
+                      e.preventDefault();
+                      onSelectArmy(garrisonArmyDesc);
+                    }
+                  }}
+                  title={devMode ? `${tooltip}\n[dev] click = select army for editing · shift-click = remove unit` : tooltip} style={{
                   position: "relative", padding: 1,
                   background: "rgba(0,0,0,0.35)", borderRadius: 2,
                   minWidth: 0,
+                  cursor: devMode ? "pointer" : "default",
+                  outline: isGarrisonSelected ? "1px solid rgba(250,204,21,0.55)" : "none",
                 }}>
                   {(() => {
                     // 0.9.410+ swap: same general-face-card swap as field-army
@@ -2858,10 +2902,29 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               }} />
             ))}
           </div>
+            );
+          })()
         ) : (
-          <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>
-            No units stationed
-          </span>
+          devMode && info && info.faction && info.region ? (
+            // 0.9.648: empty garrison — still let the user select it as the
+            // edit target so they can add units from Recruitable to it.
+            (() => {
+              const emptyDesc = { faction: info.faction, locator: { region: info.region }, units: [], label: `${info.city || info.name || info.region} garrison` };
+              const emptyKey = armyKeyOf ? armyKeyOf(emptyDesc.faction, emptyDesc.locator) : null;
+              const isSel = emptyKey && emptyKey === selectedArmyKey;
+              return (
+                <span
+                  onClick={() => onSelectArmy && onSelectArmy(emptyDesc)}
+                  title="Click to select this empty garrison as the army edit target — Recruitable clicks will add units to it"
+                  style={{ color: isSel ? "#facc15" : "#bbb", fontStyle: "italic", fontSize: "0.75rem", cursor: "pointer", outline: isSel ? "1px solid rgba(250,204,21,0.55)" : "none", padding: "1px 4px", borderRadius: 3 }}
+                >No units stationed{isSel ? " · selected — add from Recruitable below" : " (dev: click to make editable)"}</span>
+              );
+            })()
+          ) : (
+            <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>
+              No units stationed
+            </span>
+          )
         )}
         </div>
       </div>
@@ -2899,16 +2962,40 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     </div>
                   )}
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {armies.map((a, ai) => (
+              {armies.map((a, ai) => {
+                // 0.9.648: field-army edit selection. Coord locator → keys
+                // pendingArmyUnits the same way main.js's update-army-units
+                // IPC matches by (x, y).
+                const fieldDesc = {
+                  faction: a.faction || fac,
+                  locator: { x: a.x, y: a.y },
+                  units: a.units || [],
+                  label: a.character || (fac ? factionLabel(fac) + " army" : "Army"),
+                };
+                const fieldKey = (devMode && armyKeyOf && a.x != null && a.y != null)
+                  ? armyKeyOf(fieldDesc.faction, fieldDesc.locator) : null;
+                const isFieldSelected = devMode && fieldKey && fieldKey === selectedArmyKey;
+                return (
                 <div key={ai}>
-                  <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
-                    {a.character || (fac ? factionLabel(fac) + " army" : "Army")}
+                  <div
+                    onClick={(e) => { if (devMode && onSelectArmy && a.x != null && a.y != null) { e.preventDefault(); onSelectArmy(fieldDesc); } }}
+                    title={devMode && a.x != null && a.y != null ? "[dev] click → select this army to edit · click recruitable below to add units" : undefined}
+                    style={{
+                      fontSize: "0.68rem", color: isFieldSelected ? "#facc15" : "#ddd", marginBottom: 2,
+                      cursor: devMode && a.x != null && a.y != null ? "pointer" : "default",
+                      outline: isFieldSelected ? "1px solid rgba(250,204,21,0.55)" : "none",
+                      padding: "1px 4px", borderRadius: 3, display: "inline-block",
+                    }}>
+                    {a.character || (fac ? factionLabel(fac) + " army" : "Army")}{isFieldSelected ? " · selected" : ""}
                   </div>
                   <div style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(10, 1fr)",
                     gap: 2,
                     justifyContent: "start",
+                    outline: isFieldSelected ? "2px solid #facc15" : "none",
+                    outlineOffset: 2,
+                    borderRadius: 3,
                   }}>
                     {(() => {
                       // 0.9.442: generals first (same as garrison).
@@ -3068,7 +3155,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     })()}
                   </div>
                 </div>
-              ))}
+              );
+              })}
                   </div>
                 </div>
               ))}

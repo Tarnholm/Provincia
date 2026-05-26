@@ -46,7 +46,12 @@ function updateErrToast(raw) {
 
 // Layout constants
 const MAP_PADDING = 6;
-const PANELS_GAP = 6;
+// 0.9.647: PANELS_GAP was 6px — too small, made the right column read as flush
+// with the map. Bumped to match the natural inter-panel vertical gap (the
+// Diplomacy/Characters/Buildings Movables sit ~0.009 vh apart vertically by
+// default ≈ 10px on most screens). With this, the map-to-right-column gap
+// reads the same as any other gap between sections.
+const PANELS_GAP = 10;
 const PANEL_WIDTH = 220;
 // Shrinks the map canvas horizontally to free space for the right sidebar
 // (Resources panel, Factions tiles, search). Tuned for 1920px default.
@@ -2277,6 +2282,29 @@ function App() {
       return out;
     });
   }, []);
+  // 0.9.648: army-unit-edit selection. Click any unit card in the Garrison
+  // or Field armies widgets (in dev mode) to "select" that army; then any
+  // click on a Recruitable unit appends it to the selected army's units
+  // (via stageArmyUnits → pendingArmyUnits → update-army-units IPC on Save).
+  // Hover-× on selected army's units removes them.
+  const [selectedArmyKey, setSelectedArmyKey] = useState(null);
+  const [selectedArmyDesc, setSelectedArmyDesc] = useState(null);
+  // Helper: build the canonical key the same way stageArmyUnits does.
+  const armyKey = (faction, locator) => {
+    if (!faction || !locator) return null;
+    const locK = locator.region != null ? `r:${locator.region}` : `c:${locator.x},${locator.y}`;
+    return `${(faction || "").toLowerCase()}|${locK}`;
+  };
+  const onSelectArmy = useCallback((army) => {
+    if (!army) { setSelectedArmyKey(null); setSelectedArmyDesc(null); return; }
+    const k = armyKey(army.faction, army.locator);
+    if (!k) return;
+    // Toggle off if clicking the same army.
+    if (k === selectedArmyKey) { setSelectedArmyKey(null); setSelectedArmyDesc(null); return; }
+    setSelectedArmyKey(k);
+    setSelectedArmyDesc({ faction: army.faction, locator: army.locator, label: army.label, originalUnits: army.units || [] });
+  }, [selectedArmyKey]);
+
   // Stage an army's full unit list (add/remove). locator = {x,y} (character army)
   // or {region} (garrison). Keyed by faction|locator so re-edits replace.
   const stageArmyUnits = useCallback((faction, locator, units, label) => {
@@ -2295,6 +2323,25 @@ function App() {
       return out;
     });
   }, []);
+
+  // Click → add a recruitable unit to the currently-selected army.
+  const onAddUnitToSelectedArmy = useCallback((unitName) => {
+    if (!selectedArmyKey || !selectedArmyDesc || !unitName) return;
+    const pending = pendingArmyUnits.get(selectedArmyKey);
+    const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
+    const next = [...(cur || []), { unit: unitName, exp: 0, armour: 0, weapon_lvl: 0 }];
+    stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, stageArmyUnits]);
+
+  // Click × → remove the unit at index from the currently-selected army.
+  const onRemoveUnitFromSelectedArmy = useCallback((idx) => {
+    if (!selectedArmyKey || !selectedArmyDesc) return;
+    const pending = pendingArmyUnits.get(selectedArmyKey);
+    const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
+    const next = (cur || []).filter((_, i) => i !== idx);
+    stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, stageArmyUnits]);
+
   // Stage a diplomacy edit from the editor. valueKind ∈ core|rel|agg.
   const stageDiplomacy = useCallback((valueKind, from, to, value, label) => {
     const key = `${valueKind}|${from}|${to}`;
@@ -14652,6 +14699,11 @@ function App() {
                       pendingGenerals={pendingGenerals}
                       onStageDiplomacy={stageDiplomacy}
                       pendingDiplomacy={pendingDiplomacy}
+                      selectedArmyKey={selectedArmyKey}
+                      onSelectArmy={onSelectArmy}
+                      onAddUnitToSelectedArmy={onAddUnitToSelectedArmy}
+                      onRemoveUnitFromSelectedArmy={onRemoveUnitFromSelectedArmy}
+                      armyKeyOf={armyKey}
                       regions={regions}
                       regionCentroids={regionCentroids}
                       victoryConditions={victoryConditions}

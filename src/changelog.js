@@ -8,6 +8,20 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.648",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Edit army units from the Region panel (dev mode).** Click any garrison unit card OR a field-army title → that army becomes the **selected edit target** (yellow ring + label). Now every click on a unit in the **Recruitable** panel **appends that unit to the selected army** — perfect for buffing a settlement's garrison or topping up a field stack. **Shift-click a garrison unit** to remove it. (Field-army unit-removal via the same shift-click pattern coming next ship.) An empty garrison can also be selected in dev mode so you can populate it from scratch. Edits stack in `pendingArmyUnits` and apply on **Save to Mod** via the existing `update-army-units` IPC — same plumbing as the prior shift-click-the-map-marker editor, just surfaced in the panel where you're already looking." },
+    ],
+  },
+  {
+    version: "0.9.647",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**Right column no longer flush against the map.** The map-to-right-column gap (PANELS_GAP) was 6 px — visually flush — so the Settlement / Diplomacy / Characters / Buildings panels looked glued to the map's right edge. Bumped to 10 px so the gap matches the natural inter-panel vertical spacing (≈ 10 px on most screens) — the map-to-right-column gap now reads the same as any other gap between sections. The right column shifts right + shrinks by the delta; saved panel positions resolve through the colBox mapping so individual widgets keep their relative layout." },
+    ],
+  },
+  {
     version: "0.9.646",
     date: "2026-05-26",
     items: [
