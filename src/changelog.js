@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.665",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Re-issue the `appliedArmyUnits` clear with a fresh flag (`_cleared_665`).** The 0.9.664 `[gar-dbg]` log proved that `applK1✓` for Reate's `romans_julii|r:Sabinia-Aequia` key is what's masking the file truth (3 units) with the stale post-edit overlay (1 unit). 0.9.660's clear ran but applied got repopulated afterward — most likely by a successful Apply that the file was then rolled back from via Restore Last Backup. New flag wipes the overlay again so the panel reads the bundled-JSON / file truth. Reate's general + 2 hastati come back." },
+    ],
+  },
+  {
     version: "0.9.664",
     date: "2026-05-26",
     items: [

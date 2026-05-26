@@ -2254,17 +2254,15 @@ function App() {
   // Restore Last Backup (descr_strat reverted).
   const [appliedArmyUnits, setAppliedArmyUnits] = useState(() => {
     try {
-      // 0.9.660 one-shot: 0.9.654..0.9.658 had a duplicate-first-name bug
-      // (RIS has multiple Servius / Manius / Gaius per faction) — the IPC
-      // wrote to the wrong character's army, returned ok:true, and the
-      // entry moved to appliedArmyUnits as an overlay. The overlay then
-      // hid the real garrison cards in the panel (e.g. Reate's hastati).
-      // Clear the overlay ONCE on first launch of 0.9.660 so the real
-      // state reappears; 0.9.659+ writes the correct character so future
-      // applies don't repeat the bug.
-      if (!localStorage.getItem("appliedArmyUnits_cleared_660")) {
+      // 0.9.665: re-issue the applied overlay clear. 0.9.660's version ran,
+      // but applied later got repopulated (by either a downstream Apply
+      // success that wrote to the wrong character, or a code path I missed).
+      // The [gar-dbg] log on Reate showed applK1✓ even after the .660 clear
+      // — so a fresh flag forces a second wipe. After this users get the
+      // panel reading honest bundled-JSON / file truth again.
+      if (!localStorage.getItem("appliedArmyUnits_cleared_665")) {
         localStorage.removeItem("appliedArmyUnits");
-        localStorage.setItem("appliedArmyUnits_cleared_660", "1");
+        localStorage.setItem("appliedArmyUnits_cleared_665", "1");
         return new Map();
       }
       const raw = localStorage.getItem("appliedArmyUnits");

@@ -42,6 +42,22 @@
 //   diffed saves): strategic-AI tile cache, trade-route waypoint array,
 //   or a coarser sub-region grid (2,272 = 32×71).
 //
+// VERDICT (resources-table hypothesis, 2026-05-26 follow-up — see
+// dig-resources-confirm.js):  blob is NOT the resources table.
+//   * descr_strat (imperial_campaign) has 5,548 resource entries, none of
+//     the natural filters (slaves-only=1311, non-slaves=4237) gives 2,272.
+//   * Every u32 field in the record (0x10, 0x14, 0x20, 0x28, 0x2c, 0x4c, …)
+//     has ≤ ~67 distinct values and clusters on magic constants
+//     (200, 600, 959, 1535, 166) — nothing looks like an (x,y) tile coord.
+//     Real resource coords span x∈[4..1019], y∈[1..698] with hundreds of
+//     distinct values; we don't see that shape anywhere.
+//   * Best (x,y) hit-rate against descr_strat coords was 57.9 % (u32 y,x
+//     @ +0x10), and inspection shows all those hits are template-value
+//     collisions on the lone Thamoudaia perfumes resource at (600,200) —
+//     not a structural match.
+//   Next hypotheses to test: AI strategic-target pool, diplomacy/trade
+//   matrix, watchtower/fort pool, or a long-range AI tile-evaluation cache.
+//
 // Usage:  node dig-post-grid-267-array.js [savePath]
 
 "use strict";
