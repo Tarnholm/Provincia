@@ -9858,6 +9858,44 @@ function App() {
                   }}
                 >VC Owners</button>
               )}
+              {/* "Mac" — load a bundled RIS subset + sample save so the app
+                  works on a machine without the game installed. Visible on
+                  darwin only (dev pill is already dev-only); set localStorage
+                  "showMacBundledBtn=1" to also test on Windows.
+                  Click → IPC pre-loads mod char data in main, we mirror
+                  what a normal mod-pick sets in localStorage, then reload so
+                  every state hook initialises from the bundled paths. */}
+              {window.electronAPI?.macLoadBundledDemo && (
+                (window.electronAPI.platform === 'darwin' ||
+                 (typeof localStorage !== 'undefined' && localStorage.getItem('showMacBundledBtn') === '1')) && (
+                <button
+                  className="dev-btn"
+                  onClick={async () => {
+                    try {
+                      const r = await window.electronAPI.macLoadBundledDemo();
+                      if (!r || !r.ok) { pushToast(`Mac demo load failed: ${r && r.error || 'unknown'}`, 'error'); return; }
+                      try {
+                        localStorage.setItem('liveSaveDir', r.saveDir);
+                        localStorage.setItem('importedCampaign', r.campaign || 'Rome');
+                        localStorage.setItem('modDataDir', r.dataDir);
+                        if (r.saveFile) localStorage.setItem('pinnedSaveFile', r.saveFile);
+                      } catch {}
+                      pushToast(`Bundled mod loaded${r.saveFile ? ' + sample save' : ''}. Reloading…`, 'info');
+                      setTimeout(() => location.reload(), 400);
+                    } catch (e) {
+                      pushToast(`Mac demo error: ${e?.message || e}`, 'error');
+                    }
+                  }}
+                  title="Load bundled RIS subset + sample save (for machines without the game installed)"
+                  style={{
+                    ...btnStyle(false),
+                    background: "rgba(60,60,60,0.7)",
+                    color: "#a0c4ff",
+                    border: "1px solid #a0c4ff",
+                    minWidth: 56,
+                  }}
+                >Mac</button>
+              ))}
               {/* 0.9.469: in Electron, the Save button opens the unified
                   review modal — that's the single entry-point for ALL
                   dev-mode edits (buildings/traits/ancillaries/resources/

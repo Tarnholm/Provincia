@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.631",
+  "version": "0.9.632",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -10,6 +10,7 @@
     "start": "vite",
     "bundle-data": "node scripts/bundle-mod-data.js",
     "fetch-runtime": "node scripts/fetch-runtime.js",
+    "bundle-mac-demo": "node scripts/bundle-mac-demo.js",
     "prebuild": "node scripts/bundle-mod-data.js && node scripts/fetch-runtime.js",
     "build": "vite build",
     "test": "vitest run",
@@ -71,7 +72,8 @@
     },
     "extraResources": [
       { "from": "scripts-suite-py", "to": "app_data" },
-      { "from": "python-runtime", "to": "python-runtime" }
+      { "from": "python-runtime", "to": "python-runtime" },
+      { "from": "bundled-mod", "to": "bundled-mod" }
     ],
     "publish": [
       {

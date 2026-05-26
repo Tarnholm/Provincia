@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.632",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**New dev-pill button: \"Mac.\"** Loads a bundled RIS subset + a sample save shipped inside the installer, so the app works on a machine that doesn't have the game installed (the original ask was a MacBook with no RTW install — hence the name). Click → main process pre-loads mod character data from `resources/bundled-mod/`, the renderer mirrors what a normal mod-pick would set in localStorage (mod data dir, save dir, pinned save file, campaign = Rome), then reloads so every state hook initialises against the bundled paths. Visible on darwin only by default (set `localStorage.showMacBundledBtn = '1'` to also test on Windows). Bundle is assembled by `npm run bundle-mac-demo` from `C:\\RIS\\RIS` and committed to the repo (~60 MB) so CI macOS builds ship it." },
+    ],
+  },
+  {
     version: "0.9.631",
     date: "2026-05-26",
     items: [

@@ -3,6 +3,13 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronAPI", {
   // Open the embedded Settlement Processor (Scripts) window (dev pill).
   openScriptsWindow: () => ipcRenderer.invoke("sps:open-window"),
+  // Mac dev-pill button: load the bundled RIS subset + sample save so the
+  // app works without the game installed. Returns { ok, dataDir, saveDir,
+  // saveFile, campaign }.
+  macLoadBundledDemo: () => ipcRenderer.invoke("mac-load-bundled-demo"),
+  // Expose process.platform once at load — used by the dev pill to show the
+  // Mac button only on darwin.
+  platform: process.platform,
   // Victory-conditions helper: region-list CSV in → region,owner_faction CSV out.
   vcRegionOwnersCsv: (modDataDir, campaign) => ipcRenderer.invoke("vc-region-owners-csv", modDataDir, campaign),
   selectFolder: () => ipcRenderer.invoke("select-folder"),

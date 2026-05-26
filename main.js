@@ -8129,6 +8129,36 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
   }
 });
 
+// Mac dev-pill button: load the bundled RIS subset + sample save so the app
+// works on a machine without the game installed. Returns the resolved paths
+// (data dir, save dir, save file, campaign); the renderer wires them up via
+// the same flow as a normal mod pick (localStorage + characters-init + reload).
+// Assembled by scripts/bundle-mac-demo.js into resources/bundled-mod/ at build.
+ipcMain.handle("mac-load-bundled-demo", async () => {
+  try {
+    const root = app.isPackaged
+      ? path.join(process.resourcesPath, "bundled-mod")
+      : path.join(__dirname, "bundled-mod");
+    const dataDir = path.join(root, "data");
+    const saveDir = path.join(root, "saves");
+    if (!fs.existsSync(dataDir)) {
+      return { ok: false, error: `Bundled mod not found at ${root}. Run \`npm run bundle-mac-demo\` (only available on machines with C:\\RIS\\RIS).` };
+    }
+    // Pre-load mod data into the main process so the renderer's reload finds it ready.
+    try { loadModCharacterData(dataDir); } catch (e) { return { ok: false, error: `loadModCharacterData failed: ${e.message}` }; }
+    // Pick the first .sav (bundler writes "sample.sav"); fall back to any .sav.
+    let saveFile = null;
+    if (fs.existsSync(saveDir)) {
+      const savs = fs.readdirSync(saveDir).filter(f => /\.sav$/i.test(f));
+      saveFile = savs.includes("sample.sav") ? "sample.sav" : (savs[0] || null);
+    }
+    console.log(`[mac-bundled] activated: dataDir=${dataDir}  save=${saveFile || "(none)"}`);
+    return { ok: true, dataDir, saveDir, saveFile, campaign: "Rome" };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 ipcMain.handle("save-watch-stop", async () => {
   if (saveDirWatcher) { try { saveDirWatcher.close(); } catch {} saveDirWatcher = null; }
   if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }

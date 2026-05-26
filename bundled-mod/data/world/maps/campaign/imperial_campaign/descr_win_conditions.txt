@@ -1,0 +1,1120 @@
+romans_julii
+hold_regions Rome, Falerii, Praeneste, Reate, Camerinum, Cosa, Corfinium, Fregellae, Teate, Perusia, Arretium, Iguvium, Larinum, Sena_Gallica, Volaterrae, Maleventum, Neapolis, Pisae, Arpi, Paestum, Canusium, Venusia, Thurii, Croton, Epizephyrian_Locri, Metapontum, Tarentum, Uria, Brundisium, Compsa, Bovianum, Capua, Consentia, Petelia, Grumentum, Potentia, Rhegium, Volsinii, Asculum, Ankon, Friniatium, Stalia, Apua, Mantua, Sarsina, Bononia, Mutina, Spina, Atria, Tauromenion, Tyndaris, Messana, Panormos, Melite, Lilybaion, Entella, Segesta, Eryx, Acragas, Herakleia_Minoa, Myttistratum, Enna, Katane, Syracuse, Kamarina, Leontinoi, Veleia, Clastidium, Intimilium, Ingaunum, Carystum, Taurasia, Segusio, Salassium, Eporedia, Brixia, Verona, Acerrae, Mediolanum, Comum, Oscela, Ateste, Altinum, Oppidum_Catalorum, Patavium, Camunnium, Isarcium-Brixenetium, Vennonium, Veldidena, Massalia, Aegitna, Glanum, Deciatium, Avaticium, Antipolis, Eburodunum, Segustero, Solonium, Tricastinium, Vienna, Axima, Brioratis, Cabillonum, Decetia, Alesia, Genava, Sedunium, Tarodunum, Riusiava, Helvetium, Damasia, Brigantium-Alpes, Bedacum, Cambodunum, Catenatium, Rucinatium, Sorviodurum, Boiodurum, Agathe, Nemausus, Illiberis-Ruscino, Narbo, Cerretanium, Andosinium, Tolosa, Gabalium, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Sotium, Coequosa, Uxellodunum, Nitiobrogum, Petrocorium, Durotincum, Santonium, Limonum, Maroventum, Ambilatrium, Indiciacum, Arvernium, Rodumna, Eborolacum, Argentomagus, Avaricum, Leprosum, Ambiacum, Agedincum, Cenabum, Scoliva, Senonium, Lutetia, Iatinum, Vindinum, Diablintium, Esuvium, Venellium, Veliocassium, Lexovium, Caletium, Andemantunnum, Nasium, Eburobriga, Vesontio, Viviscus, Brenodurum, Eburodunum-Veragria, Turicum, Morinium, Menapium, Ceutronium, Nervium, Pleumoxium, Antunnacum, Oppidum_Eburonum, Eburonium, Divodurum, Borbetomagus, Treverium, Oppidum_Treverorum, Caerosium, Durocortorum, Geidumnium, Suessionium, Bellovacium, Viromanduium, Samarobriva, Atrebatium, Condevincum, Venetium, Corsiolitum, Condate, Osismium, Oppidum_Indicetum, Emporion, Rhode, Hibera, Ilercavonium, Cissa, Barkeno, Iesso, Auso, Castrum_Bergium, Kili, Althaea, Kelin, Edeta, Arse, Ergavica, Baria, Sexi, Iliberri, Basti, Mastia, Ilici, Oppidum_Contestanorum, Contestanium, Saetabis, Hemeroskopeion, Carteia, Malaca, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Apollonia-Epeiros, Skodra, Dournion, Olkinion, Meteon, Rhizon, Daorson, Narona, Narenson_Teichos, Melaina_Korkyra, Issa, Pharos, Epetion-Salona, Tragourion, Promona, Idassa, Scardona, Argyruntum, Athyinites, Metulum, Tarsatica, Neviodunum, Delmium, Arduba, Splonum, Autariaton_Teichos, Kapedounon, Galabrion_Teichos, Dardanopolis, Naissos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Argos_Orestikon, Herakleia_Lynkestis, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Amphipolis, Philippoi, Herakleia-Sintike, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Perinthos, Selymbria, Byzantium, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Dion_Teichos, Philippopolis, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Orchomenos, Thebes, Delphoi, Elateia, Opous, Karystos, Eretria, Chalkis, Oreos, Skyros, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Sikyon, Aigion, Pellene, Olympia, Elis, Dyme, Corinth, Megara, Argos, Trozan, Gytheion, Messene, Sparta, Prasiai, Athens, Piraeus, Tanagra, Caralis, Sulci, Neapolis-Sardinia, Uselis, Cornus, Pluvium, Olbia-Sardinia, Aleria, Venicum, Ebusus, Bocchoris, Tunes, Karchedonike_Neapolis, Carthage, Clupea, Thapsus, Leptis_Minor, Hadrumetum, Castrum_Macaeorum, Euphranta, Castrum_Atarantorum, Leptis, Sabrata, Oea, Meninx, Hippo, Rusicade, Gigthis, Macomades_Minores, Vaga, Utica, Hippo_Diarrhytus, Tamuda, Sala, Rusadir, Lixus, Tingi, Saldae, Iol, Icosium, Volubilis, Molochath, Castrum_Autololum, Rutubis
+take_regions 414
+short_campaign outlive_factions
+syracuse insubres epirus
+
+carthage
+hold_regions Carthage, Utica, Tunes, Vaga, Hippo_Diarrhytus, Karchedonike_Neapolis, Bulla, Hadrumetum, Clupea, Leptis_Minor, Hippo, Thapsus, Macomades_Minores, Lilybaion, Caralis, Eryx, Rusicade, Sulci, Segesta, Neapolis-Sardinia, Herakleia_Minoa, Meninx, Melite, Gigthis, Panormos, Sabrata, Saldae, Olbia-Sardinia, Oea, Icosium, Aleria, Leptis, Iol, Ebusus, Euphranta, Baria, Sexi, Rusadir, Malaca, Carteia, Tingi, Castrum_Macaeorum, Castrum_Atarantorum, Tamuda, Sala, Lixus, Castrum_Autololum, Rutubis, Castrum_Baniurarum, Miglis, Siga, Auzea, Cirta, Suthul, Hekatompylos-Numidia, Thala, Sicca, Tipasa, Turris_Tamalleni, Zygantis, Capsa, Tabudium, Castrum_Nicivorum, Cidamus, Bedirum, Garama, Castrum_Psyllorum, Volubilis, Molochath, Entella, Uselis, Cornus, Pluvium, Bocchoris, Acragas, Myttistratum, Enna, Katane, Syracuse, Kamarina, Leontinoi, Tauromenion, Tyndaris, Messana, Gades, Asta, Hispalis, Oppidum_Contestanorum, Contestanium, Saetabis, Hemeroskopeion, Kili, Althaea, Kelin, Edeta, Arse, Ergavica, Hibera, Ilercavonium, Cissa, Barkeno, Iesso, Auso, Castrum_Bergium, Oppidum_Indicetum, Emporion, Rhode, Iliberri, Basti, Mastia, Ilici, Urso, Ilipa, Iliturgi, Carmo, Munda, Corduba, Erisana, Sisapo, Onoba, Conistorgis, Myrtilis, Lacobriga, Nertobriga_Celticorum, Ebora, Mirobriga_Celticorum, Salacia, Oxthracae, Moron, Oppidum_Lusitanorum, Olisipo, Conimbriga, Talabriga, Venicum, Illiberis-Ruscino, Narbo, Agathe, Nemausus, Massalia, Aegitna, Glanum, Deciatium, Avaticium, Antipolis, Consentia, Croton, Petelia, Thurii, Rhegium, Epizephyrian_Locri, Grumentum, Potentia, Paestum, Intimilium, Ingaunum, Carystum, Friniatium, Stalia, Apua, Veleia, Clastidium, Cosa, Falerii, Volsinii, Perusia, Arretium, Volaterrae, Pisae, Neapolis, Capua, Fregellae, Praeneste, Rome
+take_regions 173
+short_campaign outlive_factions
+syracuse masaesyli massylii edeta
+
+antigonid
+hold_regions Pella, Idomenai, Thessalonike, Edessa-Bottiaia, Beroia, Berge, Dion, Kassandreia, Herakleia_Lynkestis, Stymbara, Herakleia-Sintike, Phalanna, Amphipolis, Torone, Argos_Orestikon, Akanthos, Larissa, Philippoi, Aiginion, Trikka, Lychnidos, Pelion, Pherai, Demetrias, Pharsalos, Agrianon_Teichos, Thebai_Phthiotides, Chalkis, Eretria, Megara, Corinth, Piraeus, Karystos, Trozan, Ktimene, Lamia, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Orchomenos, Thebes, Delphoi, Elateia, Opous, Oreos, Skyros, Sikyon, Aigion, Pellene, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Argos, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Gytheion, Messene, Sparta, Prasiai, Kreonion, Dimale, Epidamnos, Sesarethos, Hyskana, Lissos, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Perinthos, Selymbria, Byzantium, Kios, Kyzikos, Alexandreia-Troas, Abydos, Lampsakos, Thera, Delos, Naxos, Mytilene, Methymna, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Pergamon, Daskyleion, Adramyttion, Skepsis, Antiocheia-Alabanda, Seleukeia-Tralleis, Magnesia-Maiandros, Hierapolis-Charonia, Hypaipa, Sardis, Thyateira, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Nikaia, Nikomedia, Bithynion, Chalkedon, Uria, Brundisium, Apollonia-Pontos, Debelton, Mesembria, Seleukeia-Pieria, Antioch, Alexandria, Naukratis
+take_regions 161
+short_campaign outlive_factions
+epirus aetolia athens boeotia achaea sparta
+
+ptolemaic
+hold_regions Alexandria, Naukratis, Sais, Sebennytos-Bousiris, Athribis, Memphis, Mendes-Thmouis, Boubastis, Arsinoe-Krokodeilon_Polis, Heroon_Polis, Tanis, Oxyrhynchos, Arsinoe-Klysma, Zeszes, Pelousion, Hermou_Polis, Rhaithou, Gaza, Lykon_Polis, Philotera, Askalon, Panos_Polis, Azotos, Myos_Hormos, Hebron, Ioppe, Jerusalem, Paphos, Amathous, Samareia, Dora, Ptolemais-Phoinike, Ptolemais-Hermeiou, Kition, Pella-Peraia, Soloi, Gadara, Hibis, Gerasa, Itanos, Mikra_Apollonos_Polis, Gamala, Abila, Patara, Salamis, Philadelpheia, Xanthos, Limyra, Berytos, Chalkis-Libanos, Phaselis, Tlos, Thebes-Megale_Diospolis, Myra, Telmessos, Nagidos, Korakesion, Knidos, Termessos, Aspendos, Herakleia-Phoinike, Megale_Apollonos_Polis, Etenna-Kotenna, Kaunos, Mylasa, Halikarnassos, Thera, Kos, Miletos, Syene-Elephantine, Naxos, Samos, Delos, Erythrai, Tachompso-Pselkis, Premnis, Berenike-Panchrysos, Mytilene, Methymna, Berenike-Trogodytike, Pachora, Samothrake, Ptolemais-Theron, Berenike-Deire, Eboda, Aualites, Makoua, Attena, Mikra_Primis, Madaba, Sidon, Byblos, Tyre, Aptera, Polyrrhenia, Kydonia, Arsinoe, Kythera, Gortyna, Hierapytna, Lyktos, Knosos, Lato, Oaxos, Paraitonion, Tetrapyrgia, Kyrene, Automala, Euesperides, Arsinoe-Kyrenaike, Ptolemais-Kyrenaike, Side, Aphrodisias, Stratonikeia, Perge, Lindos, Rhodes, Heliou_Polis-Syria, Arethousa, Arados-Marathos, Amathe, Laodikeia-Paralos, Apameia-Syria, Chalkis-Belos, Damascus, Abai, Seleukeia-Pieria, Antioch, Beroia-Syria, Amphipolis-Chalybonitis, Kyrrhos, Hierapolis, Doliche, Apameia-Zeugma, Palmyra, Rhambaion_Kome, Balagala, Nikephorion, Anthemousias-Batnai, Edessa, Karrhai, Olbe, Seleukeia-Kalykadnos, Issos, Soloi-Kilikia, Mallos, Tarsos, Kastabala, Isaura, Homona, Laranda, Kios, Kyzikos, Alexandreia-Troas, Abydos, Lampsakos, Apollonia-Pontos, Debelton, Mesembria, Odessos, Kallatis, Tomis, Myrina, Elaious, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Priene, Ephesos, Chios, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Amphipolis, Philippoi, Herakleia-Sintike, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Argos_Orestikon, Herakleia_Lynkestis, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Athens, Piraeus, Tanagra
+take_regions 207
+short_campaign outlive_factions
+cyrene rhodes selge athens knossos gortyn
+
+seleucid
+hold_regions Seleucia, Thelme, Artemita, Charmande, Is, Sittake, Arrhapa, Babylon, Sadrakai, Chala, Nippur, Apameia-Sittakene, Assur, Arbela, Uruk, Ninos, Doura-Europos, Adrapana, Pinaka, Susa, Antiocheia-Mygdonia, Seleukeia-Erythtreia, Laodikeia-Media, Sareisa-Satalka, Ouxion_Phrourion, Kossaion_Phrourion, Edessa, Nikephorion, Seleukeia-Soloke, Karrhai, Ekbatana, Kyropolis-Kadousia, Anthemousias-Batnai, Amphipolis-Chalybonitis, Hierapolis, Amathe, Damascus, Apameia-Zeugma, Beroia-Syria, Arethousa, Apameia-Syria, Chalkis-Belos, Doliche, Heliou_Polis-Syria, Amardion_Phrourion, Kyrrhos, Melita, Europos-Rhagai, Antioch, Laodikeia-Paralos, Byblos, Seleukeia-Pieria, Issos, Kastabala, Komana-Kappadokia, Antiocheia-Persis, Mallos, Apameia-Rhagiane, Sirynx-Tambrax, Tarsos, Soloi-Kilikia, Seleukeia-Kalykadnos, Kybistra, Zadrakarta, Gabai, Ikonion, Derbikon_Taphai, Hekatompylos, Tapyron_Phrourion, Side, Laodikeia-Katakekaumene, Gordion, Gorbeous, Toriaion, Tagai, Antiocheia-Pisidia, Pessinous, Sagalassos, Eukarpia, Alexandreia-Karmania, Apameia-Kelainai, Nisa, Dorylaion, Aizanoi, Hierapolis-Charonia, Aphrodisias, Blaundos, Zetis, Sousia, Magnesia-Maiandros, Apauarktike, Stratonikeia, Sardis, Antiocheia-Alabanda, Seleukeia-Tralleis, Hypaipa, Thyateira, Daskyleion, Magnesia-Sipylos, Ephesos, Achaia_Polis, Smyrna, Klazomenai, Lampsakos, Prophthasia, Adramyttion, Skepsis, Abydos, Lysimacheia, Alexandreia-Troas, Antiocheia-Margiane, Elaious, Iasonion, Alexandreia-Drangiane, Alexandreia-Ariane, Arados-Marathos, Herakleia-Phoinike, Chalkis-Libanos, Abai, Pasargadai, Persepolis, Ikaros, Teredon, Alexandreia-Charax, Miletos, Samos, Priene, Chios, Erythrai, Kyme, Synnada, Peion, Kibyra, Isinda, Pednelissos, Selge, Olbe, Nagidos, Korakesion, Aspendos, Etenna-Kotenna, Myrina, Samothrake, Thasos, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Amphipolis, Philippoi, Herakleia-Sintike, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Argos_Orestikon, Herakleia_Lynkestis, Tyana, Garsaoura, Mazaka, Anisa, Ankyra, Tektosagikon_Phrourion, Bloukion, Gangra, Kimiata, Koloussa, Omanon_Emporion, Batrasauaue, Kryptos_Limen, Sabai-Chattenia, Labai, Koromanis, Alexandreia-Arachosia, Arachotos, Abastaniopolis, Alexandreia-Boukephala, Malliopolis, Agalassopolis, Sibopolis, Amakatis, Nikaia-Hydaspes, Taxila, Sopeithopolis, Peukelaotis, Arigaion, Glausaiopolis, Massaga, Poura, Alexandreia-Oreitaia, Alexandrou_Limen, Aristobathra, Paphos, Soloi, Amathous, Kition, Salamis, Alexandria, Naukratis, Memphis, Heroon_Polis, Arsinoe-Klysma, Athribis, Sebennytos-Bousiris, Boubastis, Sais, Mendes-Thmouis, Tanis, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Athens, Piraeus, Tanagra
+take_regions 250
+short_campaign outlive_factions
+pergamon rhodes bithynia bactria athens lyttos
+
+bactria
+hold_regions Baktra-Zariaspa, Oxeiana, Alexandreia-Oxeiane, Aornos-Baktria, Marouka, Indikomordana, Nautaka, Darapsa, Baktrias_Basileion, Marakanda, Kyropolis, Antiocheia-Skythia, Iasonion, Antiocheia-Margiane, Lithinos_Pyrgos, Amyrgion_Kome, Hekatompylos, Tapyron_Phrourion, Tagai, Apauarktike, Amardion_Phrourion, Sirynx-Tambrax, Zadrakarta, Derbikon_Taphai, Europos-Rhagai, Pasargadai, Trybaktra, Parnon_Taphai, Amyrgon_Taphai, Attason_Taphai, Massageton_Taphai, Chorasmia, Alikodra, Kossaion_Phrourion, Adrapana, Laodikeia-Media, Apameia-Rhagiane, Ekbatana, Persepolis, Antiocheia-Persis, Gabai, Alexandreia-Drangiane, Prophthasia, Sousia, Alexandreia-Ariane, Achaia_Polis, Zetis, Alexandreia-Karmania, Ortospana, Alexandreia-Kaukasia, Alexandreia-Arachosia, Arachotos, Abastaniopolis, Alexandreia-Boukephala, Malliopolis, Agalassopolis, Sibopolis, Amakatis, Nikaia-Hydaspes, Taxila, Sopeithopolis, Peukelaotis, Arigaion, Glausaiopolis, Massaga, Kaspeira, Sangala, The_Road_to_Methora, Pimprama, The_Road_to_Palibothra, Kounindapolis, Audoumbara, Antachara, Alexandreia-Sogdia, Alexandreia-Indos, Bardaxema, Patala, Binagara, Sindomana, Poura, Alexandreia-Oreitaia, Alexandrou_Limen, Aristobathra
+take_regions 83
+short_campaign outlive_factions
+parni mauryan
+
+parni
+hold_regions Parnon_Taphai, Hekatompylos, Tapyron_Phrourion, Tagai, Apauarktike, Nisa, Amardion_Phrourion, Sirynx-Tambrax, Zadrakarta, Derbikon_Taphai, Europos-Rhagai, Kossaion_Phrourion, Adrapana, Laodikeia-Media, Apameia-Rhagiane, Ekbatana, Pasargadai, Kapouta, Gazaka, Ouera, Kyropolis-Kadousia, Pinaka, Sareisa-Satalka, Assur, Arrhapa, Sadrakai, Arbela, Ninos, Babylon, Seleukeia-Soloke, Susa, Ouxion_Phrourion, Artemita, Chala, Uruk, Nippur, Apameia-Sittakene, Seleucia, Sittake, Thelme, Iasonion, Antiocheia-Margiane, Antiocheia-Mygdonia, Is, Doura-Europos, Nikephorion, Anthemousias-Batnai, Edessa, Karrhai, Persepolis, Antiocheia-Persis, Gabai, Poura, Alexandreia-Oreitaia, Alexandrou_Limen, Aristobathra, Seleukeia-Erythtreia, Ikaros, Teredon, Alexandreia-Charax, Zetis, Alexandreia-Karmania, Alexandreia-Drangiane, Prophthasia, Sousia, Alexandreia-Ariane, Achaia_Polis, Aornos-Baktria, Baktra-Zariaspa, Alexandreia-Oxeiane, Oxeiana, Indikomordana, Alexandreia-Arachosia, Arachotos, Seltia, Artageira, Armavir, Olane, Gorniai, Ptoua, Arsarata, Thospia, Chalybikon_Phrourion, Taochikon_Phrourion, Baraza, Bakchia, Harmozike-Seusamora
+take_regions 87
+short_campaign outlive_factions
+bactria saka
+
+saka
+hold_regions Sakon_Taphai, Sakaraulon_Taphai, Marakanda, Nautaka, Kyropolis, Lithinos_Pyrgos, Antiocheia-Skythia, Amyrgion_Kome, Chorasmia, Alikodra, Trybaktra, Tsats, Qagranqok, Kasia, Soita, Mpraysnrar, Chaurana, Qamnur, Kadota, Qudsdoqok, Numden, Auxakia, Kushi, Qudsril, Arshi, Nroyso, Amyrgon_Taphai, Attason_Taphai, Massageton_Taphai, Darapsa, Baktrias_Basileion, Marouka, Alexandreia-Drangiane, Prophthasia, Sousia, Alexandreia-Ariane, Achaia_Polis, Ortospana, Alexandreia-Kaukasia, Alexandreia-Arachosia, Arachotos, Zetis, Alexandreia-Karmania, Antachara, Alexandreia-Sogdia, Alexandreia-Indos, Abastaniopolis, Alexandreia-Boukephala, Malliopolis, Agalassopolis, Sibopolis, Amakatis, Nikaia-Hydaspes, Taxila, Sopeithopolis, Peukelaotis, Arigaion, Glausaiopolis, Massaga, Kaspeira, Sangala, The_Road_to_Methora, Pimprama, The_Road_to_Palibothra, Kounindapolis, Audoumbara, Bardaxema, Patala, Binagara, Sindomana, Poura, Alexandreia-Oreitaia, Alexandrou_Limen, Aristobathra
+take_regions 74
+short_campaign outlive_factions
+bactria parni
+
+armenia
+hold_regions Armavir, Gorniai, Thospia, Olane, Seltia, Artageira, Ptoua, Karkathiokerta, Tomisa, Zeugma-Kommagene, Nymphaios, Kamakh, Erez, Karana, Mossynoikon_Metropolis, Makronopolis, Chaldaikon_Phrourion, Gymnias, Kaballa, Kapouta, Gazaka, Ouera, Kyropolis-Kadousia, Assur, Arrhapa, Sadrakai, Arbela, Ninos, Kossaion_Phrourion, Adrapana, Laodikeia-Media, Apameia-Rhagiane, Ekbatana, Pinaka, Sareisa-Satalka, Nikephorion, Anthemousias-Batnai, Edessa, Karrhai, Antiocheia-Mygdonia, Beroia-Syria, Amphipolis-Chalybonitis, Kyrrhos, Hierapolis, Doliche, Apameia-Zeugma, Olbe, Seleukeia-Kalykadnos, Issos, Soloi-Kilikia, Mallos, Tarsos, Kastabala, Herakleia-Phoinike, Seleukeia-Pieria, Antioch, Damascus, Chalkis-Libanos, Abai, Heliou_Polis-Syria, Arethousa, Arados-Marathos, Amathe, Laodikeia-Paralos, Apameia-Syria, Chalkis-Belos, Sidon, Berytos, Byblos, Palmyra, Rhambaion_Kome, Balagala
+take_regions 73
+short_campaign outlive_factions
+atropatene cappadocia pontus
+
+pontus
+hold_regions Amaseia, Pimolisa, Zela, Komana-Pontos, Kabeira, Kimiata, Tibarenikon_Phrourion, Kamisa, Gangra, Koloussa, Gadilon, Amisos, Themiskyra, Kotyora, Kerasous, Kieros, Herakleia-Pontos, Sesamos, Tieion, Nikaia, Nikomedia, Bithynion, Chalkedon, Kios, Kyzikos, Ouenasa, Ekkobriga, Taouion, Kamakh, Erez, Karana, Mossynoikon_Metropolis, Makronopolis, Chaldaikon_Phrourion, Gymnias, Kaballa, Drilaikon_Phrourion, Trapezous, Chalybikon_Phrourion, Taochikon_Phrourion, Baraza, Bakchia, Harmozike-Seusamora, Moschon_Kome, Sourion, Phasis, Sarapana, Iberopolis, Kolchopolis, Koutatision, Kerketon_Kome, Naana, Dioskourias, Pityous, Heniochon_Kome, Zygopolis, Gorgippia, Hermonassa, Phanagoreia, Skopelos, Gerousa, Theodosia, Pantikapaion, Nymphaion, Kerkinitis, Chersonesos, Lampas, Skythike_Palaiopolis, Karkine, Pergamon, Daskyleion, Adramyttion, Skepsis, Antiocheia-Alabanda, Seleukeia-Tralleis, Magnesia-Maiandros, Hierapolis-Charonia, Hypaipa, Sardis, Thyateira, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Apameia-Kelainai, Antiocheia-Pisidia, Blaundos, Eukarpia, Aizanoi, Synnada, Pessinous, Gordion, Dorylaion, Peion, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Patara, Myra, Xanthos, Tlos, Limyra, Phaselis, Telmessos, Termessos, Perge, Kibyra, Isinda, Pednelissos, Selge, Sagalassos, Nagidos, Korakesion, Side, Aspendos, Etenna-Kotenna, Lindos, Rhodes, Ikonion, Toriaion, Laodikeia-Katakekaumene, Isaura, Homona, Laranda, Kybistra, Tyana, Garsaoura, Mazaka, Anisa, Gorbeous, Ankyra, Tektosagikon_Phrourion, Bloukion, Olbe, Seleukeia-Kalykadnos, Issos, Soloi-Kilikia, Mallos, Tarsos, Kastabala, Zeugma-Kommagene, Nymphaios, Beroia-Syria, Amphipolis-Chalybonitis, Kyrrhos, Hierapolis, Doliche, Apameia-Zeugma, Karkathiokerta, Tomisa, Seltia, Artageira, Armavir, Olane, Gorniai, Ptoua, Thospia, Pinaka, Sareisa-Satalka, Kapouta, Gazaka, Ouera, Kyropolis-Kadousia, Athens, Piraeus, Tanagra, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Karystos, Eretria, Chalkis, Oreos, Skyros, Orchomenos, Thebes, Delphoi, Elateia, Opous
+take_regions 192
+short_campaign outlive_factions
+sinope trapezus heraclea_pontica armenia galatians bosporan
+
+lusitani
+hold_regions Oxthracae, Oppidum_Lusitanorum, Salacia, Moron, Tude, Lansbricae, Lucensium, Brigantium-Artabria, Bracarium, Onoba, Conistorgis, Myrtilis, Lacobriga, Nertobriga_Celticorum, Ebora, Mirobriga_Celticorum, Olisipo, Conimbriga, Talabriga, Urso, Ilipa, Iliturgi, Carmo, Munda, Corduba, Erisana, Sisapo, Gades, Asta, Hispalis, Baria, Sexi, Iliberri, Basti, Mastia, Ilici, Castulo, Libisosa, Oretum, Carteia, Malaca, Tamusia, Mirobriga, Hermandica, Oppidum_Vettonum, Tamuda, Sala, Rusadir, Lixus, Tingi, Consabura, Toletum, Complutum, Volubilis, Molochath
+take_regions 55
+short_campaign outlive_factions
+arevaci edeta emporion
+
+getae
+hold_regions Dourostoron, Helis, Zusidava, Cumidava, Arpis, Zargidava, Tamasidava, Saldensium, Argedava, Acidava, Netindava, Oppidum_Teuriscorum, Eraviscium, Oppidum_Anartorum, Castrum_Anartorum, Drobeta, Arcidava, Tapae, Predavensium, Ansamenium, Patridava, Vibantarium, Sarmizegetusa, Apulum, Rhatacensium, Napoca, Arcinna, Buridava, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Dion_Teichos, Philippopolis, Serdike, Singidounon, Ratiaria, Artakon_Teichos, Kapidaua, Skaidaoua, Triballon_Teichos, Oiskos, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Teuriscium, Tylis, Odessos, Kallatis, Tomis, Olbia, Istrie, Trogodyton_Teichos, Aigyssos, Kios, Kyzikos, Perinthos, Selymbria, Byzantium, Apollonia-Pontos, Debelton, Mesembria, Tyragetaike_Kome, Tyras, Nikonion
+take_regions 70
+short_campaign outlive_factions
+tylis histria pentapolis odrysians
+
+acarnania
+hold_regions Stratos, Oiniadai, Leukas
+take_regions 23
+short_campaign outlive_factions
+aetolia epirus
+
+achaea
+hold_regions Aigion, Dyme, Pellene, Sikyon, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Corinth, Megara, Argos, Trozan, Olympia, Elis, Gytheion, Messene, Sparta, Prasiai, Orchomenos, Thebes, Delphoi, Elateia, Opous, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Karystos, Eretria, Chalkis, Oreos, Skyros, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Athens, Piraeus, Tanagra, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion
+take_regions 55
+short_campaign outlive_factions
+aetolia elis messene acarnania sparta antigonid
+
+acragas
+hold_regions Acragas
+take_regions 21
+short_campaign outlive_factions
+syracuse
+
+aedui
+hold_regions Cabillonum, Decetia, Alesia, Vesontio, Viviscus, Brenodurum, Eburodunum-Veragria, Turicum, Agedincum, Cenabum, Scoliva, Senonium, Lutetia, Iatinum, Andemantunnum, Nasium, Eburobriga, Vienna, Axima, Brioratis, Indiciacum, Arvernium, Rodumna, Eborolacum, Genava, Sedunium, Argentomagus, Avaricum, Leprosum, Ambiacum, Suessionium, Bellovacium, Viromanduium, Samarobriva, Atrebatium, Tarodunum, Riusiava, Helvetium
+take_regions 38
+short_campaign outlive_factions
+arverni allobroges massalia insubres
+
+aetolia
+hold_regions Thermon, Naupaktos, Delphoi, Zakynthos, Same, Oiniadai, Leukas, Stratos, Argos-Amphilochia, Orchomenos, Thebes, Elateia, Opous, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Apollonia-Epeiros, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Argos_Orestikon, Herakleia_Lynkestis, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Karystos, Eretria, Chalkis, Oreos, Skyros, Athens, Piraeus, Tanagra, Corinth, Megara, Argos, Trozan, Sikyon, Aigion, Pellene, Olympia, Elis, Dyme, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Skodra, Dournion, Olkinion, Meteon, Amphipolis, Philippoi, Herakleia-Sintike, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos
+take_regions 95
+short_campaign outlive_factions
+achaea boeotia elis sparta antigonid
+
+allobroges
+hold_regions Vienna, Brioratis, Genava, Axima, Sedunium, Cabillonum, Decetia, Alesia, Vesontio, Viviscus, Brenodurum, Eburodunum-Veragria, Turicum, Indiciacum, Arvernium, Rodumna, Eborolacum, Comum, Oscela, Taurasia, Segusio, Salassium, Eporedia, Acerrae, Mediolanum, Eburodunum, Segustero, Solonium, Tricastinium, Massalia, Aegitna, Glanum, Deciatium, Avaticium, Antipolis
+take_regions 35
+short_campaign outlive_factions
+insubres aedui massalia arverni
+
+ardiaei
+hold_regions Rhizon, Narenson_Teichos, Daorson, Narona, Idassa, Scardona, Argyruntum, Athyinites, Metulum, Tarsatica, Neviodunum, Melaina_Korkyra, Issa, Pharos, Epetion-Salona, Tragourion, Promona, Nesactium, Tergeste, Skodra, Dournion, Olkinion, Meteon, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Delmium, Arduba, Splonum, Cibalae, Segestica, Akouminkon, Sirmion, Autariaton_Teichos, Kapedounon, Singidounon, Galabrion_Teichos, Dardanopolis, Naissos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Apollonia-Epeiros, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Argos_Orestikon, Herakleia_Lynkestis, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Amphipolis, Philippoi, Herakleia-Sintike, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Orchomenos, Thebes, Delphoi, Elateia, Opous, Karystos, Eretria, Chalkis, Oreos, Skyros, Athens, Piraeus, Tanagra, Corinth, Megara, Sikyon, Aigion, Pellene, Olympia, Elis, Dyme, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Argos, Trozan, Gytheion, Messene, Sparta, Prasiai
+take_regions 126
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+arevaci
+hold_regions Numantia, Uxama, Termes, Lutia, Aratis, Turiaso, Contrebia_Leucada, Calagurris, Varia, Turba, Salduie, Segeda, Contrebia_Belaisca, Nertobriga, Vettonium, Segovia, Cauca, Arbucala, Pallantia, Intercatia, Tamusia, Mirobriga, Hermandica, Oppidum_Vettonum, Zoelarium, Lancia, Noega, Iacca, Andelos, Pompelo, Castrum_Bardyetarum, Oppidum_Vasconum, Segisamo, Virovesca, Beleia, Bergida, Aracillum, Atanagrus, Ilerda, Bolskan, Kili, Althaea, Kelin, Edeta, Arse, Ergavica, Castulo, Libisosa, Oretum, Urso, Ilipa, Iliturgi, Carmo, Munda, Corduba, Erisana, Sisapo, Onoba, Conistorgis, Myrtilis, Lacobriga, Nertobriga_Celticorum, Ebora, Mirobriga_Celticorum, Salacia, Oxthracae, Moron, Oppidum_Lusitanorum, Consabura, Toletum, Complutum
+take_regions 71
+short_campaign outlive_factions
+edeta emporion lusitani
+
+argos
+hold_regions Argos, Prasiai
+take_regions 22
+short_campaign outlive_factions
+achaea elis messene sparta
+
+arverni
+hold_regions Arvernium, Indiciacum, Eborolacum, Rodumna, Cabillonum, Decetia, Alesia, Argentomagus, Avaricum, Leprosum, Ambiacum, Vienna, Axima, Brioratis, Agedincum, Cenabum, Scoliva, Senonium, Lutetia, Iatinum, Andemantunnum, Nasium, Eburobriga, Uxellodunum, Nitiobrogum, Petrocorium, Durotincum, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Sotium, Coequosa, Genava, Sedunium, Cerretanium, Andosinium, Tolosa, Gabalium, Eburodunum, Segustero, Solonium, Tricastinium, Massalia, Aegitna, Glanum, Deciatium, Avaticium, Antipolis
+take_regions 50
+short_campaign outlive_factions
+aedui massalia allobroges insubres
+
+asti
+hold_regions Bizye
+take_regions 21
+short_campaign outlive_factions
+byzantium pentapolis cabyle odrysians
+
+athens
+hold_regions Athens, Skyros, Myrina, Piraeus, Tanagra, Karystos, Eretria, Chalkis, Oreos, Orchomenos, Thebes, Delphoi, Elateia, Opous, Corinth, Megara, Argos, Trozan, Gytheion, Messene, Sparta, Prasiai, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Amphipolis, Philippoi, Herakleia-Sintike, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Apollonia-Epeiros, Uria, Brundisium, Thera, Delos, Naxos, Mytilene, Methymna, Lindos, Rhodes, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Pergamon, Daskyleion, Adramyttion, Skepsis, Antiocheia-Alabanda, Seleukeia-Tralleis, Magnesia-Maiandros, Hierapolis-Charonia, Hypaipa, Sardis, Thyateira, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Alexandreia-Troas, Abydos, Lampsakos, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Perinthos, Selymbria, Byzantium, Nikaia, Nikomedia, Bithynion, Chalkedon, Paphos, Soloi, Amathous, Kition, Salamis, Patara, Myra, Xanthos, Tlos, Limyra, Phaselis, Telmessos, Termessos, Perge, Nagidos, Korakesion, Side, Aspendos, Etenna-Kotenna
+take_regions 133
+hold_region, Myrina, Samothrake, Athens, Piraeus, Tanagra, Karystos, Eretria, Megara, Chalkis, Opous, Orchomenos, Oreos, Trozan, Corinth, Argos, Prasiai, Sikyon, Delos, Naxos, Thera, Thasos
+short_campaign outlive_factions
+sparta boeotia antigonid pergamon rhodes
+
+atropatene
+hold_regions Gazaka, Kapouta, Ouera, Kyropolis-Kadousia, Kossaion_Phrourion, Adrapana, Laodikeia-Media, Apameia-Rhagiane, Ekbatana, Pinaka, Sareisa-Satalka, Assur, Arrhapa, Sadrakai, Arbela, Ninos, Europos-Rhagai, Pasargadai, Persepolis, Antiocheia-Persis, Gabai, Babylon, Uruk, Nippur, Apameia-Sittakene, Seleucia, Sittake, Thelme, Seleukeia-Erythtreia, Ikaros, Teredon, Alexandreia-Charax, Zetis, Alexandreia-Karmania, Thospia, Arsarata
+take_regions 36
+short_campaign outlive_factions
+armenia cappadocia parni
+
+belgae
+hold_regions Viromanduium, Atrebatium, Suessionium, Samarobriva, Bellovacium, Ceutronium, Nervium, Pleumoxium, Durocortorum, Geidumnium, Morinium, Menapium, Antunnacum, Oppidum_Eburonum, Eburonium, Betasium, Marsium, Asciburgium, Munitium, Sunicium-Texandrium, Siatutanda, Teuderium, Chattuarium, Divodurum, Borbetomagus, Treverium, Oppidum_Treverorum, Caerosium, Melocabus, Tencterium, Arctaunum, Budoris, Mattium, Sugambrium, Castrum_Reginorum, Oppidum_Cantiacorum, Castrum_Cantiacorum, Oppidum_Reginorum, Castrum_Catuvellaunorum, Castrum_Trinobantium, Catuvellaunium, Oppidum_Catuvellaunorum, Castrum_Corieltauviorum, Oppidum_Corieltauviorum, Oppidum_Trinobantium, Castrum_Ecenorum, Oppidum_Durotrigum, Castrum_Durotrigum, Durotrigium, Sorviodunum, Oppidum_Dobunnorum, Castrum_Dobunnorum
+take_regions 52
+short_campaign outlive_factions
+trinovantes cimbri chatti
+
+bessi
+hold_regions Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Dion_Teichos, Philippopolis, Serdike, Galabrion_Teichos, Dardanopolis, Naissos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Ratiaria, Artakon_Teichos, Helis, Kapidaua, Skaidaoua, Tylis, Triballon_Teichos, Oiskos, Apollonia-Pontos, Debelton, Mesembria, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Amphipolis, Philippoi, Herakleia-Sintike, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Perinthos, Selymbria, Byzantium, Saldensium, Argedava, Acidava, Netindava, Istrie, Trogodyton_Teichos, Aigyssos, Odessos, Kallatis, Tomis, Arcinna, Buridava, Dourostoron, Zusidava, Cumidava, Arpis, Zargidava, Tamasidava, Sarmizegetusa, Apulum, Rhatacensium, Napoca
+take_regions 83
+short_campaign outlive_factions
+dentheletae maedi odrysians
+
+bithynia
+hold_regions Nikaia, Nikomedia, Bithynion, Chalkedon, Kios, Kyzikos, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Perinthos, Selymbria, Byzantium, Alexandreia-Troas, Abydos, Lampsakos, Pessinous, Gordion, Dorylaion, Peion, Gorbeous, Ankyra, Tektosagikon_Phrourion, Bloukion, Gangra, Kimiata, Koloussa, Kieros, Herakleia-Pontos, Sesamos, Tieion, Sinope, Amaseia, Pimolisa, Kabeira, Tibarenikon_Phrourion, Gadilon, Amisos, Themiskyra, Kotyora, Kerasous, Ouenasa, Ekkobriga, Taouion, Zela, Komana-Pontos, Kamisa, Pergamon, Daskyleion, Adramyttion, Skepsis, Antiocheia-Alabanda, Seleukeia-Tralleis, Magnesia-Maiandros, Hierapolis-Charonia, Hypaipa, Sardis, Thyateira, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Apameia-Kelainai, Antiocheia-Pisidia, Blaundos, Eukarpia, Aizanoi, Synnada, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Apollonia-Pontos, Debelton, Mesembria, Dion_Teichos, Philippopolis
+take_regions 93
+short_campaign outlive_factions
+byzantium heraclea_pontica cius cyzicus odrysians pergamon galatians
+
+boeotia
+hold_regions Orchomenos, Thebes, Tanagra, Delphoi, Elateia, Opous, Karystos, Eretria, Chalkis, Oreos, Skyros, Athens, Piraeus, Corinth, Megara, Sikyon, Aigion, Pellene, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Argos, Trozan, Gytheion, Messene, Sparta, Prasiai, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Argos_Orestikon, Herakleia_Lynkestis, Mytilene, Methymna, Pergamon, Daskyleion, Adramyttion, Skepsis, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai
+take_regions 71
+short_campaign outlive_factions
+aetolia athens achaea antigonid
+
+boii
+hold_regions Eburodunum-Boihaemum, Singone, Furgisatis, Boiodurum, Mediolanium, Eburum, Coridorgis, Budorgis, Alcimoennis, Tarodunum, Riusiava, Helvetium, Cabillonum, Decetia, Alesia, Vesontio, Viviscus, Brenodurum, Eburodunum-Veragria, Turicum, Anavum, Asanca, Parienna, Anartium, Calisia, Strevinta, Zumium, Redintuinum, Galaegia, Damasia, Brigantium-Alpes, Bedacum, Cambodunum, Catenatium, Rucinatium, Sorviodurum, Didunium, Helisium, Mugilonium-Sibinium, Manimium, Leucaristus, Harium, Helveconium, Bunitium, Menosgada, Locoritum, Gravionarium, Variscium
+take_regions 48
+short_campaign outlive_factions
+insubres volcae allobroges scordisci
+
+bosporan
+hold_regions Pantikapaion, Nymphaion, Theodosia, Hermonassa, Phanagoreia, Skopelos, Gorgippia, Gerousa, Zygopolis, Kerkinitis, Chersonesos, Lampas, Skythike_Palaiopolis, Karkine, Dioskourias, Pityous, Heniochon_Kome, Sanaron_Taphai, Seraka, Didouron_Taphai, Ouspe, Basilikon_Skython_Taphai, Kremnoi, Tanais
+take_regions 24
+short_campaign outlive_factions
+siraces chersonesus pontus
+
+byzantium
+hold_regions Byzantium, Chalkedon, Perinthos, Selymbria, Nikaia, Nikomedia, Bithynion, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Apollonia-Pontos, Debelton, Mesembria, Tylis, Odessos, Kallatis, Tomis, Istrie, Trogodyton_Teichos, Aigyssos, Artakon_Teichos, Helis, Kapidaua, Skaidaoua, Tyragetaike_Kome, Tyras, Nikonion, Alexandreia-Troas, Abydos, Lampsakos, Pergamon, Daskyleion, Adramyttion, Skepsis, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Amphipolis, Philippoi, Herakleia-Sintike, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Athens, Piraeus, Tanagra, Gytheion, Messene, Sparta, Prasiai, Thera, Delos, Naxos, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Pessinous, Gordion, Dorylaion, Peion, Kybistra, Tyana, Garsaoura, Mazaka, Anisa, Lindos, Rhodes, Drilaikon_Phrourion, Trapezous, Fregellae, Praeneste, Rome
+take_regions 105
+short_campaign outlive_factions
+asti pentapolis bithynia cius
+
+cabyle
+hold_regions Kabyle
+take_regions 21
+short_campaign outlive_factions
+odrysians asti pentapolis
+
+cappadocia
+hold_regions Mazaka, Tyana, Ouenasa, Anisa, Garsaoura, Kybistra, Ekkobriga, Taouion, Zela, Komana-Pontos, Kamisa, Amaseia, Pimolisa, Kabeira, Tibarenikon_Phrourion, Gangra, Kimiata, Koloussa, Gadilon, Amisos, Themiskyra, Kotyora, Kerasous, Sinope, Gorbeous, Ankyra, Tektosagikon_Phrourion, Bloukion, Pessinous, Gordion, Dorylaion, Peion, Apameia-Kelainai, Antiocheia-Pisidia, Blaundos, Eukarpia, Aizanoi, Synnada, Kibyra, Isinda, Pednelissos, Selge, Sagalassos, Ikonion, Toriaion, Laodikeia-Katakekaumene, Isaura, Homona, Laranda, Olbe, Seleukeia-Kalykadnos, Issos, Soloi-Kilikia, Mallos, Tarsos, Kastabala, Komana-Kappadokia, Melita, Patara, Myra, Xanthos, Tlos, Limyra, Phaselis, Telmessos, Termessos, Perge, Nagidos, Korakesion, Side, Aspendos, Etenna-Kotenna, Beroia-Syria, Amphipolis-Chalybonitis, Kyrrhos, Hierapolis, Doliche, Apameia-Zeugma, Zeugma-Kommagene, Nymphaios, Karkathiokerta, Tomisa, Kamakh, Erez, Karana, Mossynoikon_Metropolis, Makronopolis, Chaldaikon_Phrourion, Gymnias, Kaballa, Seltia, Artageira, Armavir, Olane, Gorniai, Ptoua, Drilaikon_Phrourion, Trapezous, Amathous, Kition, Salamis
+take_regions 102
+short_campaign outlive_factions
+armenia pontus galatians atropatene
+
+chatti
+hold_regions Canduum, Bicurgium, Marvingium, Tulisurgium, Ascalingium, Betasium, Marsium, Asciburgium, Munitium, Sunicium-Texandrium, Siatutanda, Teuderium, Chattuarium, Divodurum, Borbetomagus, Treverium, Oppidum_Treverorum, Caerosium, Antunnacum, Oppidum_Eburonum, Eburonium, Morinium, Menapium, Tecelia, Chasuarium, Tulifurdum, Ampsivarium, Fabiranum, Lugdunum-Menapia, Sturium-Marsacium, Frisium, Melocabus, Tencterium, Arctaunum, Budoris, Mattium, Sugambrium, Ceutronium, Nervium, Pleumoxium, Suessionium, Bellovacium, Viromanduium, Samarobriva, Atrebatium, Durocortorum, Geidumnium, Menosgada, Locoritum, Gravionarium, Variscium, Andemantunnum, Nasium, Eburobriga, Agedincum, Cenabum, Scoliva, Senonium, Lutetia, Iatinum, Argentomagus, Avaricum, Leprosum, Ambiacum, Vindinum, Diablintium, Esuvium, Venellium, Veliocassium, Lexovium, Caletium, Santonium, Limonum, Maroventum, Ambilatrium, Uxellodunum, Nitiobrogum, Petrocorium, Durotincum, Condevincum, Venetium, Corsiolitum, Condate, Osismium
+take_regions 84
+short_campaign outlive_factions
+suebi cimbri belgae trinovantes
+
+chersonesus
+hold_regions Chersonesos, Kerkinitis
+take_regions 22
+short_campaign outlive_factions
+siraces bosporan
+
+chios
+hold_regions Chios
+take_regions 21
+short_campaign outlive_factions
+priene pergamon rhodes athens
+
+chrysaoria
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 100
+short_campaign outlive_factions
+rhodes priene
+
+cilicians
+hold_regions Gangra, Ekkobriga, Ankyra, Bloukion, Kimiata, Pimolisa, Taouion, Gorbeous
+take_regions 100
+short_campaign outlive_factions
+pontus cappadocia selge
+
+cimbri
+hold_regions Cimbrium, Mediolanium, Singone, Eburodunum-Boihaemum, Eburum, Coridorgis, Budorgis, Vesontio, Viviscus, Brenodurum, Eburodunum-Veragria, Turicum, Vienna, Axima, Brioratis, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Patavium, Camunnium, Isarcium-Brixenetium, Vennonium, Veldidena, Mantua, Brixia, Verona, Friniatium, Stalia, Apua, Veleia, Clastidium, Acerrae, Mediolanum, Eburodunum, Segustero, Solonium, Tricastinium, Massalia, Aegitna, Glanum, Deciatium, Avaticium, Antipolis
+take_regions 49
+short_campaign outlive_factions
+suebi chatti belgae trinovantes
+
+cius
+hold_regions Kios
+take_regions 21
+short_campaign outlive_factions
+cyzicus pergamon bithynia byzantium
+
+cyrene
+hold_regions Kyrene, Ptolemais-Kyrenaike, Arsinoe-Kyrenaike, Euesperides, Tetrapyrgia, Automala, Paraitonion, Alexandria, Naukratis, Arsinoe-Krokodeilon_Polis, Rhaithou, Eboda, Pelousion, Gaza, Memphis, Heroon_Polis, Arsinoe-Klysma, Athribis, Sebennytos-Bousiris, Boubastis, Sais, Mendes-Thmouis, Tanis, Hermou_Polis, Oxyrhynchos, Thebes-Megale_Diospolis, Mikra_Apollonos_Polis, Syene-Elephantine, Megale_Apollonos_Polis, Myos_Hormos, Philotera, Ptolemais-Hermeiou, Panos_Polis, Lykon_Polis, Madaba, Philadelpheia, Gerasa, Askalon, Azotos, Ioppe, Hebron, Jerusalem, Samareia, Pella-Peraia, Gadara, Abila, Gamala, Sidon, Berytos, Byblos, Dora, Ptolemais-Phoinike, Tyre, Herakleia-Phoinike, Heliou_Polis-Syria, Arethousa, Arados-Marathos, Amathe, Laodikeia-Paralos, Apameia-Syria, Chalkis-Belos, Damascus, Chalkis-Libanos, Abai, Paphos, Soloi, Amathous, Kition, Salamis
+take_regions 69
+short_campaign outlive_factions
+knossos gortyn lyttos kydonia rhodes nabataea
+
+cyzicus
+hold_regions Kyzikos
+take_regions 21
+short_campaign outlive_factions
+pergamon cius byzantium bithynia
+
+daesitiates
+hold_regions Arduba
+take_regions 21
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+dardania
+hold_regions Dardanopolis, Galabrion_Teichos, Dardanon_Teichos, Naissos, Autariaton_Teichos, Kapedounon, Singidounon, Serdike, Ratiaria, Triballon_Teichos, Oiskos, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Stymbara, Stoboi, Bylazora, Skoupi, Rhizon, Daorson, Narona, Narenson_Teichos, Skodra, Dournion, Olkinion, Meteon, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Apollonia-Epeiros, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Argos_Orestikon, Herakleia_Lynkestis, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Amphipolis, Philippoi, Herakleia-Sintike, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Dion_Teichos, Philippopolis, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle
+take_regions 93
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+delmatae
+hold_regions Delmium, Promona, Arduba, Splonum, Idassa, Scardona, Argyruntum, Athyinites, Metulum, Tarsatica, Neviodunum, Nesactium, Tergeste, Melaina_Korkyra, Issa, Pharos, Epetion-Salona, Tragourion, Rhizon, Daorson, Narona, Narenson_Teichos, Autariaton_Teichos, Kapedounon, Skodra, Dournion, Olkinion, Meteon, Cibalae, Segestica, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Poetovio, Tauriscium, Ara_Bona, Scarbantia, Akouminkon, Sirmion, Singidounon, Ratiaria, Galabrion_Teichos, Dardanopolis, Naissos, Triballon_Teichos, Oiskos, Serdike, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Apollonia-Epeiros, Atria, Ateste, Altinum, Oppidum_Catalorum
+take_regions 71
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+dentheletae
+hold_regions Pautalia
+take_regions 21
+short_campaign outlive_factions
+paeonia maedi bessi
+
+edeta
+hold_regions Edeta, Kili, Althaea, Kelin, Arse, Ergavica, Atanagrus, Ilerda, Bolskan, Hibera, Ilercavonium, Cissa, Barkeno, Iesso, Auso, Castrum_Bergium, Oppidum_Contestanorum, Contestanium, Saetabis, Hemeroskopeion, Baria, Sexi, Iliberri, Basti, Mastia, Ilici, Castulo, Libisosa, Oretum, Urso, Ilipa, Iliturgi, Carmo, Munda, Corduba, Erisana, Sisapo, Turba, Salduie, Segeda, Contrebia_Belaisca, Nertobriga
+take_regions 42
+short_campaign outlive_factions
+emporion arevaci lusitani
+
+egypt
+hold_regions Alexandria, Meroe, Opone, Marib, Petra, Omana, Kyrene, Carthage, Cirta, Seleucia, Baktra-Zariaspa, Patala, Nisa, Mazaka, Amaseia, Armavir, Gazaka, Pergamon, Rhodes, Nikaia, Ankyra, Ouskoudama, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Syracuse, Rome
+take_regions 100
+short_campaign outlive_factions
+ptolemaic
+
+elis
+hold_regions Elis, Olympia
+take_regions 22
+short_campaign outlive_factions
+achaea sparta messene
+
+emporion
+hold_regions Emporion, Rhode, Oppidum_Indicetum
+take_regions 23
+short_campaign outlive_factions
+massalia edeta
+
+epirus
+hold_regions Ambrakia, Kichyros, Dodona, Passaron, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Argithea, Apollonia-Epeiros, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Skodra, Dournion, Olkinion, Meteon, Galabrion_Teichos, Dardanopolis, Naissos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Serdike, Argos_Orestikon, Herakleia_Lynkestis, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Amphipolis, Philippoi, Herakleia-Sintike, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Dion_Teichos, Philippopolis, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Perinthos, Selymbria, Byzantium, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Orchomenos, Thebes, Delphoi, Elateia, Opous, Athens, Piraeus, Tanagra, Corinth, Megara, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Gytheion, Messene, Sparta, Prasiai, Olympia, Elis, Dyme, Uria, Brundisium, Metapontum, Tarentum, Grumentum, Potentia, Paestum, Venusia, Arpi, Canusium, Compsa, Maleventum, Bovianum, Larinum, Consentia, Croton, Petelia, Thurii, Rhegium, Epizephyrian_Locri, Tauromenion, Tyndaris, Messana, Myttistratum, Enna, Katane, Melite, Lilybaion, Entella, Segesta, Eryx, Panormos, Acragas, Herakleia_Minoa, Syracuse, Kamarina, Leontinoi, Neapolis, Capua, Reate, Camerinum, Iguvium, Sena_Gallica, Cosa, Falerii, Volsinii, Perusia, Arretium, Volaterrae, Pisae, Corfinium, Teate, Sarsina, Bononia, Mutina, Spina, Fregellae, Praeneste, Rome
+take_regions 175
+short_campaign outlive_factions
+antigonid acarnania aetolia ardiaei
+
+galatians
+hold_regions Tektosagikon_Phrourion, Ankyra, Bloukion, Ekkobriga, Peion, Bithynion, Gorbeous, Antiocheia-Alabanda, Seleukeia-Tralleis, Magnesia-Maiandros, Hierapolis-Charonia, Hypaipa, Sardis, Thyateira, Kybistra, Tyana, Garsaoura, Mazaka, Anisa, Ouenasa, Taouion, Apameia-Kelainai, Antiocheia-Pisidia, Blaundos, Eukarpia, Aizanoi, Synnada, Pergamon, Daskyleion, Adramyttion, Skepsis, Sinope, Nikaia, Nikomedia, Chalkedon, Perinthos, Selymbria, Byzantium, Patara, Myra, Xanthos, Tlos, Limyra, Phaselis, Telmessos, Termessos, Perge
+take_regions 47
+short_campaign outlive_factions
+cappadocia pontus bithynia pergamon
+
+gortyn
+hold_regions Gortyna, Oaxos
+take_regions 22
+short_campaign outlive_factions
+kydonia lyttos knossos rhodes
+
+heraclea_pontica
+hold_regions Herakleia-Pontos, Kieros, Tieion, Sesamos, Nikaia, Nikomedia, Bithynion, Chalkedon, Kios, Kyzikos, Gangra, Kimiata, Koloussa, Amaseia, Pimolisa, Kabeira, Tibarenikon_Phrourion, Sinope, Gadilon, Amisos, Themiskyra, Kotyora, Kerasous, Gorbeous, Ankyra, Tektosagikon_Phrourion, Bloukion, Ouenasa, Ekkobriga, Taouion, Zela, Komana-Pontos, Kamisa, Kamakh, Erez, Karana, Mossynoikon_Metropolis, Makronopolis, Chaldaikon_Phrourion, Gymnias, Kaballa, Drilaikon_Phrourion, Trapezous, Dioskourias, Pityous, Heniochon_Kome, Moschon_Kome, Sourion, Phasis, Sarapana, Iberopolis, Kolchopolis, Koutatision, Kerketon_Kome, Naana, Zygopolis, Gorgippia, Hermonassa, Phanagoreia, Skopelos, Gerousa, Theodosia, Pantikapaion, Nymphaion, Chersonesos, Lampas, Skythike_Palaiopolis, Karkine, Kerkinitis, Trakana, Amadoka, Tyragetaike_Kome, Tyras, Nikonion, Olbia, Istrie, Trogodyton_Teichos, Aigyssos, Odessos, Kallatis, Tomis, Apollonia-Pontos, Debelton, Mesembria, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Perinthos, Selymbria, Byzantium
+take_regions 95
+short_campaign outlive_factions
+sinope bithynia paphlagonia pontus
+
+histri
+hold_regions Nesactium, Tergeste
+take_regions 22
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+histria
+hold_regions Istrie
+take_regions 21
+short_campaign outlive_factions
+pentapolis olbia getae
+
+iapodes
+hold_regions Metulum, Argyruntum
+take_regions 22
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+illyrian_kingdom
+hold_regions Lissos, Sesarethos, Epidamnos, Dimale, Kreonion, Rhizon, Daorson, Narona, Narenson_Teichos, Idassa, Scardona, Argyruntum, Athyinites, Metulum, Tarsatica, Neviodunum, Melaina_Korkyra, Issa, Pharos, Epetion-Salona, Tragourion, Promona, Nesactium, Tergeste, Skodra, Dournion, Olkinion, Meteon, Pelion, Lychnidos, Hyskana, Delmium, Arduba, Splonum, Cibalae, Segestica, Akouminkon, Sirmion, Autariaton_Teichos, Kapedounon, Singidounon, Galabrion_Teichos, Dardanopolis, Naissos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Apollonia-Epeiros, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Argos_Orestikon, Herakleia_Lynkestis, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Amphipolis, Philippoi, Herakleia-Sintike, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Orchomenos, Thebes, Delphoi, Elateia, Opous, Karystos, Eretria, Chalkis, Oreos, Skyros, Athens, Piraeus, Tanagra, Corinth, Megara, Sikyon, Aigion, Pellene, Olympia, Elis, Dyme, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Argos, Trozan, Gytheion, Messene, Sparta, Prasiai
+take_regions 126
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+indo_greeks
+hold_regions Baktra-Zariaspa, Sakon_Taphai, Nisa, Patala, Seleucia, Gazaka, Armavir, Marib, Meroe, Alexandria, Kyrene, Rhodes, Pergamon, Nikaia, Ankyra, Amaseia, Mazaka, Seraka, Pantikapaion
+take_regions 100
+short_campaign outlive_factions
+bactria mauryan
+
+insubres
+hold_regions Mediolanum, Acerrae, Mantua, Brixia, Verona, Friniatium, Stalia, Apua, Veleia, Clastidium, Patavium, Camunnium, Isarcium-Brixenetium, Vennonium, Veldidena, Comum, Oscela, Taurasia, Segusio, Salassium, Eporedia, Atria, Ateste, Altinum, Oppidum_Catalorum, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Sarsina, Bononia, Mutina, Spina, Damasia, Brigantium-Alpes, Bedacum, Cambodunum, Catenatium, Rucinatium, Sorviodurum, Boiodurum
+take_regions 46
+short_campaign outlive_factions
+arverni aedui allobroges massalia
+
+issa
+hold_regions Issa, Melaina_Korkyra, Epetion-Salona, Tragourion
+take_regions 24
+short_campaign outlive_factions
+ardiaei epirus
+
+knossos
+hold_regions Knosos, Aptera, Gortyna, Hierapytna, Lyktos, Lato, Itanos, Oaxos, Polyrrhenia, Kydonia, Arsinoe, Kythera, Thera, Delos, Naxos, Lindos, Rhodes, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Patara, Myra, Xanthos, Tlos, Limyra, Phaselis, Telmessos, Termessos, Perge, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Karystos, Eretria, Chalkis, Oreos, Skyros, Athens, Piraeus, Tanagra, Corinth, Megara, Argos, Trozan, Gytheion, Messene, Sparta, Prasiai, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike
+take_regions 90
+short_campaign outlive_factions
+kydonia lyttos gortyn rhodes
+
+kush
+hold_regions Meroe, Araba, Kandragori, Sekande, Napata, Makoua, Attena, Mikra_Primis, Pachora, Premnis, Tachompso-Pselkis, Tenoupsis, Megabaron_Kome, Syene-Elephantine, Megale_Apollonos_Polis, Thebes-Megale_Diospolis, Mikra_Apollonos_Polis
+take_regions 17
+short_campaign outlive_factions
+saba nabataea cyrene
+
+kydonia
+hold_regions Kydonia, Polyrrhenia
+take_regions 22
+short_campaign outlive_factions
+lyttos gortyn knossos rhodes
+
+labeatae
+hold_regions Skodra, Meteon
+take_regions 22
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+liburni
+hold_regions Idassa, Scardona, Athyinites, Tarsatica, Argyruntum, Metulum, Neviodunum, Nesactium, Tergeste, Melaina_Korkyra, Issa, Pharos, Epetion-Salona, Tragourion, Promona, Delmium, Arduba, Splonum, Rhizon, Daorson, Narona, Narenson_Teichos, Autariaton_Teichos, Kapedounon, Skodra, Dournion, Olkinion, Meteon, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Apollonia-Epeiros, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Uria, Brundisium, Metapontum, Tarentum, Venusia, Arpi, Canusium, Compsa, Maleventum, Bovianum, Larinum, Corfinium, Teate, Asculum, Ankon, Reate, Camerinum, Iguvium, Sena_Gallica, Atria, Ateste, Altinum, Oppidum_Catalorum, Sarsina, Bononia, Mutina, Spina, Rhegium, Epizephyrian_Locri, Consentia, Croton, Petelia, Thurii
+take_regions 89
+short_campaign outlive_factions
+issa epirus scordisci syracuse
+
+lugii
+hold_regions Leucaristus, Helisium, Harium, Manimium, Helveconium, Didunium, Mugilonium-Sibinium, Bunitium, Aestium, Ascaucalis, Marionis, Cistuia, Coeonoenum, Reudignium, Anavum, Asanca, Parienna, Anartium, Calisia, Oppidum_Teuriscorum, Eraviscium, Oppidum_Anartorum, Castrum_Anartorum, Mediolanium, Singone, Eburodunum-Boihaemum, Eburum, Coridorgis, Budorgis, Strevinta, Zumium, Redintuinum, Galaegia, Drobeta, Arcidava, Tapae, Predavensium, Ansamenium, Scurgum, Atmonium, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Sopianae, Bormanum, Oppidum_Eraviscorum, Aquincum, Poetovio, Tauriscium, Ara_Bona, Scarbantia, Cibalae, Segestica, Akouminkon, Sirmion, Singidounon, Teuriscium, Mersovium, Susudata
+take_regions 65
+short_campaign outlive_factions
+suebi chatti volcae belgae trinovantes
+
+lycia
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 100
+short_campaign outlive_factions
+rhodes selge
+
+lysiad
+hold_regions Synnada
+take_regions 21
+short_campaign outlive_factions
+galatians paphlagonia
+
+lyttos
+hold_regions Lyktos, Lato
+take_regions 22
+short_campaign outlive_factions
+kydonia gortyn knossos rhodes
+
+maedi
+hold_regions Iamphorynna
+take_regions 21
+short_campaign outlive_factions
+paeonia dentheletae bessi
+
+masaesyli
+hold_regions Siga, Auzea, Saldae, Iol, Icosium, Castrum_Autololum, Rutubis, Castrum_Baniurarum, Miglis, Cirta, Suthul, Volubilis, Molochath, Althiburos, Mactaris, Zama, Thugga, Hippo, Rusicade, Vaga, Utica, Hippo_Diarrhytus, Thapsus, Leptis_Minor, Hadrumetum, Castrum_Macaeorum, Euphranta, Castrum_Atarantorum, Leptis, Sabrata, Oea, Meninx, Gigthis, Macomades_Minores, Tamuda, Sala, Rusadir, Lixus, Tingi, Tabudium, Castrum_Nicivorum, Turris_Tamalleni, Zygantis, Capsa, Hekatompylos-Numidia, Thala, Sicca, Tipasa, Bulla, Cidamus, Bedirum, Garama, Castrum_Psyllorum, Tunes, Karchedonike_Neapolis, Carthage, Clupea
+take_regions 57
+hold_region, Cirta, Carthage, Kyrene, Alexandria, Meroe, Omana, Marib, Petra, Seleucia, Vellegia, Garama, Numantia, Edeta, Oxthracae, Massalia, Bononia, Mediolanum, Rome, Syracuse
+short_campaign outlive_factions
+massylii carthage
+
+massalia
+hold_regions Massalia, Antipolis, Agathe, Aegitna, Glanum, Deciatium, Avaticium, Eburodunum, Segustero, Solonium, Tricastinium, Intimilium, Ingaunum, Carystum, Friniatium, Stalia, Apua, Veleia, Clastidium, Nemausus, Illiberis-Ruscino, Narbo, Oppidum_Indicetum, Emporion, Rhode, Hibera, Ilercavonium, Cissa, Barkeno, Iesso, Auso, Castrum_Bergium, Kili, Althaea, Kelin, Edeta, Arse, Ergavica, Venicum, Aleria, Cosa, Falerii, Volsinii, Perusia, Arretium, Volaterrae, Pisae, Ebusus, Bocchoris
+take_regions 49
+short_campaign outlive_factions
+emporion allobroges insubres edeta
+
+massylii
+hold_regions Thugga, Zama, Cirta, Suthul, Althiburos, Mactaris, Hippo, Rusicade, Vaga, Utica, Hippo_Diarrhytus, Thapsus, Leptis_Minor, Hadrumetum, Castrum_Macaeorum, Euphranta, Castrum_Atarantorum, Leptis, Sabrata, Oea, Meninx, Gigthis, Macomades_Minores, Turris_Tamalleni, Zygantis, Capsa, Tabudium, Castrum_Nicivorum, Hekatompylos-Numidia, Thala, Sicca, Tipasa, Bulla, Cidamus, Bedirum, Garama, Castrum_Psyllorum, Volubilis, Molochath, Saldae, Iol, Icosium, Castrum_Autololum, Rutubis, Castrum_Baniurarum, Miglis, Siga, Auzea, Tamuda, Sala, Rusadir, Lixus, Tingi, Tunes, Karchedonike_Neapolis, Carthage, Clupea
+take_regions 57
+short_campaign outlive_factions
+masaesyli carthage
+
+mauryan
+hold_regions The_Road_to_Palibothra, Kounindapolis, The_Road_to_Methora, Pimprama, Audoumbara, Sangala, Abastaniopolis, Alexandreia-Boukephala, Malliopolis, Agalassopolis, Sibopolis, Amakatis, Nikaia-Hydaspes, Taxila, Sopeithopolis, Peukelaotis, Arigaion, Glausaiopolis, Massaga, Bardaxema, Patala, Binagara, Sindomana, Kaspeira, Poura, Alexandreia-Oreitaia, Alexandrou_Limen, Aristobathra, Antachara, Alexandreia-Sogdia, Alexandreia-Indos, Ortospana, Alexandreia-Kaukasia, Alexandreia-Arachosia, Arachotos, Zetis, Alexandreia-Karmania, Sousia, Alexandreia-Ariane, Achaia_Polis, Alexandreia-Drangiane, Prophthasia, Iasonion, Antiocheia-Margiane, Darapsa, Baktrias_Basileion, Marouka, Aornos-Baktria, Baktra-Zariaspa, Alexandreia-Oxeiane, Oxeiana, Indikomordana, Auxoume, Asachaiopolis
+take_regions 54
+short_campaign outlive_factions
+bactria saka
+
+megalopolis
+hold_regions Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Sikyon, Aigion, Pellene, Corinth, Megara, Argos, Trozan, Olympia, Elis, Dyme, Gytheion, Messene, Sparta, Prasiai, Orchomenos, Thebes, Delphoi, Elateia, Opous, Athens, Piraeus, Tanagra, Karystos, Eretria, Chalkis, Oreos, Skyros, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Ambrakia, Kichyros, Argithea, Passaron, Dodona
+take_regions 55
+short_campaign outlive_factions
+elis achaea messene sparta
+
+messene
+hold_regions Messene
+take_regions 21
+short_campaign outlive_factions
+elis achaea sparta
+
+miletus
+hold_regions Miletos, Halikarnassos, Mylasa, Antiocheia-Alabanda, Stratonikeia, Priene, Samos, Ephesos
+take_regions 100
+short_campaign outlive_factions
+priene chios rhodes pergamon athens
+
+nabataea
+hold_regions Petra, Ailana, Eboda, Aramaua, Barathena, Bostra, Kanatha, Madaba, Philadelpheia, Gerasa, Hebron, Jerusalem, Samareia, Pella-Peraia, Gadara, Abila, Gamala, Askalon, Azotos, Ioppe, Sidon, Berytos, Byblos, Dora, Ptolemais-Phoinike, Tyre, Damascus, Chalkis-Libanos, Abai, Palmyra, Rhambaion_Kome, Balagala, Baklanaza, Egra, Leuke_Kome, Badeo, Ausara, Iathrippa, Menambis, Nestos-Arabia, Karna, Naskos, Negrana, Marib, Mariama, Marasdou, Athloula, Mouza, Saue, Sakatia, Myos_Hormos, Philotera, Rhaithou, Pelousion, Gaza
+take_regions 55
+short_campaign outlive_factions
+saba kush cyrene
+
+odrysians
+hold_regions Seuthopolis, Beroia-Thraike, Ouskoudama, Bizye, Salmydessos, Korelon_Teichos, Kabyle, Dion_Teichos, Philippopolis, Artakon_Teichos, Helis, Kapidaua, Skaidaoua, Tylis, Apollonia-Pontos, Debelton, Mesembria, Saldensium, Argedava, Acidava, Netindava, Serdike, Odessos, Kallatis, Tomis, Istrie, Trogodyton_Teichos, Aigyssos, Ratiaria, Triballon_Teichos, Oiskos, Galabrion_Teichos, Dardanopolis, Naissos, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Argos_Orestikon, Herakleia_Lynkestis, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Amphipolis, Philippoi, Herakleia-Sintike, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Perinthos, Selymbria, Byzantium, Alexandreia-Troas, Abydos, Lampsakos, Kios, Kyzikos, Nikaia, Nikomedia, Bithynion, Chalkedon
+take_regions 82
+short_campaign outlive_factions
+bessi cabyle byzantium asti pentapolis tylis getae bithynia
+
+olbia
+hold_regions Olbia, Tyragetaike_Kome, Tyras, Nikonion, Trakana, Amadoka, Niosson, Erakton, Leinon, Istrie, Trogodyton_Teichos, Aigyssos, Dourostoron, Zusidava, Cumidava, Arpis, Zargidava, Tamasidava, Odessos, Kallatis, Tomis, Chersonesos, Lampas, Skythike_Palaiopolis, Karkine, Kerkinitis, Theodosia, Pantikapaion, Nymphaion, Basilikon_Skython_Taphai, Kremnoi, Tanais, Zygopolis, Gorgippia, Hermonassa, Phanagoreia, Skopelos, Gerousa, Dioskourias, Pityous, Heniochon_Kome, Alexandreia-Troas, Abydos, Lampsakos, Kios, Kyzikos, Pergamon, Daskyleion, Adramyttion, Skepsis, Kieros, Herakleia-Pontos, Sesamos, Tieion, Nikaia, Nikomedia, Bithynion, Chalkedon, Gangra, Kimiata, Koloussa, Sinope, Amaseia, Pimolisa, Kabeira, Tibarenikon_Phrourion, Gadilon, Amisos, Themiskyra, Kotyora, Kerasous
+take_regions 71
+short_campaign outlive_factions
+histria chersonesus
+
+paeonia
+hold_regions Bylazora, Stoboi, Stymbara, Skoupi, Dardanon_Teichos, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Amphipolis, Philippoi, Herakleia-Sintike, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Serdike, Galabrion_Teichos, Dardanopolis, Naissos, Dion_Teichos, Philippopolis, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Perinthos, Selymbria, Byzantium, Alexandreia-Troas, Abydos, Lampsakos, Pergamon, Daskyleion, Adramyttion, Skepsis, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Skodra, Dournion, Olkinion, Meteon, Argos_Orestikon, Herakleia_Lynkestis, Apollonia-Epeiros, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Zakynthos, Same, Oiniadai, Thermon, Naupaktos, Leukas, Stratos, Argos-Amphilochia, Orchomenos, Thebes, Delphoi, Elateia, Opous
+take_regions 106
+short_campaign outlive_factions
+dentheletae maedi
+
+paphlagonia
+hold_regions Gangra
+take_regions 21
+short_campaign outlive_factions
+sinope pontus heraclea_pontica galatians
+
+pentapolis
+hold_regions Kallatis, Tomis, Odessos, Mesembria, Apollonia-Pontos
+take_regions 25
+short_campaign outlive_factions
+byzantium asti cabyle histria
+
+pergamon
+hold_regions Pergamon, Kyme, Daskyleion, Adramyttion, Skepsis, Antiocheia-Alabanda, Seleukeia-Tralleis, Magnesia-Maiandros, Hierapolis-Charonia, Hypaipa, Sardis, Thyateira, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Kios, Kyzikos, Alexandreia-Troas, Abydos, Lampsakos, Kieros, Herakleia-Pontos, Sesamos, Tieion, Gangra, Kimiata, Koloussa, Nikaia, Nikomedia, Bithynion, Chalkedon, Pessinous, Gordion, Dorylaion, Peion, Apameia-Kelainai, Antiocheia-Pisidia, Blaundos, Eukarpia, Aizanoi, Synnada, Kibyra, Isinda, Pednelissos, Selge, Sagalassos, Gorbeous, Ankyra, Tektosagikon_Phrourion, Bloukion, Ouenasa, Ekkobriga, Taouion, Kybistra, Tyana, Garsaoura, Mazaka, Anisa, Ikonion, Toriaion, Laodikeia-Katakekaumene, Isaura, Homona, Laranda, Olbe, Seleukeia-Kalykadnos, Issos, Soloi-Kilikia, Mallos, Tarsos, Kastabala, Patara, Myra, Xanthos, Tlos, Limyra, Phaselis, Telmessos, Termessos, Perge, Nagidos, Korakesion, Side, Aspendos, Etenna-Kotenna, Zeugma-Kommagene, Nymphaios, Zela, Komana-Pontos, Kamisa, Komana-Kappadokia, Melita, Thera, Delos, Naxos, Karystos, Eretria, Chalkis, Oreos, Skyros
+take_regions 113
+short_campaign outlive_factions
+cyzicus priene rhodes bithynia galatians athens
+
+priene
+hold_regions Priene
+take_regions 21
+short_campaign outlive_factions
+chios rhodes pergamon athens
+
+rhodes
+hold_regions Rhodes, Lindos, Patara, Myra, Xanthos, Tlos, Limyra, Phaselis, Telmessos, Termessos, Perge, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Thera, Delos, Naxos, Aptera, Polyrrhenia, Kydonia, Arsinoe, Kythera, Gortyna, Hierapytna, Lyktos, Knosos, Lato, Itanos, Oaxos, Nagidos, Korakesion, Side, Aspendos, Etenna-Kotenna, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Antiocheia-Alabanda, Seleukeia-Tralleis, Magnesia-Maiandros, Hierapolis-Charonia, Hypaipa, Sardis, Thyateira, Isaura, Homona, Laranda, Olbe, Seleukeia-Kalykadnos, Issos, Soloi-Kilikia, Mallos, Tarsos, Kastabala, Kibyra, Isinda, Pednelissos, Selge, Sagalassos, Apameia-Kelainai, Antiocheia-Pisidia, Blaundos, Eukarpia, Aizanoi, Synnada, Pessinous, Gordion, Dorylaion, Peion, Alexandreia-Troas, Abydos, Lampsakos, Argos, Trozan
+take_regions 85
+short_campaign outlive_factions
+priene athens knossos gortyn cius sparta cyrene
+
+saba
+hold_regions Marib, Marasdou, Athloula, Menambis, Sakatia, Sabai, Mariama, Arabias_Emporion, Mesala, Sapphar, Mouza, Saue, Nestos-Arabia, Karna, Naskos, Negrana, Badeo, Ausara, Iathrippa, Omanon_Emporion, Batrasauaue, Kryptos_Limen, Kane, Thabba, Sabbatha, Syagros, Sadasara, Moscha_Limen, Tamna, Karipeta, Baklanaza, Egra, Leuke_Kome
+take_regions 33
+short_campaign outlive_factions
+kush nabataea
+
+scordisci
+hold_regions Singidounon, Akouminkon, Kapedounon, Sirmion, Autariaton_Teichos, Galabrion_Teichos, Dardanopolis, Naissos, Delmium, Arduba, Splonum, Ratiaria, Serdike, Triballon_Teichos, Oiskos, Cibalae, Segestica, Arcinna, Buridava
+take_regions 19
+short_campaign outlive_factions
+ardiaei boii tylis
+
+selge
+hold_regions Selge
+take_regions 21
+short_campaign outlive_factions
+galatians paphlagonia cappadocia
+
+sinope
+hold_regions Sinope
+take_regions 21
+short_campaign outlive_factions
+heraclea_pontica trapezus paphlagonia
+
+siraces
+hold_regions Seraka, Ouspe, Sanaron_Taphai, Didouron_Taphai, Isondon_Taphai, Hexapolis, Nauaris, Trakana, Amadoka, Skopelos, Gerousa, Zygopolis, Gorgippia, Hermonassa, Phanagoreia, Theodosia, Pantikapaion, Nymphaion, Dioskourias, Pityous, Heniochon_Kome, Kerkinitis, Chersonesos, Lampas, Skythike_Palaiopolis, Karkine, Olbia, Skython_Taphai, Androphagon_Kome, Hygreis, Skythopolis, Naskopolis, Basilikon_Skython_Taphai, Kremnoi, Tanais, Sauromaton_Taphai, Perierbidon_Taphai, Basilikon_Sauromaton_Taphai, Tyragetaike_Kome, Tyras, Nikonion, Istrie, Trogodyton_Teichos, Aigyssos, Hekatompylos, Tapyron_Phrourion, Tagai, Apauarktike
+take_regions 48
+short_campaign outlive_factions
+bosporan chersonesus armenia pontus
+
+sparta
+hold_regions Sparta, Gytheion, Kythera, Messene, Prasiai, Olympia, Elis, Dyme, Argos, Trozan, Megalopolis, Lepreon, Tegea, Mantineia, Orchomenos-Arkadia, Corinth, Megara, Sikyon, Aigion, Pellene, Orchomenos, Thebes, Delphoi, Elateia, Opous, Gortyna, Hierapytna, Lyktos, Knosos, Lato, Itanos, Oaxos, Aptera, Polyrrhenia, Kydonia, Arsinoe, Athens, Piraeus, Tanagra, Kos, Mylasa, Knidos, Kaunos, Halikarnassos, Aphrodisias, Stratonikeia, Lindos, Rhodes, Ktimene, Lamia, Pharsalos, Thebai_Phthiotides, Demetrias, Pherai, Trikka, Larissa, Phalanna, Aiginion, Metapontum, Tarentum, Consentia, Croton, Petelia, Thurii, Rhegium, Epizephyrian_Locri, Syracuse, Kamarina, Leontinoi
+take_regions 69
+short_campaign outlive_factions
+athens messene elis achaea antigonid
+
+suebi
+hold_regions Susudata, Strevinta, Zumium, Redintuinum, Galaegia, Anavum, Asanca, Parienna, Anartium, Calisia, Furgisatis, Alcimoennis, Mediolanium, Singone, Eburodunum-Boihaemum, Eburum, Coridorgis, Budorgis, Marionis, Cistuia, Coeonoenum, Reudignium, Tarodunum, Riusiava, Helvetium, Vienna, Axima, Brioratis, Cabillonum, Decetia, Alesia, Argentomagus, Avaricum, Leprosum, Ambiacum, Andemantunnum, Nasium, Eburobriga, Canduum, Marvingium, Bicurgium, Indiciacum, Arvernium, Rodumna, Eborolacum, Tulisurgium, Ascalingium
+take_regions 47
+short_campaign outlive_factions
+chatti lugii cimbri volcae
+
+syracuse
+hold_regions Syracuse, Leontinoi, Kamarina, Katane, Tauromenion, Tyndaris, Acragas, Herakleia_Minoa, Panormos, Melite, Lilybaion, Entella, Segesta, Eryx, Myttistratum, Enna, Messana, Venicum, Aleria, Rhegium, Epizephyrian_Locri, Caralis, Sulci, Neapolis-Sardinia, Uselis, Cornus, Pluvium, Olbia-Sardinia, Consentia, Croton, Petelia, Thurii, Grumentum, Potentia, Paestum, Metapontum, Tarentum, Uria, Brundisium, Thapsus, Leptis_Minor, Hadrumetum, Tunes, Karchedonike_Neapolis, Carthage, Clupea, Vaga, Utica, Hippo_Diarrhytus, Neapolis, Capua, Compsa, Maleventum, Bovianum, Larinum, Corfinium, Teate, Cosa, Falerii, Volsinii, Perusia, Arretium, Volaterrae, Pisae, Asculum, Ankon, Reate, Camerinum, Iguvium, Sena_Gallica, Sarsina, Bononia, Mutina, Spina, Atria, Ateste, Altinum, Oppidum_Catalorum, Nesactium, Tergeste, Idassa, Scardona, Argyruntum, Athyinites, Metulum, Tarsatica, Neviodunum, Melaina_Korkyra, Issa, Pharos, Epetion-Salona, Tragourion, Promona, Rhizon, Daorson, Narona, Narenson_Teichos, Skodra, Dournion, Olkinion, Meteon, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Korkyra, Phoinike, Antigoneia-Chaonia, Atintanopolis, Orikon, Byllis-Amantia, Ambrakia, Kichyros, Argithea, Passaron, Dodona, Athens, Piraeus, Tanagra, Thera, Delos, Naxos, Aptera, Polyrrhenia, Kydonia, Arsinoe, Kythera, Gortyna, Hierapytna, Lyktos, Knosos, Lato, Itanos, Oaxos, Miletos, Samos, Priene, Ephesos, Chios, Erythrai, Klazomenai, Smyrna, Magnesia-Sipylos, Kyme, Fregellae, Praeneste, Rome
+take_regions 151
+short_campaign outlive_factions
+acragas issa ardiaei athens massalia
+
+taras
+hold_regions Tarentum, Metapontum
+take_regions 22
+short_campaign outlive_factions
+epirus
+
+thessaly
+hold_regions Larissa, Pharsalos, Pherai, Trikka, Phalanna, Thebai_Phthiotides
+take_regions 100
+short_campaign outlive_factions
+antigonid
+
+trapezus
+hold_regions Trapezous
+take_regions 21
+short_campaign outlive_factions
+sinope pontus
+
+triballi
+hold_regions Oiskos, Triballon_Teichos, Ratiaria, Singidounon, Autariaton_Teichos, Kapedounon, Galabrion_Teichos, Dardanopolis, Naissos, Serdike, Artakon_Teichos, Helis, Kapidaua, Skaidaoua, Saldensium, Argedava, Acidava, Netindava, Tylis, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Odessos, Kallatis, Tomis, Apollonia-Pontos, Debelton, Mesembria, Perinthos, Selymbria, Byzantium, Myrina, Elaious, Samothrake, Thasos, Lysimacheia, Ainos, Maroneia, Kypsela, Apros, Nastos, Abdera-Thraike, Dion_Teichos, Philippopolis, Keirpara, Iamphorynna, Koilaleton_Teichos, Pautalia, Agrianon_Teichos, Stymbara, Stoboi, Bylazora, Skoupi, Dardanon_Teichos, Amphipolis, Philippoi, Herakleia-Sintike, Kassandreia, Torone, Akanthos, Thessalonike, Berge, Dion, Beroia, Pella, Edessa-Bottiaia, Idomenai, Argos_Orestikon, Herakleia_Lynkestis, Pelion, Kreonion, Dimale, Lychnidos, Epidamnos, Sesarethos, Hyskana, Lissos, Istrie, Trogodyton_Teichos, Aigyssos, Tyragetaike_Kome, Tyras, Nikonion
+take_regions 87
+short_campaign outlive_factions
+getae tylis scordisci
+
+trinovantes
+hold_regions Castrum_Trinobantium, Oppidum_Trinobantium
+take_regions 22
+short_campaign outlive_factions
+belgae lusitani cimbri arverni
+
+tylis
+hold_regions Tylis, Debelton, Artakon_Teichos, Helis, Kapidaua, Skaidaoua, Serdike, Ouskoudama, Bizye, Salmydessos, Beroia-Thraike, Korelon_Teichos, Seuthopolis, Kabyle, Apollonia-Pontos, Mesembria, Odessos, Kallatis, Tomis, Istrie, Trogodyton_Teichos, Aigyssos, Triballon_Teichos, Oiskos, Saldensium, Argedava, Acidava, Netindava, Perinthos, Selymbria, Byzantium
+take_regions 31
+short_campaign outlive_factions
+pentapolis cabyle getae odrysians getae
+
+volcae
+hold_regions Menosgada, Strevinta, Coridorgis, Eburum, Damasia, Brigantium-Alpes, Bedacum, Cambodunum, Catenatium, Rucinatium, Sorviodurum, Boiodurum, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Poetovio, Tauriscium, Ara_Bona, Scarbantia, Mersovium, Susudata, Sopianae, Bormanum, Oppidum_Eraviscorum, Aquincum, Melocabus, Tencterium, Arctaunum, Budoris, Mattium, Sugambrium, Zumium, Redintuinum, Galaegia, Locoritum, Gravionarium, Variscium, Furgisatis, Alcimoennis, Mediolanium, Singone, Eburodunum-Boihaemum, Budorgis, Tarodunum, Riusiava, Helvetium, Canduum, Marvingium, Bicurgium
+take_regions 55
+short_campaign outlive_factions
+chatti boii suebi
+
+ptolemaic_rebels
+hold_regions Alexandria, Meroe, Opone, Marib, Petra, Omana, Kyrene, Carthage, Cirta, Seleucia, Baktra-Zariaspa, Patala, Nisa, Mazaka, Amaseia, Armavir, Gazaka, Pergamon, Rhodes, Nikaia, Ankyra, Ouskoudama, Pella, Ambrakia, Thermon, Orchomenos, Athens, Aigion, Sparta, Syracuse, Rome
+take_regions 200
+short_campaign outlive_factions
+ptolemaic
+
+seleucid_rebels
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 200
+short_campaign outlive_factions
+seleucid
+
+seleucid_rebels2
+hold_regions Seleucia, Alexandria, Petra, Kyrene, Meroe, Marib, Baktra-Zariaspa, Patala, Nisa, Sakon_Taphai, Gazaka, Armavir, Seraka, Pantikapaion, Mazaka, Amaseia, Ankyra, Nikaia, Pergamon, Rhodes, Sparta, Athens, Aigion, Orchomenos, Thermon, Pella, Ambrakia, Syracuse, Rome, Carthage, Rhizon, Ouskoudama, Dourostoron
+take_regions 200
+short_campaign outlive_factions
+seleucid
+
+; --- ported from Classic (new factions, 2026-05-23T13-08-08-736Z) ---
+
+anartes
+hold_regions Oppidum_Anartorum, Castrum_Anartorum, Anartium, Oppidum_Teuriscorum, Eraviscium, Mediolanium, Singone, Eburodunum-Boihaemum, Eburum, Coridorgis, Budorgis, Furgisatis, Alcimoennis, Drobeta, Arcidava, Tapae, Predavensium, Ansamenium, Anavum, Asanca, Parienna, Calisia, Strevinta, Zumium, Redintuinum, Galaegia, Sopianae, Bormanum, Oppidum_Eraviscorum, Aquincum, Canduum, Marvingium, Bicurgium, Didunium, Helisium, Mugilonium-Sibinium, Manimium, Leucaristus, Harium, Helveconium, Bunitium, Mersovium, Susudata, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Poetovio, Tauriscium, Ara_Bona, Scarbantia
+take_regions 56
+
+axum
+hold_regions Auxoume, Asachaiopolis, Megabaron_Kome, Kandragori, Meroe, Araba, Makoua, Attena, Mikra_Primis, Napata, Sekande, Aualites, Berenike-Deire, Tenoupsis, Marib, Mariama, Marasdou, Athloula, Mouza, Saue, Sakatia, Arabias_Emporion, Mesala, Sapphar, Darada, Koloe, Malao, Mosyllon, Boron, Sabai, Adaboulopolis, Sabbata, Adoulis, Berenike-Panchrysos, Berenike-Trogodytike, Tamna, Karipeta, Kane, Thabba, Sabbatha, Syagros, Sadasara, Moscha_Limen, Kossaion_Phrourion, Adrapana, Laodikeia-Media, Apameia-Rhagiane, Ekbatana
+take_regions 48
+
+bastarnae
+hold_regions Scurgum, Saldensium, Argedava, Acidava, Netindava, Dourostoron, Zusidava, Cumidava, Arpis, Zargidava, Tamasidava, Sarmizegetusa, Apulum, Rhatacensium, Napoca, Arcinna, Buridava, Patridava, Vibantarium, Istrie, Trogodyton_Teichos, Aigyssos, Niosson, Erakton, Leinon, Odessos, Kallatis, Tomis, Tyragetaike_Kome, Tyras, Nikonion, Olbia
+take_regions 32
+
+brigantes
+hold_regions Brigantium, Castrum_Itunae, Castrum_Brigantum, Oppidum_Brigantum, Castrum_Damnoniorum, Castrum_Epidiorum, Castrum_Hebudum, Castrum_Taexalorum, Castrum_Caledoniorum, Castrum_Carnonacarum, Castrum_Vacomagorum, Castrum_Lugiorum, Castrum_Smertarum, Castrum_Cornaviorum, Castrum_Orcadum, Castrum_Haemodaeorum, Bremenium, Castrum_Novantarum, Castrum_Otadinorum, Ratostabius, Oppidum_Silurum, Castrum_Demetarum, Oppidum_Ordovicum, Viroconium, Castrum_Cornoviorum, Castrum_Ordovicum, Castrum_Deceanglorum, Castrum_Monae, Oppidum_Dumnoniorum, Dumnonium, Castrum_Dumnoniorum, Regia, Castrum_Monaodum, Castrum_Reginorum, Oppidum_Cantiacorum, Castrum_Cantiacorum, Oppidum_Reginorum, Castrum_Catuvellaunorum, Castrum_Trinobantium, Catuvellaunium, Oppidum_Catuvellaunorum, Castrum_Corieltauviorum, Oppidum_Corieltauviorum, Condevincum, Venetium, Corsiolitum, Condate, Osismium, Oppidum_Durotrigum, Castrum_Durotrigum, Durotrigium, Sorviodunum, Oppidum_Dobunnorum, Castrum_Dobunnorum, Oppidum_Trinobantium, Castrum_Ecenorum, Rhaeba, Laberus, Ivernis, Dunum
+take_regions 60
+
+caledonii
+hold_regions Castrum_Caledoniorum, Castrum_Damnoniorum, Castrum_Epidiorum, Castrum_Hebudum, Castrum_Taexalorum, Castrum_Carnonacarum, Castrum_Vacomagorum, Castrum_Lugiorum, Castrum_Smertarum, Castrum_Cornaviorum, Castrum_Orcadum, Castrum_Haemodaeorum, Oppidum_Brigantum, Brigantium, Castrum_Brigantum, Castrum_Itunae, Bremenium, Castrum_Novantarum, Castrum_Otadinorum, Ratostabius, Oppidum_Silurum, Castrum_Demetarum, Oppidum_Ordovicum, Viroconium, Castrum_Cornoviorum, Castrum_Ordovicum, Castrum_Deceanglorum, Castrum_Monae, Oppidum_Dumnoniorum, Dumnonium, Castrum_Dumnoniorum, Regia, Castrum_Monaodum, Castrum_Reginorum, Oppidum_Cantiacorum, Castrum_Cantiacorum, Oppidum_Reginorum, Castrum_Catuvellaunorum, Castrum_Trinobantium, Catuvellaunium, Oppidum_Catuvellaunorum, Castrum_Corieltauviorum, Oppidum_Corieltauviorum, Condevincum, Venetium, Corsiolitum, Condate, Osismium, Oppidum_Durotrigum, Castrum_Durotrigum, Durotrigium, Sorviodunum, Oppidum_Dobunnorum, Castrum_Dobunnorum, Oppidum_Trinobantium, Castrum_Ecenorum, Rhaeba, Laberus, Ivernis, Dunum
+take_regions 60
+
+cantabri
+hold_regions Aracillum, Bergida, Segisamo, Virovesca, Beleia, Bracarium, Zoelarium, Lancia, Noega, Vettonium, Segovia, Cauca, Arbucala, Pallantia, Intercatia, Iacca, Andelos, Pompelo, Castrum_Bardyetarum, Oppidum_Vasconum, Tamusia, Mirobriga, Hermandica, Oppidum_Vettonum, Turba, Salduie, Segeda, Contrebia_Belaisca, Nertobriga, Termes, Lutia, Aratis, Numantia, Uxama, Turiaso, Contrebia_Leucada, Calagurris, Varia, Tude, Lansbricae, Lucensium, Brigantium-Artabria, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Sotium, Coequosa
+take_regions 49
+
+cantiaci
+hold_regions Castrum_Cantiacorum, Oppidum_Cantiacorum, Castrum_Reginorum, Oppidum_Reginorum, Castrum_Catuvellaunorum, Castrum_Trinobantium, Catuvellaunium, Oppidum_Catuvellaunorum, Castrum_Corieltauviorum, Oppidum_Corieltauviorum, Oppidum_Trinobantium, Castrum_Ecenorum, Oppidum_Dumnoniorum, Dumnonium, Castrum_Dumnoniorum, Oppidum_Durotrigum, Castrum_Durotrigum, Durotrigium, Sorviodunum, Oppidum_Dobunnorum, Castrum_Dobunnorum, Regia, Castrum_Monaodum, Oppidum_Ordovicum, Viroconium, Castrum_Cornoviorum, Castrum_Ordovicum, Castrum_Deceanglorum, Castrum_Monae, Ratostabius, Oppidum_Silurum, Castrum_Demetarum, Condevincum, Venetium, Corsiolitum, Condate, Osismium, Oppidum_Brigantum, Brigantium, Castrum_Brigantum, Castrum_Itunae, Bremenium, Castrum_Novantarum, Castrum_Otadinorum, Castrum_Damnoniorum, Castrum_Epidiorum, Castrum_Hebudum, Castrum_Taexalorum, Castrum_Caledoniorum, Castrum_Carnonacarum, Castrum_Vacomagorum, Castrum_Lugiorum, Castrum_Smertarum, Castrum_Cornaviorum, Castrum_Orcadum, Castrum_Haemodaeorum, Rhaeba, Laberus, Ivernis, Dunum
+take_regions 60
+
+carmo
+hold_regions Carmo, Urso, Ilipa, Iliturgi, Munda, Corduba, Erisana, Sisapo, Gades, Asta, Hispalis, Baria, Sexi, Iliberri, Basti, Mastia, Ilici, Castulo, Libisosa, Oretum, Carteia, Malaca, Onoba, Conistorgis, Myrtilis, Lacobriga, Nertobriga_Celticorum, Ebora, Mirobriga_Celticorum, Tamusia, Mirobriga, Hermandica, Oppidum_Vettonum, Salacia, Oxthracae, Moron, Oppidum_Lusitanorum, Olisipo, Conimbriga, Talabriga, Consabura, Toletum, Complutum
+take_regions 43
+
+cherusci
+hold_regions Ascalingium, Tulisurgium, Canduum, Marvingium, Bicurgium, Betasium, Marsium, Asciburgium, Munitium, Sunicium-Texandrium, Siatutanda, Teuderium, Chattuarium, Divodurum, Borbetomagus, Treverium, Oppidum_Treverorum, Caerosium, Antunnacum, Oppidum_Eburonum, Eburonium, Lugdunum-Menapia, Sturium-Marsacium, Frisium, Tecelia, Chasuarium, Tulifurdum, Ampsivarium, Fabiranum, Avionium, Anglium, Suardonium, Nuithonium, Eudosium, Harudium, Teutonium, Cimbrium, Strevinta, Zumium, Redintuinum, Galaegia, Furgisatis, Alcimoennis, Marionis, Cistuia, Coeonoenum, Reudignium, Menosgada, Locoritum, Gravionarium, Variscium, Scurgum, Atmonium, Mediolanium, Singone, Eburodunum-Boihaemum, Eburum, Coridorgis, Budorgis, Didunium, Helisium, Mugilonium-Sibinium, Manimium, Leucaristus, Harium, Helveconium, Bunitium, Mersovium, Susudata, Melocabus, Tencterium, Arctaunum, Budoris, Mattium, Sugambrium
+take_regions 75
+
+cisalpine_boii
+hold_regions Bononia, Mutina, Sarsina, Spina, Acerrae, Mediolanum, Mantua, Brixia, Verona, Patavium, Camunnium, Isarcium-Brixenetium, Vennonium, Veldidena, Friniatium, Stalia, Apua, Veleia, Clastidium, Comum, Oscela, Taurasia, Segusio, Salassium, Eporedia, Intimilium, Ingaunum, Carystum, Atria, Ateste, Altinum, Oppidum_Catalorum, Cosa, Falerii, Volsinii, Perusia, Arretium, Volaterrae, Pisae, Reate, Camerinum, Iguvium, Sena_Gallica
+take_regions 43
+
+gallaeci
+hold_regions Bracarium, Tude, Lansbricae, Lucensium, Brigantium-Artabria, Olisipo, Conimbriga, Talabriga, Onoba, Conistorgis, Myrtilis, Lacobriga, Nertobriga_Celticorum, Ebora, Mirobriga_Celticorum, Salacia, Oxthracae, Moron, Oppidum_Lusitanorum, Zoelarium, Lancia, Noega, Segisamo, Virovesca, Beleia, Bergida, Aracillum, Iacca, Andelos, Pompelo, Castrum_Bardyetarum, Oppidum_Vasconum, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Sotium, Coequosa
+take_regions 39
+
+garamantes
+hold_regions Garama, Bedirum, Sabae, Castrum_Psyllorum, Cidamus, Turris_Tamalleni, Zygantis, Capsa, Hekatompylos-Numidia, Thala, Sicca, Tipasa, Bulla, Tabudium, Castrum_Nicivorum, Cirta, Suthul, Gigthis, Macomades_Minores, Castrum_Macaeorum, Euphranta, Castrum_Atarantorum, Leptis, Sabrata, Oea, Meninx, Hibis, Augila, Alexandrou_Parembole, Ammonion, Marmarike_Oasis, Automala, Euesperides, Arsinoe-Kyrenaike, Ptolemais-Kyrenaike
+take_regions 35
+
+gauts
+hold_regions Gutum, Castrum_Gutarum, Oppidum_Gutarum, Hillevionum, Favonaeum-Firaesium, Veltaeum, Castrum_Osiorum, Finnium, Ascaucalis, Aestium, Didunium, Helisium, Mugilonium-Sibinium, Manimium, Leucaristus, Harium, Helveconium, Bunitium, Niosson, Erakton, Leinon, Scurgum, Atmonium, Olbia, Tyragetaike_Kome, Tyras, Nikonion, Istrie, Trogodyton_Teichos, Aigyssos, Trakana, Amadoka, Dourostoron, Zusidava, Cumidava, Arpis, Zargidava, Tamasidava, Skython_Taphai, Androphagon_Kome, Patridava, Vibantarium
+take_regions 42
+
+gerrha
+hold_regions Gerrha, Labai, Sabai-Chattenia, Koromanis, Kathara, Tylos, Omana, Omanon_Emporion, Batrasauaue, Kryptos_Limen, Poura, Alexandreia-Oreitaia, Alexandrou_Limen, Aristobathra, Seleukeia-Erythtreia, Ikaros, Teredon, Alexandreia-Charax, Uruk, Nippur, Babylon, Seleukeia-Soloke, Susa, Ouxion_Phrourion, Artemita, Chala, Apameia-Sittakene, Seleucia, Sittake, Thelme, Persepolis, Antiocheia-Persis, Gabai, Zetis, Alexandreia-Karmania
+take_regions 35
+
+hadhramaut
+hold_regions Sabbatha, Thabba, Sadasara, Kane, Syagros, Moscha_Limen, Tamna, Karipeta, Arabias_Emporion, Mesala, Sapphar, Mouza, Saue, Sakatia, Marib, Mariama, Marasdou, Athloula, Menambis, Nestos-Arabia, Karna, Naskos, Negrana, Badeo, Ausara, Iathrippa, Baklanaza, Egra, Leuke_Kome, Omana, Kathara, Tylos, Omanon_Emporion, Batrasauaue, Kryptos_Limen, Sabai-Chattenia, Labai, Koromanis, Aromaton_Emporion, Dioskoridous_Kome, Seleukeia-Erythtreia, Ikaros, Teredon, Alexandreia-Charax
+take_regions 44
+
+helvetii
+hold_regions Helvetium, Riusiava, Alcimoennis, Tarodunum, Genava, Sedunium, Vesontio, Viviscus, Brenodurum, Eburodunum-Veragria, Turicum, Cabillonum, Decetia, Alesia, Andemantunnum, Nasium, Eburobriga, Patavium, Camunnium, Isarcium-Brixenetium, Vennonium, Veldidena, Uxellodunum, Nitiobrogum, Petrocorium, Durotincum, Comum, Oscela, Santonium, Limonum, Maroventum, Ambilatrium, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia
+take_regions 41
+
+iberians
+hold_regions Harmozike-Seusamora, Iberopolis, Chalybikon_Phrourion, Taochikon_Phrourion, Baraza, Bakchia, Dioskourias, Pityous, Heniochon_Kome, Moschon_Kome, Sourion, Phasis, Sarapana, Kolchopolis, Koutatision, Kerketon_Kome, Naana, Sakasenopolis, Chadacha, Chabala, Legaiopolis, Drilaikon_Phrourion, Trapezous, Seltia, Artageira, Armavir, Olane, Gorniai, Ptoua, Arsarata, Kamakh, Erez, Karana, Mossynoikon_Metropolis, Makronopolis, Chaldaikon_Phrourion, Gymnias, Kaballa, Thospia
+take_regions 40
+
+ilergetes
+hold_regions Atanagrus, Ilerda, Bolskan, Hibera, Ilercavonium, Cissa, Barkeno, Iesso, Auso, Castrum_Bergium, Oppidum_Indicetum, Emporion, Rhode, Iacca, Andelos, Pompelo, Castrum_Bardyetarum, Oppidum_Vasconum, Turba, Salduie, Segeda, Contrebia_Belaisca, Nertobriga, Termes, Lutia, Aratis, Numantia, Uxama, Turiaso, Contrebia_Leucada, Calagurris, Varia, Illiberis-Ruscino, Narbo, Cerretanium, Andosinium, Tolosa, Gabalium
+take_regions 38
+
+ingauni
+hold_regions Ingaunum, Intimilium, Carystum, Friniatium, Stalia, Apua, Veleia, Clastidium, Taurasia, Segusio, Salassium, Eporedia, Cosa, Falerii, Volsinii, Perusia, Arretium, Volaterrae, Pisae, Massalia, Aegitna, Glanum, Deciatium, Avaticium, Antipolis, Eburodunum, Segustero, Solonium, Tricastinium, Oppidum_Indicetum, Emporion, Rhode, Agathe, Nemausus, Illiberis-Ruscino, Narbo, Venicum
+take_regions 37
+
+iverni
+hold_regions Ivernis, Dunum, Rhaeba, Laberus, Regia, Castrum_Monaodum, Oppidum_Ordovicum, Viroconium, Castrum_Cornoviorum, Castrum_Ordovicum, Castrum_Deceanglorum, Castrum_Monae, Ratostabius, Oppidum_Silurum, Castrum_Demetarum, Oppidum_Dumnoniorum, Dumnonium, Castrum_Dumnoniorum, Bremenium, Castrum_Novantarum, Castrum_Otadinorum, Condevincum, Venetium, Corsiolitum, Condate, Osismium, Tude, Lansbricae, Lucensium, Brigantium-Artabria, Castrum_Damnoniorum, Castrum_Epidiorum, Castrum_Hebudum, Castrum_Taexalorum, Castrum_Caledoniorum, Castrum_Carnonacarum, Castrum_Vacomagorum, Castrum_Lugiorum, Castrum_Smertarum, Castrum_Cornaviorum, Castrum_Orcadum, Castrum_Haemodaeorum, Zoelarium, Lancia, Noega, Bracarium, Segisamo, Virovesca, Beleia, Bergida, Aracillum, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Sotium, Coequosa, Iacca, Andelos, Pompelo, Castrum_Bardyetarum, Oppidum_Vasconum, Santonium, Limonum, Maroventum, Ambilatrium
+take_regions 67
+
+mauri
+hold_regions Volubilis, Molochath, Castrum_Baniurarum, Miglis, Siga, Auzea, Tamuda, Sala, Rusadir, Lixus, Tingi, Castrum_Autololum, Rutubis, Saldae, Iol, Icosium, Carteia, Malaca, Gades, Asta, Hispalis, Urso, Ilipa, Iliturgi, Carmo, Munda, Corduba, Erisana, Sisapo
+take_regions 29
+
+musulamii
+hold_regions Castrum_Gaetulorum, Miglis, Hekatompylos-Numidia, Thala, Sicca, Tipasa, Bulla, Tabudium, Castrum_Nicivorum, Turris_Tamalleni, Zygantis, Capsa, Cidamus, Bedirum, Garama, Castrum_Psyllorum, Castrum_Autololum, Rutubis, Saldae, Iol, Icosium, Cirta, Suthul, Castrum_Macaeorum, Euphranta, Castrum_Atarantorum, Leptis, Sabrata, Oea, Meninx, Hippo, Rusicade, Vaga, Utica, Hippo_Diarrhytus, Thapsus, Leptis_Minor, Hadrumetum, Gigthis, Macomades_Minores, Tamuda, Sala, Rusadir, Lixus, Tingi, Castrum_Baniurarum, Siga, Auzea, Althiburos, Mactaris, Zama, Thugga, Volubilis, Molochath, Tunes, Karchedonike_Neapolis, Carthage, Clupea
+take_regions 58
+
+osismii
+hold_regions Osismium, Condevincum, Venetium, Corsiolitum, Condate, Vindinum, Diablintium, Esuvium, Venellium, Veliocassium, Lexovium, Caletium, Santonium, Limonum, Maroventum, Ambilatrium, Oppidum_Dumnoniorum, Dumnonium, Castrum_Dumnoniorum, Uxellodunum, Nitiobrogum, Petrocorium, Durotincum, Argentomagus, Avaricum, Leprosum, Ambiacum, Suessionium, Bellovacium, Viromanduium, Samarobriva, Atrebatium, Morinium, Menapium, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Sotium, Coequosa, Agedincum, Cenabum, Scoliva, Senonium, Lutetia, Iatinum
+take_regions 47
+
+roman_senate
+hold_regions Han_Settlement, Fregellae, Praeneste, Rome
+take_regions 4
+
+royal_sarmatians
+hold_regions Basilikon_Sauromaton_Taphai, Sauromaton_Taphai, Perierbidon_Taphai, Skython_Taphai, Androphagon_Kome, Hygreis, Skythopolis, Naskopolis, Sanaron_Taphai, Seraka, Didouron_Taphai, Ouspe, Isondon_Taphai, Hexapolis, Nauaris, Niosson, Erakton, Leinon, Trakana, Amadoka, Saldensium, Argedava, Acidava, Netindava, Dourostoron, Zusidava, Cumidava, Arpis, Zargidava, Tamasidava, Patridava, Vibantarium, Sarmizegetusa, Apulum, Rhatacensium, Napoca, Arcinna, Buridava, Drobeta, Arcidava, Tapae, Predavensium, Ansamenium, Oppidum_Teuriscorum, Eraviscium, Oppidum_Anartorum, Castrum_Anartorum, Sopianae, Bormanum, Oppidum_Eraviscorum, Aquincum, Teuriscium, Anavum, Asanca, Parienna, Anartium, Calisia
+take_regions 57
+
+royal_scythians
+hold_regions Skythopolis, Skython_Taphai, Basilikon_Skython_Taphai, Skythike_Palaiopolis, Androphagon_Kome, Chersonesos, Lampas, Karkine, Sauromaton_Taphai, Perierbidon_Taphai, Basilikon_Sauromaton_Taphai, Isondon_Taphai, Hexapolis, Nauaris, Kremnoi, Tanais, Trakana, Amadoka, Niosson, Erakton, Leinon, Skopelos, Gerousa, Zygopolis, Gorgippia, Hermonassa, Phanagoreia, Dioskourias, Pityous, Heniochon_Kome, Sakon_Taphai, Sakaraulon_Taphai, Tsats, Sanaron_Taphai, Seraka, Didouron_Taphai, Ouspe, Amyrgon_Taphai, Attason_Taphai, Massageton_Taphai, Chorasmia, Alikodra, Aornos-Baktria, Baktra-Zariaspa, Alexandreia-Oxeiane, Oxeiana, Indikomordana, Gadilon, Amisos, Themiskyra, Kotyora, Kerasous, Hygreis, Naskopolis
+take_regions 54
+
+silures
+hold_regions Ratostabius, Oppidum_Silurum, Castrum_Demetarum, Oppidum_Ordovicum, Viroconium, Castrum_Cornoviorum, Castrum_Ordovicum, Castrum_Deceanglorum, Castrum_Monae, Oppidum_Dumnoniorum, Dumnonium, Castrum_Dumnoniorum, Condevincum, Venetium, Corsiolitum, Condate, Osismium, Oppidum_Brigantum, Brigantium, Castrum_Brigantum, Castrum_Itunae, Regia, Castrum_Monaodum, Bremenium, Castrum_Novantarum, Castrum_Otadinorum, Castrum_Damnoniorum, Castrum_Epidiorum, Castrum_Hebudum, Castrum_Taexalorum, Castrum_Caledoniorum, Castrum_Carnonacarum, Castrum_Vacomagorum, Castrum_Lugiorum, Castrum_Smertarum, Castrum_Cornaviorum, Castrum_Orcadum, Castrum_Haemodaeorum, Castrum_Reginorum, Oppidum_Cantiacorum, Castrum_Cantiacorum, Oppidum_Reginorum, Castrum_Catuvellaunorum, Castrum_Trinobantium, Catuvellaunium, Oppidum_Catuvellaunorum, Castrum_Corieltauviorum, Oppidum_Corieltauviorum, Oppidum_Trinobantium, Castrum_Ecenorum, Oppidum_Durotrigum, Castrum_Durotrigum, Durotrigium, Sorviodunum, Oppidum_Dobunnorum, Castrum_Dobunnorum, Rhaeba, Laberus, Ivernis, Dunum
+take_regions 60
+
+sotiates
+hold_regions Sotium, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Coequosa, Santonium, Limonum, Maroventum, Ambilatrium, Uxellodunum, Nitiobrogum, Petrocorium, Durotincum, Agathe, Nemausus, Illiberis-Ruscino, Narbo, Oppidum_Indicetum, Emporion, Rhode, Cerretanium, Andosinium, Tolosa, Gabalium, Atanagrus, Ilerda, Bolskan, Segisamo, Virovesca, Beleia, Bergida, Aracillum, Iacca, Andelos, Pompelo, Castrum_Bardyetarum, Oppidum_Vasconum
+take_regions 39
+
+sugambri
+hold_regions Sugambrium, Betasium, Marsium, Asciburgium, Munitium, Sunicium-Texandrium, Siatutanda, Teuderium, Chattuarium, Tulisurgium, Ascalingium, Divodurum, Borbetomagus, Treverium, Oppidum_Treverorum, Caerosium, Antunnacum, Oppidum_Eburonum, Eburonium, Morinium, Menapium, Lugdunum-Menapia, Sturium-Marsacium, Frisium, Suessionium, Bellovacium, Viromanduium, Samarobriva, Atrebatium, Ceutronium, Nervium, Pleumoxium, Durocortorum, Geidumnium, Tecelia, Chasuarium, Tulifurdum, Ampsivarium, Fabiranum, Avionium, Anglium, Suardonium, Nuithonium, Eudosium, Harudium, Teutonium, Cimbrium, Marionis, Cistuia, Coeonoenum, Reudignium, Melocabus, Tencterium, Arctaunum, Budoris, Mattium
+take_regions 56
+
+taurisci
+hold_regions Poetovio, Tauriscium, Acervo, Ara_Bona, Nauportos, Scarbantia, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Cibalae, Segestica, Idassa, Scardona, Argyruntum, Athyinites, Metulum, Tarsatica, Neviodunum, Patavium, Camunnium, Isarcium-Brixenetium, Vennonium, Veldidena, Nesactium, Tergeste, Sopianae, Bormanum, Oppidum_Eraviscorum, Aquincum, Drobeta, Arcidava, Tapae, Predavensium, Ansamenium, Oppidum_Teuriscorum, Eraviscium, Oppidum_Anartorum, Castrum_Anartorum, Teuriscium
+take_regions 43
+
+treveri
+hold_regions Treverium, Oppidum_Treverorum, Divodurum, Borbetomagus, Caerosium, Betasium, Marsium, Asciburgium, Munitium, Sunicium-Texandrium, Siatutanda, Teuderium, Chattuarium, Melocabus, Tencterium, Arctaunum, Budoris, Mattium, Sugambrium, Antunnacum, Oppidum_Eburonum, Eburonium, Morinium, Menapium, Durocortorum, Geidumnium, Lugdunum-Menapia, Sturium-Marsacium, Frisium, Andemantunnum, Nasium, Eburobriga, Menosgada, Locoritum, Gravionarium, Variscium, Tarodunum, Riusiava, Helvetium
+take_regions 39
+
+venedae
+hold_regions Venedium, Aestium, Ascaucalis, Marionis, Cistuia, Coeonoenum, Reudignium, Didunium, Helisium, Mugilonium-Sibinium, Manimium, Leucaristus, Harium, Helveconium, Bunitium, Scurgum, Atmonium, Anavum, Asanca, Parienna, Anartium, Calisia, Oppidum_Teuriscorum, Eraviscium, Oppidum_Anartorum, Castrum_Anartorum, Strevinta, Zumium, Redintuinum, Galaegia, Mediolanium, Singone, Eburodunum-Boihaemum, Eburum, Coridorgis, Budorgis, Teuriscium
+take_regions 37
+
+veneti
+hold_regions Patavium, Ateste, Altinum, Atria, Oppidum_Catalorum, Mantua, Brixia, Verona, Camunnium, Isarcium-Brixenetium, Vennonium, Veldidena, Acervo, Nauportos, Carnium, Teurnia, Saevatium-Laiancium, Noreia, Ambisontium, Gamavodurum, Lentia, Idassa, Scardona, Argyruntum, Athyinites, Metulum, Tarsatica, Neviodunum, Nesactium, Tergeste, Melaina_Korkyra, Issa, Pharos, Epetion-Salona, Tragourion, Promona, Sarsina, Bononia, Mutina, Spina, Asculum, Ankon, Reate, Camerinum, Iguvium, Sena_Gallica
+take_regions 46
+
+volcae_gallia
+hold_regions Nemausus, Tolosa, Agathe, Cerretanium, Andosinium, Gabalium, Eburodunum, Segustero, Solonium, Tricastinium, Vienna, Axima, Brioratis, Uxellodunum, Nitiobrogum, Petrocorium, Durotincum, Illiberis-Ruscino, Narbo, Oppidum_Indicetum, Emporion, Rhode, Massalia, Aegitna, Glanum, Deciatium, Avaticium, Antipolis, Castrum_Bigerrorum, Tarusatium, Tarbellium, Elimberrum, Elusatium, Sotium, Coequosa, Indiciacum, Arvernium, Rodumna, Eborolacum
+take_regions 39
+
+albanians
+hold_regions Chabala, Chadacha
+take_regions 22
+
+ambrones
+hold_regions Carrodunum-Ambronia
+take_regions 21
+
+aorsi
+hold_regions Hexapolis, Aorson_Taphai
+take_regions 22
+
+apuani
+hold_regions Apua
+take_regions 21
+
+arados
+hold_regions Arados-Marathos
+take_regions 21
+
+armenia_minor
+hold_regions Kamakh, Erez, Karana
+take_regions 23
+
+arse
+hold_regions Arse
+take_regions 21
+
+arshi
+hold_regions Arshi
+take_regions 21
+
+asta
+hold_regions Asta
+take_regions 21
+
+astures
+hold_regions Lancia, Noega
+take_regions 22
+
+aulerci
+hold_regions Diablintium, Vindinum, Scoliva
+take_regions 23
+
+basti
+hold_regions Basti
+take_regions 21
+
+belli
+hold_regions Segeda, Contrebia_Belaisca
+take_regions 22
+
+bituriges
+hold_regions Avaricum, Argentomagus, Leprosum
+take_regions 23
+
+breuni
+hold_regions Veldidena
+take_regions 21
+
+bruttians
+hold_regions Consentia, Petelia
+take_regions 22
+
+buri
+hold_regions Buridava, Arcinna
+take_regions 22
+
+cadurci
+hold_regions Uxellodunum
+take_regions 21
+
+capua
+hold_regions Capua
+take_regions 21
+
+carpetani
+hold_regions Toletum, Consabura
+take_regions 22
+
+catuvellauni
+hold_regions Catuvellaunium, Castrum_Catuvellaunorum, Oppidum_Catuvellaunorum
+take_regions 23
+
+celtici
+hold_regions Ebora, Nertobriga_Celticorum
+take_regions 22
+
+cenomani
+hold_regions Brixia, Verona, Mantua
+take_regions 23
+
+characene
+hold_regions Alexandreia-Charax, Teredon, Ikaros, Tylos
+take_regions 24
+
+chauci
+hold_regions Fabiranum, Tecelia
+take_regions 22
+
+chorasmia
+hold_regions Chorasmia, Chomara, Trybaktra, Alikodra
+take_regions 24
+
+colchians
+hold_regions Koutatision, Sourion
+take_regions 22
+
+corsi
+hold_regions Venicum
+take_regions 21
+
+costoboci
+hold_regions Vibantarium, Patridava, Coisstobocum
+take_regions 23
+
+crobyzi
+hold_regions Kapidaua
+take_regions 21
+
+dumnonii
+hold_regions Castrum_Dumnoniorum, Dumnonium, Oppidum_Dumnoniorum
+take_regions 23
+
+durotriges
+hold_regions Castrum_Durotrigum, Durotrigium, Sorviodunum, Oppidum_Durotrigum
+take_regions 24
+
+eburones
+hold_regions Eburonium, Oppidum_Eburonum
+take_regions 22
+
+eravisci
+hold_regions Aquincum, Bormanum, Oppidum_Eraviscorum, Eraviscium
+take_regions 24
+
+frisii
+hold_regions Frisium
+take_regions 21
+
+gades
+hold_regions Gades
+take_regions 21
+
+heniochi
+hold_regions Heniochon_Kome
+take_regions 21
+
+hermunduri
+hold_regions Mersovium
+take_regions 21
+
+himyar
+hold_regions Sapphar, Mesala, Arabias_Emporion
+take_regions 23
+
+iazyges
+hold_regions Kremnoi
+take_regions 21
+
+ilici
+hold_regions Ilici
+take_regions 21
+
+indians
+hold_regions Peukelaotis, Arigaion, Massaga, Nagara-Nysa, Bazira-Ora, Alexandreia-Boukephala, Aornos-Embolima, Alexandreia-Kaukasia, Sopeithopolis, Sibopolis, Glausaiopolis, Ortospana, Nikaia-Hydaspes, Amakatis, Agalassopolis
+take_regions 35
+
+kucha
+hold_regions Kushi
+take_regions 21
+
+lacetani
+hold_regions Iesso
+take_regions 21
+
+langobardi
+hold_regions Marionis
+take_regions 21
+
+lihyan
+hold_regions Egra, Ausara
+take_regions 22
+
+lucanians
+hold_regions Grumentum, Potentia
+take_regions 22
+
+mamertines
+hold_regions Messana
+take_regions 21
+
+marcomanni
+hold_regions Galaegia
+take_regions 21
+
+messapians
+hold_regions Brundisium, Uria
+take_regions 22
+
+minaeans
+hold_regions Karna, Naskos, Nestos-Arabia, Negrana, Thoumata
+take_regions 25
+
+mossynoeci
+hold_regions Mossynoikon_Metropolis
+take_regions 21
+
+nasamones
+hold_regions Augila, Castrum_Psyllorum
+take_regions 22
+
+nervii
+hold_regions Nervium
+take_regions 21
+
+norici
+hold_regions Noreia, Gamavodurum, Lentia
+take_regions 23
+
+ordovices
+hold_regions Castrum_Ordovicum, Oppidum_Ordovicum
+take_regions 22
+
+oretani
+hold_regions Castulo, Oretum
+take_regions 22
+
+palmyra
+hold_regions Palmyra
+take_regions 21
+
+persis
+hold_regions Persepolis, Pasargadai
+take_regions 22
+
+picentes
+hold_regions Asculum
+take_regions 21
+
+qataban
+hold_regions Tamna, Karipeta, Mariama
+take_regions 23
+
+quadi
+hold_regions Redintuinum
+take_regions 21
+
+rhoxolani
+hold_regions Hygreis
+take_regions 21
+
+salassi
+hold_regions Salassium, Eporedia
+take_regions 22
+
+salluvii
+hold_regions Glanum, Avaticium
+take_regions 22
+
+samnites
+hold_regions Bovianum, Compsa
+take_regions 22
+
+sardinians
+hold_regions Cornus, Uselis
+take_regions 22
+
+sarsinates
+hold_regions Sarsina
+take_regions 21
+
+senones
+hold_regions Agedincum, Senonium, Eburobriga
+take_regions 23
+
+sequani
+hold_regions Vesontio, Brenodurum, Turicum
+take_regions 23
+
+sidon
+hold_regions Sidon
+take_regions 21
+
+sophene
+hold_regions Karkathiokerta, Tomisa, Nymphaios, Zeugma-Kommagene
+take_regions 24
+
+tencteri
+hold_regions Tencterium
+take_regions 21
+
+teurisci
+hold_regions Teuriscium, Oppidum_Teuriscorum
+take_regions 22
+
+thamud
+hold_regions Baklanaza
+take_regions 21
+
+timbuktu
+hold_regions Nigira_Metropolis
+take_regions 21
+
+tyragetae
+hold_regions Tyragetaike_Kome
+take_regions 21
+
+tyre
+hold_regions Tyre
+take_regions 21
+
+ubii
+hold_regions Arctaunum
+take_regions 21
+
+usipetes
+hold_regions Melocabus
+take_regions 21
+
+vaccaei
+hold_regions Pallantia, Intercatia
+take_regions 22
+
+vascones
+hold_regions Pompelo, Andelos
+take_regions 22
+
+veneti_gallia
+hold_regions Venetium
+take_regions 21
+
+vettones
+hold_regions Vettonium, Mirobriga
+take_regions 22
+
+vindelici
+hold_regions Rucinatium, Catenatium, Damasia, Sorviodurum
+take_regions 24
+
+volsinii
+hold_regions Volsinii, Rome, Falerii, Praeneste, Reate, Camerinum, Cosa, Corfinium, Fregellae, Teate, Perusia, Arretium, Iguvium, Larinum, Sena_Gallica, Volaterrae, Maleventum, Neapolis, Pisae, Arpi, Paestum, Canusium, Venusia, Thurii, Croton, Epizephyrian_Locri, Metapontum, Tarentum, Uria, Brundisium, Compsa, Bovianum, Capua, Consentia, Petelia, Grumentum, Potentia, Rhegium, Asculum, Ankon, Friniatium, Stalia, Apua, Mantua, Sarsina, Bononia, Mutina, Spina, Atria, Tauromenion, Tyndaris, Messana, Panormos, Melite, Lilybaion, Entella, Segesta, Eryx, Acragas, Herakleia_Minoa, Myttistratum, Enna, Katane, Syracuse, Kamarina, Leontinoi, Veleia, Clastidium, Intimilium, Ingaunum, Carystum, Taurasia, Segusio, Salassium, Eporedia, Brixia, Verona, Acerrae, Mediolanum, Comum, Oscela, Ateste, Altinum, Oppidum_Catalorum, Patavium
+take_regions 85
+
