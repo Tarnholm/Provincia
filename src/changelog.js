@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.660",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**One-shot clear of the stale army-unit overlay from the 0.9.654–0.9.658 duplicate-first-name bug.** That bug silently wrote staged Reate / Pisae / Maleventum etc. edits to the WRONG character's army (the first one matching a shared first name), and the entry moved to `appliedArmyUnits` as an overlay — which then hid the real garrison cards from the panel so you couldn't × the units you wanted to remove. 0.9.659 fixed the future writes; this release clears the stale overlay on first launch so the real garrison reappears. Re-stage your Reate edit and Apply again — the IPC will now write to Servius Fulvius_Flaccus's army (line 7170) instead of Servius Ogulnius_Gallus's (line 7099)." },
+    ],
+  },
+  {
     version: "0.9.659",
     date: "2026-05-26",
     items: [
