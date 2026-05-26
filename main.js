@@ -141,7 +141,7 @@ ipcMain.handle("reveal-log-file", () => {
 // units (army composition, soldier counts), and settlement built-buildings
 // from RTW:R save binaries. See calibration/PROGRESS_LOG.md for the reverse
 // engineering notes.
-const { findCharacterRecords, findCharacterRegion } = require("./src/characterParser.js");
+const { findCharacterRecords, findCharacterRegion, countDeadPoolRecords } = require("./src/characterParser.js");
 const { findScriptedCharacters: findCharsV2 } = require("./src/characterParserV2.js");
 const { parseLine: parseLogLineV2 } = require("./src/messageLogParser.js");
 const { findUnitRecords } = require("./src/unitParser.js");
@@ -170,6 +170,7 @@ const {
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
   deriveEngineFactionOrder: cxDeriveEngineOrder,
+  countEngineCharacters,
 } = require("./src/saveCrackerExtras.js");
 const descrGen = require("./src/descrStratGeneral.js");
 
@@ -2035,6 +2036,30 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     return out;
   })();
 
+  // 2026-05-26: entity-budget health counts. The engine's ~65,536 (2^16)
+  // pointer registry is shared between live characters and dead-pool dynasty
+  // records; long campaigns bloat the dead pool steadily (~8.6/turn) and
+  // crash when the cap is approached. Surfacing these in the UI lets the
+  // user see where any save sits in that budget.
+  //   - aliveCount      = engine CHARACTER records minus the in-place dead
+  //                       still in the active block (the signature catches
+  //                       both; in-place dead are reported separately).
+  //   - deadCount       = per-faction dynasty-pool records (the bloat source).
+  //   - inPlaceDeadCount= chars flagged isDead by the v1 parser this turn.
+  // Cost: ~50ms (dead scan) + ~350ms (engine walk) on a 70 MB save. Run only
+  // at snapshot time — the values flow into renderer state and the UI reads
+  // them from there.
+  let aliveCount = null, deadCount = null, inPlaceDeadCount = null;
+  try {
+    inPlaceDeadCount = (characters || []).filter(c => c.isDead).length;
+    const engineChars = countEngineCharacters(saveBuf);
+    aliveCount = engineChars - inPlaceDeadCount;
+    deadCount = countDeadPoolRecords(saveBuf);
+    console.log(`[entity-budget] alive=${aliveCount} dead-pool=${deadCount} in-place-dead=${inPlaceDeadCount} engine-chars=${engineChars}`);
+  } catch (err) {
+    console.warn("[entity-budget] count failed:", err && err.message);
+  }
+
   return {
     characters,
     units,
@@ -2046,6 +2071,9 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     liveArmies,
     currentYear,
     currentTurn: readTurnFromSave(saveBuf),
+    aliveCount,
+    deadCount,
+    inPlaceDeadCount,
   };
 }
 
@@ -3138,10 +3166,47 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
     const lines = text.split(/\r?\n/);
     const byRegion = locator && locator.region != null;
     const byCoord = locator && typeof locator.x === "number" && typeof locator.y === "number";
-    if (!byRegion && !byCoord) return { ok: false, error: "locator needs region or x/y" };
+    const byCharacter = locator && typeof locator.character === "string" && locator.character.length > 0;
+    if (!byRegion && !byCoord && !byCharacter) return { ok: false, error: "locator needs region, x/y, or character" };
     const wantFac = String(faction || "").toLowerCase();
     let unitStart = -1, unitEnd = -1, indent = "\t";
-    if (byCoord) {
+    // 0.9.651: when locator.character is set (a named bodyguard commander
+    // — e.g. Appius), find the character record in the faction's block,
+    // then its `army { }` unit lines. Runs BEFORE the region-mode lookup
+    // so a "garrison" whose units actually live inside a character army
+    // (very common — provincial capitals + every named general) resolves
+    // correctly. The region-mode `garrisoned_army` lookup below is the
+    // fallback for the leaderless garrison case.
+    if (byCharacter) {
+      let curFac = null;
+      const wantChar = String(locator.character).trim();
+      for (let i = 0; i < lines.length; i++) {
+        const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
+        if (fm) { curFac = fm[1].toLowerCase(); continue; }
+        if (wantFac && curFac !== wantFac) continue;
+        // descr_strat character header: `character\tFirstName Family, named character, ...`
+        const cm = lines[i].match(/^character\s*,?\s*([^,]+?)\s*,\s*named character/i);
+        if (!cm) continue;
+        const firstName = cm[1].trim().split(/\s+/)[0];
+        if (firstName !== wantChar) continue;
+        // Walk forward to this character's `army` block.
+        for (let j = i + 1; j < lines.length && j < i + 40; j++) {
+          if (/^character[\s,]/.test(lines[j])) break;
+          if (/^faction\s+/.test(lines[j])) break;
+          if (/^\s*army\b/.test(lines[j])) {
+            let k = j + 1;
+            while (k < lines.length && /^\s*unit\s+/.test(lines[k])) {
+              if (unitStart < 0) { unitStart = k; indent = (lines[k].match(/^(\s*)/) || ["", "\t"])[1]; }
+              k++;
+            }
+            unitEnd = k;
+            break;
+          }
+        }
+        if (unitStart >= 0) break;
+      }
+    }
+    if (unitStart < 0 && byCoord) {
       // Find the character at (x,y) [+ faction], then its `army` block's units.
       let curFac = null;
       for (let i = 0; i < lines.length; i++) {
@@ -3161,8 +3226,9 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
           }
         }
       }
-    } else {
-      // garrisoned_army for region.
+    }
+    if (unitStart < 0 && byRegion) {
+      // garrisoned_army for region — fallback when character / x,y lookups didn't hit.
       let curFac = null;
       for (let i = 0; i < lines.length; i++) {
         const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i); if (fm) { curFac = fm[1].toLowerCase(); continue; }
@@ -3184,8 +3250,16 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
     }
     if (unitStart < 0 && !byRegion) return { ok: false, error: "army block not found" };
     if (unitStart < 0) return { ok: false, error: "garrison block not found" };
-    const fmtUnit = (u) => `${indent}unit\t\t${u.name}\t\t\texp ${u.exp || 0} armour ${u.armour || 0} weapon_lvl ${u.weapon || 0}`;
-    const newLines = units.filter((u) => u && u.name).map(fmtUnit);
+    // 0.9.651: accept either shape — pendingArmyUnits from the Recruitable-
+    // click path stores {unit, exp, armour, weapon_lvl}; the original
+    // ArmyUnitsEditor path stores {name, exp, armour, weapon}. Normalize
+    // before formatting so both write valid descr_strat lines.
+    const unitName = (u) => u && (u.name || u.unit);
+    const unitExp = (u) => (u && (u.exp ?? u.xp)) || 0;
+    const unitArm = (u) => (u && u.armour) || 0;
+    const unitWep = (u) => (u && (u.weapon ?? u.weapon_lvl)) || 0;
+    const fmtUnit = (u) => `${indent}unit\t\t${unitName(u)}\t\t\texp ${unitExp(u)} armour ${unitArm(u)} weapon_lvl ${unitWep(u)}`;
+    const newLines = units.filter((u) => unitName(u)).map(fmtUnit);
     lines.splice(unitStart, unitEnd - unitStart, ...newLines);
     fs.writeFileSync(dsPath, lines.join(eol), "utf8");
     try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[army-units] re-parse failed:", e && e.message); }
@@ -7318,6 +7392,9 @@ async function reparseLatestSave() {
       newData.currentYear = extras.currentYear;
       newData.currentTurn = extras.currentTurn;
       newData.liveArmies = extras.liveArmies;
+      newData.aliveCount = extras.aliveCount;
+      newData.deadCount = extras.deadCount;
+      newData.inPlaceDeadCount = extras.inPlaceDeadCount;
       // Bridge v1 chars' traits/ancillaries/firstName/lastName onto the
       // role-anchored characterExtras entries via (x, y) coord match.
       // parseCharacterExtras finds RIS chars that v1 misses (different
@@ -7593,6 +7670,9 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
           lastSaveData.currentYear = initialExtras.currentYear;
           lastSaveData.currentTurn = initialExtras.currentTurn;
           lastSaveData.liveArmies = initialExtras.liveArmies;
+          lastSaveData.aliveCount = initialExtras.aliveCount;
+          lastSaveData.deadCount = initialExtras.deadCount;
+          lastSaveData.inPlaceDeadCount = initialExtras.inPlaceDeadCount;
           try {
             if (lastSaveData.characterExtras && initialExtras.characters) {
               const bridged = cxBridgeV1Traits(lastSaveData.characterExtras, initialExtras.characters, modAncillaryNames);
@@ -8021,6 +8101,9 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
         lastSaveData.currentYear = extras.currentYear;
         lastSaveData.currentTurn = extras.currentTurn;
         lastSaveData.liveArmies = extras.liveArmies;
+        lastSaveData.aliveCount = extras.aliveCount;
+        lastSaveData.deadCount = extras.deadCount;
+        lastSaveData.inPlaceDeadCount = extras.inPlaceDeadCount;
         // Same bridge as in save-watch path: copy traits from v1 onto the
         // role-anchored characterExtras entries via (x, y) coord match.
         try {

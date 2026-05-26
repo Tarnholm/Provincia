@@ -1562,6 +1562,15 @@ function App() {
     setDashLoading(true);
     window.electronAPI.validateMod().then(r => setDashResult(r)).catch(e => setDashResult({ error: e?.message })).finally(() => setDashLoading(false));
   }, [showDashboard]);
+  // 2026-05-26: Save entity-budget health — engine's ~65,536 (2^16) pointer
+  // registry is shared between live characters AND per-faction dynasty-pool
+  // (dead) records. Long campaigns bloat the dead pool steadily (~8.6/turn);
+  // approaching the cap risks save corruption. Counts come from main.js in
+  // parseCharactersAndUnits (one snapshot-time scan; not per-render).
+  const [aliveCount, setAliveCount] = useState(null);
+  const [deadCount, setDeadCount] = useState(null);
+  const [inPlaceDeadCount, setInPlaceDeadCount] = useState(null);
+  const [showEntityBudget, setShowEntityBudget] = useState(false);
   useEffect(() => {
     const onKey = (e) => {
       // Open/close on Ctrl-K / Cmd-K.
@@ -4467,6 +4476,11 @@ function App() {
       if (data && data.initialOwnerByCity) setInitialOwnerByCity(data.initialOwnerByCity);
       if (data && data.initialCreatorByCity) setInitialCreatorByCity(data.initialCreatorByCity);
       if (data && data.currentOwnerByCity) setCurrentOwnerByCity(data.currentOwnerByCity);
+      // 2026-05-26: entity-budget health counts (alive/dead/in-place-dead).
+      // Refreshed every snapshot; UI reads from state, never recomputes.
+      if (data && data.aliveCount != null) setAliveCount(data.aliveCount);
+      if (data && data.deadCount != null) setDeadCount(data.deadCount);
+      if (data && data.inPlaceDeadCount != null) setInPlaceDeadCount(data.inPlaceDeadCount);
       if (file) setLiveSaveFile(file);
       // Re-detect faction on every save — catches campaign switches while live
       // mode stays active (e.g. user quits Dummies and loads a Julii save).
@@ -4556,6 +4570,10 @@ function App() {
         if (d.initialOwnerByCity) setInitialOwnerByCity(d.initialOwnerByCity);
         if (d.initialCreatorByCity) setInitialCreatorByCity(d.initialCreatorByCity);
         if (d.currentOwnerByCity) setCurrentOwnerByCity(d.currentOwnerByCity);
+        // 2026-05-26: entity-budget health counts on initial load too.
+        if (d.aliveCount != null) setAliveCount(d.aliveCount);
+        if (d.deadCount != null) setDeadCount(d.deadCount);
+        if (d.inPlaceDeadCount != null) setInPlaceDeadCount(d.inPlaceDeadCount);
         // Cracker-extras were ONLY wired into the onSaveSnapshot (file-change)
         // handler, never the initial live-load path — so on first Live load the
         // treasury, diplomacy, etc. stayed null/stale (player treasury fell back
@@ -10045,6 +10063,32 @@ function App() {
                   }}
                 >Validate</button>
               )}
+              {/* 2026-05-26: Save entity-budget health. The engine's ~65,536
+                  (2^16) pointer registry is shared by live characters and
+                  per-faction dynasty-pool (dead) records. Long campaigns bloat
+                  the dead pool steadily and risk save corruption near the cap.
+                  Pill color tracks deadCount/65536: <30% green, <40% yellow,
+                  ≥40% red. Button only shows once we have counts in state. */}
+              {(aliveCount != null || deadCount != null) && (() => {
+                const cap = 65536;
+                const deadFrac = deadCount != null ? deadCount / cap : 0;
+                const tier = deadFrac >= 0.4 ? "red" : deadFrac >= 0.3 ? "yellow" : "green";
+                const color = tier === "red" ? "#f87171" : tier === "yellow" ? "#facc15" : "#4ade80";
+                return (
+                  <button
+                    className="dev-btn"
+                    onClick={() => setShowEntityBudget(true)}
+                    title={`Save entity budget — live ${aliveCount ?? "?"} / dead-pool ${deadCount ?? "?"} of ~${cap.toLocaleString()}`}
+                    style={{
+                      ...btnStyle(false),
+                      background: "rgba(60,60,60,0.7)",
+                      color,
+                      border: `1px solid ${color}`,
+                      minWidth: 66,
+                    }}
+                  >Budget</button>
+                );
+              })()}
               {/* Victory-conditions helper: pick a region-list CSV → get a CSV of
                   region,owner_faction from the loaded mod's descr_strat. */}
               {window.electronAPI?.vcRegionOwnersCsv && (
@@ -12932,6 +12976,117 @@ function App() {
           onDismiss={() => setUpdateReady(null)}
         />
       )}
+      {/* 2026-05-26: Save entity-budget modal. Shows how close the current
+          save sits to the engine's ~65,536 (2^16) pointer-registry cap.
+          Live characters (engine CHARACTER records, signature cracked
+          2026-05-26) plus per-faction dynasty-pool dead records
+          (signature: ASCII /portraits/dead/). Pool grows ~8.6/turn;
+          approaching the cap risks save corruption. Thresholds:
+          deadCount/cap ≥ 0.40 → red ("near corruption risk"), ≥ 0.30 →
+          yellow, else green. */}
+      {showEntityBudget && (() => {
+        const cap = 65536;
+        const alive = aliveCount;
+        const dead = deadCount;
+        const inPlace = inPlaceDeadCount;
+        const have = (alive != null) || (dead != null);
+        const total = (alive || 0) + (dead || 0);
+        const totalFrac = total / cap;
+        const deadFrac = dead != null ? dead / cap : 0;
+        const tier = deadFrac >= 0.4 ? "red" : deadFrac >= 0.3 ? "yellow" : "green";
+        const tierColor = tier === "red" ? "#f87171" : tier === "yellow" ? "#facc15" : "#4ade80";
+        const tierLabel = tier === "red" ? "near corruption risk" : tier === "yellow" ? "watch closely" : "healthy";
+        const fmt = (n) => n == null ? "—" : Number(n).toLocaleString();
+        const pct = (n) => n == null ? "—" : `${(n * 100).toFixed(1)}%`;
+        return (
+          <div onClick={() => setShowEntityBudget(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+            zIndex: 10001, display: "flex", alignItems: "flex-start", justifyContent: "center",
+            paddingTop: "12vh",
+          }}>
+            <div onClick={(e) => e.stopPropagation()} style={{
+              background: "#1e1e1e", color: "#e6e6e6", borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.10)",
+              width: "min(540px, 92vw)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+              display: "flex", flexDirection: "column",
+            }}>
+              <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
+                <h3 style={{ margin: 0, fontSize: "1rem", flex: 1 }}>
+                  Save entity budget
+                  <span style={{ marginLeft: 10, fontSize: "0.72rem", color: tierColor, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    {tierLabel}
+                  </span>
+                </h3>
+                <button onClick={() => setShowEntityBudget(false)} style={{
+                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#ccc", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.78rem",
+                }}>Close</button>
+              </div>
+              <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                {!have ? (
+                  <div style={{ color: "#888", fontStyle: "italic", fontSize: "0.85rem" }}>
+                    No save loaded yet — counts populate after the first snapshot parse.
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: "0.78rem", color: "#bbb" }}>
+                      Engine pointer cap: <span style={{ color: "#eee", fontFamily: "monospace" }}>~{cap.toLocaleString()}</span> (2<sup>16</sup>).
+                      Live characters and dead-pool dynasty records share this budget;
+                      the dead pool grows ~8.6 entries per turn on a long campaign.
+                    </div>
+                    {/* Combined progress bar */}
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.74rem", color: "#aaa", marginBottom: 4 }}>
+                        <span>Total used</span>
+                        <span><span style={{ color: "#eee" }}>{fmt(total)}</span> of {cap.toLocaleString()} ({pct(totalFrac)})</span>
+                      </div>
+                      <div style={{ height: 10, background: "rgba(255,255,255,0.06)", borderRadius: 5, overflow: "hidden", display: "flex" }}>
+                        <div style={{
+                          width: `${Math.min(100, ((alive || 0) / cap) * 100)}%`,
+                          background: "#60a5fa",
+                        }} />
+                        <div style={{
+                          width: `${Math.min(100 - ((alive || 0) / cap) * 100, ((dead || 0) / cap) * 100)}%`,
+                          background: tierColor,
+                        }} />
+                      </div>
+                    </div>
+                    {/* Line items */}
+                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: "6px 12px", fontSize: "0.86rem", alignItems: "baseline" }}>
+                      <span style={{ color: "#60a5fa", fontWeight: 600 }}>live characters</span>
+                      <span style={{ color: "#888", fontSize: "0.74rem" }}>engine CHARACTER records (active block)</span>
+                      <span style={{ fontFamily: "monospace", color: "#eee" }}>{fmt(alive)}</span>
+
+                      <span style={{ color: tierColor, fontWeight: 600 }}>dead-pool</span>
+                      <span style={{ color: "#888", fontSize: "0.74rem" }}>per-faction dynasty records ({pct(deadFrac)} of cap)</span>
+                      <span style={{ fontFamily: "monospace", color: "#eee" }}>{fmt(dead)}</span>
+
+                      <span style={{ color: "#a78bfa", fontWeight: 600 }}>in-place dead</span>
+                      <span style={{ color: "#888", fontSize: "0.74rem" }}>died this turn — still in active CHARACTER block</span>
+                      <span style={{ fontFamily: "monospace", color: "#eee" }}>{fmt(inPlace)}</span>
+                    </div>
+                    {tier !== "green" && (
+                      <div style={{
+                        padding: "8px 10px", borderRadius: 6, fontSize: "0.78rem",
+                        background: `${tierColor}22`, border: `1px solid ${tierColor}55`, color: tierColor,
+                      }}>
+                        {tier === "red"
+                          ? "Dead pool exceeds 40% of the engine cap — campaigns at this size have been reported to corrupt on save. Consider archiving the campaign."
+                          : "Dead pool exceeds 30% of the engine cap — watch the growth rate over the next several turns."}
+                      </div>
+                    )}
+                    <div style={{ fontSize: "0.7rem", color: "#666", marginTop: 4 }}>
+                      Counts refresh on every save snapshot. The signatures were cracked
+                      2026-05-26 against the engine's reference build; tolerance ~3.8%.
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {showDashboard && (() => {
         const r = dashResult;
         const jumpTo = (file, snippet, line) => window.electronAPI?.scriptsJumpTo?.(file, snippet || null, line || null);
@@ -15961,9 +16116,21 @@ function App() {
                               return bg1 - bg2;
                             });
                             prefetchUnitIcons(modDataDir, sortedUnits.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
+                            // 0.9.651: surface (x, y) for the field-army edit
+                            // selector / pendingArmyUnits keying. _pos came from
+                            // cmdPos and survived mergeByTile; split it back
+                            // into numeric coords for RegionInfo.
+                            let posX = null, posY = null;
+                            if (e._pos && typeof e._pos === "string") {
+                              const [px, py] = e._pos.split(",");
+                              const nx = Number(px), ny = Number(py);
+                              if (Number.isFinite(nx) && Number.isFinite(ny)) { posX = nx; posY = ny; }
+                            }
                             return {
                               character: e.character,
                               faction: e.faction,
+                              x: posX,
+                              y: posY,
                               units: sortedUnits.map((u) => {
                                 const queue = fieldStartingByName.get(u.name);
                                 const seed = queue && queue.length ? queue.shift() : null;
@@ -15987,8 +16154,33 @@ function App() {
                           };
                           const own = mergedOwnFinal.map(buildEntry);
                           const others = mergedOthersFinal.map(buildEntry);
-                          if (own.length === 0 && others.length === 0) return null;
-                          return { own, others };
+                          // 0.9.651: live-merge pendingArmyUnits for each field
+                          // army (same idea as the garrison prop). If the user
+                          // has staged adds/removes for an army at (faction,
+                          // x, y), replace its units with the pending list so
+                          // recruit-clicks and × removes show up immediately
+                          // — not just after Save to Mod.
+                          const mergeFieldPending = (army) => {
+                            if (!army || army.x == null || army.y == null || !army.faction) return army;
+                            const key = `${String(army.faction).toLowerCase()}|c:${army.x},${army.y}`;
+                            const pending = pendingArmyUnits.get(key);
+                            if (!pending) return army;
+                            return {
+                              ...army,
+                              units: (pending.units || []).map((u) => ({
+                                unit: u.unit,
+                                xp: u.exp || 0,
+                                armour: u.armour || 0,
+                                weapon: u.weapon || 0,
+                                faction: army.faction,
+                                icon: army.faction ? getCachedUnitIcon(army.faction, u.unit) : null,
+                              })),
+                            };
+                          };
+                          const ownMerged = own.map(mergeFieldPending);
+                          const othersMerged = others.map(mergeFieldPending);
+                          if (ownMerged.length === 0 && othersMerged.length === 0) return null;
+                          return { own: ownMerged, others: othersMerged };
                         }
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
@@ -16032,6 +16224,10 @@ function App() {
                             // already display-converted at the build site.
                             character: cmdFirstName ? displayFullName(cmdFirstName, cmdLastName) : a.character,
                             faction: fac,
+                            // 0.9.651: descr_strat tile coords for field-army
+                            // edit selection (pendingArmyUnits keyed by x,y).
+                            x: typeof a.x === "number" ? a.x : null,
+                            y: typeof a.y === "number" ? a.y : null,
                             units: (a.units || []).map((u, ui) => ({
                               unit: u.name, xp: u.exp || 0,
                               armour: u.armour || 0, weapon: u.weapon || 0,
@@ -16043,7 +16239,35 @@ function App() {
                           };
                           (fac && ownerFaction && fac === ownerFaction ? own : others).push(entry);
                         }
-                        return { own, others };
+                        // 0.9.651: live-merge pendingArmyUnits for each field
+                        // army (descr_strat fallback path — mirrors the live
+                        // path's behaviour). Recruit-clicks / × removes show
+                        // up immediately, not just after Save to Mod.
+                        const mergeFieldPending = (army) => {
+                          if (!army || army.x == null || army.y == null || !army.faction) return army;
+                          const key = `${String(army.faction).toLowerCase()}|c:${army.x},${army.y}`;
+                          const pending = pendingArmyUnits.get(key);
+                          if (!pending) return army;
+                          return {
+                            ...army,
+                            units: (pending.units || []).map((u, ui) => ({
+                              unit: u.unit,
+                              xp: u.exp || 0,
+                              armour: u.armour || 0,
+                              weapon: u.weapon || 0,
+                              faction: army.faction || null,
+                              icon: army.faction ? getCachedUnitIcon(army.faction, u.unit) : null,
+                              // Preserve the bodyguard-swap hint on the first
+                              // unit so the general's face card still renders
+                              // after edits (matches the non-live entry's
+                              // commanderName / commanderFaction tagging
+                              // above — only the first card is tagged).
+                              commanderName: null,
+                              commanderFaction: null,
+                            })),
+                          };
+                        };
+                        return { own: own.map(mergeFieldPending), others: others.map(mergeFieldPending) };
                       })()}
                       /* `queue` prop removed — queued upgrades now render
                          inline in the main Buildings grid as an orange-bordered

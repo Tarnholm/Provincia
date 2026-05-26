@@ -2628,11 +2628,25 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             // unit card → selects THIS army (faction + region). Selected army
             // gets a yellow ring and per-unit × overlay to remove; subsequent
             // Recruitable clicks append to it.
+            // 0.9.651: when the garrison is backed by a named character's
+            // bodyguard army (e.g. Pisae's units sit inside Appius's
+            // `army {}` block in descr_strat, NOT in a `garrisoned_army`
+            // block), the region-only locator can't find anything to
+            // write → IPC returns "garrison block not found". Surface
+            // the commander's first name in the locator so the IPC can
+            // resolve via that character's army block too.
+            const commanderName = (garrisonCommander && garrisonCommander.character)
+              || (garrison.find(u => u && u.commanderName) || {}).commanderName
+              || null;
+            const commanderFirst = commanderName ? String(commanderName).split(/\s+/)[0] : null;
             const garrisonArmyDesc = {
               faction: info && info.faction,
-              locator: { region: (info && info.region) || null },
+              locator: {
+                region: (info && info.region) || null,
+                ...(commanderFirst ? { character: commanderFirst } : {}),
+              },
               units: garrison,
-              label: `${(info && (info.city || info.name || info.region)) || "settlement"} garrison`,
+              label: `${(info && (info.city || info.name || info.region)) || "settlement"} garrison${commanderFirst ? ` (${commanderFirst})` : ""}`,
             };
             const garrisonKey = armyKeyOf ? armyKeyOf(garrisonArmyDesc.faction, garrisonArmyDesc.locator) : null;
             const isGarrisonSelected = devMode && garrisonKey && garrisonKey === selectedArmyKey;
@@ -3041,7 +3055,27 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         title={tooltip} style={{
                         position: "relative", padding: 1,
                         background: "rgba(0,0,0,0.35)", borderRadius: 2,
+                        outline: isFieldSelected ? "1px solid rgba(250,204,21,0.55)" : "none",
                       }}>
+                        {isFieldSelected && onRemoveUnitFromSelectedArmy && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              const origIdx = a.units.indexOf(u);
+                              if (origIdx >= 0) onRemoveUnitFromSelectedArmy(origIdx);
+                            }}
+                            title="Remove this unit"
+                            style={{
+                              position: "absolute", top: -4, right: -4, zIndex: 5,
+                              width: 13, height: 13, padding: 0, lineHeight: 1,
+                              background: "rgba(248,113,113,0.95)", color: "#fff",
+                              border: "1px solid rgba(0,0,0,0.4)", borderRadius: "50%",
+                              cursor: "pointer", fontSize: "10px", fontWeight: 700,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >×</button>
+                        )}
                         {(() => {
                           // 0.9.410+ swap: bodyguard unit card → general's face card.
                           let info = u.commanderUuid && commanderInfo ? commanderInfo.get(u.commanderUuid) : null;

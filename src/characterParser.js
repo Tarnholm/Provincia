@@ -639,10 +639,38 @@ function buildFamilyTree(characters) {
   return byLastName;
 }
 
+// Count dead-pool dynasty records in the save. Cracked 2026-05-26 by the
+// save-cracker agent: each per-faction dynasty-pool entry embeds a portrait
+// path of the form `data/ui/.../portraits/dead/<idx>.tga`. Scanning for the
+// ASCII substring `/portraits/dead/` is a 1:1 match for the pool records
+// (verified zero duplicates against self-pointer header counts on the same
+// save). On `Dummies Turn 960 Start.sav` this returns 21,762 — the dominant
+// bloat source on long campaigns (grows ~8.6 per turn). Tight buffer scan,
+// ~50ms on a 70 MB save. Combined with the live-character count, the two
+// signatures together account for ~37% of the engine's ~65,536 entity cap
+// on that save, which is what the in-app health gauge surfaces.
+function countDeadPoolRecords(buf) {
+  if (!buf || typeof buf.length !== "number" || buf.length < 16) return 0;
+  // Build the needle as a Buffer once. Buffer.indexOf is the fastest scan
+  // in Node — way faster than per-byte JS or toString("ascii") on the whole
+  // file (which would balloon a 70 MB save into a 70 MB UTF-16 string).
+  const needle = Buffer.from("/portraits/dead/", "ascii");
+  let count = 0;
+  let from = 0;
+  while (from < buf.length) {
+    const idx = buf.indexOf(needle, from);
+    if (idx < 0) break;
+    count++;
+    from = idx + needle.length;
+  }
+  return count;
+}
+
 module.exports = {
   findCharacterRecords,
   parseCharacter,
   buildFamilyTree,
   findCharacterRegion,
   buildPositionIndex,
+  countDeadPoolRecords,
 };

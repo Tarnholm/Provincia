@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.651",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Save to Mod now actually writes unit edits for character-led garrisons** (Pisae / Appius case). Failure was *\"Applied 0, 1 failed: units Pisae garrison: garrison block not found\"* — the IPC only knew how to find leaderless `garrisoned_army` blocks, but Pisae's units actually live inside Appius's `army { }` block under his character record. The locator now carries the commander's first name when one's present (Appius / etc.), and the IPC walks the descr_strat character records for that name and edits THAT army. Region-mode is still the fallback for true leaderless garrisons. Also: the unit-write format silently filtered out every unit when the staged shape was `{unit, weapon_lvl}` (Recruitable-click path) instead of the legacy `{name, weapon}` shape — both shapes are now accepted." },
+      { type: "feature", text: "**Field-army units edit the same way garrison units do.** Click a field army's title → it becomes the selected edit target (yellow ring, like garrison). Click Recruitable → the new unit appears in that army's grid *immediately*. Each unit on the selected army has the same red × in the top-right; click → removed, card vanishes immediately. Both the live-mode and the non-live (descr_strat) data paths run `pendingArmyUnits` through the field-armies prop so the panel re-renders in real time, not just on Save to Mod. (Hidden prerequisite this fix landed: field-army entries now carry x/y so the click handler actually fires on click — it was silently gated `null != null` in many cases before.)" },
+      { type: "feature", text: "**\"Budget\" button — live save entity-budget readout.** Save crackers found the engine indexes each save against a ~65,536-entity pointer registry; on a turn-960 RIS save, dead characters alone consume ~33% of that cap (21,762 of them — they accumulate ~8.6/turn and never get freed). New **Budget** pill in the dev-pill row (green / yellow / red on `deadCount / 65536`) opens a modal with the live + dead-pool + just-died counts, a stacked progress bar against the cap, and a tier-specific warning (\"healthy\" / \"watch closely\" / \"near corruption risk\"). New helpers `countEngineCharacters(buf)` and `countDeadPoolRecords(buf)` (in `saveCrackerExtras.js` / `characterParser.js`) get computed on every save snapshot and surfaced as `aliveCount` / `deadCount` / `inPlaceDeadCount` on the save-data object. On the dev's reference Turn 960 save these match the engine within 3.8% of its own reported counts." },
+    ],
+  },
+  {
     version: "0.9.650",
     date: "2026-05-26",
     items: [
