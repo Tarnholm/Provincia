@@ -126,7 +126,7 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 14;
+const LAYOUT_VERSION = 15;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -154,7 +154,13 @@ const CANONICAL_V4 = {
   // y=0.0083 + h=0.6843 = 0.6926; strip y = 0.6926 + 9/1080 = 0.7009).
   "bottom.search":      { x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 },
   "bottom.factions":    { x: 0.0047, y: 0.7492, w: 0.2076, h: 0.2458 },
-  "bottom.selected":    { x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 },
+  // 0.9.655 (LAYOUT_VERSION 15): bottom.selected lines up with the map —
+  // x=0, w=span(0.572) so its left/right edges sit exactly on the map's
+  // left/right edges below the bottom-strip line, instead of being a
+  // narrower stripe leaving 5px to the map-right and a gap to the faction
+  // list on the left. bottom.factions overlays on top via the usual z-
+  // order, so the left-side faction picker still renders normally.
+  "bottom.selected":    { x: 0, y: 0.7009, w: 0.572, h: 0.2941 },
 };
 // Splitter overrides that put the map at the width the canonical widget
 // grid assumes. rightColPct=0.428 leaves x∈(0.566, 1) for widgets.

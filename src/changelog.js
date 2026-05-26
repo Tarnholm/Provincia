@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.655",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**\"Selected provinces\" panel now lines up with the map's left + right edges.** Was a narrower stripe with a 5 px gap to the map's right edge and another gap to the faction list on the left. New canonical default: x=0, w=0.572 — its column matches the map's, so its left/right edges sit exactly on the map's left/right edges below the bottom-strip line. LAYOUT_VERSION bumped to 15, so the migration pushes the new position into existing users' localStorage on next launch (no manual reset needed). The faction picker (bottom.factions) overlays via z-order as before, so the left-side faction list still renders normally on top." },
+    ],
+  },
+  {
     version: "0.9.654",
     date: "2026-05-26",
     items: [

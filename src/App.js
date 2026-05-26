@@ -14693,7 +14693,7 @@ function App() {
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
               colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
-              defaultPct={{ x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 }}>
+              defaultPct={{ x: 0, y: 0.7009, w: 0.572, h: 0.2941 }}>
               {/* Three sections in this widget:
                     1) Recent regions chips + Summary toggle (fixed row)
                     2) "Selected Provinces:" title + Deselect All (fixed row)
