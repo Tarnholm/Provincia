@@ -386,8 +386,15 @@ function main() {
   // per-region merc-pool table, i.e. 0x14e5ac6+) and apply the three tests.
   // If ANY passes, claim as char-pool-auto.
   {
+    // 2026-05-26: dynamic ZONE_END. The hardcoded 0x1f10c72 was sized for
+    // save_1.2.sav (~40 MB body); larger saves (e.g. the 67 MB Dummies/Turn-960
+    // autosave) have ~28 MB of body region past 0x1f10c72 that's also full of
+    // char-pool blobs. Anchor to the faction array start instead — that's the
+    // structural boundary char-pool ends at on every save we have. Falls back
+    // to the old hardcoded value when the faction parser found nothing.
     const ZONE_START = 0x14e5ac6;
-    const ZONE_END   = Math.min(0x1f10c72, size);
+    const factionsArrayStart = (factions && factions[0]) ? factions[0].offset : Math.min(0x1f10c72, size);
+    const ZONE_END   = factionsArrayStart;
     const MIN_GAP    = 5 * 1024;
     const PORTRAIT   = Buffer.from("data/ui/");
     let autoClaimed = 0;
