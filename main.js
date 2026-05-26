@@ -3298,6 +3298,49 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
         }
       }
     }
+    if (unitStart < 0 && byRegion) {
+      // 0.9.658: ;Region-comment fallback. Most provincial capitals (Reate,
+      // Pisae, Maleventum, …) have NO `garrisoned_army` block. Their garrison
+      // lives inside a character army marked by a `;<region>` comment line
+      // immediately above the `character,` header. RegionInfo also tries to
+      // pass `locator.character` for this case, but if the live-save commander
+      // resolution missed (no garrisonCommander on the save side, no
+      // commanderName on the unit cards), only `locator.region` makes it
+      // through and the previous byRegion path bailed silently. Now we read
+      // the comment hint, walk to the next character, and edit their army
+      // block.
+      const wantedReg = String(locator.region).trim();
+      const escaped = wantedReg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const commentRe = new RegExp(`^;\\s*${escaped}\\s*$`, "i");
+      let curFac = null;
+      for (let i = 0; i < lines.length; i++) {
+        const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
+        if (fm) { curFac = fm[1].toLowerCase(); continue; }
+        if (wantFac && curFac !== wantFac) continue;
+        if (!commentRe.test(lines[i])) continue;
+        // Walk to the next character line within a few rows.
+        for (let j = i + 1; j < lines.length && j < i + 6; j++) {
+          if (/^character[\s,]/.test(lines[j])) {
+            for (let k = j + 1; k < lines.length && k < j + 40; k++) {
+              if (/^character[\s,]/.test(lines[k])) break;
+              if (/^faction\s+/.test(lines[k])) break;
+              if (/^\s*army\b/.test(lines[k])) {
+                let m = k + 1;
+                while (m < lines.length && /^\s*unit\s+/.test(lines[m])) {
+                  if (unitStart < 0) { unitStart = m; indent = (lines[m].match(/^(\s*)/) || ["", "\t"])[1]; }
+                  m++;
+                }
+                unitEnd = m;
+                console.log(`[army-units] ;Region fallback: matched ";${wantedReg}" at line ${i + 1}, character at line ${j + 1}, army at line ${k + 1}, units ${unitStart + 1}..${unitEnd} (${unitEnd - unitStart} lines)`);
+                break;
+              }
+            }
+            break;
+          }
+        }
+        if (unitStart >= 0) break;
+      }
+    }
     if (unitStart < 0 && !byRegion) return { ok: false, error: "army block not found" };
     if (unitStart < 0) return { ok: false, error: "garrison block not found" };
     // 0.9.651: accept either shape — pendingArmyUnits from the Recruitable-

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.658",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Reate / Pisae / every provincial-capital garrison edit now actually writes to descr_strat.** Their \"garrison\" is a *character army* sitting on the settlement tile (marked by a `;<Region>` comment immediately above the `character,` line), not a `garrisoned_army` block. RegionInfo already passed `locator.character` for the common case (live-save bodyguard resolves to a character), but when that resolution missed — typically before a save was loaded, or when the panel built the garrison from `startingArmiesByRegion` without setting commanderName on the unit cards — only `locator.region` reached the IPC and the byRegion lookup quietly returned \"garrison block not found.\" The overlay continued to show the post-edit state in Provincia while descr_strat (and therefore the game) stayed unchanged — exactly what \"in game still has 2 hastati, Provincia shows 0\" looked like. Added a `;Region`-comment fallback to the IPC's byRegion path: scan for the comment, walk to the next `character,` line, then to its `army` block. Re-Apply your pending Reate edit and the units will land in descr_strat this time." },
+    ],
+  },
+  {
     version: "0.9.657",
     date: "2026-05-26",
     items: [
