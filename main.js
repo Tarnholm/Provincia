@@ -3187,6 +3187,12 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
       let curFac = null;
       const wantChar = String(locator.character).trim();
       const wantHasSpace = /\s/.test(wantChar);  // full name vs first-name-only
+      // 0.9.661: descr_strat uses underscores inside compound family names
+      // (e.g. `Fulvius_Flaccus`), while the renderer hands us the display
+      // form `"Fulvius Flaccus"`. Compare with underscores-as-spaces both
+      // sides so the exact-match disambiguator actually matches.
+      const norm = (s) => String(s).toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
+      const wantNorm = norm(wantChar);
       let charHeadersInWantFac = 0;
       let charFirstNamesSampled = [];
       // 0.9.659: collect all matches in pass 1 so we can detect ambiguity
@@ -3212,7 +3218,7 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
         const firstName = fullName.split(/\s+/)[0];
         if (charFirstNamesSampled.length < 12) charFirstNamesSampled.push(firstName);
         const hit = wantHasSpace
-          ? fullName.toLowerCase() === wantChar.toLowerCase()
+          ? norm(fullName) === wantNorm
           : firstName === wantChar;
         if (hit) matches.push({ line: i, fullName, firstName });
       }
@@ -3256,7 +3262,7 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
           const fullName = cm[1].trim();
           const firstName = fullName.split(/\s+/)[0];
           const hit = wantHasSpace
-            ? fullName.toLowerCase() === wantChar.toLowerCase()
+            ? norm(fullName) === wantNorm
             : firstName === wantChar;
           if (hit) matchesAny.push({ line: i, fullName, faction: curFac2 });
         }

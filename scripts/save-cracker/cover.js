@@ -277,6 +277,63 @@ function main() {
     }
   }
 
+  // --- 9c. Post-tile-grid 267-stride aux array (session 2026-05-26) --------
+  // Auto-claim a per-save block of 2272 × 267-byte template records that sits
+  // BETWEEN settlement-detail-0 (end of tile-grid implicit marker) and the
+  // first settlement marker. Same 267 B stride as the main tile-grid (so this
+  // is a tile-attribute-format array), but only ~4 % of the 240×238 cell count.
+  // 82 % of records are byte-identical to a "default template" record whose
+  // header is `c4 03 00 00 … c9 03 … c8 c8 02 06 c8 …`; only ~418 carry
+  // unique payload (sparse single-byte flags scattered through the 267 B).
+  //
+  // Settlement-detail tokens (`hinterland_region`, `core_building`,
+  // `default_set`, `fc fc fc fc 64`) have ZERO hits here — so it is NOT
+  // per-settlement detail; likeliest candidate is a strategic-AI tile
+  // cache / coarser sub-region grid (2272 = 32 × 71). Investigation script:
+  // `scripts/save-cracker/dig-post-grid-267-array.js`.
+  //
+  // The array starts a few bytes after the tile-grid matrix end + the implicit
+  // settlement-0 record (here 0xf84632..0xf85f5c, hardcoded for save_1.2.sav).
+  // Locate it dynamically: search forward from 0xf85f5c for the magic
+  // `00 c4 03 00 00` (zero-padded cluster start) and grow while the stride
+  // is a multiple of 267 (267 / 534 / 801 / 1068 / 1602 …).
+  {
+    const TMPL_MAGIC = Buffer.from([0xc4, 0x03, 0x00, 0x00]);
+    const SCAN_START = 0xf85f5c;
+    const SCAN_END   = Math.min(size, SCAN_START + 0x100000); // 1 MB safety cap
+    // Find first record start (preceded by 0).
+    let firstOff = -1;
+    for (let i = SCAN_START; i + 4 <= SCAN_END; i++) {
+      if (buf[i] === 0xc4 && buf[i+1] === 0x03 && buf[i+2] === 0x00 && buf[i+3] === 0x00 && buf[i-1] === 0) {
+        // Validate by checking a second record at +267.
+        if (buf[i + 267] === 0xc4 && buf[i + 267 + 1] === 0x03) { firstOff = i; break; }
+      }
+    }
+    if (firstOff >= 0) {
+      let p = firstOff, count = 0;
+      while (p + 267 < SCAN_END) {
+        if (buf[p] !== 0xc4 || buf[p+1] !== 0x03) break;
+        count++;
+        // Walk to the next cluster start (stride is a positive multiple of 267
+        // up to 1602 = 267×6).
+        let next = -1;
+        for (let k = 1; k <= 6; k++) {
+          const cand = p + k * 267;
+          if (cand + 4 > SCAN_END) break;
+          if (buf[cand] === 0xc4 && buf[cand+1] === 0x03 && buf[cand-1] === 0) { next = cand; break; }
+        }
+        if (next < 0) { p += 267; break; }  // last record consumed
+        p = next;
+      }
+      const blockEnd = p + 267;
+      // Sanity: only claim if we found a large enough block (≥ 1024 records).
+      if (count >= 1024) {
+        claim(bm, firstOff, blockEnd, claims, "Post-grid 267-stride array (2272 tile-format records, ~82% default-template)");
+        console.log(`post-grid 267-stride array: ${count} records at 0x${firstOff.toString(16)}..0x${blockEnd.toString(16)} (${blockEnd - firstOff} B)`);
+      }
+    }
+  }
+
   // --- 10. Siege block (73 bytes at 0x152f529 per session 33) --------------
   if (0x152f529 + 73 <= size) {
     claim(bm, 0x152f529, 0x152f529 + 73, claims, "Siege block (73 B per active siege)");

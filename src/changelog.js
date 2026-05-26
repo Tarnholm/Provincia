@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.661",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Underscore/space normalization in by-character army lookup.** 0.9.659 added full-name disambiguation, but the renderer passes the display form `\"Servius Fulvius Flaccus\"` (space) while descr_strat stores `\"Servius Fulvius_Flaccus\"` (underscore, since compound family names are single tokens). Exact-match failed, the lookup fell through, and the `;Region` fallback bailed because descr_strat uses `;Reate` (city name) not `;Sabinia-Aequia` (descr_regions region). The IPC now normalizes both sides — lowercase + underscores→spaces + collapsed whitespace — so `Fulvius_Flaccus` matches `Fulvius Flaccus`. Re-Apply the Reate edit and it'll write to the correct character." },
+    ],
+  },
+  {
     version: "0.9.660",
     date: "2026-05-26",
     items: [
