@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.645",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**Validate dashboard: new \"VC malformed\" check.** Scans `descr_win_conditions.txt` for any line that isn't a faction header / `hold_regions` / `take_regions` / `short_campaign` / outlive list / comment / blank, and lists the offenders with click-to-jump. (Was added while investigating the \"factions after Athens have no VC\" symptom — that root cause is still TBD; deleting the two `hold_region,` (singular, typo) lines in RIS's file did NOT fix it. File has been restored byte-identical to the user's original.)" },
+    ],
+  },
+  {
     version: "0.9.644",
     date: "2026-05-26",
     items: [

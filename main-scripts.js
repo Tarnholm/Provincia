@@ -210,8 +210,8 @@ ipcMain.handle('sps:validate-mod', async () => {
     const p = path.join(configDir, n);
     return fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : null;
   };
-  const summary = { danglingChains: 0, danglingLevels: 0, stratErrors: 0, missingLocale: 0, orphanedChains: 0 };
-  const out = { summary, danglingChains: [], danglingLevels: [], stratErrors: [], missingLocale: [], orphanedChains: [] };
+  const summary = { danglingChains: 0, danglingLevels: 0, stratErrors: 0, missingLocale: 0, orphanedChains: 0, vcMalformed: 0 };
+  const out = { summary, danglingChains: [], danglingLevels: [], stratErrors: [], missingLocale: [], orphanedChains: [], vcMalformed: [] };
   try {
     const edb = read('export_descr_buildings.txt');
     if (!edb) return { ...out, error: 'export_descr_buildings.txt not loaded — import a mod first.' };
@@ -305,11 +305,35 @@ ipcMain.handle('sps:validate-mod', async () => {
       }
     }
 
+    // descr_win_conditions.txt: flag any non-canonical directive. Athens-style
+    // `hold_region,` (singular, typo for hold_regions) silently kills every
+    // faction's VC from that line onward in-game — RTW's parser bails. Anything
+    // that isn't blank, a `;` comment, a bare lowercase faction-header, the
+    // canonical `hold_regions ` / `take_regions ` / `short_campaign ` lines, or
+    // the outlive-list line (multiple bare lowercase tokens) goes here.
+    const wc = read('descr_win_conditions.txt');
+    if (wc) {
+      const lines = wc.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
+        const t = raw.trim();
+        if (!t) continue;
+        if (t.startsWith(';')) continue;
+        if (/^[a-z_0-9]+$/.test(t)) continue;                 // faction header
+        if (/^[a-z_0-9 ]+$/.test(t)) continue;                // outlive list (space-separated lowercase)
+        if (/^hold_regions\s/.test(t)) continue;
+        if (/^take_regions\s/.test(t)) continue;
+        if (/^short_campaign\s/.test(t)) continue;
+        out.vcMalformed.push({ file: 'descr_win_conditions.txt', line: i + 1, text: t.slice(0, 200) });
+      }
+    }
+
     summary.danglingChains = out.danglingChains.length;
     summary.danglingLevels = out.danglingLevels.length;
     summary.stratErrors = out.stratErrors.length;
     summary.missingLocale = out.missingLocale.length;
     summary.orphanedChains = out.orphanedChains.length;
+    summary.vcMalformed = out.vcMalformed.length;
     return out;
   } catch (e) {
     return { ...out, error: e.message };
