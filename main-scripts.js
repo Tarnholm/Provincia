@@ -210,8 +210,8 @@ ipcMain.handle('sps:validate-mod', async () => {
     const p = path.join(configDir, n);
     return fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : null;
   };
-  const summary = { danglingChains: 0, danglingLevels: 0, stratErrors: 0, missingLocale: 0, orphanedChains: 0, vcMalformed: 0 };
-  const out = { summary, danglingChains: [], danglingLevels: [], stratErrors: [], missingLocale: [], orphanedChains: [], vcMalformed: [] };
+  const summary = { danglingChains: 0, danglingLevels: 0, stratErrors: 0, missingLocale: 0, orphanedChains: 0, vcMalformed: 0, vcOrphanFactions: 0 };
+  const out = { summary, danglingChains: [], danglingLevels: [], stratErrors: [], missingLocale: [], orphanedChains: [], vcMalformed: [], vcOrphanFactions: [] };
   try {
     const edb = read('export_descr_buildings.txt');
     if (!edb) return { ...out, error: 'export_descr_buildings.txt not loaded — import a mod first.' };
@@ -312,15 +312,43 @@ ipcMain.handle('sps:validate-mod', async () => {
     // canonical `hold_regions ` / `take_regions ` / `short_campaign ` lines, or
     // the outlive-list line (multiple bare lowercase tokens) goes here.
     const wc = read('descr_win_conditions.txt');
+    // Reuse the same descr_strat content the strat-errors check loaded above
+    // (variable `strat`). If that pass didn't run for some reason, fall back
+    // to reading it now — we need its faction list for the orphan check.
+    const stratForFactions = (typeof strat !== 'undefined' && strat) ? strat : read('descr_strat.txt');
     if (wc) {
       const lines = wc.split(/\r?\n/);
+      // Build the set of REAL playable factions from descr_strat — every
+      // `faction <name>, ai_<...>` line — so we can flag any VC block whose
+      // header doesn't correspond to a real faction. Indo_greeks-style orphans
+      // make RTW's VC parser silently abandon the rest of the file → every
+      // faction below the orphan loses its VC in-game.
+      const stratFactions = new Set();
+      if (stratForFactions) {
+        for (const ln of stratForFactions.split(/\r?\n/)) {
+          const m = ln.match(/^faction[ \t]+([a-z_0-9]+)[, \t]/);
+          if (m) stratFactions.add(m[1]);
+        }
+      }
       for (let i = 0; i < lines.length; i++) {
         const raw = lines[i];
         const t = raw.trim();
         if (!t) continue;
         if (t.startsWith(';')) continue;
-        if (/^[a-z_0-9]+$/.test(t)) continue;                 // faction header
-        if (/^[a-z_0-9 ]+$/.test(t)) continue;                // outlive list (space-separated lowercase)
+        // Faction header — but if descr_strat is loaded, ALSO verify it's a real faction.
+        if (/^[a-z_0-9]+$/.test(t)) {
+          if (stratFactions.size > 0 && !stratFactions.has(t)) {
+            // Confirm it's actually a header (next non-blank line is hold_regions / take_regions),
+            // so we don't false-flag a lone-faction outlive-list token.
+            let next = '';
+            for (let j = i + 1; j < lines.length; j++) { const nt = lines[j].trim(); if (nt) { next = nt; break; } }
+            if (next.startsWith('hold_regions') || next.startsWith('take_regions')) {
+              out.vcOrphanFactions.push({ faction: t, file: 'descr_win_conditions.txt', line: i + 1 });
+            }
+          }
+          continue;
+        }
+        if (/^[a-z_0-9 ]+$/.test(t)) continue;                // outlive list
         if (/^hold_regions\s/.test(t)) continue;
         if (/^take_regions\s/.test(t)) continue;
         if (/^short_campaign\s/.test(t)) continue;
@@ -334,6 +362,7 @@ ipcMain.handle('sps:validate-mod', async () => {
     summary.missingLocale = out.missingLocale.length;
     summary.orphanedChains = out.orphanedChains.length;
     summary.vcMalformed = out.vcMalformed.length;
+    summary.vcOrphanFactions = out.vcOrphanFactions.length;
     return out;
   } catch (e) {
     return { ...out, error: e.message };

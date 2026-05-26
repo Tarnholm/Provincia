@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.646",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Found the real VC bug (#2): orphan faction header in descr_win_conditions.** RIS's `descr_win_conditions.txt` had an `indo_greeks` block (lines 355–360) but no `indo_greeks` faction in `descr_strat.txt` OR `descr_sm_factions.txt` — it's a dead reference. RTW's parser fails on the unknown faction and silently abandons the rest of the file. That's exactly why VCs worked up to `illyrian_kingdom` (last good block before `indo_greeks`) and stopped from `insubres` onwards (next faction after the orphan). The block has been removed from the live file; backup at `_backups/descr_win_conditions_preIndoGreeks_*.txt`." },
+      { type: "improvement", text: "**Validate dashboard: new \"VC orphans\" check** that catches this. Cross-references every faction header in `descr_win_conditions.txt` against the real playable-faction list from `descr_strat.txt`; any header without a matching `faction <name>, ai_<...>` line is flagged with click-to-jump. So the entire \"orphan faction header silently kills every VC below it\" class of bug is now a one-click diagnosis going forward." },
+      { type: "fix", text: "**Earlier debugging gotcha — `sed -i` on Git Bash strips CRLF.** When fixing the VC file via shell `sed -i`, the operation silently converted CRLF→LF line endings; RTW Remastered won't parse the file in that state. From now on, byte-level edits to RTW config files use Python (`open('rb')`/`open('wb')`) to preserve CRLF exactly. (No code change — just a process fix; calling it out so it doesn't bite again.)" },
+    ],
+  },
+  {
     version: "0.9.645",
     date: "2026-05-26",
     items: [

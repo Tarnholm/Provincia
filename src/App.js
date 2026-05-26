@@ -12940,7 +12940,7 @@ function App() {
                 const totalIssues = (s.danglingChains || 0) + (s.danglingLevels || 0) + (s.stratErrors || 0) + (s.missingLocale || 0);
                 return (
                   <>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8, marginBottom: 10 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, marginBottom: 10 }}>
                       {[
                         ["Dangling chains", s.danglingChains, "#f87171"],
                         ["Dangling levels", s.danglingLevels, "#fb923c"],
@@ -12948,6 +12948,7 @@ function App() {
                         ["Missing locale", s.missingLocale, "#a78bfa"],
                         ["Orphaned chains", s.orphanedChains, "#9ca3af"],
                         ["VC malformed", s.vcMalformed, "#f87171"],
+                        ["VC orphans", s.vcOrphanFactions, "#f87171"],
                       ].map(([label, n, color]) => (
                         <div key={label} style={{
                           background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)",
@@ -12991,6 +12992,11 @@ function App() {
                     <Section title="descr_win_conditions malformed lines (silently kill VCs for every faction below)" count={s.vcMalformed || 0} color="#f87171">
                       {(r.vcMalformed || []).map((d, i) => (
                         <Row key={i} label={d.text} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                      ))}
+                    </Section>
+                    <Section title="VC orphan factions (header in win_conditions, faction not in descr_strat — kills VCs below)" count={s.vcOrphanFactions || 0} color="#f87171">
+                      {(r.vcOrphanFactions || []).map((d, i) => (
+                        <Row key={i} label={`${d.faction} — not a playable faction in descr_strat`} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
                       ))}
                     </Section>
                   </>
