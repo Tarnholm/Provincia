@@ -1526,6 +1526,27 @@ function App() {
   // wealth / region count / army count / AI / diplomatic state side by side.
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [compareSelection, setCompareSelection] = useState([null, null, null]);
+  // 0.9.639: command palette (Ctrl/Cmd-K) — fuzzy-find regions, factions,
+  // color modes, building chains; Enter jumps/activates. Closes on Escape.
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [cmdQuery, setCmdQuery] = useState("");
+  const [cmdSelIdx, setCmdSelIdx] = useState(0);
+  useEffect(() => {
+    const onKey = (e) => {
+      // Open/close on Ctrl-K / Cmd-K.
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setCmdOpen(o => !o);
+        setCmdQuery("");
+        setCmdSelIdx(0);
+        return;
+      }
+      // Escape closes when open.
+      if (cmdOpen && e.key === "Escape") { e.preventDefault(); setCmdOpen(false); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cmdOpen]);
   // 0..100 while electron-updater is downloading the installer in the
   // background; null when no download is in flight. Drives the progress
   // strip next to the version label.
@@ -12782,31 +12803,173 @@ function App() {
           onDismiss={() => setUpdateReady(null)}
         />
       )}
+      {cmdOpen && (() => {
+        // Build the search index lazily so it only walks regions/factions
+        // when the palette is open (cheap; thousands of items are fine).
+        const idx = [];
+        // Color modes — set the map mode.
+        const MODES = [
+          ["faction", "Faction"], ["culture", "Culture"], ["religion", "Religion"],
+          ["aor", "Areas of Recruitment"], ["terrain", "Terrain"], ["climate", "Climate"],
+          ["port_level", "Port Level"], ["irrigation", "Irrigation"], ["earthquakes", "Earthquakes"],
+          ["rivertrade", "River Trade"], ["hidden_resource", "Hidden Resource"],
+          ["garrison", "Garrison"], ["happiness", "Happiness"], ["income", "Income"],
+          ["public_order", "Public Order"], ["loyalist", "Loyalist"],
+        ];
+        for (const [m, label] of MODES) {
+          idx.push({ kind: "mode", id: m, label, sub: "map mode", action: () => { setColorMode(m); setCmdOpen(false); } });
+        }
+        // Factions — select + highlight.
+        for (const f of (factions || [])) {
+          const disp = (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " ");
+          idx.push({
+            kind: "faction", id: f, label: disp, sub: "faction",
+            action: () => {
+              setSelectedFaction(f); setSelectedFactions(new Set([f])); setCmdOpen(false);
+            },
+          });
+        }
+        // Regions — set selectedProvinces + zoom.
+        for (const [rgbKey, r] of Object.entries(regions || {})) {
+          const lbl = r.region || r.city || "";
+          if (!lbl) continue;
+          idx.push({
+            kind: "region", id: rgbKey, label: lbl, sub: r.city && r.region && r.city !== r.region ? `region · ${r.city}` : "region",
+            action: () => { setSelectedProvinces([rgbKey]); zoomToProvinces([rgbKey]); setCmdOpen(false); },
+          });
+        }
+        // Useful actions.
+        idx.push({ kind: "action", id: "scripts", label: "Open Scripts window", sub: "action", action: () => { window.electronAPI?.openScriptsWindow?.(); setCmdOpen(false); } });
+        if (window.electronAPI?.scriptsJumpTo) {
+          idx.push({ kind: "action", id: "edb", label: "Open EDB in editor", sub: "action", action: () => { window.electronAPI.scriptsJumpTo("export_descr_buildings.txt", null); setCmdOpen(false); } });
+        }
+        idx.push({ kind: "action", id: "compare", label: "Compare factions", sub: "action", action: () => { setShowCompareModal(true); setCmdOpen(false); } });
+
+        // Fuzzy filter: substring (case-insensitive) with simple scoring —
+        // prefix > word-boundary > anywhere. Limit to 60 hits for snappiness.
+        const q = cmdQuery.trim().toLowerCase();
+        let hits;
+        if (!q) {
+          // No query → show modes + a few actions first, factions, then regions.
+          hits = idx.slice().sort((a, b) => {
+            const order = { mode: 0, action: 1, faction: 2, region: 3 };
+            return (order[a.kind] - order[b.kind]) || a.label.localeCompare(b.label);
+          }).slice(0, 60);
+        } else {
+          const scored = [];
+          for (const e of idx) {
+            const ll = e.label.toLowerCase();
+            let score;
+            if (ll === q) score = 0;
+            else if (ll.startsWith(q)) score = 1;
+            else if ((` ` + ll).includes(` ` + q)) score = 2;
+            else if (ll.includes(q)) score = 3;
+            else continue;
+            scored.push([score, e.label.length, e]);
+          }
+          scored.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2].label.localeCompare(b[2].label));
+          hits = scored.slice(0, 60).map(s => s[2]);
+        }
+        const sel = Math.max(0, Math.min(cmdSelIdx, hits.length - 1));
+        const KIND_COLOR = { mode: "#fbbf24", faction: "#a0c4ff", region: "#7fd1b9", action: "#d0a0ff" };
+        return (
+          <div onClick={() => setCmdOpen(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+            zIndex: 10002, display: "flex", alignItems: "flex-start", justifyContent: "center",
+            paddingTop: "12vh",
+          }}>
+            <div onClick={(e) => e.stopPropagation()} style={{
+              background: "#1e1e1e", color: "#e6e6e6", borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.10)",
+              width: "min(560px, 90vw)", maxHeight: "70vh", overflow: "hidden",
+              display: "flex", flexDirection: "column",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+            }}>
+              <input
+                autoFocus
+                value={cmdQuery}
+                onChange={(e) => { setCmdQuery(e.target.value); setCmdSelIdx(0); }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") { e.preventDefault(); setCmdSelIdx(i => Math.min(hits.length - 1, i + 1)); }
+                  else if (e.key === "ArrowUp") { e.preventDefault(); setCmdSelIdx(i => Math.max(0, i - 1)); }
+                  else if (e.key === "Enter") { e.preventDefault(); hits[sel]?.action?.(); }
+                }}
+                placeholder="Search regions, factions, modes, actions…  (Ctrl-K)"
+                style={{
+                  width: "100%", padding: "12px 14px", background: "#252525", color: "#eee",
+                  border: "none", outline: "none", fontSize: "0.95rem",
+                  borderBottom: "1px solid rgba(255,255,255,0.10)",
+                }}
+              />
+              <div style={{ overflowY: "auto", maxHeight: "60vh" }}>
+                {hits.length === 0 ? (
+                  <div style={{ padding: 14, color: "#888", fontStyle: "italic" }}>No matches.</div>
+                ) : hits.map((h, i) => (
+                  <div
+                    key={`${h.kind}:${h.id}`}
+                    onMouseEnter={() => setCmdSelIdx(i)}
+                    onClick={() => h.action?.()}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "7px 14px", fontSize: "0.82rem", cursor: "pointer",
+                      background: i === sel ? "rgba(255,255,255,0.06)" : "transparent",
+                      borderLeft: `3px solid ${i === sel ? (KIND_COLOR[h.kind] || "#aaa") : "transparent"}`,
+                    }}
+                  >
+                    <span style={{
+                      fontSize: "0.62rem", fontWeight: 700, color: KIND_COLOR[h.kind] || "#aaa",
+                      letterSpacing: "0.05em", textTransform: "uppercase",
+                      width: 56, flexShrink: 0,
+                    }}>{h.kind}</span>
+                    <span style={{ flex: 1, textTransform: h.kind === "region" || h.kind === "faction" ? "capitalize" : "none" }}>{h.label}</span>
+                    <span style={{ fontSize: "0.68rem", color: "#777" }}>{h.sub}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: "6px 14px", fontSize: "0.65rem", color: "#777", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 14 }}>
+                <span>↑↓ to move</span><span>↵ to select</span><span>esc to close</span><span style={{ marginLeft: "auto" }}>{hits.length} of {idx.length} indexed</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {showCompareModal && (() => {
-        const allFactions = (factions || []).slice().sort();
+        // Defensive: every data source may be null / undefined when the modal
+        // opens before a mod is loaded, or when the renderer hasn't populated
+        // a particular slice yet. Wrap each lookup; degrade to "—" gracefully.
+        const allFactions = Array.isArray(factions) ? factions.slice().sort() : [];
         const fmt = (n) => n == null ? "—" : (typeof n === "number" ? n.toLocaleString() : n);
         const colorOf = (f) => {
-          const c = factionColors && (factionColors[f] || factionColors[f?.toLowerCase?.()]);
-          return c ? `rgb(${c[0]}, ${c[1]}, ${c[2]})` : "#aaa";
+          if (!f) return "#aaa";
+          const lf = typeof f === "string" ? f.toLowerCase() : "";
+          const c = factionColors && (factionColors[f] || factionColors[lf]);
+          return Array.isArray(c) ? `rgb(${c[0]}, ${c[1]}, ${c[2]})` : "#aaa";
         };
         const rowFor = (f) => {
-          if (!f) return null;
-          const lf = f.toLowerCase();
-          const liveRegions = liveRegionsByFaction ? liveRegionsByFaction[lf] : null;
-          const liveArmies = liveArmiesByFaction ? liveArmiesByFaction[lf] : null;
-          const startRegions = (factionRegionsMap[f] || []).length;
-          const liveTreasury = liveTreasuryByFaction && liveTreasuryByFaction[lf];
-          const startWealth = factionWealth[f] != null ? factionWealth[f] : (factionWealth[lf] != null ? factionWealth[lf] : null);
-          const wealth = liveTreasury ? liveTreasury.treasury : startWealth;
-          const display = (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " ");
-          const ai = aiPersonalityByFaction ? (aiPersonalityByFaction[lf] || null) : null;
-          return {
-            faction: f, display, color: colorOf(f), wealth, wealthIsLive: !!liveTreasury,
-            startWealth, regions: liveRegions != null ? liveRegions : startRegions,
-            startRegions, armies: liveArmies || 0, isLive: liveLogActive && liveRegions != null,
-            ai: ai ? ai.replace(/^ai_/, "").replace(/_/g, " ") : null,
-            regionNames: factionRegionsMap[f] || [],
-          };
+          if (!f || typeof f !== "string") return null;
+          try {
+            const lf = f.toLowerCase();
+            const frm = factionRegionsMap || {};
+            const fw = factionWealth || {};
+            const liveRegions = liveRegionsByFaction ? (liveRegionsByFaction[lf] ?? null) : null;
+            const liveArmies = liveArmiesByFaction ? (liveArmiesByFaction[lf] ?? null) : null;
+            const startRegions = (Array.isArray(frm[f]) ? frm[f] : (Array.isArray(frm[lf]) ? frm[lf] : [])).length;
+            const liveTreasury = liveTreasuryByFaction ? liveTreasuryByFaction[lf] : null;
+            const startWealth = fw[f] != null ? fw[f] : (fw[lf] != null ? fw[lf] : null);
+            const wealth = liveTreasury ? liveTreasury.treasury : startWealth;
+            const display = (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " ");
+            const ai = aiPersonalityByFaction ? (aiPersonalityByFaction[lf] || null) : null;
+            return {
+              faction: f, display, color: colorOf(f), wealth, wealthIsLive: !!liveTreasury,
+              startWealth, regions: liveRegions != null ? liveRegions : startRegions,
+              startRegions, armies: liveArmies || 0, isLive: !!liveLogActive && liveRegions != null,
+              ai: ai ? ai.replace(/^ai_/, "").replace(/_/g, " ") : null,
+              regionNames: Array.isArray(frm[f]) ? frm[f] : (Array.isArray(frm[lf]) ? frm[lf] : []),
+            };
+          } catch (e) {
+            console.warn("[compare] row failed for", f, e);
+            return { faction: f, display: f, color: "#aaa", wealth: null, wealthIsLive: false, startWealth: null, regions: null, startRegions: 0, armies: 0, isLive: false, ai: null, regionNames: [], error: e.message };
+          }
         };
         return (
           <div onClick={() => setShowCompareModal(false)} style={{
@@ -12826,6 +12989,11 @@ function App() {
                   color: "#ccc", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.78rem",
                 }}>Close</button>
               </div>
+              {allFactions.length === 0 && (
+                <div style={{ padding: 12, color: "#aaa", fontStyle: "italic", textAlign: "center" }}>
+                  No factions loaded yet — pick a mod folder first (the Compare view reads from the same data as the rest of the app).
+                </div>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                 {[0, 1, 2].map(idx => {
                   const f = compareSelection[idx];

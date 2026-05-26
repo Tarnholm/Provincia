@@ -8,6 +8,20 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.640",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Compare button no longer crashes the app.** A few of the data sources it reads (`factionRegionsMap`, `factionWealth`, `factionColors`, `liveTreasuryByFaction`, `aiPersonalityByFaction`) can be `undefined` depending on what's loaded — the modal blew up trying to index into them. Every lookup is now null-safe, the per-column row builder is wrapped in a try/catch (so one bad faction can't take down the whole modal), and when no mod is loaded the modal shows a friendly *\"pick a mod folder first\"* note instead of three empty pickers. Also adds the same guards to the `factions` iteration in case it's not an array yet." },
+    ],
+  },
+  {
+    version: "0.9.639",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Command palette (Ctrl-K / Cmd-K).** Fuzzy-find everything from one place — type a few letters and the palette ranks hits across regions, factions, map color modes (faction / culture / AOR / terrain / climate / port / irrigation / earthquakes / hidden resource / garrison / happiness / income / public order / etc.) and actions (Open Scripts, Open EDB in editor, Compare factions). ↑↓ to move, ↵ to activate, esc to close. Picking a region selects + zooms to it; a faction selects + highlights; a mode flips the map; an action runs it. Scoring is prefix > word-boundary > anywhere with length tiebreak. Cuts the dropdown + map-click chain for everyday navigation. 6/8 improvements shipped; remaining: #2 mod-validation dashboard, #3 cross-reference panel." },
+    ],
+  },
+  {
     version: "0.9.638",
     date: "2026-05-26",
     items: [
