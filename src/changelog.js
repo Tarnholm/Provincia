@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.654",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Removed units no longer pop back into the garrison after Save to Mod.** Save was writing the edit to descr_strat correctly, then clearing `pendingArmyUnits` — at which point the panel re-read `liveUnitsByRegion` (computed from the save buffer, NOT descr_strat, so still showing the pre-edit units) and silently reverted. The post-save snapshot refresh only updated `armiesData` / `startingArmiesByRegion` via a `matches()` that doesn't understand character-name locators, so it skipped Appius-class garrisons too. Provincia now keeps the `pendingArmyUnits` entries after a successful Save, so the garrison merge continues to overlay the applied state and the panel stays consistent with the file. Tradeoff: the Pending Changes count keeps showing the army-unit edits until you click \"Discard all\" or re-import the mod — much better than the silent revert it replaced." },
+    ],
+  },
+  {
     version: "0.9.653",
     date: "2026-05-26",
     items: [

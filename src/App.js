@@ -18181,7 +18181,20 @@ function App() {
                   setPendingCharPos(new Map());
                   setPendingCharFields(new Map());
                   setPendingGarrisonMoves(new Map());
-                  setPendingArmyUnits(new Map());
+                  // 0.9.654: DO NOT clear pendingArmyUnits on Save. The
+                  // garrison + field-army panels read from liveUnitsByRegion
+                  // (live mode) or startingArmiesByRegion (non-live) — the
+                  // post-save apply() refreshes startingArmiesByRegion via
+                  // matches() but can't refresh liveUnitsByRegion because
+                  // that's derived from the save buffer (not descr_strat),
+                  // and matches() doesn't grok character-name locators.
+                  // Net effect: clearing pendingArmyUnits made the UI revert
+                  // to the pre-edit live garrison. Keeping the entries lets
+                  // the garrison merge continue to overlay the applied state.
+                  // Tradeoff: the Pending Changes count will keep showing the
+                  // army-unit edits until the user clicks "Discard all" or
+                  // re-imports the mod. Worth it vs the silent revert bug.
+                  // setPendingArmyUnits(new Map());     // intentionally kept
                   setPendingDiplomacy(new Map());
                   setPendingLog([]);
                   setDevDirtyFiles(new Set());
@@ -18193,7 +18206,7 @@ function App() {
                     localStorage.removeItem("pendingCharPos");
                     localStorage.removeItem("pendingCharFields");
                     localStorage.removeItem("pendingGarrisonMoves");
-                    localStorage.removeItem("pendingArmyUnits");
+                    // localStorage.removeItem("pendingArmyUnits");  // intentionally kept (see above)
                     localStorage.removeItem("pendingDiplomacy");
                     localStorage.removeItem("pendingLog");
                   } catch {}
