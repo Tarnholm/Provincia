@@ -3219,7 +3219,37 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
         if (unitStart >= 0) break;
       }
       if (unitStart < 0) {
-        console.warn(`[army-units] byCharacter MISS: wantChar="${wantChar}" wantFac="${wantFac}" — found ${charHeadersInWantFac} character headers in that faction. First names sampled: ${JSON.stringify(charFirstNamesSampled)}`);
+        console.warn(`[army-units] byCharacter MISS with faction filter: wantChar="${wantChar}" wantFac="${wantFac}" — found ${charHeadersInWantFac} character headers in that faction. First names sampled: ${JSON.stringify(charFirstNamesSampled)}`);
+        // 0.9.653: faction filter sometimes points at the wrong block (e.g.
+        // the renderer passes the descr_regions REBEL faction `italics` when
+        // a settlement is actually Roman). Retry the same character lookup
+        // with NO faction constraint — character first names are unique
+        // enough on a campaign-wide basis to be a safe second pass.
+        let curFac2 = null;
+        for (let i = 0; i < lines.length; i++) {
+          const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
+          if (fm) { curFac2 = fm[1].toLowerCase(); continue; }
+          const cm = lines[i].match(/^character\s*,?\s*([^,]+?)\s*,\s*named character/i);
+          if (!cm) continue;
+          const firstName = cm[1].trim().split(/\s+/)[0];
+          if (firstName !== wantChar) continue;
+          console.log(`[army-units] character match (no-faction retry): line=${i + 1} actualFaction="${curFac2}" firstName="${firstName}"`);
+          for (let j = i + 1; j < lines.length && j < i + 40; j++) {
+            if (/^character[\s,]/.test(lines[j])) break;
+            if (/^faction\s+/.test(lines[j])) break;
+            if (/^\s*army\b/.test(lines[j])) {
+              let k = j + 1;
+              while (k < lines.length && /^\s*unit\s+/.test(lines[k])) {
+                if (unitStart < 0) { unitStart = k; indent = (lines[k].match(/^(\s*)/) || ["", "\t"])[1]; }
+                k++;
+              }
+              unitEnd = k;
+              console.log(`[army-units] unit lines (no-faction retry): ${unitStart + 1}..${unitEnd} (${unitEnd - unitStart} unit lines)`);
+              break;
+            }
+          }
+          if (unitStart >= 0) break;
+        }
       }
     }
     if (unitStart < 0 && byCoord) {

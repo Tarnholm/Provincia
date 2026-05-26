@@ -2639,8 +2639,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               || (garrison.find(u => u && u.commanderName) || {}).commanderName
               || null;
             const commanderFirst = commanderName ? String(commanderName).split(/\s+/)[0] : null;
+            // 0.9.653: use the SETTLEMENT'S actual owner (from save / descr_strat
+            // ownership map) for the locator faction — NOT `info.faction`, which
+            // for the rebel-mapping case is `italics`/`slave`/whatever
+            // descr_regions assigns as the fallback culture (the Pisae IPC log
+            // showed `wantFac="italics"` because info.faction was the rebel
+            // faction, while Appius's actual character record lives under
+            // romans_julii). Fall back to garrisonCommander.faction → r.faction
+            // so we always have something.
+            const ownerFaction = ownerFactionId
+              || (garrisonCommander && garrisonCommander.faction)
+              || (info && info.faction)
+              || null;
             const garrisonArmyDesc = {
-              faction: info && info.faction,
+              faction: ownerFaction,
               locator: {
                 region: (info && info.region) || null,
                 ...(commanderFirst ? { character: commanderFirst } : {}),

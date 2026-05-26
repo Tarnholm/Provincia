@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.653",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Pisae / Appius Save fix — the real one this time.** Logs from 0.9.652 showed `wantFac=\"italics\"` reaching the IPC — that's the descr_regions REBEL faction Provincia falls back to when a region's culture-faction differs from its actual owner. Pisae is *owned by* `romans_julii` in descr_strat, where Appius's character record lives. Two fixes: (1) RegionInfo now builds the garrison army descriptor's faction from `ownerFactionId` first (the real save / descr_strat owner), then `garrisonCommander.faction`, then `info.faction` as last resort. (2) Belt-and-suspenders: the IPC's by-character lookup now retries WITHOUT the faction filter on miss — character first names are unique enough campaign-wide that this is safe, and it logs the actual faction it found the character under so we'd catch any other rebel-faction-mismatch class in future." },
+    ],
+  },
+  {
     version: "0.9.652",
     date: "2026-05-26",
     items: [
