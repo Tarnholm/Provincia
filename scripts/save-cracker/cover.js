@@ -299,42 +299,71 @@ function main() {
   //
   // The array starts a few bytes after the tile-grid matrix end + the implicit
   // settlement-0 record (here 0xf84632..0xf85f5c, hardcoded for save_1.2.sav).
-  // Locate it dynamically: search forward from 0xf85f5c for the magic
-  // `00 c4 03 00 00` (zero-padded cluster start) and grow while the stride
-  // is a multiple of 267 (267 / 534 / 801 / 1068 / 1602 …).
+  // Locate by scanning forward for the stable record-body signature at +0x10..
+  // +0x1f: `c8 00 00 00 c8 00 00 00 02 00 00 00 06 00 00 00`. The +0x00 and
+  // +0x0c u32 fields are NOT stable — Turn 960 had c4 03 00 00 / c9 03 00 00,
+  // Turn 1018 has fe 03 00 00 / 03 04 00 00 (different pool-size / generation
+  // counter). The +0x10 signature is identical across saves.
   {
-    const TMPL_MAGIC = Buffer.from([0xc4, 0x03, 0x00, 0x00]);
+    const BODY_SIG = Buffer.from([0xc8, 0x00, 0x00, 0x00, 0xc8, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00]);
     const SCAN_START = 0xf85f5c;
     const SCAN_END   = Math.min(size, SCAN_START + 0x100000); // 1 MB safety cap
-    // Find first record start (preceded by 0).
+    // Find first record start: locate BODY_SIG at +0x10 from a candidate record
+    // start; the candidate start is BODY_SIG_OFFSET - 0x10 inside a zero-led run.
     let firstOff = -1;
-    for (let i = SCAN_START; i + 4 <= SCAN_END; i++) {
-      if (buf[i] === 0xc4 && buf[i+1] === 0x03 && buf[i+2] === 0x00 && buf[i+3] === 0x00 && buf[i-1] === 0) {
-        // Validate by checking a second record at +267.
-        if (buf[i + 267] === 0xc4 && buf[i + 267 + 1] === 0x03) { firstOff = i; break; }
+    {
+      let p = SCAN_START;
+      while (p + 16 <= SCAN_END) {
+        const sigAt = buf.indexOf(BODY_SIG, p);
+        if (sigAt < 0 || sigAt + 16 > SCAN_END) break;
+        const cand = sigAt - 0x10;
+        // Record starts after a zero byte; ensure cand-1 is zero (preceded by
+        // padding) and cand is non-zero (real record header).
+        if (cand > SCAN_START && buf[cand - 1] === 0 && buf[cand] !== 0) {
+          // Validate by checking a second record's BODY_SIG at cand + 267 + 0x10.
+          const nextSig = cand + 267 + 0x10;
+          if (nextSig + 16 <= SCAN_END) {
+            let match = true;
+            for (let k = 0; k < 16; k++) if (buf[nextSig + k] !== BODY_SIG[k]) { match = false; break; }
+            if (match) { firstOff = cand; break; }
+          }
+        }
+        p = sigAt + 1;
       }
     }
     if (firstOff >= 0) {
+      // The +0x00 u32 is the per-save pool ID (964 on Turn 960, 1022 on Turn
+      // 1018). Use the FIRST record's u32 as this save's magic, then walk by
+      // stride 267. Records that deviate (per the 2026-05-26 cracking the 418
+      // unique records' differing bytes are scattered through the body, with
+      // some landing on +0x10..+0x1f) won't match every byte exactly, so the
+      // walk tolerates up to MAX_BREAKS consecutive non-matching strides
+      // before stopping. The +0x00 magic alone is the cheapest, most stable
+      // anchor: every record in the Turn-960 array had c4 03 at +0x00 across
+      // all 2272 entries; same for fe 03 at +0x00 on Turn 1018.
+      const magic = buf.readUInt32LE(firstOff);
+      // Some records span 2-6 stride units (the 2026-05-26 cracking showed
+      // strides 267, 534, 801, 1068, 1602 — i.e. 267×{1,2,3,4,6}). Walk by
+      // probing +267, +534, +801, +1068, +1335, +1602 for the next record;
+      // pick the closest hit. Stops when no multi-stride lookahead finds the
+      // magic — i.e. the array has truly ended.
       let p = firstOff, count = 0;
-      while (p + 267 < SCAN_END) {
-        if (buf[p] !== 0xc4 || buf[p+1] !== 0x03) break;
+      while (p + 267 <= SCAN_END) {
+        if (buf.readUInt32LE(p) !== magic) break;
         count++;
-        // Walk to the next cluster start (stride is a positive multiple of 267
-        // up to 1602 = 267×6).
         let next = -1;
         for (let k = 1; k <= 6; k++) {
           const cand = p + k * 267;
           if (cand + 4 > SCAN_END) break;
-          if (buf[cand] === 0xc4 && buf[cand+1] === 0x03 && buf[cand-1] === 0) { next = cand; break; }
+          if (buf.readUInt32LE(cand) === magic) { next = cand; break; }
         }
-        if (next < 0) { p += 267; break; }  // last record consumed
+        if (next < 0) { p += 267; break; }
         p = next;
       }
       const blockEnd = p + 267;
-      // Sanity: only claim if we found a large enough block (≥ 1024 records).
       if (count >= 1024) {
-        claim(bm, firstOff, blockEnd, claims, "Post-grid 267-stride array (2272 tile-format records, ~82% default-template)");
-        console.log(`post-grid 267-stride array: ${count} records at 0x${firstOff.toString(16)}..0x${blockEnd.toString(16)} (${blockEnd - firstOff} B)`);
+        claim(bm, firstOff, blockEnd, claims, "Post-grid 267-stride array (auxiliary tile-format records)");
+        console.log(`post-grid 267-stride array: ${count} records at 0x${firstOff.toString(16)}..0x${blockEnd.toString(16)} (${blockEnd - firstOff} B, magic 0x${magic.toString(16)})`);
       }
     }
   }
