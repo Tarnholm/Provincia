@@ -370,7 +370,13 @@
     <div class="dialog-panel" style="width:560px; max-width:92vw;">
       <div class="dialog-header">
         <h3>Migrate Building Chain</h3>
-        <p>Retire an old building chain and replace it with one or more new ones. The chosen migrations are written to <code>config/chain_migration.txt</code> and applied when you run the step.</p>
+        <p>Retire an old building chain and replace it with one or more new ones — across the EDB and every settlement.</p>
+        <ol class="migrate-steps">
+          <li>Pick the chain to <b>remove</b> and the chain(s) to <b>replace it with</b>, then <b>Add</b>.</li>
+          <li>Click <b>Run migration now</b>.</li>
+          <li>Check the <b>Changelog</b> / <b>Report</b> tabs (what changed + any manual follow-ups).</li>
+          <li>Click <b>Save to Mod</b> to write it back (a backup is made first).</li>
+        </ol>
       </div>
       <div class="dialog-body">
         <div class="dialog-section-label">Current migrations</div>
@@ -403,7 +409,9 @@
         </div>
       </div>
       <div class="dialog-footer">
+        <span id="migrate-run-hint" class="migrate-run-hint"></span>
         <button id="migrate-close" class="toolbar-btn">Close</button>
+        <button id="migrate-run" class="toolbar-btn primary" disabled>Run migration now</button>
       </div>
     </div>
   </div>

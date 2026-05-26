@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.631",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**Migrate Building Chain is now self-guiding.** The Configure… dialog shows numbered steps and has a **Run migration now** button that runs just this step (no hunting for checkboxes), then points you to the Changelog/Report tabs and the Save to Mod button. The `farms` and `herds` migrations come pre-configured, so the common case is: open the dialog → Run migration now → Save to Mod. The button stays disabled until at least one migration is set up, with a hint showing how many will run." },
+    ],
+  },
+  {
     version: "0.9.630",
     date: "2026-05-26",
     items: [

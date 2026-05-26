@@ -278,10 +278,31 @@ async function openMigrateDialog() {
   oldSel.onchange = renderMigrateNewList;
   document.getElementById('migrate-new-filter').oninput = renderMigrateNewList;
   document.getElementById('migrate-add').onclick = onMigrateAdd;
+  document.getElementById('migrate-run').onclick = runMigrateNow;
   overlay.onclick = (e) => {
     if (e.target === overlay || e.target.id === 'migrate-close') overlay.classList.remove('visible');
   };
   overlay.classList.add('visible');
+}
+
+// Enable "Run migration now" only when at least one migration is configured.
+function updateMigrateRunState() {
+  const btn = document.getElementById('migrate-run');
+  const hint = document.getElementById('migrate-run-hint');
+  if (!btn) return;
+  const n = _migData.migrations.length;
+  btn.disabled = n === 0;
+  if (hint) hint.textContent = n ? `Runs ${n} migration${n === 1 ? '' : 's'} (this step only)` : 'Add a migration first';
+}
+
+// Run ONLY the migrate_chain step from the dialog, then guide to Save to Mod.
+async function runMigrateNow() {
+  if (!_migData.migrations.length) return;
+  document.getElementById('migrate-overlay').classList.remove('visible');
+  // Select only this step so we don't run the whole pipeline.
+  document.querySelectorAll('.step-checkbox').forEach(cb => { cb.checked = (cb.dataset.step === 'migrate_chain'); });
+  await runPipeline();
+  appendConsole('\nMigration done. Review the Changelog / Report tabs above, then click "Save to Mod" (top-right) to write it back.\n', 'info');
 }
 
 function renderMigrateNewList() {
@@ -304,6 +325,7 @@ function updateMigrateNewCount() {
 
 function renderMigrateList() {
   const list = document.getElementById('migrate-list');
+  updateMigrateRunState();
   if (!_migData.migrations.length) {
     list.innerHTML = `<div class="migrate-dim" style="padding:6px">None yet — add one below.</div>`;
     return;
