@@ -3186,8 +3186,16 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
     if (byCharacter) {
       let curFac = null;
       const wantChar = String(locator.character).trim();
+      const wantHasSpace = /\s/.test(wantChar);  // full name vs first-name-only
       let charHeadersInWantFac = 0;
       let charFirstNamesSampled = [];
+      // 0.9.659: collect all matches in pass 1 so we can detect ambiguity
+      // (RIS has 2 Servius / 3 Manius / etc. in romans_julii alone — a
+      // first-name-only match used to silently pick the WRONG character's
+      // army, writing the edit to a no-op and returning ok:true). When the
+      // locator carries a full "First Last" name we can disambiguate via
+      // exact full-name match.
+      const matches = [];
       for (let i = 0; i < lines.length; i++) {
         const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
         if (fm) { curFac = fm[1].toLowerCase(); continue; }
@@ -3200,10 +3208,19 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
         const cm = lines[i].match(/^character\s*,?\s*(?:sub_faction\s+\S+\s*,\s*)?([^,]+?)\s*,\s*named character/i);
         if (!cm) continue;
         charHeadersInWantFac++;
-        const firstName = cm[1].trim().split(/\s+/)[0];
+        const fullName = cm[1].trim();
+        const firstName = fullName.split(/\s+/)[0];
         if (charFirstNamesSampled.length < 12) charFirstNamesSampled.push(firstName);
-        if (firstName !== wantChar) continue;
-        console.log(`[army-units] character match: faction="${curFac}" line=${i + 1} firstName="${firstName}" wantChar="${wantChar}"`);
+        const hit = wantHasSpace
+          ? fullName.toLowerCase() === wantChar.toLowerCase()
+          : firstName === wantChar;
+        if (hit) matches.push({ line: i, fullName, firstName });
+      }
+      if (matches.length > 1) {
+        console.warn(`[army-units] byCharacter AMBIGUOUS: ${matches.length} matches for "${wantChar}" in faction "${wantFac}" — ${matches.map((m) => m.fullName).join(", ")}. Falling through to byCoord / ;Region path so the right army is found.`);
+      } else if (matches.length === 1) {
+        const i = matches[0].line;
+        console.log(`[army-units] character match: line=${i + 1} fullName="${matches[0].fullName}" wantChar="${wantChar}" wantFac="${wantFac}"`);
         // Walk forward to this character's `army` block.
         for (let j = i + 1; j < lines.length && j < i + 40; j++) {
           if (/^character[\s,]/.test(lines[j])) { console.log(`[army-units] hit next character at line ${j + 1}, stopping forward walk`); break; }
@@ -3220,24 +3237,34 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
             break;
           }
         }
-        if (unitStart >= 0) break;
       }
-      if (unitStart < 0) {
+      if (unitStart < 0 && matches.length === 0) {
         console.warn(`[army-units] byCharacter MISS with faction filter: wantChar="${wantChar}" wantFac="${wantFac}" — found ${charHeadersInWantFac} character headers in that faction. First names sampled: ${JSON.stringify(charFirstNamesSampled)}`);
         // 0.9.653: faction filter sometimes points at the wrong block (e.g.
         // the renderer passes the descr_regions REBEL faction `italics` when
         // a settlement is actually Roman). Retry the same character lookup
-        // with NO faction constraint — character first names are unique
-        // enough on a campaign-wide basis to be a safe second pass.
+        // with NO faction constraint. 0.9.659: collect all matches first so
+        // we can fall through on ambiguity instead of writing to the first
+        // one we hit.
         let curFac2 = null;
+        const matchesAny = [];
         for (let i = 0; i < lines.length; i++) {
           const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
           if (fm) { curFac2 = fm[1].toLowerCase(); continue; }
           const cm = lines[i].match(/^character\s*,?\s*(?:sub_faction\s+\S+\s*,\s*)?([^,]+?)\s*,\s*named character/i);
           if (!cm) continue;
-          const firstName = cm[1].trim().split(/\s+/)[0];
-          if (firstName !== wantChar) continue;
-          console.log(`[army-units] character match (no-faction retry): line=${i + 1} actualFaction="${curFac2}" firstName="${firstName}"`);
+          const fullName = cm[1].trim();
+          const firstName = fullName.split(/\s+/)[0];
+          const hit = wantHasSpace
+            ? fullName.toLowerCase() === wantChar.toLowerCase()
+            : firstName === wantChar;
+          if (hit) matchesAny.push({ line: i, fullName, faction: curFac2 });
+        }
+        if (matchesAny.length > 1) {
+          console.warn(`[army-units] no-faction retry AMBIGUOUS: ${matchesAny.length} matches for "${wantChar}" — ${matchesAny.map((m) => `${m.fullName}(${m.faction})`).join(", ")}. Falling through.`);
+        } else if (matchesAny.length === 1) {
+          const i = matchesAny[0].line;
+          console.log(`[army-units] character match (no-faction retry): line=${i + 1} actualFaction="${matchesAny[0].faction}" fullName="${matchesAny[0].fullName}"`);
           for (let j = i + 1; j < lines.length && j < i + 40; j++) {
             if (/^character[\s,]/.test(lines[j])) break;
             if (/^faction\s+/.test(lines[j])) break;
@@ -3252,7 +3279,6 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
               break;
             }
           }
-          if (unitStart >= 0) break;
         }
       }
     }

@@ -2638,7 +2638,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             const commanderName = (garrisonCommander && garrisonCommander.character)
               || (garrison.find(u => u && u.commanderName) || {}).commanderName
               || null;
-            const commanderFirst = commanderName ? String(commanderName).split(/\s+/)[0] : null;
+            // 0.9.659: prefer the FULL name in the locator (e.g. "Servius
+            // Fulvius_Flaccus" not just "Servius") so the IPC can
+            // disambiguate when the faction has multiple characters sharing
+            // a first name (RIS romans_julii has 2 Servius / 3 Manius /…).
+            // garrisonCommander.character from a live save is typically
+            // full; the non-live unit-card commanderName is firstName only,
+            // and the IPC falls back to byCoord / ;Region when that is
+            // ambiguous.
+            const commanderFirst = commanderName || null;
             // 0.9.653: use the SETTLEMENT'S actual owner (from save / descr_strat
             // ownership map) for the locator faction — NOT `info.faction`, which
             // for the rebel-mapping case is `italics`/`slave`/whatever

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.659",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Garrison edits no longer silently write to the wrong character.** The actual root cause of \"Reate has 2 hastati in game, Provincia shows 0\": RIS's romans_julii has TWO characters named Servius (Ogulnius_Gallus and Fulvius_Flaccus), THREE Manius, multiple Gaius/Lucius/Marcus. The IPC's by-character army lookup matched on first name only and silently wrote to whichever it hit first — line 7099 (Servius Ogulnius_Gallus, solo 1-unit army), not line 7170 (Servius Fulvius_Flaccus at Reate, 3-unit army). Net effect: write was a no-op on the wrong character, `ok:true` returned, badge cleared, descr_strat at Reate untouched. Now: the IPC collects ALL matches in one pass; if there's more than one, it logs the conflict and falls through to the byCoord / `;Region`-comment path (added in 0.9.658) which uniquely resolves to the correct character via the `;Reate` marker. RegionInfo also now passes the FULL name (\"Servius Fulvius_Flaccus\") when the live save knows it, so the IPC can exact-match instead of falling through. Same fall-through guard added to the no-faction retry. Re-Apply your Reate edit — it'll land on Fulvius_Flaccus's army this time." },
+    ],
+  },
+  {
     version: "0.9.658",
     date: "2026-05-26",
     items: [
