@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.664",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**Diagnostic log for Reate's 1-unit-vs-3-units mystery.** 0.9.663 was supposed to clear the stale pending overlay, but Reate still shows just the general. Added a `[gar-dbg]` log line that fires whenever the panel renders Sabinia-Aequia / Reate, dumping the region/city/faction/owner ids, starting-army count, raw unit count, both merge-key probes (pending + applied for both r.faction and ownerId), and the final normalised count. Click Reate once after updating, then send `%AppData%\\Roaming\\Provincia\\provincia.log`'s `[gar-dbg]` lines — the output identifies which step is dropping the hastati." },
+    ],
+  },
+  {
     version: "0.9.663",
     date: "2026-05-26",
     items: [

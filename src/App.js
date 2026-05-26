@@ -15500,6 +15500,25 @@ function App() {
                             weapon: u.weapon || 0,
                           }));
                         }
+                        // 0.9.664: diagnostic — surfaces in provincia.log when
+                        // the panel count doesn't match the file count. Logs
+                        // region, city, starting-army count, raw + post-merge
+                        // unit counts, and which pending/applied keys hit (if
+                        // any). Remove after the Reate "1 unit shown vs 3 in
+                        // file" mystery is resolved.
+                        try {
+                          const debug = (r.city === "Reate" || r.region === "Sabinia-Aequia");
+                          if (debug) {
+                            const regData = startingArmiesByRegion?.[r.region];
+                            const garrisonArmies = regData?.garrison || [];
+                            const rawUnits = garrisonArmies.reduce((n, a) => n + (a.units?.length || 0), 0);
+                            const pendK1 = pendingKey1 && pendingArmyUnits.get(pendingKey1) ? "pendK1✓" : "pendK1✗";
+                            const pendK2 = pendingKey2 && pendingArmyUnits.get(pendingKey2) ? "pendK2✓" : "pendK2✗";
+                            const applK1 = pendingKey1 && appliedArmyUnits.get(pendingKey1) ? "applK1✓" : "applK1✗";
+                            const applK2 = pendingKey2 && appliedArmyUnits.get(pendingKey2) ? "applK2✓" : "applK2✗";
+                            console.log(`[gar-dbg] region=${r.region} city=${r.city} r.faction=${r.faction} ownerId=${ownerId} startingArmies=${garrisonArmies.length} rawUnits=${rawUnits} pendK1=${pendingKey1} pendK2=${pendingKey2} ${pendK1} ${pendK2} ${applK1} ${applK2} pendingEntry=${pendingEntry ? pendingEntry.units.length + "u" : "null"} normalised=${normalised?.length ?? "null"}`);
+                          }
+                        } catch {}
                         if (!normalised || normalised.length === 0) {
                           // Empty pending state is still a valid display: an
                           // empty garrison the user is editing toward. Return
