@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.638",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Faction Compare** (#4 of the 8 improvements). New **Compare** button in the dev pill opens a modal where you pick up to 3 factions from dropdowns and see them side-by-side: starting wealth (with live treasury when a save is loaded), region count (start + live), army count (live), AI personality, and an expandable region list per faction. Each column is colour-coded with the faction's banner colour. No more clicking back and forth between single-faction inspectors to answer \"is X richer than Y at turn 0?\" 5/8 improvements shipped; remaining: #2 mod-validation dashboard, #3 cross-reference panel, #7 command palette." },
+    ],
+  },
+  {
     version: "0.9.637",
     date: "2026-05-26",
     items: [

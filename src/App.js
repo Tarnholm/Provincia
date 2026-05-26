@@ -1522,6 +1522,10 @@ function App() {
   // expected faction count (=trait indices drifted; regenerate save).
   const [saveStaleInfo, setSaveStaleInfo] = useState(null);
   const [saveStaleDismissed, setSaveStaleDismissed] = useState(false);
+  // 0.9.638: faction compare modal — pick up to 3 factions and see their
+  // wealth / region count / army count / AI / diplomatic state side by side.
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [compareSelection, setCompareSelection] = useState([null, null, null]);
   // 0..100 while electron-updater is downloading the installer in the
   // background; null when no download is in flight. Drives the progress
   // strip next to the version label.
@@ -9877,6 +9881,20 @@ function App() {
                   }}
                 >EDB</button>
               )}
+              {/* 0.9.638: Compare up to 3 factions side-by-side (wealth,
+                  regions, armies, AI, diplomatic state). */}
+              <button
+                className="dev-btn"
+                onClick={() => setShowCompareModal(true)}
+                title="Compare up to 3 factions side-by-side"
+                style={{
+                  ...btnStyle(false),
+                  background: "rgba(60,60,60,0.7)",
+                  color: "#d0a0ff",
+                  border: "1px solid #a78bfa",
+                  minWidth: 76,
+                }}
+              >Compare</button>
               {/* Victory-conditions helper: pick a region-list CSV → get a CSV of
                   region,owner_faction from the loaded mod's descr_strat. */}
               {window.electronAPI?.vcRegionOwnersCsv && (
@@ -12764,6 +12782,109 @@ function App() {
           onDismiss={() => setUpdateReady(null)}
         />
       )}
+      {showCompareModal && (() => {
+        const allFactions = (factions || []).slice().sort();
+        const fmt = (n) => n == null ? "—" : (typeof n === "number" ? n.toLocaleString() : n);
+        const colorOf = (f) => {
+          const c = factionColors && (factionColors[f] || factionColors[f?.toLowerCase?.()]);
+          return c ? `rgb(${c[0]}, ${c[1]}, ${c[2]})` : "#aaa";
+        };
+        const rowFor = (f) => {
+          if (!f) return null;
+          const lf = f.toLowerCase();
+          const liveRegions = liveRegionsByFaction ? liveRegionsByFaction[lf] : null;
+          const liveArmies = liveArmiesByFaction ? liveArmiesByFaction[lf] : null;
+          const startRegions = (factionRegionsMap[f] || []).length;
+          const liveTreasury = liveTreasuryByFaction && liveTreasuryByFaction[lf];
+          const startWealth = factionWealth[f] != null ? factionWealth[f] : (factionWealth[lf] != null ? factionWealth[lf] : null);
+          const wealth = liveTreasury ? liveTreasury.treasury : startWealth;
+          const display = (factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " ");
+          const ai = aiPersonalityByFaction ? (aiPersonalityByFaction[lf] || null) : null;
+          return {
+            faction: f, display, color: colorOf(f), wealth, wealthIsLive: !!liveTreasury,
+            startWealth, regions: liveRegions != null ? liveRegions : startRegions,
+            startRegions, armies: liveArmies || 0, isLive: liveLogActive && liveRegions != null,
+            ai: ai ? ai.replace(/^ai_/, "").replace(/_/g, " ") : null,
+            regionNames: factionRegionsMap[f] || [],
+          };
+        };
+        return (
+          <div onClick={() => setShowCompareModal(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+            zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <div onClick={(e) => e.stopPropagation()} style={{
+              background: "#1e1e1e", color: "#e6e6e6", borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.10)", padding: 16,
+              width: "min(880px, 92vw)", maxHeight: "86vh", overflow: "auto",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+                <h3 style={{ margin: 0, flex: 1, fontSize: "1.05rem" }}>Compare factions</h3>
+                <button onClick={() => setShowCompareModal(false)} style={{
+                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#ccc", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.78rem",
+                }}>Close</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                {[0, 1, 2].map(idx => {
+                  const f = compareSelection[idx];
+                  const row = rowFor(f);
+                  return (
+                    <div key={idx} style={{
+                      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: 6, padding: 10, fontSize: "0.78rem",
+                    }}>
+                      <select
+                        value={f || ""}
+                        onChange={(e) => setCompareSelection(s => { const c = s.slice(); c[idx] = e.target.value || null; return c; })}
+                        style={{
+                          width: "100%", marginBottom: 8, background: "#2a2a2a", color: "#eee",
+                          border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "4px 6px", fontSize: "0.78rem",
+                        }}
+                      >
+                        <option value="">— pick a faction —</option>
+                        {allFactions.map(fn => (<option key={fn} value={fn}>{(factionDisplayNames && factionDisplayNames[fn]) || fn.replace(/_/g, " ")}</option>))}
+                      </select>
+                      {row ? (
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                            <span style={{ width: 12, height: 12, borderRadius: 2, background: row.color, border: "1px solid rgba(0,0,0,0.4)", flexShrink: 0 }} />
+                            <b style={{ flex: 1, textTransform: "capitalize" }}>{row.display}</b>
+                          </div>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem" }}>
+                            <tbody>
+                              <tr><td style={{ color: "#888", padding: "2px 0" }}>Wealth{row.wealthIsLive ? " (live)" : ""}</td><td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(row.wealth)}</td></tr>
+                              {row.wealthIsLive && row.startWealth != null && (<tr><td style={{ color: "#888", padding: "2px 0" }}>— starting</td><td style={{ textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{fmt(row.startWealth)}</td></tr>)}
+                              <tr><td style={{ color: "#888", padding: "2px 0" }}>Regions{row.isLive ? " (live)" : ""}</td><td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(row.regions)}</td></tr>
+                              {row.isLive && row.startRegions !== row.regions && (<tr><td style={{ color: "#888", padding: "2px 0" }}>— starting</td><td style={{ textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{fmt(row.startRegions)}</td></tr>)}
+                              {liveLogActive && (<tr><td style={{ color: "#888", padding: "2px 0" }}>Armies</td><td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(row.armies)}</td></tr>)}
+                              {row.ai && (<tr><td style={{ color: "#888", padding: "2px 0" }}>AI</td><td style={{ textAlign: "right", textTransform: "capitalize" }}>{row.ai}</td></tr>)}
+                            </tbody>
+                          </table>
+                          {row.regionNames.length > 0 && (
+                            <details style={{ marginTop: 6 }}>
+                              <summary style={{ cursor: "pointer", color: "#aaa", fontSize: "0.72rem" }}>Region list ({row.regionNames.length})</summary>
+                              <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 4, fontSize: "0.7rem", lineHeight: 1.5 }}>
+                                {row.regionNames.map(r => <div key={r} style={{ color: "#bbb" }}>{r}</div>)}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ color: "#888", fontStyle: "italic", padding: "8px 0" }}>Pick a faction above.</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 10, fontSize: "0.7rem", color: "#888" }}>
+                Values marked <i>(live)</i> come from the loaded save; the rest are starting state from descr_strat.
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {saveStaleInfo && !saveStaleDismissed && (
         <div style={{
           position: "fixed", top: updateReady ? 56 : 12, left: "50%", transform: "translateX(-50%)",
