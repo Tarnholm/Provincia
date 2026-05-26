@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.634",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**AOR map: dominant AOR is now the fill colour** (flipped from 0.9.633, which had it inverted). For a region tagged `aor_suebian, aor_germanic`, the broad ethnic AOR `aor_germanic` is the dominant identity for that area's recruitment — so it now fills the region, and the more specific `aor_suebian` overlays as stripes. Per-region AOR list sorted by global frequency DESCENDING (most common first) with alphabetic tiebreak; palette slots assigned dominant-first so the AORs that fill the most map area each get a distinct colour. Legend uses the same sort, so colours line up across the map and the legend." },
+    ],
+  },
+  {
     version: "0.9.633",
     date: "2026-05-26",
     items: [
