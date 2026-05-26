@@ -55,8 +55,30 @@ const { findAllSettlementMarkers, scanChainsBetween } = require("../src/building
 const { findCharacterRecords } = require("../src/characterParser.js");
 const { countEngineCharacters } = require("../src/saveCrackerExtras.js");
 const { countDeadPoolRecords } = require("../src/characterParser.js");
+const { countMapEntities } = require("../src/mapEntityParser.js");
 
 const MOD_DATA_DIR = "C:/RIS/RIS/data";
+
+// Count `resource <type>, <amount>, <x>, <y>` lines in the active campaign's
+// descr_strat. Resources are tile-placements that don't change during a
+// campaign (cities can be razed but the resource tile remains and re-enters
+// the registry when re-conquered). descr_strat is the authoritative source.
+// 2026-05-27 cracking session refuted the post-grid 267-stride array as the
+// resource table; descr_strat counting is the most reliable proxy until a
+// dedicated save-buffer parser surfaces.
+function countResourcesFromDescrStrat() {
+  const candidates = [
+    path.join(MOD_DATA_DIR, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(MOD_DATA_DIR, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(MOD_DATA_DIR, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    const text = fs.readFileSync(p, "utf8");
+    return (text.match(/^resource\s+/gm) || []).length;
+  }
+  return null;
+}
 
 // Dev-log entity ratios (sum = 65,563 ≈ 100 % of pointer registry at the moment of corruption).
 const DEV = {
@@ -144,38 +166,61 @@ function est(key) {
   return Math.round((DEV[key] || 0) * scale);
 }
 
+// 2b. Map-entity counts from chain scans + 267-stride aux array.
+// roads & ports are counted from settlement-detail building chains.
+// watchtowers is best-effort (post-grid 267-stride non-template records);
+// returns null on saves where the array isn't present yet, then we estimate.
+const mapEnts = countMapEntities(buf);
+const watchtowersCounted = mapEnts.watchtowers;
+console.log(`map-entity counts: roads=${mapEnts.roads} (hinterland_roads chains), ports=${mapEnts.ports} (port_buildings=${mapEnts.portsBuildings} + river_port=${mapEnts.portsRiver}), watchtowers=${watchtowersCounted ?? "n/a (array absent — early game)"}`);
+
 // 3. Build final table. Known counts override estimates.
 const counts = {
   factions,                       // counted
   settlements: setts.length,      // counted
   forts: est("forts"),            // estimated (dev = 0)
-  ports: est("ports"),            // estimated
-  watchtowers: est("watchtowers"),// estimated
+  ports: mapEnts.ports,           // counted (port_buildings + river_port chains)
+  watchtowers: watchtowersCounted ?? est("watchtowers"),  // probable-counted or estimated
   characters: live,               // counted
   armies,                         // counted (commanded + naval + region-garrisons)
   units,                          // counted
-  resources: est("resources"),    // estimated
-  roads: est("roads"),            // estimated
+  resources: 0,                   // set below from descr_strat count
+  roads: mapEnts.roads,           // counted (hinterland_roads chains)
   sieges: 0,                      // counted (set below)
   characterRecords: dead,         // counted
   buildings,                      // counted
   cameras: 0,
   superfactions: 0,
 };
+const watchtowersSource = watchtowersCounted != null ? "(counted-probable)" : "(est)";
 // Siege block at fixed offset (cover.js claims 0x152f529); presence ≈ 1 siege.
 // TODO: scan all sieges; for now this is a coarse 0/1.
 counts.sieges = (buf.length > 0x152f529 + 73) ? 1 : 0;
+
+// 2026-05-27: resources count from descr_strat tile placements (5,548 for
+// RIS imperial). Resources are static — they don't get created/destroyed by
+// normal play, just enter/leave the registry when settlements change hands.
+// Best approximation until a save-buffer parser surfaces.
+const resourcesCounted = countResourcesFromDescrStrat();
+counts.resources = resourcesCounted ?? est("resources");
+const resourcesSource = resourcesCounted != null ? "(counted-descr-strat)" : "(est)";
 
 const total = Object.values(counts).reduce((a, b) => a + b, 0);
 const headroom = CAP - total;
 const pct = (100 * total / CAP).toFixed(1);
 
 // Print breakdown sorted by share of pool.
-const rows = Object.entries(counts).map(([k, v]) => ({
-  key: k, count: v,
-  share: (100 * v / CAP).toFixed(2),
-  source: ["forts","ports","watchtowers","resources","roads","cameras","superfactions"].includes(k) ? "(est)" : "(counted)",
-}));
+// ports, roads are now counted from chain scans.
+// watchtowers is "(counted-probable)" if the post-grid array exists, else "(est)".
+const COUNTED = new Set(["factions","settlements","characters","armies","units","sieges","characterRecords","buildings","ports","roads"]);
+const rows = Object.entries(counts).map(([k, v]) => {
+  let source;
+  if (k === "watchtowers") source = watchtowersSource;
+  else if (k === "resources") source = resourcesSource;
+  else if (COUNTED.has(k)) source = "(counted)";
+  else source = "(est)";
+  return { key: k, count: v, share: (100 * v / CAP).toFixed(2), source };
+});
 rows.sort((a, b) => b.count - a.count);
 console.log("entity counts (sorted by share of pointer registry):");
 console.log("  " + "category".padEnd(20) + "count".padStart(8) + "    share   source");
