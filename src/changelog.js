@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.643",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Victory conditions: auto-convert city names → region names on load.** Symptom that triggered it: in-game, Epirus (and every other faction) showed 0 victory conditions despite RIS's `descr_win_conditions.txt` looking full. Cause: RTW's engine resolves `hold_regions` tokens against `descr_regions.txt`'s REGION NAMES, but RIS's file listed CITY names (`Ambrakia, Athens, Sparta, Rome…` instead of `Ambrakikos_Kolpos, Attike, Lakonia, Roma…`). RTW silently drops unknown tokens — every faction ended up with 0 valid VCs. Of Epirus's 175 hold-region tokens, only 6 happened to match a region name; the other 169 were rejected. Provincia's VC parser now **auto-builds a city→region map from descr_regions and rewrites city tokens on parse**, so old / hand-edited / legacy files self-heal in-memory. The writer already emits whatever's in memory, so once you Save to Mod, the file is canonical region-name form from then on. A one-time toast announces how many tokens were auto-converted so you know it happened. (Companion fix: RIS's actual `descr_win_conditions.txt` has been overwritten with the corrected version — 7475 city→region swaps, 0 unknowns — with a backup of the original in the campaign's `_backups/` folder.)" },
+    ],
+  },
+  {
     version: "0.9.642",
     date: "2026-05-26",
     items: [

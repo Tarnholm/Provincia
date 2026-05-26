@@ -487,17 +487,34 @@ function prerenderCultureBorderPath(regions, offscreen, imgSize) {
   return prerenderGroupBorderPath(regions, offscreen, imgSize, (r) => r.culture);
 }
 
-// Parse victory conditions file
-function parseVictoryConditions(text) {
+// Parse victory conditions file.
+//
+// 0.9.643: accepts an optional `cityToRegion` map (built from descr_regions).
+// RTW's engine resolves `hold_regions <tokens>` against descr_regions' REGION
+// NAMES — feeding it city names (like RIS's old `Ambrakia, Athens, Sparta, …`
+// instead of `Ambrakikos_Kolpos, Attike, Lakonia, …`) silently drops them and
+// the faction ends up with 0 VCs in-game. We auto-swap city→region on parse
+// so any legacy/hand-edited file self-heals, and so Provincia's in-memory
+// state is canonical (region names) — meaning the writer at "Save to Mod"
+// always emits valid RTW format from then on. Reports the swap count via the
+// optional onNormalize callback so the UI can surface a one-time toast.
+function parseVictoryConditions(text, cityToRegion, onNormalize) {
   const lines = text.split(/\r?\n/);
   const result = {};
   let current = null;
+  let swapped = 0;
+  const remap = (tok) => {
+    if (!cityToRegion) return tok;
+    const r = cityToRegion[tok];
+    if (r && r !== tok) { swapped++; return r; }
+    return tok;
+  };
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line || line.startsWith(";")) continue;
     if (line.startsWith("hold_regions")) {
       if (!current) continue;
-      const parts = line.replace("hold_regions", "").trim().split(/[\s,]+/).filter(Boolean);
+      const parts = line.replace("hold_regions", "").trim().split(/[\s,]+/).filter(Boolean).map(remap);
       result[current].hold_regions = parts;
     } else if (line.startsWith("take_regions")) {
       if (!current) continue;
@@ -518,7 +535,21 @@ function parseVictoryConditions(text) {
       }
     }
   }
+  if (swapped > 0 && typeof onNormalize === "function") onNormalize(swapped);
   return result;
+}
+
+// Build the city→region map Provincia uses to normalize VC files. Iterates
+// the loaded `regions` (keyed by RGB) and reads each entry's .city/.region.
+// Returns null when regions isn't populated yet so callers skip normalization
+// cleanly (parseVictoryConditions does no-op in that case).
+function buildCityToRegionMap(regions) {
+  if (!regions) return null;
+  const map = {};
+  for (const r of Object.values(regions)) {
+    if (r && r.city && r.region) map[r.city] = r.region;
+  }
+  return Object.keys(map).length ? map : null;
 }
 
 // Move helper for reordering lists
@@ -5347,7 +5378,11 @@ function App() {
       try {
         const campaign = CAMPAIGNS[mapCampaign];
         const r = await loadCampaignData(campaign.winConditionsFile);
-        const parsed = parseVictoryConditions(r.text);
+        const parsed = parseVictoryConditions(
+          r.text,
+          buildCityToRegionMap(regions),
+          (n) => console.warn(`[victory] normalized ${n} city→region tokens on load (bundled VC file).`)
+        );
         setVictoryConditions(parsed);
       } catch (err) {
         console.error("Failed to load victory conditions:", err);
@@ -8731,7 +8766,11 @@ function App() {
     }
     if (!classicVC) {
       const r2 = await fetch((import.meta.env.BASE_URL || "./") + "/descr_win_conditions_classic.txt");
-      classicVC = parseVictoryConditions(await r2.text());
+      classicVC = parseVictoryConditions(
+        await r2.text(),
+        buildCityToRegionMap(regions),
+        (n) => console.warn(`[victory] normalized ${n} city→region tokens on load (classic bundle).`)
+      );
       setClassicVictory(classicVC);
     }
     // Also build imperial city → region name map for conversion
@@ -17082,7 +17121,19 @@ function App() {
           }
           if (fileContents["descr_win_conditions.txt"]) {
             const text = fileContents["descr_win_conditions.txt"];
-            const vc = parseVictoryConditions(text);
+            const vc = parseVictoryConditions(
+              text,
+              buildCityToRegionMap(regions),
+              (n) => {
+                // The file used city names instead of region names — RTW
+                // silently drops these in-game (faction ends up with 0 VCs).
+                // Provincia auto-converts them in-memory so the writer at
+                // "Save to Mod" emits the canonical region-name form,
+                // self-healing the file the next time it's saved.
+                console.warn(`[victory] descr_win_conditions.txt had ${n} city-name tokens — auto-converted to region names (Save to Mod will write the canonical form).`);
+                pushToast(`Victory conditions: auto-fixed ${n} city-name tokens to region names. Save to Mod to make it permanent.`, "info");
+              }
+            );
             const vcCount = Object.keys(vc).length;
             if (vcCount > 0) {
               if (canSave) await window.electronAPI.saveFile(camp.out.win, text);
