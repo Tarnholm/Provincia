@@ -149,12 +149,71 @@ we want a 100 %-accurate budget.
 
 ## Test saves on disk (Downloads folder)
 
-- `save_TEST_A_control.sav` (Turn 960 byte-identical)
-- `save_TEST_B_oneByte.sav` (1-byte flip)
-- `save_TEST_C_zeroBody.sav` (250 B wiped — crashes RTW)
+- `save_TEST_A_control.sav` (Turn 960 byte-identical) ✓ loaded
+- `save_TEST_B_oneByte.sav` (1-byte flip) ✓ loaded
+- `save_TEST_C_zeroBody.sav` (250 B wiped) ✗ CRASH
+- `save_TEST_D_splice.sav` (record #50 spliced out, file -462 B) — **NEEDS IN-GAME TEST**
+- `save_TEST_E_clone.sav` (record #50 = byte-equal clone of #49, same size) — **NEEDS IN-GAME TEST**
 
 Originals also present:
 - `save_Autosave   Dummies   Turn 900 End.sav`
 - `save_Autosave   Dummies   Turn 960 Start.sav` (test source)
 - `save_item limit bug.sav` (Turn 1017)
 - `save_Autosave   Dummies   Turn 1018 Start.sav`
+
+## Session 2026-05-27 part 2 — post-restart findings
+
+### Dead-pool structure (CONFIRMED via dig-deadpool-count-v4)
+
+Dead-pool records are **packed tight with no inter-record header**. Each
+record is structured:
+
+```
+u16 path_length        ← e.g. 0x2f = 47
+ascii path             ← e.g. "data/ui/greek/portraits/portraits/dead/090.tga"
+\0 (path terminator)
+... per-record binary body (~440 B typical, can be MUCH larger) ...
+```
+
+The NEXT record's `u16 path_length` immediately follows the previous
+record's body. There is **no terminator, no record-count u32, and no
+faction-pool header** observable in the inter-record bytes.
+
+Whole-save scan for `u32 == 21762` (= total dead-record count): no hit in
+header areas. The hits at 0x8bb0+12n are an unrelated 12-byte-stride array
+in the file header (coincidentally many 21762 values). So there is NO
+single global "decrement-this-counter" header that we have located.
+
+### The cluster hypothesis was WRONG
+
+Dead-pool records are NOT in per-faction contiguous pools. They are
+**interleaved with LIVING character records** (`cards/old/`, `cards/young/`).
+Cluster boundaries detected by gap analysis (238-target) coincide with
+crossings of unrelated sections (often 200KB+ of other data between
+"clusters") — not with faction-pool boundaries.
+
+### Test D + E design
+
+Since no count was found, two hypotheses to test in-game:
+
+| Test | Hypothesis it falsifies | Modification |
+|---|---|---|
+| **D (splice)** | "engine reads count from file" | record #50 removed, file shrinks 462 B. If loads → engine walks until terminator OR rebuilds from registry, AND tolerates the file-size change. |
+| **E (clone)** | "engine validates record uniqueness" | record #50 overwritten byte-equal with record #49. File size unchanged, but two records now share the same UUID/charId. If loads → uniqueness not enforced. |
+
+Outcomes branch the path forward:
+- D loads ⇒ pruner is `splice records out, write smaller file`. Easy.
+- D crashes, E loads ⇒ pruner must overwrite-with-clone of a "safe noop"
+  record (probably a generic-template dead char).
+- Both crash ⇒ pointer-registry or absolute-offset dependency we haven't
+  located. Need to differentially find the offset-index this validates.
+
+### TODO (next session)
+
+1. **User: load Test D and Test E in RTW.** Report which (if any) loads
+   cleanly and ends turn. This single experiment branches the rest of the
+   pruner design.
+2. Update `mapEntityParser.js` countWatchtowers to 40-byte-stride table
+   (351 → 176 exact). Still pending from before the crash.
+3. Per the outcome of (1), implement the pruner against Test 1017 to
+   actually free entity-budget slots.
