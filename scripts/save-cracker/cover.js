@@ -98,11 +98,18 @@ function main() {
   // Framed-undecoded; sits between RNG counter block and the diplo event log.
   claim(bm, 0x44e2, 0x2a25d, claims, "post-fow-35-stride-table");
 
-  // --- 3b. Diplo event log (session 57) — 1002 × 12 B ----------------------
-  claim(bm, 0x2a25d, 0x2d155, claims, "diplo-event-log");
+  // --- 3b. Diplo event log (session 57) — 1002 × 12 B + slack -------------
+  // 2026-05-27: widen end to the diplo-slot-table start. Saves with >1002
+  // events (e.g. all four Dummies saves here) carry ~70 trailing 12-byte
+  // entries that the 1002-fixed count missed. Bytes at 0x2d155..0x2d4a9 are
+  // continued stride-12 records (same `<u32 hash>` repeat pattern), so they
+  // belong to this log.
+  claim(bm, 0x2a25d, 0x2d4a9, claims, "diplo-event-log");
 
-  // --- 3c. Diplo slot-table (session 56) — 12-byte slot table -------------
-  claim(bm, 0x2d4a9, 0x618f8, claims, "diplo-slot-table");
+  // --- 3c. Diplo slot-table (session 56) — 12-byte slot table + slack -----
+  // 2026-05-27: widen end to ZoneA start. Same reasoning as 3b — trailing
+  // stride-12 entries up to the next fixed section.
+  claim(bm, 0x2d4a9, 0x61c47, claims, "diplo-slot-table");
 
   // --- 3d. Zone A — battle/message log slots (session 54) -----------------
   claim(bm, 0x61c47, 0x846af, claims, "ZoneA-log-slots");
@@ -361,9 +368,42 @@ function main() {
         p = next;
       }
       const blockEnd = p + 267;
-      if (count >= 1024) {
+      // 2026-05-27: lower the record-count floor from 1024 to 2. Earlier
+      // saves (e.g. Turn 900 End) have a tiny array (~7 records / 2.4 KB)
+      // that the 1024-floor rejected. As long as the magic-walk finds at
+      // least 2 consecutive matching records (validation passes already
+      // require a 2nd record at +267×k for the FIRST record to be claimed),
+      // we trust the detection.
+      if (count >= 2) {
         claim(bm, firstOff, blockEnd, claims, "Post-grid 267-stride array (auxiliary tile-format records)");
         console.log(`post-grid 267-stride array: ${count} records at 0x${firstOff.toString(16)}..0x${blockEnd.toString(16)} (${blockEnd - firstOff} B, magic 0x${magic.toString(16)})`);
+      }
+    }
+  }
+
+  // --- 9d. Pre-first-marker region fallback (2026-05-27) -------------------
+  // On saves where section 9c found nothing (e.g. Turn 900 End, where the
+  // dummy pool hasn't grown to the 267-stride array yet), there's still a
+  // small unclaimed region between the hardcoded settlement-detail-0 end
+  // (0xf85f5c) and the first settlement marker. It contains the second
+  // settlement's detail record + leading FF padding. Claim the gap if it's
+  // not already covered.
+  if (setts.length > 0) {
+    const PRE_MARKER_START = 0xf85f5c;
+    const firstMarker = setts[0].offset;
+    if (firstMarker > PRE_MARKER_START) {
+      // Find any unclaimed sub-runs in the range and claim them.
+      let runStart = -1;
+      for (let i = PRE_MARKER_START; i <= firstMarker; i++) {
+        const claimedHere = i < firstMarker && bm[i];
+        if (!claimedHere && runStart < 0) runStart = i;
+        else if (claimedHere && runStart >= 0) {
+          if (i - runStart >= 64) claim(bm, runStart, i, claims, "Pre-first-marker region (settlement-1 detail + leading padding)");
+          runStart = -1;
+        }
+      }
+      if (runStart >= 0 && firstMarker - runStart >= 64) {
+        claim(bm, runStart, firstMarker, claims, "Pre-first-marker region (settlement-1 detail + leading padding)");
       }
     }
   }
