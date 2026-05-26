@@ -1,0 +1,967 @@
+{
+    "header": {
+        "magic": 1802,
+        "campaign_uuid": 1963196431,
+        "unknown_08_1c": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0
+        ],
+        "campaign_type_flag": 131076,
+        "save_version": 7,
+        "hash_campaign": 1791478878,
+        "hash_mod": 2687583679,
+        "hash_variant": 708017412,
+        "session_timestamp": 1767814671,
+        "unknown_34_3a": [
+            133,
+            170,
+            2,
+            0,
+            0,
+            0
+        ],
+        "campaign_name_len": 18,
+        "campaign_name": "alternate_campaign"
+    },
+    "discovered": {
+        "pad": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            64,
+            1,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            31
+        ],
+        "sentinel": [
+            156,
+            199,
+            6
+        ],
+        "byte_count": 30,
+        "bits": [
+            0,
+            0,
+            0,
+            0,
+            247,
+            127,
+            15,
+            56,
+            34,
+            104,
+            135,
+            0,
+            32,
+            18,
+            160,
+            195,
+            70,
+            32,
+            72,
+            32,
+            209,
+            0,
+            130,
+            91,
+            136,
+            32,
+            19,
+            1,
+            0,
+            200
+        ]
+    },
+    "mod_display_name": {
+        "char_count": 0,
+        "chars": ""
+    },
+    "mod_content_hash": {
+        "char_count": 65535,
+        "chars": "%3F%3F%3F"
+    },
+    "mod_path": {
+        "char_count": 0,
+        "chars": ""
+    },
+    "action_counter": 65536,
+    "registry_at_566": [
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 61184,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 256,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 3727954432,
+            "name": "%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 4009754624,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 4009754624,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 4009754624,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 4009754624,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 4009754624,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 256,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 452984832,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 256,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 469762048,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 256,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 486539264,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 4009754624,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 4009754624,
+            "name": "%00"
+        },
+        {
+            "count": 15663104,
+            "name": "%00"
+        },
+        {
+            "count": 16777216,
+            "name": "%00"
+        },
+        {
+            "count": 65536,
+            "name": "%00"
+        },
+        {
+            "count": 0,
+            "name": "%00"
+        },
+        {
+            "count": 873594880,
+            "name": "%DE%0A%EF%00"
+        }
+    ],
+    "registry_at_3310": [
+        {
+            "count": 6946816,
+            "name": "%00"
+        },
+        {
+            "count": 1380931328,
+            "name": "LD_MAP%00"
+        },
+        {
+            "count": 3,
+            "name": "DIPLOMATIC_ATTITUDE%00"
+        },
+        {
+            "count": 6,
+            "name": "SENATE_SERVICE_HISTORY%00"
+        },
+        {
+            "count": 1,
+            "name": "HELP_PLAYER_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "JOURNAL_EVENT%00"
+        },
+        {
+            "count": 1,
+            "name": "GROUND_TILE%00"
+        },
+        {
+            "count": 1,
+            "name": "MERCENARY_DESCRIPTION%00"
+        },
+        {
+            "count": 4,
+            "name": "ECONOMICS_DATA%00"
+        },
+        {
+            "count": 4,
+            "name": "AMBIENT_OBJECT%00"
+        },
+        {
+            "count": 1,
+            "name": "LOG_EVENT%00"
+        },
+        {
+            "count": 1,
+            "name": "SETTLEMENT_PLAN_SLOT_POSITION%00"
+        },
+        {
+            "count": 1,
+            "name": "POLITICAL_ASSASSINATION%00"
+        },
+        {
+            "count": 1,
+            "name": "FACTION%00"
+        },
+        {
+            "count": 34,
+            "name": "SIEGE_ENGINE_QUEUE_ITEM%00"
+        },
+        {
+            "count": 2,
+            "name": "SENATE_EVENT%00"
+        },
+        {
+            "count": 1,
+            "name": "GET_MAP_INFO_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "MAKE_TRADE_AGREEMENT_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "TAKE_CITY_BASE_BUILDER%00"
+        },
+        {
+            "count": 2,
+            "name": "WORLD_MAP_PARAMETERS%00"
+        },
+        {
+            "count": 3,
+            "name": "ASSIST_FACTION_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "IMPERATOR%00"
+        },
+        {
+            "count": 1,
+            "name": "MAP_REGIONS%00"
+        },
+        {
+            "count": 6,
+            "name": "LEGION_DESCRIPTION%00"
+        },
+        {
+            "count": 1,
+            "name": "SUBJUGATE_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "HOLD_REGIONS%00"
+        },
+        {
+            "count": 1,
+            "name": "ANCILLARY_UNIT%00"
+        },
+        {
+            "count": 1,
+            "name": "SOLDIER_PERSISTENT%00"
+        },
+        {
+            "count": 5,
+            "name": "FORT_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "CHARACTER_DB%00"
+        },
+        {
+            "count": 2,
+            "name": "EVENT_DETAILS%00"
+        },
+        {
+            "count": 2,
+            "name": "BUILDING%00"
+        },
+        {
+            "count": 2,
+            "name": "GIVE_BACK_CITY_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "WATCHTOWER_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "LEAVE_REGION_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "HORDE%00"
+        },
+        {
+            "count": 5,
+            "name": "MAKE_ALLIANCE_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "FORT_SHROUD%00"
+        },
+        {
+            "count": 5,
+            "name": "PORT_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "WONDER_SHROUD%00"
+        },
+        {
+            "count": 1,
+            "name": "FOG_OF_WAR_TABLE%00"
+        },
+        {
+            "count": 1,
+            "name": "WATCHTOWER_SHROUD%00"
+        },
+        {
+            "count": 1,
+            "name": "SETTLEMENT_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "PORT_SHROUD%00"
+        },
+        {
+            "count": 3,
+            "name": "CEASE_HOSTILITIES_BUILDER%00"
+        },
+        {
+            "count": 2,
+            "name": "APPEASE_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "UNIT_SHIP%00"
+        },
+        {
+            "count": 1,
+            "name": "ANNEX_CITY_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "BUILDING_CONSTRUCTION_ITEM%00"
+        },
+        {
+            "count": 3,
+            "name": "RESOURCE_MANAGER%00"
+        },
+        {
+            "count": 2,
+            "name": "SETTLEMENT_SHROUD%00"
+        },
+        {
+            "count": 4,
+            "name": "OFFICER%00"
+        },
+        {
+            "count": 1,
+            "name": "STRATEGY_DATE%00"
+        },
+        {
+            "count": 1,
+            "name": "BUILD_ARMY_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "WIN_CONDITION%00"
+        },
+        {
+            "count": 3,
+            "name": "WORLD_MAP_STREAMING_GAME_TILE%00"
+        },
+        {
+            "count": 1,
+            "name": "ROAD_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "FORT%00"
+        },
+        {
+            "count": 6,
+            "name": "FAMOUS_BATTLE_DETAIL%00"
+        },
+        {
+            "count": 4,
+            "name": "EVENT_MANAGER%00"
+        },
+        {
+            "count": 3,
+            "name": "AI_SENATE_FACTION_DATA%00"
+        },
+        {
+            "count": 6,
+            "name": "WATCHTOWER%00"
+        },
+        {
+            "count": 2,
+            "name": "TAKE_ROME%00"
+        },
+        {
+            "count": 2,
+            "name": "CHARACTER_RECORD%00"
+        },
+        {
+            "count": 20,
+            "name": "RESOURCE_HEADER%00"
+        },
+        {
+            "count": 3,
+            "name": "PORT%00"
+        },
+        {
+            "count": 4,
+            "name": "RELIGION_VERSION%00"
+        },
+        {
+            "count": 2,
+            "name": "BREAK_ALLIANCE_BUILDER%00"
+        },
+        {
+            "count": 2,
+            "name": "CALENDER%00"
+        },
+        {
+            "count": 4,
+            "name": "SENATE_MISSION_IMPL%00"
+        },
+        {
+            "count": 2,
+            "name": "SETTLEMENT_MECHANICS_STATS%00"
+        },
+        {
+            "count": 5,
+            "name": "SETTLEMENT%00"
+        },
+        {
+            "count": 14,
+            "name": "NAME_DB%00"
+        },
+        {
+            "count": 1,
+            "name": "DECLARE_WAR_BUILDER%00"
+        },
+        {
+            "count": 2,
+            "name": "MISSION_HISTORY_ENTRY%00"
+        },
+        {
+            "count": 1,
+            "name": "RECRUITMENT_ITEM%00"
+        },
+        {
+            "count": 6,
+            "name": "RESOURCE%00"
+        },
+        {
+            "count": 4,
+            "name": "STRATEGY_MAP_POSITION%00"
+        },
+        {
+            "count": 1,
+            "name": "AI_SENATE_FACTION%00"
+        },
+        {
+            "count": 14,
+            "name": "BLOCKADE_PORT_BUILDER%00"
+        },
+        {
+            "count": 3,
+            "name": "UNIT%00"
+        },
+        {
+            "count": 7,
+            "name": "LANDMARK_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "ATTACK_OUTLAW_FACTION_BUILDER%00"
+        },
+        {
+            "count": 2,
+            "name": "ROAD%00"
+        },
+        {
+            "count": 2,
+            "name": "ASSASSINATION_BUILDER%00"
+        },
+        {
+            "count": 2,
+            "name": "ARMY%00"
+        },
+        {
+            "count": 3,
+            "name": "AMBIENT_OBJECT_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "BROKER_PEACE_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "DEMAND_SUICIDE_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "EXACT_TRIBUTE_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "FAMOUS_BATTLE_SITE_MANAGER%00"
+        },
+        {
+            "count": 1,
+            "name": "WORLD%00"
+        },
+        {
+            "count": 36,
+            "name": "FACTION_ECONOMICS%00"
+        },
+        {
+            "count": 2,
+            "name": "RESOURCE_ID%00"
+        },
+        {
+            "count": 1,
+            "name": "OUTLIVE_FACTIONS%00"
+        },
+        {
+            "count": 2,
+            "name": "GIVE_CASH_BUILDER%00"
+        },
+        {
+            "count": 1,
+            "name": "UNIT_ARTILLERY%00"
+        },
+        {
+            "count": 1,
+            "name": "CHARACTER%00"
+        },
+        {
+            "count": 17,
+            "name": "OFFICE%00"
+        },
+        {
+            "count": 1,
+            "name": "ASSASSINATION_MISSION%00"
+        },
+        {
+            "count": 5,
+            "name": "SIEGE%00"
+        },
+        {
+            "count": 1,
+            "name": "UNIT_DB%00"
+        },
+        {
+            "count": 1,
+            "name": "CHARACTER_PATHS%00"
+        },
+        {
+            "count": 1,
+            "name": "SETTLEMENT_PLAN_PERSISTING%00"
+        },
+        {
+            "count": 1,
+            "name": "STRATEGY_MAP%00"
+        },
+        {
+            "count": 5,
+            "name": "CHARACTER_ACTION_DETAILS%00"
+        }
+    ]
+}

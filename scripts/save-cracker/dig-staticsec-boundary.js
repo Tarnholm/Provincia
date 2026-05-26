@@ -1,0 +1,13 @@
+const fs=require("fs");
+const buf=fs.readFileSync("C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_macedon t0.sav");
+const cellStart=0xf8fc9, stride=267, N=239, cells=N*N;
+const matEnd=cellStart+cells*stride;
+console.log("matrix: 0x"+cellStart.toString(16)+" .. 0x"+matEnd.toString(16)+" ("+(cells*stride)+" bytes, "+(cells*stride/1048576).toFixed(3)+" MB)");
+console.log("file size: 0x"+buf.length.toString(16)+" ("+buf.length+")");
+console.log("bytes after matrix end: "+(buf.length-matEnd)+" = "+((buf.length-matEnd)/1048576).toFixed(2)+" MB (tail: settlement zone etc.)");
+let hex="";for(let i=0;i<48;i++)hex+=buf[matEnd+i].toString(16).padStart(2,"0")+" ";
+console.log("\nbytes at matEnd (0x"+matEnd.toString(16)+"): "+hex);
+const lastCell=cellStart+(cells-1)*stride;
+console.log("\nlast cell #"+(cells-1)+" @0x"+lastCell.toString(16)+": +0="+buf.readUInt32LE(lastCell)+" +4="+buf.readUInt32LE(lastCell+4)+" +8="+buf.readUInt32LE(lastCell+8)+" +12(att)="+buf.readUInt32LE(lastCell+12)+" +16="+buf.readUInt32LE(lastCell+16)+" +20="+buf.readUInt32LE(lastCell+20)+" +24="+buf.readInt32LE(lastCell+24));
+const BODYROOT_END=0x633bb3;
+console.log("\nbody-root header end 0x"+BODYROOT_END.toString(16)+" is record #"+Math.floor((BODYROOT_END-cellStart)/stride)+" of the matrix (mid-cell offset "+((BODYROOT_END-cellStart)%stride)+")");
