@@ -5626,26 +5626,44 @@ function App() {
             return [Math.max(0,Math.min(255,baseCol[0]+v)), Math.max(0,Math.min(255,baseCol[1]+v)), Math.max(0,Math.min(255,baseCol[2]+v))];
           }));
       } else if (colorMode === "aor") {
-        // 0.9.486: AOR map mode. Each region's `aor_X` tags are turned
-        // into a color set; the FIRST AOR fills the region, and any
-        // additional AORs overlay as diagonal stripes (cycling through
-        // their colors) at the same hi-res scale used by the cultures-
-        // mode ethnicity stripes. Regions with no AOR fall back to a
-        // muted neutral. Palette is shared with cultures so the visual
-        // language matches.
+        // AOR map mode. Each region's `aor_X` tags are turned into a colour
+        // set; the FIRST AOR fills the region and the rest stripe over it.
+        //
+        // 0.9.633: pick the PRIMARY AOR by global frequency, not tag order.
+        // RIS authors put broad regional AORs (aor_camillan 41, aor_greek 286,
+        // aor_celtic 201, aor_gallic 169, …) first in each region's tag list,
+        // so every Italian region was filling as "Camillan beige," hiding its
+        // real ethnic identity (etruscan/samnite/picentine/tarentine/…). We
+        // now sort each region's AOR list by how many regions the AOR appears
+        // in (least common first), so the most-localized AOR becomes the
+        // primary fill and the broad regional bleeds become the stripes —
+        // matching what a "proper main AOR vs secondary AORs" reading wants.
+        // Ties break alphabetically for deterministic output.
+        const aorFreq = {};
+        for (const r of Object.values(regions)) {
+          for (const a of getAors(r.tags)) aorFreq[a] = (aorFreq[a] || 0) + 1;
+        }
+        const aorByRegionKey = {};
+        // Build the per-region sorted list FIRST so palette assignment below
+        // walks primaries-first (localized AORs claim distinct palette slots
+        // before broad ones get them).
+        for (const [key, r] of Object.entries(regions)) {
+          const raw = getAors(r.tags);
+          if (raw.length === 0) continue;
+          aorByRegionKey[key] = raw.slice().sort((a, b) => {
+            const da = aorFreq[a] || 0, db = aorFreq[b] || 0;
+            return da !== db ? da - db : a.localeCompare(b);
+          });
+        }
         const aorColors = {};
         let ai = 0;
-        const aorByRegionKey = {};
-        for (const [key, r] of Object.entries(regions)) {
-          const list = getAors(r.tags);
-          if (list.length === 0) continue;
+        for (const list of Object.values(aorByRegionKey)) {
           for (const a of list) {
             if (!aorColors[a]) {
               aorColors[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
               ai++;
             }
           }
-          aorByRegionKey[key] = list;
         }
         console.log(`[aor] palette built: ${Object.keys(aorColors).length} unique AORs across ${Object.keys(aorByRegionKey).length} regions`);
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
@@ -11303,17 +11321,26 @@ function App() {
       // which AOR is the most common (helps spot dominant recruitment
       // zones). Multi-AOR regions get a small "+N" marker on each AOR
       // they belong to in the future click-to-filter pass.
-      const seen = {};
+      // Match the map's palette assignment: count first, then walk each
+      // region's AOR list LEAST-FREQUENT-FIRST so localized AORs claim
+      // distinct palette slots before broad ones get them. Without this
+      // the same AOR would get different colours in the legend vs the map.
       const counts = {};
+      for (const r of Object.values(regions)) {
+        for (const a of getAors(r.tags)) counts[a] = (counts[a] || 0) + 1;
+      }
+      const seen = {};
       let ai = 0;
       for (const r of Object.values(regions)) {
-        const list = getAors(r.tags);
+        const list = getAors(r.tags).slice().sort((a, b) => {
+          const da = counts[a] || 0, db = counts[b] || 0;
+          return da !== db ? da - db : a.localeCompare(b);
+        });
         for (const a of list) {
           if (!seen[a]) {
             seen[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
             ai++;
           }
-          counts[a] = (counts[a] || 0) + 1;
         }
       }
       const entries = Object.entries(seen).sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));

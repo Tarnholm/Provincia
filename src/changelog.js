@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.633",
+    date: "2026-05-26",
+    items: [
+      { type: "improvement", text: "**AOR map: the \"proper\" main AOR now shows as the fill colour, with broad regional AORs as the stripe overlay.** Previously the code just took the first `aor_X` tag on a region — which (by RIS authoring convention) is the broad regional bleed: `aor_camillan` (41 regions), `aor_greek` (286), `aor_celtic` (201), `aor_gallic` (169), etc. So every Italian region was filling as the same Camillan beige, hiding its real ethnic identity (`aor_etruscan`, `aor_samnite`, `aor_picentine`, `aor_tarentine`, `aor_lucanian`, …). Each region's AOR list is now sorted by **global frequency, least-common first**, so the most-localized AOR becomes the primary fill and the broad regional AORs become the stripes. Result: every region's specific cultural AOR finally reads at a glance, with the wide regional bleeds visible as overlays. The legend uses the same ordering so colours line up between map and legend." },
+    ],
+  },
+  {
     version: "0.9.632",
     date: "2026-05-26",
     items: [
