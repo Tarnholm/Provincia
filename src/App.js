@@ -489,32 +489,21 @@ function prerenderCultureBorderPath(regions, offscreen, imgSize) {
 
 // Parse victory conditions file.
 //
-// 0.9.643: accepts an optional `cityToRegion` map (built from descr_regions).
-// RTW's engine resolves `hold_regions <tokens>` against descr_regions' REGION
-// NAMES — feeding it city names (like RIS's old `Ambrakia, Athens, Sparta, …`
-// instead of `Ambrakikos_Kolpos, Attike, Lakonia, …`) silently drops them and
-// the faction ends up with 0 VCs in-game. We auto-swap city→region on parse
-// so any legacy/hand-edited file self-heals, and so Provincia's in-memory
-// state is canonical (region names) — meaning the writer at "Save to Mod"
-// always emits valid RTW format from then on. Reports the swap count via the
-// optional onNormalize callback so the UI can surface a one-time toast.
-function parseVictoryConditions(text, cityToRegion, onNormalize) {
+// 0.9.643 added a city→region conversion based on the assumption that RTW
+// expects region names. 0.9.644 REVERTS that: in-game testing showed RTW
+// actually expects CITY / SETTLEMENT names in hold_regions (Roman Julii's
+// city-name list worked; converting to region names broke every faction).
+// Extra args kept for source compatibility — they're ignored now.
+function parseVictoryConditions(text, _cityToRegion, _onNormalize) {
   const lines = text.split(/\r?\n/);
   const result = {};
   let current = null;
-  let swapped = 0;
-  const remap = (tok) => {
-    if (!cityToRegion) return tok;
-    const r = cityToRegion[tok];
-    if (r && r !== tok) { swapped++; return r; }
-    return tok;
-  };
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line || line.startsWith(";")) continue;
     if (line.startsWith("hold_regions")) {
       if (!current) continue;
-      const parts = line.replace("hold_regions", "").trim().split(/[\s,]+/).filter(Boolean).map(remap);
+      const parts = line.replace("hold_regions", "").trim().split(/[\s,]+/).filter(Boolean);
       result[current].hold_regions = parts;
     } else if (line.startsWith("take_regions")) {
       if (!current) continue;
@@ -535,22 +524,13 @@ function parseVictoryConditions(text, cityToRegion, onNormalize) {
       }
     }
   }
-  if (swapped > 0 && typeof onNormalize === "function") onNormalize(swapped);
   return result;
 }
 
-// Build the city→region map Provincia uses to normalize VC files. Iterates
-// the loaded `regions` (keyed by RGB) and reads each entry's .city/.region.
-// Returns null when regions isn't populated yet so callers skip normalization
-// cleanly (parseVictoryConditions does no-op in that case).
-function buildCityToRegionMap(regions) {
-  if (!regions) return null;
-  const map = {};
-  for (const r of Object.values(regions)) {
-    if (r && r.city && r.region) map[r.city] = r.region;
-  }
-  return Object.keys(map).length ? map : null;
-}
+// 0.9.644: buildCityToRegionMap kept as a stub (returns null) so any
+// downstream code expecting the function still works. The city→region
+// conversion idea was wrong (see parseVictoryConditions above).
+function buildCityToRegionMap() { return null; }
 
 // Move helper for reordering lists
 function moveAtIndex(list, from, to) {

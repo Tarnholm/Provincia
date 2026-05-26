@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.644",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Revert the 0.9.643 \"VC city→region\" conversion — diagnosis was wrong.** In-game testing showed Roman Julii had been working fine in 0.9.642 with the *city-name* form (`Rome, Falerii, Praeneste, …`); converting to region names (`Roma, Faliscia, Latium, …`) broke every faction. So RTW Remastered actually expects **city / settlement names** in `hold_regions`, not region names. Provincia's parser no longer rewrites tokens. The `descr_win_conditions.txt` in RIS has been restored from the timestamped backup made before 0.9.643's overwrite. (The original Epirus-shows-0 symptom is a different bug — investigating; please share a screenshot or describe exactly what's displayed.)" },
+    ],
+  },
+  {
     version: "0.9.643",
     date: "2026-05-26",
     items: [
