@@ -1,0 +1,160 @@
+// Generate clip-path keyframes for the dev-pill genie animation.
+//
+// Mental model (user-described): the bottle is BEHIND the Dev button on
+// the right. The Dev button IS the bottle's opening. The pill content
+// (the genie) flows OUT of the Dev button leftward as it expands, and
+// gets pulled back INTO the Dev button rightward as it retracts.
+//
+// Concretely:
+//
+//   At retract t=0  (or emerge t=1):
+//      [============ pill body =========)|  ← bodyLeftEdge at x=0,
+//                                            tiny shoulder near x=1
+//
+//   At t=0.5:
+//                       [== body ==)|       ← bodyLeftEdge at x=0.5
+//
+//   At t=1.0 (retract done / emerge start):
+//                                  )|       ← body fully sucked in
+//
+// The "neck" is intentionally short — just a small shoulder taper into
+// a rounded cap at the right edge. The vast majority of the visible
+// pill is the BODY (full-height rectangle that grows/shrinks from the
+// left). The "bottle neck" the user sees is effectively the Dev button
+// itself.
+//
+// Implementation: each polygon vertex's natural x position gets clamped
+// to `max(naturalX, bodyLeftEdge)` — so vertices to the left of the
+// body's current left edge collapse to that edge, effectively making
+// them invisible (zero-width segments). Vertices to the right of it
+// remain at their natural x. As tp → 1, bodyLeftEdge → 1, collapsing
+// every vertex to the right edge. Combined with the rounded cap, the
+// final state is the cap's tiny arc — which then closes off via
+// bottleneckFactor.
+
+const SLICES = 16;
+const CAP_POINTS = 7;
+const KEYFRAMES = 22;
+
+// Neck geometry — short and right-anchored.
+const NECK_X = 1.0;             // neck always at the right edge
+const SHOULDER_WIDTH = 0.05;    // 5% of pill width for the taper
+const NECK_HALF = 8;            // half-height of the rounded cap in %
+const TAIL_START = 0.84;        // bottleneckFactor ramp window
+
+function smoothstep(t) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  return t * t * (3 - 2 * t);
+}
+
+function bottleneckFactor(tp) {
+  if (tp <= TAIL_START) return 1;
+  return 1 - smoothstep((tp - TAIL_START) / (1 - TAIL_START));
+}
+
+// Body's left edge x at time tp (for retract; emerge reverses).
+// Uses a slightly eased ramp so the body retracts faster in the middle
+// than at the ends — feels more like a smooth pour than a linear slide.
+function bodyLeftAt(tp) {
+  // Sigmoid easing on a 0..1 ramp.
+  return tp; // start linear; easing comes from the CSS animation curve
+}
+
+function slicePoint(naturalX, tp, isTop) {
+  const bodyLeft = bodyLeftAt(tp);
+  const effectiveX = Math.max(naturalX, bodyLeft);
+
+  const b = bottleneckFactor(tp);
+  const halfNeck = NECK_HALF * b;
+  const neckY = isTop ? (50 - halfNeck) : (50 + halfNeck);
+  const yEdge = isTop ? 0 : 100;
+  const shoulderStart = NECK_X - SHOULDER_WIDTH;
+
+  let cy;
+  if (effectiveX <= shoulderStart) {
+    cy = yEdge;
+  } else if (effectiveX >= NECK_X) {
+    cy = neckY;
+  } else {
+    const t = (effectiveX - shoulderStart) / SHOULDER_WIDTH;
+    cy = yEdge + (neckY - yEdge) * smoothstep(t);
+  }
+  return [effectiveX * 100, cy];
+}
+
+// Right-cap arc — small half-circle at (100%, 50%) with radius =
+// halfNeck. Bulges slightly LEFT so it appears as a rounded inset on
+// the pill's right edge (rather than clipping past x=100%). When
+// halfNeck → 0 in the tail, the cap collapses to a single point.
+function capVertices(tp) {
+  const b = bottleneckFactor(tp);
+  const halfNeck = NECK_HALF * b;
+  const pts = [];
+  for (let i = 0; i < CAP_POINTS; i++) {
+    const a = Math.PI * (i / (CAP_POINTS - 1));
+    const dx = -Math.sin(a) * halfNeck * 0.35; // bulge LEFT (inward)
+    const dy = -Math.cos(a) * halfNeck;
+    const x = 100 + dx;
+    const y = 50 + dy;
+    pts.push([x, y]);
+  }
+  return pts;
+}
+
+function polygonFor(tp) {
+  const top = [];
+  for (let i = 0; i < SLICES; i++) {
+    const x = i / (SLICES - 1);
+    top.push(slicePoint(x, tp, true));
+  }
+  const cap = capVertices(tp);
+  const bot = [];
+  for (let i = SLICES - 1; i >= 0; i--) {
+    const x = i / (SLICES - 1);
+    bot.push(slicePoint(x, tp, false));
+  }
+  return [...top, ...cap, ...bot]
+    .map(([x, y]) => `${x.toFixed(2)}% ${y.toFixed(2)}%`)
+    .join(", ");
+}
+
+function generate(name, reverse) {
+  const frames = [];
+  for (let i = 0; i <= KEYFRAMES; i++) {
+    const tp = i / KEYFRAMES;
+    frames.push({ time: tp, poly: polygonFor(tp) });
+  }
+  if (reverse) {
+    frames.reverse();
+    for (let i = 0; i < frames.length; i++) {
+      frames[i] = { ...frames[i], time: 1 - frames[i].time };
+    }
+    frames.sort((a, b) => a.time - b.time);
+  }
+  let css = `@keyframes ${name} {\n`;
+  for (const f of frames) {
+    const pct = (f.time * 100).toFixed(3);
+    css += `  ${pct}% { clip-path: polygon(${f.poly}); }\n`;
+  }
+  css += `}\n`;
+  return css;
+}
+
+const out = `/* AUTO-GENERATED by scripts/generate-genie-keyframes.js — do not hand-edit. */
+[data-anim-fire="retract"] {
+  /* "forwards" holds the final clip-path (fully sucked-in) after the
+     animation completes, so the element stays invisible until React
+     unmounts it. Easing front-loaded so the body retracts visibly into
+     the Dev button rather than just disappearing at the end. */
+  animation: anim-retract 540ms cubic-bezier(0.4, 0, 0.5, 1) 1 forwards;
+}
+[data-anim-fire="emerge"] {
+  /* Mirrors retract with the inverse curve so the body unfolds out of
+     the Dev button rather than fading in. */
+  animation: anim-emerge 540ms cubic-bezier(0.5, 0, 0.6, 1) 1;
+}
+${generate("anim-retract", false)}
+${generate("anim-emerge", true)}`;
+
+process.stdout.write(out);
