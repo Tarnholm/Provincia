@@ -360,21 +360,31 @@ function parseArmiesClassified(text, tgaBuf, mapHeight) {
       const coord = COORD_RE.exec(rest);
       if (!coord) { current = null; prevComment = ""; continue; }
       const sx = parseInt(coord[1]), sy = parseInt(coord[2]);
-      const name = rest.split(",")[0].trim().replace(/_/g, " ");
-      // 0.9.506: skip `character sub_faction <id>` lines. RIS's descr_strat
-      // uses this form to mark sub-faction territories — the line has no
-      // real character name, the engine assigns one at runtime (Omanes,
-      // etc.). Treating it as a character produced "sub faction parni" in
-      // the Smyrna garrison's character popup. With the line skipped, the
-      // army goes through the army-without-character path and the live
-      // save's commander uuid resolution surfaces the real name when a
-      // save is loaded; in starting mode, the garrison just shows the
-      // unit cards without a synthetic name.
-      if (/^sub[ _]faction\b/i.test(name)) {
-        console.log(`[bundle] skipped sub_faction marker at ${prevComment.trim() || `(${sx},${sy})`}`);
-        current = null;
-        prevComment = "";
-        continue;
+      // descr_strat has two character header shapes:
+      //   regular:        `character,\tName, named character, …`
+      //   sub_faction:    `character,\tsub_faction athens,\tEumedes, named character, …`  (NAMED)
+      //                   `character,\tsub_faction parni, named character, …`            (UNNAMED — engine names at runtime)
+      // First field is either the name (regular) or `sub_faction <id>` (sub).
+      // For sub_faction lines, the SECOND field is the name when it isn't a
+      // type-label (named character/spy/diplomat/etc.) — Eumedes of Thurioi
+      // is one of 80+ named sub_faction characters in RIS. Skipping all
+      // sub_faction lines (0.9.506's original behaviour) hid them from the
+      // garrison popup.
+      const parts = rest.split(",").map((p) => p.trim());
+      const TYPE_LABEL_RE = /^(?:named\s+character|spy|diplomat|princess|priest|merchant|assassin|admiral|captain)\b/i;
+      let name;
+      if (/^sub[ _]faction\b/i.test(parts[0])) {
+        // sub_faction line — second field is the name unless it's a type label.
+        if (parts[1] && !TYPE_LABEL_RE.test(parts[1])) {
+          name = parts[1].replace(/_/g, " ");
+        } else {
+          console.log(`[bundle] skipped unnamed sub_faction marker at ${prevComment.trim() || `(${sx},${sy})`}`);
+          current = null;
+          prevComment = "";
+          continue;
+        }
+      } else {
+        name = parts[0].replace(/_/g, " ");
       }
       const [ac, snapX, snapY] = armyClass(rest, prevComment, sx, sy, getPixel);
       const loc = prevComment.startsWith(";") ? prevComment.replace(/^;/, "").trim() : "";

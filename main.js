@@ -3192,8 +3192,12 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
         const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
         if (fm) { curFac = fm[1].toLowerCase(); continue; }
         if (wantFac && curFac !== wantFac) continue;
-        // descr_strat character header: `character\tFirstName Family, named character, ...`
-        const cm = lines[i].match(/^character\s*,?\s*([^,]+?)\s*,\s*named character/i);
+        // descr_strat character header:
+        //   regular:     `character\tFirstName Family, named character, ...`
+        //   sub_faction: `character\tsub_faction athens,\tEumedes, named character, ...`
+        // The sub_faction prefix is optional; the name we want is the first
+        // non-`sub_faction` comma-separated field before `named character`.
+        const cm = lines[i].match(/^character\s*,?\s*(?:sub_faction\s+\S+\s*,\s*)?([^,]+?)\s*,\s*named character/i);
         if (!cm) continue;
         charHeadersInWantFac++;
         const firstName = cm[1].trim().split(/\s+/)[0];
@@ -3229,7 +3233,7 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
         for (let i = 0; i < lines.length; i++) {
           const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
           if (fm) { curFac2 = fm[1].toLowerCase(); continue; }
-          const cm = lines[i].match(/^character\s*,?\s*([^,]+?)\s*,\s*named character/i);
+          const cm = lines[i].match(/^character\s*,?\s*(?:sub_faction\s+\S+\s*,\s*)?([^,]+?)\s*,\s*named character/i);
           if (!cm) continue;
           const firstName = cm[1].trim().split(/\s+/)[0];
           if (firstName !== wantChar) continue;

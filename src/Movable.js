@@ -126,7 +126,14 @@ export function saveWidgetPos(id, pos) {
 // grid changes. Migration overwrites widget.* AND the map-sizing splitter
 // keys so the map ends up narrow enough that the left-half widgets aren't
 // hidden behind it. Existing users get the new grid on next launch.
-const LAYOUT_VERSION = 15;
+// 0.9.656: REVERTED from 15. v0.9.655 bumped to 15 to push the new
+// bottom.selected (x=0, w=0.572 = map-aligned) to existing users. That
+// migration overwrote EVERY widget's position with CANONICAL_V4, not just
+// bottom.selected — so users with hand-tuned layouts saw "the header for
+// selected provinces etc got moved." Keep 14 to stop further forced
+// migrations; the new bottom.selected default still applies for users
+// whose saved position is missing, but customised layouts are left alone.
+const LAYOUT_VERSION = 14;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -154,13 +161,7 @@ const CANONICAL_V4 = {
   // y=0.0083 + h=0.6843 = 0.6926; strip y = 0.6926 + 9/1080 = 0.7009).
   "bottom.search":      { x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 },
   "bottom.factions":    { x: 0.0047, y: 0.7492, w: 0.2076, h: 0.2458 },
-  // 0.9.655 (LAYOUT_VERSION 15): bottom.selected lines up with the map —
-  // x=0, w=span(0.572) so its left/right edges sit exactly on the map's
-  // left/right edges below the bottom-strip line, instead of being a
-  // narrower stripe leaving 5px to the map-right and a gap to the faction
-  // list on the left. bottom.factions overlays on top via the usual z-
-  // order, so the left-side faction picker still renders normally.
-  "bottom.selected":    { x: 0, y: 0.7009, w: 0.572, h: 0.2941 },
+  "bottom.selected":    { x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 },
 };
 // Splitter overrides that put the map at the width the canonical widget
 // grid assumes. rightColPct=0.428 leaves x∈(0.566, 1) for widgets.
@@ -172,6 +173,21 @@ const CANONICAL_V4_SPLITTERS = {
   "layout.riTopRowPct": "0",
   "layout.riBuildRowPct": "0",
 };
+// 0.9.656: one-shot un-migration for users hit by the v15 migration that
+// over-aggressively reset every widget when only bottom.selected's
+// canonical had changed. Detect the specific v15-shipped bottom.selected
+// position ({x:0, w:0.572}) and restore the v14 canonical for it.
+// Doesn't touch any other widget, so any customisations the user RE-
+// applied after the bad migration are preserved.
+try {
+  const bs = localStorage.getItem("widget.bottom.selected");
+  if (bs) {
+    const p = JSON.parse(bs);
+    if (p && p.x === 0 && Math.abs((p.w || 0) - 0.572) < 0.001) {
+      localStorage.setItem("widget.bottom.selected", JSON.stringify({ x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 }));
+    }
+  }
+} catch {}
 try {
   const stored = parseInt(localStorage.getItem("widget.layoutVersion") || "0", 10);
   if (stored < LAYOUT_VERSION) {

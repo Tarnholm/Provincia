@@ -1,81 +1,5 @@
 [
   {
-    "name": "Garrison of Marrucinia-Vestinia",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Marrucinia-Vestinia",
-    "faction": "romans_julii",
-    "x": null,
-    "y": null,
-    "region": "Marrucinia-Vestinia",
-    "units": [
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Etruria_Orientalis",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Etruria_Orientalis",
-    "faction": "romans_julii",
-    "x": null,
-    "y": null,
-    "region": "Etruria_Orientalis",
-    "units": [
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Camertia-Nahartia",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Camertia-Nahartia",
-    "faction": "romans_julii",
-    "x": null,
-    "y": null,
-    "region": "Camertia-Nahartia",
-    "units": [
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
-    "name": "Garrison of Latium",
-    "charType": "garrison",
-    "armyClass": "garrison",
-    "location": "Latium",
-    "faction": "romans_julii",
-    "x": null,
-    "y": null,
-    "region": "Latium",
-    "units": [
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ],
-    "_garrisoned": true
-  },
-  {
     "name": "Quintus Ogulnius Gallus",
     "charType": "general",
     "armyClass": "garrison",
@@ -632,18 +556,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -812,12 +724,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -948,18 +854,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -1021,18 +915,6 @@
     "units": [
       {
         "name": "roman general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -1139,11 +1021,11 @@
   {
     "name": "Manius Aemilius Paullus",
     "charType": "general",
-    "armyClass": "field",
-    "location": "Etruria",
+    "armyClass": "garrison",
+    "location": "Perusia",
     "faction": "romans_julii",
-    "x": 275,
-    "y": 425,
+    "x": 283,
+    "y": 422,
     "age": 50,
     "tags": [
       "named"
@@ -1481,13 +1363,105 @@
     ]
   },
   {
+    "name": "Eumedes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thurii",
+    "faction": "romans_julii",
+    "x": 327,
+    "y": 372,
+    "age": 23,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Thurii",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "CounterSpy",
+        "level": 1
+      },
+      {
+        "name": "BadInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "BadAmbusher",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 6
+      },
+      {
+        "name": "Intelligent",
+        "level": 1
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "roman general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman rorarii",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman rorarii",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Sextus Quinctilius Varus",
     "charType": "general",
-    "armyClass": "field",
-    "location": "Outside Maleventum",
+    "armyClass": "garrison",
+    "location": "Camerinum",
     "faction": "romans_julii",
-    "x": 308,
-    "y": 394,
+    "x": 291,
+    "y": 421,
     "age": 23,
     "tags": [
       "named"
@@ -1842,11 +1816,11 @@
   {
     "name": "Gnaeus Cornelius Scipio",
     "charType": "general",
-    "armyClass": "field",
-    "location": "Outside Fregellae",
+    "armyClass": "garrison",
+    "location": "Praeneste",
     "faction": "romans_julii",
-    "x": 287,
-    "y": 400,
+    "x": 288,
+    "y": 403,
     "age": 35,
     "tags": [
       "named"
@@ -2280,7 +2254,165 @@
         "weapon": 0
       },
       {
-        "name": "roman rorarii",
+        "name": "aor oscan spearmen southern",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor oscan javelinmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Timochares",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Croton",
+    "faction": "romans_julii",
+    "x": 335,
+    "y": 363,
+    "age": 35,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Croton",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "Gambling",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 1
+      },
+      {
+        "name": "HatesRoman",
+        "level": 1
+      },
+      {
+        "name": "Liar",
+        "level": 1
+      },
+      {
+        "name": "RhetoricSkill",
+        "level": 1
+      },
+      {
+        "name": "Xenophobia",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "roman general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Nossis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Epizephyrian Locri",
+    "faction": "romans_julii",
+    "x": 325,
+    "y": 351,
+    "age": 40,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Epizephyrian_Locri",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "Just",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 7
+      },
+      {
+        "name": "RhetoricSkill",
+        "level": 2
+      },
+      {
+        "name": "Scout",
+        "level": 1
+      },
+      {
+        "name": "ArchitectSkill",
+        "level": 1
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "roman general",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -2354,11 +2486,11 @@
   {
     "name": "Tiberius Sempronius Gracchus",
     "charType": "general",
-    "armyClass": "field",
-    "location": "Outside Paestum",
+    "armyClass": "garrison",
+    "location": "Teate",
     "faction": "romans_julii",
-    "x": 315,
-    "y": 381,
+    "x": 302,
+    "y": 410,
     "age": 29,
     "tags": [
       "named"
@@ -2895,6 +3027,104 @@
       },
       {
         "name": "libyan skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Exainetos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Herakleia-Minoa",
+    "faction": "carthage",
+    "x": 292,
+    "y": 339,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Herakleia_Minoa",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCavalryGeneral",
+        "level": 1
+      },
+      {
+        "name": "Talkative",
+        "level": 1
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 3
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 1
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 7
+      },
+      {
+        "name": "Anger",
+        "level": 1
+      },
+      {
+        "name": "BadFarmer",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "carthaginian general's bodyguard",
+        "exp": 2,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyan slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -3897,6 +4127,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "libyan slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -4002,6 +4238,12 @@
     "units": [
       {
         "name": "carthaginian general's bodyguard",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyan slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -4362,6 +4604,12 @@
     "units": [
       {
         "name": "carthaginian general's bodyguard",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyan slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -10062,6 +10310,134 @@
     ]
   },
   {
+    "name": "Nactanebo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Thebes-Megale Diospolis",
+    "faction": "ptolemaic",
+    "x": 545,
+    "y": 190,
+    "age": 70,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingEgyptian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 3
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 1
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 2
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 6
+      },
+      {
+        "name": "Selflessness",
+        "level": 2
+      },
+      {
+        "name": "Temperament",
+        "level": 4
+      },
+      {
+        "name": "Wealthy",
+        "level": 1
+      },
+      {
+        "name": "BadCommander",
+        "level": 1
+      },
+      {
+        "name": "BadTrader",
+        "level": 2
+      },
+      {
+        "name": "Unjust",
+        "level": 1
+      },
+      {
+        "name": "HarshJustice",
+        "level": 1
+      },
+      {
+        "name": "Miserly",
+        "level": 1
+      },
+      {
+        "name": "Ugly",
+        "level": 3
+      },
+      {
+        "name": "Infertile",
+        "level": 3
+      },
+      {
+        "name": "GoodTaxman",
+        "level": 1
+      },
+      {
+        "name": "Cheapskate",
+        "level": 2
+      },
+      {
+        "name": "Hypochondriac",
+        "level": 2
+      },
+      {
+        "name": "Rabblerouser",
+        "level": 1
+      },
+      {
+        "name": "HighPersonalSecurity",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 7
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "ptolemaic cavalry of the court",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Aristolaos",
     "charType": "general",
     "armyClass": "garrison",
@@ -13125,6 +13501,18 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -15666,6 +16054,98 @@
     ]
   },
   {
+    "name": "Dotari",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Etenna-Kotenna",
+    "faction": "ptolemaic",
+    "x": 502,
+    "y": 351,
+    "age": 38,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPisidian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Etenna-Kotenna",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "Joker",
+        "level": 1
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "Warlord",
+        "level": 1
+      },
+      {
+        "name": "Generous",
+        "level": 1
+      },
+      {
+        "name": "Noctophilia",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "ptolemaic cavalry of the court",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Ijeri",
     "charType": "general",
     "armyClass": "garrison",
@@ -17103,6 +17583,18 @@
         "exp": 1,
         "armour": 0,
         "weapon": 1
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -17653,6 +18145,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -17689,6 +18187,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -17723,6 +18233,12 @@
       {
         "name": "ptolemaic cavalry of the court",
         "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -17941,6 +18457,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -18157,6 +18685,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -18243,6 +18783,12 @@
       {
         "name": "ptolemaic cavalry of the court",
         "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -18923,6 +19469,18 @@
         "exp": 1,
         "armour": 0,
         "weapon": 1
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -19007,6 +19565,18 @@
         "exp": 1,
         "armour": 0,
         "weapon": 1
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -19551,6 +20121,94 @@
     ]
   },
   {
+    "name": "Andragoras",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Zadrakarta",
+    "faction": "seleucid",
+    "x": 754,
+    "y": 427,
+    "age": 30,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIranian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Xenophilia",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 2
+      },
+      {
+        "name": "DeceiverVirtue",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 3
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "Temperament",
+        "level": 3
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "Andragoras_Biography",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "AntipatrosB",
     "charType": "general",
     "armyClass": "garrison",
@@ -19825,6 +20483,85 @@
       }
     ],
     "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 1
+      }
+    ]
+  },
+  {
+    "name": "Smerdis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kybistra",
+    "faction": "seleucid",
+    "x": 529,
+    "y": 364,
+    "age": 45,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCappadocian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Kybistra",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 2
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Bloodthirsty",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "BloodHumour",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [
+      "drillmaster",
+      "mercenary_captain"
+    ],
     "units": [
       {
         "name": "seleucid general",
@@ -20997,6 +21734,93 @@
     ]
   },
   {
+    "name": "Anu-uballit-Nikarchos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Uruk",
+    "faction": "seleucid",
+    "x": 686,
+    "y": 314,
+    "age": 24,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingMesopotamian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 1
+      },
+      {
+        "name": "HarshJustice",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Sobriety",
+        "level": 1
+      },
+      {
+        "name": "Miserly",
+        "level": 1
+      },
+      {
+        "name": "BoringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "AssassinMaster",
+        "level": 3
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "drillmaster",
+      "decorated_hero"
+    ],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Kassandros",
     "charType": "general",
     "armyClass": "garrison",
@@ -21435,6 +22259,12 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -21532,6 +22362,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -21636,6 +22472,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -21983,6 +22825,12 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -22225,6 +23073,18 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -22383,6 +23243,130 @@
     ]
   },
   {
+    "name": "Omanes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Smyrna",
+    "faction": "seleucid",
+    "x": 449,
+    "y": 362,
+    "age": 22,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIranian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 7
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "Temperament",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 4
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "StrategicSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "VictorOthersVirtue",
+        "level": 2
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 4
+      },
+      {
+        "name": "Feck",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 1
+      },
+      {
+        "name": "Fertile",
+        "level": 2
+      },
+      {
+        "name": "Despoiler",
+        "level": 2
+      },
+      {
+        "name": "TacticalSkill",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "Handsome",
+        "level": 1
+      },
+      {
+        "name": "GoodAmbusher",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 1
+      }
+    ]
+  },
+  {
     "name": "AlexandrosB",
     "charType": "general",
     "armyClass": "garrison",
@@ -22469,6 +23453,12 @@
         "exp": 1,
         "armour": 0,
         "weapon": 1
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -22597,6 +23587,176 @@
     ]
   },
   {
+    "name": "Deiotaros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pessinous",
+    "faction": "seleucid",
+    "x": 496,
+    "y": 383,
+    "age": 60,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCeltic",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 2
+      },
+      {
+        "name": "TacticalSkill",
+        "level": 1
+      },
+      {
+        "name": "Xenophilia",
+        "level": 1
+      },
+      {
+        "name": "Just",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "Austere",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "BadAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Scout",
+        "level": 1
+      },
+      {
+        "name": "Generous",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 6
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Demeter"
+    ],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Aioiorix",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Pessinous",
+    "faction": "seleucid",
+    "x": 495,
+    "y": 384,
+    "age": 39,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCeltic",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Berserker",
+        "level": 1
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 1
+      },
+      {
+        "name": "Embezzler",
+        "level": 1
+      },
+      {
+        "name": "Corrupt",
+        "level": 1
+      },
+      {
+        "name": "BloodHumour",
+        "level": 1
+      },
+      {
+        "name": "BadDefender",
+        "level": 1
+      },
+      {
+        "name": "BadSiegeDefender",
+        "level": 1
+      },
+      {
+        "name": "Perverted",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 7
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Ptolemaios",
     "charType": "general",
     "armyClass": "garrison",
@@ -22686,6 +23846,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -23101,6 +24267,84 @@
         "exp": 1,
         "armour": 0,
         "weapon": 1
+      }
+    ]
+  },
+  {
+    "name": "Baalyathon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Byblos",
+    "faction": "seleucid",
+    "x": 557,
+    "y": 320,
+    "age": 33,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPhoenician",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 1
+      },
+      {
+        "name": "Xenophilia",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 2
+      },
+      {
+        "name": "Philhellene",
+        "level": 1
+      },
+      {
+        "name": "MathematicsSkill",
+        "level": 2
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -23603,6 +24847,88 @@
       }
     ],
     "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Anu-ikshur",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nippur",
+    "faction": "seleucid",
+    "x": 677,
+    "y": 324,
+    "age": 50,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingMesopotamian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "GoodTaxman",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "PhilosophySkill",
+        "level": 1
+      },
+      {
+        "name": "HarshRuler",
+        "level": 1
+      },
+      {
+        "name": "BoringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 5
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Demeter"
+    ],
     "units": [
       {
         "name": "seleucid general",
@@ -24309,6 +25635,12 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -24700,6 +26032,18 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -25159,6 +26503,180 @@
     ]
   },
   {
+    "name": "Mithres",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Aizanoi",
+    "faction": "seleucid",
+    "x": 474,
+    "y": 377,
+    "age": 33,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIranian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 2
+      },
+      {
+        "name": "Fertile",
+        "level": 1
+      },
+      {
+        "name": "PoeticSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "ArchitectSkill",
+        "level": 1
+      },
+      {
+        "name": "BloodHumour",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Disciplinarian",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Midas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gorbeous",
+    "faction": "seleucid",
+    "x": 509,
+    "y": 391,
+    "age": 33,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPhrygian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Gorbeous",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Coward",
+        "level": 1
+      },
+      {
+        "name": "BadAttacker",
+        "level": 1
+      },
+      {
+        "name": "NonAuthoritarian",
+        "level": 1
+      },
+      {
+        "name": "BadDisciplinarian",
+        "level": 1
+      },
+      {
+        "name": "BoringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 8
+      },
+      {
+        "name": "Just",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Hermes"
+    ],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Papas",
     "charType": "general",
     "armyClass": "garrison",
@@ -25294,6 +26812,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -25484,6 +27008,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -26011,6 +27541,12 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -26193,6 +27729,208 @@
       }
     ],
     "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Dryenes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Melita",
+    "faction": "seleucid",
+    "x": 573,
+    "y": 386,
+    "age": 44,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCappadocian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Melita",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "GoodMiner",
+        "level": 1
+      },
+      {
+        "name": "BoringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Ignorance",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 8
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "BadAttacker",
+        "level": 1
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "Feck",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 2
+      },
+      {
+        "name": "Handsome",
+        "level": 1
+      },
+      {
+        "name": "Fertile",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Kousios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Komana-Kappadokia",
+    "faction": "seleucid",
+    "x": 551,
+    "y": 380,
+    "age": 41,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCappadocian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Komana_Kappadokias",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 2
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "Paranoia",
+        "level": 4
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Noctophobia",
+        "level": 1
+      },
+      {
+        "name": "Xenophobia",
+        "level": 1
+      },
+      {
+        "name": "Just",
+        "level": 1
+      },
+      {
+        "name": "BadAttacker",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "Austere",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Artemis"
+    ],
     "units": [
       {
         "name": "seleucid general",
@@ -27074,6 +28812,12 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -27538,6 +29282,18 @@
         "exp": 1,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -27775,6 +29531,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -28102,6 +29864,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -28354,6 +30122,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -28424,6 +30198,12 @@
       {
         "name": "seleucid general",
         "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -28642,6 +30422,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -28822,6 +30608,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -28856,6 +30648,12 @@
       {
         "name": "seleucid general",
         "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -28964,6 +30762,18 @@
       {
         "name": "seleucid general",
         "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -31045,6 +32855,101 @@
       },
       {
         "name": "cappadocian cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Dolazelmis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Komana-Pontos",
+    "faction": "pontus",
+    "x": 547,
+    "y": 409,
+    "age": 44,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Komana_Pontos",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 2
+      },
+      {
+        "name": "Pious",
+        "level": 1
+      },
+      {
+        "name": "Miserly",
+        "level": 1
+      },
+      {
+        "name": "Sobriety",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 3
+      },
+      {
+        "name": "HarshJustice",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Apollo",
+      "drillmaster"
+    ],
+    "units": [
+      {
+        "name": "cappadocian general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -36680,13 +38585,13 @@
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -38472,7 +40377,7 @@
         "weapon": 0
       },
       {
-        "name": "bessian swordsmen",
+        "name": "thracian hillmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -38816,19 +40721,19 @@
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -41483,13 +43388,13 @@
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -42437,6 +44342,90 @@
     "ancillaries": [
       "heroic_saviour"
     ],
+    "units": [
+      {
+        "name": "cappadocian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Isokrates",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Garsaoura",
+    "faction": "cappadocia",
+    "x": 525,
+    "y": 375,
+    "age": 30,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Ephesos",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodEngineer",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "Corrupt",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 2
+      },
+      {
+        "name": "NaturalPhilosophySkill",
+        "level": 2
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 3
+      },
+      {
+        "name": "Paranoia",
+        "level": 4
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
     "units": [
       {
         "name": "cappadocian general",
@@ -44553,7 +46542,7 @@
         "weapon": 0
       },
       {
-        "name": "psiloi",
+        "name": "chian horophylakes",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -49076,7 +51065,7 @@
         "weapon": 0
       },
       {
-        "name": "thracian infantry",
+        "name": "thracian hillmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -50376,6 +52365,84 @@
       },
       {
         "name": "prodromoi",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Basigerrhos",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Near Emporion",
+    "faction": "emporion",
+    "x": 183,
+    "y": 411,
+    "age": 34,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIberian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Bloodthirsty",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 3
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 2
+      },
+      {
+        "name": "Liar",
+        "level": 3
+      },
+      {
+        "name": "Paranoia",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "mercenary_captain"
+    ],
+    "units": [
+      {
+        "name": "greek general",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -62089,7 +64156,7 @@
         "weapon": 0
       },
       {
-        "name": "thracian infantry",
+        "name": "thracian hillmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -64081,25 +66148,25 @@
         "weapon": 0
       },
       {
-        "name": "greek hoplites",
+        "name": "messenian hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "greek hoplites",
+        "name": "messenian hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "greek hoplites",
+        "name": "messenian hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "greek hoplites",
+        "name": "messenian hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -65469,19 +67536,19 @@
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "thracian peltasts",
+        "name": "thracian peltasts reform",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -67596,7 +69663,7 @@
         "weapon": 0
       },
       {
-        "name": "greek hoplites",
+        "name": "mesembrian hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -77404,6 +79471,70 @@
     ]
   },
   {
+    "name": "Eptenis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Debelton",
+    "faction": "tylis",
+    "x": 442,
+    "y": 419,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Nipsaians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Handsome",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Followers",
+        "level": 4
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "galatian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Dromichaites",
     "charType": "general",
     "armyClass": "garrison",
@@ -79415,6 +81546,245 @@
       {
         "name": "greek peltasts",
         "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Ebryzelmis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kypsela",
+    "faction": "seleucid_rebels",
+    "x": 436,
+    "y": 397,
+    "age": 36,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Kypsela",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "GoodFarmer",
+        "level": 1
+      },
+      {
+        "name": "Coward",
+        "level": 1
+      },
+      {
+        "name": "Embezzler",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "architect"
+    ],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor thracian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Dropion",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Apros",
+    "faction": "seleucid_rebels",
+    "x": 443,
+    "y": 398,
+    "age": 50,
+    "tags": [
+      "heir",
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Caenians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 6
+      },
+      {
+        "name": "Selflessness",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 5
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor thracian infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Taroutinas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ouskoudama",
+    "faction": "seleucid_rebels",
+    "x": 436,
+    "y": 409,
+    "age": 21,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Moisoi",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "seleucid general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor thracian light lancers",
+        "exp": 1,
         "armour": 0,
         "weapon": 0
       }
@@ -89548,6 +91918,2353 @@
     "_garrisoned": true
   },
   {
+    "name": "Ab",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Moscaflacopolis",
+    "faction": "slave",
+    "x": 1016,
+    "y": 1,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingLibyan",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "BadFarmer",
+        "level": 3
+      },
+      {
+        "name": "Immortal",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "massylian royal bodyguards",
+        "exp": 9,
+        "armour": 9,
+        "weapon": 9
+      }
+    ]
+  },
+  {
+    "name": "Decius",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Rhegium",
+    "faction": "slave",
+    "x": 319,
+    "y": 348,
+    "age": 43,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingItalic",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "BadAdministrator",
+        "level": 1
+      },
+      {
+        "name": "BattleScarred",
+        "level": 2
+      },
+      {
+        "name": "Corrupt",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 1
+      },
+      {
+        "name": "Sacrilegious",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "campanian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian heavy cavalry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian thureophoroi",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "oscan spearmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Bato",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sopianae",
+    "faction": "slave",
+    "x": 344,
+    "y": 464,
+    "age": 48,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDelmato_Pannonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Andizetes",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "AssassinCatcher",
+        "level": 1
+      },
+      {
+        "name": "BadMiner",
+        "level": 2
+      },
+      {
+        "name": "Handsome",
+        "level": 1
+      },
+      {
+        "name": "Warlord",
+        "level": 1
+      },
+      {
+        "name": "Aesthetic",
+        "level": 2
+      },
+      {
+        "name": "Just",
+        "level": 2
+      },
+      {
+        "name": "Selflessness",
+        "level": 4
+      },
+      {
+        "name": "Temperament",
+        "level": 4
+      },
+      {
+        "name": "BloodHumour",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 2
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "northern illyrian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Akrobanos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Olkinion",
+    "faction": "slave",
+    "x": 357,
+    "y": 405,
+    "age": 19,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIllyrian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Labeatai",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "LivestockHerds",
+        "level": 2
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 2
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "TacticalSkill",
+        "level": 2
+      },
+      {
+        "name": "BloodHumour",
+        "level": 2
+      },
+      {
+        "name": "Feck",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "HighPersonalSecurity",
+        "level": 2
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 1
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Killes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Byllis-Amantia",
+    "faction": "slave",
+    "x": 364,
+    "y": 385,
+    "age": 28,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIllyrian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Bylliones",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 2
+      },
+      {
+        "name": "Cheapskate",
+        "level": 2
+      },
+      {
+        "name": "DeceiverVirtue",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Wealthy",
+        "level": 2
+      },
+      {
+        "name": "MathematicsSkill",
+        "level": 3
+      },
+      {
+        "name": "GoodTaxman",
+        "level": 2
+      },
+      {
+        "name": "Paranoia",
+        "level": 1
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 3
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 5
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 5
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Aterix",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Splonum",
+    "faction": "slave",
+    "x": 329,
+    "y": 447,
+    "age": 25,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDelmato_Pannonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Maezaei",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "Austere",
+        "level": 1
+      },
+      {
+        "name": "BadBuilder",
+        "level": 1
+      },
+      {
+        "name": "BadEngineer",
+        "level": 1
+      },
+      {
+        "name": "BlackBileHumour",
+        "level": 1
+      },
+      {
+        "name": "Over_Confidence",
+        "level": 1
+      },
+      {
+        "name": "HarshJustice",
+        "level": 2
+      },
+      {
+        "name": "HighPersonalSecurity",
+        "level": 1
+      },
+      {
+        "name": "Just",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "LivestockHerds",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "northern illyrian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Zanatis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Autariaton_Teichos",
+    "faction": "slave",
+    "x": 357,
+    "y": 425,
+    "age": 36,
+    "tags": [
+      "leader",
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIllyrian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Autariatae",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 2
+      },
+      {
+        "name": "Energetic",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 2
+      },
+      {
+        "name": "GoodMiner",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 1
+      },
+      {
+        "name": "Disciplinarian",
+        "level": 2
+      },
+      {
+        "name": "BadDefender",
+        "level": 3
+      },
+      {
+        "name": "ReligiousMania",
+        "level": 2
+      },
+      {
+        "name": "BadAmbusher",
+        "level": 1
+      },
+      {
+        "name": "HatesArdiaei",
+        "level": 2
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "tutor"
+    ],
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Venima",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Cibalae",
+    "faction": "slave",
+    "x": 351,
+    "y": 454,
+    "age": 37,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDelmato_Pannonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Breuci",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Warlord",
+        "level": 2
+      },
+      {
+        "name": "Anger",
+        "level": 2
+      },
+      {
+        "name": "BattleScarred",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 3
+      },
+      {
+        "name": "Bloodthirsty",
+        "level": 1
+      },
+      {
+        "name": "Temperament",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 2
+      },
+      {
+        "name": "BloodHumour",
+        "level": 2
+      },
+      {
+        "name": "Ignorance",
+        "level": 1
+      },
+      {
+        "name": "HarshJustice",
+        "level": 1
+      },
+      {
+        "name": "HarshRuler",
+        "level": 3
+      },
+      {
+        "name": "HatesArdiaei",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "northern illyrian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Paio",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Segestica",
+    "faction": "slave",
+    "x": 325,
+    "y": 456,
+    "age": 29,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDelmato_Pannonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Segestani",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 2
+      },
+      {
+        "name": "Handsome",
+        "level": 3
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "Energetic",
+        "level": 2
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 2
+      },
+      {
+        "name": "GoodAmbusher",
+        "level": 1
+      },
+      {
+        "name": "GoodRiskyAttacker",
+        "level": 2
+      },
+      {
+        "name": "Lewd",
+        "level": 1
+      },
+      {
+        "name": "HatesArdiaei",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "northern illyrian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Morkon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Naissos",
+    "faction": "slave",
+    "x": 384,
+    "y": 427,
+    "age": 29,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDelmato_Pannonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Dardanoi",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 2
+      },
+      {
+        "name": "Handsome",
+        "level": 3
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "Energetic",
+        "level": 2
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 2
+      },
+      {
+        "name": "GoodAmbusher",
+        "level": 1
+      },
+      {
+        "name": "GoodRiskyAttacker",
+        "level": 2
+      },
+      {
+        "name": "Lewd",
+        "level": 1
+      },
+      {
+        "name": "HatesArdiaei",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian warband",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Kleitos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Hyskana",
+    "faction": "slave",
+    "x": 376,
+    "y": 400,
+    "age": 56,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIllyrian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Penestai",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "HarshJustice",
+        "level": 1
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 2
+      },
+      {
+        "name": "Handsome",
+        "level": 2
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "BadBuilder",
+        "level": 1
+      },
+      {
+        "name": "Disciplinarian",
+        "level": 2
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "LivestockHerds",
+        "level": 2
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 5
+      }
+    ],
+    "ancillaries": [
+      "decorated_hero"
+    ],
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Pinnes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Daorson",
+    "faction": "slave",
+    "x": 343,
+    "y": 421,
+    "age": 23,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIllyrian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Daorsi",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 2
+      },
+      {
+        "name": "GoodTaxman",
+        "level": 2
+      },
+      {
+        "name": "BadAttacker",
+        "level": 1
+      },
+      {
+        "name": "Handsome",
+        "level": 2
+      },
+      {
+        "name": "Hypochondriac",
+        "level": 1
+      },
+      {
+        "name": "LaxPersonalSecurity",
+        "level": 1
+      },
+      {
+        "name": "MathematicsSkill",
+        "level": 2
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 2
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 4
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 4
+      },
+      {
+        "name": "Upright",
+        "level": 2
+      },
+      {
+        "name": "RhetoricSkill",
+        "level": 1
+      },
+      {
+        "name": "NonAuthoritarian",
+        "level": 2
+      },
+      {
+        "name": "NaturalPhilosophySkill",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Laidikalos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Dournion",
+    "faction": "slave",
+    "x": 364,
+    "y": 407,
+    "age": 31,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIllyrian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Kaouoi",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 7
+      },
+      {
+        "name": "Xenophobia",
+        "level": 2
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "Superstitious",
+        "level": 2
+      },
+      {
+        "name": "Ignorance",
+        "level": 1
+      },
+      {
+        "name": "Slothful",
+        "level": 2
+      },
+      {
+        "name": "Liar",
+        "level": 2
+      },
+      {
+        "name": "Girls",
+        "level": 2
+      },
+      {
+        "name": "Miserly",
+        "level": 1
+      },
+      {
+        "name": "Ugly",
+        "level": 1
+      },
+      {
+        "name": "GloriousFool",
+        "level": 1
+      },
+      {
+        "name": "NonAuthoritarian",
+        "level": 2
+      },
+      {
+        "name": "Gambling",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "illyrian warlords bodyguard",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "illyrian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Eptekentos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Salmydessos",
+    "faction": "slave",
+    "x": 452,
+    "y": 410,
+    "age": 27,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingBithynian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Thynians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Thracian_War_Engines",
+        "level": 2
+      },
+      {
+        "name": "Former_Mercenary",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 4
+      },
+      {
+        "name": "GoodRaider",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "drillmaster"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thynoi clubmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Sothimos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Philippopolis",
+    "faction": "slave",
+    "x": 416,
+    "y": 412,
+    "age": 21,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Philippopolis",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "galato-thracian warband",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Kersos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ratiaria",
+    "faction": "slave",
+    "x": 394,
+    "y": 434,
+    "age": 21,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Moisoi",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "galato-thracian warband",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Eptezenis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Korelon Teichos",
+    "faction": "slave",
+    "x": 435,
+    "y": 414,
+    "age": 37,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Korelians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Infertile",
+        "level": 1
+      },
+      {
+        "name": "BattleScarred",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Thracian_War_Engines",
+        "level": 1
+      },
+      {
+        "name": "Former_Mercenary",
+        "level": 1
+      },
+      {
+        "name": "Thracian_Polygamous",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "GoodRaider",
+        "level": 3
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thracian infantry",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Ketriporis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Skoupi",
+    "faction": "slave",
+    "x": 380,
+    "y": 407,
+    "age": 37,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Skoupi",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Infertile",
+        "level": 1
+      },
+      {
+        "name": "BattleScarred",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Thracian_War_Engines",
+        "level": 1
+      },
+      {
+        "name": "Former_Mercenary",
+        "level": 1
+      },
+      {
+        "name": "Thracian_Polygamous",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "GoodRaider",
+        "level": 3
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thracian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Deiotaros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Serdike",
+    "faction": "slave",
+    "x": 400,
+    "y": 420,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCeltic",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Serdoi",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "gallic royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic skirmishers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Taroutinas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Dion Teichos",
+    "faction": "slave",
+    "x": 424,
+    "y": 408,
+    "age": 21,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Dians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thracian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Dixazelmeos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Nastos",
+    "faction": "slave",
+    "x": 417,
+    "y": 399,
+    "age": 21,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Sapaeians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thracian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Skostokos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ainos",
+    "faction": "slave",
+    "x": 434,
+    "y": 394,
+    "age": 24,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Ainos",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thracian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Brinkazeis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Artakon_Teichos",
+    "faction": "slave",
+    "x": 424,
+    "y": 427,
+    "age": 29,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingTriballian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Obulensians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "Followers",
+        "level": 3
+      },
+      {
+        "name": "GoodRaider",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Zalmoxis"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thracian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Smordotormos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Koilaleton Teichos",
+    "faction": "slave",
+    "x": 414,
+    "y": 419,
+    "age": 21,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Koilaletaians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "thracian royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thracian peltasts",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Scorilo",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Skaidaoua",
+    "faction": "slave",
+    "x": 423,
+    "y": 435,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingThracian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Oitensians",
+        "level": 1
+      },
+      {
+        "name": "TribalAssigned",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "Followers",
+        "level": 5
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "getic royal bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "getic archers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Solon",
     "charType": "general",
     "armyClass": "garrison",
@@ -89638,6 +94355,114 @@
       },
       {
         "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Huevos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Contestanium",
+    "faction": "slave",
+    "x": 137,
+    "y": 368,
+    "age": 45,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIberian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 2
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 2
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "Ignorance",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "GoodMiner",
+        "level": 1
+      },
+      {
+        "name": "Austere",
+        "level": 3
+      },
+      {
+        "name": "GoodEngineer",
+        "level": 1
+      },
+      {
+        "name": "Xenophobia",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "celtiberian noble bodyguards",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "caetrati swordsmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -89742,6 +94567,140 @@
       },
       {
         "name": "ankonitan hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Aktaios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Narona",
+    "faction": "slave",
+    "x": 339,
+    "y": 421,
+    "age": 37,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Narona",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 2
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 2
+      },
+      {
+        "name": "Austere",
+        "level": 3
+      },
+      {
+        "name": "GoodEngineer",
+        "level": 1
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 2
+      },
+      {
+        "name": "Liar",
+        "level": 3
+      },
+      {
+        "name": "Noctophobia",
+        "level": 1
+      },
+      {
+        "name": "Scout",
+        "level": 1
+      },
+      {
+        "name": "Disciplinarian",
+        "level": 2
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "DeceiverVirtue",
+        "level": 2
+      },
+      {
+        "name": "AssassinCatcher",
+        "level": 1
+      },
+      {
+        "name": "CounterSpy",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
         "exp": 1,
         "armour": 0,
         "weapon": 0
@@ -91336,6 +96295,2969 @@
       },
       {
         "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Nikodamos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Lamia",
+    "faction": "slave",
+    "x": 395,
+    "y": 364,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingNorthwestGreek",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Lamia",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 3
+      },
+      {
+        "name": "Generous",
+        "level": 3
+      },
+      {
+        "name": "GoodCavalryGeneral",
+        "level": 2
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Handsome",
+        "level": 2
+      },
+      {
+        "name": "Fertile",
+        "level": 2
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 4
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Eurydamas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Ktimene",
+    "faction": "slave",
+    "x": 390,
+    "y": 366,
+    "age": 40,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingNorthwestGreek",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Ktimene",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "Disciplinarian",
+        "level": 2
+      },
+      {
+        "name": "StrategicSkill",
+        "level": 1
+      },
+      {
+        "name": "TacticalSkill",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Damagetos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Argos-Amphilochia",
+    "faction": "slave",
+    "x": 383,
+    "y": 363,
+    "age": 44,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Argos_Amphilochia",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Pious",
+        "level": 3
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Generous",
+        "level": 3
+      },
+      {
+        "name": "Just",
+        "level": 2
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 2
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 2
+      },
+      {
+        "name": "Embezzler",
+        "level": 2
+      },
+      {
+        "name": "MathematicsSkill",
+        "level": 2
+      },
+      {
+        "name": "Handsome",
+        "level": 2
+      },
+      {
+        "name": "PoeticSkill",
+        "level": 2
+      },
+      {
+        "name": "WifeFamilyWealth",
+        "level": 5
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [
+      "poet"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Archippos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Oreos",
+    "faction": "slave",
+    "x": 403,
+    "y": 365,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodTrader",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "Lewd",
+        "level": 3
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 5
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Oreos",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Kleiton",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Opous",
+    "faction": "slave",
+    "x": 402,
+    "y": 361,
+    "age": 20,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Opous",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 2
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 5
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "Energetic",
+        "level": 3
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "GoodFarmer",
+        "level": 2
+      },
+      {
+        "name": "Anger",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "BattleScarred",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "heroic_saviour"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Euthydemos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Sikyon",
+    "faction": "slave",
+    "x": 399,
+    "y": 351,
+    "age": 41,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Wealthy",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Sikyon",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Abantidas",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Near Sikyon",
+    "faction": "slave",
+    "x": 398,
+    "y": 351,
+    "age": 35,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Sikyon",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Limnaios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Lepreon",
+    "faction": "slave",
+    "x": 389,
+    "y": 342,
+    "age": 38,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingArcadian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Lepreon",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCavalryGeneral",
+        "level": 1
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 3
+      },
+      {
+        "name": "Aesthetic",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Demeter"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Nikagoras",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Same",
+    "faction": "slave",
+    "x": 376,
+    "y": 353,
+    "age": 49,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingNorthwestGreek",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Same",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "GoodFarmer",
+        "level": 1
+      },
+      {
+        "name": "BadAmbusher",
+        "level": 2
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 3
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "GloriousFool",
+        "level": 3
+      },
+      {
+        "name": "BloodHumour",
+        "level": 3
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Ptolemaios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Arsinoe",
+    "faction": "slave",
+    "x": 423,
+    "y": 315,
+    "age": 56,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Arsinoe",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "YellowBileHumour",
+        "level": 3
+      },
+      {
+        "name": "Upright",
+        "level": 2
+      },
+      {
+        "name": "Lewd",
+        "level": 1
+      },
+      {
+        "name": "LaxPersonalSecurity",
+        "level": 1
+      },
+      {
+        "name": "ReligiousMania",
+        "level": 2
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "Infertile",
+        "level": 1
+      },
+      {
+        "name": "Despoiler",
+        "level": 3
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 5
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "kretan hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Dionysandros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Abdera-Thraike",
+    "faction": "slave",
+    "x": 420,
+    "y": 396,
+    "age": 40,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Abdera",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Ignorance",
+        "level": 2
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 2
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "ExpensiveTastes",
+        "level": 2
+      },
+      {
+        "name": "GloriousFool",
+        "level": 3
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "Just",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Artemidoros",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Selymbria",
+    "faction": "slave",
+    "x": 455,
+    "y": 403,
+    "age": 46,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingDorian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Selymbria",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Disciplinarian",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 2
+      },
+      {
+        "name": "Gambling",
+        "level": 2
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 5
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 4
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "HighPersonalSecurity",
+        "level": 2
+      },
+      {
+        "name": "Pragmatic",
+        "level": 1
+      },
+      {
+        "name": "Warlord",
+        "level": 3
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 4
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Cheophokios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Karkine",
+    "faction": "slave",
+    "x": 494,
+    "y": 485,
+    "age": 40,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Karkine",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 5
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 4
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "Energetic",
+        "level": 3
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "GoodCavalryGeneral",
+        "level": 1
+      },
+      {
+        "name": "Noctophilia",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [
+      "mercenary_captain"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Tichingios",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Tanais",
+    "faction": "slave",
+    "x": 550,
+    "y": 514,
+    "age": 39,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingScythian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Tanaisan",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCavalryGeneral",
+        "level": 2
+      },
+      {
+        "name": "GoodCommander",
+        "level": 4
+      },
+      {
+        "name": "Brave",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "HarshRuler",
+        "level": 1
+      },
+      {
+        "name": "HighPersonalSecurity",
+        "level": 2
+      },
+      {
+        "name": "Pragmatic",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 4
+      },
+      {
+        "name": "Girls",
+        "level": 2
+      },
+      {
+        "name": "Despoiler",
+        "level": 3
+      },
+      {
+        "name": "Sacrilegious",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "armoured sarmatian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "maeotian archers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Skymnos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pityous",
+    "faction": "slave",
+    "x": 576,
+    "y": 459,
+    "age": 33,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Pityous",
+        "level": 1
+      },
+      {
+        "name": "GoodFarmer",
+        "level": 1
+      },
+      {
+        "name": "GoodMiner",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Milon",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Phasis",
+    "faction": "slave",
+    "x": 594,
+    "y": 449,
+    "age": 52,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Phasis",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "Stoic",
+        "level": 1
+      },
+      {
+        "name": "Prim",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "Fertile",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 5
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Hippolytos",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Themiskyra",
+    "faction": "slave",
+    "x": 548,
+    "y": 422,
+    "age": 25,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Themiskyra",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCavalryGeneral",
+        "level": 1
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "Scout",
+        "level": 1
+      },
+      {
+        "name": "NaturalMilitarySkill",
+        "level": 2
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "Secretive",
+        "level": 1
+      },
+      {
+        "name": "Xenophobia",
+        "level": 1
+      },
+      {
+        "name": "CounterSpy",
+        "level": 1
+      },
+      {
+        "name": "HarshJustice",
+        "level": 2
+      },
+      {
+        "name": "CharmingWife",
+        "level": 1
+      },
+      {
+        "name": "InteligentWife",
+        "level": 1
+      },
+      {
+        "name": "WifelyStats",
+        "level": 6
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "heroic_saviour"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Thales",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Koloussa",
+    "faction": "slave",
+    "x": 518,
+    "y": 426,
+    "age": 25,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIonian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Koloussa",
+        "level": 1
+      },
+      {
+        "name": "Embezzler",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 1
+      },
+      {
+        "name": "StrategicSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodTaxman",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 3
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Masas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Taouion",
+    "faction": "slave",
+    "x": 526,
+    "y": 397,
+    "age": 34,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPhrygian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Pteria",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "BoringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Disciplinarian",
+        "level": 1
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 2
+      },
+      {
+        "name": "NaturalPhilosophySkill",
+        "level": 1
+      },
+      {
+        "name": "CounterSpy",
+        "level": 2
+      },
+      {
+        "name": "Ignorance",
+        "level": 1
+      },
+      {
+        "name": "Liar",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "HarshJustice",
+        "level": 2
+      },
+      {
+        "name": "Unjust",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "cappadocian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian javelinmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Halyshir",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Gadilon",
+    "faction": "slave",
+    "x": 536,
+    "y": 424,
+    "age": 33,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCappadocian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Gadilon",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Energetic",
+        "level": 1
+      },
+      {
+        "name": "Berserker",
+        "level": 1
+      },
+      {
+        "name": "Warlord",
+        "level": 1
+      },
+      {
+        "name": "TacticalSkill",
+        "level": 2
+      },
+      {
+        "name": "Epicurean",
+        "level": 1
+      },
+      {
+        "name": "Paranoia",
+        "level": 1
+      },
+      {
+        "name": "Ignorance",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "heroic_saviour"
+    ],
+    "units": [
+      {
+        "name": "cappadocian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Terituchmes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kamisa",
+    "faction": "slave",
+    "x": 558,
+    "y": 404,
+    "age": 40,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCappadocian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Kamisa",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 1
+      },
+      {
+        "name": "Embezzler",
+        "level": 1
+      },
+      {
+        "name": "Liar",
+        "level": 1
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "Noctophilia",
+        "level": 1
+      },
+      {
+        "name": "Scout",
+        "level": 1
+      },
+      {
+        "name": "Perverted",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 4
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "cappadocian general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cappadocian slingers",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Ermaktas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Isinda",
+    "faction": "slave",
+    "x": 486,
+    "y": 349,
+    "age": 35,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPisidian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Isinda",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "BadCommander",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "GoodFarmer",
+        "level": 1
+      },
+      {
+        "name": "BoringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "PoeticSkill",
+        "level": 2
+      },
+      {
+        "name": "PoliticsSkill",
+        "level": 1
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "Paranoia",
+        "level": 1
+      },
+      {
+        "name": "Noctophobia",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "drillmaster"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "pisidian javelinmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Armounanis",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Kibyra",
+    "faction": "slave",
+    "x": 478,
+    "y": 349,
+    "age": 29,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPisidian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Kibyra",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "BadMiner",
+        "level": 1
+      },
+      {
+        "name": "LenientJustice",
+        "level": 1
+      },
+      {
+        "name": "Miserly",
+        "level": 1
+      },
+      {
+        "name": "Handsome",
+        "level": 1
+      },
+      {
+        "name": "AssassinCatcher",
+        "level": 1
+      },
+      {
+        "name": "Authoritarian",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 2
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "GoodAmbusher",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 2
+      }
+    ],
+    "ancillaries": [
+      "mercenary_captain"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "lydian akontistai",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Appas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Laranda",
+    "faction": "slave",
+    "x": 520,
+    "y": 356,
+    "age": 33,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIsaurian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Laranda",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 4
+      },
+      {
+        "name": "NaturalEnergy",
+        "level": 4
+      },
+      {
+        "name": "NaturalIntelligence",
+        "level": 3
+      },
+      {
+        "name": "NaturalCharisma",
+        "level": 3
+      },
+      {
+        "name": "Temperament",
+        "level": 4
+      },
+      {
+        "name": "Selflessness",
+        "level": 3
+      },
+      {
+        "name": "GeneralExperience",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 1
+      },
+      {
+        "name": "GoodFarmer",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "StrategicSkill",
+        "level": 1
+      },
+      {
+        "name": "BoringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "PublicFaith",
+        "level": 2
+      },
+      {
+        "name": "Pragmatic",
+        "level": 1
+      },
+      {
+        "name": "Austere",
+        "level": 1
+      },
+      {
+        "name": "Cheapskate",
+        "level": 1
+      },
+      {
+        "name": "SpyMaster",
+        "level": 1
+      },
+      {
+        "name": "CounterSpy",
+        "level": 1
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "Paranoia",
+        "level": 4
+      },
+      {
+        "name": "Xenophobia",
+        "level": 1
+      },
+      {
+        "name": "PublicAtheism",
+        "level": 1
+      },
+      {
+        "name": "Sobriety",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "cilician general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "kietaian hillmen",
+        "exp": 2,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Trokondas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Isaura",
+    "faction": "slave",
+    "x": 509,
+    "y": 354,
+    "age": 31,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIsaurian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Isaura",
+        "level": 1
+      },
+      {
+        "name": "Insane",
+        "level": 1
+      },
+      {
+        "name": "Berserker",
+        "level": 1
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 1
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 1
+      },
+      {
+        "name": "BloodHumour",
+        "level": 1
+      },
+      {
+        "name": "GoodAmbusher",
+        "level": 1
+      },
+      {
+        "name": "Energetic",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "drillmaster",
+      "mercenary_captain"
+    ],
+    "units": [
+      {
+        "name": "cilician general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "isaurian marauders",
+        "exp": 2,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Pisdes",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Homona",
+    "faction": "slave",
+    "x": 506,
+    "y": 356,
+    "age": 33,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingIsaurian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "LoyaltyLevel",
+        "level": 2
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 2
+      },
+      {
+        "name": "GoodSiegeAttacker",
+        "level": 2
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 2
+      },
+      {
+        "name": "Drink",
+        "level": 1
+      },
+      {
+        "name": "Joker",
+        "level": 1
+      },
+      {
+        "name": "Girls",
+        "level": 1
+      },
+      {
+        "name": "HarshRuler",
+        "level": 1
+      },
+      {
+        "name": "Paranoia",
+        "level": 4
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "cilician general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "isaurian marauders",
+        "exp": 2,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Chaireas",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Pednelissos",
+    "faction": "slave",
+    "x": 494,
+    "y": 352,
+    "age": 32,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPisidian",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Pednelissos",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodDefender",
+        "level": 1
+      },
+      {
+        "name": "Noctophobia",
+        "level": 1
+      },
+      {
+        "name": "GoodFarmer",
+        "level": 1
+      },
+      {
+        "name": "NaturalMilitarySkill",
+        "level": 1
+      },
+      {
+        "name": "Embezzler",
+        "level": 1
+      },
+      {
+        "name": "Warlord",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "drillmaster",
+      "merchant"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "pisidian javelinmen",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "ArtemidorosB",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Perge",
+    "faction": "slave",
+    "x": 494,
+    "y": 348,
+    "age": 35,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingPamphylianGreek",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Perge",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Generous",
+        "level": 1
+      },
+      {
+        "name": "BattleScarred",
+        "level": 2
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "NightBattleCapable",
+        "level": 1
+      },
+      {
+        "name": "GoodAttacker",
+        "level": 2
+      },
+      {
+        "name": "GoodInfantryGeneral",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 2
+      },
+      {
+        "name": "HaleAndHearty",
+        "level": 3
+      },
+      {
+        "name": "GoodBuilder",
+        "level": 1
+      },
+      {
+        "name": "BadFarmer",
+        "level": 1
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [
+      "drillmaster",
+      "mercenary_captain"
+    ],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "pamphylian hoplites",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Tarkyaris",
+    "charType": "general",
+    "armyClass": "garrison",
+    "location": "Olbe",
+    "faction": "slave",
+    "x": 530,
+    "y": 350,
+    "age": 62,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingCilician",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "Olbe",
+        "level": 1
+      },
+      {
+        "name": "GreekCityAssigned",
+        "level": 1
+      },
+      {
+        "name": "Pious",
+        "level": 1
+      },
+      {
+        "name": "TouchedByTheGods",
+        "level": 1
+      },
+      {
+        "name": "Intelligent",
+        "level": 2
+      },
+      {
+        "name": "InspiringSpeaker",
+        "level": 1
+      },
+      {
+        "name": "Sobriety",
+        "level": 3
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 1
+      },
+      {
+        "name": "Coward",
+        "level": 1
+      },
+      {
+        "name": "LogisticalSkill",
+        "level": 2
+      },
+      {
+        "name": "Supplies",
+        "level": 4
+      },
+      {
+        "name": "Untouchable",
+        "level": 1
+      },
+      {
+        "name": "Immovable",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 6
+      }
+    ],
+    "ancillaries": [
+      "priest_of_Apollo"
+    ],
+    "units": [
+      {
+        "name": "cilician general",
+        "exp": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "cilician spearmen",
         "exp": 1,
         "armour": 0,
         "weapon": 0

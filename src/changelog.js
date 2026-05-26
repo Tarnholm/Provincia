@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.656",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Thurii now shows its garrison (Eumedes of Thurioi).** RIS uses `sub_faction athens` to tag Eumedes inside the `romans_julii` block — his line is `character,\\tsub_faction athens,\\tEumedes, named character, …`. Provincia's `bundle-mod-data.js` was skipping *all* `sub_faction` character lines (0.9.506 behaviour, originally meant to drop *unnamed* sub_faction markers like `sub_faction parni,\\tnamed character …` that the engine names at runtime). The bundler now distinguishes the two shapes — skips only when the field after the sub_faction tag is a type label (named character / spy / diplomat / etc.); otherwise it parses the actual name. 80+ named sub_faction characters across RIS (Eumedes among them) now appear in the bundled JSON and in the garrison popup. Same regex update applied to the IPC's by-character army-edit lookup so Save to Mod can locate sub_faction-tagged characters too. Run `npm run bundle-data` (or wait for the next mod refresh) to pick up the new bundled data." },
+      { type: "fix", text: "**Reverted the layout-version bump from 0.9.655.** That bump (LAYOUT_VERSION 14→15) was supposed to push *only* the new `bottom.selected` position to existing users — but the migration logic overwrites *every* widget's saved position with the canonical defaults, so people with hand-tuned layouts saw \"the header for selected provinces etc got moved.\" Reverted LAYOUT_VERSION back to 14 and added a one-shot un-migration that detects the v15-shipped `bottom.selected` ({x:0, w:0.572}) and restores the v14 canonical for it ONLY. All other widgets are left alone — any customisations you re-applied after the bad migration are preserved. Saved content (pending edits, character/army changes) is React state, never touched by layout migrations." },
+    ],
+  },
+  {
     version: "0.9.655",
     date: "2026-05-26",
     items: [
