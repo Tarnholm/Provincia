@@ -185,6 +185,137 @@ ipcMain.handle('sps:xref-find', async (_, name) => {
   return { byFile, totalMatches: total };
 });
 
+// 0.9.642: Mod-validation dashboard scanner — one pass that finds the
+// most common consistency bugs across the loaded mod and groups them
+// for the UI. Each issue carries a `file`/`line` pair so the dashboard
+// can hand it off to scriptsJumpTo for a click-through fix.
+//
+// Checks (MVP):
+//   1. Dangling EDB chain refs   — `building_present[_min_level] <X>` where
+//                                   <X> has no `building <X>` block.
+//   2. Dangling EDB level refs   — `building_present_min_level <chain> <lvl>`
+//                                   where <chain> exists but <lvl> isn't one
+//                                   of its declared levels.
+//   3. descr_strat settlement    — `building { type <chain> <lvl> }` where
+//      type errors                 <chain> doesn't exist OR <lvl> isn't a
+//                                   level of <chain>.
+//   4. Missing localization      — every declared EDB level whose `{<lvl>}`
+//                                   key is missing from text/export_buildings.txt.
+//   5. Orphaned chains           — `building <X>` blocks with zero external
+//                                   refs AND zero descr_strat prebuilts
+//                                   (candidates for removal).
+ipcMain.handle('sps:validate-mod', async () => {
+  const configDir = path.join(PROJECT_ROOT, 'config');
+  const read = (n) => {
+    const p = path.join(configDir, n);
+    return fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : null;
+  };
+  const summary = { danglingChains: 0, danglingLevels: 0, stratErrors: 0, missingLocale: 0, orphanedChains: 0 };
+  const out = { summary, danglingChains: [], danglingLevels: [], stratErrors: [], missingLocale: [], orphanedChains: [] };
+  try {
+    const edb = read('export_descr_buildings.txt');
+    if (!edb) return { ...out, error: 'export_descr_buildings.txt not loaded — import a mod first.' };
+    const buildings = parseEDB(edb);
+    // Index chains + levels.
+    const chainLevels = {};      // chain → Set<level>
+    const chainLine = {};        // chain → declaration line number
+    for (const b of buildings) {
+      const lvls = b.rawLevelsLine ? b.rawLevelsLine.split(/\s+/).filter(Boolean) : b.levels.map(l => l.name);
+      chainLevels[b.name] = new Set(lvls);
+      chainLine[b.name] = b.line;
+    }
+
+    // Scan EDB lines for building_present[_min_level] refs.
+    const edbLines = edb.split(/\r?\n/);
+    const refsByChain = {};                                            // chain → ref count (for orphan detection)
+    const chainSet = new Set(Object.keys(chainLevels));
+    let currentBlock = null;
+    let braceDepth = 0;
+    for (let i = 0; i < edbLines.length; i++) {
+      const raw = edbLines[i];
+      const code = raw.split(';', 1)[0];
+      // Track which chain block we're inside (so we can skip self-refs in
+      // the orphan-detection ref count).
+      const bm = code.match(/^\s*building\s+([A-Za-z_][A-Za-z0-9_]*)/);
+      if (bm && braceDepth === 0) currentBlock = bm[1];
+      braceDepth += (code.match(/\{/g) || []).length - (code.match(/\}/g) || []).length;
+      if (braceDepth === 0) currentBlock = null;
+
+      const mMl = code.match(/building_present_min_level\s+([A-Za-z_][A-Za-z0-9_+]*)\s+(\S+)/);
+      if (mMl) {
+        const [, chain, lvl] = mMl;
+        if (!chainSet.has(chain)) {
+          out.danglingChains.push({ chain, file: 'export_descr_buildings.txt', line: i + 1, text: code.trim().slice(0, 200) });
+        } else {
+          if (!chainLevels[chain].has(lvl)) {
+            out.danglingLevels.push({ chain, level: lvl, file: 'export_descr_buildings.txt', line: i + 1, text: code.trim().slice(0, 200) });
+          }
+          if (chain !== currentBlock) refsByChain[chain] = (refsByChain[chain] || 0) + 1;
+        }
+        continue;
+      }
+      const mB = code.match(/building_present\s+([A-Za-z_][A-Za-z0-9_+]*)\b/);
+      if (mB) {
+        const chain = mB[1];
+        if (!chainSet.has(chain)) {
+          out.danglingChains.push({ chain, file: 'export_descr_buildings.txt', line: i + 1, text: code.trim().slice(0, 200) });
+        } else if (chain !== currentBlock) {
+          refsByChain[chain] = (refsByChain[chain] || 0) + 1;
+        }
+      }
+    }
+
+    // descr_strat settlement type errors + prebuilt counts (also feeds orphan check).
+    const strat = read('descr_strat.txt');
+    const prebuiltsByChain = {};
+    if (strat) {
+      const sLines = strat.split(/\r?\n/);
+      let currentRegion = '(unknown)';
+      for (let i = 0; i < sLines.length; i++) {
+        const rm = sLines[i].match(/^\s*region\s+(\S+)/);
+        if (rm) { currentRegion = rm[1]; continue; }
+        const tm = sLines[i].match(/^\s*type\s+(\S+)\s+(\S+)/);
+        if (!tm) continue;
+        const [, chain, level] = tm;
+        prebuiltsByChain[chain] = (prebuiltsByChain[chain] || 0) + 1;
+        if (!chainSet.has(chain)) {
+          out.stratErrors.push({ region: currentRegion, chain, level, issue: 'chain not in EDB', file: 'descr_strat.txt', line: i + 1, text: sLines[i].trim().slice(0, 200) });
+        } else if (!chainLevels[chain].has(level)) {
+          out.stratErrors.push({ region: currentRegion, chain, level, issue: `level not in chain's declared levels`, file: 'descr_strat.txt', line: i + 1, text: sLines[i].trim().slice(0, 200) });
+        }
+      }
+    }
+
+    // Localization gaps: every declared level should have a `{<level>}` key.
+    const text = read('export_buildings.txt');
+    if (text) {
+      for (const [chain, lvls] of Object.entries(chainLevels)) {
+        for (const lvl of lvls) {
+          if (!text.includes(`{${lvl}}`)) out.missingLocale.push({ chain, level: lvl });
+        }
+      }
+    }
+
+    // Orphaned chains: declared, no EDB refs outside their own block, no prebuilts.
+    for (const chain of chainSet) {
+      const refs = refsByChain[chain] || 0;
+      const prebuilts = prebuiltsByChain[chain] || 0;
+      if (refs === 0 && prebuilts === 0) {
+        out.orphanedChains.push({ chain, file: 'export_descr_buildings.txt', line: chainLine[chain] });
+      }
+    }
+
+    summary.danglingChains = out.danglingChains.length;
+    summary.danglingLevels = out.danglingLevels.length;
+    summary.stratErrors = out.stratErrors.length;
+    summary.missingLocale = out.missingLocale.length;
+    summary.orphanedChains = out.orphanedChains.length;
+    return out;
+  } catch (e) {
+    return { ...out, error: e.message };
+  }
+});
+
 ipcMain.handle('sps:jump-to', async (_, fileName, searchText, line) => {
   const payload = { fileName, searchText, line: typeof line === 'number' ? line : null };
   const ready = scriptsWin && !scriptsWin.isDestroyed() && !scriptsWin.webContents.isLoading();

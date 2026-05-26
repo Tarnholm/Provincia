@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   scriptsJumpTo: (fileName, searchText, line) => ipcRenderer.invoke("sps:jump-to", fileName, searchText, line),
   // X-Ref scan: "where is this used?" Returns { byFile: { fileName: [{line, text}] }, totalMatches }.
   xrefFind: (name) => ipcRenderer.invoke("sps:xref-find", name),
+  // Mod-validation: returns { summary, danglingChains, danglingLevels, stratErrors, missingLocale, orphanedChains }.
+  validateMod: () => ipcRenderer.invoke("sps:validate-mod"),
   // Mac dev-pill button: load the bundled RIS subset + sample save so the
   // app works without the game installed. Returns { ok, dataDir, saveDir,
   // saveFile, campaign }.

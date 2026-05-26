@@ -1536,6 +1536,16 @@ function App() {
   const [xrefQuery, setXrefQuery] = useState("");
   const [xrefResult, setXrefResult] = useState(null);
   const [xrefLoading, setXrefLoading] = useState(false);
+  // 0.9.642: Mod-validation dashboard — finds dangling refs, missing
+  // localization, settlement type errors, orphaned chains in one pass.
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [dashResult, setDashResult] = useState(null);
+  const [dashLoading, setDashLoading] = useState(false);
+  useEffect(() => {
+    if (!showDashboard || !window.electronAPI?.validateMod) return;
+    setDashLoading(true);
+    window.electronAPI.validateMod().then(r => setDashResult(r)).catch(e => setDashResult({ error: e?.message })).finally(() => setDashLoading(false));
+  }, [showDashboard]);
   useEffect(() => {
     const onKey = (e) => {
       // Open/close on Ctrl-K / Cmd-K.
@@ -9954,6 +9964,21 @@ function App() {
                   }}
                 >X-Ref</button>
               )}
+              {/* 0.9.642: Mod-validation dashboard. */}
+              {window.electronAPI?.validateMod && (
+                <button
+                  className="dev-btn"
+                  onClick={() => { setDashResult(null); setShowDashboard(true); }}
+                  title="Scan the loaded mod for dangling refs, missing localization, settlement errors, and orphaned chains"
+                  style={{
+                    ...btnStyle(false),
+                    background: "rgba(60,60,60,0.7)",
+                    color: "#4ade80",
+                    border: "1px solid #4ade80",
+                    minWidth: 76,
+                  }}
+                >Validate</button>
+              )}
               {/* Victory-conditions helper: pick a region-list CSV → get a CSV of
                   region,owner_faction from the loaded mod's descr_strat. */}
               {window.electronAPI?.vcRegionOwnersCsv && (
@@ -12841,6 +12866,115 @@ function App() {
           onDismiss={() => setUpdateReady(null)}
         />
       )}
+      {showDashboard && (() => {
+        const r = dashResult;
+        const jumpTo = (file, snippet, line) => window.electronAPI?.scriptsJumpTo?.(file, snippet || null, line || null);
+        const Section = ({ title, count, color, children }) => (
+          <details open={count > 0 && count <= 40} style={{ marginTop: 8 }}>
+            <summary style={{ cursor: "pointer", padding: "6px 8px", borderRadius: 4, fontSize: "0.82rem", background: count > 0 ? "rgba(255,255,255,0.04)" : "transparent" }}>
+              <span style={{ color, fontWeight: 600 }}>● </span>
+              <b>{title}</b> <span style={{ color: "#888", fontVariantNumeric: "tabular-nums" }}>({count})</span>
+            </summary>
+            {count > 0 && <div style={{ padding: "6px 6px 0", maxHeight: 280, overflowY: "auto" }}>{children}</div>}
+          </details>
+        );
+        const Row = ({ label, file, line, text, onClick }) => (
+          <div
+            onClick={onClick}
+            title={file ? `Open ${file}:${line}` : ""}
+            style={{
+              display: "flex", gap: 10, padding: "3px 8px", fontSize: "0.74rem",
+              cursor: onClick ? "pointer" : "default", borderRadius: 3, fontFamily: "monospace",
+            }}
+            onMouseEnter={onClick ? (e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)" : undefined}
+            onMouseLeave={onClick ? (e) => e.currentTarget.style.background = "transparent" : undefined}
+          >
+            <span style={{ flex: 1, color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+            {file && <span style={{ color: "#7fd1b9", fontSize: "0.7rem" }}>{file}:{line}</span>}
+          </div>
+        );
+        return (
+          <div onClick={() => setShowDashboard(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+            zIndex: 10001, display: "flex", alignItems: "flex-start", justifyContent: "center",
+            paddingTop: "6vh",
+          }}>
+            <div onClick={(e) => e.stopPropagation()} style={{
+              background: "#1e1e1e", color: "#e6e6e6", borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.10)",
+              width: "min(820px, 92vw)", maxHeight: "86vh", overflow: "auto",
+              padding: 14, boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+                <h3 style={{ margin: 0, flex: 1, fontSize: "1.05rem" }}>Mod-validation dashboard</h3>
+                <button onClick={() => setShowDashboard(false)} style={{
+                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#ccc", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.78rem",
+                }}>Close</button>
+              </div>
+              {dashLoading || !r ? (
+                <div style={{ padding: 20, color: "#888", textAlign: "center" }}>Scanning…</div>
+              ) : r.error ? (
+                <div style={{ padding: 14, color: "#f87171" }}>{r.error}</div>
+              ) : (() => {
+                const s = r.summary || {};
+                const totalIssues = (s.danglingChains || 0) + (s.danglingLevels || 0) + (s.stratErrors || 0) + (s.missingLocale || 0);
+                return (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 10 }}>
+                      {[
+                        ["Dangling chains", s.danglingChains, "#f87171"],
+                        ["Dangling levels", s.danglingLevels, "#fb923c"],
+                        ["descr_strat errors", s.stratErrors, "#facc15"],
+                        ["Missing locale", s.missingLocale, "#a78bfa"],
+                        ["Orphaned chains", s.orphanedChains, "#9ca3af"],
+                      ].map(([label, n, color]) => (
+                        <div key={label} style={{
+                          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)",
+                          borderRadius: 6, padding: "8px 10px", textAlign: "center",
+                        }}>
+                          <div style={{ fontSize: "1.4rem", fontWeight: 700, color: (n || 0) > 0 ? color : "#4ade80", fontVariantNumeric: "tabular-nums" }}>{n || 0}</div>
+                          <div style={{ fontSize: "0.66rem", color: "#888", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {totalIssues === 0 && (
+                      <div style={{ padding: 12, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 6, color: "#86efac", fontSize: "0.82rem" }}>
+                        ✓ No correctness issues found. The {(s.orphanedChains || 0)} orphaned chains below are candidates for cleanup but not bugs.
+                      </div>
+                    )}
+                    <Section title="Dangling chain references" count={s.danglingChains || 0} color="#f87171">
+                      {(r.danglingChains || []).map((d, i) => (
+                        <Row key={i} label={`${d.chain} — ${d.text}`} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                      ))}
+                    </Section>
+                    <Section title="Dangling level references" count={s.danglingLevels || 0} color="#fb923c">
+                      {(r.danglingLevels || []).map((d, i) => (
+                        <Row key={i} label={`${d.chain} → ${d.level} — ${d.text}`} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                      ))}
+                    </Section>
+                    <Section title="descr_strat settlement errors" count={s.stratErrors || 0} color="#facc15">
+                      {(r.stratErrors || []).map((d, i) => (
+                        <Row key={i} label={`${d.region}: type ${d.chain} ${d.level} — ${d.issue}`} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                      ))}
+                    </Section>
+                    <Section title="Missing localization keys" count={s.missingLocale || 0} color="#a78bfa">
+                      {(r.missingLocale || []).map((d, i) => (
+                        <Row key={i} label={`{${d.level}} — needed for ${d.chain}`} />
+                      ))}
+                    </Section>
+                    <Section title="Orphaned chains (no refs, no prebuilts)" count={s.orphanedChains || 0} color="#9ca3af">
+                      {(r.orphanedChains || []).map((d, i) => (
+                        <Row key={i} label={d.chain} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                      ))}
+                    </Section>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        );
+      })()}
       {showXrefModal && (() => {
         const r = xrefResult;
         const totalFiles = r && r.byFile ? Object.keys(r.byFile).length : 0;

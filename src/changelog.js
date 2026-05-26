@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.642",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Mod-validation dashboard** (#2 of the 8 — final one). New **Validate** button in the dev pill runs a single scan of the loaded mod and surfaces every consistency bug it finds in one panel: **dangling chain refs** (`building_present <X>` where X has no `building X` block), **dangling level refs** (right chain, wrong level), **descr_strat settlement errors** (`type <chain> <level>` where the chain doesn't exist OR the level isn't one of the chain's declared levels), **missing localization** (declared EDB levels with no `{level}` key in `text/export_buildings.txt`), and **orphaned chains** (defined but with zero refs anywhere AND zero descr_strat prebuilts — cleanup candidates). Five summary tiles at the top; each section is collapsible; **every error row is click-to-jump** straight to the offending file:line in the Scripts editor. The migration / family-tree class of bugs that ate hours earlier in the project would have surfaced here in seconds. **All 8 improvements now shipped.**" },
+    ],
+  },
+  {
     version: "0.9.641",
     date: "2026-05-26",
     items: [
