@@ -18334,10 +18334,36 @@ function App() {
                   // faction + locator (coords or region).
                   if (appliedUnits.length) {
                     const norm = (us) => (us || []).map((u) => (typeof u === "string" ? { name: u, exp: 0, armour: 0, weapon: 0 } : u));
+                    // 0.9.662: previous matches() compared locator.region
+                    // ("Sabinia-Aequia", a descr_regions name) against the
+                    // army's a.region || a.location ("Reate", a city name)
+                    // — these never matched, so the in-memory snapshot
+                    // stayed stale and the panel kept showing pre-edit
+                    // units. New flow: match by character first (reliable
+                    // when the locator carries one), then fall back to a
+                    // tolerant region/city/location compare, then by
+                    // coords.
+                    const normName = (s) => String(s || "").toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
                     const matches = (a, au) => {
                       if ((a.faction || "").toLowerCase() !== (au.faction || "").toLowerCase()) return false;
-                      if (au.locator.region != null) return (a.charType === "garrison" || a._garrisoned) && (a.region || a.location) === au.locator.region;
-                      return a.x === au.locator.x && a.y === au.locator.y;
+                      if (au.locator.character) {
+                        const want = normName(au.locator.character);
+                        const have = normName(a.character || a.name);
+                        if (want && have) {
+                          if (want === have) return true;
+                          if (want.split(" ")[0] === have.split(" ")[0]) return true;  // first-name fallback
+                        }
+                      }
+                      if (au.locator.region != null) {
+                        const want = normName(au.locator.region);
+                        // a.region (descr_regions name) OR a.location (city, e.g. "Reate")
+                        if (normName(a.region) === want) return (a.charType === "garrison" || a._garrisoned);
+                        if (normName(a.location) === want) return (a.charType === "garrison" || a._garrisoned);
+                      }
+                      if (au.locator.x != null && au.locator.y != null) {
+                        return a.x === au.locator.x && a.y === au.locator.y;
+                      }
+                      return false;
                     };
                     const apply = (arr) => Array.isArray(arr) ? arr.map((a) => {
                       const au = appliedUnits.find((u) => matches(a, u));

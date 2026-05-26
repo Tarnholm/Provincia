@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.662",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Panel updates after Save — no more \"cached garrison\" lag.** The post-Save snapshot refresh compared `locator.region` (descr_regions name, e.g. \"Sabinia-Aequia\") against `army.region || army.location` (city name, e.g. \"Reate\"), which never matched — so even after the IPC successfully rewrote descr_strat, `startingArmiesByRegion` in memory still held the pre-edit unit list and the garrison panel kept showing the old cards. Now the matcher tries `locator.character` first (full-name match, then first-name fallback) using underscore/space normalization, then falls back to a tolerant region-OR-city compare, then coords. Reate / Pisae / Maleventum / Perusia and equivalents now refresh cleanly post-Apply." },
+    ],
+  },
+  {
     version: "0.9.661",
     date: "2026-05-26",
     items: [
