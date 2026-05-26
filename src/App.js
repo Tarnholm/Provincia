@@ -1517,6 +1517,11 @@ function App() {
   // Auto-update status listener: surfaces update-available / downloaded / error via toast.
   // Also exposes setUpdateReady so the UI can show a "Restart & install" button.
   const [updateReady, setUpdateReady] = useState(null); // { version } once download finishes
+  // 0.9.635: save-out-of-sync detector. Populated from characters-init when
+  // the loaded save's Factionleader-trait count is far below the mod's
+  // expected faction count (=trait indices drifted; regenerate save).
+  const [saveStaleInfo, setSaveStaleInfo] = useState(null);
+  const [saveStaleDismissed, setSaveStaleDismissed] = useState(false);
   // 0..100 while electron-updater is downloading the installer in the
   // background; null when no download is in flight. Drives the progress
   // strip next to the version label.
@@ -2403,6 +2408,15 @@ function App() {
       api.charactersInit(dir).then(result => {
         if (result?.ok) {
           console.log("[characters] initialized: " + result.names + " names, " + result.traits + " traits, " + result.surnames + " surnames, " + result.chains + " chains, " + result.factionDisplay + " faction display names");
+          // Save-out-of-sync warning (set by main when Factionleader-trait
+          // count is suspiciously below the mod's faction count). Reset on
+          // every characters-init so swapping mods / saves re-evaluates.
+          if (result.saveModSync?.stale) {
+            setSaveStaleInfo(result.saveModSync);
+            setSaveStaleDismissed(false);
+          } else {
+            setSaveStaleInfo(null);
+          }
           // Pull the descr_strat-derived turn-0 settlement ownership map so
           // recruit evaluation has a real owner per city (without needing a
           // save loaded). Otherwise we fall back to descr_regions' rebel-
@@ -11352,6 +11366,37 @@ function App() {
         );
       }
       console.log(`[aor] legend: ${entries.length} unique AORs across ${Object.values(counts).reduce((a, b) => a + b, 0)} region-tags`);
+
+      // 0.9.635: click an AOR to isolate every region tagged with it
+      // (primary fill OR stripe overlay); shift-click to add more. Same
+      // shared legendFilter state + selectedProvinces highlight infra
+      // as the culture / religion legends.
+      const activeSet = legendFilter instanceof Set ? legendFilter : null;
+      const getMatchingKeys = (name) => {
+        const out = [];
+        for (const [rgbKey, r] of Object.entries(regions)) {
+          if (getAors(r.tags).includes(name)) out.push(rgbKey);
+        }
+        return out;
+      };
+      const handleLegendClick = (name, isShift) => {
+        setLegendFilter(prev => {
+          const current = prev instanceof Set ? new Set(prev) : new Set();
+          if (isShift) {
+            if (current.has(name)) current.delete(name);
+            else current.add(name);
+          } else {
+            if (current.size === 1 && current.has(name)) current.clear();
+            else { current.clear(); current.add(name); }
+          }
+          const allKeys = [...current].flatMap(n => getMatchingKeys(n));
+          const unique = [...new Set(allKeys)];
+          setSelectedProvinces(unique);
+          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
+          return current.size === 0 ? null : current;
+        });
+      };
+
       return (
         <div style={panelStyle}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
@@ -11359,27 +11404,40 @@ function App() {
           </div>
           {!legendCollapsed && (
             <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "30vh", overflowY: "auto" }}>
-              {entries.map(([name, col]) => (
-                <div key={name} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "1px 0", fontSize: "0.72rem",
-                }} title={`${counts[name]} region(s) tagged with aor_${name}`}>
-                  <span style={{
-                    width: 12, height: 12, borderRadius: 2, flexShrink: 0,
-                    background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
-                    border: "1px solid rgba(0,0,0,0.35)",
-                  }} />
-                  <span style={{ flex: 1, textTransform: "capitalize", color: "#eee" }}>
-                    {name.replace(/_/g, " ")}
-                  </span>
-                  <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
-                    {counts[name]}
-                  </span>
-                </div>
-              ))}
+              {entries.map(([name, col]) => {
+                const isActive = activeSet && activeSet.has(name);
+                const dimmed = activeSet && !isActive;
+                return (
+                  <div
+                    key={name}
+                    onClick={(e) => handleLegendClick(name, e.shiftKey)}
+                    title={`${counts[name]} region(s) tagged with aor_${name}\nClick to isolate · Shift-click to add`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "2px 4px", fontSize: "0.72rem",
+                      borderRadius: 3, cursor: "pointer",
+                      background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
+                      opacity: dimmed ? 0.42 : 1,
+                      transition: "opacity 0.12s, background 0.12s",
+                    }}
+                  >
+                    <span style={{
+                      width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                      background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
+                      border: "1px solid rgba(0,0,0,0.35)",
+                    }} />
+                    <span style={{ flex: 1, textTransform: "capitalize", color: "#eee" }}>
+                      {name.replace(/_/g, " ")}
+                    </span>
+                    <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
+                      {counts[name]}
+                    </span>
+                  </div>
+                );
+              })}
               <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
                 Stripes = regions with multiple AORs (each AOR's color appears in rotation).
-                <br />Click button again to exit AOR mode.
+                <br />Click an entry to isolate · Shift-click to add · Click again to clear.
               </div>
             </div>
           )}
@@ -12687,6 +12745,29 @@ function App() {
           onRestart={() => window.electronAPI?.updaterQuitAndInstall?.()}
           onDismiss={() => setUpdateReady(null)}
         />
+      )}
+      {saveStaleInfo && !saveStaleDismissed && (
+        <div style={{
+          position: "fixed", top: updateReady ? 56 : 12, left: "50%", transform: "translateX(-50%)",
+          zIndex: 10000, background: "rgba(180, 130, 30, 0.96)", color: "#fff",
+          padding: "10px 16px", borderRadius: 8, fontSize: "0.82rem", maxWidth: 640,
+          boxShadow: "0 6px 24px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.18)",
+          display: "flex", alignItems: "center", gap: 12,
+        }}>
+          <span style={{ fontSize: "1.05rem" }}>⚠️</span>
+          <div style={{ flex: 1, lineHeight: 1.4 }}>
+            <b>Save looks out of sync with the loaded mod.</b> Only {saveStaleInfo.leadersDetected} of ~{saveStaleInfo.factionsExpected} faction leaders resolved
+            ({saveStaleInfo.totalChars} characters parsed). Character names / traits may be wrong — make a fresh turn-0 save against the current mod and re-load it.
+          </div>
+          <button
+            onClick={() => setSaveStaleDismissed(true)}
+            title="Dismiss for this session"
+            style={{
+              background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff",
+              padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.75rem",
+            }}
+          >Dismiss</button>
+        </div>
       )}
       <Toasts
         toasts={toasts}

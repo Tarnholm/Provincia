@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.635",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Save-out-of-sync detector.** When you load a save against a mod whose `descr_names_lookup.txt` / `export_descr_character_traits.txt` have drifted since the save was made, name + trait indices resolve to garbage — characters show wrong names, leaders read as commoners, etc. Provincia now flags it: after `characters-init`, it counts how many save characters have the `Factionleader` trait and compares to the mod's faction count. If far fewer leaders resolve than expected (the smoking gun for trait-index drift), a yellow banner appears: *\"Save looks out of sync with the loaded mod — only X of ~Y faction leaders resolved. Make a fresh turn-0 save and re-load.\"* Dismissable per session. (This is the auto-detect for the class of bug that caused the Antigonos II 0/1/0/3 / \"end;Iolaos\" debugging — should save you the next round of it.)" },
+      { type: "improvement", text: "**AOR legend: click an AOR to isolate every region tagged with it** (primary fill OR stripe overlay) — fades the rest, zooms to fit the selection. Shift-click to add more AORs; click again to clear. Reuses the same `legendFilter` infrastructure as the culture / religion legends, so the interaction matches what you already know. Tooltip on hover now also shows the count + the hint." },
+    ],
+  },
+  {
     version: "0.9.634",
     date: "2026-05-26",
     items: [

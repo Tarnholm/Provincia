@@ -8123,6 +8123,47 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
       const win = BrowserWindow.getAllWindows()[0];
       if (win) win.webContents.send("save-snapshot", { file: lastSaveFile, data: lastSaveData });
     }
+
+    // 0.9.635: Save-out-of-sync detector. The save stores INDICES into
+    // descr_names_lookup.txt and export_descr_character_traits.txt; if those
+    // files changed since the save was made (mod updated, characters
+    // renamed, traits reordered) the indices resolve to garbage names and
+    // traits. The cleanest signal is the Factionleader trait — every
+    // playable faction in descr_strat has exactly one leader, so the save
+    // should have roughly the same number of characters tagged with
+    // "Factionleader". When trait indices drift, that trait stops resolving
+    // and the count collapses. The renderer surfaces a yellow banner.
+    try {
+      const factionsWithChars = modDescrStratFamilies
+        ? Object.values(modDescrStratFamilies.byFaction || {}).filter(b => (b.members || []).length > 0).length
+        : 0;
+      const chars = (lastSaveData && lastSaveData.charactersByRegion)
+        ? Object.values(lastSaveData.charactersByRegion).flat()
+        : [];
+      // Also accept characterExtras as a fallback (different code path).
+      const trAll = chars.length ? chars : (lastSaveData?.characterExtras || []);
+      const leaderCount = trAll.filter(c => {
+        const ts = c.traits || [];
+        return ts.some(t => (typeof t === "string" ? t : t?.name) === "Factionleader");
+      }).length;
+      const totalChars = trAll.length;
+      // Only flag when we have enough signal to be meaningful: real save
+      // loaded (>20 chars), real mod loaded (>5 factions), AND the ratio
+      // of leaders found to factions expected is below 40%.
+      if (totalChars >= 20 && factionsWithChars >= 5 && leaderCount < Math.max(2, factionsWithChars * 0.4)) {
+        info.saveModSync = {
+          stale: true,
+          leadersDetected: leaderCount,
+          factionsExpected: factionsWithChars,
+          totalChars,
+          sampleNames: trAll.slice(0, 8).map(c => c.firstName || c.first || "?").filter(Boolean),
+        };
+        console.warn(`[save-sync] STALE save likely — ${leaderCount}/${factionsWithChars} Factionleader-tagged chars (${totalChars} total)`);
+      } else if (totalChars > 0 && factionsWithChars > 0) {
+        info.saveModSync = { stale: false, leadersDetected: leaderCount, factionsExpected: factionsWithChars, totalChars };
+      }
+    } catch (e) { console.warn("[save-sync] detector failed:", e && e.message); }
+
     return { ok: true, ...info };
   } catch (e) {
     return { ok: false, error: e.message };
