@@ -3170,6 +3170,12 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
     if (!byRegion && !byCoord && !byCharacter) return { ok: false, error: "locator needs region, x/y, or character" };
     const wantFac = String(faction || "").toLowerCase();
     let unitStart = -1, unitEnd = -1, indent = "\t";
+    // 0.9.652: diagnostic logs for the "garrison block not found" class.
+    // Surface faction, locator, units count, dsPath; then for each lookup
+    // path (character/coord/region) log whether it matched and at what
+    // line. Logs land in %AppData%\Roaming\Provincia\provincia.log.
+    console.log(`[army-units] IPC start: faction="${faction}" locator=${JSON.stringify(locator)} units=${units.length} dsPath="${dsPath}"`);
+    console.log(`[army-units] flags: byRegion=${byRegion} byCoord=${byCoord} byCharacter=${byCharacter} wantFac="${wantFac}"`);
     // 0.9.651: when locator.character is set (a named bodyguard commander
     // — e.g. Appius), find the character record in the faction's block,
     // then its `army { }` unit lines. Runs BEFORE the region-mode lookup
@@ -3180,6 +3186,8 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
     if (byCharacter) {
       let curFac = null;
       const wantChar = String(locator.character).trim();
+      let charHeadersInWantFac = 0;
+      let charFirstNamesSampled = [];
       for (let i = 0; i < lines.length; i++) {
         const fm = lines[i].match(/^faction\s+([a-z_0-9]+)/i);
         if (fm) { curFac = fm[1].toLowerCase(); continue; }
@@ -3187,23 +3195,31 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
         // descr_strat character header: `character\tFirstName Family, named character, ...`
         const cm = lines[i].match(/^character\s*,?\s*([^,]+?)\s*,\s*named character/i);
         if (!cm) continue;
+        charHeadersInWantFac++;
         const firstName = cm[1].trim().split(/\s+/)[0];
+        if (charFirstNamesSampled.length < 12) charFirstNamesSampled.push(firstName);
         if (firstName !== wantChar) continue;
+        console.log(`[army-units] character match: faction="${curFac}" line=${i + 1} firstName="${firstName}" wantChar="${wantChar}"`);
         // Walk forward to this character's `army` block.
         for (let j = i + 1; j < lines.length && j < i + 40; j++) {
-          if (/^character[\s,]/.test(lines[j])) break;
-          if (/^faction\s+/.test(lines[j])) break;
+          if (/^character[\s,]/.test(lines[j])) { console.log(`[army-units] hit next character at line ${j + 1}, stopping forward walk`); break; }
+          if (/^faction\s+/.test(lines[j])) { console.log(`[army-units] hit next faction at line ${j + 1}, stopping forward walk`); break; }
           if (/^\s*army\b/.test(lines[j])) {
+            console.log(`[army-units] found army block at line ${j + 1}`);
             let k = j + 1;
             while (k < lines.length && /^\s*unit\s+/.test(lines[k])) {
               if (unitStart < 0) { unitStart = k; indent = (lines[k].match(/^(\s*)/) || ["", "\t"])[1]; }
               k++;
             }
             unitEnd = k;
+            console.log(`[army-units] unit lines: ${unitStart + 1}..${unitEnd} (${unitEnd - unitStart} unit lines)`);
             break;
           }
         }
         if (unitStart >= 0) break;
+      }
+      if (unitStart < 0) {
+        console.warn(`[army-units] byCharacter MISS: wantChar="${wantChar}" wantFac="${wantFac}" — found ${charHeadersInWantFac} character headers in that faction. First names sampled: ${JSON.stringify(charFirstNamesSampled)}`);
       }
     }
     if (unitStart < 0 && byCoord) {

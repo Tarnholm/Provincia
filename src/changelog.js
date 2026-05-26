@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.652",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Diagnostic logs for the lingering Pisae / Appius \"garrison block not found\" failure.** Verified locally that the descr_strat character header is `character,\\tAppius Claudius_Pulcher, named character, ...` and my regex matches it — so the IPC lookup *should* find Appius in romans_julii's block. Adding logs to find out which step is actually missing on your run: the IPC now logs the faction / locator / byCharacter flag at entry, then per-lookup outcomes (which line matched, where the `army` block was found, how many unit lines, plus on miss: a sample of character first names it DID see in the target faction). Reproduce with a × click + Save to Mod, then send `%AppData%\\Roaming\\Provincia\\provincia.log` (or paste the `[army-units]` lines)." },
+    ],
+  },
+  {
     version: "0.9.651",
     date: "2026-05-26",
     items: [
