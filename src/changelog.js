@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.650",
+    date: "2026-05-26",
+    items: [
+      { type: "fix", text: "**Garrison cards now actually disappear when you click ×** (and appear when you click a Recruitable unit). The 0.9.649 live-merge was looking up `pendingArmyUnits` under the current `ownerId` key, but RegionInfo's army descriptor keys the entry under `info.faction` (the descr_strat starting owner). When those differed — i.e. any settlement that's changed hands in your save — the merge silently missed and the panel showed the unchanged live garrison. Now it tries `r.faction` first (1:1 with the selection path) and falls back to `ownerId`, so the panel updates immediately regardless of who currently owns the town." },
+    ],
+  },
+  {
     version: "0.9.649",
     date: "2026-05-26",
     items: [

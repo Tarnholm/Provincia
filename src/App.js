@@ -15265,14 +15265,26 @@ function App() {
                           (currentOwnerByCity && currentOwnerByCity[r.city])
                           || (initialOwnerByCity && initialOwnerByCity[r.city])
                           || r.faction;
-                        // 0.9.649: merge pendingArmyUnits for THIS garrison so
+                        // 0.9.650: merge pendingArmyUnits for THIS garrison so
                         // recruit-clicks and × removes show up in the panel
-                        // immediately, not just after Save to Mod. Key matches
-                        // armyKey(faction, {region}) — same hash stageArmyUnits uses.
-                        const pendingKey = ownerId && r.region
+                        // immediately, not just after Save to Mod. Key must
+                        // match what RegionInfo passes to onSelectArmy — which
+                        // uses `info.faction` (== r.faction, the descr_strat
+                        // starting owner), NOT the live current owner. So we
+                        // try BOTH: r.faction first (matches the selection
+                        // path 1:1), ownerId as a fallback. Without the
+                        // r.faction-first lookup the merge silently misses
+                        // when a settlement has changed hands in-game.
+                        const pendingKey1 = r.faction && r.region
+                          ? `${String(r.faction).toLowerCase()}|r:${r.region}`
+                          : null;
+                        const pendingKey2 = ownerId && r.region && ownerId !== r.faction
                           ? `${String(ownerId).toLowerCase()}|r:${r.region}`
                           : null;
-                        const pendingEntry = pendingKey ? pendingArmyUnits.get(pendingKey) : null;
+                        const pendingEntry =
+                          (pendingKey1 && pendingArmyUnits.get(pendingKey1))
+                          || (pendingKey2 && pendingArmyUnits.get(pendingKey2))
+                          || null;
                         if (pendingEntry) {
                           normalised = (pendingEntry.units || []).map((u) => ({
                             unit: u.unit,
