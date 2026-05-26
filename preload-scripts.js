@@ -89,4 +89,9 @@ contextBridge.exposeInMainWorld("api", {
   onComparisonStatus: (cb) => on("comparison-status", cb),
   onMasterOutput: (cb) => on("master-output", cb),
   onMasterDone: (cb) => on("master-done", cb),
+  // sps:jump-to forwarder — main sends a `jump-to` event with { fileName,
+  // searchText } when the user clicks an "Open in editor" link in the main
+  // app. Renderer switches to the editor tab, loads the file, and scrolls
+  // Monaco to the first match.
+  onJumpTo: (cb) => on("jump-to", cb),
 });

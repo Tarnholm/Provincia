@@ -3747,6 +3747,35 @@ function setCompareStatus(msg) {
 // ══════════════════════════════════════
 
 function setupEventListeners() {
+  // 0.9.637: sps:jump-to handler — open a config file in Monaco and (if
+  // searchText given) scroll to the first match. Fired by the main Provincia
+  // app's "Open in editor" buttons.
+  if (window.api.onJumpTo) window.api.onJumpTo(async ({ fileName, searchText }) => {
+    try {
+      // Make sure the Editor tab is foregrounded so Monaco lays out properly.
+      const editorSeg = document.querySelector('.segmented-control .segment[data-tab="editor"]');
+      if (editorSeg && !editorSeg.classList.contains('active')) editorSeg.click();
+      // Look up the file path by name.
+      const files = await window.api.listConfigFiles();
+      const f = (files || []).find(x => x.name === fileName);
+      if (!f) {
+        appendConsole(`[jump-to] file not loaded: ${fileName} — import a mod first.\n`, 'stderr');
+        return;
+      }
+      await openFile(f.path, f.name);
+      // openFile populates Monaco synchronously via setValue; reveal first match.
+      if (searchText && monacoEditor) {
+        const model = monacoEditor.getModel();
+        const matches = model.findMatches(searchText, false, false, false, null, false);
+        if (matches && matches.length) {
+          const r = matches[0].range;
+          monacoEditor.setSelection(r);
+          monacoEditor.revealLineInCenter(r.startLineNumber);
+        }
+      }
+    } catch (e) { appendConsole(`[jump-to] error: ${e.message}\n`, 'stderr'); }
+  });
+
   window.api.onStepOutput((data) => {
     appendConsole(data.text, data.stream);
   });

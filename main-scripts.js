@@ -116,12 +116,39 @@ function openScriptsWindow() {
   scriptsWin.setMenuBarVisibility(false);
   scriptsWin.loadFile(path.join(__dirname, 'scripts-suite', 'index.html'));
   scriptsWin.on('closed', () => { scriptsWin = null; });
+  // Replay any pending sps:jump-to once the renderer is up — supports the
+  // "click an EDB link in the main app and the Scripts window opens + jumps
+  // straight to that line" flow in a single user action.
+  scriptsWin.webContents.once('did-finish-load', () => {
+    if (_pendingScriptsJump) {
+      scriptsWin.webContents.send('sps:jump-to', _pendingScriptsJump);
+      _pendingScriptsJump = null;
+    }
+  });
 }
 
 // ── IPC Handlers ──
 
 ipcMain.handle('sps:get-pipeline-steps', () => PIPELINE_STEPS);
 ipcMain.handle('sps:get-project-root', () => PROJECT_ROOT);
+
+// 0.9.637: open a config file in the Scripts window's Monaco editor and
+// optionally scroll to the first match of `searchText`. Used by the main
+// Provincia app's "Open in editor" entry points (dev pill → EDB button,
+// per-card jump-to buttons, etc.). If the Scripts window isn't open yet,
+// the request is queued and replayed once the renderer is ready — so the
+// first-open + jump-to path works in one click.
+let _pendingScriptsJump = null;
+ipcMain.handle('sps:jump-to', async (_, fileName, searchText) => {
+  const ready = scriptsWin && !scriptsWin.isDestroyed() && !scriptsWin.webContents.isLoading();
+  if (ready) {
+    scriptsWin.webContents.send('sps:jump-to', { fileName, searchText });
+  } else {
+    _pendingScriptsJump = { fileName, searchText };
+    openScriptsWindow();
+  }
+  return { ok: true };
+});
 
 // ── Mod / Game Import ──
 

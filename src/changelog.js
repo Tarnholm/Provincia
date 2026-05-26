@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.637",
+    date: "2026-05-26",
+    items: [
+      { type: "feature", text: "**Open-in-editor plumbing + EDB dev-pill button** (#8 of the 8 improvements). New `scripts-jump-to(fileName, searchText)` IPC opens a config file in the Scripts window's Monaco editor — and, when given a search string, finds + scrolls to the first match. Works whether the Scripts window is already open or not (it opens it and replays the request once Monaco is ready). First entry point is a simple **EDB** button in the dev pill that opens `export_descr_buildings.txt` straight in the editor. The plumbing now supports per-card \"Open in editor\" buttons cheaply — e.g. a building popup can pass `(\"export_descr_buildings.txt\", \"building \" + chainName)` and the Scripts window jumps right to that chain block. More callsites coming in later batches." },
+    ],
+  },
+  {
     version: "0.9.636",
     date: "2026-05-26",
     items: [

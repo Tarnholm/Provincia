@@ -9859,6 +9859,24 @@ function App() {
                   }}
                 >Scripts</button>
               )}
+              {/* 0.9.637: open EDB directly in the Scripts editor (Monaco). The
+                  plumbing supports searchText too — passing a chain name as the
+                  second arg will scroll to it. Future per-card "Open in EDB"
+                  buttons (on building popups, etc.) all share this IPC. */}
+              {window.electronAPI?.scriptsJumpTo && (
+                <button
+                  className="dev-btn"
+                  onClick={() => window.electronAPI.scriptsJumpTo("export_descr_buildings.txt", null)}
+                  title="Open export_descr_buildings.txt in the Scripts editor (Monaco)"
+                  style={{
+                    ...btnStyle(false),
+                    background: "rgba(60,60,60,0.7)",
+                    color: "#9ca3af",
+                    border: "1px solid #6b7280",
+                    minWidth: 50,
+                  }}
+                >EDB</button>
+              )}
               {/* Victory-conditions helper: pick a region-list CSV → get a CSV of
                   region,owner_faction from the loaded mod's descr_strat. */}
               {window.electronAPI?.vcRegionOwnersCsv && (

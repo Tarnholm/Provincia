@@ -3,6 +3,10 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronAPI", {
   // Open the embedded Settlement Processor (Scripts) window (dev pill).
   openScriptsWindow: () => ipcRenderer.invoke("sps:open-window"),
+  // Open a config file in the Scripts window's Monaco editor and (if
+  // searchText given) scroll to the first match. Opens the Scripts window
+  // on demand. Used by "Open in editor" buttons in the main app.
+  scriptsJumpTo: (fileName, searchText) => ipcRenderer.invoke("sps:jump-to", fileName, searchText),
   // Mac dev-pill button: load the bundled RIS subset + sample save so the
   // app works without the game installed. Returns { ok, dataDir, saveDir,
   // saveFile, campaign }.
