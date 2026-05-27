@@ -53,7 +53,18 @@ for (const sav of saves) {
     results.push({ save: base, status: "no-output" });
     continue;
   }
-  const val = run("val", path.join(SCRIPT_DIR, "validate-descr-strat.js"), [outFile]);
+  // Re-use the SAME mod dir the generator auto-detected (printed as
+  // 'auto-detected from save: ... → <path>'). Without this, validator
+  // would default to bundled-mod and surface false-positive trait/unit
+  // warnings when the user's installed mod has a different vocabulary.
+  let validatorArgs = [outFile];
+  const modMatch = gen.out.match(/auto-detected from save:[^→]*→\s*([^)]+)\)/);
+  if (modMatch) {
+    const detected = modMatch[1].trim();
+    const dataDir = path.join(detected, "data");
+    if (fs.existsSync(dataDir)) validatorArgs.push(dataDir);
+  }
+  const val = run("val", path.join(SCRIPT_DIR, "validate-descr-strat.js"), validatorArgs);
   const valOk = /✓ no structural issues detected|Issues: 0 errors,/.test(val.out);
   const sizeKB = (fs.statSync(outFile).size / 1024).toFixed(0);
 
