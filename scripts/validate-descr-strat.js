@@ -102,11 +102,20 @@ function loadEdctTraitNames(modDataDir) {
   for (const p of candidates) {
     if (!fs.existsSync(p)) continue;
     const set = new Set();
+    const maxLevels = {};
+    let curTrait = null, levelCount = 0;
     for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
-      const m = raw.match(/^Trait\s+(\S+)/);
-      if (m) set.add(m[1]);
+      const tm = raw.match(/^Trait\s+(\S+)/);
+      if (tm) {
+        if (curTrait) maxLevels[curTrait] = levelCount;
+        curTrait = tm[1]; levelCount = 0;
+        set.add(curTrait);
+        continue;
+      }
+      if (curTrait && /^\s*Level\s+/.test(raw)) levelCount++;
     }
-    if (set.size > 0) { set._sourcePath = p; return set; }
+    if (curTrait) maxLevels[curTrait] = levelCount;
+    if (set.size > 0) { set._sourcePath = p; set._maxLevels = maxLevels; return set; }
   }
   return null;
 }
@@ -244,8 +253,13 @@ for (let i = 0; i < lines.length; i++) {
     if (edctTraits) {
       const body = line.slice(6).trim();
       for (const part of body.split(",")) {
-        const m = part.trim().match(/^(\S+)\s+\d+$/);
+        const m = part.trim().match(/^(\S+)\s+(\d+)$/);
         if (m && !edctTraits.has(m[1])) warn(i + 1, "unknown trait: " + m[1]);
+        else if (m && edctTraits._maxLevels) {
+          const cap = edctTraits._maxLevels[m[1]];
+          const lvl = +m[2];
+          if (cap && lvl > cap) warn(i + 1, `trait ${m[1]} level ${lvl} exceeds EDCT max ${cap}`);
+        }
       }
     }
     continue;

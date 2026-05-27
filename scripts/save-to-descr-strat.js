@@ -270,8 +270,10 @@ function loadNameLookup(modDataDir) {
   return [];
 }
 
-// export_descr_character_traits.txt — extract just the trait NAMES (order
-// matters: the save stores trait_id = index into this list).
+// export_descr_character_traits.txt — extract trait NAMES (order matters:
+// the save stores trait_id = index into this list) plus the MAX LEVEL of
+// each trait (= the count of "Level <name>" definitions inside the block).
+// Returns { names: [...], maxLevels: { name: int } }.
 function loadTraitNames(modDataDir) {
   const candidates = [
     path.join(modDataDir, "export_descr_character_traits.txt"),
@@ -281,11 +283,20 @@ function loadTraitNames(modDataDir) {
     if (!fs.existsSync(src)) continue;
     const text = fs.readFileSync(src, "utf8");
     const names = [];
+    const maxLevels = {};
+    let curTrait = null, levelCount = 0;
     for (const line of text.split(/\r?\n/)) {
-      const m = line.match(/^Trait\s+(\S+)/);
-      if (m) names.push(m[1]);
+      const tm = line.match(/^Trait\s+(\S+)/);
+      if (tm) {
+        if (curTrait) maxLevels[curTrait] = levelCount;
+        curTrait = tm[1]; levelCount = 0;
+        names.push(curTrait);
+        continue;
+      }
+      if (curTrait && /^\s*Level\s+/.test(line)) levelCount++;
     }
-    if (names.length > 0) return names;
+    if (curTrait) maxLevels[curTrait] = levelCount;
+    if (names.length > 0) { names.maxLevels = maxLevels; return names; }
   }
   return [];
 }
@@ -558,7 +569,7 @@ function resolveUniqueFirstName(c, usedNames, nameLookupSet) {
   return null;
 }
 
-function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames) {
+function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames, traitMaxLevels) {
   const lines = [];
   const firstName = c.firstName || "Unknown";
   const lastName = c.lastName || ""; // Greek single-name chars have no lastName
@@ -579,10 +590,11 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   lines.push(`character,\t${fullName}, named character${role}, age ${c.age || 30}, , x ${x}, y ${y}`);
 
   // Traits line — skip when empty.
-  // Cap trait level at 9: RTW traits have a max level of 9 in the engine.
-  // The save sometimes carries higher values (these are accumulating
-  // COUNTER-traits used internally; emitting them verbatim would let the
-  // engine re-fire their threshold effects on every turn).
+  // Cap each trait at ITS OWN declared max level from EDCT (most traits
+  // are binary, max=1; counter-traits go up to 9). The save sometimes
+  // carries higher values (these are accumulating COUNTER-traits used
+  // internally; emitting them verbatim would let the engine re-fire
+  // their threshold effects on every turn).
   if (c.traits && c.traits.length > 0) {
     const traitParts = c.traits
       .filter(t => t.name && t.level >= 1)
@@ -591,7 +603,10 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
       // "Fitness" → "Fitness_Normal" / "Fitness_Overweight" / etc).
       // Engine would just silently drop them but they trigger warnings.
       .filter(t => !edctTraitNames || edctTraitNames.has(t.name))
-      .map(t => `${t.name} ${Math.min(t.level, 9)}`);
+      .map(t => {
+        const cap = (traitMaxLevels && traitMaxLevels[t.name]) || 9;
+        return `${t.name} ${Math.min(t.level, cap)}`;
+      });
     if (traitParts.length > 0) {
       lines.push(`traits ${traitParts.join(", ")}`);
     }
@@ -646,7 +661,7 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity, traitMaxLevels) {
   const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
@@ -693,7 +708,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   let emittedCount = 0, skippedCount = 0;
   for (const c of characters) {
     const army = charArmies.get(c.secondaryUuid);
-    const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames);
+    const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames, traitMaxLevels);
     if (text === null) { skippedCount++; continue; }
     lines.push(text);
     lines.push("");
@@ -1298,7 +1313,7 @@ async function main() {
     cs.length = 0;
     for (const c of dedupedKeep) cs.push(c);
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity, traitNames.maxLevels || {});
     // Per-faction summary header: human-readable digest at the top of
     // each faction block so a glance at the file tells you what's in it.
     const trTag = tr != null ? `treasury=${tr.toLocaleString()}` : "treasury=(bundled-default)";
