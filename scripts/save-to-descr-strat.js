@@ -1105,11 +1105,22 @@ async function main() {
   // descr_strat doesn't declare. Unowned settlements (UUID didn't resolve to
   // any descr_strat-anchored faction) also land in `slave`.
   const normalizeFaction = (f) => /_rebel$/.test(f) ? "slave" : f;
+  // Skip settlements whose name doesn't map to a region in the active
+  // mod's descr_regions. Common when the save was made with an older mod
+  // version that had settlements since removed/renamed (Sabrata, Kition,
+  // etc. exist in older RIS but not in RIS beta). Emitting them with
+  // `region Unknown` would cause "region not found" engine errors.
   const byFactionSettlements = {};
+  let droppedNoRegion = 0;
   for (const s of parsed.settlements) {
+    const region = settlementToRegion[s.name];
+    if (!region) { droppedNoRegion++; continue; }
     const owner = normalizeFaction(owners.ownerByCity[s.name] || "slave");
     if (!byFactionSettlements[owner]) byFactionSettlements[owner] = [];
-    byFactionSettlements[owner].push({ ...s, region: settlementToRegion[s.name] });
+    byFactionSettlements[owner].push({ ...s, region });
+  }
+  if (droppedNoRegion > 0) {
+    console.log(`[${Date.now() - t0}ms] dropped ${droppedNoRegion} settlements whose name doesn't exist in the active mod's descr_regions (save made with different mod version)`);
   }
   const byFactionChars = {};
   for (const c of characters) {
