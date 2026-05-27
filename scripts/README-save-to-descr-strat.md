@@ -20,7 +20,10 @@ entity-cap that makes very long campaigns crash.
 | Real current treasury per faction | `parseFactionTreasuries` mapped via `descr_sm_factions` order |
 | Diplomatic relations (wars, alliances) | `parseDiplomacyMatrix` + relaxed locator for RIS imperial |
 | Character position fallback (governors, leaderless factions) | leader → faction-mate → `map_regions.tga` settlement coords |
-| Synthesized leaders for orphan factions | name token from `descr_names_lookup` + faction's first settlement coords |
+| Synthesized leaders for orphan factions | walk descr_names_lookup until unused name + faction's bodyguard from EDU |
+| EVERY bundled faction emitted | killed factions get minimal blocks (with bundled denari) so they can re-emerge |
+| Original `faction_creator` per settlement | from bundled descr_strat — drives emergent-faction rebellions |
+| Name dedupe + EDU substitution | unique character names (RTW requirement); stale unit refs auto-substituted to current EDU-valid units |
 
 ### Documented limitations
 
@@ -43,9 +46,14 @@ entity-cap that makes very long campaigns crash.
 ### Typical workflow
 
 ```sh
-# 1. Generate descr_strat from a save
-node scripts/save-to-descr-strat.js "C:/Users/vtarn/Downloads/save_item limit bug.sav"
-# → derived/save_item limit bug.descr_strat.txt   (~2.8 MB)
+# 1. Generate descr_strat from a save, USING THE USER'S ACTUAL MOD
+#    (so region/EDU/EDB references match what's installed)
+node scripts/save-to-descr-strat.js \
+  "C:/Users/vtarn/Downloads/save_item limit bug.sav" \
+  --mod-dir "C:/Users/.../RIS beta"
+# → derived/save_item limit bug.descr_strat.txt   (~2.3 MB)
+# Without --mod-dir, falls back to bundled-mod/data (~2.8 MB; may have
+# region/unit names that don't exist in your installed mod).
 
 # 2. Validate structurally
 node scripts/validate-descr-strat.js "derived/save_item limit bug.descr_strat.txt"
@@ -73,19 +81,24 @@ node scripts/save-to-descr-strat.js \
   --deploy "C:/Users/.../RIS beta/.../imperial_campaign"
 ```
 
-### Per-save stats (T1017 RIS imperial)
+### Per-save stats (T1017 RIS imperial, generated against RIS beta installed mod)
 
 ```
-197 factions emitted (all have at least a leader, real or synthesized)
+239 faction blocks (= every bundled-mod faction, killed ones included
+  for re-emergence — their original-creator regions stay marked so
+  rebellions can re-spawn them from historical territory)
 1232 settlements with buildings + inferred levels
-2133 characters (1980 real + 153 synthesized for orphan factions)
-1271 units across army blocks
-227 factions with real current treasury
+1240 living characters, all uniquely named (dedupe dropped ~900 chars
+  whose duplicate names couldn't be disambiguated within nameLookup —
+  RTW requires unique character names)
+827 units across army blocks
+227 factions with real current treasury (from save's economics records)
 507 wars + 503 alliances as diplomatic_stance lines
 27 family relationships + 4 character_record entries
-709 ancillary lines (named via EDA)
-0 validator errors / 0 warnings on 96k-line output
-2.80 MB total
+EDU substitution: 14 bodyguard rewrites (stale unit refs from older
+  RIS versions auto-mapped to current EDU-valid units)
+0 validator errors / 0 warnings against RIS beta mod (EDB/EDU/EDCT/EDA)
+2.29 MB total
 ```
 
 ### Pre-generated outputs
