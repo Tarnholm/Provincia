@@ -25,15 +25,35 @@ if (!fs.existsSync(inputPath)) { console.error("not found:", inputPath); process
 // Load reference data for cross-reference validation.
 // Returns null silently when files aren't present (some bundled mods only
 // have partial data).
+// Search for EDU in bundled-mod first, then in any user-installed mod under
+// the Feral RTW Mods directory. Returns the parsed Set + the path used.
 function loadEduUnitNames(modDataDir) {
-  const p = path.join(modDataDir, "export_descr_unit.txt");
-  if (!fs.existsSync(p)) return null;
-  const set = new Set();
-  for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
-    const m = raw.match(/^type\s+(.+?)\s*$/);
-    if (m) set.add(m[1].trim());
+  const candidates = [path.join(modDataDir, "export_descr_unit.txt")];
+  // Fallback: any mod dir under Feral RTW Mods
+  const modsRoot = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods";
+  function walk(dir, depth) {
+    if (depth > 8) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const sub = path.join(dir, e.name);
+      const cand = path.join(sub, "export_descr_unit.txt");
+      if (fs.existsSync(cand)) candidates.push(cand);
+      walk(sub, depth + 1);
+    }
   }
-  return set;
+  if (fs.existsSync(modsRoot)) walk(modsRoot, 0);
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    const set = new Set();
+    for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+      const m = raw.match(/^type\s+(.+?)\s*$/);
+      if (m) set.add(m[1].trim());
+    }
+    if (set.size > 0) { set._sourcePath = p; return set; }
+  }
+  return null;
 }
 function loadEdbChainLevels(modDataDir) {
   const stripComments = (line) => { const i = line.indexOf(";"); return i >= 0 ? line.slice(0, i) : line; };
@@ -77,7 +97,7 @@ function loadEdctTraitNames(modDataDir) {
 const eduUnits = loadEduUnitNames(modDataDir);
 const edbChains = loadEdbChainLevels(modDataDir);
 const edctTraits = loadEdctTraitNames(modDataDir);
-console.log(`reference data: EDU=${eduUnits?.size ?? "(missing)"} units, EDB=${edbChains ? Object.keys(edbChains).length : "(missing)"} chains, EDCT=${edctTraits?.size ?? "(missing)"} traits`);
+console.log(`reference data: EDU=${eduUnits?.size ?? "(missing)"} units${eduUnits?._sourcePath ? " (from " + eduUnits._sourcePath + ")" : ""}, EDB=${edbChains ? Object.keys(edbChains).length : "(missing)"} chains, EDCT=${edctTraits?.size ?? "(missing)"} traits`);
 console.log();
 
 const text = fs.readFileSync(inputPath, "utf8");

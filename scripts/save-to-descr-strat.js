@@ -232,6 +232,38 @@ function loadTraitNames(modDataDir) {
   return [];
 }
 
+// export_descr_unit.txt — Set of unit names from EDU. Searched in the
+// bundled mod first, then any user-installed mod dir under Feral RTW.
+// Returns null if no EDU is found (save→descr_strat still works, just
+// without unit-name substitution for invalid references).
+function loadEduUnitNames(modDataDir) {
+  const candidates = [path.join(modDataDir, "export_descr_unit.txt")];
+  const modsRoot = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods";
+  function walk(dir, depth) {
+    if (depth > 8) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const sub = path.join(dir, e.name);
+      const cand = path.join(sub, "export_descr_unit.txt");
+      if (fs.existsSync(cand)) candidates.push(cand);
+      walk(sub, depth + 1);
+    }
+  }
+  if (fs.existsSync(modsRoot)) walk(modsRoot, 0);
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    const set = new Set();
+    for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+      const m = raw.match(/^type\s+(.+?)\s*$/);
+      if (m) set.add(m[1].trim());
+    }
+    if (set.size > 0) { set._sourcePath = p; return set; }
+  }
+  return null;
+}
+
 // export_descr_ancillaries.txt — extract names in declaration order so
 // save's ancillary u32 id can be mapped to a descr_strat-emittable name.
 function loadAncillaryNames(modDataDir) {
@@ -413,7 +445,7 @@ function emitSettlement(s, factionId, chainLevels) {
 //
 // Returns null when the character isn't emittable (e.g. unknown position with
 // no faction-anchor fallback).
-function emitCharacter(c, armyUnits, fallbackPos, ancNames) {
+function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog) {
   const lines = [];
   const firstName = c.firstName || "Unknown";
   const lastName = c.lastName || ""; // Greek single-name chars have no lastName
@@ -465,19 +497,39 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames) {
 
   // Army block — every commander WITH a bodyguard unit gets one. The
   // bodyguard is the first `unit` line; other units in the stack follow.
+  // EDU-aware substitution: if a unit name doesn't exist in this mod's
+  // EDU, replace it with the faction's most-common-bodyguard (= the
+  // first unit of that faction's other commanders). Catches saves that
+  // were made with an older mod version that had units since renamed.
   if (armyUnits && armyUnits.length > 0) {
     lines.push("army");
-    for (const u of armyUnits) {
+    for (let i = 0; i < armyUnits.length; i++) {
+      const u = armyUnits[i];
+      let name = u.name;
+      if (eduUnits && !eduUnits.has(name)) {
+        // Substitute. For the bodyguard slot (first unit) use the
+        // faction's preferred bodyguard. For other units we drop them
+        // entirely — there's no good substitute for an unknown infantry/
+        // cavalry unit and the engine would still reject the descr_strat.
+        if (i === 0 && factionBodyguard) {
+          name = factionBodyguard;
+          if (substitutionLog) substitutionLog.push({ from: u.name, to: name, kind: "bodyguard" });
+        } else {
+          if (substitutionLog) substitutionLog.push({ from: u.name, to: null, kind: "dropped" });
+          continue; // skip emit
+        }
+      }
       const exp = u.xp ?? 0;
       const armour = u.armourUpgrade ?? 0;
       const weapon = u.weaponUpgrade ?? 0;
-      lines.push(`unit\t\t${u.name}\t\texp ${exp} armour ${armour} weapon_lvl ${weapon}`);
+      lines.push(`unit\t\t${name}\t\texp ${exp} armour ${armour} weapon_lvl ${weapon}`);
     }
   }
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog) {
+  const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
   if (decl.superfaction) lines.push(`superfaction ${decl.superfaction}`);
@@ -522,7 +574,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   let emittedCount = 0, skippedCount = 0;
   for (const c of characters) {
     const army = charArmies.get(c.secondaryUuid);
-    const text = emitCharacter(c, army, fallbackPos, ancNames);
+    const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog);
     if (text === null) { skippedCount++; continue; }
     lines.push(text);
     lines.push("");
@@ -780,6 +832,7 @@ async function main() {
   const nameLookup = loadNameLookup(BUNDLED_MOD);
   const traitNames = loadTraitNames(BUNDLED_MOD);
   const ancNames = loadAncillaryNames(BUNDLED_MOD);
+  const eduUnits = loadEduUnitNames(BUNDLED_MOD);
   console.log(`[${Date.now() - t0}ms] mod data loaded: ` +
     `${Object.keys(ownership.ownerByCity).length} settlements, ` +
     `${Object.keys(factionDecls).length} factions, ` +
@@ -787,7 +840,8 @@ async function main() {
     `${nameLookup.length} name tokens, ` +
     `${traitNames.length} traits, ` +
     `${ancNames.length} ancillaries, ` +
-    `${Object.keys(settlementCoords).length} settlement coords`);
+    `${Object.keys(settlementCoords).length} settlement coords, ` +
+    `EDU=${eduUnits ? eduUnits.size + " units" : "(missing → no unit substitution)"}`);
 
   // ── Parse the save ──
   const buf = fs.readFileSync(savePath);
@@ -891,6 +945,33 @@ async function main() {
   console.log(`[${Date.now() - t0}ms] factions present in save: ${allFactionIds.size} ` +
     `(unresolved settlements and *_rebel factions mapped to slave)`);
 
+  // Build faction → preferred bodyguard unit map. For each real character
+  // with an army, the FIRST unit is typically their bodyguard. We tally
+  // by faction so synthesized leaders for orphan factions can borrow a
+  // bodyguard name that's actually valid in the mod's EDU. Also derive a
+  // file-wide fallback for factions that have no parsed characters at all.
+  // Filter to EDU-valid names only — otherwise an obsolete unit name like
+  // "oscan general" (no longer in the mod's EDU) becomes the "preferred"
+  // bodyguard and substitution maps unknown back to unknown.
+  const bodyguardCounts = {};
+  const globalBodyguardCounts = {};
+  for (const c of characters) {
+    const army = charArmies.get(c.secondaryUuid);
+    if (!army || army.length === 0) continue;
+    const bg = army[0].name;
+    if (!bg) continue;
+    if (eduUnits && !eduUnits.has(bg)) continue; // skip unknowns
+    if (!bodyguardCounts[c.faction]) bodyguardCounts[c.faction] = {};
+    bodyguardCounts[c.faction][bg] = (bodyguardCounts[c.faction][bg] || 0) + 1;
+    globalBodyguardCounts[bg] = (globalBodyguardCounts[bg] || 0) + 1;
+  }
+  const factionBodyguardByFaction = {};
+  for (const [fac, counts] of Object.entries(bodyguardCounts)) {
+    factionBodyguardByFaction[fac] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  }
+  const fallbackBodyguardUnit = Object.entries(globalBodyguardCounts)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || "general's bodyguard cavalry";
+
   // ── Emit per-faction blocks ──
   // Preserve the bundled file's faction ORDER so the engine reads them in
   // the same sequence (some campaign scripts assume a specific order).
@@ -905,6 +986,7 @@ async function main() {
   }
 
   const blocks = [];
+  const substitutionLog = [];
   let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0 };
   for (const facId of orderedFactions) {
     const decl = factionDecls[facId];
@@ -927,9 +1009,6 @@ async function main() {
       const seed = facId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
       const firstName = nameLookup[seed % nameLookup.length] || "Captain";
       const fallback = settlementCoords[ss[0].name] || { x: 250, y: 350 };
-      // Use a SYNTH_UUID for the secondaryUuid so we can attach a synthesized
-      // army to this character (engine requires every named character to
-      // have a bodyguard unit; without one the descr_strat is rejected).
       const synthUuid = 0xc0000000 | (seed & 0x0fffffff);
       cs.push({
         firstName,
@@ -951,21 +1030,20 @@ async function main() {
         primaryUuid: null,
         synthesized: true,
       });
-      // Generic bodyguard unit. Real unit name varies per mod/culture
-      // (roman general / carthaginian general / etc) but every RTW EDU
-      // includes at minimum a generic captain bodyguard. "general's
-      // bodyguard cavalry" is the common-denominator name across RTW
-      // Remastered's vanilla + most major mods; if it doesn't exist in
-      // this mod's EDU, the engine will warn but should still load.
+      // Pick the most-used bodyguard unit for this faction (from its real
+      // characters that we DID parse, if any). Falls back to faction-
+      // pool-wide most-common ("legatus legionis" on RIS) so the unit
+      // exists in EDU and doesn't trip the engine's unit-type check.
+      const bodyguardUnit = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
       charArmies.set(synthUuid, [{
-        name: "general's bodyguard cavalry",
+        name: bodyguardUnit,
         xp: 0,
         armourUpgrade: 0,
         weaponUpgrade: 0,
       }]);
     }
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog);
     const trTag = tr != null ? ` (treasury ${tr})` : "";
     blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)${trTag}`);
     blocks.push(block.text);
@@ -1054,6 +1132,15 @@ async function main() {
   console.log(`  treasuries matched:  ${Object.keys(currentTreasuryByFaction).length} factions`);
   console.log(`  religions parsed:    ${Object.keys(religionByCity).length} settlements`);
   console.log(`  v2 chars (females+): ${v2Chars.length} (not yet emitted as separate descr_strat blocks)`);
+  if (substitutionLog.length > 0) {
+    const bgSubs = substitutionLog.filter(s => s.kind === "bodyguard").length;
+    const dropped = substitutionLog.filter(s => s.kind === "dropped").length;
+    console.log(`  EDU substitutions:   ${bgSubs} bodyguard rewrites, ${dropped} unknown units dropped`);
+    const bySource = {};
+    for (const s of substitutionLog) bySource[s.from] = (bySource[s.from] || 0) + 1;
+    const top = Object.entries(bySource).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    console.log(`    top missing units: ${top.map(([n, c]) => `"${n}"×${c}`).join(", ")}`);
+  }
 
   // --deploy: copy into the target campaign dir with backup
   if (deployTarget) {
