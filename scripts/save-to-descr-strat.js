@@ -188,6 +188,25 @@ function loadTraitNames(modDataDir) {
   return [];
 }
 
+// export_descr_ancillaries.txt — extract names in declaration order so
+// save's ancillary u32 id can be mapped to a descr_strat-emittable name.
+function loadAncillaryNames(modDataDir) {
+  const candidates = [
+    path.join(modDataDir, "export_descr_ancillaries.txt"),
+  ];
+  for (const src of candidates) {
+    if (!fs.existsSync(src)) continue;
+    const text = fs.readFileSync(src, "utf8");
+    const names = [];
+    for (const line of text.split(/\r?\n/)) {
+      const m = line.match(/^Ancillary\s+(\S+)/);
+      if (m) names.push(m[1]);
+    }
+    if (names.length > 0) return names;
+  }
+  return [];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SETTLEMENT LEVEL INFERENCE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -331,7 +350,7 @@ function emitSettlement(s, factionId, chainLevels) {
 //
 // Returns null when the character isn't emittable (e.g. unknown position with
 // no faction-anchor fallback).
-function emitCharacter(c, armyUnits, fallbackPos) {
+function emitCharacter(c, armyUnits, fallbackPos, ancNames) {
   const lines = [];
   const firstName = c.firstName || "Unknown";
   const lastName = c.lastName || ""; // Greek single-name chars have no lastName
@@ -365,10 +384,21 @@ function emitCharacter(c, armyUnits, fallbackPos) {
     }
   }
 
-  // Ancillaries: the save stores ancillary IDs (u32), not names. To emit
-  // descr_strat-valid names we need export_descr_ancillaries.txt parsing
-  // — TODO. For now omit the line entirely; characters keep their main
-  // traits, which is the more important fidelity.
+  // Ancillaries: save stores u32 IDs, EDA's declaration order is the ID
+  // sequence. Map each ID to its name; skip IDs that fall outside the
+  // table (unknown / corrupt) so we don't emit garbage names.
+  if (c.ancillaries && c.ancillaries.length > 0 && ancNames && ancNames.length > 0) {
+    const ancParts = [];
+    for (const a of c.ancillaries) {
+      const id = (a && typeof a === "object") ? a.id : a;
+      if (typeof id === "number" && id >= 0 && id < ancNames.length) {
+        ancParts.push(ancNames[id]);
+      }
+    }
+    if (ancParts.length > 0) {
+      lines.push(`ancillaries ${ancParts.join(", ")}`);
+    }
+  }
 
   // Army block — every commander WITH a bodyguard unit gets one. The
   // bodyguard is the first `unit` line; other units in the stack follow.
@@ -384,7 +414,7 @@ function emitCharacter(c, armyUnits, fallbackPos) {
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames) {
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
   if (decl.superfaction) lines.push(`superfaction ${decl.superfaction}`);
@@ -415,7 +445,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   let emittedCount = 0, skippedCount = 0;
   for (const c of characters) {
     const army = charArmies.get(c.secondaryUuid);
-    const text = emitCharacter(c, army, fallbackPos);
+    const text = emitCharacter(c, army, fallbackPos, ancNames);
     if (text === null) { skippedCount++; continue; }
     lines.push(text);
     lines.push("");
@@ -472,7 +502,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
 //   * splitStart = index of first `faction <id>, ai_<type>` line
 //   * splitEnd   = index of first line containing `faction_agression` (comment
 //     OR actual entry) after splitStart
-function spliceBundledTemplate(bundledLines, newFactionBlocksText) {
+function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment) {
   let splitStart = -1, splitEnd = -1;
   for (let i = 0; i < bundledLines.length; i++) {
     const ln = bundledLines[i];
@@ -486,7 +516,8 @@ function spliceBundledTemplate(bundledLines, newFactionBlocksText) {
   if (splitEnd < 0) splitEnd = bundledLines.length;
   const head = bundledLines.slice(0, splitStart).join("\n");
   const tail = bundledLines.slice(splitEnd).join("\n");
-  return head + "\n" + newFactionBlocksText + "\n\n" + tail;
+  const banner = headerComment ? headerComment + "\n\n" : "";
+  return banner + head + "\n" + newFactionBlocksText + "\n\n" + tail;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -517,12 +548,14 @@ async function main() {
   const settlementToRegion = loadSettlementToRegion(BUNDLED_MOD);
   const nameLookup = loadNameLookup(BUNDLED_MOD);
   const traitNames = loadTraitNames(BUNDLED_MOD);
+  const ancNames = loadAncillaryNames(BUNDLED_MOD);
   console.log(`[${Date.now() - t0}ms] mod data loaded: ` +
     `${Object.keys(ownership.ownerByCity).length} settlements, ` +
     `${Object.keys(factionDecls).length} factions, ` +
     `${Object.keys(chainLevels).length} chains, ` +
     `${nameLookup.length} name tokens, ` +
-    `${traitNames.length} traits`);
+    `${traitNames.length} traits, ` +
+    `${ancNames.length} ancillaries`);
 
   // ── Parse the save ──
   const buf = fs.readFileSync(savePath);
@@ -608,7 +641,7 @@ async function main() {
       const cand = males[0] || cs[0];
       if (cand) cand.isLeader = true;
     }
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames);
     blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)`);
     blocks.push(block.text);
     blocks.push("");
@@ -627,7 +660,40 @@ async function main() {
   // ── Splice into bundled template ──
   const bundledText = fs.readFileSync(stratPath, "utf8");
   const bundledLines = bundledText.split(/\r?\n/);
-  const finalText = spliceBundledTemplate(bundledLines, blocks.join("\n"));
+  const banner = [
+    ";",
+    "; Auto-generated descr_strat.txt from a save file.",
+    "; Source save: " + path.basename(savePath),
+    "; Generated:   " + new Date().toISOString(),
+    ";",
+    "; This is the 'Continue Campaign as New Campaign' artefact: the engine's",
+    "; entity registry restarts at 0 when this file is loaded as a fresh",
+    "; campaign, sidestepping the 65,536-slot cap that would otherwise crash",
+    "; the source save's late-game state.",
+    ";",
+    "; Per-faction blocks (settlements + characters + armies + family records)",
+    "; were generated from the save. The HEADER (campaign declaration, playable",
+    "; lists, date, landmarks, resources) and TAIL (faction_aggression, regions,",
+    "; spawn scripts, background script reference) are copied verbatim from the",
+    "; bundled descr_strat template.",
+    ";",
+    "; Stats:",
+    `;   ${stats.factions} factions emitted`,
+    `;   ${stats.settlements} settlements (with buildings + inferred levels)`,
+    `;   ${stats.characters} living characters (${stats.skipped} skipped: no position)`,
+    `;   ${stats.units} units across army blocks`,
+    `;   ${stats.familyRecords} family-tree character_record lines`,
+    `;   ${stats.relativeLines} relative-link lines`,
+    ";",
+    "; Known gaps not extracted from save:",
+    ";   - Real current treasury (we use bundled-starting denari)",
+    ";   - Diplomatic relations (alliances, wars, attitudes)",
+    ";   - Female characters (parser currently only finds male generals)",
+    ";   - In-progress building queues (only completed buildings carry over)",
+    ";   - Campaign script state (script restarts; intro events may re-fire)",
+    ";",
+  ].join("\n");
+  const finalText = spliceBundledTemplate(bundledLines, blocks.join("\n"), banner);
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, finalText, "utf8");
