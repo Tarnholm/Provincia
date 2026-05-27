@@ -84,20 +84,69 @@ function loadEdbChainLevels(modDataDir) {
   return null;
 }
 function loadEdctTraitNames(modDataDir) {
-  const p = path.join(modDataDir, "export_descr_character_traits.txt");
-  if (!fs.existsSync(p)) return null;
-  const set = new Set();
-  for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
-    const m = raw.match(/^Trait\s+(\S+)/);
-    if (m) set.add(m[1]);
+  const candidates = [path.join(modDataDir, "export_descr_character_traits.txt")];
+  const modsRoot = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods";
+  function walk(dir, depth) {
+    if (depth > 8) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const sub = path.join(dir, e.name);
+      const cand = path.join(sub, "export_descr_character_traits.txt");
+      if (fs.existsSync(cand)) candidates.push(cand);
+      walk(sub, depth + 1);
+    }
   }
-  return set;
+  if (fs.existsSync(modsRoot)) walk(modsRoot, 0);
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    const set = new Set();
+    for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+      const m = raw.match(/^Trait\s+(\S+)/);
+      if (m) set.add(m[1]);
+    }
+    if (set.size > 0) { set._sourcePath = p; return set; }
+  }
+  return null;
+}
+function loadEdaAncillaryNames(modDataDir) {
+  const candidates = [path.join(modDataDir, "export_descr_ancillaries.txt")];
+  const modsRoot = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods";
+  function walk(dir, depth) {
+    if (depth > 8) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const sub = path.join(dir, e.name);
+      const cand = path.join(sub, "export_descr_ancillaries.txt");
+      if (fs.existsSync(cand)) candidates.push(cand);
+      walk(sub, depth + 1);
+    }
+  }
+  if (fs.existsSync(modsRoot)) walk(modsRoot, 0);
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    const set = new Set();
+    for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+      const m = raw.match(/^Ancillary\s+(\S+)/);
+      if (m) set.add(m[1]);
+    }
+    if (set.size > 0) { set._sourcePath = p; return set; }
+  }
+  return null;
 }
 
 const eduUnits = loadEduUnitNames(modDataDir);
 const edbChains = loadEdbChainLevels(modDataDir);
 const edctTraits = loadEdctTraitNames(modDataDir);
-console.log(`reference data: EDU=${eduUnits?.size ?? "(missing)"} units${eduUnits?._sourcePath ? " (from " + eduUnits._sourcePath + ")" : ""}, EDB=${edbChains ? Object.keys(edbChains).length : "(missing)"} chains, EDCT=${edctTraits?.size ?? "(missing)"} traits`);
+const edaAncs = loadEdaAncillaryNames(modDataDir);
+console.log(`reference data:`);
+console.log(`  EDU:  ${eduUnits?.size ?? "(missing)"} units${eduUnits?._sourcePath ? " ← " + eduUnits._sourcePath : ""}`);
+console.log(`  EDB:  ${edbChains ? Object.keys(edbChains).length : "(missing)"} chains`);
+console.log(`  EDCT: ${edctTraits?.size ?? "(missing)"} traits${edctTraits?._sourcePath ? " ← " + edctTraits._sourcePath : ""}`);
+console.log(`  EDA:  ${edaAncs?.size ?? "(missing)"} ancillaries${edaAncs?._sourcePath ? " ← " + edaAncs._sourcePath : ""}`);
 console.log();
 
 const text = fs.readFileSync(inputPath, "utf8");
@@ -201,7 +250,17 @@ for (let i = 0; i < lines.length; i++) {
     }
     continue;
   }
-  if (/^ancillaries\s/.test(line)) { anciLines++; continue; }
+  if (/^ancillaries\s/.test(line)) {
+    anciLines++;
+    if (edaAncs) {
+      const body = line.slice(12).trim();
+      for (const part of body.split(",")) {
+        const name = part.trim();
+        if (name && !edaAncs.has(name)) warn(i + 1, "unknown ancillary: " + name);
+      }
+    }
+    continue;
+  }
   if (line.startsWith("character_record")) { characterRecords++; continue; }
   if (line.startsWith("relative")) {
     relativeLines++;
