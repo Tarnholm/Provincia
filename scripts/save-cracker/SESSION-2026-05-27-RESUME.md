@@ -189,14 +189,33 @@ T960 Start (21,762 dead) vs T960 End (21,772 dead):
 - 560 u32 fields changed by +1 (could be per-faction sub-pool counts)
 - 0 u32 fields changed from 21762→21772 at the same offset
 
-### Direction options for next session
+### 🎯 BREAKTHROUGH (post-midnight) — self-pointer found
 
-1. **Try DLR**: if removing the LAST record loads cleanly, the engine walks until exhausted (no count check) — then D's failure is something else entirely (maybe a reference invalidation, since record #50 might be referenced by a living char).
-2. **Try D6**: if decrementing the 0x106c3ac counter fixes D, we found a real engine state we need to maintain.
-3. **Pivot to "safe to trim" filter**: replicate the trim_analysis logic that found Wahab AliYahbir as the one safe-to-remove dead char (no references to his UUID). Generate a test where we splice ONLY a no-references char. If that loads, the issue is reference integrity, not iteration count.
-4. **Accept defeat on splice**, build a clone-pruner around the working E mechanism, accept the caveat that it may not free registry slots (and verify by re-running save-budget-full on an E-cloned save and checking if characterRecords actually dropped).
+Each dead record carries a **u32 self-pointer at relative offset (pathLen + 9)** whose value equals (record_start + pathLen + 9). Verified across **100% of 21,762 records.**
 
-The Dummies save data is very valuable — 21k+ dead chars to experiment with. But the splice path is harder than initial hypotheses suggested.
+This explains every prior splice failure: after splicing, every downstream record sits at a new file position (-462 B), but its stored self-pointer still holds the OLD position. The engine validates self_ptr == current_position, sees mismatch, trips `next < buffer_end Failed` in an infinite retry loop.
+
+**Two new test saves generated:**
+
+- **save_TEST_D7_splice_selfptr.sav** — splice rec #50 + decrement all 21,711 downstream primary self-pointers by 462. Clean execution: zero anomalies, every patch was a stale value as predicted.
+- **save_TEST_D8_splice_allptr.sav** — splice rec #50 + decrement all 44,676 intra-record self-pointers (D7 + ancillary pointers found in ~1,010 records). Comprehensive variant in case D7 misses something.
+
+### Try in this order when you wake up
+
+1. **D7 first** — if it loads, the primary +(pathLen+9) self-pointer was the whole story. This is the pruner mechanism.
+2. **D8 if D7 fails** — if it loads, ancillary pointers also matter; D7 missed them.
+3. **DLR if D7+D8 both fail** — tests the "engine walks until exhausted" hypothesis instead of the count hypothesis. Splices the LAST record.
+4. **D6 if all of above fail** — patches the suspicious 65,312→65,322 +10 differential.
+
+If D7 loads → the next step is scaling: write a tool that removes N records (e.g., 1,000 first, then 5,000) with all self-pointers patched. The Dummies save has 21,762 dead records → potential to free ~5,000 pointer-registry slots and buy hundreds of turns of headroom.
+
+Ruled out hypotheses (don't revisit):
+- Section size headers (sec[1] is pre-allocated)
+- Global pointer table to records (only 226 noise hits)
+- u32==21762 anywhere in sec[1]
+- Per-faction u32 with +10 cumulative delta
+- u32==21761 6 hits (those are building chain records)
+- Building cross-references (false positives in bit-packed trait flags)
 
 Originals also present:
 - `save_Autosave   Dummies   Turn 900 End.sav`
