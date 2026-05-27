@@ -1,7 +1,7 @@
 ;
 ; Auto-generated descr_strat.txt from a save file.
 ; Source save: save_Autosave   Bactria   Turn 964.sav
-; Generated:   2026-05-27T18:05:02.065Z
+; Generated:   2026-05-27T18:11:12.791Z
 ;
 ; This is the 'Continue Campaign as New Campaign' artefact: the engine's
 ; entity registry restarts at 0 when this file is loaded as a fresh
@@ -20,7 +20,7 @@
 ;   1228 living characters (61 skipped: no position)
 ;   855 units across army blocks
 ;   6 family-tree character_record lines
-;   55 relative-link lines
+;   54 relative-link lines
 ;
 ; Known gaps that COULD NOT be extracted from this save:
 ;   - Diplomatic relations: parseDiplomacyMatrix couldn't locate the matrix
@@ -5919,7 +5919,7 @@ resource        slaves,                 1,           996,    1; Han_Region
 ; >>>> start of factions section <<<<
 
 ;4a. Rome
-;;; romans_julii ─ 18 settlements / 128 chars / 27 family-links
+;;; romans_julii ─ 18 settlements / 128 chars / 26 family-links
 ;;;   treasury=3 440, leader=Dardanos Magna, population=391 316
 faction	romans_julii, ai_rome
 superfaction roman_senate
@@ -7816,7 +7816,6 @@ relative	Sippas Candavajji, Genucius_Aventinensis Candavajji, end
 relative	Dasantilla Ricburgis, Attalos Ricburgis, end
 relative	Fosayo Auaros, Attalos Triptolemos, Fosayo Angeliskos, Samuntio Aneirin, Thiogneitidas Cliticus, end
 relative	Dasantilla EurydikeB, Attalos EurydikeB, end
-relative	Poseidonia Nysaios, Fosayo Nysaios, end
 relative	Dasantilla Nysaios, Samuntio Fara, ApolloniosB Imouthes, Thaulos Valerius_Messalla, Genucius_Aventinensis Salisuka, end
 relative	Leon Cloelius_Siculus, Genucius_Aventinensis Cloelius_Siculus, end
 relative	Attalos Eurydamidas, Nawfim Eurydamidas, end

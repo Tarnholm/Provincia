@@ -1,7 +1,7 @@
 ;
 ; Auto-generated descr_strat.txt from a save file.
 ; Source save: save_item limit bug.sav
-; Generated:   2026-05-27T18:05:33.482Z
+; Generated:   2026-05-27T18:11:44.176Z
 ;
 ; This is the 'Continue Campaign as New Campaign' artefact: the engine's
 ; entity registry restarts at 0 when this file is loaded as a fresh
@@ -20,7 +20,7 @@
 ;   1240 living characters (57 skipped: no position)
 ;   827 units across army blocks
 ;   4 family-tree character_record lines
-;   27 relative-link lines
+;   26 relative-link lines
 ;
 ; Known gaps that COULD NOT be extracted from this save:
 ;   - Diplomatic relations: parseDiplomacyMatrix couldn't locate the matrix
@@ -7437,7 +7437,7 @@ diplomatic_stance roman_rebels_1 ptolemaic_rebels allied
 diplomatic_stance roman_rebels_1 seleucid_rebels allied
 ; total: 507 wars, 503 alliances, 0 hostile relationships
 
-;;; romans_julii ─ 0 settlements / 105 chars / 8 family-links
+;;; romans_julii ─ 0 settlements / 105 chars / 7 family-links
 ;;;   treasury=1 291 327, leader=TitusA Sallustius_Crispus, population=(unknown)
 faction	romans_julii, ai_rome,
 superfaction roman_senate
@@ -7886,7 +7886,6 @@ traits BeingBosporan 1, BeingPaphlagonian 1, Hebron 1, Thracian 1, YellowBileHum
 relative	Servius Caecilius_Metellus, ServiusB Caecilius_Metellus, end
 relative	TitusA Cornelius_Scipio, Quintus Cornelius_Scipio, end
 relative	Sextus Sempronius_Gracchus, LuciusA Sempronius_Gracchus, end
-relative	TitusA Sallustius_Crispus, TitusA Sallustius_Crispus, Aulus Sempronius_Longus, Sextus Memmius_Gemellus, end
 relative	Tiberius Livius_Drusus, Publius Livius_Drusus, Marcus Livius_Drusus, end
 relative	Manius Iunius_Brutus, Appius Sempronius_Sophus, Lucius Herennius_Bassus, end
 relative	Sextus Livius_Drusus, Lucius Livius_Drusus, end

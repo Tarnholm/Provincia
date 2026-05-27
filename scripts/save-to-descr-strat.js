@@ -702,8 +702,13 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   const namedUuids = new Set(characters.map(c => c.primaryUuid).filter(Boolean));
 
   // Per-faction relatives: only relationships where at least the father is
-  // attributed to this faction. Wives/children inherit the faction implicitly.
-  const factionRelatives = family.relatives.filter(r => r.fatherChar.faction === facId);
+  // attributed to this faction AND survived dedupe (so his character entry
+  // is actually emitted). Dropping the dedupe-survived check would emit
+  // `relative\t<dropped-name>, ...` referencing a character that doesn't
+  // exist in the file — engine would warn or skip.
+  const namedUuidsForRel = new Set(characters.map(c => c.primaryUuid).filter(Boolean));
+  const factionRelatives = family.relatives.filter(r =>
+    r.fatherChar.faction === facId && namedUuidsForRel.has(r.fatherChar.primaryUuid));
 
   let emittedCount = 0, skippedCount = 0;
   for (const c of characters) {
@@ -718,13 +723,17 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
     lines.push(`; ${skippedCount} character(s) skipped (no position and no fallback)`);
   }
 
+  // Only count family members with a real firstName — wives/children
+  // parsed from save sometimes lack names (different record format), and
+  // a `relative` line with empty parts is malformed. Drop unnamed kin.
+  const hasName = (c) => !!(c && c.firstName);
   // Family-member character_record entries: every character referenced as
   // a spouse or child of one of our named characters who is NOT themselves
   // already emitted as a `character,` entry.
   let recordCount = 0;
   const seenInRecords = new Set();
   for (const r of factionRelatives) {
-    const candidates = [r.motherChar, ...r.childrenChars].filter(Boolean);
+    const candidates = [r.motherChar, ...r.childrenChars].filter(hasName);
     for (const candChar of candidates) {
       if (namedUuids.has(candChar.primaryUuid)) continue;
       if (seenInRecords.has(candChar.primaryUuid)) continue;
@@ -736,12 +745,17 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   if (recordCount > 0) lines.push("");
 
   // Relative lines tie the named character to spouse + children by NAME.
+  // Skip lines where neither spouse nor any child has a name (would emit
+  // `relative\tDad, end` which is a no-op + clutters validator output).
   let relativeCount = 0;
   for (const r of factionRelatives) {
-    const fatherName = fullName(r.fatherChar);
-    const parts = [fatherName];
-    if (r.motherChar) parts.push(fullName(r.motherChar));
-    for (const child of r.childrenChars) parts.push(fullName(child));
+    if (!hasName(r.fatherChar)) continue;
+    const namedMother = hasName(r.motherChar) ? r.motherChar : null;
+    const namedKids = r.childrenChars.filter(hasName);
+    if (!namedMother && namedKids.length === 0) continue;
+    const parts = [fullName(r.fatherChar)];
+    if (namedMother) parts.push(fullName(namedMother));
+    for (const child of namedKids) parts.push(fullName(child));
     parts.push("end");
     lines.push(`relative\t${parts.join(", ")}`);
     relativeCount++;
@@ -875,7 +889,7 @@ function parseDiplomacyMatrixRelaxed(buf, factionOrder) {
 // descr_strat allows: `diplomatic_stance <factA> <factB> <stance>`
 // stance values: allied, suspicious, neutral, hostile, war.
 // We only emit non-neutral relationships so the file stays compact.
-function emitDiplomacyBlock(diploMatrix) {
+function emitDiplomacyBlock(diploMatrix, emittedFactions) {
   if (!diploMatrix) return "";
   const lines = [];
   lines.push("; --- diplomatic_stance pairs extracted from the save ---");
@@ -883,30 +897,27 @@ function emitDiplomacyBlock(diploMatrix) {
   // A→B and B→A (the engine treats them symmetrically).
   const seenPair = new Set();
   const pairKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
-  let warN = 0, alliedN = 0, hostileN = 0;
+  // Drop pairs referencing factions we didn't emit (engine ignores them,
+  // but file-validator flags them as unknown). Pass emittedFactions=null
+  // to disable the filter.
+  const knownFac = emittedFactions instanceof Set ? emittedFactions : null;
+  let warN = 0, alliedN = 0, hostileN = 0, droppedN = 0;
+  const emitPair = (facA, facB, stance, counter) => {
+    if (knownFac && (!knownFac.has(facA) || !knownFac.has(facB))) { droppedN++; return; }
+    const k = pairKey(facA, facB);
+    if (seenPair.has(k)) return; seenPair.add(k);
+    lines.push(`diplomatic_stance ${facA} ${facB} ${stance}`);
+    counter();
+  };
   for (const [facA, rec] of Object.entries(diploMatrix)) {
     if (facA === "_meta") continue;
-    for (const facB of rec.war || []) {
-      const k = pairKey(facA, facB);
-      if (seenPair.has(k)) continue; seenPair.add(k);
-      lines.push(`diplomatic_stance ${facA} ${facB} war`);
-      warN++;
-    }
-    for (const facB of rec.allied || []) {
-      const k = pairKey(facA, facB);
-      if (seenPair.has(k)) continue; seenPair.add(k);
-      lines.push(`diplomatic_stance ${facA} ${facB} allied`);
-      alliedN++;
-    }
-    for (const facB of rec.hostile || []) {
-      const k = pairKey(facA, facB);
-      if (seenPair.has(k)) continue; seenPair.add(k);
-      lines.push(`diplomatic_stance ${facA} ${facB} hostile`);
-      hostileN++;
-    }
+    for (const facB of rec.war || [])     emitPair(facA, facB, "war",     () => warN++);
+    for (const facB of rec.allied || [])  emitPair(facA, facB, "allied",  () => alliedN++);
+    for (const facB of rec.hostile || []) emitPair(facA, facB, "hostile", () => hostileN++);
   }
-  lines.push(`; total: ${warN} wars, ${alliedN} alliances, ${hostileN} hostile relationships`);
-  return { text: lines.join("\n"), warN, alliedN, hostileN };
+  lines.push(`; total: ${warN} wars, ${alliedN} alliances, ${hostileN} hostile relationships` +
+    (droppedN > 0 ? ` (${droppedN} pairs dropped — faction not in emitted set)` : ""));
+  return { text: lines.join("\n"), warN, alliedN, hostileN, droppedN };
 }
 
 function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment) {
@@ -1338,7 +1349,8 @@ async function main() {
   }
 
   // ── Diplomacy block — goes before per-faction blocks ──
-  const diploBlock = emitDiplomacyBlock(diploMatrix);
+  const emittedFactions = new Set(orderedFactions);
+  const diploBlock = emitDiplomacyBlock(diploMatrix, emittedFactions);
   if (diploBlock && diploBlock.text) {
     blocks.unshift(diploBlock.text, "");
     stats.warPairs = diploBlock.warN;

@@ -1,7 +1,7 @@
 ;
 ; Auto-generated descr_strat.txt from a save file.
 ; Source save: save_Autosave   Dummies   Turn 1134.sav
-; Generated:   2026-05-27T18:05:12.270Z
+; Generated:   2026-05-27T18:11:22.981Z
 ;
 ; This is the 'Continue Campaign as New Campaign' artefact: the engine's
 ; entity registry restarts at 0 when this file is loaded as a fresh
@@ -19,8 +19,8 @@
 ;   1310 settlements (with buildings + inferred levels)
 ;   574 living characters (0 skipped: no position)
 ;   253 units across army blocks
-;   7 family-tree character_record lines
-;   33 relative-link lines
+;   6 family-tree character_record lines
+;   31 relative-link lines
 ;
 ; Known gaps that COULD NOT be extracted from this save:
 ;   - Diplomatic relations: parseDiplomacyMatrix couldn't locate the matrix
@@ -9768,7 +9768,7 @@ diplomatic_stance roman_rebels_1 tylis allied
 diplomatic_stance roman_rebels_1 tyragetae allied
 ; total: 2626 wars, 1217 alliances, 3 hostile relationships
 
-;;; romans_julii ─ 1 settlements / 166 chars / 31 family-links
+;;; romans_julii ─ 1 settlements / 166 chars / 29 family-links
 ;;;   treasury=-91 455, leader=Theagenes Lasos, population=25 606
 faction	romans_julii, ai_rome
 superfaction roman_senate
@@ -10496,7 +10496,6 @@ character_record	Genucius_Camillus Dasas, 	male, age 14, alive, never_a_leader
 character_record	Daria Gadtab, 	male, age 23, alive, never_a_leader
 character_record	Protesilaos Meskena, 	male, age 14, alive, never_a_leader
 character_record	Ulpia LaodikeB, 	male, age 9, alive, never_a_leader
-character_record	Satres CammaA, 	male, age 9, alive, never_a_leader
 
 relative	Foundania Dasas, Macro Dasas, end
 relative	Poseidonios LaodikeB, Daria LaodikeB, end
@@ -10506,7 +10505,6 @@ relative	ApolloniosB Annaeus_Cornutus, Ulpia Annaeus_Cornutus, end
 relative	Poseidonios CammaA, Dasantius CammaA, Ulpia CammaA, Poseidonios CammaA, Daria CammaA, end
 relative	Dasantius Cabruno, Poseidonios Cabruno, Mahanandin Cabruno, end
 relative	Poseidonios Triptolemos, Siromos Triptolemos, end
-relative	Satres Athanaric, Ulpia Athanaric, end
 relative	Genucius_Camillus Asela, Genucius_Camillus Asela, end
 relative	Protesilaos Swarnapali, Theagenes Swarnapali, end
 relative	Genucius_Camillus Dasas, Genucius_Camillus Dasas, end
@@ -10527,7 +10525,6 @@ relative	Naxia Veio, Mahanandin Veio, end
 relative	Theagenes LaodikeB, Ulpia LaodikeB, end
 relative	Ulpia IndortesA, Attalos IndortesA, end
 relative	Ulpia Cabruno, ApolloniosB Cabruno, end
-relative	Poseidonios CammaA, Satres CammaA, end
 relative	Ulpia Annaeus_Cornutus, Protesilaos Annaeus_Cornutus, end
 
 ;;; roman_rebels_1 ─ 0 settlements / 0 chars / 0 family-links
