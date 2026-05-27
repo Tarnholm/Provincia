@@ -924,11 +924,13 @@ async function main() {
     // load the faction. The placeholder takes the first settlement's
     // coords + a generic name token that's known to exist in the lookup.
     if (cs.length === 0 && ss.length > 0 && nameLookup.length > 0) {
-      // Pick a deterministic but per-faction-unique name slot so two
-      // synthesized factions don't end up with the same leader name.
       const seed = facId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
       const firstName = nameLookup[seed % nameLookup.length] || "Captain";
       const fallback = settlementCoords[ss[0].name] || { x: 250, y: 350 };
+      // Use a SYNTH_UUID for the secondaryUuid so we can attach a synthesized
+      // army to this character (engine requires every named character to
+      // have a bodyguard unit; without one the descr_strat is rejected).
+      const synthUuid = 0xc0000000 | (seed & 0x0fffffff);
       cs.push({
         firstName,
         lastName: null,
@@ -938,14 +940,29 @@ async function main() {
         isHeir: false,
         isDead: false,
         faction: facId,
-        traits: [{ name: "Factionleader", level: 1 }],
+        traits: [
+          { name: "Factionleader", level: 1 },
+          { name: "TurnsAlive", level: 1 },
+        ],
         ancillaries: [],
         tileX: fallback.x,
         tileY: fallback.y,
-        secondaryUuid: null,
+        secondaryUuid: synthUuid,
         primaryUuid: null,
         synthesized: true,
       });
+      // Generic bodyguard unit. Real unit name varies per mod/culture
+      // (roman general / carthaginian general / etc) but every RTW EDU
+      // includes at minimum a generic captain bodyguard. "general's
+      // bodyguard cavalry" is the common-denominator name across RTW
+      // Remastered's vanilla + most major mods; if it doesn't exist in
+      // this mod's EDU, the engine will warn but should still load.
+      charArmies.set(synthUuid, [{
+        name: "general's bodyguard cavalry",
+        xp: 0,
+        armourUpgrade: 0,
+        weaponUpgrade: 0,
+      }]);
     }
     const tr = currentTreasuryByFaction[facId];
     const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords);
