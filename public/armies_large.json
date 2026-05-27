@@ -556,6 +556,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -724,6 +736,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -854,6 +872,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -915,6 +945,18 @@
     "units": [
       {
         "name": "roman general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -2254,13 +2296,7 @@
         "weapon": 0
       },
       {
-        "name": "aor oscan spearmen southern",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "aor oscan javelinmen",
+        "name": "roman rorarii",
         "exp": 0,
         "armour": 0,
         "weapon": 0

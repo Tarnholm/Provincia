@@ -1614,7 +1614,7 @@
 		;;faction colours (some base game factions may have hardcoded overrides)
 		"colours":
 		{
-			"primary":   [  85,  135, 65,  ],
+			"primary":   [  41,  162, 13,  ],
 			"secondary": [  255, 250, 200, ],
 
 			"family tree":
@@ -12168,79 +12168,6 @@
 		;;allow this faction to have a functioning family tree
 		"allow reproduction": true,
 	},
-	"scythians": ;Scythians
-	{
-		;;name and description
-		"string":      "SCYTHIANS",
-		"description": "SCYTHIANS_DESCR",
-
-		;;culture and (default?) character ethnicity
-		"culture":   "scythian",
-		"ethnicity": "caucasiandark",
-
-		;;tags for faction groups
-		"tags": [ "fgroup_nomad", ],
-
-		;;namelists
-		"namelists":
-		{
-			"men":      "siraces_men",
-			"women":    "siraces_women",
-			"surnames": "blank_surnames",
-		},
-
-		"logos":
-		{
-			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
-			"loading screen icon": "data/ui/faction_icons/scythians.tga",
-
-			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       26,
-			"rebel standard index": 26,
-
-			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       26,
-			"rebel logo index": 26,
-
-			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_nomad_rebel.CAS",
-			"strat rebel symbol model": "data/models_strat/symbol_nomad_rebel.CAS",
-		},
-
-		;;faction colours (some base game factions may have hardcoded overrides)
-		"colours":
-		{
-			"primary":   [  43,  99,  31,  ],
-			"secondary": [  255, 255, 255,  ],
-
-			"family tree":
-			{
-				"background":      [  43,  99,  31,  ],
-				"font":            [  255, 255, 255, ],
-
-				"selected line":   [  255, 255, 255, ],
-				"unselected line": [  200, 187, 187, ],
-			},
-		},
-
-		"movies":
-		{
-			;;movie to play when starting a campaign
-			"intro": "data/fmv/intros/scythia_intro_1080p.wmv",
-
-			;;movie to play when this faction wins or is defeated, respectively
-			"victory": "data/fmv/victory/barbarian_outro.wmv",
-			"defeat": "data/fmv/lose/siraces.wmv",
-		},
-
-		"available in custom battles": false,
-		"prefer naval invasions": false,
-		"default religion": "scythian",
-		"default battle ai personality": "default_personality",
-
-		;;allow this faction to have a functioning family tree
-		"allow reproduction": true,
-	},
 	"mamertines":
 	{
 		;;name and description
@@ -15882,6 +15809,79 @@
 		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
+		"default battle ai personality": "default_personality",
+
+		;;allow this faction to have a functioning family tree
+		"allow reproduction": true,
+	},
+	"scythians": ;Scythians
+	{
+		;;name and description
+		"string":      "SCYTHIANS",
+		"description": "SCYTHIANS_DESCR",
+
+		;;culture and (default?) character ethnicity
+		"culture":   "scythian",
+		"ethnicity": "caucasiandark",
+
+		;;tags for faction groups
+		"tags": [ "fgroup_nomad", ],
+
+		;;namelists
+		"namelists":
+		{
+			"men":      "siraces_men",
+			"women":    "siraces_women",
+			"surnames": "blank_surnames",
+		},
+
+		"logos":
+		{
+			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
+			"loading screen icon": "data/ui/faction_icons/scythians.tga",
+
+			;;standard index as declared in descr_standards (4 per page)
+			"standard index":       26,
+			"rebel standard index": 26,
+
+			;;logo index as declared in descr_sm_faction_logos (1 per page)
+			"logo index":       26,
+			"rebel logo index": 26,
+
+			;;flag models to be used on the strat map when a settlement is unoccupied
+			"strat symbol model":       "data/models_strat/symbol_nomad_rebel.CAS",
+			"strat rebel symbol model": "data/models_strat/symbol_nomad_rebel.CAS",
+		},
+
+		;;faction colours (some base game factions may have hardcoded overrides)
+		"colours":
+		{
+			"primary":   [  43,  99,  31,  ],
+			"secondary": [  255, 255, 255,  ],
+
+			"family tree":
+			{
+				"background":      [  43,  99,  31,  ],
+				"font":            [  255, 255, 255, ],
+
+				"selected line":   [  255, 255, 255, ],
+				"unselected line": [  200, 187, 187, ],
+			},
+		},
+
+		"movies":
+		{
+			;;movie to play when starting a campaign
+			"intro": "data/fmv/intros/scythia_intro_1080p.wmv",
+
+			;;movie to play when this faction wins or is defeated, respectively
+			"victory": "data/fmv/victory/barbarian_outro.wmv",
+			"defeat": "data/fmv/lose/siraces.wmv",
+		},
+
+		"available in custom battles": false,
+		"prefer naval invasions": false,
+		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree

@@ -24527,7 +24527,7 @@
       "category": "slave"
     }
   ],
-  "Hellenike_Mariandynia": [
+  "Kaukonia": [
     {
       "type": "fish",
       "amount": 3,
@@ -24535,6 +24535,29 @@
       "y": 286,
       "category": "trade"
     },
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 497,
+      "y": 286,
+      "category": "trade"
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 496,
+      "y": 284,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 495,
+      "y": 286,
+      "category": "slave"
+    }
+  ],
+  "Hellenike_Mariandynia": [
     {
       "type": "pottery",
       "amount": 2,
@@ -27068,29 +27091,6 @@
       "category": "slave"
     }
   ],
-  "Kaukonia": [
-    {
-      "type": "coal",
-      "amount": 1,
-      "x": 497,
-      "y": 286,
-      "category": "trade"
-    },
-    {
-      "type": "olive_oil",
-      "amount": 1,
-      "x": 496,
-      "y": 284,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 495,
-      "y": 286,
-      "category": "slave"
-    }
-  ],
   "Kimiatene": [
     {
       "type": "copper",
@@ -27389,6 +27389,15 @@
       "category": "trade"
     },
     {
+      "type": "slaves",
+      "amount": 1,
+      "x": 546,
+      "y": 279,
+      "category": "slave"
+    }
+  ],
+  "Tibarenia": [
+    {
       "type": "honey",
       "amount": 1,
       "x": 552,
@@ -27403,10 +27412,31 @@
       "category": "trade"
     },
     {
+      "type": "gemstones",
+      "amount": 2,
+      "x": 556,
+      "y": 283,
+      "category": "trade"
+    },
+    {
+      "type": "pitch",
+      "amount": 1,
+      "x": 559,
+      "y": 282,
+      "category": "trade"
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 554,
+      "y": 282,
+      "category": "trade"
+    },
+    {
       "type": "slaves",
       "amount": 1,
-      "x": 546,
-      "y": 279,
+      "x": 553,
+      "y": 281,
       "category": "slave"
     }
   ],
@@ -27463,6 +27493,13 @@
       "category": "trade"
     },
     {
+      "type": "copper",
+      "amount": 2,
+      "x": 558,
+      "y": 290,
+      "category": "trade"
+    },
+    {
       "type": "slaves",
       "amount": 1,
       "x": 547,
@@ -27504,43 +27541,6 @@
       "amount": 1,
       "x": 534,
       "y": 278,
-      "category": "slave"
-    }
-  ],
-  "Lykos": [
-    {
-      "type": "copper",
-      "amount": 2,
-      "x": 558,
-      "y": 290,
-      "category": "trade"
-    },
-    {
-      "type": "gold",
-      "amount": 1,
-      "x": 563,
-      "y": 287,
-      "category": "trade"
-    },
-    {
-      "type": "stone",
-      "amount": 2,
-      "x": 566,
-      "y": 285,
-      "category": "trade"
-    },
-    {
-      "type": "wild_animals",
-      "amount": 1,
-      "x": 568,
-      "y": 290,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 566,
-      "y": 289,
       "category": "slave"
     }
   ],
@@ -35819,36 +35819,6 @@
       "category": "slave"
     }
   ],
-  "Tibarenia": [
-    {
-      "type": "gemstones",
-      "amount": 2,
-      "x": 556,
-      "y": 283,
-      "category": "trade"
-    },
-    {
-      "type": "pitch",
-      "amount": 1,
-      "x": 559,
-      "y": 282,
-      "category": "trade"
-    },
-    {
-      "type": "silver",
-      "amount": 1,
-      "x": 554,
-      "y": 282,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 559,
-      "y": 280,
-      "category": "slave"
-    }
-  ],
   "Taochia": [
     {
       "type": "iron",
@@ -35918,10 +35888,31 @@
       "category": "trade"
     },
     {
+      "type": "gold",
+      "amount": 1,
+      "x": 563,
+      "y": 287,
+      "category": "trade"
+    },
+    {
+      "type": "stone",
+      "amount": 2,
+      "x": 566,
+      "y": 285,
+      "category": "trade"
+    },
+    {
+      "type": "wild_animals",
+      "amount": 1,
+      "x": 568,
+      "y": 290,
+      "category": "trade"
+    },
+    {
       "type": "slaves",
       "amount": 1,
-      "x": 561,
-      "y": 281,
+      "x": 568,
+      "y": 286,
       "category": "slave"
     }
   ],

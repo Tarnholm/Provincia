@@ -9099,16 +9099,6 @@
     "pop_level": "9",
     "ethnicities": "cappadocian 60 ionian 40"
   },
-  "229,25,210": {
-    "region": "Lykos",
-    "city": "Pontikos_Phourion",
-    "faction": "cappadocia",
-    "culture": "Pontians",
-    "tags": "aor_cappadocian, aor_asian, rel_cappadocian_4, rel_ionian_1, Farm5, hills, continental, irrigation_river",
-    "farm_level": "5",
-    "pop_level": "5",
-    "ethnicities": "cappadocian 80 ionian 20"
-  },
   "177,58,148": {
     "region": "Kappadokia",
     "city": "Mazaka",

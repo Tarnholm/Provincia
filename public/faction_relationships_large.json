@@ -23,54 +23,90 @@
     {
       "to": "taras",
       "kind": "protects"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "volsinii": [
     {
       "to": "romans_julii",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "capua": [
     {
       "to": "romans_julii",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "samnites": [
     {
       "to": "romans_julii",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "lucanians": [
     {
       "to": "romans_julii",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "bruttians": [
     {
       "to": "romans_julii",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "taras": [
     {
       "to": "romans_julii",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "carthage": [
     {
       "to": "gades",
       "kind": "protects"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "gades": [
     {
       "to": "carthage",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "antigonid": [
@@ -105,18 +141,30 @@
     {
       "to": "galatians",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "argos": [
     {
       "to": "antigonid",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "megalopolis": [
     {
       "to": "antigonid",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "seleucid": [
@@ -187,30 +235,50 @@
     {
       "to": "bithynia",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "lysiad": [
     {
       "to": "seleucid",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "arados": [
     {
       "to": "seleucid",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "characene": [
     {
       "to": "seleucid",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "persis": [
     {
       "to": "seleucid",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "ptolemaic": [
@@ -277,35 +345,59 @@
     {
       "to": "ptolemaic_rebels",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "tyre": [
     {
       "to": "ptolemaic",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "sidon": [
     {
       "to": "ptolemaic",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "qataban": [
     {
       "to": "himyar",
       "kind": "protects"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "himyar": [
     {
       "to": "qataban",
       "kind": "protected_by"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "egypt": [
     {
       "to": "ptolemaic",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
       "kind": "war"
     }
   ],
@@ -313,11 +405,33 @@
     {
       "to": "seleucid",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "seleucid_rebels": [
     {
       "to": "seleucid",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "issa": [
+    {
+      "to": "syracuse",
+      "kind": "ally"
+    },
+    {
+      "to": "greeks",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
       "kind": "war"
     }
   ],
@@ -333,16 +447,10 @@
     {
       "to": "mamertines",
       "kind": "war"
-    }
-  ],
-  "issa": [
-    {
-      "to": "syracuse",
-      "kind": "ally"
     },
     {
-      "to": "greeks",
-      "kind": "ally"
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "greeks": [
@@ -393,11 +501,19 @@
     {
       "to": "illyrian_kingdom",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "mamertines": [
     {
       "to": "syracuse",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
       "kind": "war"
     }
   ],
@@ -405,18 +521,30 @@
     {
       "to": "antigonid",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "messene": [
     {
       "to": "antigonid",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "cabyle": [
     {
       "to": "antigonid",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "epirus": [
@@ -438,6 +566,10 @@
     },
     {
       "to": "illyrian_kingdom",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
       "kind": "war"
     }
   ],
@@ -465,6 +597,14 @@
     {
       "to": "tylis",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    },
+    {
+      "to": "pontus",
+      "kind": "ally"
     }
   ],
   "achaea": [
@@ -491,6 +631,10 @@
     {
       "to": "lyttos",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "bithynia": [
@@ -517,12 +661,20 @@
     {
       "to": "galatians",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "nabataea": [
     {
       "to": "ptolemaic",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "miletus": [
@@ -541,6 +693,10 @@
     {
       "to": "sinope",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "athens": [
@@ -579,6 +735,10 @@
     {
       "to": "elis",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "lyttos": [
@@ -605,6 +765,10 @@
     {
       "to": "greeks",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "sparta": [
@@ -635,12 +799,20 @@
     {
       "to": "elis",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "chios": [
     {
       "to": "ptolemaic",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "elis": [
@@ -671,6 +843,10 @@
     {
       "to": "lyttos",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "cyrene": [
@@ -685,17 +861,29 @@
     {
       "to": "gortyn",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "kush": [
     {
       "to": "ptolemaic",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "ptolemaic_rebels": [
     {
       "to": "ptolemaic",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
       "kind": "war"
     }
   ],
@@ -711,11 +899,23 @@
     {
       "to": "galatians",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "cappadocia": [
     {
       "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    },
+    {
+      "to": "armenia",
       "kind": "ally"
     }
   ],
@@ -723,11 +923,31 @@
     {
       "to": "seleucid",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "armenia": [
     {
       "to": "seleucid",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    },
+    {
+      "to": "cappadocia",
+      "kind": "ally"
+    },
+    {
+      "to": "sophene",
+      "kind": "ally"
+    },
+    {
+      "to": "armenia_minor",
       "kind": "ally"
     }
   ],
@@ -743,6 +963,10 @@
     {
       "to": "tylis",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "priene": [
@@ -752,6 +976,10 @@
     },
     {
       "to": "galatians",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
       "kind": "war"
     }
   ],
@@ -763,12 +991,20 @@
     {
       "to": "pergamon",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "paphlagonia": [
     {
       "to": "seleucid",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "aetolia": [
@@ -783,6 +1019,10 @@
     {
       "to": "elis",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "acarnania": [
@@ -793,6 +1033,10 @@
     {
       "to": "aetolia",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "illyrian_kingdom": [
@@ -811,6 +1055,10 @@
     {
       "to": "labeatae",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "gortyn": [
@@ -821,12 +1069,10 @@
     {
       "to": "sparta",
       "kind": "ally"
-    }
-  ],
-  "bosporan": [
+    },
     {
-      "to": "olbia",
-      "kind": "ally"
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "olbia": [
@@ -853,12 +1099,30 @@
     {
       "to": "miletus",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "bosporan": [
+    {
+      "to": "olbia",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "boeotia": [
     {
       "to": "athens",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "sinope": [
@@ -889,12 +1153,30 @@
     {
       "to": "trapezus",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "rhodes": [
     {
       "to": "sinope",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "emporion": [
+    {
+      "to": "massalia",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "massalia": [
@@ -905,12 +1187,28 @@
     {
       "to": "greeks",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
-  "emporion": [
+  "cius": [
     {
-      "to": "massalia",
+      "to": "byzantium",
       "kind": "ally"
+    },
+    {
+      "to": "bithynia",
+      "kind": "ally"
+    },
+    {
+      "to": "heraclea_pontica",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "byzantium": [
@@ -937,20 +1235,10 @@
     {
       "to": "asti",
       "kind": "ally"
-    }
-  ],
-  "cius": [
-    {
-      "to": "byzantium",
-      "kind": "ally"
     },
     {
-      "to": "bithynia",
-      "kind": "ally"
-    },
-    {
-      "to": "heraclea_pontica",
-      "kind": "ally"
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "heraclea_pontica": [
@@ -973,6 +1261,10 @@
     {
       "to": "sinope",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "tylis": [
@@ -991,12 +1283,20 @@
     {
       "to": "getae",
       "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "asti": [
     {
       "to": "byzantium",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "pentapolis": [
@@ -1011,6 +1311,10 @@
     {
       "to": "getae",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "histria": [
@@ -1029,6 +1333,10 @@
     {
       "to": "getae",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "getae": [
@@ -1043,6 +1351,10 @@
     {
       "to": "histria",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "chersonesus": [
@@ -1053,12 +1365,20 @@
     {
       "to": "heraclea_pontica",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "trapezus": [
     {
       "to": "sinope",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "ardiaei": [
@@ -1069,6 +1389,10 @@
     {
       "to": "labeatae",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "labeatae": [
@@ -1079,17 +1403,43 @@
     {
       "to": "illyrian_kingdom",
       "kind": "ally"
-    }
-  ],
-  "liburni": [
+    },
     {
-      "to": "iapodes",
+      "to": "slave",
       "kind": "war"
     }
   ],
   "iapodes": [
     {
       "to": "liburni",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "liburni": [
+    {
+      "to": "iapodes",
+      "kind": "war"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "lugii": [
+    {
+      "to": "scordisci",
+      "kind": "ally"
+    },
+    {
+      "to": "boii",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
       "kind": "war"
     }
   ],
@@ -1101,16 +1451,10 @@
     {
       "to": "boii",
       "kind": "ally"
-    }
-  ],
-  "lugii": [
-    {
-      "to": "scordisci",
-      "kind": "ally"
     },
     {
-      "to": "boii",
-      "kind": "ally"
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "boii": [
@@ -1125,36 +1469,1942 @@
     {
       "to": "insubres",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "insubres": [
     {
       "to": "boii",
       "kind": "ally"
-    }
-  ],
-  "aedui": [
+    },
     {
-      "to": "belgae",
-      "kind": "ally"
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "belgae": [
     {
       "to": "aedui",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
-  "suebi": [
+  "aedui": [
     {
-      "to": "cimbri",
+      "to": "belgae",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ],
   "cimbri": [
     {
       "to": "suebi",
       "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "suebi": [
+    {
+      "to": "cimbri",
+      "kind": "ally"
+    },
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "slave": [
+    {
+      "to": "romans_julii",
+      "kind": "war"
+    },
+    {
+      "to": "antigonid",
+      "kind": "war"
+    },
+    {
+      "to": "ptolemaic",
+      "kind": "war"
+    },
+    {
+      "to": "seleucid",
+      "kind": "war"
+    },
+    {
+      "to": "carthage",
+      "kind": "war"
+    },
+    {
+      "to": "parni",
+      "kind": "war"
+    },
+    {
+      "to": "arverni",
+      "kind": "war"
+    },
+    {
+      "to": "suebi",
+      "kind": "war"
+    },
+    {
+      "to": "pontus",
+      "kind": "war"
+    },
+    {
+      "to": "armenia",
+      "kind": "war"
+    },
+    {
+      "to": "getae",
+      "kind": "war"
+    },
+    {
+      "to": "greeks",
+      "kind": "war"
+    },
+    {
+      "to": "siraces",
+      "kind": "war"
+    },
+    {
+      "to": "arevaci",
+      "kind": "war"
+    },
+    {
+      "to": "odrysians",
+      "kind": "war"
+    },
+    {
+      "to": "massylii",
+      "kind": "war"
+    },
+    {
+      "to": "trinovantes",
+      "kind": "war"
+    },
+    {
+      "to": "sparta",
+      "kind": "war"
+    },
+    {
+      "to": "galatians",
+      "kind": "war"
+    },
+    {
+      "to": "pergamon",
+      "kind": "war"
+    },
+    {
+      "to": "bosporan",
+      "kind": "war"
+    },
+    {
+      "to": "massalia",
+      "kind": "war"
+    },
+    {
+      "to": "syracuse",
+      "kind": "war"
+    },
+    {
+      "to": "rhodes",
+      "kind": "war"
+    },
+    {
+      "to": "athens",
+      "kind": "war"
+    },
+    {
+      "to": "achaea",
+      "kind": "war"
+    },
+    {
+      "to": "aetolia",
+      "kind": "war"
+    },
+    {
+      "to": "boeotia",
+      "kind": "war"
+    },
+    {
+      "to": "epirus",
+      "kind": "war"
+    },
+    {
+      "to": "bactria",
+      "kind": "war"
+    },
+    {
+      "to": "cyrene",
+      "kind": "war"
+    },
+    {
+      "to": "saka",
+      "kind": "war"
+    },
+    {
+      "to": "lusitani",
+      "kind": "war"
+    },
+    {
+      "to": "edeta",
+      "kind": "war"
+    },
+    {
+      "to": "masaesyli",
+      "kind": "war"
+    },
+    {
+      "to": "volcae",
+      "kind": "war"
+    },
+    {
+      "to": "allobroges",
+      "kind": "war"
+    },
+    {
+      "to": "aedui",
+      "kind": "war"
+    },
+    {
+      "to": "belgae",
+      "kind": "war"
+    },
+    {
+      "to": "insubres",
+      "kind": "war"
+    },
+    {
+      "to": "boii",
+      "kind": "war"
+    },
+    {
+      "to": "scordisci",
+      "kind": "war"
+    },
+    {
+      "to": "tylis",
+      "kind": "war"
+    },
+    {
+      "to": "bithynia",
+      "kind": "war"
+    },
+    {
+      "to": "chatti",
+      "kind": "war"
+    },
+    {
+      "to": "cimbri",
+      "kind": "war"
+    },
+    {
+      "to": "lugii",
+      "kind": "war"
+    },
+    {
+      "to": "ardiaei",
+      "kind": "war"
+    },
+    {
+      "to": "cappadocia",
+      "kind": "war"
+    },
+    {
+      "to": "atropatene",
+      "kind": "war"
+    },
+    {
+      "to": "kush",
+      "kind": "war"
+    },
+    {
+      "to": "nabataea",
+      "kind": "war"
+    },
+    {
+      "to": "saba",
+      "kind": "war"
+    },
+    {
+      "to": "mauryan",
+      "kind": "war"
+    },
+    {
+      "to": "emporion",
+      "kind": "war"
+    },
+    {
+      "to": "acragas",
+      "kind": "war"
+    },
+    {
+      "to": "acarnania",
+      "kind": "war"
+    },
+    {
+      "to": "elis",
+      "kind": "war"
+    },
+    {
+      "to": "messene",
+      "kind": "war"
+    },
+    {
+      "to": "knossos",
+      "kind": "war"
+    },
+    {
+      "to": "gortyn",
+      "kind": "war"
+    },
+    {
+      "to": "lyttos",
+      "kind": "war"
+    },
+    {
+      "to": "kydonia",
+      "kind": "war"
+    },
+    {
+      "to": "byzantium",
+      "kind": "war"
+    },
+    {
+      "to": "pentapolis",
+      "kind": "war"
+    },
+    {
+      "to": "histria",
+      "kind": "war"
+    },
+    {
+      "to": "chersonesus",
+      "kind": "war"
+    },
+    {
+      "to": "chios",
+      "kind": "war"
+    },
+    {
+      "to": "priene",
+      "kind": "war"
+    },
+    {
+      "to": "cius",
+      "kind": "war"
+    },
+    {
+      "to": "sinope",
+      "kind": "war"
+    },
+    {
+      "to": "olbia",
+      "kind": "war"
+    },
+    {
+      "to": "cyzicus",
+      "kind": "war"
+    },
+    {
+      "to": "heraclea_pontica",
+      "kind": "war"
+    },
+    {
+      "to": "trapezus",
+      "kind": "war"
+    },
+    {
+      "to": "issa",
+      "kind": "war"
+    },
+    {
+      "to": "paeonia",
+      "kind": "war"
+    },
+    {
+      "to": "dentheletae",
+      "kind": "war"
+    },
+    {
+      "to": "maedi",
+      "kind": "war"
+    },
+    {
+      "to": "bessi",
+      "kind": "war"
+    },
+    {
+      "to": "cabyle",
+      "kind": "war"
+    },
+    {
+      "to": "asti",
+      "kind": "war"
+    },
+    {
+      "to": "triballi",
+      "kind": "war"
+    },
+    {
+      "to": "paphlagonia",
+      "kind": "war"
+    },
+    {
+      "to": "selge",
+      "kind": "war"
+    },
+    {
+      "to": "histri",
+      "kind": "war"
+    },
+    {
+      "to": "liburni",
+      "kind": "war"
+    },
+    {
+      "to": "iapodes",
+      "kind": "war"
+    },
+    {
+      "to": "delmatae",
+      "kind": "war"
+    },
+    {
+      "to": "daesitiates",
+      "kind": "war"
+    },
+    {
+      "to": "labeatae",
+      "kind": "war"
+    },
+    {
+      "to": "illyrian_kingdom",
+      "kind": "war"
+    },
+    {
+      "to": "dardania",
+      "kind": "war"
+    },
+    {
+      "to": "volsinii",
+      "kind": "war"
+    },
+    {
+      "to": "picentes",
+      "kind": "war"
+    },
+    {
+      "to": "messapians",
+      "kind": "war"
+    },
+    {
+      "to": "capua",
+      "kind": "war"
+    },
+    {
+      "to": "samnites",
+      "kind": "war"
+    },
+    {
+      "to": "lucanians",
+      "kind": "war"
+    },
+    {
+      "to": "bruttians",
+      "kind": "war"
+    },
+    {
+      "to": "italics",
+      "kind": "war"
+    },
+    {
+      "to": "mamertines",
+      "kind": "war"
+    },
+    {
+      "to": "sardinians",
+      "kind": "war"
+    },
+    {
+      "to": "mauri",
+      "kind": "war"
+    },
+    {
+      "to": "musulamii",
+      "kind": "war"
+    },
+    {
+      "to": "garamantes",
+      "kind": "war"
+    },
+    {
+      "to": "nasamones",
+      "kind": "war"
+    },
+    {
+      "to": "asta",
+      "kind": "war"
+    },
+    {
+      "to": "basti",
+      "kind": "war"
+    },
+    {
+      "to": "ilici",
+      "kind": "war"
+    },
+    {
+      "to": "oretani",
+      "kind": "war"
+    },
+    {
+      "to": "carpetani",
+      "kind": "war"
+    },
+    {
+      "to": "celtici",
+      "kind": "war"
+    },
+    {
+      "to": "vettones",
+      "kind": "war"
+    },
+    {
+      "to": "gallaeci",
+      "kind": "war"
+    },
+    {
+      "to": "astures",
+      "kind": "war"
+    },
+    {
+      "to": "cantabri",
+      "kind": "war"
+    },
+    {
+      "to": "vaccaei",
+      "kind": "war"
+    },
+    {
+      "to": "vascones",
+      "kind": "war"
+    },
+    {
+      "to": "ilergetes",
+      "kind": "war"
+    },
+    {
+      "to": "lacetani",
+      "kind": "war"
+    },
+    {
+      "to": "sotiates",
+      "kind": "war"
+    },
+    {
+      "to": "salluvii",
+      "kind": "war"
+    },
+    {
+      "to": "sequani",
+      "kind": "war"
+    },
+    {
+      "to": "senones",
+      "kind": "war"
+    },
+    {
+      "to": "osismii",
+      "kind": "war"
+    },
+    {
+      "to": "veneti_gallia",
+      "kind": "war"
+    },
+    {
+      "to": "bituriges",
+      "kind": "war"
+    },
+    {
+      "to": "aulerci",
+      "kind": "war"
+    },
+    {
+      "to": "nervii",
+      "kind": "war"
+    },
+    {
+      "to": "eburones",
+      "kind": "war"
+    },
+    {
+      "to": "treveri",
+      "kind": "war"
+    },
+    {
+      "to": "ingauni",
+      "kind": "war"
+    },
+    {
+      "to": "apuani",
+      "kind": "war"
+    },
+    {
+      "to": "cenomani",
+      "kind": "war"
+    },
+    {
+      "to": "salassi",
+      "kind": "war"
+    },
+    {
+      "to": "veneti",
+      "kind": "war"
+    },
+    {
+      "to": "vindelici",
+      "kind": "war"
+    },
+    {
+      "to": "norici",
+      "kind": "war"
+    },
+    {
+      "to": "taurisci",
+      "kind": "war"
+    },
+    {
+      "to": "eravisci",
+      "kind": "war"
+    },
+    {
+      "to": "anartes",
+      "kind": "war"
+    },
+    {
+      "to": "helvetii",
+      "kind": "war"
+    },
+    {
+      "to": "ubii",
+      "kind": "war"
+    },
+    {
+      "to": "tencteri",
+      "kind": "war"
+    },
+    {
+      "to": "usipetes",
+      "kind": "war"
+    },
+    {
+      "to": "catuvellauni",
+      "kind": "war"
+    },
+    {
+      "to": "durotriges",
+      "kind": "war"
+    },
+    {
+      "to": "dumnonii",
+      "kind": "war"
+    },
+    {
+      "to": "silures",
+      "kind": "war"
+    },
+    {
+      "to": "ordovices",
+      "kind": "war"
+    },
+    {
+      "to": "brigantes",
+      "kind": "war"
+    },
+    {
+      "to": "caledonii",
+      "kind": "war"
+    },
+    {
+      "to": "frisii",
+      "kind": "war"
+    },
+    {
+      "to": "sugambri",
+      "kind": "war"
+    },
+    {
+      "to": "chauci",
+      "kind": "war"
+    },
+    {
+      "to": "cherusci",
+      "kind": "war"
+    },
+    {
+      "to": "langobardi",
+      "kind": "war"
+    },
+    {
+      "to": "hermunduri",
+      "kind": "war"
+    },
+    {
+      "to": "marcomanni",
+      "kind": "war"
+    },
+    {
+      "to": "quadi",
+      "kind": "war"
+    },
+    {
+      "to": "bastarnae",
+      "kind": "war"
+    },
+    {
+      "to": "gauts",
+      "kind": "war"
+    },
+    {
+      "to": "buri",
+      "kind": "war"
+    },
+    {
+      "to": "crobyzi",
+      "kind": "war"
+    },
+    {
+      "to": "costoboci",
+      "kind": "war"
+    },
+    {
+      "to": "royal_scythians",
+      "kind": "war"
+    },
+    {
+      "to": "royal_sarmatians",
+      "kind": "war"
+    },
+    {
+      "to": "aorsi",
+      "kind": "war"
+    },
+    {
+      "to": "iazyges",
+      "kind": "war"
+    },
+    {
+      "to": "rhoxolani",
+      "kind": "war"
+    },
+    {
+      "to": "chorasmia",
+      "kind": "war"
+    },
+    {
+      "to": "scythians",
+      "kind": "war"
+    },
+    {
+      "to": "arshi",
+      "kind": "war"
+    },
+    {
+      "to": "kucha",
+      "kind": "war"
+    },
+    {
+      "to": "armenia_minor",
+      "kind": "war"
+    },
+    {
+      "to": "colchians",
+      "kind": "war"
+    },
+    {
+      "to": "iberians",
+      "kind": "war"
+    },
+    {
+      "to": "albanians",
+      "kind": "war"
+    },
+    {
+      "to": "sophene",
+      "kind": "war"
+    },
+    {
+      "to": "commagene",
+      "kind": "war"
+    },
+    {
+      "to": "arados",
+      "kind": "war"
+    },
+    {
+      "to": "tyre",
+      "kind": "war"
+    },
+    {
+      "to": "hasmonean",
+      "kind": "war"
+    },
+    {
+      "to": "osrhoene",
+      "kind": "war"
+    },
+    {
+      "to": "characene",
+      "kind": "war"
+    },
+    {
+      "to": "persis",
+      "kind": "war"
+    },
+    {
+      "to": "thamud",
+      "kind": "war"
+    },
+    {
+      "to": "lihyan",
+      "kind": "war"
+    },
+    {
+      "to": "minaeans",
+      "kind": "war"
+    },
+    {
+      "to": "qataban",
+      "kind": "war"
+    },
+    {
+      "to": "himyar",
+      "kind": "war"
+    },
+    {
+      "to": "hadhramaut",
+      "kind": "war"
+    },
+    {
+      "to": "gerrha",
+      "kind": "war"
+    },
+    {
+      "to": "libyans",
+      "kind": "war"
+    },
+    {
+      "to": "gades",
+      "kind": "war"
+    },
+    {
+      "to": "carmo",
+      "kind": "war"
+    },
+    {
+      "to": "arse",
+      "kind": "war"
+    },
+    {
+      "to": "belli",
+      "kind": "war"
+    },
+    {
+      "to": "corsi",
+      "kind": "war"
+    },
+    {
+      "to": "cadurci",
+      "kind": "war"
+    },
+    {
+      "to": "volcae_gallia",
+      "kind": "war"
+    },
+    {
+      "to": "cisalpine_boii",
+      "kind": "war"
+    },
+    {
+      "to": "breuni",
+      "kind": "war"
+    },
+    {
+      "to": "teurisci",
+      "kind": "war"
+    },
+    {
+      "to": "ambrones",
+      "kind": "war"
+    },
+    {
+      "to": "gauls",
+      "kind": "war"
+    },
+    {
+      "to": "iverni",
+      "kind": "war"
+    },
+    {
+      "to": "cantiaci",
+      "kind": "war"
+    },
+    {
+      "to": "venedae",
+      "kind": "war"
+    },
+    {
+      "to": "germanics",
+      "kind": "war"
+    },
+    {
+      "to": "tyragetae",
+      "kind": "war"
+    },
+    {
+      "to": "sarsinates",
+      "kind": "war"
+    },
+    {
+      "to": "heniochi",
+      "kind": "war"
+    },
+    {
+      "to": "mossynoeci",
+      "kind": "war"
+    },
+    {
+      "to": "palmyra",
+      "kind": "war"
+    },
+    {
+      "to": "sidon",
+      "kind": "war"
+    },
+    {
+      "to": "axum",
+      "kind": "war"
+    },
+    {
+      "to": "timbuktu",
+      "kind": "war"
+    },
+    {
+      "to": "indians",
+      "kind": "war"
+    },
+    {
+      "to": "argos",
+      "kind": "war"
+    },
+    {
+      "to": "chrysaoria",
+      "kind": "war"
+    },
+    {
+      "to": "cilicians",
+      "kind": "war"
+    },
+    {
+      "to": "dummies",
+      "kind": "war"
+    },
+    {
+      "to": "egypt",
+      "kind": "war"
+    },
+    {
+      "to": "hellenistic_rebels",
+      "kind": "war"
+    },
+    {
+      "to": "indo_greeks",
+      "kind": "war"
+    },
+    {
+      "to": "lycia",
+      "kind": "war"
+    },
+    {
+      "to": "lysiad",
+      "kind": "war"
+    },
+    {
+      "to": "megalopolis",
+      "kind": "war"
+    },
+    {
+      "to": "miletus",
+      "kind": "war"
+    },
+    {
+      "to": "ptolemaic_rebels",
+      "kind": "war"
+    },
+    {
+      "to": "roman_rebels_1",
+      "kind": "war"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "war"
+    },
+    {
+      "to": "roman_senate",
+      "kind": "war"
+    },
+    {
+      "to": "seleucid_rebels",
+      "kind": "war"
+    },
+    {
+      "to": "seleucid_rebels2",
+      "kind": "war"
+    },
+    {
+      "to": "taras",
+      "kind": "war"
+    },
+    {
+      "to": "thessaly",
+      "kind": "war"
+    }
+  ],
+  "parni": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "arverni": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "pontus": [
+    {
+      "to": "slave",
+      "kind": "war"
+    },
+    {
+      "to": "galatians",
+      "kind": "ally"
+    }
+  ],
+  "siraces": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "arevaci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "massylii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "trinovantes": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "saka": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "lusitani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "edeta": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "masaesyli": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "volcae": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "allobroges": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "chatti": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "atropatene": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "saba": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "mauryan": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "acragas": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "kydonia": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "paeonia": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "dentheletae": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "maedi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "bessi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "triballi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "selge": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "histri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "delmatae": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "daesitiates": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "dardania": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "picentes": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "messapians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "italics": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "sardinians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "mauri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "musulamii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "garamantes": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "nasamones": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "asta": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "basti": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "ilici": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "oretani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "carpetani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "celtici": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "vettones": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "gallaeci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "astures": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "cantabri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "vaccaei": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "vascones": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "ilergetes": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "lacetani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "sotiates": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "salluvii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "sequani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "senones": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "osismii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "veneti_gallia": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "bituriges": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "aulerci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "nervii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "eburones": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "treveri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "ingauni": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "apuani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "cenomani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "salassi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "veneti": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "vindelici": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "norici": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "taurisci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "eravisci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "anartes": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "helvetii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "ubii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "tencteri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "usipetes": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "catuvellauni": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "durotriges": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "dumnonii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "silures": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "ordovices": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "brigantes": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "caledonii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "frisii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "sugambri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "chauci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "cherusci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "langobardi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "hermunduri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "marcomanni": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "quadi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "bastarnae": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "gauts": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "buri": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "crobyzi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "costoboci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "royal_scythians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "royal_sarmatians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "aorsi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "iazyges": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "rhoxolani": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "chorasmia": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "scythians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "arshi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "kucha": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "armenia_minor": [
+    {
+      "to": "slave",
+      "kind": "war"
+    },
+    {
+      "to": "armenia",
+      "kind": "ally"
+    }
+  ],
+  "colchians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "iberians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "albanians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "sophene": [
+    {
+      "to": "slave",
+      "kind": "war"
+    },
+    {
+      "to": "armenia",
+      "kind": "ally"
+    }
+  ],
+  "commagene": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "hasmonean": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "osrhoene": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "thamud": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "lihyan": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "minaeans": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "hadhramaut": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "gerrha": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "libyans": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "carmo": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "arse": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "belli": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "corsi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "cadurci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "volcae_gallia": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "cisalpine_boii": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "breuni": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "teurisci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "ambrones": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "gauls": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "iverni": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "cantiaci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "venedae": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "germanics": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "tyragetae": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "sarsinates": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "heniochi": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "mossynoeci": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "palmyra": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "axum": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "timbuktu": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "indians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "chrysaoria": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "cilicians": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "dummies": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "hellenistic_rebels": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "indo_greeks": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "lycia": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "roman_rebels_1": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "roman_rebels_2": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "roman_senate": [
+    {
+      "to": "slave",
+      "kind": "war"
+    }
+  ],
+  "thessaly": [
+    {
+      "to": "slave",
+      "kind": "war"
     }
   ]
 }
