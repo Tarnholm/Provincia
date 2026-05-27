@@ -217,13 +217,13 @@ function loadFactionDeclarations(stratPath) {
 
 function loadSettlementToRegion(modDataDir) {
   const regionsPath = findDescrRegions(modDataDir, "imperial_campaign");
-  if (!regionsPath) return {};
+  if (!regionsPath) return { settlementToRegion: {}, regionToSettlement: {} };
   const regionToSettlement = parseDescrRegions(regionsPath);
-  const out = {};
+  const settlementToRegion = {};
   for (const [region, settlement] of Object.entries(regionToSettlement)) {
-    out[settlement] = region;
+    settlementToRegion[settlement] = region;
   }
-  return out;
+  return { settlementToRegion, regionToSettlement };
 }
 
 // Settlement tile coordinates extracted from map_regions.tga. Each
@@ -991,7 +991,7 @@ async function main() {
   const { decls: factionDecls, descrOrder } = loadFactionDeclarations(stratPath);
   const engineOrder = deriveEngineFactionOrder(descrOrder);
   const chainLevels = loadChainLevels(modDataDir);
-  const settlementToRegion = loadSettlementToRegion(modDataDir);
+  const { settlementToRegion, regionToSettlement } = loadSettlementToRegion(modDataDir);
   const settlementCoords = loadSettlementCoords(modDataDir);
   const nameLookup = loadNameLookup(modDataDir);
   const traitNames = loadTraitNames(modDataDir);
@@ -1121,6 +1121,36 @@ async function main() {
   }
   if (droppedNoRegion > 0) {
     console.log(`[${Date.now() - t0}ms] dropped ${droppedNoRegion} settlements whose name doesn't exist in the active mod's descr_regions (save made with different mod version)`);
+  }
+
+  // ── Fill in missing regions with placeholder settlements ──
+  // RTW requires EVERY region in descr_regions to have a corresponding
+  // settlement in descr_strat. The save might not have settlements for
+  // every region (new regions added in the mod since the save was made,
+  // or regions our parser missed). For those regions, emit a minimal
+  // slave-owned placeholder settlement at level 'village' so the engine
+  // is satisfied. Without this the engine errors on "missing settlement
+  // for region X".
+  const generatedRegionSet = new Set();
+  for (const ss of Object.values(byFactionSettlements)) {
+    for (const s of ss) generatedRegionSet.add(s.region);
+  }
+  let placeholders = 0;
+  for (const [region, settlementName] of Object.entries(regionToSettlement)) {
+    if (generatedRegionSet.has(region)) continue;
+    if (!byFactionSettlements.slave) byFactionSettlements.slave = [];
+    byFactionSettlements.slave.push({
+      name: settlementName,
+      region,
+      offset: -1,
+      buildings: [],
+      queued: [],
+      __placeholder: true,
+    });
+    placeholders++;
+  }
+  if (placeholders > 0) {
+    console.log(`[${Date.now() - t0}ms] added ${placeholders} placeholder slave-owned settlements for mod regions not covered by save`);
   }
   const byFactionChars = {};
   for (const c of characters) {
