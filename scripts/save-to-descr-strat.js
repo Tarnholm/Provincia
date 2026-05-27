@@ -676,7 +676,12 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
 function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity, traitMaxLevels) {
   const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
-  lines.push(`faction\t${facId}, ${decl.aiType}`);
+  // Strip any trailing comma that leaked through from the source mod's
+  // descr_strat (RIS alternate_campaign has `faction\trj, ai_rome,` —
+  // trailing comma is harmless in that file but tokenizes as an empty
+  // field here, looking like a parse error to humans reading the diff).
+  const aiType = decl.aiType.replace(/,+$/, "");
+  lines.push(`faction\t${facId}, ${aiType}`);
   if (decl.superfaction) lines.push(`superfaction ${decl.superfaction}`);
   // Prefer the save's actual current treasury; fall back to bundled-starting
   // denari when extraction missed this faction (small/rebel factions whose

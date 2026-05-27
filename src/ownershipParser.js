@@ -12,10 +12,14 @@ const fs = require("fs");
 const path = require("path");
 
 function findCampaignDescrStrat(modDataDir) {
-  // Prefer a campaign subfolder whose descr_strat.txt exists.
-  const campaignDir = path.join(modDataDir, "world", "maps", "campaign");
-  if (fs.existsSync(campaignDir)) {
-    const candidates = ["ris_classic", "imperial_campaign"];
+  // RIS-style mods can ship the live campaign under
+  // `data/original_overrides/<bucket>/world/maps/campaign/<X>/descr_strat.txt`
+  // (override layout) AND keep a legacy alt under `data/world/maps/...`.
+  // The override version is what the game actually loads — prefer it.
+  const tryStandardLayout = (root) => {
+    const campaignDir = path.join(root, "world", "maps", "campaign");
+    if (!fs.existsSync(campaignDir)) return null;
+    const candidates = ["imperial_campaign", "ris_classic"];
     for (const c of candidates) {
       const p = path.join(campaignDir, c, "descr_strat.txt");
       if (fs.existsSync(p)) return p;
@@ -27,8 +31,23 @@ function findCampaignDescrStrat(modDataDir) {
         if (fs.existsSync(p)) return p;
       }
     } catch {}
+    return null;
+  };
+  // Walk original_overrides/* first — that's what the engine reads.
+  const overridesRoot = path.join(modDataDir, "original_overrides");
+  if (fs.existsSync(overridesRoot)) {
+    try {
+      for (const entry of fs.readdirSync(overridesRoot, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const hit = tryStandardLayout(path.join(overridesRoot, entry.name));
+        if (hit) return hit;
+      }
+    } catch {}
   }
-  // Fallback: flat layout (e.g., loose test folder)
+  // Fall back to the legacy in-tree layout.
+  const legacy = tryStandardLayout(modDataDir);
+  if (legacy) return legacy;
+  // Last resort: flat layout (e.g., loose test folder)
   const flat = path.join(modDataDir, "descr_strat.txt");
   if (fs.existsSync(flat)) return flat;
   return null;
