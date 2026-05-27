@@ -747,11 +747,19 @@ function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment
 async function main() {
   const argv = process.argv.slice(2);
   if (argv.length < 1) {
-    console.error("usage: node scripts/save-to-descr-strat.js <save-path> [output-path]");
+    console.error("usage: node scripts/save-to-descr-strat.js <save-path> [output-path] [--deploy <target-campaign-dir>]");
+    console.error("       --deploy   immediately copy the generated file into <target-campaign-dir>");
+    console.error("                  (creates descr_strat.txt.backup on first deploy)");
     process.exit(2);
   }
   const savePath = argv[0];
-  const outPath = argv[1] || path.join(PROJECT_ROOT, "derived", path.basename(savePath, ".sav") + ".descr_strat.txt");
+  let deployTarget = null;
+  const positional = [];
+  for (let i = 1; i < argv.length; i++) {
+    if (argv[i] === "--deploy") { deployTarget = argv[++i]; continue; }
+    positional.push(argv[i]);
+  }
+  const outPath = positional[0] || path.join(PROJECT_ROOT, "derived", path.basename(savePath, ".sav") + ".descr_strat.txt");
 
   if (!fs.existsSync(savePath)) { console.error("save not found:", savePath); process.exit(1); }
 
@@ -1029,6 +1037,26 @@ async function main() {
   console.log(`  treasuries matched:  ${Object.keys(currentTreasuryByFaction).length} factions`);
   console.log(`  religions parsed:    ${Object.keys(religionByCity).length} settlements`);
   console.log(`  v2 chars (females+): ${v2Chars.length} (not yet emitted as separate descr_strat blocks)`);
+
+  // --deploy: copy into the target campaign dir with backup
+  if (deployTarget) {
+    const target = path.join(deployTarget, "descr_strat.txt");
+    const backup = path.join(deployTarget, "descr_strat.txt.backup");
+    if (!fs.existsSync(deployTarget)) {
+      console.error("\n❌ deploy target does not exist:", deployTarget);
+      process.exit(1);
+    }
+    if (fs.existsSync(target) && !fs.existsSync(backup)) {
+      fs.copyFileSync(target, backup);
+      console.log("\n✓ backup created:", backup);
+    } else if (fs.existsSync(backup)) {
+      console.log("\n(backup preserved at " + backup + ")");
+    }
+    fs.copyFileSync(outPath, target);
+    console.log(`✓ deployed to ${target}`);
+    console.log("\nNext: start a NEW imperial_campaign in RTW. Rollback if needed:");
+    console.log(`  node scripts/deploy-descr-strat.js --rollback "${deployTarget}"`);
+  }
 }
 
 main().catch((e) => { console.error("FATAL:", e.stack || e); process.exit(1); });
