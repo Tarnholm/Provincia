@@ -886,10 +886,37 @@ async function main() {
     // load a descr_strat where a playable faction has no leader; for non-
     // playable factions it usually invents one. Better to just promote.
     if (cs.length > 0 && !cs.some(c => c.isLeader)) {
-      // Heuristic: oldest male character becomes leader
       const males = cs.filter(c => c.gender === "male").sort((a, b) => (b.age || 0) - (a.age || 0));
       const cand = males[0] || cs[0];
       if (cand) cand.isLeader = true;
+    }
+    // Synthesize a placeholder leader for any faction with settlements but
+    // no extracted characters. Without a leader the engine refuses to
+    // load the faction. The placeholder takes the first settlement's
+    // coords + a generic name token that's known to exist in the lookup.
+    if (cs.length === 0 && ss.length > 0 && nameLookup.length > 0) {
+      // Pick a deterministic but per-faction-unique name slot so two
+      // synthesized factions don't end up with the same leader name.
+      const seed = facId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+      const firstName = nameLookup[seed % nameLookup.length] || "Captain";
+      const fallback = settlementCoords[ss[0].name] || { x: 250, y: 350 };
+      cs.push({
+        firstName,
+        lastName: null,
+        gender: "male",
+        age: 40,
+        isLeader: true,
+        isHeir: false,
+        isDead: false,
+        faction: facId,
+        traits: [{ name: "Factionleader", level: 1 }],
+        ancillaries: [],
+        tileX: fallback.x,
+        tileY: fallback.y,
+        secondaryUuid: null,
+        primaryUuid: null,
+        synthesized: true,
+      });
     }
     const tr = currentTreasuryByFaction[facId];
     const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords);
