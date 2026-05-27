@@ -229,11 +229,11 @@ for (let i = 0; i < lines.length; i++) {
     buildBraceDepth = 0;
     continue;
   }
-  if (line.startsWith("character,")) {
+  if (/^character\b/.test(line) && !/^character_record\b/.test(line)) {
     characters++;
     if (curFaction) factionsByName[curFaction].characters++;
-    // Check shape: character,	<Name>, named character[, leader|heir], age N, , x X, y Y
-    if (!/named character/.test(line)) warn(i + 1, "character line missing `named character`: " + line.slice(0, 60));
+    // Check shape: character\t<Name>, named_character[, leader|heir], age N, , x X, y Y
+    if (!/named_character/.test(line)) warn(i + 1, "character line missing `named_character`: " + line.slice(0, 60));
     if (!/age \d+/.test(line)) warn(i + 1, "character line missing valid age: " + line.slice(0, 60));
     if (!/x \d+,\s*y \d+/.test(line)) warn(i + 1, "character line missing x/y coords: " + line.slice(0, 60));
     continue;

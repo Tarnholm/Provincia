@@ -456,7 +456,11 @@ function emitCharacterRecord(c) {
   // as faction leader (used for wives, children, distant relatives). For our
   // extraction, ANY character without isLeader/isHeir gets never_a_leader.
   const flag = (c.isLeader || c.isHeir) ? "" : ", never_a_leader";
-  return `character_record\t${fullName(c)}, \t${gender}, age ${c.age || 1}, ${status}${flag}`;
+  // Match bundled descr_strat shape: gender first, then full stat fields
+  // (command/influence/management/subterfuge all 0), then age, status,
+  // leader-flag. Engine may accept abbreviated form but some validators
+  // trip on missing fields; safer to emit full shape.
+  return `character_record\t${fullName(c)}, \t${gender}, command 0, influence 0, management 0, subterfuge 0, age ${c.age || 1}, ${status}${flag}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -587,7 +591,12 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   if ((!x || !y) && fallbackPos) { x = fallbackPos.x; y = fallbackPos.y; }
   if (!x || !y) return null; // give up — can't position this character
 
-  lines.push(`character,\t${fullName}, named character${role}, age ${c.age || 30}, , x ${x}, y ${y}`);
+  // descr_strat tokenizes on commas+whitespace. The bundled file uses
+  // `named_character` (underscore) — engine's lookup is on the joined
+  // identifier; `named character` (space) is parsed as two tokens and
+  // typically silently skipped, demoting the character to a no-role
+  // captain. Match bundled exactly.
+  lines.push(`character\t${fullName}, named_character${role}, age ${c.age || 30}, , x ${x}, y ${y}`);
 
   // Traits line — skip when empty.
   // Cap each trait at ITS OWN declared max level from EDCT (most traits
