@@ -589,20 +589,21 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
 function parseDiplomacyMatrixRelaxed(buf, factionOrder) {
   if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
   const N = factionOrder.length;
-  // 1. Locate: find {0, key, 200, attitude<=1000} with N consecutive same-key cells
-  let base = -1, stride = -1, key = -1;
+  // 1. Find ALL candidate matrices that satisfy the {0, key, 200, attitude<=1000}
+  // invariant for at least N+2 consecutive cells. Larger saves can have several
+  // distinct "matrix-shaped" regions — picking the first one (as before) gives
+  // a false positive on Bactria T964 where the real matrix is the 4th hit.
+  const candidates = [];
   for (let p = 0x4000; p < buf.length - 32; p++) {
     if (buf.readUInt32LE(p) !== 0) continue;
     const k = buf.readUInt32LE(p + 4);
     if (buf.readUInt32LE(p + 8) !== 200) continue;
     if (buf.readUInt32LE(p + 12) > 1000) continue;
-    // Probe strides 80..400 for N+2 consecutive cells with same key.
     for (let s = 80; s <= 400; s++) {
       if (p + s + 12 >= buf.length) break;
       if (buf.readUInt32LE(p + s) !== 0) continue;
       if (buf.readUInt32LE(p + s + 4) !== k) continue;
       if (buf.readUInt32LE(p + s + 8) !== 200) continue;
-      // Validate run length
       let good = 0;
       for (let n = 0; n < N + 2; n++) {
         const o = p + n * s;
@@ -610,30 +611,50 @@ function parseDiplomacyMatrixRelaxed(buf, factionOrder) {
         if (buf.readUInt32LE(o) === 0 && buf.readUInt32LE(o + 4) === k && buf.readUInt32LE(o + 8) === 200) good++;
         else break;
       }
-      if (good >= N) { base = p; stride = s; key = k; break; }
+      if (good >= N) { candidates.push({ base: p, stride: s, key: k }); break; }
     }
-    if (base >= 0) break;
+    if (candidates.length >= 12) break; // enough to score
   }
-  if (base < 0) return null;
+  if (candidates.length === 0) return null;
 
-  // 2. Calibrate C via symmetry (att(A,B) == att(B,A))
-  const attAt = (A, B, C) => {
-    const o = base + (A * N + B + C) * stride + 12;
+  // 2. Score each candidate by symmetry (real matrix has att(A,B) == att(B,A)
+  // ~100% of the time; false positives are essentially 0% symmetric). Score
+  // each over a 7x7 sample so this is cheap.
+  const symmetryScore = (base, stride) => {
+    let best = -1, bestC = 0;
+    const attAt = (A, B, C) => {
+      const o = base + (A * N + B + C) * stride + 12;
+      if (o < 0 || o + 4 > buf.length) return null;
+      return buf.readUInt32LE(o);
+    };
+    for (let C = -3; C <= 3; C++) {
+      let sym = 0, tot = 0;
+      for (let A = 1; A < N; A += 7) for (let B = A + 1; B < N; B += 5) {
+        const v1 = attAt(A, B, C), v2 = attAt(B, A, C);
+        if (v1 == null || v2 == null) continue;
+        tot++; if (v1 === v2) sym++;
+      }
+      const sc = tot ? sym / tot : 0;
+      if (sc > best) { best = sc; bestC = C; }
+    }
+    return { score: best, C: bestC };
+  };
+  let bestCand = null, bestScore = -1, bestC = 0;
+  for (const c of candidates) {
+    const { score, C: cC } = symmetryScore(c.base, c.stride);
+    if (score > bestScore) { bestScore = score; bestCand = c; bestC = cC; }
+  }
+  // Reject if no candidate scores well — the matrix probably isn't in this
+  // save format. Real matrices score >0.9 (T1017 hit 93% across candidates);
+  // false-positive runs from arbitrary structured data score ~0.2-0.5.
+  // Threshold 0.8 catches the real matrix while rejecting the noise.
+  if (!bestCand || bestScore < 0.8) return null;
+  const base = bestCand.base, stride = bestCand.stride, key = bestCand.key, C = bestC;
+  const attAt = (A, B, C2) => {
+    const o = base + (A * N + B + C2) * stride + 12;
     if (o < 0 || o + 4 > buf.length) return null;
     return buf.readUInt32LE(o);
   };
-  let bestC = 0, bestSym = -1;
-  for (let C = -3; C <= 3; C++) {
-    let sym = 0, tot = 0;
-    for (let A = 1; A < N; A += 7) for (let B = A + 1; B < N; B += 5) {
-      const v1 = attAt(A, B, C), v2 = attAt(B, A, C);
-      if (v1 == null || v2 == null) continue;
-      tot++; if (v1 === v2) sym++;
-    }
-    const score = tot ? sym / tot : 0;
-    if (score > bestSym) { bestSym = score; bestC = C; }
-  }
-  const C = bestC;
 
   // 3. Build per-faction stance lists
   const out = {};
