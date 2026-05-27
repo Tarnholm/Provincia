@@ -230,6 +230,24 @@ on sec[1] would obviously miss most of the iteration.
 
 (NOT generated yet — user said no more saves; run `node scripts/save-cracker/splice-d12-all-chars.js` to generate.)
 
+### D13 — even more comprehensive (also ready, not generated)
+
+Further research revealed **sec[7] has 28,760 self-pointers**, of which
+only 19,563 are character records. The other 9,197 are sub-section
+headers (sec[7] starts with alternating 16-byte / 338-byte records
+that look like settlement/province summaries with x/y coordinates).
+
+D11/D12 trailer brute-force only covered `>= sec[7].end`, missing
+sec[7]'s 9,197 non-character self-pointers.
+
+`splice-d13-all-self-pointers.js` does a brute-force scan of the
+ENTIRE file for `u32@p == p` patterns and patches ALL of them that
+are AFTER the splice point. ~70,000+ patches estimated.
+
+Trade-off: catches every real self-pointer but also might patch some
+false positives (random u32s that coincidentally equal their position).
+Try this if D12 fails.
+
 ### Other key trailer findings (research time)
 
 **sec[7] is 32 MB and contains the bulk of the game state**:
