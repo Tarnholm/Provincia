@@ -189,7 +189,77 @@ T960 Start (21,762 dead) vs T960 End (21,772 dead):
 - 560 u32 fields changed by +1 (could be per-faction sub-pool counts)
 - 0 u32 fields changed from 21762→21772 at the same offset
 
-### 🎯 BREAKTHROUGH (post-midnight) — self-pointer found
+### 🎯🎯🎯 BREAKTHROUGH (mid-morning, while user away) — character record census
+
+**HUGE realization**: we were patching only DEAD character self-pointers but
+the same +(pathLen+9) self-pointer structure is shared by LIVING characters
+too. Total character record breakdown:
+
+| Type | Count | Patched by D11 |
+|---|---|---|
+| /portraits/dead/  | 21,762 | YES |
+| /portraits/young/ | 3,473  | **NO** ← missed |
+| /portraits/old/   | 1,146  | **NO** ← missed |
+| **TOTAL CHARACTER RECORDS** | **26,381** | |
+
+All three flavors have 100% self-pointer match at +(pathLen+9). D11
+patched 21,762 of 26,381 (= 82%). Left **4,619 living character
+self-pointers stale**, which is almost certainly why D11 still hangs.
+
+### Section distribution (also news to us)
+
+| Section | dead | young | old |
+|---|---|---|---|
+| sec[0]    | 0     | 0    | 0   |
+| sec[1] (16MB) | **5,649** | 723 | 237 |
+| sec[2..6] | 187   | 18   | 4   |
+| sec[7] (32MB) | **15,926** | 2,732 | 905 |
+| trailer   | 0     | 0    | 0   |
+
+73% of dead character records are in **sec[7]**, not sec[1]! Plus the 3,637
+living character records in sec[7] that D11 ignored. Splicing only worked
+on sec[1] would obviously miss most of the iteration.
+
+### D12 (ready to test when user back)
+
+`save_TEST_D12_splice_all_chars.sav` patches:
+1. ALL 26,381 character record self-pointers (dead + young + old, those AFTER splice point)
+2. Canonical top-level sec[2..7] self_offsets
+3. 478 faction record self-pointers (verified +4 and +8 invariants)
+4. All trailer self-pointers (brute-force)
+
+(NOT generated yet — user said no more saves; run `node scripts/save-cracker/splice-d12-all-chars.js` to generate.)
+
+### Other key trailer findings (research time)
+
+**sec[7] is 32 MB and contains the bulk of the game state**:
+- 238 faction records (`ff 0a af f0` magic)
+- 15,926 dead character records
+- 3,637 living character records (young + old)
+- 129 captain_card_ markers
+
+**Trailer (2.4 MB) breakdown**:
+- Settlement model name table at start (~few KB)
+- Lua persistent counters at ~0x4326450 (small region, ~1.4 KB — format_notes said 280KB which is wrong)
+- **Offset-index table at 0x43277ab..0x435086d (164 KB) with 26,631+ stride-6 entries**
+  (format_notes said 50-120 entries — also wrong, real count is 28,021)
+
+Each offset-index entry: `{u32 self_offset, u16 type_tag, [+ optional u32s]}`. Type 0 (just self+type) is stride-6, type 1 is stride-14, type 2 is stride-22. Counts pointing somewhere:
+- 227 entries point into sec[1]
+- 106 entries point into the dead-pool region specifically
+- 18,910 entries point to positions AFTER the splice point
+
+### What's actually iterated by the engine
+
+Per the message log analysis: engine reaches \"world map size 915592 in
+save game\" then crashes with \"Unknown format % at formatting[568]\" /
+\"min <= max Failed\" / infinite \"next < buffer_end Failed\" loop.
+
+That `formatting[568]` index is interesting — 568 might correlate with
+LIVING character count (3,473 + ... = could be in that range). Worth
+investigating when D12 is tested.
+
+### Original breakthrough (kept for context)
 
 Each dead record carries a **u32 self-pointer at relative offset (pathLen + 9)** whose value equals (record_start + pathLen + 9). Verified across **100% of 21,762 records.**
 
