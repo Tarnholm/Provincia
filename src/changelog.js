@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.670",
+    date: "2026-05-27",
+    items: [
+      { type: "change", text: "**Scripts > starting_treasury.py:** reverted to the simple `5000 + 500 × settlements` formula (no tier scaling). Preserves slave and dummies at their canonical -50000 / -50000. All other factions including emergent/rebel ones (egypt, greeks, lycia, chrysaoria, ptolemaic_rebels, seleucid_rebels, seleucid_rebels2) now follow the formula." },
+      { type: "fix", text: "**Scripts > Changelogs panel:** faction-keyed changelogs (starting_treasury, port_mercenaries) now render correctly — previously the settlement-only parser silently dropped every row of starting_treasury's output, showing \"No changes found\" even when 7+ factions were rewritten. Also strips `[CHANGED]`/`[ADDED]`/`[REMOVED]`/`[UPDATED]` line prefixes (used by temples.py) so those entries don't vanish either." },
+    ],
+  },
+  {
     version: "0.9.669",
     date: "2026-05-27",
     items: [

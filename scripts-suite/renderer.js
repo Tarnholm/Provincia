@@ -771,11 +771,20 @@ async function loadChangelogs() {
     'port_mercenaries': 'Port Mercenaries',
   };
 
-  // Separate mercenary changelog files from settlement changelog files
+  // Split changelog files by how they should be rendered:
+  // - factionFiles: line-by-line, "Name: change" format. For scripts whose
+  //   changelog rows are keyed by FACTION (starting_treasury) or by category
+  //   header (port_mercenaries) — NOT by settlement.
+  // - settlementFiles: grouped by settlement (the default). Parsed with the
+  //   regex ladder below; lines that don't match any pattern are silently
+  //   dropped, which is why faction-keyed lines used to show as "No changes
+  //   found" even when the script wrote rows.
+  const FACTION_KEYED = ['port_mercenaries', 'starting_treasury'];
   const mercFiles = [];
   const settlementFiles = [];
   for (const cf of changelogFiles) {
-    if (cf.path.toLowerCase().includes('port_mercenaries')) {
+    const lower = cf.path.toLowerCase();
+    if (FACTION_KEYED.some(key => lower.includes(key))) {
       mercFiles.push(cf);
     } else {
       settlementFiles.push(cf);
@@ -794,8 +803,12 @@ async function loadChangelogs() {
     }
 
     for (const line of content.split('\n')) {
-      const trimmed = line.trim();
+      let trimmed = line.trim();
       if (!trimmed || trimmed.startsWith('===') || trimmed.startsWith('---')) continue;
+      // Strip optional status prefix some scripts use (temples.py emits
+      // `[CHANGED] city (region): ...`). Without this strip the leading `[`
+      // bypasses every settlement-name regex below and the entry vanishes.
+      trimmed = trimmed.replace(/^\[(?:CHANGED|ADDED|REMOVED|UPDATED)\]\s*/i, '');
 
       let settlement = null;
       let change = trimmed;
