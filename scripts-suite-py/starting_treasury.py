@@ -29,9 +29,15 @@ KEEP = {
     "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
 }
 BASE_DENARI = 5000
-PER_TIER = 500     # money per effective tier (after bump) per settlement
-BUMP = 2           # suite-wide "bump of 2": village/town/large_town count 0,
-                   # city = tier 1, large_city = 2, huge_city = 3.
+PER_TIER = 275     # money per tier-point summed across all settlements. Calibrated
+                   # against seleucid's RIS imperial loadout (115 settlements, raw
+                   # tier-sum 225) → ~67k denari. User's target was "around 65k"
+                   # for seleucid as the peer empire at start of imperial campaign.
+BUMP = 0           # how much to subtract from each settlement's raw tier before
+                   # contributing. 0 = every non-village settlement counts at its
+                   # raw tier (town=1, large_town=2, city=3, large_city=4,
+                   # huge_city=5). Bump=2 was too aggressive — it floored 78% of
+                   # seleucid's empire (town+large_town) at zero contribution.
 
 # Settlement-level → raw tier (same convention as the other suite scripts).
 LEVEL_TO_TIER = {

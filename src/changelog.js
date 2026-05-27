@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.669",
+    date: "2026-05-27",
+    items: [
+      { type: "fix", text: "**Scripts > starting_treasury.py:** drop BUMP from 2 to 0 (every non-village settlement now contributes), bump PER_TIER from 500 to 275. The previous bump=2 floored 78% of seleucid's 115-settlement empire (their 41 town + 49 large_town settlements) at zero contribution; the new formula calibrates against seleucid's RIS imperial loadout to land at ~67k (was 62.5k vanilla, user's target ~65k). Numbers across all factions now stay near-vanilla rather than crashing." },
+    ],
+  },
+  {
     version: "0.9.668",
     date: "2026-05-27",
     items: [
