@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.668",
+    date: "2026-05-27",
+    items: [
+      { type: "fix", text: "**save-to-descr-strat: guarantee a `core_building` entry on every emitted settlement.** RTW requires every settlement to have a core_building — without one the engine refuses to load the descr_strat. 348 placeholder slave-owned settlements (mod regions not covered by the save) were being emitted without one, plus any save record whose core_building entry didn't parse. Now injects a level-appropriate default (governors_house through huge_city palace) when missing." },
+    ],
+  },
+  {
     version: "0.9.667",
     date: "2026-05-27",
     items: [

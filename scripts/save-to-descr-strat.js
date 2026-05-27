@@ -516,6 +516,7 @@ function emitSettlement(s, factionId, chainLevels, originalCreator, populationBy
       queuedByChain.set(q.name, q.percent);
     }
   }
+  let emittedCoreBuilding = false;
   for (const b of s.buildings) {
     const levelNames = chainLevels[b.name];
     let effectiveLevel = b.level;
@@ -530,9 +531,28 @@ function emitSettlement(s, factionId, chainLevels, originalCreator, populationBy
     } else {
       levelName = `level_${effectiveLevel ?? "?"}`;
     }
+    if (b.name === "core_building") emittedCoreBuilding = true;
     lines.push(`\tbuilding`);
     lines.push(`\t{`);
     lines.push(`\t\ttype ${b.name} ${levelName}`);
+    lines.push(`\t}`);
+  }
+  // RTW REQUIRES every settlement to have a `core_building`. Placeholder
+  // settlements (mod regions not covered by the save) and any save record
+  // whose core_building entry didn't parse won't have one — inject the
+  // level-appropriate default. Without this the engine refuses to load
+  // the descr_strat (silently for some campaigns, hard-crash for others).
+  if (!emittedCoreBuilding) {
+    const coreLevels = chainLevels["core_building"];
+    const tierMap = { village: 0, town: 1, large_town: 2, minor_city: 3, city: 3, large_city: 4, huge_city: 5 };
+    const tier = tierMap[level] ?? 0;
+    let coreLevelName = "governors_house";
+    if (coreLevels && coreLevels.length > 0) {
+      coreLevelName = coreLevels[Math.min(tier, coreLevels.length - 1)];
+    }
+    lines.push(`\tbuilding`);
+    lines.push(`\t{`);
+    lines.push(`\t\ttype core_building ${coreLevelName}`);
     lines.push(`\t}`);
   }
   lines.push("}");

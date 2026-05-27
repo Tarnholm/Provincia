@@ -1,7 +1,7 @@
 ;
 ; Auto-generated descr_strat.txt from a save file.
 ; Source save: save_Autosave   Bactria   Turn 964.sav
-; Generated:   2026-05-27T18:24:13.947Z
+; Generated:   2026-05-27T19:06:15.354Z
 ;
 ; This is the 'Continue Campaign as New Campaign' artefact: the engine's
 ; entity registry restarts at 0 when this file is loaded as a fresh
@@ -72750,6 +72750,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator taras
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72759,6 +72763,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72768,6 +72776,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator samnites
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72777,6 +72789,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator messapians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72786,6 +72802,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lucanians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72795,6 +72815,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator samnites
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72804,6 +72828,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator samnites
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72813,6 +72841,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator samnites
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72822,6 +72854,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72831,6 +72867,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sidon
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72840,6 +72880,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72849,6 +72893,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72858,6 +72906,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator capua
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72867,6 +72919,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sardinians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72876,6 +72932,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator corsi
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72885,6 +72945,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72894,6 +72958,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72903,6 +72971,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator masaesyli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72912,6 +72984,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sidon
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72921,6 +72997,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator musulamii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72930,6 +73010,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator musulamii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72939,6 +73023,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator timbuktu
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72948,6 +73036,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator timbuktu
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72957,6 +73049,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator timbuktu
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72966,6 +73062,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72975,6 +73075,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72984,6 +73088,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sidon
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -72993,6 +73101,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73002,6 +73114,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73011,6 +73127,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sidon
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73020,6 +73140,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73029,6 +73153,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73038,6 +73166,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sidon
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73047,6 +73179,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nasamones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73056,6 +73192,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73065,6 +73205,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73074,6 +73218,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator garamantes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73083,6 +73231,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73092,6 +73244,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73101,6 +73257,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73110,6 +73270,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73119,6 +73283,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73128,6 +73296,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator axum
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73137,6 +73309,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73146,6 +73322,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73155,6 +73335,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73164,6 +73348,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73173,6 +73361,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73182,6 +73374,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73191,6 +73387,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73200,6 +73400,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73209,6 +73413,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73218,6 +73426,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73227,6 +73439,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arevaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73236,6 +73452,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73245,6 +73465,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73254,6 +73478,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vascones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73263,6 +73491,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73272,6 +73504,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73281,6 +73517,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73290,6 +73530,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sidon
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73299,6 +73543,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator celtici
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73308,6 +73556,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vaccaei
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73317,6 +73569,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73326,6 +73582,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carpetani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73335,6 +73595,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vascones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73344,6 +73608,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arevaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73353,6 +73621,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vettones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73362,6 +73634,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73371,6 +73647,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73380,6 +73660,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73389,6 +73673,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73398,6 +73686,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73407,6 +73699,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vettones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73416,6 +73712,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73425,6 +73725,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator ilergetes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73434,6 +73738,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73443,6 +73751,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lusitani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73452,6 +73764,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator basti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73461,6 +73777,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arverni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73470,6 +73790,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osismii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73479,6 +73803,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aulerci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73488,6 +73816,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nervii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73497,6 +73829,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator veneti_gallia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73506,6 +73842,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73515,6 +73855,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aulerci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73524,6 +73868,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belgae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73533,6 +73881,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belgae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73542,6 +73894,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belgae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73551,6 +73907,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73560,6 +73920,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73569,6 +73933,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73578,6 +73946,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73587,6 +73959,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73596,6 +73972,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73605,6 +73985,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73614,6 +73998,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73623,6 +74011,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bituriges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73632,6 +74024,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73641,6 +74037,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nervii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73650,6 +74050,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bituriges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73659,6 +74063,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73668,6 +74076,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator salluvii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73677,6 +74089,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sequani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73686,6 +74102,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73695,6 +74115,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73704,6 +74128,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73713,6 +74141,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator senones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73722,6 +74154,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator senones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73731,6 +74167,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73740,6 +74180,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73749,6 +74193,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73758,6 +74206,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73767,6 +74219,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nervii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73776,6 +74232,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nervii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73785,6 +74245,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nervii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73794,6 +74258,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sotiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73803,6 +74271,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sotiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73812,6 +74284,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sotiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73821,6 +74297,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sotiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73830,6 +74310,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sotiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73839,6 +74323,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator salluvii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73848,6 +74336,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator apuani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73857,6 +74349,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator apuani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73866,6 +74362,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator apuani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73875,6 +74375,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator volsinii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73884,6 +74388,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator veneti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73893,6 +74401,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73902,6 +74414,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73911,6 +74427,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vindelici
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73920,6 +74440,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator breuni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73929,6 +74453,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator breuni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73938,6 +74466,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73947,6 +74479,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73956,6 +74492,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator volcae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73965,6 +74505,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator helvetii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73974,6 +74518,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator trinovantes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73983,6 +74531,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator dumnonii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -73992,6 +74544,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74001,6 +74557,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74010,6 +74570,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74019,6 +74583,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74028,6 +74596,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator durotriges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74037,6 +74609,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74046,6 +74622,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74055,6 +74635,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74064,6 +74648,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator catuvellauni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74073,6 +74661,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator durotriges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74082,6 +74674,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator dumnonii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74091,6 +74687,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74100,6 +74700,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74109,6 +74713,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74118,6 +74726,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74127,6 +74739,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74136,6 +74752,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74145,6 +74765,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74154,6 +74778,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74163,6 +74791,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74172,6 +74804,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator brigantes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74181,6 +74817,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator trinovantes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74190,6 +74830,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74199,6 +74843,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iverni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74208,6 +74856,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator marcomanni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74217,6 +74869,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator gauts
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74226,6 +74882,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator hermunduri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74235,6 +74895,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator quadi
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74244,6 +74908,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74253,6 +74921,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74262,6 +74934,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator gauts
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74271,6 +74947,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74280,6 +74960,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74289,6 +74973,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74298,6 +74986,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74307,6 +74999,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74316,6 +75012,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74325,6 +75025,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74334,6 +75038,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74343,6 +75051,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74352,6 +75064,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator chatti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74361,6 +75077,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74370,6 +75090,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74379,6 +75103,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator gauts
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74388,6 +75116,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74397,6 +75129,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74406,6 +75142,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74415,6 +75155,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74424,6 +75168,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74433,6 +75181,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74442,6 +75194,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74451,6 +75207,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74460,6 +75220,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74469,6 +75233,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74478,6 +75246,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74487,6 +75259,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74496,6 +75272,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74505,6 +75285,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74514,6 +75298,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74523,6 +75311,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74532,6 +75324,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74541,6 +75337,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74550,6 +75350,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74559,6 +75363,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74568,6 +75376,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74577,6 +75389,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator scordisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74586,6 +75402,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74595,6 +75415,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator taurisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74604,6 +75428,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator eravisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74613,6 +75441,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator labeatae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74622,6 +75454,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator labeatae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74631,6 +75467,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator dardania
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74640,6 +75480,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator dardania
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74649,6 +75493,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator liburni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74658,6 +75506,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator issa
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74667,6 +75519,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator labeatae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74676,6 +75532,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74685,6 +75545,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator labeatae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74694,6 +75558,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator labeatae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74703,6 +75571,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator ardiaei
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74712,6 +75584,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74721,6 +75597,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator paeonia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74730,6 +75610,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator dentheletae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74739,6 +75623,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bessi
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74748,6 +75636,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator triballi
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74757,6 +75649,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator odrysians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74766,6 +75662,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator dentheletae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74775,6 +75675,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74784,6 +75688,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74793,6 +75701,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74802,6 +75714,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bessi
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74811,6 +75727,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74820,6 +75740,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74829,6 +75753,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator triballi
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74838,6 +75766,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74847,6 +75779,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74856,6 +75792,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74865,6 +75805,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74874,6 +75818,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74883,6 +75831,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74892,6 +75844,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator teurisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74901,6 +75857,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74910,6 +75870,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74919,6 +75883,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator ambrones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74928,6 +75896,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74937,6 +75909,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator costoboci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74946,6 +75922,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74955,6 +75935,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74964,6 +75948,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator anartes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74973,6 +75961,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator eravisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74982,6 +75974,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator teurisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -74991,6 +75987,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator antigonid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75000,6 +76000,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75009,6 +76013,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75018,6 +76026,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator epirus
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75027,6 +76039,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75036,6 +76052,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asti
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75045,6 +76065,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator paeonia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75054,6 +76078,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator antigonid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75063,6 +76091,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75072,6 +76104,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75081,6 +76117,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75090,6 +76130,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator achaea
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75099,6 +76143,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator athens
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75108,6 +76156,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator athens
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75117,6 +76169,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75126,6 +76182,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bosporan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75135,6 +76195,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator siraces
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75144,6 +76208,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75153,6 +76221,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75162,6 +76234,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bosporan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75171,6 +76247,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75180,6 +76260,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75189,6 +76273,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator royal_sarmatians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75198,6 +76286,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator histria
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75207,6 +76299,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75216,6 +76312,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75225,6 +76325,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75234,6 +76338,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75243,6 +76351,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator royal_scythians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75252,6 +76364,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cyzicus
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75261,6 +76377,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75270,6 +76390,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75279,6 +76403,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75288,6 +76416,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75297,6 +76429,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75306,6 +76442,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75315,6 +76455,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75324,6 +76468,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator chrysaoria
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75333,6 +76481,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75342,6 +76494,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75351,6 +76507,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75360,6 +76520,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75369,6 +76533,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lycia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75378,6 +76546,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator galatians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75387,6 +76559,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator pontus
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75396,6 +76572,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sparta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75405,6 +76585,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator trapezus
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75414,6 +76598,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cilicians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75423,6 +76611,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator armenia_minor
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75432,6 +76624,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator armenia_minor
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75441,6 +76637,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator gades
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75450,6 +76650,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75459,6 +76663,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator egypt
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75468,6 +76676,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arados
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75477,6 +76689,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator ptolemaic_rebels
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75486,6 +76702,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75495,6 +76715,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75504,6 +76728,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cyrene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75513,6 +76741,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75522,6 +76754,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator ptolemaic
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75531,6 +76767,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75540,6 +76780,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75549,6 +76793,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator egypt
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75558,6 +76806,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator egypt
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75567,6 +76819,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75576,6 +76832,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cyrene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75585,6 +76845,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator axum
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75594,6 +76858,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator axum
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75603,6 +76871,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator axum
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75612,6 +76884,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator palmyra
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75621,6 +76897,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lihyan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75630,6 +76910,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lihyan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75639,6 +76923,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lihyan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75648,6 +76936,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator minaeans
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75657,6 +76949,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator gerrha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75666,6 +76962,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator minaeans
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75675,6 +76975,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lihyan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75684,6 +76988,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lihyan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75693,6 +77001,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75702,6 +77014,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator armenia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75711,6 +77027,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iberians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75720,6 +77040,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iberians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75729,6 +77053,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sophene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75738,6 +77066,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75747,6 +77079,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator armenia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75756,6 +77092,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iberians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75765,6 +77105,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator armenia_minor
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75774,6 +77118,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator colchians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75783,6 +77131,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator albanians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75792,6 +77144,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator armenia_minor
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75801,6 +77157,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mossynoeci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75810,6 +77170,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75819,6 +77183,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75828,6 +77196,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75837,6 +77209,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75846,6 +77222,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75855,6 +77235,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lihyan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75864,6 +77248,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lihyan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75873,6 +77261,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75882,6 +77274,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75891,6 +77287,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75900,6 +77300,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75909,6 +77313,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75918,6 +77326,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75927,6 +77339,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75936,6 +77352,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75945,6 +77365,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75954,6 +77378,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75963,6 +77391,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75972,6 +77404,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75981,6 +77417,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75990,6 +77430,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -75999,6 +77443,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bactria
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76008,6 +77456,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76017,6 +77469,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator chorasmia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76026,6 +77482,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76035,6 +77495,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76044,6 +77508,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76053,6 +77521,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76062,6 +77534,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76071,6 +77547,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76080,6 +77560,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76089,6 +77573,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76098,6 +77586,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76107,6 +77599,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator roman_rebels_1
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76116,6 +77612,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator roman_rebels_2
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76125,6 +77625,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76134,6 +77638,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76143,6 +77651,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76152,6 +77664,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cilicians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76161,6 +77677,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76170,6 +77690,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76179,6 +77703,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76188,6 +77716,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator armenia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76197,6 +77729,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saka
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -76206,6 +77742,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator roman_senate
+	building
+	{
+		type core_building governors_villa
+	}
 }
 character	Bagasis Virno, named_character, leader, age 52, , x 278, y 427
 traits FasterCharacters 1, DramasFanGreekVice 1, Leading_Picente 1, Nauarchos_Ptolemaic 1

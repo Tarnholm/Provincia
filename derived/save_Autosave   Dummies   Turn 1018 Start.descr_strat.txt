@@ -1,7 +1,7 @@
 ;
 ; Auto-generated descr_strat.txt from a save file.
 ; Source save: save_Autosave   Dummies   Turn 1018 Start.sav
-; Generated:   2026-05-27T18:24:21.279Z
+; Generated:   2026-05-27T19:06:22.441Z
 ;
 ; This is the 'Continue Campaign as New Campaign' artefact: the engine's
 ; entity registry restarts at 0 when this file is loaded as a fresh
@@ -17,8 +17,8 @@
 ; Stats:
 ;   239 factions emitted
 ;   1476 settlements (with buildings + inferred levels)
-;   1172 living characters (69 skipped: no position)
-;   764 units across army blocks
+;   1173 living characters (69 skipped: no position)
+;   765 units across army blocks
 ;   4 family-tree character_record lines
 ;   26 relative-link lines
 ;
@@ -36,6 +36,46 @@
 ;   - Real current treasury for 227 factions (vs bundled-starting denari)
 ;   - Religion data for 1036 settlements (not emitted yet — needs further mapping to descr_strat syntax)
 ;   - 435 v2 character records (non-general roles: females, diplomats, spies, etc.)
+;
+
+;
+; Auto-generated descr_strat.txt from a save file.
+; Source save: save_item limit bug.sav
+; Generated:   2026-05-27T18:24:45.572Z
+;
+; This is the 'Continue Campaign as New Campaign' artefact: the engine's
+; entity registry restarts at 0 when this file is loaded as a fresh
+; campaign, sidestepping the 65,536-slot cap that would otherwise crash
+; the source save's late-game state.
+;
+; Per-faction blocks (settlements + characters + armies + family records)
+; were generated from the save. The HEADER (campaign declaration, playable
+; lists, date, landmarks, resources) and TAIL (faction_aggression, regions,
+; spawn scripts, background script reference) are copied verbatim from the
+; bundled descr_strat template.
+;
+; Stats:
+;   239 factions emitted
+;   1476 settlements (with buildings + inferred levels)
+;   1163 living characters (78 skipped: no position)
+;   769 units across army blocks
+;   4 family-tree character_record lines
+;   26 relative-link lines
+;
+; Known gaps that COULD NOT be extracted from this save:
+;   - Diplomatic relations: parseDiplomacyMatrix couldn't locate the matrix
+;     in this save (matrix locator works on some saves but not all RIS
+;     formats). Engine will pick defaults from descr_strat faction_agression.
+;   - Female characters' full data: parseCharacterExtras found 439
+;     v2 records but they don't carry names — so they can only inform the
+;     family tree count, not produce character_record lines.
+;   - In-progress building queues (only completed buildings carry over).
+;   - Campaign script state (Lua counters reset; intro events may re-fire).
+;
+; Things WE DID extract from the save:
+;   - Real current treasury for 227 factions (vs bundled-starting denari)
+;   - Religion data for 1038 settlements (not emitted yet — needs further mapping to descr_strat syntax)
+;   - 439 v2 character records (non-general roles: females, diplomats, spies, etc.)
 ;
 
 ;
@@ -6464,6 +6504,1021 @@ resource        slaves,                     1,           1013,  561     ; Eremos
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; >>>> start of factions section <<<<
 
+; --- diplomatic_stance pairs extracted from the save ---
+diplomatic_stance romans_julii apuani war
+diplomatic_stance romans_julii buri war
+diplomatic_stance romans_julii capua war
+diplomatic_stance romans_julii corsi war
+diplomatic_stance romans_julii insubres war
+diplomatic_stance romans_julii issa war
+diplomatic_stance romans_julii liburni war
+diplomatic_stance romans_julii lucanians war
+diplomatic_stance romans_julii marcomanni war
+diplomatic_stance romans_julii messene war
+diplomatic_stance romans_julii priene war
+diplomatic_stance romans_julii samnites war
+diplomatic_stance romans_julii sardinians war
+diplomatic_stance romans_julii taurisci war
+diplomatic_stance romans_julii veneti war
+diplomatic_stance romans_julii volsinii war
+diplomatic_stance roman_rebels_2 apuani war
+diplomatic_stance roman_rebels_2 buri war
+diplomatic_stance roman_rebels_2 capua war
+diplomatic_stance roman_rebels_2 corsi war
+diplomatic_stance roman_rebels_2 insubres war
+diplomatic_stance roman_rebels_2 issa war
+diplomatic_stance roman_rebels_2 liburni war
+diplomatic_stance roman_rebels_2 lucanians war
+diplomatic_stance roman_rebels_2 marcomanni war
+diplomatic_stance roman_rebels_2 messene war
+diplomatic_stance roman_rebels_2 priene war
+diplomatic_stance roman_rebels_2 samnites war
+diplomatic_stance roman_rebels_2 sardinians war
+diplomatic_stance roman_rebels_2 taurisci war
+diplomatic_stance roman_rebels_2 veneti war
+diplomatic_stance roman_rebels_2 volsinii war
+diplomatic_stance roman_senate apuani war
+diplomatic_stance roman_senate buri war
+diplomatic_stance roman_senate capua war
+diplomatic_stance roman_senate corsi war
+diplomatic_stance roman_senate insubres war
+diplomatic_stance roman_senate issa war
+diplomatic_stance roman_senate liburni war
+diplomatic_stance roman_senate lucanians war
+diplomatic_stance roman_senate marcomanni war
+diplomatic_stance roman_senate messene war
+diplomatic_stance roman_senate priene war
+diplomatic_stance roman_senate samnites war
+diplomatic_stance roman_senate sardinians war
+diplomatic_stance roman_senate taurisci war
+diplomatic_stance roman_senate veneti war
+diplomatic_stance roman_senate volsinii war
+diplomatic_stance carthage acragas war
+diplomatic_stance carthage buri war
+diplomatic_stance carthage cyrene war
+diplomatic_stance carthage mauri war
+diplomatic_stance carthage nabataea war
+diplomatic_stance carthage nervii war
+diplomatic_stance carthage sardinians war
+diplomatic_stance carthage syracuse war
+diplomatic_stance carthage cappadocia allied
+diplomatic_stance carthage lucanians allied
+diplomatic_stance carthage marcomanni allied
+diplomatic_stance carthage samnites allied
+diplomatic_stance carthage volsinii allied
+diplomatic_stance antigonid athens war
+diplomatic_stance antigonid boeotia war
+diplomatic_stance antigonid epirus war
+diplomatic_stance antigonid maedi war
+diplomatic_stance antigonid palmyra war
+diplomatic_stance antigonid sparta war
+diplomatic_stance antigonid seleucid_rebels war
+diplomatic_stance antigonid seleucid allied
+diplomatic_stance antigonid argos allied
+diplomatic_stance antigonid dentheletae allied
+diplomatic_stance antigonid elis allied
+diplomatic_stance antigonid illyrian_kingdom allied
+diplomatic_stance antigonid messapians allied
+diplomatic_stance antigonid persis allied
+diplomatic_stance antigonid scythians allied
+diplomatic_stance ptolemaic seleucid war
+diplomatic_stance ptolemaic arados war
+diplomatic_stance ptolemaic chios war
+diplomatic_stance ptolemaic egypt war
+diplomatic_stance ptolemaic gerrha war
+diplomatic_stance ptolemaic lihyan war
+diplomatic_stance ptolemaic lyttos war
+diplomatic_stance ptolemaic nasamones war
+diplomatic_stance ptolemaic selge war
+diplomatic_stance ptolemaic thamud war
+diplomatic_stance ptolemaic tyre war
+diplomatic_stance ptolemaic ptolemaic_rebels war
+diplomatic_stance ptolemaic achaea allied
+diplomatic_stance ptolemaic athens allied
+diplomatic_stance ptolemaic axum allied
+diplomatic_stance ptolemaic greeks allied
+diplomatic_stance ptolemaic hadhramaut allied
+diplomatic_stance ptolemaic iberians allied
+diplomatic_stance ptolemaic massalia allied
+diplomatic_stance ptolemaic minaeans allied
+diplomatic_stance ptolemaic mossynoeci allied
+diplomatic_stance ptolemaic nabataea allied
+diplomatic_stance ptolemaic nervii allied
+diplomatic_stance ptolemaic paphlagonia allied
+diplomatic_stance ptolemaic quadi allied
+diplomatic_stance seleucid albanians war
+diplomatic_stance seleucid cius war
+diplomatic_stance seleucid cyzicus war
+diplomatic_stance seleucid galatians war
+diplomatic_stance seleucid sophene war
+diplomatic_stance seleucid tyre war
+diplomatic_stance seleucid seleucid_rebels war
+diplomatic_stance seleucid seleucid_rebels2 war
+diplomatic_stance seleucid parni allied
+diplomatic_stance seleucid saka allied
+diplomatic_stance seleucid armenia_minor allied
+diplomatic_stance seleucid atropatene allied
+diplomatic_stance seleucid bithynia allied
+diplomatic_stance seleucid chios allied
+diplomatic_stance seleucid cyrene allied
+diplomatic_stance seleucid lysiad allied
+diplomatic_stance seleucid musulamii allied
+diplomatic_stance seleucid olbia allied
+diplomatic_stance seleucid pentapolis allied
+diplomatic_stance seleucid picentes allied
+diplomatic_stance seleucid rhodes allied
+diplomatic_stance seleucid siraces allied
+diplomatic_stance bactria parni war
+diplomatic_stance bactria arshi war
+diplomatic_stance bactria chorasmia war
+diplomatic_stance bactria kucha war
+diplomatic_stance bactria armenia allied
+diplomatic_stance bactria bithynia allied
+diplomatic_stance bactria characene allied
+diplomatic_stance bactria lysiad allied
+diplomatic_stance bactria megalopolis allied
+diplomatic_stance bactria qataban allied
+diplomatic_stance parni saka allied
+diplomatic_stance parni arshi allied
+diplomatic_stance parni chorasmia allied
+diplomatic_stance parni cyzicus allied
+diplomatic_stance parni iberians allied
+diplomatic_stance parni pentapolis allied
+diplomatic_stance saka indians war
+diplomatic_stance saka chorasmia allied
+diplomatic_stance armenia atropatene war
+diplomatic_stance armenia cappadocia allied
+diplomatic_stance armenia galatians allied
+diplomatic_stance armenia gerrha allied
+diplomatic_stance armenia iberians allied
+diplomatic_stance armenia sophene allied
+diplomatic_stance pontus armenia_minor war
+diplomatic_stance pontus persis war
+diplomatic_stance pontus sinope war
+diplomatic_stance pontus musulamii allied
+diplomatic_stance pontus pentapolis allied
+diplomatic_stance pontus trapezus allied
+diplomatic_stance lusitani vettones war
+diplomatic_stance lusitani astures allied
+diplomatic_stance lusitani vaccaei allied
+diplomatic_stance getae triballi war
+diplomatic_stance getae seleucid_rebels war
+diplomatic_stance getae dardania allied
+diplomatic_stance getae epirus allied
+diplomatic_stance getae histria allied
+diplomatic_stance getae pergamon allied
+diplomatic_stance acarnania achaea war
+diplomatic_stance acarnania athens war
+diplomatic_stance acarnania epirus war
+diplomatic_stance acarnania ardiaei allied
+diplomatic_stance acarnania boeotia allied
+diplomatic_stance acarnania issa allied
+diplomatic_stance acarnania triballi allied
+diplomatic_stance acarnania tyragetae allied
+diplomatic_stance acarnania seleucid_rebels allied
+diplomatic_stance achaea aetolia war
+diplomatic_stance achaea elis war
+diplomatic_stance achaea epirus allied
+diplomatic_stance achaea greeks allied
+diplomatic_stance achaea sparta allied
+diplomatic_stance acragas capua allied
+diplomatic_stance acragas celtici allied
+diplomatic_stance acragas nabataea allied
+diplomatic_stance acragas volsinii allied
+diplomatic_stance aedui allobroges war
+diplomatic_stance aedui sequani war
+diplomatic_stance aedui treveri war
+diplomatic_stance aedui arverni allied
+diplomatic_stance aedui belgae allied
+diplomatic_stance aedui boii allied
+diplomatic_stance aedui vascones allied
+diplomatic_stance aetolia athens war
+diplomatic_stance aetolia elis war
+diplomatic_stance aetolia illyrian_kingdom allied
+diplomatic_stance aetolia seleucid_rebels allied
+diplomatic_stance albanians bosporan war
+diplomatic_stance albanians aorsi allied
+diplomatic_stance albanians iberians allied
+diplomatic_stance albanians ordovices allied
+diplomatic_stance albanians pergamon allied
+diplomatic_stance allobroges arverni war
+diplomatic_stance allobroges salassi war
+diplomatic_stance allobroges aulerci allied
+diplomatic_stance allobroges cadurci allied
+diplomatic_stance allobroges cenomani allied
+diplomatic_stance allobroges helvetii allied
+diplomatic_stance ambrones costoboci war
+diplomatic_stance ambrones bastarnae allied
+diplomatic_stance ambrones chatti allied
+diplomatic_stance ambrones suebi allied
+diplomatic_stance ambrones taurisci allied
+diplomatic_stance anartes costoboci war
+diplomatic_stance anartes eravisci war
+diplomatic_stance anartes rhaetians allied
+diplomatic_stance anartes taurisci allied
+diplomatic_stance anartes volcae allied
+diplomatic_stance aorsi bosporan war
+diplomatic_stance aorsi royal_sarmatians war
+diplomatic_stance aorsi roman_rebels_1 war
+diplomatic_stance aorsi siraces allied
+diplomatic_stance aorsi venedae allied
+diplomatic_stance apuani insubres war
+diplomatic_stance apuani sardinians allied
+diplomatic_stance arados chios allied
+diplomatic_stance arados sidon allied
+diplomatic_stance ardiaei epirus war
+diplomatic_stance ardiaei illyrian_kingdom war
+diplomatic_stance ardiaei labeatae war
+diplomatic_stance ardiaei daesitiates allied
+diplomatic_stance ardiaei triballi allied
+diplomatic_stance arevaci carpetani war
+diplomatic_stance arevaci celtici war
+diplomatic_stance arevaci gallaeci war
+diplomatic_stance arevaci astures allied
+diplomatic_stance arevaci bituriges allied
+diplomatic_stance arevaci edeta allied
+diplomatic_stance arevaci gades allied
+diplomatic_stance arevaci osismii allied
+diplomatic_stance arevaci veneti_gallia allied
+diplomatic_stance argos athens war
+diplomatic_stance argos miletus war
+diplomatic_stance armenia_minor trapezus war
+diplomatic_stance armenia_minor atropatene allied
+diplomatic_stance armenia_minor bosporan allied
+diplomatic_stance armenia_minor cappadocia allied
+diplomatic_stance armenia_minor musulamii allied
+diplomatic_stance armenia_minor persis allied
+diplomatic_stance arse celtici war
+diplomatic_stance arse astures allied
+diplomatic_stance arse belli allied
+diplomatic_stance arse bituriges allied
+diplomatic_stance arse gades allied
+diplomatic_stance arse ilergetes allied
+diplomatic_stance arse ilici allied
+diplomatic_stance arse vascones allied
+diplomatic_stance arse veneti_gallia allied
+diplomatic_stance arshi kucha allied
+diplomatic_stance arverni bituriges war
+diplomatic_stance arverni massylii war
+diplomatic_stance arverni senones war
+diplomatic_stance arverni celtici allied
+diplomatic_stance arverni eburones allied
+diplomatic_stance arverni helvetii allied
+diplomatic_stance arverni ilergetes allied
+diplomatic_stance arverni veneti_gallia allied
+diplomatic_stance arverni volcae_gallia allied
+diplomatic_stance asta carmo war
+diplomatic_stance asta celtici war
+diplomatic_stance asta osismii war
+diplomatic_stance asta carpetani allied
+diplomatic_stance asta mauryan allied
+diplomatic_stance asta nabataea allied
+diplomatic_stance asta nervii allied
+diplomatic_stance asta sardinians allied
+diplomatic_stance asta syracuse allied
+diplomatic_stance asti cabyle war
+diplomatic_stance asti pergamon war
+diplomatic_stance asti byzantium allied
+diplomatic_stance asti tylis allied
+diplomatic_stance astures celtici war
+diplomatic_stance astures vettones war
+diplomatic_stance athens boeotia war
+diplomatic_stance athens elis war
+diplomatic_stance athens knossos war
+diplomatic_stance athens miletus war
+diplomatic_stance athens rhodes war
+diplomatic_stance athens sparta war
+diplomatic_stance athens dardania allied
+diplomatic_stance athens greeks allied
+diplomatic_stance athens minaeans allied
+diplomatic_stance athens palmyra allied
+diplomatic_stance atropatene iberians war
+diplomatic_stance atropatene royal_sarmatians allied
+diplomatic_stance atropatene royal_scythians allied
+diplomatic_stance atropatene siraces allied
+diplomatic_stance aulerci veneti_gallia war
+diplomatic_stance aulerci cadurci allied
+diplomatic_stance axum kush war
+diplomatic_stance axum saba allied
+diplomatic_stance bastarnae costoboci war
+diplomatic_stance bastarnae gauts war
+diplomatic_stance bastarnae lugii war
+diplomatic_stance bastarnae chatti allied
+diplomatic_stance bastarnae langobardi allied
+diplomatic_stance bastarnae masaesyli allied
+diplomatic_stance basti ilici war
+diplomatic_stance basti osismii war
+diplomatic_stance basti celtici allied
+diplomatic_stance belgae senones war
+diplomatic_stance belgae bituriges allied
+diplomatic_stance belgae sugambri allied
+diplomatic_stance belli celtici war
+diplomatic_stance belli edeta war
+diplomatic_stance belli osismii war
+diplomatic_stance belli gades allied
+diplomatic_stance belli lacetani allied
+diplomatic_stance belli massylii allied
+diplomatic_stance belli vettones allied
+diplomatic_stance bessi olbia war
+diplomatic_stance bessi seleucid_rebels war
+diplomatic_stance bessi dardania allied
+diplomatic_stance bessi epirus allied
+diplomatic_stance bessi maedi allied
+diplomatic_stance bessi persis allied
+diplomatic_stance bithynia heraclea_pontica war
+diplomatic_stance bithynia musulamii allied
+diplomatic_stance bithynia persis allied
+diplomatic_stance bituriges massylii war
+diplomatic_stance bituriges volcae_gallia war
+diplomatic_stance bituriges cadurci allied
+diplomatic_stance bituriges dumnonii allied
+diplomatic_stance bituriges insubres allied
+diplomatic_stance bituriges sugambri allied
+diplomatic_stance bituriges tencteri allied
+diplomatic_stance boeotia knossos war
+diplomatic_stance boeotia issa allied
+diplomatic_stance boeotia seleucid_rebels allied
+diplomatic_stance boii brigantes war
+diplomatic_stance boii eravisci war
+diplomatic_stance boii helvetii war
+diplomatic_stance boii odrysians war
+diplomatic_stance boii tencteri war
+diplomatic_stance boii cherusci allied
+diplomatic_stance boii histri allied
+diplomatic_stance boii insubres allied
+diplomatic_stance boii taurisci allied
+diplomatic_stance boii usipetes allied
+diplomatic_stance boii vindelici allied
+diplomatic_stance boii volcae allied
+diplomatic_stance bosporan chersonesus war
+diplomatic_stance bosporan iazyges war
+diplomatic_stance bosporan royal_sarmatians war
+diplomatic_stance bosporan colchians allied
+diplomatic_stance bosporan heniochi allied
+diplomatic_stance bosporan royal_scythians allied
+diplomatic_stance bosporan tyragetae allied
+diplomatic_stance brigantes cenomani war
+diplomatic_stance brigantes helvetii allied
+diplomatic_stance bruttians caledonii war
+diplomatic_stance bruttians iverni war
+diplomatic_stance bruttians oretani war
+diplomatic_stance bruttians silures war
+diplomatic_stance bruttians trinovantes war
+diplomatic_stance bruttians roman_rebels_1 war
+diplomatic_stance bruttians cantiaci allied
+diplomatic_stance bruttians catuvellauni allied
+diplomatic_stance buri marcomanni war
+diplomatic_stance buri massylii allied
+diplomatic_stance buri roman_rebels_1 allied
+diplomatic_stance byllis issa war
+diplomatic_stance byllis teurisci war
+diplomatic_stance byllis epirus allied
+diplomatic_stance byllis eravisci allied
+diplomatic_stance byllis labeatae allied
+diplomatic_stance byllis liburni allied
+diplomatic_stance byllis masaesyli allied
+diplomatic_stance byllis odrysians allied
+diplomatic_stance byllis olbia allied
+diplomatic_stance byllis salassi allied
+diplomatic_stance byllis tylis allied
+diplomatic_stance byllis volcae allied
+diplomatic_stance byzantium persis war
+diplomatic_stance byzantium crobyzi allied
+diplomatic_stance byzantium heraclea_pontica allied
+diplomatic_stance byzantium lysiad allied
+diplomatic_stance byzantium pentapolis allied
+diplomatic_stance byzantium sinope allied
+diplomatic_stance byzantium teurisci allied
+diplomatic_stance byzantium triballi allied
+diplomatic_stance byzantium seleucid_rebels allied
+diplomatic_stance cabyle pergamon war
+diplomatic_stance cabyle tylis war
+diplomatic_stance cabyle crobyzi allied
+diplomatic_stance cabyle seleucid_rebels allied
+diplomatic_stance cadurci senones war
+diplomatic_stance cadurci veneti_gallia war
+diplomatic_stance cadurci treveri allied
+diplomatic_stance caledonii catuvellauni allied
+diplomatic_stance cantabri celtici war
+diplomatic_stance cantabri ilergetes allied
+diplomatic_stance cantiaci dumnonii war
+diplomatic_stance cantiaci durotriges war
+diplomatic_stance cantiaci silures war
+diplomatic_stance cantiaci veneti_gallia allied
+diplomatic_stance cappadocia pentapolis war
+diplomatic_stance cappadocia sidon war
+diplomatic_stance cappadocia tyre war
+diplomatic_stance cappadocia roman_rebels_1 war
+diplomatic_stance cappadocia cius allied
+diplomatic_stance cappadocia colchians allied
+diplomatic_stance cappadocia heraclea_pontica allied
+diplomatic_stance cappadocia musulamii allied
+diplomatic_stance cappadocia sinope allied
+diplomatic_stance capua marcomanni war
+diplomatic_stance capua massylii allied
+diplomatic_stance carmo celtici war
+diplomatic_stance carpetani celtici war
+diplomatic_stance carpetani ilici allied
+diplomatic_stance carpetani vascones allied
+diplomatic_stance catuvellauni sugambri war
+diplomatic_stance catuvellauni oretani allied
+diplomatic_stance catuvellauni trinovantes allied
+diplomatic_stance celtici gades war
+diplomatic_stance celtici gallaeci war
+diplomatic_stance celtici ilici war
+diplomatic_stance celtici massylii war
+diplomatic_stance celtici osismii war
+diplomatic_stance celtici vaccaei war
+diplomatic_stance celtici vettones war
+diplomatic_stance celtici massalia allied
+diplomatic_stance celtici treveri allied
+diplomatic_stance cenomani histri war
+diplomatic_stance cenomani insubres war
+diplomatic_stance cenomani odrysians war
+diplomatic_stance cenomani salassi war
+diplomatic_stance cenomani taurisci war
+diplomatic_stance cenomani veneti war
+diplomatic_stance cenomani cisalpine_boii allied
+diplomatic_stance cenomani ingauni allied
+diplomatic_stance cenomani massylii allied
+diplomatic_stance cenomani scythians allied
+diplomatic_stance cenomani sequani allied
+diplomatic_stance cenomani tencteri allied
+diplomatic_stance cenomani teurisci allied
+diplomatic_stance characene cius allied
+diplomatic_stance characene heraclea_pontica allied
+diplomatic_stance characene paphlagonia allied
+diplomatic_stance characene picentes allied
+diplomatic_stance characene qataban allied
+diplomatic_stance chatti suebi war
+diplomatic_stance chatti ubii war
+diplomatic_stance chatti chauci allied
+diplomatic_stance chatti frisii allied
+diplomatic_stance chatti rhaetians allied
+diplomatic_stance chatti usipetes allied
+diplomatic_stance chatti volcae allied
+diplomatic_stance chauci cherusci war
+diplomatic_stance chauci langobardi war
+diplomatic_stance chauci suebi war
+diplomatic_stance chauci costoboci allied
+diplomatic_stance chauci hermunduri allied
+diplomatic_stance chauci masaesyli allied
+diplomatic_stance chauci massylii allied
+diplomatic_stance chauci sugambri allied
+diplomatic_stance chersonesus iazyges war
+diplomatic_stance chersonesus heniochi allied
+diplomatic_stance chersonesus heraclea_pontica allied
+diplomatic_stance chersonesus ordovices allied
+diplomatic_stance chersonesus rhoxolani allied
+diplomatic_stance cherusci hermunduri war
+diplomatic_stance cherusci langobardi war
+diplomatic_stance cherusci sugambri war
+diplomatic_stance cherusci lugii allied
+diplomatic_stance cherusci usipetes allied
+diplomatic_stance chios persis war
+diplomatic_stance chios cyrene allied
+diplomatic_stance chios saba allied
+diplomatic_stance cimbri eburones war
+diplomatic_stance cimbri frisii war
+diplomatic_stance cimbri gauts war
+diplomatic_stance cimbri langobardi war
+diplomatic_stance cimbri masaesyli war
+diplomatic_stance cimbri usipetes allied
+diplomatic_stance cisalpine_boii scordisci war
+diplomatic_stance cisalpine_boii veneti war
+diplomatic_stance cius persis war
+diplomatic_stance cius paphlagonia allied
+diplomatic_stance colchians heniochi war
+diplomatic_stance colchians iberians war
+diplomatic_stance colchians siraces war
+diplomatic_stance colchians musulamii allied
+diplomatic_stance commagene roman_rebels_1 war
+diplomatic_stance corsi sardinians war
+diplomatic_stance costoboci eravisci war
+diplomatic_stance costoboci iazyges war
+diplomatic_stance costoboci issa war
+diplomatic_stance costoboci tyragetae war
+diplomatic_stance costoboci venedae war
+diplomatic_stance costoboci helvetii allied
+diplomatic_stance costoboci histria allied
+diplomatic_stance costoboci lugii allied
+diplomatic_stance costoboci rhoxolani allied
+diplomatic_stance costoboci vindelici allied
+diplomatic_stance crobyzi pergamon war
+diplomatic_stance crobyzi teurisci allied
+diplomatic_stance crobyzi triballi allied
+diplomatic_stance crobyzi tylis allied
+diplomatic_stance crobyzi roman_rebels_1 allied
+diplomatic_stance cyrene gortyn allied
+diplomatic_stance cyrene massalia allied
+diplomatic_stance cyrene mauri allied
+diplomatic_stance cyrene sidon allied
+diplomatic_stance daesitiates issa war
+diplomatic_stance daesitiates scythians war
+diplomatic_stance daesitiates taurisci war
+diplomatic_stance daesitiates eravisci allied
+diplomatic_stance daesitiates liburni allied
+diplomatic_stance daesitiates triballi allied
+diplomatic_stance dardania dentheletae war
+diplomatic_stance dardania epirus war
+diplomatic_stance dardania labeatae war
+diplomatic_stance dardania triballi war
+diplomatic_stance dardania delmatae allied
+diplomatic_stance dardania maedi allied
+diplomatic_stance delmatae issa war
+diplomatic_stance delmatae iapodes allied
+diplomatic_stance delmatae liburni allied
+diplomatic_stance delmatae scythians allied
+diplomatic_stance dentheletae epirus war
+diplomatic_stance dentheletae seleucid_rebels war
+diplomatic_stance dentheletae persis allied
+diplomatic_stance dumnonii durotriges war
+diplomatic_stance dumnonii iverni war
+diplomatic_stance dumnonii silures war
+diplomatic_stance dumnonii veneti_gallia war
+diplomatic_stance dumnonii treveri allied
+diplomatic_stance durotriges iverni war
+diplomatic_stance durotriges silures war
+diplomatic_stance durotriges trinovantes allied
+diplomatic_stance durotriges veneti_gallia allied
+diplomatic_stance eburones sugambri war
+diplomatic_stance eburones norici allied
+diplomatic_stance eburones ubii allied
+diplomatic_stance eburones veneti_gallia allied
+diplomatic_stance edeta ilici war
+diplomatic_stance edeta osismii allied
+diplomatic_stance edeta sotiates allied
+diplomatic_stance egypt tyre allied
+diplomatic_stance elis greeks allied
+diplomatic_stance emporion lacetani war
+diplomatic_stance emporion vascones war
+diplomatic_stance emporion insubres allied
+diplomatic_stance emporion volcae_gallia allied
+diplomatic_stance epirus iazyges war
+diplomatic_stance epirus illyrian_kingdom war
+diplomatic_stance epirus teurisci war
+diplomatic_stance epirus triballi war
+diplomatic_stance epirus greeks allied
+diplomatic_stance epirus palmyra allied
+diplomatic_stance eravisci iapodes allied
+diplomatic_stance eravisci masaesyli allied
+diplomatic_stance eravisci odrysians allied
+diplomatic_stance eravisci salassi allied
+diplomatic_stance eravisci ubii allied
+diplomatic_stance frisii gauts war
+diplomatic_stance frisii langobardi war
+diplomatic_stance frisii sugambri war
+diplomatic_stance frisii norici allied
+diplomatic_stance gades massalia war
+diplomatic_stance gades massylii allied
+diplomatic_stance gades nervii allied
+diplomatic_stance gades osismii allied
+diplomatic_stance galatians heraclea_pontica war
+diplomatic_stance galatians sinope allied
+diplomatic_stance gallaeci massylii war
+diplomatic_stance gallaeci veneti_gallia war
+diplomatic_stance gallaeci vettones war
+diplomatic_stance gauts langobardi war
+diplomatic_stance gauts venedae war
+diplomatic_stance gauts helvetii allied
+diplomatic_stance gauts royal_sarmatians allied
+diplomatic_stance gerrha paphlagonia war
+diplomatic_stance gerrha himyar allied
+diplomatic_stance gortyn knossos war
+diplomatic_stance gortyn lyttos war
+diplomatic_stance gortyn sparta allied
+diplomatic_stance greeks illyrian_kingdom war
+diplomatic_stance greeks histria allied
+diplomatic_stance greeks issa allied
+diplomatic_stance greeks lyttos allied
+diplomatic_stance greeks massylii allied
+diplomatic_stance greeks sparta allied
+diplomatic_stance greeks syracuse allied
+diplomatic_stance hadhramaut himyar war
+diplomatic_stance hadhramaut mossynoeci war
+diplomatic_stance hadhramaut saba war
+diplomatic_stance helvetii suebi war
+diplomatic_stance helvetii tencteri war
+diplomatic_stance helvetii ubii war
+diplomatic_stance helvetii volcae war
+diplomatic_stance helvetii odrysians allied
+diplomatic_stance helvetii salassi allied
+diplomatic_stance helvetii senones allied
+diplomatic_stance heniochi siraces war
+diplomatic_stance heniochi iberians allied
+diplomatic_stance heniochi trapezus allied
+diplomatic_stance heraclea_pontica persis war
+diplomatic_stance heraclea_pontica iberians allied
+diplomatic_stance heraclea_pontica picentes allied
+diplomatic_stance heraclea_pontica qataban allied
+diplomatic_stance heraclea_pontica seleucid_rebels allied
+diplomatic_stance hermunduri suebi war
+diplomatic_stance himyar lihyan war
+diplomatic_stance himyar quadi war
+diplomatic_stance himyar saba war
+diplomatic_stance histri taurisci war
+diplomatic_stance histri iapodes allied
+diplomatic_stance histri insubres allied
+diplomatic_stance histria pergamon war
+diplomatic_stance histria tyragetae war
+diplomatic_stance histria ordovices allied
+diplomatic_stance histria triballi allied
+diplomatic_stance iapodes taurisci war
+diplomatic_stance iazyges ordovices war
+diplomatic_stance iazyges royal_scythians war
+diplomatic_stance iazyges tyragetae war
+diplomatic_stance iazyges seleucid_rebels war
+diplomatic_stance iazyges suebi allied
+diplomatic_stance iberians qataban allied
+diplomatic_stance iberians sophene allied
+diplomatic_stance iberians trapezus allied
+diplomatic_stance iberians roman_rebels_1 allied
+diplomatic_stance ilergetes massylii war
+diplomatic_stance ilergetes sotiates war
+diplomatic_stance ilergetes vaccaei war
+diplomatic_stance ilergetes vascones war
+diplomatic_stance ilergetes ilici allied
+diplomatic_stance ilergetes volcae_gallia allied
+diplomatic_stance indians kucha allied
+diplomatic_stance ingauni salluvii war
+diplomatic_stance ingauni roman_rebels_1 war
+diplomatic_stance insubres massylii war
+diplomatic_stance insubres salassi war
+diplomatic_stance insubres salluvii war
+diplomatic_stance insubres veneti war
+diplomatic_stance insubres roman_rebels_1 war
+diplomatic_stance insubres lacetani allied
+diplomatic_stance insubres senones allied
+diplomatic_stance insubres vindelici allied
+diplomatic_stance insubres volcae_gallia allied
+diplomatic_stance issa liburni war
+diplomatic_stance issa scythians allied
+diplomatic_stance issa syracuse allied
+diplomatic_stance issa taurisci allied
+diplomatic_stance issa teurisci allied
+diplomatic_stance issa triballi allied
+diplomatic_stance knossos kydonia war
+diplomatic_stance knossos lyttos war
+diplomatic_stance knossos qataban war
+diplomatic_stance knossos rhodes war
+diplomatic_stance kush lihyan allied
+diplomatic_stance kush paphlagonia allied
+diplomatic_stance kush tyre allied
+diplomatic_stance kydonia rhodes war
+diplomatic_stance labeatae scythians war
+diplomatic_stance labeatae triballi war
+diplomatic_stance lacetani massylii war
+diplomatic_stance lacetani vascones allied
+diplomatic_stance langobardi roman_rebels_1 war
+diplomatic_stance langobardi norici allied
+diplomatic_stance langobardi ubii allied
+diplomatic_stance liburni taurisci war
+diplomatic_stance lihyan thamud war
+diplomatic_stance lihyan roman_rebels_1 war
+diplomatic_stance lihyan nasamones allied
+diplomatic_stance lihyan tyre allied
+diplomatic_stance lucanians massylii allied
+diplomatic_stance lugii suebi war
+diplomatic_stance lugii venedae war
+diplomatic_stance lugii rhaetians allied
+diplomatic_stance lugii royal_sarmatians allied
+diplomatic_stance lugii royal_scythians allied
+diplomatic_stance lugii scythians allied
+diplomatic_stance lysiad musulamii allied
+diplomatic_stance lyttos rhodes war
+diplomatic_stance mamertines roman_rebels_1 war
+diplomatic_stance marcomanni syracuse war
+diplomatic_stance marcomanni massalia allied
+diplomatic_stance masaesyli rhaetians war
+diplomatic_stance masaesyli ubii war
+diplomatic_stance masaesyli usipetes war
+diplomatic_stance masaesyli venedae allied
+diplomatic_stance massalia mauri allied
+diplomatic_stance massalia mauryan allied
+diplomatic_stance massalia nabataea allied
+diplomatic_stance massalia sardinians allied
+diplomatic_stance massylii salassi war
+diplomatic_stance massylii salluvii war
+diplomatic_stance massylii sardinians war
+diplomatic_stance massylii senones war
+diplomatic_stance massylii volcae_gallia war
+diplomatic_stance massylii samnites allied
+diplomatic_stance massylii vascones allied
+diplomatic_stance massylii volcae allied
+diplomatic_stance massylii volsinii allied
+diplomatic_stance mauri mauryan allied
+diplomatic_stance mauri nabataea allied
+diplomatic_stance mauri roman_rebels_1 allied
+diplomatic_stance mauryan nabataea allied
+diplomatic_stance messapians miletus war
+diplomatic_stance messapians roman_rebels_1 war
+diplomatic_stance messene taras war
+diplomatic_stance miletus sparta war
+diplomatic_stance minaeans ordovices allied
+diplomatic_stance minaeans sinope allied
+diplomatic_stance mossynoeci quadi war
+diplomatic_stance mossynoeci saba allied
+diplomatic_stance musulamii persis allied
+diplomatic_stance musulamii sinope allied
+diplomatic_stance musulamii roman_rebels_1 allied
+diplomatic_stance nasamones thamud war
+diplomatic_stance nervii osismii allied
+diplomatic_stance norici treveri war
+diplomatic_stance norici usipetes allied
+diplomatic_stance norici veneti_gallia allied
+diplomatic_stance odrysians vindelici war
+diplomatic_stance odrysians salassi allied
+diplomatic_stance olbia seleucid_rebels war
+diplomatic_stance olbia pergamon allied
+diplomatic_stance ordovices pergamon war
+diplomatic_stance ordovices tyragetae war
+diplomatic_stance ordovices royal_scythians allied
+diplomatic_stance ordovices sinope allied
+diplomatic_stance oretani silures war
+diplomatic_stance osrhoene veneti_gallia war
+diplomatic_stance osrhoene senones allied
+diplomatic_stance palmyra seleucid_rebels allied
+diplomatic_stance paphlagonia qataban allied
+diplomatic_stance paphlagonia saba allied
+diplomatic_stance paphlagonia thamud allied
+diplomatic_stance pentapolis sinope war
+diplomatic_stance pentapolis persis allied
+diplomatic_stance pentapolis siraces allied
+diplomatic_stance pentapolis trapezus allied
+diplomatic_stance pergamon tylis war
+diplomatic_stance pergamon seleucid_rebels war
+diplomatic_stance pergamon royal_sarmatians allied
+diplomatic_stance pergamon siraces allied
+diplomatic_stance persis qataban war
+diplomatic_stance persis rhoxolani allied
+diplomatic_stance persis tyre allied
+diplomatic_stance picentes roman_rebels_1 war
+diplomatic_stance qataban rhodes war
+diplomatic_stance quadi saba war
+diplomatic_stance rhaetians volcae allied
+diplomatic_stance rhodes sinope allied
+diplomatic_stance rhoxolani royal_sarmatians allied
+diplomatic_stance rhoxolani siraces allied
+diplomatic_stance rhoxolani seleucid_rebels allied
+diplomatic_stance royal_scythians tyragetae allied
+diplomatic_stance saba roman_rebels_1 allied
+diplomatic_stance salassi sequani war
+diplomatic_stance salassi salluvii allied
+diplomatic_stance salassi treveri allied
+diplomatic_stance salassi vaccaei allied
+diplomatic_stance salluvii roman_rebels_1 war
+diplomatic_stance salluvii volcae_gallia allied
+diplomatic_stance samnites roman_rebels_1 war
+diplomatic_stance sardinians veneti_gallia allied
+diplomatic_stance scordisci veneti allied
+diplomatic_stance scythians vindelici war
+diplomatic_stance scythians teurisci allied
+diplomatic_stance senones sotiates allied
+diplomatic_stance senones sugambri allied
+diplomatic_stance sequani treveri allied
+diplomatic_stance sequani vindelici allied
+diplomatic_stance sequani volcae allied
+diplomatic_stance sidon tyre war
+diplomatic_stance silures sugambri war
+diplomatic_stance sotiates vascones war
+diplomatic_stance suebi usipetes allied
+diplomatic_stance suebi venedae allied
+diplomatic_stance suebi volcae allied
+diplomatic_stance sugambri treveri war
+diplomatic_stance sugambri usipetes allied
+diplomatic_stance syracuse roman_rebels_1 allied
+diplomatic_stance taras roman_rebels_1 war
+diplomatic_stance taurisci tyragetae allied
+diplomatic_stance tencteri volcae war
+diplomatic_stance tencteri treveri allied
+diplomatic_stance tencteri ubii allied
+diplomatic_stance teurisci triballi allied
+diplomatic_stance teurisci seleucid_rebels allied
+diplomatic_stance treveri ubii allied
+diplomatic_stance triballi seleucid_rebels war
+diplomatic_stance triballi tylis allied
+diplomatic_stance tyragetae seleucid_rebels allied
+diplomatic_stance ubii volcae war
+diplomatic_stance usipetes veneti_gallia allied
+diplomatic_stance usipetes volcae allied
+diplomatic_stance usipetes roman_rebels_1 allied
+diplomatic_stance vaccaei veneti_gallia allied
+diplomatic_stance venedae roman_rebels_1 war
+diplomatic_stance veneti_gallia vettones allied
+diplomatic_stance volcae_gallia roman_rebels_1 war
+diplomatic_stance roman_rebels_1 romans_julii war
+diplomatic_stance roman_rebels_1 roman_rebels_2 war
+diplomatic_stance roman_rebels_1 roman_senate war
+diplomatic_stance roman_rebels_1 carthage war
+diplomatic_stance roman_rebels_1 antigonid war
+diplomatic_stance roman_rebels_1 ptolemaic war
+diplomatic_stance roman_rebels_1 seleucid war
+diplomatic_stance roman_rebels_1 bactria war
+diplomatic_stance roman_rebels_1 parni war
+diplomatic_stance roman_rebels_1 saka war
+diplomatic_stance roman_rebels_1 armenia war
+diplomatic_stance roman_rebels_1 pontus war
+diplomatic_stance roman_rebels_1 lusitani war
+diplomatic_stance roman_rebels_1 getae war
+diplomatic_stance roman_rebels_1 acarnania war
+diplomatic_stance roman_rebels_1 achaea war
+diplomatic_stance roman_rebels_1 acragas war
+diplomatic_stance roman_rebels_1 aetolia war
+diplomatic_stance roman_rebels_1 albanians war
+diplomatic_stance roman_rebels_1 allobroges war
+diplomatic_stance roman_rebels_1 anartes war
+diplomatic_stance roman_rebels_1 armenia_minor war
+diplomatic_stance roman_rebels_1 arse war
+diplomatic_stance roman_rebels_1 arverni war
+diplomatic_stance roman_rebels_1 asta war
+diplomatic_stance roman_rebels_1 asti war
+diplomatic_stance roman_rebels_1 astures war
+diplomatic_stance roman_rebels_1 athens war
+diplomatic_stance roman_rebels_1 aulerci war
+diplomatic_stance roman_rebels_1 axum war
+diplomatic_stance roman_rebels_1 bastarnae war
+diplomatic_stance roman_rebels_1 basti war
+diplomatic_stance roman_rebels_1 belgae war
+diplomatic_stance roman_rebels_1 belli war
+diplomatic_stance roman_rebels_1 bithynia war
+diplomatic_stance roman_rebels_1 bituriges war
+diplomatic_stance roman_rebels_1 boeotia war
+diplomatic_stance roman_rebels_1 bosporan war
+diplomatic_stance roman_rebels_1 cadurci war
+diplomatic_stance roman_rebels_1 cantabri war
+diplomatic_stance roman_rebels_1 cantiaci war
+diplomatic_stance roman_rebels_1 capua war
+diplomatic_stance roman_rebels_1 carmo war
+diplomatic_stance roman_rebels_1 carpetani war
+diplomatic_stance roman_rebels_1 catuvellauni war
+diplomatic_stance roman_rebels_1 celtici war
+diplomatic_stance roman_rebels_1 cenomani war
+diplomatic_stance roman_rebels_1 characene war
+diplomatic_stance roman_rebels_1 chatti war
+diplomatic_stance roman_rebels_1 chauci war
+diplomatic_stance roman_rebels_1 cherusci war
+diplomatic_stance roman_rebels_1 chios war
+diplomatic_stance roman_rebels_1 chrysaoria war
+diplomatic_stance roman_rebels_1 costoboci war
+diplomatic_stance roman_rebels_1 cyzicus war
+diplomatic_stance roman_rebels_1 daesitiates war
+diplomatic_stance roman_rebels_1 dardania war
+diplomatic_stance roman_rebels_1 delmatae war
+diplomatic_stance roman_rebels_1 dentheletae war
+diplomatic_stance roman_rebels_1 durotriges war
+diplomatic_stance roman_rebels_1 eburones war
+diplomatic_stance roman_rebels_1 edeta war
+diplomatic_stance roman_rebels_1 egypt war
+diplomatic_stance roman_rebels_1 elis war
+diplomatic_stance roman_rebels_1 emporion war
+diplomatic_stance roman_rebels_1 epirus war
+diplomatic_stance roman_rebels_1 gades war
+diplomatic_stance roman_rebels_1 galatians war
+diplomatic_stance roman_rebels_1 gallaeci war
+diplomatic_stance roman_rebels_1 gortyn war
+diplomatic_stance roman_rebels_1 greeks war
+diplomatic_stance roman_rebels_1 hasmonean war
+diplomatic_stance roman_rebels_1 helvetii war
+diplomatic_stance roman_rebels_1 heniochi war
+diplomatic_stance roman_rebels_1 heraclea_pontica war
+diplomatic_stance roman_rebels_1 hermunduri war
+diplomatic_stance roman_rebels_1 himyar war
+diplomatic_stance roman_rebels_1 histria war
+diplomatic_stance roman_rebels_1 iapodes war
+diplomatic_stance roman_rebels_1 iazyges war
+diplomatic_stance roman_rebels_1 ilergetes war
+diplomatic_stance roman_rebels_1 ilici war
+diplomatic_stance roman_rebels_1 illyrian_kingdom war
+diplomatic_stance roman_rebels_1 kush war
+diplomatic_stance roman_rebels_1 kydonia war
+diplomatic_stance roman_rebels_1 labeatae war
+diplomatic_stance roman_rebels_1 lacetani war
+diplomatic_stance roman_rebels_1 lucanians war
+diplomatic_stance roman_rebels_1 lugii war
+diplomatic_stance roman_rebels_1 libyans war
+diplomatic_stance roman_rebels_1 lycia war
+diplomatic_stance roman_rebels_1 lysiad war
+diplomatic_stance roman_rebels_1 lyttos war
+diplomatic_stance roman_rebels_1 maedi war
+diplomatic_stance roman_rebels_1 marcomanni war
+diplomatic_stance roman_rebels_1 massalia war
+diplomatic_stance roman_rebels_1 miletus war
+diplomatic_stance roman_rebels_1 mossynoeci war
+diplomatic_stance roman_rebels_1 nabataea war
+diplomatic_stance roman_rebels_1 nasamones war
+diplomatic_stance roman_rebels_1 nervii war
+diplomatic_stance roman_rebels_1 norici war
+diplomatic_stance roman_rebels_1 odrysians war
+diplomatic_stance roman_rebels_1 olbia war
+diplomatic_stance roman_rebels_1 ordovices war
+diplomatic_stance roman_rebels_1 oretani war
+diplomatic_stance roman_rebels_1 osismii war
+diplomatic_stance roman_rebels_1 osrhoene war
+diplomatic_stance roman_rebels_1 paeonia war
+diplomatic_stance roman_rebels_1 palmyra war
+diplomatic_stance roman_rebels_1 pergamon war
+diplomatic_stance roman_rebels_1 rhoxolani war
+diplomatic_stance roman_rebels_1 royal_sarmatians war
+diplomatic_stance roman_rebels_1 salassi war
+diplomatic_stance roman_rebels_1 sardinians war
+diplomatic_stance roman_rebels_1 scordisci war
+diplomatic_stance roman_rebels_1 scythians war
+diplomatic_stance roman_rebels_1 selge war
+diplomatic_stance roman_rebels_1 senones war
+diplomatic_stance roman_rebels_1 sequani war
+diplomatic_stance roman_rebels_1 sidon war
+diplomatic_stance roman_rebels_1 silures war
+diplomatic_stance roman_rebels_1 sinope war
+diplomatic_stance roman_rebels_1 sotiates war
+diplomatic_stance roman_rebels_1 sparta war
+diplomatic_stance roman_rebels_1 suebi war
+diplomatic_stance roman_rebels_1 teurisci war
+diplomatic_stance roman_rebels_1 thamud war
+diplomatic_stance roman_rebels_1 timbuktu war
+diplomatic_stance roman_rebels_1 trapezus war
+diplomatic_stance roman_rebels_1 treveri war
+diplomatic_stance roman_rebels_1 triballi war
+diplomatic_stance roman_rebels_1 trinovantes war
+diplomatic_stance roman_rebels_1 tylis war
+diplomatic_stance roman_rebels_1 tyre war
+diplomatic_stance roman_rebels_1 ubii war
+diplomatic_stance roman_rebels_1 vaccaei war
+diplomatic_stance roman_rebels_1 vascones war
+diplomatic_stance roman_rebels_1 veneti war
+diplomatic_stance roman_rebels_1 vettones war
+diplomatic_stance roman_rebels_1 seleucid_rebels2 war
+diplomatic_stance roman_rebels_1 ambrones allied
+diplomatic_stance roman_rebels_1 apuani allied
+diplomatic_stance roman_rebels_1 arados allied
+diplomatic_stance roman_rebels_1 ardiaei allied
+diplomatic_stance roman_rebels_1 arevaci allied
+diplomatic_stance roman_rebels_1 argos allied
+diplomatic_stance roman_rebels_1 arshi allied
+diplomatic_stance roman_rebels_1 atropatene allied
+diplomatic_stance roman_rebels_1 bessi allied
+diplomatic_stance roman_rebels_1 boii allied
+diplomatic_stance roman_rebels_1 brigantes allied
+diplomatic_stance roman_rebels_1 byllis allied
+diplomatic_stance roman_rebels_1 byzantium allied
+diplomatic_stance roman_rebels_1 cabyle allied
+diplomatic_stance roman_rebels_1 caledonii allied
+diplomatic_stance roman_rebels_1 chersonesus allied
+diplomatic_stance roman_rebels_1 chorasmia allied
+diplomatic_stance roman_rebels_1 cilicians allied
+diplomatic_stance roman_rebels_1 cimbri allied
+diplomatic_stance roman_rebels_1 cisalpine_boii allied
+diplomatic_stance roman_rebels_1 cius allied
+diplomatic_stance roman_rebels_1 colchians allied
+diplomatic_stance roman_rebels_1 corsi allied
+diplomatic_stance roman_rebels_1 cyrene allied
+diplomatic_stance roman_rebels_1 eravisci allied
+diplomatic_stance roman_rebels_1 frisii allied
+diplomatic_stance roman_rebels_1 garamantes allied
+diplomatic_stance roman_rebels_1 gauls allied
+diplomatic_stance roman_rebels_1 gauts allied
+diplomatic_stance roman_rebels_1 germanics allied
+diplomatic_stance roman_rebels_1 gerrha allied
+diplomatic_stance roman_rebels_1 hadhramaut allied
+diplomatic_stance roman_rebels_1 histri allied
+diplomatic_stance roman_rebels_1 indians allied
+diplomatic_stance roman_rebels_1 issa allied
+diplomatic_stance roman_rebels_1 italics allied
+diplomatic_stance roman_rebels_1 iverni allied
+diplomatic_stance roman_rebels_1 knossos allied
+diplomatic_stance roman_rebels_1 kucha allied
+diplomatic_stance roman_rebels_1 liburni allied
+diplomatic_stance roman_rebels_1 masaesyli allied
+diplomatic_stance roman_rebels_1 massylii allied
+diplomatic_stance roman_rebels_1 mauryan allied
+diplomatic_stance roman_rebels_1 megalopolis allied
+diplomatic_stance roman_rebels_1 messene allied
+diplomatic_stance roman_rebels_1 minaeans allied
+diplomatic_stance roman_rebels_1 pentapolis allied
+diplomatic_stance roman_rebels_1 persis allied
+diplomatic_stance roman_rebels_1 priene allied
+diplomatic_stance roman_rebels_1 qataban allied
+diplomatic_stance roman_rebels_1 quadi allied
+diplomatic_stance roman_rebels_1 rhaetians allied
+diplomatic_stance roman_rebels_1 rhodes allied
+diplomatic_stance roman_rebels_1 royal_scythians allied
+diplomatic_stance roman_rebels_1 siraces allied
+diplomatic_stance roman_rebels_1 sophene allied
+diplomatic_stance roman_rebels_1 sugambri allied
+diplomatic_stance roman_rebels_1 taurisci allied
+diplomatic_stance roman_rebels_1 tencteri allied
+diplomatic_stance roman_rebels_1 thessaly allied
+diplomatic_stance roman_rebels_1 tyragetae allied
+diplomatic_stance roman_rebels_1 veneti_gallia allied
+diplomatic_stance roman_rebels_1 vindelici allied
+diplomatic_stance roman_rebels_1 volcae allied
+diplomatic_stance roman_rebels_1 volsinii allied
+diplomatic_stance roman_rebels_1 hellenistic_rebels allied
+diplomatic_stance roman_rebels_1 ptolemaic_rebels allied
+diplomatic_stance roman_rebels_1 seleucid_rebels allied
+; total: 507 wars, 503 alliances, 0 hostile relationships
+
+;;; romans_julii ─ 0 settlements / 105 chars / 7 family-links
+;;;   treasury=1 291 327, leader=TitusA Sallustius_Crispus, population=(unknown)
 ; --- diplomatic_stance pairs extracted from the save ---
 diplomatic_stance romans_julii apuani war
 diplomatic_stance romans_julii buri war
@@ -48827,10 +49882,348 @@ denari	0
 faction	ingauni, ai_insubres
 denari	0
 
-;;; insubres ─ 0 settlements / 0 chars / 0 family-links
-;;;   treasury=2 042 914, leader=(none), population=(unknown)
+;;; insubres ─ 5 settlements / 1 chars / 0 family-links
+;;;   treasury=2 042 914, leader=Boleriavus [SYNTH], population=29 838
 faction	insubres, ai_insubres
 denari	2042914
+settlement
+{
+	level large_town
+	region Insubria
+	year_founded 0
+	population 6041
+	plan_set default_set
+	faction_creator insubres
+	building
+	{
+		type l_settlement_besieged level_0
+	}
+	building
+	{
+		type hinterland_region region_base
+	}
+	building
+	{
+		type core_building governors_palace
+	}
+	building
+	{
+		type military_industrial_complex mic_3
+	}
+	building
+	{
+		type sedentary_animal_husbandry livestock_drive
+	}
+	building
+	{
+		type market forum
+	}
+	building
+	{
+		type river_port river_port2
+	}
+	building
+	{
+		type hides_industry hides_2
+	}
+	building
+	{
+		type horse_trainer horse_2
+	}
+	building
+	{
+		type smith smiths_workshop
+	}
+	building
+	{
+		type health baths
+	}
+	building
+	{
+		type justice_court level_0
+	}
+	building
+	{
+		type theatres lyceum
+	}
+	building
+	{
+		type hinterland_roads highways
+	}
+	building
+	{
+		type temple_complex_celtic temple_celtic_3
+	}
+	building
+	{
+		type defenses stone_wall
+	}
+}
+settlement
+{
+	level town
+	region Insubria_Meridionalis
+	year_founded 0
+	population 5099
+	plan_set default_set
+	faction_creator insubres
+	building
+	{
+		type l_settlement_besieged level_0
+	}
+	building
+	{
+		type hinterland_region region_base
+	}
+	building
+	{
+		type core_building governors_villa
+	}
+	building
+	{
+		type military_industrial_complex mic_2
+	}
+	building
+	{
+		type irrigated_farming basin_irrigation
+	}
+	building
+	{
+		type food_storage granary+1
+	}
+	building
+	{
+		type market market
+	}
+	building
+	{
+		type river_port river_port1
+	}
+	building
+	{
+		type textiles_production textiles_1
+	}
+	building
+	{
+		type smith blacksmith
+	}
+	building
+	{
+		type health sewers
+	}
+	building
+	{
+		type hinterland_roads paved_roads
+	}
+	building
+	{
+		type temple_complex_celtic temple_celtic_2
+	}
+	building
+	{
+		type defenses wooden_wall
+	}
+}
+settlement
+{
+	level town
+	region Genuatia-Tigullia
+	year_founded 0
+	population 5318
+	plan_set default_set
+	faction_creator apuani
+	building
+	{
+		type l_settlement_besieged level_0
+	}
+	building
+	{
+		type hinterland_region region_base
+	}
+	building
+	{
+		type core_building governors_villa
+	}
+	building
+	{
+		type garrison garrison
+	}
+	building
+	{
+		type highland_pastoralism highland_pasturing
+	}
+	building
+	{
+		type market market
+	}
+	building
+	{
+		type port_buildings port
+	}
+	building
+	{
+		type textiles_production textiles_1
+	}
+	building
+	{
+		type olive_cultivation olive_2
+	}
+	building
+	{
+		type smith blacksmith
+	}
+	building
+	{
+		type health sewers
+	}
+	building
+	{
+		type hinterland_roads paved_roads
+	}
+	building
+	{
+		type temple_complex_celtic temple_celtic_2
+	}
+	building
+	{
+		type defenses wooden_wall
+	}
+}
+settlement
+{
+	level town
+	region Taurinia
+	year_founded 0
+	population 7151
+	plan_set default_set
+	faction_creator apuani
+	building
+	{
+		type l_settlement_besieged level_0
+	}
+	building
+	{
+		type hinterland_region region_base
+	}
+	building
+	{
+		type core_building governors_villa
+	}
+	building
+	{
+		type military_industrial_complex mic_2
+	}
+	building
+	{
+		type irrigated_farming basin_irrigation
+	}
+	building
+	{
+		type food_storage granary+1
+	}
+	building
+	{
+		type market market
+	}
+	building
+	{
+		type river_port river_port1
+	}
+	building
+	{
+		type grain_industry mill
+	}
+	building
+	{
+		type horse_trainer horse_2
+	}
+	building
+	{
+		type health sewers
+	}
+	building
+	{
+		type theatres odeon
+	}
+	building
+	{
+		type hinterland_roads paved_roads
+	}
+	building
+	{
+		type temple_complex_celtic temple_celtic_2
+	}
+	building
+	{
+		type defenses wooden_wall
+	}
+}
+settlement
+{
+	level town
+	region Lepontia
+	year_founded 0
+	population 6229
+	plan_set default_set
+	faction_creator aedui
+	building
+	{
+		type l_settlement_besieged level_0
+	}
+	building
+	{
+		type hinterland_region region_base
+	}
+	building
+	{
+		type core_building governors_villa
+	}
+	building
+	{
+		type military_industrial_complex mic_2
+	}
+	building
+	{
+		type highland_pastoralism highland_pasturing
+	}
+	building
+	{
+		type market market
+	}
+	building
+	{
+		type hides_industry hides_1
+	}
+	building
+	{
+		type stone_quarry stone_2
+	}
+	building
+	{
+		type health sewers
+	}
+	building
+	{
+		type taverns tavern
+	}
+	building
+	{
+		type hinterland_roads paved_roads
+	}
+	building
+	{
+		type temple_complex_celtic temple_celtic_2
+	}
+	building
+	{
+		type defenses wooden_wall
+	}
+}
+character	Boleriavus, named_character, leader, age 40, , x 252, y 457
+traits Factionleader 1, TurnsAlive 1
+army
+unit		greek general		exp 0 armour 0 weapon_lvl 0
+
 
 ;;; issa ─ 9 settlements / 10 chars / 0 family-links
 ;;;   treasury=0, leader=Dumnorix, population=42 346
@@ -59101,7 +60494,7 @@ faction	volcae_gallia, ai_volcae
 denari	0
 
 ;;; volsinii ─ 1 settlements / 1 chars / 0 family-links
-;;;   treasury=0, leader=Boleriavus [SYNTH], population=14 940
+;;;   treasury=0, leader=Boniatus [SYNTH], population=14 940
 faction	volsinii, ai_rome
 denari	0
 settlement
@@ -59177,7 +60570,7 @@ settlement
 		type defenses large_stone_wall
 	}
 }
-character	Boleriavus, named_character, leader, age 40, , x 280, y 415
+character	Boniatus, named_character, leader, age 40, , x 280, y 415
 traits Factionleader 1, TurnsAlive 1
 army
 unit		greek general		exp 0 armour 0 weapon_lvl 0
@@ -59293,8 +60686,8 @@ denari	-4965619
 faction	dummies, ai_dummies
 denari	-50000
 
-;;; slave ─ 773 settlements / 9 chars / 0 family-links
-;;;   treasury=(bundled-default), leader=(none), population=1 992 627
+;;; slave ─ 768 settlements / 9 chars / 0 family-links
+;;;   treasury=(bundled-default), leader=(none), population=1 962 789
 faction	slave, ai_slave
 denari	-50000
 settlement
@@ -65510,144 +66903,6 @@ settlement
 	building
 	{
 		type hospitals hospital_2
-	}
-	building
-	{
-		type hinterland_roads paved_roads
-	}
-	building
-	{
-		type temple_complex_celtic temple_celtic_2
-	}
-	building
-	{
-		type defenses wooden_wall
-	}
-}
-settlement
-{
-	level large_town
-	region Insubria
-	year_founded 0
-	population 6041
-	plan_set default_set
-	faction_creator insubres
-	building
-	{
-		type l_settlement_besieged level_0
-	}
-	building
-	{
-		type hinterland_region region_base
-	}
-	building
-	{
-		type core_building governors_palace
-	}
-	building
-	{
-		type military_industrial_complex mic_3
-	}
-	building
-	{
-		type sedentary_animal_husbandry livestock_drive
-	}
-	building
-	{
-		type market forum
-	}
-	building
-	{
-		type river_port river_port2
-	}
-	building
-	{
-		type hides_industry hides_2
-	}
-	building
-	{
-		type horse_trainer horse_2
-	}
-	building
-	{
-		type smith smiths_workshop
-	}
-	building
-	{
-		type health baths
-	}
-	building
-	{
-		type justice_court level_0
-	}
-	building
-	{
-		type theatres lyceum
-	}
-	building
-	{
-		type hinterland_roads highways
-	}
-	building
-	{
-		type temple_complex_celtic temple_celtic_3
-	}
-	building
-	{
-		type defenses stone_wall
-	}
-}
-settlement
-{
-	level town
-	region Insubria_Meridionalis
-	year_founded 0
-	population 5099
-	plan_set default_set
-	faction_creator insubres
-	building
-	{
-		type l_settlement_besieged level_0
-	}
-	building
-	{
-		type hinterland_region region_base
-	}
-	building
-	{
-		type core_building governors_villa
-	}
-	building
-	{
-		type military_industrial_complex mic_2
-	}
-	building
-	{
-		type irrigated_farming basin_irrigation
-	}
-	building
-	{
-		type food_storage granary+1
-	}
-	building
-	{
-		type market market
-	}
-	building
-	{
-		type river_port river_port1
-	}
-	building
-	{
-		type textiles_production textiles_1
-	}
-	building
-	{
-		type smith blacksmith
-	}
-	building
-	{
-		type health sewers
 	}
 	building
 	{
@@ -74463,140 +75718,6 @@ settlement
 }
 settlement
 {
-	level town
-	region Genuatia-Tigullia
-	year_founded 0
-	population 5318
-	plan_set default_set
-	faction_creator apuani
-	building
-	{
-		type l_settlement_besieged level_0
-	}
-	building
-	{
-		type hinterland_region region_base
-	}
-	building
-	{
-		type core_building governors_villa
-	}
-	building
-	{
-		type garrison garrison
-	}
-	building
-	{
-		type highland_pastoralism highland_pasturing
-	}
-	building
-	{
-		type market market
-	}
-	building
-	{
-		type port_buildings port
-	}
-	building
-	{
-		type textiles_production textiles_1
-	}
-	building
-	{
-		type olive_cultivation olive_2
-	}
-	building
-	{
-		type smith blacksmith
-	}
-	building
-	{
-		type health sewers
-	}
-	building
-	{
-		type hinterland_roads paved_roads
-	}
-	building
-	{
-		type temple_complex_celtic temple_celtic_2
-	}
-	building
-	{
-		type defenses wooden_wall
-	}
-}
-settlement
-{
-	level town
-	region Taurinia
-	year_founded 0
-	population 7151
-	plan_set default_set
-	faction_creator apuani
-	building
-	{
-		type l_settlement_besieged level_0
-	}
-	building
-	{
-		type hinterland_region region_base
-	}
-	building
-	{
-		type core_building governors_villa
-	}
-	building
-	{
-		type military_industrial_complex mic_2
-	}
-	building
-	{
-		type irrigated_farming basin_irrigation
-	}
-	building
-	{
-		type food_storage granary+1
-	}
-	building
-	{
-		type market market
-	}
-	building
-	{
-		type river_port river_port1
-	}
-	building
-	{
-		type grain_industry mill
-	}
-	building
-	{
-		type horse_trainer horse_2
-	}
-	building
-	{
-		type health sewers
-	}
-	building
-	{
-		type theatres odeon
-	}
-	building
-	{
-		type hinterland_roads paved_roads
-	}
-	building
-	{
-		type temple_complex_celtic temple_celtic_2
-	}
-	building
-	{
-		type defenses wooden_wall
-	}
-}
-settlement
-{
 	level village
 	region Statiellia-Vagiennia
 	year_founded 0
@@ -74805,67 +75926,6 @@ settlement
 	building
 	{
 		type health sewers
-	}
-	building
-	{
-		type hinterland_roads paved_roads
-	}
-	building
-	{
-		type temple_complex_celtic temple_celtic_2
-	}
-	building
-	{
-		type defenses wooden_wall
-	}
-}
-settlement
-{
-	level town
-	region Lepontia
-	year_founded 0
-	population 6229
-	plan_set default_set
-	faction_creator aedui
-	building
-	{
-		type l_settlement_besieged level_0
-	}
-	building
-	{
-		type hinterland_region region_base
-	}
-	building
-	{
-		type core_building governors_villa
-	}
-	building
-	{
-		type military_industrial_complex mic_2
-	}
-	building
-	{
-		type highland_pastoralism highland_pasturing
-	}
-	building
-	{
-		type market market
-	}
-	building
-	{
-		type hides_industry hides_1
-	}
-	building
-	{
-		type stone_quarry stone_2
-	}
-	building
-	{
-		type health sewers
-	}
-	building
-	{
-		type taverns tavern
 	}
 	building
 	{
@@ -84629,6 +85689,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84638,6 +85702,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84647,6 +85715,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator italics
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84656,6 +85728,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84665,6 +85741,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84674,6 +85754,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84683,6 +85767,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84692,6 +85780,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84701,6 +85793,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84710,6 +85806,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84719,6 +85819,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84728,6 +85832,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84737,6 +85845,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84746,6 +85858,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sardinians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84755,6 +85871,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84764,6 +85884,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84773,6 +85897,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84782,6 +85910,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84791,6 +85923,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator masaesyli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84800,6 +85936,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84809,6 +85949,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator massylii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84818,6 +85962,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84827,6 +85975,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84836,6 +85988,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84845,6 +86001,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator musulamii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84854,6 +86014,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84863,6 +86027,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84872,6 +86040,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator masaesyli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84881,6 +86053,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84890,6 +86066,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84899,6 +86079,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84908,6 +86092,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84917,6 +86105,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84926,6 +86118,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84935,6 +86131,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84944,6 +86144,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84953,6 +86157,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84962,6 +86170,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84971,6 +86183,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84980,6 +86196,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84989,6 +86209,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -84998,6 +86222,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85007,6 +86235,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85016,6 +86248,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85025,6 +86261,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator masaesyli
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85034,6 +86274,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85043,6 +86287,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85052,6 +86300,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85061,6 +86313,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85070,6 +86326,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85079,6 +86339,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85088,6 +86352,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85097,6 +86365,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85106,6 +86378,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85115,6 +86391,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85124,6 +86404,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85133,6 +86417,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85142,6 +86430,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85151,6 +86443,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85160,6 +86456,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85169,6 +86469,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85178,6 +86482,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85187,6 +86495,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85196,6 +86508,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85205,6 +86521,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carthage
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85214,6 +86534,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator gallaeci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85223,6 +86547,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85232,6 +86560,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85241,6 +86573,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85250,6 +86586,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vaccaei
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85259,6 +86599,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85268,6 +86612,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator ilici
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85277,6 +86625,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85286,6 +86638,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85295,6 +86651,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85304,6 +86664,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85313,6 +86677,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator asta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85322,6 +86690,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85331,6 +86703,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85340,6 +86716,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85349,6 +86729,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85358,6 +86742,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85367,6 +86755,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lusitani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85376,6 +86768,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85385,6 +86781,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85394,6 +86794,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator edeta
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85403,6 +86807,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85412,6 +86820,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85421,6 +86833,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85430,6 +86846,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arevaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85439,6 +86859,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arevaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85448,6 +86872,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85457,6 +86885,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85466,6 +86898,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85475,6 +86911,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85484,6 +86924,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85493,6 +86937,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vaccaei
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85502,6 +86950,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85511,6 +86963,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85520,6 +86976,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carpetani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85529,6 +86989,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85538,6 +87002,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85547,6 +87015,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arevaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85556,6 +87028,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85565,6 +87041,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85574,6 +87054,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85583,6 +87067,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85592,6 +87080,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85601,6 +87093,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85610,6 +87106,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator carpetani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85619,6 +87119,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator oretani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85628,6 +87132,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85637,6 +87145,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85646,6 +87158,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85655,6 +87171,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85664,6 +87184,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85673,6 +87197,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85682,6 +87210,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85691,6 +87223,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85700,6 +87236,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85709,6 +87249,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85718,6 +87262,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arevaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85727,6 +87275,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lacetani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85736,6 +87288,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85745,6 +87301,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85754,6 +87314,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85763,6 +87327,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85772,6 +87340,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arverni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85781,6 +87353,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osismii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85790,6 +87366,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85799,6 +87379,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aulerci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85808,6 +87392,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nervii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85817,6 +87405,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator veneti_gallia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85826,6 +87418,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85835,6 +87431,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aulerci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85844,6 +87444,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aulerci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85853,6 +87457,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belgae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85862,6 +87470,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belgae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85871,6 +87483,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator belgae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85880,6 +87496,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85889,6 +87509,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85898,6 +87522,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85907,6 +87535,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85916,6 +87548,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85925,6 +87561,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85934,6 +87574,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85943,6 +87587,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85952,6 +87600,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arverni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85961,6 +87613,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arverni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85970,6 +87626,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arverni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85979,6 +87639,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osismii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85988,6 +87652,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arverni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -85997,6 +87665,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cadurci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86006,6 +87678,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86015,6 +87691,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86024,6 +87704,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86033,6 +87717,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator volcae_gallia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86042,6 +87730,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator sequani
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86051,6 +87743,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator allobroges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86060,6 +87756,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86069,6 +87769,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86078,6 +87782,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86087,6 +87795,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86096,6 +87808,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86105,6 +87821,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86114,6 +87834,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86123,6 +87847,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86132,6 +87860,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86141,6 +87873,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86150,6 +87886,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86159,6 +87899,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator nervii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86168,6 +87912,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vascones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86177,6 +87925,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vascones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86186,6 +87938,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arevaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86195,6 +87951,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vascones
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86204,6 +87964,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86213,6 +87977,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86222,6 +87990,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86231,6 +88003,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86240,6 +88016,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator vindelici
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86249,6 +88029,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator norici
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86258,6 +88042,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86267,6 +88055,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator boii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86276,6 +88068,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator volcae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86285,6 +88081,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86294,6 +88094,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86303,6 +88107,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator helvetii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86312,6 +88120,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator anartes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86321,6 +88133,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator catuvellauni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86330,6 +88146,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator silures
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86339,6 +88159,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cantiaci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86348,6 +88172,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator suebi
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86357,6 +88185,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator marcomanni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86366,6 +88198,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator hermunduri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86375,6 +88211,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cherusci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86384,6 +88224,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator lugii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86393,6 +88237,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator chauci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86402,6 +88250,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator frisii
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86411,6 +88263,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86420,6 +88276,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86429,6 +88289,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86438,6 +88302,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86447,6 +88315,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86456,6 +88328,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86465,6 +88341,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86474,6 +88354,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86483,6 +88367,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86492,6 +88380,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator eravisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86501,6 +88393,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator taurisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86510,6 +88406,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator scordisci
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86519,6 +88419,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator daesitiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86528,6 +88432,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator daesitiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86537,6 +88445,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86546,6 +88458,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator byllis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86555,6 +88471,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iapodes
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86564,6 +88484,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator daesitiates
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86573,6 +88497,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86582,6 +88510,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator pentapolis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86591,6 +88523,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator pentapolis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86600,6 +88536,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator paeonia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86609,6 +88549,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86618,6 +88562,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86627,6 +88575,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86636,6 +88588,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator getae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86645,6 +88601,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86654,6 +88614,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86663,6 +88627,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator getae
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86672,6 +88640,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator buri
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86681,6 +88653,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator aedui
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86690,6 +88666,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86699,6 +88679,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86708,6 +88692,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator antigonid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86717,6 +88705,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator antigonid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86726,6 +88718,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86735,6 +88731,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86744,6 +88744,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86753,6 +88757,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86762,6 +88770,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator antigonid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86771,6 +88783,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86780,6 +88796,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86789,6 +88809,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86798,6 +88822,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86807,6 +88835,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator argos
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86816,6 +88848,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86825,6 +88861,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86834,6 +88874,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86843,6 +88887,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86852,6 +88900,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86861,6 +88913,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86870,6 +88926,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86879,6 +88939,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86888,6 +88952,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iazyges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86897,6 +88965,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator scythians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86906,6 +88978,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator scythians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86915,6 +88991,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iazyges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86924,6 +89004,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator royal_sarmatians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86933,6 +89017,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86942,6 +89030,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86951,6 +89043,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator selge
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86960,6 +89056,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86969,6 +89069,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86978,6 +89082,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cappadocia
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86987,6 +89095,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cilicians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -86996,6 +89108,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cilicians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87005,6 +89121,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cilicians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87014,6 +89134,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87023,6 +89147,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cilicians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87032,6 +89160,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87041,6 +89173,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87050,6 +89186,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator egypt
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87059,6 +89199,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator arados
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87068,6 +89212,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87077,6 +89225,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator seleucid
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87086,6 +89238,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator tyre
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87095,6 +89251,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator tyre
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87104,6 +89264,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator cyrene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87113,6 +89277,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87122,6 +89290,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator egypt
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87131,6 +89303,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator axum
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87140,6 +89316,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator gerrha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87149,6 +89329,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87158,6 +89342,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator hadhramaut
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87167,6 +89355,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87176,6 +89368,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator hadhramaut
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87185,6 +89381,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saba
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87194,6 +89394,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator saba
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87203,6 +89407,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87212,6 +89420,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87221,6 +89433,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87230,6 +89446,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator commagene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87239,6 +89459,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87248,6 +89472,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator albanians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87257,6 +89485,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87266,6 +89498,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator albanians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87275,6 +89511,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator colchians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87284,6 +89524,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator albanians
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87293,6 +89537,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87302,6 +89550,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87311,6 +89563,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87320,6 +89576,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87329,6 +89589,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87338,6 +89602,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87347,6 +89615,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87356,6 +89628,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87365,6 +89641,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87374,6 +89654,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87383,6 +89667,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87392,6 +89680,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87401,6 +89693,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87410,6 +89706,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87419,6 +89719,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87428,6 +89732,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87437,6 +89745,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator thamud
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87446,6 +89758,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator thamud
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87455,6 +89771,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87464,6 +89784,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87473,6 +89797,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87482,6 +89810,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator characene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87491,6 +89823,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator osrhoene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87500,6 +89836,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87509,6 +89849,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator persis
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87518,6 +89862,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87527,6 +89875,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87536,6 +89888,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87545,6 +89901,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87554,6 +89914,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87563,6 +89927,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87572,6 +89940,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87581,6 +89953,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87590,6 +89966,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator atropatene
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87599,6 +89979,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bactria
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87608,6 +89992,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator bactria
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87617,6 +90005,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauryan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87626,6 +90018,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauryan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87635,6 +90031,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauryan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87644,6 +90044,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauryan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87653,6 +90057,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauryan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87662,6 +90070,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator mauryan
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87671,6 +90083,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator kucha
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87680,6 +90096,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator iazyges
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87689,6 +90109,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator parni
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87698,6 +90122,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator greeks
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87707,6 +90135,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87716,6 +90148,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87725,6 +90161,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87734,6 +90174,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87743,6 +90187,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87752,6 +90200,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 settlement
 {
@@ -87761,6 +90213,10 @@ settlement
 	population 1500
 	plan_set default_set
 	faction_creator slave
+	building
+	{
+		type core_building governors_villa
+	}
 }
 character	Ouologaises, named_character, age 19, , x 113, y 489
 traits STRating 3, Hypochondriac 3, HaleAndHearty 3, Energetic 3, Fitness 2, TheSick 2, Blindness 3, Deafness 3, Heroic_Hunter 1, FasterCharacters 1, Political_General 1, BeingPaphlagonian 1, BeingJudaean 1, OliveLover 2, HarshJustice 3, GoodTrader 1, Puno_Iboshim 1, Mocked_By_Locals 1, TheBlessed 1, BadStrategist 3, Killed_Man 1
