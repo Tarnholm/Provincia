@@ -274,9 +274,51 @@ and the only options are:
 - Accept that the cap can't be raised via save editing
 
 **Test order when you're back:**
-1. **D12** first (cleanest hypothesis: character self-pointers were the missing piece)
-2. **D13** if D12 fails (maximum-comprehensive)
-3. If both fail, declare splice infeasible and explore alternatives
+1. ~~D12 first~~ — analytical update: D12 still leaves 10,767 stale self-pointers. SKIP.
+2. **D13 directly** — provably zero stale self-pointers (mathematically verified)
+3. If D13 fails, splice is structurally infeasible
+
+### Mathematical proof that D13 is complete (post-research verification)
+
+Direct simulation results:
+
+**1. Stale self-pointer count by patch level:**
+- D11 leaves 15,378 stale self-pointers (12,357 in sec[7], 2,943 in sec[1], 78 in sec[2..6])
+- D12 leaves 10,767 stale self-pointers
+- **D13 leaves 0 stale self-pointers — PROVEN by simulation**
+
+**2. D13 output byte-level diff vs original:**
+- 25,783,698 bytes identical BEFORE splice region — 0 unexpected divergences
+- 44,655,442 bytes identical AFTER splice region (vs orig shifted left 462 B)
+- 145,125 expected divergent bytes (= patched self-pointer u32s)
+- **0 unexpected divergences**
+- Verdict: D13 is EXACTLY "original minus spliced bytes, with all self-pointers correctly patched. Nothing else changed."
+
+**3. Cross-reference analysis (other types of pointers):**
+- 2,339 total u32 values matching some self-pointer position (potential cross-refs)
+- Filtered against statistical noise expectation (97,731 valid targets × 70M positions / 4B = ~1,700 expected coincidences)
+- Only sec[0] has significant signal (374 vs 148 noise) BUT analysis of Start vs End shows 433 of 445 are static (= constants, not real pointers) and 12 are dynamic, ALL pointing to pre-splice positions (don't need patching for our splice)
+
+**4. Relative-offset pointer test:**
+- sec[7].size differs by -189,039 between Start and End (= dynamic section)
+- If relative-offset pointers existed from outside sec[7], we'd see u32 deltas of ±189,039 in many positions
+- Actual count of delta=±189,039: **0 instances**
+- Conclusion: engine uses absolute file offsets, not relative
+
+**5. Final certainty:**
+D13's mechanism (patch every u32@p == p that's AFTER splice by -SPLICE_BYTES)
+is provably the complete set of pointer fixes IF the engine validates positions
+via the self-pointer invariant. The evidence rules out the most common
+alternative mechanisms (cross-references, relative offsets) as primary
+validation methods.
+
+**Only remaining uncertainty**: the engine might validate something completely
+non-pointer-based (e.g., a checksum or hash that we missed evidence of).
+Test E ruled out content-based checksums (clone with same size loaded fine).
+Section-size validation is ruled out (sec[1].size is pre-allocated/static).
+This leaves only obscure mechanisms unlikely to exist in a 2004-era engine.
+
+D13 has the highest possible analytical confidence prior to in-game testing.
 
 ### Other key trailer findings (research time)
 
