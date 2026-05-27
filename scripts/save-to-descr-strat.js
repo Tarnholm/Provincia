@@ -222,16 +222,58 @@ const POPULATION_BY_LEVEL = {
 // ─────────────────────────────────────────────────────────────────────────────
 // CHARACTER EXTRACTION
 // ─────────────────────────────────────────────────────────────────────────────
-function extractLivingCharacters(buf, nameLookup, traitNames) {
+function extractCharacters(buf, nameLookup, traitNames) {
   const records = findCharacterRecords(buf, nameLookup, traitNames, null);
   const markers = findFactionMarkers(buf);
   assignFactions(records, markers);
-  // Filter to living characters with a faction. Dead chars don't go into
-  // descr_strat (that's the entire POINT of this exercise — leave bloat behind).
-  // Characters without a faction (couldn't attribute via captain_card_) get
-  // dropped — the engine would have to invent one anyway.
-  const living = records.filter(c => !c.isDead && c.faction && c.firstName && c.firstName !== `#0`);
-  return living;
+  // Return ALL parsed characters — caller filters as needed. Dead chars
+  // matter for father references (engine needs character_record for the
+  // dead ancestor) but we'll handle that in the family-tree emit step.
+  return records.filter(c => c.firstName && c.firstName !== `#0`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FAMILY TREE
+// ─────────────────────────────────────────────────────────────────────────────
+// Build the (father, mother) → [children] graph from each character's spouse
+// and child UUIDs. Returns:
+//   { uuidToChar: Map<primaryUuid, char>,
+//     relatives: [{ fatherChar, motherChar, childrenChars }, ...] }
+function buildFamilyTree(allCharacters) {
+  const uuidToChar = new Map();
+  for (const c of allCharacters) {
+    if (c.primaryUuid) uuidToChar.set(c.primaryUuid, c);
+  }
+  const relatives = [];
+  for (const c of allCharacters) {
+    // Anchor relationships to the MALE (father) — the bundled file's
+    // convention. Skip females here; they're listed as the spouse in their
+    // husband's relative line.
+    if (c.gender !== "male") continue;
+    if (!c.spouseUuid && (!c.childUuids || c.childUuids.length === 0)) continue;
+    const motherChar = c.spouseUuid ? uuidToChar.get(c.spouseUuid) : null;
+    const childrenChars = (c.childUuids || [])
+      .map(u => uuidToChar.get(u))
+      .filter(Boolean);
+    if (!motherChar && childrenChars.length === 0) continue;
+    relatives.push({ fatherChar: c, motherChar, childrenChars });
+  }
+  return { uuidToChar, relatives };
+}
+
+function fullName(c) {
+  if (!c) return null;
+  return c.lastName ? `${c.firstName} ${c.lastName}` : c.firstName;
+}
+
+function emitCharacterRecord(c) {
+  const gender = c.gender || "male";
+  const status = c.isDead ? "dead" : "alive";
+  // never_a_leader = engine flag preventing this person from being eligible
+  // as faction leader (used for wives, children, distant relatives). For our
+  // extraction, ANY character without isLeader/isHeir gets never_a_leader.
+  const flag = (c.isLeader || c.isHeir) ? "" : ", never_a_leader";
+  return `character_record\t${fullName(c)}, \t${gender}, age ${c.age || 1}, ${status}${flag}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -342,7 +384,7 @@ function emitCharacter(c, armyUnits, fallbackPos) {
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family) {
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
   if (decl.superfaction) lines.push(`superfaction ${decl.superfaction}`);
@@ -350,9 +392,9 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   for (const s of settlements) {
     lines.push(emitSettlement(s, facId, chainLevels));
   }
-  // Determine a fallback position for characters whose own tileX/tileY is
-  // unset. Order of preference: the leader's position, then any other
-  // character with a position. If nobody has one, we skip the character.
+  // Fallback position for characters whose own tileX/tileY is unset
+  // (governors stuck in settlements, etc). Use the leader's position, or
+  // any other commander's position.
   let fallbackPos = null;
   for (const c of characters) {
     if (c.isLeader && c.tileX && c.tileY) { fallbackPos = { x: c.tileX, y: c.tileY }; break; }
@@ -362,6 +404,14 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
       if (c.tileX && c.tileY) { fallbackPos = { x: c.tileX, y: c.tileY }; break; }
     }
   }
+  // The set of UUIDs that ARE named characters in this faction — we'll skip
+  // them in the character_record pass (they get full `character,` entries).
+  const namedUuids = new Set(characters.map(c => c.primaryUuid).filter(Boolean));
+
+  // Per-faction relatives: only relationships where at least the father is
+  // attributed to this faction. Wives/children inherit the faction implicitly.
+  const factionRelatives = family.relatives.filter(r => r.fatherChar.faction === facId);
+
   let emittedCount = 0, skippedCount = 0;
   for (const c of characters) {
     const army = charArmies.get(c.secondaryUuid);
@@ -374,7 +424,36 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   if (skippedCount > 0) {
     lines.push(`; ${skippedCount} character(s) skipped (no position and no fallback)`);
   }
-  return { text: lines.join("\n"), emittedCount, skippedCount };
+
+  // Family-member character_record entries: every character referenced as
+  // a spouse or child of one of our named characters who is NOT themselves
+  // already emitted as a `character,` entry.
+  let recordCount = 0;
+  const seenInRecords = new Set();
+  for (const r of factionRelatives) {
+    const candidates = [r.motherChar, ...r.childrenChars].filter(Boolean);
+    for (const candChar of candidates) {
+      if (namedUuids.has(candChar.primaryUuid)) continue;
+      if (seenInRecords.has(candChar.primaryUuid)) continue;
+      seenInRecords.add(candChar.primaryUuid);
+      lines.push(emitCharacterRecord(candChar));
+      recordCount++;
+    }
+  }
+  if (recordCount > 0) lines.push("");
+
+  // Relative lines tie the named character to spouse + children by NAME.
+  let relativeCount = 0;
+  for (const r of factionRelatives) {
+    const fatherName = fullName(r.fatherChar);
+    const parts = [fatherName];
+    if (r.motherChar) parts.push(fullName(r.motherChar));
+    for (const child of r.childrenChars) parts.push(fullName(child));
+    parts.push("end");
+    lines.push(`relative\t${parts.join(", ")}`);
+    relativeCount++;
+  }
+  return { text: lines.join("\n"), emittedCount, skippedCount, recordCount, relativeCount };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -456,14 +535,20 @@ async function main() {
   if (owners.error) { console.error("ownership resolution failed:", owners.error); process.exit(1); }
   console.log(`[${Date.now() - t0}ms] owners resolved — ${Object.keys(owners.ownerByCity).length} settlements, ${owners.unknownCount} unknown`);
 
-  // Characters
-  let characters = [];
+  // Characters — extract ALL (including dead + non-attributed) so we can
+  // build family-tree continuity. We'll filter to faction-attributed +
+  // living at emission time.
+  let allCharacters = [];
   if (nameLookup.length > 0 && traitNames.length > 0) {
-    characters = extractLivingCharacters(buf, nameLookup, traitNames);
-    console.log(`[${Date.now() - t0}ms] living characters extracted — ${characters.length} with faction attribution`);
+    allCharacters = extractCharacters(buf, nameLookup, traitNames);
+    const livingAttributed = allCharacters.filter(c => !c.isDead && c.faction).length;
+    console.log(`[${Date.now() - t0}ms] characters extracted — ${allCharacters.length} total, ${livingAttributed} living+faction-attributed`);
   } else {
     console.warn(`[${Date.now() - t0}ms] WARNING: missing nameLookup or traitNames — character extraction skipped`);
   }
+  const characters = allCharacters.filter(c => !c.isDead && c.faction);
+  const family = buildFamilyTree(allCharacters);
+  console.log(`[${Date.now() - t0}ms] family tree — ${family.relatives.length} parent-anchor relationships, ${family.uuidToChar.size} indexed by uuid`);
 
   // Armies (units grouped by commander UUID)
   const charArmies = groupUnitsByCommander(buf);
@@ -508,7 +593,7 @@ async function main() {
   }
 
   const blocks = [];
-  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0 };
+  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0 };
   for (const facId of orderedFactions) {
     const decl = factionDecls[facId];
     if (!decl) { console.warn(`  WARNING: no declaration for ${facId} — skipping`); continue; }
@@ -523,14 +608,16 @@ async function main() {
       const cand = males[0] || cs[0];
       if (cand) cand.isLeader = true;
     }
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels);
-    blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (${block.skippedCount} skipped no-pos)`);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family);
+    blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)`);
     blocks.push(block.text);
     blocks.push("");
     stats.factions++;
     stats.settlements += ss.length;
     stats.characters += block.emittedCount;
     stats.skipped += block.skippedCount;
+    stats.familyRecords += block.recordCount;
+    stats.relativeLines += block.relativeCount;
     for (const c of cs) {
       const army = charArmies.get(c.secondaryUuid);
       if (army) stats.units += army.length;
@@ -553,6 +640,8 @@ async function main() {
   console.log(`  settlements:         ${stats.settlements}`);
   console.log(`  living characters:   ${stats.characters} emitted (+${stats.skipped} skipped no-pos)`);
   console.log(`  units in armies:     ${stats.units}`);
+  console.log(`  family records:      ${stats.familyRecords} character_record lines`);
+  console.log(`  family relationships: ${stats.relativeLines} relative lines`);
 }
 
 main().catch((e) => { console.error("FATAL:", e.stack || e); process.exit(1); });
