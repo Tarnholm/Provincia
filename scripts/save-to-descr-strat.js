@@ -49,6 +49,7 @@ const {
   parseReligionByCity,
   deriveEngineFactionOrder,
   identifyFactionRecordOwners,
+  parseModInfo,
 } = require("../src/saveCrackerExtras.js");
 const { parseDescrRegions: parseDR2, buildRegionCoords } = require("../src/descrStratGeneral.js");
 
@@ -94,6 +95,63 @@ function assignFactions(records, factionMarkers) {
 const SCRIPT_DIR = __dirname;
 const PROJECT_ROOT = path.resolve(SCRIPT_DIR, "..");
 const BUNDLED_MOD = path.join(PROJECT_ROOT, "bundled-mod", "data");
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOD AUTO-DETECTION
+// ─────────────────────────────────────────────────────────────────────────────
+// Given a save's modDisplayName (e.g. "[EARLY ACCESS] RTR: Imperium
+// Surrectum 0.7.0"), find a Mods/My Mods directory whose name fuzzy-
+// matches. Strips brackets, normalises whitespace, then prefers the
+// most-recently-modified match.
+function findInstalledModByName(modDisplayName) {
+  const modsRoots = [
+    "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/My Mods",
+    "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/Local Mods",
+  ];
+  // Match strategies (try each in order, first hit wins):
+  //   1. Substring match after normalization (covers "RIS Classic" ↔ "ris classic beta")
+  //   2. Initials of one matches the other's full normalized form
+  //      ("RTR: Imperium Surrectum" → "ris" matches dir "RIS beta")
+  //   3. Initials of one matches initials of the other ("RIS" ↔ "RIS")
+  const normalize = (s) => String(s).toLowerCase()
+    .replace(/\[[^\]]*\]/g, "")
+    .replace(/[\d.]+/g, "")
+    .replace(/[^a-z]+/g, "")
+    .trim();
+  // Compute initials from a non-normalized string, e.g.
+  // "RTR: Imperium Surrectum 0.7.0" → "ris".
+  const initials = (s) => {
+    const clean = String(s).replace(/\[[^\]]*\]/g, "").replace(/[\d.]+/g, " ");
+    const words = clean.split(/[^A-Za-z]+/).filter(Boolean);
+    return words.map(w => w[0].toLowerCase()).join("");
+  };
+  const targetNorm = normalize(modDisplayName);
+  const targetInit = initials(modDisplayName);
+  if (!targetNorm && !targetInit) return null;
+  let best = null;
+  for (const root of modsRoots) {
+    if (!fs.existsSync(root)) continue;
+    let entries;
+    try { entries = fs.readdirSync(root, { withFileTypes: true }); } catch { continue; }
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const dirNorm = normalize(e.name);
+      const dirInit = initials(e.name);
+      let matched = false;
+      if (targetNorm && dirNorm && (targetNorm.includes(dirNorm) || dirNorm.includes(targetNorm))) matched = true;
+      if (!matched && targetInit && dirNorm && dirNorm.includes(targetInit)) matched = true;
+      if (!matched && targetNorm && dirInit && targetNorm.includes(dirInit)) matched = true;
+      if (!matched && targetInit && dirInit && targetInit === dirInit) matched = true;
+      if (!matched) continue;
+      const full = path.join(root, e.name);
+      const dataDir = path.join(full, "data");
+      if (!fs.existsSync(dataDir)) continue;
+      const mtime = fs.statSync(full).mtimeMs;
+      if (!best || mtime > best.mtime) best = { path: full, mtime };
+    }
+  }
+  return best ? best.path : null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOD DATA LOADERS
@@ -476,7 +534,7 @@ function resolveUniqueFirstName(c, usedNames, nameLookupSet) {
   return null;
 }
 
-function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog) {
+function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames) {
   const lines = [];
   const firstName = c.firstName || "Unknown";
   const lastName = c.lastName || ""; // Greek single-name chars have no lastName
@@ -504,6 +562,11 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   if (c.traits && c.traits.length > 0) {
     const traitParts = c.traits
       .filter(t => t.name && t.level >= 1)
+      // Filter out trait names that don't exist in the mod's EDCT.
+      // Saves often reference old/renamed traits (e.g. RIS renamed
+      // "Fitness" → "Fitness_Normal" / "Fitness_Overweight" / etc).
+      // Engine would just silently drop them but they trigger warnings.
+      .filter(t => !edctTraitNames || edctTraitNames.has(t.name))
       .map(t => `${t.name} ${Math.min(t.level, 9)}`);
     if (traitParts.length > 0) {
       lines.push(`traits ${traitParts.join(", ")}`);
@@ -559,7 +622,7 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames) {
   const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
@@ -606,7 +669,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   let emittedCount = 0, skippedCount = 0;
   for (const c of characters) {
     const army = charArmies.get(c.secondaryUuid);
-    const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog);
+    const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames);
     if (text === null) { skippedCount++; continue; }
     lines.push(text);
     lines.push("");
@@ -848,18 +911,36 @@ async function main() {
     positional.push(argv[i]);
   }
   const outPath = positional[0] || path.join(PROJECT_ROOT, "derived", path.basename(savePath, ".sav") + ".descr_strat.txt");
-  // Mod data dir: prefer user-specified; else default to bundled-mod/data. If
-  // user passed `--mod-dir <mod-root>` we look for `<mod-root>/data` since
-  // RTW mods always nest their reference data under `data/`.
+  // Mod data dir cascade:
+  //   1. --mod-dir <path>  (explicit user override)
+  //   2. Auto-detect from save's modInfo by walking Mods/My Mods for a
+  //      directory whose name fuzzy-matches the modDisplayName
+  //   3. Fall back to bundled-mod/data
   let modDataDir = path.join(PROJECT_ROOT, "bundled-mod", "data");
+  let modDetectionNote = "(default: bundled-mod)";
   if (userModDir) {
     const dataPath = path.join(userModDir, "data");
     modDataDir = fs.existsSync(dataPath) ? dataPath : userModDir;
+    modDetectionNote = "(via --mod-dir)";
+  } else {
+    // Auto-detect from save's modInfo
+    try {
+      const probe = fs.readFileSync(savePath);
+      const mi = parseModInfo(probe);
+      if (mi && mi.modDisplayName) {
+        const detected = findInstalledModByName(mi.modDisplayName);
+        if (detected) {
+          modDataDir = path.join(detected, "data");
+          modDetectionNote = `(auto-detected from save: "${mi.modDisplayName}" → ${detected})`;
+        }
+      }
+    } catch {}
   }
   if (!fs.existsSync(modDataDir)) {
     console.error("mod data dir not found:", modDataDir);
     process.exit(1);
   }
+  console.log(`mod ${modDetectionNote}`);
 
   if (!fs.existsSync(savePath)) { console.error("save not found:", savePath); process.exit(1); }
 
@@ -1054,6 +1135,12 @@ async function main() {
   // backed by descr_names_lookup tokens.
   const usedNames = new Set();
   const nameLookupSet = new Set(nameLookup);
+  // Trait whitelist — drop traits not in the user's EDCT. Saves often
+  // reference renamed/removed traits (e.g. RIS renamed "Fitness" to
+  // "Fitness_Normal", "Fitness_Overweight", etc); without this filter
+  // the engine silently drops them anyway but the descr_strat looks
+  // dirty in the validator.
+  const edctTraitSet = new Set(traitNames);
   let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0, dedupedNames: 0, droppedDupes: 0 };
   for (const facId of orderedFactions) {
     const decl = factionDecls[facId];
@@ -1131,7 +1218,7 @@ async function main() {
     cs.length = 0;
     for (const c of dedupedKeep) cs.push(c);
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet);
     const trTag = tr != null ? ` (treasury ${tr})` : "";
     blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)${trTag}`);
     blocks.push(block.text);
