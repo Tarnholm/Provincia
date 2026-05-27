@@ -12,17 +12,77 @@
 
 "use strict";
 const fs = require("fs");
+const path = require("path");
 
 if (process.argv.length < 3) {
-  console.error("usage: node validate-descr-strat.js <descr_strat.txt>");
+  console.error("usage: node validate-descr-strat.js <descr_strat.txt> [bundled-mod-data-dir]");
   process.exit(2);
 }
-const path = process.argv[2];
-if (!fs.existsSync(path)) { console.error("not found:", path); process.exit(1); }
+const inputPath = process.argv[2];
+const modDataDir = process.argv[3] || path.join(__dirname, "..", "bundled-mod", "data");
+if (!fs.existsSync(inputPath)) { console.error("not found:", inputPath); process.exit(1); }
 
-const text = fs.readFileSync(path, "utf8");
+// Load reference data for cross-reference validation.
+// Returns null silently when files aren't present (some bundled mods only
+// have partial data).
+function loadEduUnitNames(modDataDir) {
+  const p = path.join(modDataDir, "export_descr_unit.txt");
+  if (!fs.existsSync(p)) return null;
+  const set = new Set();
+  for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+    const m = raw.match(/^type\s+(.+?)\s*$/);
+    if (m) set.add(m[1].trim());
+  }
+  return set;
+}
+function loadEdbChainLevels(modDataDir) {
+  const stripComments = (line) => { const i = line.indexOf(";"); return i >= 0 ? line.slice(0, i) : line; };
+  const candidates = [
+    path.join(modDataDir, "export_descr_buildings.txt"),
+  ];
+  for (const src of candidates) {
+    if (!fs.existsSync(src)) continue;
+    const text = fs.readFileSync(src, "utf8");
+    const lines = text.split(/\r?\n/);
+    const map = {};
+    let curChain = null;
+    for (const raw of lines) {
+      const line = stripComments(raw).trim();
+      if (!line) continue;
+      const cm = line.match(/^building\s+([A-Za-z_][A-Za-z0-9_]*)\s*$/);
+      if (cm) { curChain = cm[1]; continue; }
+      if (!curChain) continue;
+      const lm = line.match(/^levels\s+(.+?)\s*\{?\s*$/);
+      if (lm) {
+        const levels = lm[1].split(/\s+/).filter(Boolean);
+        if (levels.length > 0) map[curChain] = new Set(levels);
+        curChain = null;
+      }
+    }
+    if (Object.keys(map).length > 0) return map;
+  }
+  return null;
+}
+function loadEdctTraitNames(modDataDir) {
+  const p = path.join(modDataDir, "export_descr_character_traits.txt");
+  if (!fs.existsSync(p)) return null;
+  const set = new Set();
+  for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+    const m = raw.match(/^Trait\s+(\S+)/);
+    if (m) set.add(m[1]);
+  }
+  return set;
+}
+
+const eduUnits = loadEduUnitNames(modDataDir);
+const edbChains = loadEdbChainLevels(modDataDir);
+const edctTraits = loadEdctTraitNames(modDataDir);
+console.log(`reference data: EDU=${eduUnits?.size ?? "(missing)"} units, EDB=${edbChains ? Object.keys(edbChains).length : "(missing)"} chains, EDCT=${edctTraits?.size ?? "(missing)"} traits`);
+console.log();
+
+const text = fs.readFileSync(inputPath, "utf8");
 const lines = text.split(/\r?\n/);
-console.log(`validating ${path}  (${lines.length} lines, ${(text.length / 1024 / 1024).toFixed(2)} MB)`);
+console.log(`validating ${inputPath}  (${lines.length} lines, ${(text.length / 1024 / 1024).toFixed(2)} MB)`);
 console.log();
 
 const issues = [];
@@ -47,6 +107,15 @@ for (let i = 0; i < lines.length; i++) {
     if (line === "}") { buildBraceDepth--; if (buildBraceDepth === 0) inBuilding = false; }
     else if (line === "{") { buildBraceDepth++; }
     else if (!/^type\s+/.test(line)) { warn(i + 1, "unexpected line inside building block: " + line); }
+    else {
+      const m = line.match(/^type\s+(\S+)\s+(\S+)/);
+      if (m && edbChains) {
+        const chain = m[1], level = m[2];
+        const levels = edbChains[chain];
+        if (!levels) err(i + 1, "unknown building chain: " + chain);
+        else if (!levels.has(level)) err(i + 1, `unknown level "${level}" for chain ${chain}`);
+      }
+    }
     continue;
   }
   if (inSettlement) {
@@ -92,8 +161,26 @@ for (let i = 0; i < lines.length; i++) {
     continue;
   }
   if (line === "army") { armies++; if (curFaction) factionsByName[curFaction].armies++; continue; }
-  if (/^unit\s/.test(line)) { continue; }
-  if (/^traits\s/.test(line)) { traitsLines++; continue; }
+  if (/^unit\s/.test(line)) {
+    // Format: `unit\t\t<unit_name>\t\texp N armour N weapon_lvl N`
+    const m = line.match(/^unit\s+(.+?)\s+exp\s+\d+\s+armour/);
+    if (m && eduUnits) {
+      const unitName = m[1].trim();
+      if (!eduUnits.has(unitName)) err(i + 1, "unknown unit: " + unitName);
+    }
+    continue;
+  }
+  if (/^traits\s/.test(line)) {
+    traitsLines++;
+    if (edctTraits) {
+      const body = line.slice(6).trim();
+      for (const part of body.split(",")) {
+        const m = part.trim().match(/^(\S+)\s+\d+$/);
+        if (m && !edctTraits.has(m[1])) warn(i + 1, "unknown trait: " + m[1]);
+      }
+    }
+    continue;
+  }
   if (/^ancillaries\s/.test(line)) { anciLines++; continue; }
   if (line.startsWith("character_record")) { characterRecords++; continue; }
   if (line.startsWith("relative")) {

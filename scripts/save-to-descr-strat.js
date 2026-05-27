@@ -368,13 +368,32 @@ function emitSettlement(s, factionId, chainLevels) {
   lines.push(`\tpopulation ${POPULATION_BY_LEVEL[level]}`);
   lines.push(`\tplan_set default_set`);
   lines.push(`\tfaction_creator ${factionId}`);
+
+  // Auto-complete in-progress upgrades that are >50% done. If a building
+  // chain is currently at level N and queued for upgrade to level N+1 with
+  // >=50% progress, emit it at level N+1 instead of N. This carries over
+  // the user's "almost there" upgrades — losing the last 50% of progress
+  // is a small price vs losing the whole upgrade. <50% queued chains are
+  // dropped (the engine will need to re-start them).
+  const queuedByChain = new Map();
+  for (const q of (s.queued || [])) {
+    if (q && typeof q === "object" && typeof q.percent === "number") {
+      queuedByChain.set(q.name, q.percent);
+    }
+  }
   for (const b of s.buildings) {
     const levelNames = chainLevels[b.name];
+    let effectiveLevel = b.level;
+    const queuePct = queuedByChain.get(b.name);
+    if (queuePct != null && queuePct >= 50 && levelNames &&
+        typeof b.level === "number" && b.level + 1 < levelNames.length) {
+      effectiveLevel = b.level + 1;
+    }
     let levelName;
-    if (levelNames && typeof b.level === "number" && b.level >= 0 && b.level < levelNames.length) {
-      levelName = levelNames[b.level];
+    if (levelNames && typeof effectiveLevel === "number" && effectiveLevel >= 0 && effectiveLevel < levelNames.length) {
+      levelName = levelNames[effectiveLevel];
     } else {
-      levelName = `level_${b.level ?? "?"}`;
+      levelName = `level_${effectiveLevel ?? "?"}`;
     }
     lines.push(`\tbuilding`);
     lines.push(`\t{`);
