@@ -799,19 +799,35 @@ function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment
 async function main() {
   const argv = process.argv.slice(2);
   if (argv.length < 1) {
-    console.error("usage: node scripts/save-to-descr-strat.js <save-path> [output-path] [--deploy <target-campaign-dir>]");
+    console.error("usage: node scripts/save-to-descr-strat.js <save-path> [output-path] [--deploy <dir>] [--mod-dir <dir>]");
+    console.error("       --mod-dir  use <dir>/data as the reference mod (defaults to bundled-mod/data).");
+    console.error("                  Use this when deploying to a specific installed mod whose");
+    console.error("                  regions/EDU/EDB differ from the bundled fallback.");
     console.error("       --deploy   immediately copy the generated file into <target-campaign-dir>");
-    console.error("                  (creates descr_strat.txt.backup on first deploy)");
     process.exit(2);
   }
   const savePath = argv[0];
   let deployTarget = null;
+  let userModDir = null;
   const positional = [];
   for (let i = 1; i < argv.length; i++) {
     if (argv[i] === "--deploy") { deployTarget = argv[++i]; continue; }
+    if (argv[i] === "--mod-dir") { userModDir = argv[++i]; continue; }
     positional.push(argv[i]);
   }
   const outPath = positional[0] || path.join(PROJECT_ROOT, "derived", path.basename(savePath, ".sav") + ".descr_strat.txt");
+  // Mod data dir: prefer user-specified; else default to bundled-mod/data. If
+  // user passed `--mod-dir <mod-root>` we look for `<mod-root>/data` since
+  // RTW mods always nest their reference data under `data/`.
+  let modDataDir = path.join(PROJECT_ROOT, "bundled-mod", "data");
+  if (userModDir) {
+    const dataPath = path.join(userModDir, "data");
+    modDataDir = fs.existsSync(dataPath) ? dataPath : userModDir;
+  }
+  if (!fs.existsSync(modDataDir)) {
+    console.error("mod data dir not found:", modDataDir);
+    process.exit(1);
+  }
 
   if (!fs.existsSync(savePath)) { console.error("save not found:", savePath); process.exit(1); }
 
@@ -821,18 +837,19 @@ async function main() {
   console.log();
 
   // ── Load mod data ──
-  const ownership = buildInitialOwnership(BUNDLED_MOD);
+  console.log(`using mod data dir: ${modDataDir}`);
+  const ownership = buildInitialOwnership(modDataDir);
   if (ownership.error) { console.error("ownership parser failed:", ownership.error); process.exit(1); }
   const stratPath = ownership.stratPath;
   const { decls: factionDecls, descrOrder } = loadFactionDeclarations(stratPath);
   const engineOrder = deriveEngineFactionOrder(descrOrder);
-  const chainLevels = loadChainLevels(BUNDLED_MOD);
-  const settlementToRegion = loadSettlementToRegion(BUNDLED_MOD);
-  const settlementCoords = loadSettlementCoords(BUNDLED_MOD);
-  const nameLookup = loadNameLookup(BUNDLED_MOD);
-  const traitNames = loadTraitNames(BUNDLED_MOD);
-  const ancNames = loadAncillaryNames(BUNDLED_MOD);
-  const eduUnits = loadEduUnitNames(BUNDLED_MOD);
+  const chainLevels = loadChainLevels(modDataDir);
+  const settlementToRegion = loadSettlementToRegion(modDataDir);
+  const settlementCoords = loadSettlementCoords(modDataDir);
+  const nameLookup = loadNameLookup(modDataDir);
+  const traitNames = loadTraitNames(modDataDir);
+  const ancNames = loadAncillaryNames(modDataDir);
+  const eduUnits = loadEduUnitNames(modDataDir);
   console.log(`[${Date.now() - t0}ms] mod data loaded: ` +
     `${Object.keys(ownership.ownerByCity).length} settlements, ` +
     `${Object.keys(factionDecls).length} factions, ` +
