@@ -50,6 +50,7 @@ const {
   deriveEngineFactionOrder,
   identifyFactionRecordOwners,
 } = require("../src/saveCrackerExtras.js");
+const { parseDescrRegions: parseDR2, buildRegionCoords } = require("../src/descrStratGeneral.js");
 
 // Inlined from src/characterParserV2.js (not exported there). Each faction's
 // character block is preceded by a `captain_card_<faction>.tga` ASCII path
@@ -163,6 +164,36 @@ function loadSettlementToRegion(modDataDir) {
   const out = {};
   for (const [region, settlement] of Object.entries(regionToSettlement)) {
     out[settlement] = region;
+  }
+  return out;
+}
+
+// Settlement tile coordinates extracted from map_regions.tga. Each
+// settlement is a black pixel in the TGA; the surrounding region color
+// identifies which region it belongs to. Returns a map of
+// `settlementName -> { x, y }` in descr_strat tile space.
+function loadSettlementCoords(modDataDir) {
+  const tgaPath = path.join(modDataDir, "world", "maps", "base", "map_regions.tga");
+  const regionsPath = findDescrRegions(modDataDir, "imperial_campaign");
+  if (!fs.existsSync(tgaPath) || !regionsPath) return {};
+  const regionToSettlement = parseDescrRegions(regionsPath);
+  // Build rgbToRegion: parse the same descr_regions.txt for the RGB triplets.
+  const text = fs.readFileSync(regionsPath, "utf8");
+  const lines = text.split(/\r?\n/);
+  const rgbToRegion = {};
+  for (let i = 0; i < lines.length; i++) {
+    const name = lines[i];
+    if (!name || /^[;\s]/.test(name) || !/^[A-Za-z]/.test(name)) continue;
+    const rgbLine = (lines[i + 4] || "").trim();
+    const m = rgbLine.match(/^(\d+)\s+(\d+)\s+(\d+)/);
+    if (m) rgbToRegion[`${+m[1]},${+m[2]},${+m[3]}`] = name.trim();
+  }
+  const tgaBuf = fs.readFileSync(tgaPath);
+  const regionCoords = buildRegionCoords(tgaBuf, rgbToRegion);
+  const out = {};
+  for (const [region, sett] of Object.entries(regionToSettlement)) {
+    const c = regionCoords[region];
+    if (c) out[sett] = c;
   }
   return out;
 }
@@ -427,7 +458,7 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames) {
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords) {
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
   if (decl.superfaction) lines.push(`superfaction ${decl.superfaction}`);
@@ -440,8 +471,12 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
     lines.push(emitSettlement(s, facId, chainLevels));
   }
   // Fallback position for characters whose own tileX/tileY is unset
-  // (governors stuck in settlements, etc). Use the leader's position, or
-  // any other commander's position.
+  // (governors stuck in settlements, etc). Cascade:
+  //   1. Leader's position (if known)
+  //   2. Any commander's position
+  //   3. The first owned settlement's tile coords (from map_regions.tga
+  //      via buildRegionCoords). Catches factions where NO character has
+  //      a known position — previously we dropped all their chars.
   let fallbackPos = null;
   for (const c of characters) {
     if (c.isLeader && c.tileX && c.tileY) { fallbackPos = { x: c.tileX, y: c.tileY }; break; }
@@ -449,6 +484,12 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   if (!fallbackPos) {
     for (const c of characters) {
       if (c.tileX && c.tileY) { fallbackPos = { x: c.tileX, y: c.tileY }; break; }
+    }
+  }
+  if (!fallbackPos && settlementCoords) {
+    for (const s of settlements) {
+      const c = settlementCoords[s.name];
+      if (c) { fallbackPos = { x: c.x, y: c.y }; break; }
     }
   }
   // The set of UUIDs that ARE named characters in this faction — we'll skip
@@ -602,6 +643,7 @@ async function main() {
   const engineOrder = deriveEngineFactionOrder(descrOrder);
   const chainLevels = loadChainLevels(BUNDLED_MOD);
   const settlementToRegion = loadSettlementToRegion(BUNDLED_MOD);
+  const settlementCoords = loadSettlementCoords(BUNDLED_MOD);
   const nameLookup = loadNameLookup(BUNDLED_MOD);
   const traitNames = loadTraitNames(BUNDLED_MOD);
   const ancNames = loadAncillaryNames(BUNDLED_MOD);
@@ -611,7 +653,8 @@ async function main() {
     `${Object.keys(chainLevels).length} chains, ` +
     `${nameLookup.length} name tokens, ` +
     `${traitNames.length} traits, ` +
-    `${ancNames.length} ancillaries`);
+    `${ancNames.length} ancillaries, ` +
+    `${Object.keys(settlementCoords).length} settlement coords`);
 
   // ── Parse the save ──
   const buf = fs.readFileSync(savePath);
@@ -736,7 +779,7 @@ async function main() {
       if (cand) cand.isLeader = true;
     }
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords);
     const trTag = tr != null ? ` (treasury ${tr})` : "";
     blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)${trTag}`);
     blocks.push(block.text);
