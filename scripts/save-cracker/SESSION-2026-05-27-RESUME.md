@@ -159,6 +159,45 @@ we want a 100 %-accurate budget.
 - `save_TEST_F_splice100.sav` (records 100..199, -67,814 B) — run if F-10 loads
 - `save_TEST_G_splice100late.sav` (records 21000..21099, -67,554 B) — run if F-10 loads
 
+### Session 2026-05-27 part 3 — TEST RESULTS
+
+| Test | Result | Implication |
+|---|---|---|
+| D (splice rec #50) | ✗ hang `next < buffer_end Failed` infinite loop | engine reads count/size we haven't found |
+| E (clone rec #49 → #50) | ✓ LOADED + END-TURN WORKED | same-size mutation accepted |
+| F-10/G-10/F/G | (not tested — D failed) | gated on D outcome |
+| E100late (clone 100 records) | ✗ instant crash on load | clone DOES NOT scale to 100 |
+| D2 (splice + size + 10,513 self_offsets) | ✗ same hang | offset patches likely corrupted false-positive sections |
+| D3 (splice + 4 nested section sizes only) | ✗ same hang | inner sections were likely false-positive matches |
+| D4 (splice + sec[1].size only) | ✗ same hang | sec[1].size confirmed PRE-ALLOCATED (constant Start/End despite 10-char delta) |
+| DLR (splice LAST record) | NOT YET TESTED | tests whether engine iterates by count or until exhaustion |
+| D6 (splice + decrement u32 at 0x106c3ac 65312→65311) | NOT YET TESTED | most-suspicious +10 hit, close to 65,536 cap, in sec[1] |
+| D5 (splice + u32==21761 patches) | REMOVED — would corrupt building chain records | wrong hypothesis |
+
+### Key learning
+
+**The engine has an iterator with a count/size we haven't located.**
+Ruled out:
+- Section size headers (sec[1] is pre-allocated, identical across saves with different dead counts)
+- Pointer-table to records (only 226 noise matches across 43k targets)
+- Per-record self-pointers (0 records have self-pointer in first 2000)
+- Global `u32 == 21762` (only 8 hits, all in unrelated header array constant Start/End)
+- Per-faction `u32 == small count` (no per-faction field has small-positive delta summing to +10)
+
+T960 Start (21,762 dead) vs T960 End (21,772 dead):
+- 177 u32 fields changed by +10 (matches dead delta)
+- 560 u32 fields changed by +1 (could be per-faction sub-pool counts)
+- 0 u32 fields changed from 21762→21772 at the same offset
+
+### Direction options for next session
+
+1. **Try DLR**: if removing the LAST record loads cleanly, the engine walks until exhausted (no count check) — then D's failure is something else entirely (maybe a reference invalidation, since record #50 might be referenced by a living char).
+2. **Try D6**: if decrementing the 0x106c3ac counter fixes D, we found a real engine state we need to maintain.
+3. **Pivot to "safe to trim" filter**: replicate the trim_analysis logic that found Wahab AliYahbir as the one safe-to-remove dead char (no references to his UUID). Generate a test where we splice ONLY a no-references char. If that loads, the issue is reference integrity, not iteration count.
+4. **Accept defeat on splice**, build a clone-pruner around the working E mechanism, accept the caveat that it may not free registry slots (and verify by re-running save-budget-full on an E-cloned save and checking if characterRecords actually dropped).
+
+The Dummies save data is very valuable — 21k+ dead chars to experiment with. But the splice path is harder than initial hypotheses suggested.
+
 Originals also present:
 - `save_Autosave   Dummies   Turn 900 End.sav`
 - `save_Autosave   Dummies   Turn 960 Start.sav` (test source)
