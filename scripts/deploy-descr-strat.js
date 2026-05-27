@@ -58,6 +58,22 @@ function findCandidateTargets() {
   return [...out];
 }
 
+// Pick the most likely target when no explicit one is given. Prefers an
+// installed mod's imperial_campaign over the bundled-mod default — the
+// bundled default is fine for testing parsers but the user almost always
+// wants to deploy to their real installed mod.
+function autoPickTarget() {
+  const cands = findCandidateTargets().filter(p => !p.includes("bundled-mod"));
+  if (cands.length === 0) return null;
+  // Prefer the most-recently-modified candidate (= probably the active mod)
+  let best = null;
+  for (const c of cands) {
+    const mtime = fs.statSync(c).mtimeMs;
+    if (!best || mtime > best.mtime) best = { path: c, mtime };
+  }
+  return best ? best.path : null;
+}
+
 function rollback(targetDir) {
   const target = path.join(targetDir, "descr_strat.txt");
   const backup = path.join(targetDir, "descr_strat.txt.backup");
@@ -128,10 +144,20 @@ if (argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
 if (argv[0] === "--list-targets") {
   console.log("Candidate imperial_campaign folders:");
   for (const t of findCandidateTargets()) console.log("  " + t);
+  const auto = autoPickTarget();
+  console.log();
+  console.log("Auto-pick (when target arg omitted): " + (auto || "(none — would use bundled-mod default)"));
   process.exit(0);
 }
 if (argv[0] === "--rollback") {
-  rollback(argv[1] || DEFAULT_TARGET);
+  const target = argv[1] || autoPickTarget() || DEFAULT_TARGET;
+  rollback(target);
 } else {
-  deploy(argv[0], argv[1] || DEFAULT_TARGET);
+  let target = argv[1];
+  if (!target) {
+    target = autoPickTarget();
+    if (target) console.log(`(auto-picked target: ${target})`);
+    else target = DEFAULT_TARGET;
+  }
+  deploy(argv[0], target);
 }

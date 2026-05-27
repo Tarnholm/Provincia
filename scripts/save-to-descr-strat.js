@@ -342,6 +342,25 @@ function loadAncillaryNames(modDataDir) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SETTLEMENT POPULATION (from save bytes)
+// ─────────────────────────────────────────────────────────────────────────────
+// Cracked by Provincia's main.js: each settlement marker's population is a
+// u32 at marker.offset - 1494 (RIS imperial / vanilla imperial layout).
+// Sanity-clipped to [100, 100000] to detect record-layout drift.
+function extractPopulationByCity(buf, settlements) {
+  const out = {};
+  for (const s of settlements) {
+    const off = s.offset - 1494;
+    if (off < 0 || off + 4 > buf.length) continue;
+    const v = buf.readUInt32LE(off);
+    if (Number.isFinite(v) && v >= 100 && v <= 100000) {
+      out[s.name] = v;
+    }
+  }
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SETTLEMENT LEVEL INFERENCE
 // ─────────────────────────────────────────────────────────────────────────────
 // descr_strat uses level village|town|large_town|city|large_city|huge_city.
@@ -447,15 +466,20 @@ function groupUnitsByCommander(buf) {
 // EMISSION HELPERS — write descr_strat-formatted blocks
 // ─────────────────────────────────────────────────────────────────────────────
 
-function emitSettlement(s, factionId, chainLevels, originalCreator) {
+function emitSettlement(s, factionId, chainLevels, originalCreator, populationByCity) {
   const lines = [];
   const level = inferSettlementLevel(s.buildings);
+  // Prefer real save population over the level-based default. Saves the
+  // user's actual settlement growth — e.g. a "large_town" with 50k pop
+  // (turn 1000 conqueror's capital) instead of the default 3000.
+  const realPop = populationByCity ? populationByCity[s.name] : null;
+  const population = realPop != null ? realPop : POPULATION_BY_LEVEL[level];
   lines.push("settlement");
   lines.push("{");
   lines.push(`\tlevel ${level}`);
   lines.push(`\tregion ${s.region || "Unknown"}`);
   lines.push(`\tyear_founded 0`);
-  lines.push(`\tpopulation ${POPULATION_BY_LEVEL[level]}`);
+  lines.push(`\tpopulation ${population}`);
   lines.push(`\tplan_set default_set`);
   // faction_creator drives RTW's "emergent faction" mechanic: when a
   // rebellion happens in a settlement, the rebels become this faction.
@@ -622,7 +646,7 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity) {
   const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
@@ -634,7 +658,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   lines.push(`denari\t${denari}`);
   for (const s of settlements) {
     const origCreator = creatorByCity ? creatorByCity[s.name] : null;
-    lines.push(emitSettlement(s, facId, chainLevels, origCreator));
+    lines.push(emitSettlement(s, facId, chainLevels, origCreator, populationByCity));
   }
   // Fallback position for characters whose own tileX/tileY is unset
   // (governors stuck in settlements, etc). Cascade:
@@ -1050,6 +1074,11 @@ async function main() {
   const religionByCity = parseReligionByCity(buf, settlementMarkers);
   console.log(`[${Date.now() - t0}ms] religions — ${Object.keys(religionByCity).length} settlements with religion data`);
 
+  // Real settlement population from save (vs the level-based defaults
+  // we were using). Cracked: u32 at settlement.offset - 1494.
+  const populationByCity = extractPopulationByCity(buf, parsed.settlements);
+  console.log(`[${Date.now() - t0}ms] populations — ${Object.keys(populationByCity).length} settlements with real pop data`);
+
   // ── Identify KILLED factions for emergent-faction setup ──
   // Any faction in the bundled descr_strat that has zero settlements
   // AND zero characters in the save is "killed". We still emit a minimal
@@ -1218,7 +1247,7 @@ async function main() {
     cs.length = 0;
     for (const c of dedupedKeep) cs.push(c);
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity);
     const trTag = tr != null ? ` (treasury ${tr})` : "";
     blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)${trTag}`);
     blocks.push(block.text);
