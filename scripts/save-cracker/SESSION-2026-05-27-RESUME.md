@@ -273,10 +273,52 @@ and the only options are:
 - Pivot to clone-based pruner with synthetic "ignore-me" records
 - Accept that the cap can't be raised via save editing
 
-**Test order when you're back:**
-1. ~~D12 first~~ — analytical update: D12 still leaves 10,767 stale self-pointers. SKIP.
-2. **D13 directly** — provably zero stale self-pointers (mathematically verified)
-3. If D13 fails, splice is structurally infeasible
+**Test order when you're back — UPDATED with safe-to-trim discovery:**
+1. **D14 first** — splices a SAFE-TO-TRIM record (UUID 0x918fb35e at 0x18ad23d, NO external references) + all self-pointer patches. STRONGEST hypothesis combining both findings.
+2. **D13 second** — splices record #50 (which HAS 1 external UUID reference) with self-pointer patches only. If D14 works but D13 fails, the cross-reference theory is confirmed.
+3. If both fail, splice is infeasible AND there's a validation mechanism we haven't found.
+
+Run D14: `node scripts/save-cracker/splice-d14-safe-trim.js`
+Run D13: already-generated saves are in your Rome saves dir
+
+### Even bigger discovery: character UUID at +(pathLen+13)
+
+Test E loaded with an INVALID self-pointer at the cloned record (engine
+doesn't strictly validate self-pointers per se). D variants fail despite
+self-pointer patches. The likely real reason:
+
+- Each character record has a u32 UUID at +(pathLen+13) — verified 100%
+  unique across 5000 records sampled
+- Average 2.8 UUID references per character in the file (= self + ~1.8
+  external cross-references to other records / faction state)
+- Record #50's UUID (0x22b32baf) is referenced at 0x1895638 (= INSIDE
+  another dead character record at +165 — clearly a family-tree pointer)
+- Splicing record #50 leaves that family-tree reference dangling
+
+**Why does Test E work then?** E cloned record #49 over #50, so the
+UUID at 0x1896dce changed from 0x22b32baf to 0x49's UUID. The dangling
+external ref at 0x18956dd now points to a UUID NOT in the file at all.
+Engine apparently tolerates "char not found" lookups gracefully — but
+doesn't tolerate the file-size-shifted state in D variants.
+
+### find-safe-to-trim.js output
+
+307 dead records have **refs=1** (truly orphaned, no external refs).
+Distribution:
+- refs=1: 307 records (safe to splice)
+- refs=2: 13,565 records (one external ref)
+- refs=3: 1,712 records
+- refs=4-7: ~6,000 records
+- refs=8+: ~20 records (heavily referenced — important family members)
+
+### Pruner roadmap (assuming D14 works)
+
+1. D14 confirms safe-to-trim splice works
+2. Scale: splice ALL 307 safe-to-trim records (= 307 character record slots freed)
+3. Wider: also scan young/old records for refs=1 candidates
+4. With ~21k dead chars in Dummies save, ~300-500 truly orphaned is a
+   meaningful chunk of cap headroom (= ~0.5% of cap per save edit)
+5. Periodic prune as campaign progresses
 
 ### Mathematical proof that D13 is complete (post-research verification)
 
