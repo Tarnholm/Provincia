@@ -41,6 +41,15 @@ const { buildInitialOwnership, parseDescrRegions, findDescrRegions } =
   require("../src/ownershipParser.js");
 const { findCharacterRecords } = require("../src/characterParser.js");
 const { findUnitRecords } = require("../src/unitParser.js");
+const { findFactionRecords } = require("../src/factionRecordParser.js");
+const {
+  parseFactionTreasuries,
+  parseDiplomacyMatrix,
+  parseCharacterExtras,
+  parseReligionByCity,
+  deriveEngineFactionOrder,
+  identifyFactionRecordOwners,
+} = require("../src/saveCrackerExtras.js");
 
 // Inlined from src/characterParserV2.js (not exported there). Each faction's
 // character block is preceded by a `captain_card_<faction>.tga` ASCII path
@@ -119,10 +128,13 @@ function loadChainLevels(modDataDir) {
   return {};
 }
 
+// Returns { decls: { facId: {aiType, denari, superfaction} },
+//           descrOrder: [facId, ...]  in faction-block declaration order }
 function loadFactionDeclarations(stratPath) {
   const text = fs.readFileSync(stratPath, "utf8");
   const lines = text.split(/\r?\n/);
-  const out = {};
+  const decls = {};
+  const descrOrder = [];
   let curFac = null;
   for (const raw of lines) {
     const line = raw.replace(/;.*$/, "").trim();
@@ -130,17 +142,18 @@ function loadFactionDeclarations(stratPath) {
     const fm = line.match(/^faction\s+([A-Za-z0-9_]+)\s*(?:,\s*(.+))?$/);
     if (fm) {
       curFac = fm[1];
-      out[curFac] = { aiType: fm[2] || "default", denari: 1000, superfaction: null };
+      decls[curFac] = { aiType: fm[2] || "default", denari: 1000, superfaction: null };
+      descrOrder.push(curFac);
       continue;
     }
     if (!curFac) continue;
     const dm = line.match(/^denari\s+(-?\d+)/);
-    if (dm) { out[curFac].denari = parseInt(dm[1], 10); continue; }
+    if (dm) { decls[curFac].denari = parseInt(dm[1], 10); continue; }
     const sm = line.match(/^superfaction\s+(\w+)/);
-    if (sm) { out[curFac].superfaction = sm[1]; continue; }
+    if (sm) { decls[curFac].superfaction = sm[1]; continue; }
     if (line === "settlement") { curFac = null; }
   }
-  return out;
+  return { decls, descrOrder };
 }
 
 function loadSettlementToRegion(modDataDir) {
@@ -414,11 +427,15 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames) {
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury) {
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
   if (decl.superfaction) lines.push(`superfaction ${decl.superfaction}`);
-  lines.push(`denari\t${decl.denari}`);
+  // Prefer the save's actual current treasury; fall back to bundled-starting
+  // denari when extraction missed this faction (small/rebel factions whose
+  // economic record wasn't matched).
+  const denari = (currentTreasury != null) ? currentTreasury : decl.denari;
+  lines.push(`denari\t${denari}`);
   for (const s of settlements) {
     lines.push(emitSettlement(s, facId, chainLevels));
   }
@@ -502,6 +519,44 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
 //   * splitStart = index of first `faction <id>, ai_<type>` line
 //   * splitEnd   = index of first line containing `faction_agression` (comment
 //     OR actual entry) after splitStart
+// Emit `diplomatic_stance` lines from the diplomacy matrix.
+// descr_strat allows: `diplomatic_stance <factA> <factB> <stance>`
+// stance values: allied, suspicious, neutral, hostile, war.
+// We only emit non-neutral relationships so the file stays compact.
+function emitDiplomacyBlock(diploMatrix) {
+  if (!diploMatrix) return "";
+  const lines = [];
+  lines.push("; --- diplomatic_stance pairs extracted from the save ---");
+  // Track emitted pairs as a canonical-order set so we don't emit both
+  // A→B and B→A (the engine treats them symmetrically).
+  const seenPair = new Set();
+  const pairKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
+  let warN = 0, alliedN = 0, hostileN = 0;
+  for (const [facA, rec] of Object.entries(diploMatrix)) {
+    if (facA === "_meta") continue;
+    for (const facB of rec.war || []) {
+      const k = pairKey(facA, facB);
+      if (seenPair.has(k)) continue; seenPair.add(k);
+      lines.push(`diplomatic_stance ${facA} ${facB} war`);
+      warN++;
+    }
+    for (const facB of rec.allied || []) {
+      const k = pairKey(facA, facB);
+      if (seenPair.has(k)) continue; seenPair.add(k);
+      lines.push(`diplomatic_stance ${facA} ${facB} allied`);
+      alliedN++;
+    }
+    for (const facB of rec.hostile || []) {
+      const k = pairKey(facA, facB);
+      if (seenPair.has(k)) continue; seenPair.add(k);
+      lines.push(`diplomatic_stance ${facA} ${facB} hostile`);
+      hostileN++;
+    }
+  }
+  lines.push(`; total: ${warN} wars, ${alliedN} alliances, ${hostileN} hostile relationships`);
+  return { text: lines.join("\n"), warN, alliedN, hostileN };
+}
+
 function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment) {
   let splitStart = -1, splitEnd = -1;
   for (let i = 0; i < bundledLines.length; i++) {
@@ -543,7 +598,8 @@ async function main() {
   const ownership = buildInitialOwnership(BUNDLED_MOD);
   if (ownership.error) { console.error("ownership parser failed:", ownership.error); process.exit(1); }
   const stratPath = ownership.stratPath;
-  const factionDecls = loadFactionDeclarations(stratPath);
+  const { decls: factionDecls, descrOrder } = loadFactionDeclarations(stratPath);
+  const engineOrder = deriveEngineFactionOrder(descrOrder);
   const chainLevels = loadChainLevels(BUNDLED_MOD);
   const settlementToRegion = loadSettlementToRegion(BUNDLED_MOD);
   const nameLookup = loadNameLookup(BUNDLED_MOD);
@@ -587,6 +643,44 @@ async function main() {
   const charArmies = groupUnitsByCommander(buf);
   console.log(`[${Date.now() - t0}ms] units grouped — ${charArmies.size} commanders with armies`);
 
+  // V2 characters (parseCharacterExtras): catches captains, princesses,
+  // diplomats, spies, assassins, admirals, agents — including the female
+  // characters that v1 findCharacterRecords misses. Gives us spouseUuid +
+  // age so we can fill in family-tree gaps. Each record has: ownUuid,
+  // bodyguardUuid, region, spouseUuid, age, role, culture.
+  const v2Chars = parseCharacterExtras(buf);
+  console.log(`[${Date.now() - t0}ms] v2 characters parsed — ${v2Chars.length} (incl. females + non-general roles)`);
+
+  // Per-faction treasuries (cracked: parseFactionTreasuries). Each record's
+  // factionId is the descr_sm_factions index — map back to a faction name
+  // via the engine order. The CURRENT (mid-turn) treasury is at +0;
+  // turnStartTreasury is at +48 (= the start-of-turn snapshot).
+  const treasuriesRaw = parseFactionTreasuries(buf);
+  const currentTreasuryByFaction = {};
+  for (const t of treasuriesRaw) {
+    if (typeof t.factionId !== "number") continue;
+    const name = engineOrder[t.factionId];
+    if (!name) continue;
+    // If multiple records exist for the same faction (rare), keep the largest
+    // — the smaller is usually a junk match.
+    if (currentTreasuryByFaction[name] == null || t.treasury > currentTreasuryByFaction[name]) {
+      currentTreasuryByFaction[name] = t.treasury;
+    }
+  }
+  console.log(`[${Date.now() - t0}ms] treasuries — ${treasuriesRaw.length} records, ${Object.keys(currentTreasuryByFaction).length} mapped to factions`);
+
+  // Diplomacy matrix: per-faction { war, allied, hostile, trade, rel }.
+  // Keys are lowercase faction names. We translate this into descr_strat
+  // `diplomatic_stance` lines + alliance bonds.
+  const diploMatrix = parseDiplomacyMatrix(buf, engineOrder);
+  const diploStats = diploMatrix ? Object.keys(diploMatrix).filter(k => k !== "_meta").length : 0;
+  console.log(`[${Date.now() - t0}ms] diplomacy matrix — ${diploStats} factions with relations, ${diploMatrix?._meta?.warPairs || 0} war pairs`);
+
+  // Per-settlement religion (parseReligionByCity). Returns { cityName: religionId }.
+  const settlementMarkers = parsed.settlements.map(s => ({ offset: s.offset, name: s.name }));
+  const religionByCity = parseReligionByCity(buf, settlementMarkers);
+  console.log(`[${Date.now() - t0}ms] religions — ${Object.keys(religionByCity).length} settlements with religion data`);
+
   // ── Group everything by faction ──
   // Map any transient `<faction>_rebel` faction id (= temporary rebellion
   // spawn) back to `slave` so we don't emit blocks for factions the bundled
@@ -626,7 +720,7 @@ async function main() {
   }
 
   const blocks = [];
-  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0 };
+  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0 };
   for (const facId of orderedFactions) {
     const decl = factionDecls[facId];
     if (!decl) { console.warn(`  WARNING: no declaration for ${facId} — skipping`); continue; }
@@ -641,8 +735,10 @@ async function main() {
       const cand = males[0] || cs[0];
       if (cand) cand.isLeader = true;
     }
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames);
-    blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)`);
+    const tr = currentTreasuryByFaction[facId];
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr);
+    const trTag = tr != null ? ` (treasury ${tr})` : "";
+    blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)${trTag}`);
     blocks.push(block.text);
     blocks.push("");
     stats.factions++;
@@ -655,6 +751,15 @@ async function main() {
       const army = charArmies.get(c.secondaryUuid);
       if (army) stats.units += army.length;
     }
+  }
+
+  // ── Diplomacy block — goes before per-faction blocks ──
+  const diploBlock = emitDiplomacyBlock(diploMatrix);
+  if (diploBlock && diploBlock.text) {
+    blocks.unshift(diploBlock.text, "");
+    stats.warPairs = diploBlock.warN;
+    stats.alliedPairs = diploBlock.alliedN;
+    stats.hostilePairs = diploBlock.hostileN;
   }
 
   // ── Splice into bundled template ──
@@ -685,12 +790,20 @@ async function main() {
     `;   ${stats.familyRecords} family-tree character_record lines`,
     `;   ${stats.relativeLines} relative-link lines`,
     ";",
-    "; Known gaps not extracted from save:",
-    ";   - Real current treasury (we use bundled-starting denari)",
-    ";   - Diplomatic relations (alliances, wars, attitudes)",
-    ";   - Female characters (parser currently only finds male generals)",
-    ";   - In-progress building queues (only completed buildings carry over)",
-    ";   - Campaign script state (script restarts; intro events may re-fire)",
+    "; Known gaps that COULD NOT be extracted from this save:",
+    `;   - Diplomatic relations: parseDiplomacyMatrix couldn't locate the matrix`,
+    `;     in this save (matrix locator works on some saves but not all RIS`,
+    `;     formats). Engine will pick defaults from descr_strat faction_agression.`,
+    ";   - Female characters' full data: parseCharacterExtras found " + v2Chars.length,
+    ";     v2 records but they don't carry names — so they can only inform the",
+    ";     family tree count, not produce character_record lines.",
+    ";   - In-progress building queues (only completed buildings carry over).",
+    ";   - Campaign script state (Lua counters reset; intro events may re-fire).",
+    ";",
+    "; Things WE DID extract from the save:",
+    `;   - Real current treasury for ${Object.keys(currentTreasuryByFaction).length} factions (vs bundled-starting denari)`,
+    `;   - Religion data for ${Object.keys(religionByCity).length} settlements (not emitted yet — needs further mapping to descr_strat syntax)`,
+    `;   - ${v2Chars.length} v2 character records (non-general roles: females, diplomats, spies, etc.)`,
     ";",
   ].join("\n");
   const finalText = spliceBundledTemplate(bundledLines, blocks.join("\n"), banner);
@@ -708,6 +821,10 @@ async function main() {
   console.log(`  units in armies:     ${stats.units}`);
   console.log(`  family records:      ${stats.familyRecords} character_record lines`);
   console.log(`  family relationships: ${stats.relativeLines} relative lines`);
+  console.log(`  diplomatic stances:  ${stats.warPairs} wars, ${stats.alliedPairs} alliances, ${stats.hostilePairs} hostile`);
+  console.log(`  treasuries matched:  ${Object.keys(currentTreasuryByFaction).length} factions`);
+  console.log(`  religions parsed:    ${Object.keys(religionByCity).length} settlements`);
+  console.log(`  v2 chars (females+): ${v2Chars.length} (not yet emitted as separate descr_strat blocks)`);
 }
 
 main().catch((e) => { console.error("FATAL:", e.stack || e); process.exit(1); });
