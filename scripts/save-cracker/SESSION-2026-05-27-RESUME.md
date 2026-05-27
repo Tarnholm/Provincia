@@ -248,6 +248,36 @@ Trade-off: catches every real self-pointer but also might patch some
 false positives (random u32s that coincidentally equal their position).
 Try this if D12 fails.
 
+**Exact self-pointer census (computed):**
+- Total in original file: **97,731**
+- Before splice (no patch): 25,421
+- After splice (D13 patches each): **72,309**
+- Per-section breakdown after splice:
+  - sec[1] post-splice: 8,541
+  - sec[2..6]: 269
+  - sec[7]: 28,760
+  - trailer: 34,739
+
+**Patch coverage by version:**
+| Version | Patches | Misses |
+|---|---|---|
+| D11 | ~57,000 | ~15,000 sub-section self-ptrs |
+| D12 | ~60,000 | ~12,000 non-character sub-section self-ptrs |
+| D13 | 72,309 | (none for self-pointers) |
+
+If D13 fails too, the engine is likely reading positions via something
+OTHER than self-pointers — e.g., absolute file offsets stored as
+references (which our earlier scan found zero of) or relative offsets
+from a base. At that point, splice path is structurally infeasible
+and the only options are:
+- Pivot to clone-based pruner with synthetic "ignore-me" records
+- Accept that the cap can't be raised via save editing
+
+**Test order when you're back:**
+1. **D12** first (cleanest hypothesis: character self-pointers were the missing piece)
+2. **D13** if D12 fails (maximum-comprehensive)
+3. If both fail, declare splice infeasible and explore alternatives
+
 ### Other key trailer findings (research time)
 
 **sec[7] is 32 MB and contains the bulk of the game state**:
