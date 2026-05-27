@@ -154,6 +154,10 @@ we want a 100 %-accurate budget.
 - `save_TEST_C_zeroBody.sav` (250 B wiped) ✗ CRASH
 - `save_TEST_D_splice.sav` (record #50 spliced out, file -462 B) — **NEEDS IN-GAME TEST**
 - `save_TEST_E_clone.sav` (record #50 = byte-equal clone of #49, same size) — **NEEDS IN-GAME TEST**
+- `save_TEST_F10_splice10.sav` (records 100..109, -7,810 B) — run if D loads
+- `save_TEST_G10_splice10late.sav` (records 21000..21009, -9,650 B) — run if D loads
+- `save_TEST_F_splice100.sav` (records 100..199, -67,814 B) — run if F-10 loads
+- `save_TEST_G_splice100late.sav` (records 21000..21099, -67,554 B) — run if F-10 loads
 
 Originals also present:
 - `save_Autosave   Dummies   Turn 900 End.sav`
@@ -213,7 +217,28 @@ Outcomes branch the path forward:
 1. **User: load Test D and Test E in RTW.** Report which (if any) loads
    cleanly and ends turn. This single experiment branches the rest of the
    pruner design.
-2. Update `mapEntityParser.js` countWatchtowers to 40-byte-stride table
-   (351 → 176 exact). Still pending from before the crash.
-3. Per the outcome of (1), implement the pruner against Test 1017 to
-   actually free entity-budget slots.
+   - If D loads: also run F-10 → G-10 → F → G to verify splice scales and
+     position-doesn't-matter.
+   - Use `splice-dead-batch.js <startIdx> <count>` to generate ad-hoc test
+     variants.
+2. ~~Update `mapEntityParser.js` countWatchtowers to 40-byte-stride table.~~
+   **DONE 2026-05-27.** Walked count == declared count == expected on all
+   reference saves. Source label now `(counted)`. Budget refreshed:
+   T1017 = 61,492 / 93.8% (4,044 headroom).
+3. Per the outcome of (1), implement the pruner against T1017 to actually
+   free entity-budget slots. Even if only safe-to-trim records can be
+   pruned, the Dummies save has ~21,000 dead-pool candidates vs the ~4,000
+   headroom we need — splice viability ⇒ massive headroom restoration.
+
+### Trajectory across reference saves (post-watchtower-fix)
+
+| Save | Total | Pct | Headroom | characterRecords | watchtowers |
+|---|---|---|---|---|---|
+| T900 End    | 59,921 | 91.4% | 5,615 | 21,243 | 281 |
+| T960 Start  | 60,138 | 91.8% | 5,398 | 21,762 | 156 |
+| T1017       | 61,492 | 93.8% | 4,044 | 23,122 | 176 |
+| T1018 Start | 61,555 | 93.9% | 3,981 | 23,150 | 177 |
+
+Character-record growth rate (T960→T1017): +24/turn average. At that rate
++168 turns to cap. Splice-out of 5,000 dead-pool records (if viable per
+Test D outcome) would restore ~5,000 slots = ~210 turns of runway.
