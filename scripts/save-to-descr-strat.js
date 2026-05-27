@@ -652,9 +652,12 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
           continue; // skip emit
         }
       }
-      const exp = u.xp ?? 0;
-      const armour = u.armourUpgrade ?? 0;
-      const weapon = u.weaponUpgrade ?? 0;
+      // Engine caps: exp 0..9, armour 0..3, weapon_lvl 0..3. Saves
+      // sometimes carry inflated counter-values; emitting them verbatim
+      // can crash the descr_strat parser.
+      const exp = Math.max(0, Math.min(9, u.xp ?? 0));
+      const armour = Math.max(0, Math.min(3, u.armourUpgrade ?? 0));
+      const weapon = Math.max(0, Math.min(3, u.weaponUpgrade ?? 0));
       lines.push(`unit\t\t${name}\t\texp ${exp} armour ${armour} weapon_lvl ${weapon}`);
     }
   }

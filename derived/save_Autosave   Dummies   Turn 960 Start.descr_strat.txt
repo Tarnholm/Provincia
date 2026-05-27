@@ -1,7 +1,7 @@
 ;
 ; Auto-generated descr_strat.txt from a save file.
 ; Source save: save_Autosave   Dummies   Turn 960 Start.sav
-; Generated:   2026-05-27T18:11:36.950Z
+; Generated:   2026-05-27T18:13:38.016Z
 ;
 ; This is the 'Continue Campaign as New Campaign' artefact: the engine's
 ; entity registry restarts at 0 when this file is loaded as a fresh
@@ -24810,7 +24810,7 @@ character,	Theokritos, named character, age 49, , x 488, y 357
 traits BeingBithynian 1, Characharta 1, Thracian 1, STRating 3, HaleAndHearty 2, Hypochondriac 2, Energetic 4, Fitness 3, TheSick 2, Blindness 3, Deafness 3, Heroic_Hunter 1, FasterCharacters 1, Punic_Citizen 1, Punic_Hellene 1, Envy 1, Disciplinarian 2, DramasFanGreekVice 4, Weak_Watchwords_Cart 1, PoliticsSkill 3, Puno_Campanian 1
 ancillaries architect, wrestler, Dioiketes, slave_trader, Satrap3
 army
-unit		generals bodyguard		exp 10 armour 0 weapon_lvl 0
+unit		generals bodyguard		exp 9 armour 0 weapon_lvl 0
 
 character,	Tochter, named character, age 49, , x 488, y 357
 traits BeingBithynian 1, Characharta 1, Thracian 1, STRating 3, HaleAndHearty 3, Hypochondriac 3, Energetic 3, Fitness 2, TheSick 2, Blindness 3, Deafness 3, Heroic_Hunter 1, FasterCharacters 1, Insane 1, Defense_Burden 2

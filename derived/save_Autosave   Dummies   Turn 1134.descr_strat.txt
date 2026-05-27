@@ -1,7 +1,7 @@
 ;
 ; Auto-generated descr_strat.txt from a save file.
 ; Source save: save_Autosave   Dummies   Turn 1134.sav
-; Generated:   2026-05-27T18:11:22.981Z
+; Generated:   2026-05-27T18:13:24.029Z
 ;
 ; This is the 'Continue Campaign as New Campaign' artefact: the engine's
 ; entity registry restarts at 0 when this file is loaded as a fresh
