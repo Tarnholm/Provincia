@@ -192,7 +192,10 @@ const counts = {
   cameras: 0,
   superfactions: 0,
 };
-const watchtowersSource = watchtowersCounted != null ? "(counted-probable)" : "(est)";
+// 2026-05-27: watchtowers now from the canonical 40-byte-stride table
+// (walked count == declared u16 header for all reference saves). No longer
+// a heuristic — flip "(counted-probable)" to "(counted)".
+const watchtowersSource = watchtowersCounted != null ? "(counted)" : "(est)";
 // Siege block at fixed offset (cover.js claims 0x152f529); presence ≈ 1 siege.
 // TODO: scan all sieges; for now this is a coarse 0/1.
 counts.sieges = (buf.length > 0x152f529 + 73) ? 1 : 0;

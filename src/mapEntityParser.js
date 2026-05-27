@@ -124,39 +124,63 @@ function countPorts(buf, setts) {
   return t.port_buildings + t.river_port;
 }
 
-// Watchtowers — best-effort. Counts non-default records in the post-grid
-// 267-stride auxiliary tile-format array. Returns null if the array is not
-// present (e.g. early-game saves before any watchtowers are built).
+// Watchtowers — EXACT count from the canonical 40-byte-stride table.
 //
-// Hypothesis basis: across t960/t1017/t1018 the non-template record count is
-// 346..350, within 4 % of the dev image's 363 watchtowers. Different unique
-// records carry different byte-+0x20 values (0xe8 = 216, 0xbc = 45, 0x58 =
-// 16, 0x00 = 39, plus ~30 minor) — likely different sub-types (forts vs
-// watchtowers vs other map entities). Until we crack the sub-type bytes we
-// report the full non-template count.
+// CONFIRMED 2026-05-27 (see dig-watchtower-table.js):
+// The watchtower table is a 40-byte-stride record array preceded by a
+// distinctive 14-byte header marker. Every record has magic 61 13 82 12
+// at +28..+31. The last record swaps +32..+35 to 2c 71 21 ad (the same
+// 4-byte terminator that ends the table header). Record format:
+//   +0..+3   u32  tile_x
+//   +4..+7   u32  tile_y
+//   +8..+11  u32  ? (owning settlement id?)
+//   +12      u8   faction-ish (5 distinct values 0..4 across saves)
+//   +13..+15 u24  ?
+//   +16..+23 8B   per-instance hash
+//   +24..+27 u32  zero (always)
+//   +28..+31 magic 61 13 82 12 (constant on every record)
+//   +32..+35 magic 61 13 82 12 (constant — except last record = 2c 71 21 ad)
+//   +36..+39 random tail
+//
+// And the COUNT is a u16 at table_anchor - 10:
+//   prelude:  ... 35 61 23 28 00 00 35 61 23 28 2c 71 21 ad <u16 count> 61 13 82 12 <4B random> <first record>
+//
+// Validated counts (matches walk-the-table count exactly):
+//   T960:  156   T1017: 176   T1018: 177  (+1 = one watchtower built that turn)
+const WT_HEADER_MARKER = Buffer.from([
+  0x35, 0x61, 0x23, 0x28, 0x00, 0x00,
+  0x35, 0x61, 0x23, 0x28, 0x2c, 0x71, 0x21, 0xad,
+]);
+const WT_RECORD_MAGIC  = Buffer.from([0x61, 0x13, 0x82, 0x12]);
+const WT_TERMINATOR    = Buffer.from([0x2c, 0x71, 0x21, 0xad]);
+
+// Locate the watchtower table. Returns { headerOff, anchor, declaredCount }
+// or null if no table is present (saves with zero watchtowers).
+function findWatchtowerTable(buf) {
+  const headerOff = buf.indexOf(WT_HEADER_MARKER);
+  if (headerOff < 0) return null;
+  // count u16 LE immediately after the 14-byte marker
+  const declaredCount = buf.readUInt16LE(headerOff + WT_HEADER_MARKER.length);
+  // anchor = first record = marker + 14 (marker) + 2 (count) + 4 (magic) + 4 (random)
+  const anchor = headerOff + WT_HEADER_MARKER.length + 2 + 4 + 4;
+  return { headerOff, anchor, declaredCount };
+}
+
 function countWatchtowers(buf) {
-  const arr = findPostGridArray(buf);
-  if (!arr) return null;
-  // Walk records, comparing each to the template (record 0).
-  const baseRec = buf.slice(arr.start, arr.start + 267);
-  let p = arr.start, nonTpl = 0;
-  while (p + 267 <= arr.end && buf.readUInt32LE(p) === arr.magic) {
-    // Use byte +0x20 != 0xc8 as the "non-template" signature. This is
-    // stronger than full-record-diff (which over-counts records that only
-    // differ in a single tally byte). The +0x20 byte is the dominant
-    // discriminator (220 diffs out of 1232 settlements in item_limit_bug),
-    // and shows clear non-c8 clusters that look like type-tag enums.
-    if (buf[p + 0x20] !== 0xc8) nonTpl++;
-    let next = -1;
-    for (let k = 1; k <= 6; k++) {
-      const cand = p + k * 267;
-      if (cand + 4 > arr.end) break;
-      if (buf.readUInt32LE(cand) === arr.magic) { next = cand; break; }
-    }
-    if (next < 0) break;
-    p = next;
+  const t = findWatchtowerTable(buf);
+  if (!t) return null;
+  // Walk by 40-byte stride, validating magic at +28 of each record. The
+  // walked count is authoritative; the declaredCount is a cross-check.
+  let p = t.anchor, walked = 0;
+  while (p + 40 <= buf.length) {
+    if (buf.compare(WT_RECORD_MAGIC, 0, 4, p + 28, p + 32) !== 0) break;
+    walked++;
+    // Last record has terminator at +32 instead of repeated magic — when we
+    // see it, the record IS counted but no more records follow.
+    if (buf.compare(WT_TERMINATOR, 0, 4, p + 32, p + 36) === 0) break;
+    p += 40;
   }
-  return nonTpl;
+  return walked;
 }
 
 // Convenience: get all three counts in one pass over the settlement zone.
@@ -178,5 +202,6 @@ module.exports = {
   countPorts,
   countWatchtowers,
   countMapEntities,
-  findPostGridArray,  // exposed for tests / probes
+  findPostGridArray,        // exposed for tests / probes
+  findWatchtowerTable,      // exposed for tests / probes
 };
