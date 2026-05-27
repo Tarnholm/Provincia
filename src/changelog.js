@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.667",
+    date: "2026-05-27",
+    items: [
+      { type: "fix", text: "**Scripts > temples.py:** added a forbidden-temple-level list (`temple_of_viking_sp1/2/5/6/8/9`, `temple_of_horse_2_sp1/5/6`) — if a settlement already has any of these scripted/quest temples, the script leaves it entirely alone. Also re-introduced the tier-5 cap (`MAX_TEMPLE_LEVEL_FROM_TOP = 1`), so no huge-city-tier temples get placed." },
+      { type: "fix", text: "**Scripts > heavy_industry.py:** scoring now SUMS across resources instead of taking the max. Previously Athens (2 silver + 2 lead + 3 marble) picked marble_production (max 3×7 = 21) over mines (max 2×8 = 16), even though mines have more total signal (2×8 + 2×4 = 24). Now mines win at Athens." },
+      { type: "improvement", text: "**Scripts > starting_treasury.py:** new tier-based formula. `denari = 5000 + 500 × Σ max(0, settlement_tier − 2)` per faction — same \"bump of 2\" convention as the other suite scripts. Village/town/large_town contribute 0; city → tier 1; large_city → 2; huge_city → 3. The bigger your cities, the bigger your treasury." },
+    ],
+  },
+  {
     version: "0.9.666",
     date: "2026-05-27",
     items: [

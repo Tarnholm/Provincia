@@ -69,6 +69,19 @@ SKIP_FACTIONS = {"slave"}
 # (RTW allows only one temple per settlement).
 SPECIAL_TEMPLE_PREFIX = "temples_of"
 
+# Specific temple-level identifiers that, if present in a settlement, mean we
+# leave the settlement entirely alone (don't add OR re-culture a temple). Per
+# user 2026-05-27 — these are scripted/quest temples that shouldn't be touched.
+FORBIDDEN_TEMPLE_TYPES = {
+    "temple_of_viking_sp1", "temple_of_viking_sp2", "temple_of_viking_sp5",
+    "temple_of_viking_sp6", "temple_of_viking_sp8", "temple_of_viking_sp9",
+    "temple_of_horse_2_sp1", "temple_of_horse_2_sp5", "temple_of_horse_2_sp6",
+}
+
+# Cap the chosen temple level index — never place the highest (tier 5 / huge_city)
+# temple. None disables the cap.
+MAX_TEMPLE_LEVEL_FROM_TOP = 1  # = drop 1 from the top, so tier-5 is forbidden
+
 # If True, keep an existing temple's LEVEL and only switch its culture to the
 # region's dominant culture. If False (default), the temple level is chosen by
 # settlement size, mirroring mics.py's tier-based assignment.
@@ -165,9 +178,13 @@ class TempleBuildingProcessor:
         return None
 
     def choose_level(self, chain_culture, tier):
-        """Highest temple level whose settlement_min tier <= settlement tier."""
+        """Highest temple level whose settlement_min tier <= settlement tier,
+        but never the top MAX_TEMPLE_LEVEL_FROM_TOP levels of the chain (so
+        tier-5 huge_city temples are excluded by default)."""
         levels = self.temple_chains[chain_culture]["levels"]
         allowed = [name for (name, min_tier) in levels if tier >= min_tier]
+        if MAX_TEMPLE_LEVEL_FROM_TOP and len(allowed) > MAX_TEMPLE_LEVEL_FROM_TOP:
+            allowed = allowed[:-MAX_TEMPLE_LEVEL_FROM_TOP]
         return allowed[-1] if allowed else None
 
     def level_index(self, chain_culture, level_name):
@@ -345,6 +362,7 @@ class TempleBuildingProcessor:
         existing_chain = None       # e.g. temple_complex_dorian
         existing_level = None       # e.g. temple_dorian_2
         special_temple = None       # e.g. temples_of_viking — leave the settlement alone
+        forbidden_level = None      # e.g. temple_of_viking_sp1 — leave settlement alone
         new_block = []
         i, n = 0, len(block)
         while i < n:
@@ -368,6 +386,13 @@ class TempleBuildingProcessor:
                             existing_level = parts[2] if len(parts) >= 3 else None
                         elif len(parts) >= 2 and parts[1].startswith(SPECIAL_TEMPLE_PREFIX):
                             special_temple = parts[1]
+                        # Scripted/quest temple LEVELS — the level identifier
+                        # itself is the marker (no chain wrapper). If any of
+                        # these are present, leave the settlement untouched.
+                        if len(parts) >= 3 and parts[2] in FORBIDDEN_TEMPLE_TYPES:
+                            forbidden_level = parts[2]
+                        elif len(parts) >= 2 and parts[1] in FORBIDDEN_TEMPLE_TYPES:
+                            forbidden_level = parts[1]
                 if not is_temple:
                     new_block += bb
                 i += 1
@@ -384,6 +409,10 @@ class TempleBuildingProcessor:
         if faction_id in SKIP_FACTIONS:
             info["reason"] = f"faction '{faction_id}' in SKIP_FACTIONS"
             return block, False, info  # leave block untouched
+
+        if forbidden_level:
+            info["reason"] = f"has forbidden temple level '{forbidden_level}' — left unchanged"
+            return block, False, info
 
         if special_temple:
             info["reason"] = f"has special temple '{special_temple}' — left unchanged"

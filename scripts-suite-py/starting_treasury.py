@@ -2,7 +2,11 @@
 """
 starting_treasury.py — sets each faction's starting denari in descr_strat:
 
-    denari = 5000 + 500 * (number of starting settlements)
+    denari = BASE_DENARI + PER_TIER * sum(max(0, level_tier - BUMP) per settlement)
+
+with the suite-wide "bump" rule: settlements below tier BUMP contribute 0,
+city → tier 1, large_city → tier 2, huge_city → tier 3 (default BUMP=2).
+The bigger your cities, the bigger your treasury.
 
 Certain factions are left exactly as-is (slave/dummies and the emergent/rebel
 markers in KEEP). Pipeline step: .run(run_strat=, run_out=) — reads the strat it's
@@ -24,11 +28,21 @@ KEEP = {
     "egypt", "greeks", "lycia", "chrysaoria",
     "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
 }
-BASE_DENARI, PER_REGION = 5000, 500
+BASE_DENARI = 5000
+PER_TIER = 500     # money per effective tier (after bump) per settlement
+BUMP = 2           # suite-wide "bump of 2": village/town/large_town count 0,
+                   # city = tier 1, large_city = 2, huge_city = 3.
+
+# Settlement-level → raw tier (same convention as the other suite scripts).
+LEVEL_TO_TIER = {
+    "village": 0, "town": 1, "large_town": 2,
+    "minor_city": 3, "city": 3, "large_city": 4, "huge_city": 5,
+}
 
 _faction_re = re.compile(r"^faction\s+(\S+?),")
 _denari_re = re.compile(r"^(denari)(\s+)(-?\d+)\s*$")
 _settlement_re = re.compile(r"^settlement\s*$")
+_level_re = re.compile(r"^\s*level\s+(\w+)")
 
 
 class StartingTreasuryProcessor:
@@ -44,16 +58,20 @@ class StartingTreasuryProcessor:
             return
         lines = _strat.read_text(encoding="utf-8", errors="ignore").splitlines(keepends=True)
 
-        # Pass 1: per faction, find its denari line index and count settlements.
-        order, denari_idx, counts = [], {}, {}
+        # Pass 1: per faction, find its denari line index, count settlements, and
+        # sum the effective tier (settlement_tier - BUMP, floored at 0).
+        order, denari_idx, counts, tier_sums = [], {}, {}, {}
         cur = None
+        cur_settlement_open = False  # True between `settlement` and its first `level`
         for i, line in enumerate(lines):
             m = _faction_re.match(line)
             if m:
                 cur = m.group(1)
                 order.append(cur)
                 counts[cur] = 0
+                tier_sums[cur] = 0
                 denari_idx[cur] = None
+                cur_settlement_open = False
                 continue
             if cur is None:
                 continue
@@ -62,6 +80,14 @@ class StartingTreasuryProcessor:
                 continue
             if _settlement_re.match(line):
                 counts[cur] += 1
+                cur_settlement_open = True
+                continue
+            if cur_settlement_open:
+                lm = _level_re.match(line)
+                if lm:
+                    raw_tier = LEVEL_TO_TIER.get(lm.group(1), 0)
+                    tier_sums[cur] += max(0, raw_tier - BUMP)
+                    cur_settlement_open = False  # only the first `level` line counts
 
         # Pass 2: rewrite denari lines.
         changed = 0
@@ -75,11 +101,12 @@ class StartingTreasuryProcessor:
             if name in KEEP:
                 self.decisions.append(f"{name}: KEEP (denari {old})")
                 continue
-            new = BASE_DENARI + PER_REGION * counts[name]
-            self.decisions.append(f"{name}: {counts[name]} settlements -> denari {new} (was {old})")
+            tier_total = tier_sums[name]
+            new = BASE_DENARI + PER_TIER * tier_total
+            self.decisions.append(f"{name}: {counts[name]} settlements, tier-sum {tier_total} (bump={BUMP}) -> denari {new} (was {old})")
             if new != old:
                 lines[idx] = f"{m.group(1)}{m.group(2)}{new}\n"
-                self.changelog.append(f"{name}: denari {old} -> {new} ({counts[name]} settlements)")
+                self.changelog.append(f"{name}: denari {old} -> {new} ({counts[name]} settlements, tier-sum {tier_total})")
                 changed += 1
 
         _out.mkdir(parents=True, exist_ok=True)

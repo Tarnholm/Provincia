@@ -154,7 +154,12 @@ class HeavyIndustryProcessor:
                 continue  # no enabling resource -> building can't be built
             lvls = chains.get(b, [])
             if not lvls or tier < min(LEVEL_TO_TIER.get(l['settlement_min'], 99) for l in lvls): continue
-            val = max([res_dict.get(r, 0) * w for r, w in weights.items()] + [0])
+            # Sum across resources so a settlement with multiple matching
+            # resources for one building (e.g. silver+lead+iron for `mines`)
+            # outscores a single-resource building (marble). Previously this
+            # used max(), which made marble_production (3*7=21) beat mines
+            # (max of 2*8=16) even when mines had more total signal (24).
+            val = sum(res_dict.get(r, 0) * w for r, w in weights.items())
             if val >= 10: scores[b] = val
         if not scores: return None, None, [], {}
         m_val = max(scores.values())
