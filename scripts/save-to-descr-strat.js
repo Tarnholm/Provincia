@@ -389,7 +389,7 @@ function groupUnitsByCommander(buf) {
 // EMISSION HELPERS — write descr_strat-formatted blocks
 // ─────────────────────────────────────────────────────────────────────────────
 
-function emitSettlement(s, factionId, chainLevels) {
+function emitSettlement(s, factionId, chainLevels, originalCreator) {
   const lines = [];
   const level = inferSettlementLevel(s.buildings);
   lines.push("settlement");
@@ -399,7 +399,13 @@ function emitSettlement(s, factionId, chainLevels) {
   lines.push(`\tyear_founded 0`);
   lines.push(`\tpopulation ${POPULATION_BY_LEVEL[level]}`);
   lines.push(`\tplan_set default_set`);
-  lines.push(`\tfaction_creator ${factionId}`);
+  // faction_creator drives RTW's "emergent faction" mechanic: when a
+  // rebellion happens in a settlement, the rebels become this faction.
+  // Use the ORIGINAL faction_creator from the bundled descr_strat so
+  // killed factions can re-emerge from their historical homeland — not
+  // the current owner. (If we used currentOwner, killed factions would
+  // never re-emerge because no settlement points back to them.)
+  lines.push(`\tfaction_creator ${originalCreator || factionId}`);
 
   // Auto-complete in-progress upgrades that are >50% done. If a building
   // chain is currently at level N and queued for upgrade to level N+1 with
@@ -528,7 +534,7 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity) {
   const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
   lines.push(`faction\t${facId}, ${decl.aiType}`);
@@ -539,7 +545,8 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   const denari = (currentTreasury != null) ? currentTreasury : decl.denari;
   lines.push(`denari\t${denari}`);
   for (const s of settlements) {
-    lines.push(emitSettlement(s, facId, chainLevels));
+    const origCreator = creatorByCity ? creatorByCity[s.name] : null;
+    lines.push(emitSettlement(s, facId, chainLevels, origCreator));
   }
   // Fallback position for characters whose own tileX/tileY is unset
   // (governors stuck in settlements, etc). Cascade:
@@ -937,6 +944,16 @@ async function main() {
   const religionByCity = parseReligionByCity(buf, settlementMarkers);
   console.log(`[${Date.now() - t0}ms] religions — ${Object.keys(religionByCity).length} settlements with religion data`);
 
+  // ── Identify KILLED factions for emergent-faction setup ──
+  // Any faction in the bundled descr_strat that has zero settlements
+  // AND zero characters in the save is "killed". We still emit a minimal
+  // faction block for them (denari 0, no settlements, no chars) so they
+  // stay registered. Their original-creator settlements remain via the
+  // faction_creator field on settlements they used to own → engine can
+  // re-spawn them as rebels from those regions.
+  // (NOTE: this happens implicitly via the orderedFactions loop below
+  // — every bundled-mod faction gets a block even if cs/ss are empty.)
+
   // ── Group everything by faction ──
   // Map any transient `<faction>_rebel` faction id (= temporary rebellion
   // spawn) back to `slave` so we don't emit blocks for factions the bundled
@@ -992,14 +1009,16 @@ async function main() {
   // ── Emit per-faction blocks ──
   // Preserve the bundled file's faction ORDER so the engine reads them in
   // the same sequence (some campaign scripts assume a specific order).
+  // INCLUDE EVERY bundled-declared faction even if it has no settlements
+  // or characters in this save — those "killed" factions need a minimal
+  // block to stay registered as emergent (= eligible to re-spawn when
+  // a settlement using them as faction_creator rebels).
   const bundledOrder = Object.keys(factionDecls);
-  const seen = new Set();
-  const orderedFactions = [];
-  for (const fac of bundledOrder) {
-    if (allFactionIds.has(fac)) { orderedFactions.push(fac); seen.add(fac); }
-  }
+  const orderedFactions = [...bundledOrder]; // every bundled faction, in order
+  // Plus any save-only factions (extremely rare — usually means our
+  // ownership parser mapped a settlement to a faction not in descr_strat).
   for (const fac of allFactionIds) {
-    if (!seen.has(fac)) orderedFactions.push(fac);
+    if (!factionDecls[fac]) orderedFactions.push(fac);
   }
 
   const blocks = [];
@@ -1060,7 +1079,7 @@ async function main() {
       }]);
     }
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity);
     const trTag = tr != null ? ` (treasury ${tr})` : "";
     blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)${trTag}`);
     blocks.push(block.text);
