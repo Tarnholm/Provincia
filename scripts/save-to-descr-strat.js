@@ -560,6 +560,91 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
 //   * splitStart = index of first `faction <id>, ai_<type>` line
 //   * splitEnd   = index of first line containing `faction_agression` (comment
 //     OR actual entry) after splitStart
+// Relaxed diplomacy matrix locator — mirrors parseDiplomacyMatrix's logic
+// but drops the key in [1,64] restriction. RIS imperial saves use key 1026
+// at stride 267 (verified on T1017). Returns the same shape as the shipped
+// parser: `{ factionName: { war, allied, hostile, trade, rel }, _meta }`.
+//
+// Stance map (from DIPLO_STANCE in saveCrackerExtras.js):
+//   0=allied, 200=neutral, 400=hostile, 600=war, 850=total_war, 1000=crazy
+function parseDiplomacyMatrixRelaxed(buf, factionOrder) {
+  if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
+  const N = factionOrder.length;
+  // 1. Locate: find {0, key, 200, attitude<=1000} with N consecutive same-key cells
+  let base = -1, stride = -1, key = -1;
+  for (let p = 0x4000; p < buf.length - 32; p++) {
+    if (buf.readUInt32LE(p) !== 0) continue;
+    const k = buf.readUInt32LE(p + 4);
+    if (buf.readUInt32LE(p + 8) !== 200) continue;
+    if (buf.readUInt32LE(p + 12) > 1000) continue;
+    // Probe strides 80..400 for N+2 consecutive cells with same key.
+    for (let s = 80; s <= 400; s++) {
+      if (p + s + 12 >= buf.length) break;
+      if (buf.readUInt32LE(p + s) !== 0) continue;
+      if (buf.readUInt32LE(p + s + 4) !== k) continue;
+      if (buf.readUInt32LE(p + s + 8) !== 200) continue;
+      // Validate run length
+      let good = 0;
+      for (let n = 0; n < N + 2; n++) {
+        const o = p + n * s;
+        if (o + 12 >= buf.length) break;
+        if (buf.readUInt32LE(o) === 0 && buf.readUInt32LE(o + 4) === k && buf.readUInt32LE(o + 8) === 200) good++;
+        else break;
+      }
+      if (good >= N) { base = p; stride = s; key = k; break; }
+    }
+    if (base >= 0) break;
+  }
+  if (base < 0) return null;
+
+  // 2. Calibrate C via symmetry (att(A,B) == att(B,A))
+  const attAt = (A, B, C) => {
+    const o = base + (A * N + B + C) * stride + 12;
+    if (o < 0 || o + 4 > buf.length) return null;
+    return buf.readUInt32LE(o);
+  };
+  let bestC = 0, bestSym = -1;
+  for (let C = -3; C <= 3; C++) {
+    let sym = 0, tot = 0;
+    for (let A = 1; A < N; A += 7) for (let B = A + 1; B < N; B += 5) {
+      const v1 = attAt(A, B, C), v2 = attAt(B, A, C);
+      if (v1 == null || v2 == null) continue;
+      tot++; if (v1 === v2) sym++;
+    }
+    const score = tot ? sym / tot : 0;
+    if (score > bestSym) { bestSym = score; bestC = C; }
+  }
+  const C = bestC;
+
+  // 3. Build per-faction stance lists
+  const out = {};
+  let warPairs = 0;
+  // Skip faction names that aren't real diplomatic participants (rebels, slave, etc.)
+  const isDiplomatic = (name) => name && !/_rebel\d*$|^slave$|^rebels?$|^dummies$/.test(name);
+  for (let A = 0; A < N; A++) {
+    const aName = factionOrder[A];
+    if (!isDiplomatic(aName)) continue;
+    const rec = { war: [], allied: [], hostile: [], trade: [], rel: [] };
+    for (let B = 0; B < N; B++) {
+      if (B === A) continue;
+      const bName = factionOrder[B];
+      if (!isDiplomatic(bName)) continue;
+      const att = attAt(A, B, C);
+      if (att == null) continue;
+      // Use the canonical thresholds from DIPLO_STANCE
+      if (att >= 600) { rec.war.push(bName); warPairs++; }
+      else if (att <= 100) rec.allied.push(bName);
+      else if (att >= 300 && att <= 500) rec.hostile.push(bName);
+      // Note: bond / trade isn't in the relaxed parser (we'd need to confirm
+      // the relative offset for bond which is +12 in the original parser,
+      // but our offset+12 holds attitude here — the field layout might differ).
+    }
+    out[aName.toLowerCase()] = rec;
+  }
+  out._meta = { base, stride, key, C, N, warPairs: warPairs / 2, locator: "relaxed" };
+  return out;
+}
+
 // Emit `diplomatic_stance` lines from the diplomacy matrix.
 // descr_strat allows: `diplomatic_stance <factA> <factB> <stance>`
 // stance values: allied, suspicious, neutral, hostile, war.
@@ -713,9 +798,18 @@ async function main() {
   console.log(`[${Date.now() - t0}ms] treasuries — ${treasuriesRaw.length} records, ${Object.keys(currentTreasuryByFaction).length} mapped to factions`);
 
   // Diplomacy matrix: per-faction { war, allied, hostile, trade, rel }.
-  // Keys are lowercase faction names. We translate this into descr_strat
-  // `diplomatic_stance` lines + alliance bonds.
-  const diploMatrix = parseDiplomacyMatrix(buf, engineOrder);
+  // The shipped parseDiplomacyMatrix uses a locator that requires key in
+  // [1,64], which fails on RIS imperial (its key is 1026). Try the shipped
+  // one first; if it returns null, fall back to a relaxed locator that
+  // matches the same {0, key, 200, attitude} invariant without the key
+  // range check.
+  let diploMatrix = parseDiplomacyMatrix(buf, engineOrder);
+  if (!diploMatrix) {
+    diploMatrix = parseDiplomacyMatrixRelaxed(buf, engineOrder);
+    if (diploMatrix) {
+      console.log(`[${Date.now() - t0}ms]   (used relaxed locator for diplomacy matrix)`);
+    }
+  }
   const diploStats = diploMatrix ? Object.keys(diploMatrix).filter(k => k !== "_meta").length : 0;
   console.log(`[${Date.now() - t0}ms] diplomacy matrix — ${diploStats} factions with relations, ${diploMatrix?._meta?.warPairs || 0} war pairs`);
 
