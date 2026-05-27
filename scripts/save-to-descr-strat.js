@@ -451,6 +451,31 @@ function emitSettlement(s, factionId, chainLevels, originalCreator) {
 //
 // Returns null when the character isn't emittable (e.g. unknown position with
 // no faction-anchor fallback).
+// Dedupes character names: descr_strat requires UNIQUE names. When the
+// save has multiple living characters with the same name (single-name
+// cultures like Greek/Barbarian = "Bolgios" x12), we try letter-suffix
+// variants that already exist in descr_names_lookup (BolgiosA, BolgiosB...).
+// Returns the resolved name (mutating c.firstName so later emissions stay
+// consistent), or null when no valid variant is available — caller drops.
+function resolveUniqueFirstName(c, usedNames, nameLookupSet) {
+  const orig = c.firstName;
+  if (!orig) return null;
+  const lastBit = c.lastName ? ` ${c.lastName}` : "";
+  const key0 = orig + lastBit;
+  if (!usedNames.has(key0)) { usedNames.add(key0); return orig; }
+  // Try letter suffixes A..Z (some mods use only A-J).
+  for (let code = 65; code <= 90; code++) {
+    const cand = orig + String.fromCharCode(code);
+    if (nameLookupSet && !nameLookupSet.has(cand)) continue;
+    const candKey = cand + lastBit;
+    if (usedNames.has(candKey)) continue;
+    usedNames.add(candKey);
+    c.firstName = cand;
+    return cand;
+  }
+  return null;
+}
+
 function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog) {
   const lines = [];
   const firstName = c.firstName || "Unknown";
@@ -1023,7 +1048,13 @@ async function main() {
 
   const blocks = [];
   const substitutionLog = [];
-  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0 };
+  // Global name uniqueness — descr_strat requires every character to have
+  // a unique full name across the whole file. Single-name cultures
+  // (Greek/Barbarian) frequently collide; we try A/B/C/... suffixes
+  // backed by descr_names_lookup tokens.
+  const usedNames = new Set();
+  const nameLookupSet = new Set(nameLookup);
+  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0, dedupedNames: 0, droppedDupes: 0 };
   for (const facId of orderedFactions) {
     const decl = factionDecls[facId];
     if (!decl) { console.warn(`  WARNING: no declaration for ${facId} — skipping`); continue; }
@@ -1041,9 +1072,18 @@ async function main() {
     // no extracted characters. Without a leader the engine refuses to
     // load the faction. The placeholder takes the first settlement's
     // coords + a generic name token that's known to exist in the lookup.
+    // Picks a name in a way that AVOIDS collisions: starts at the seed
+    // index, walks forward through nameLookup until it finds an unused
+    // token. Without this every faction whose name hashes to the same
+    // mod-length bucket would synthesize the SAME character name and
+    // the subsequent dedup pass would drop all but one of them.
     if (cs.length === 0 && ss.length > 0 && nameLookup.length > 0) {
       const seed = facId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-      const firstName = nameLookup[seed % nameLookup.length] || "Captain";
+      let firstName = "Captain";
+      for (let off = 0; off < nameLookup.length; off++) {
+        const cand = nameLookup[(seed + off) % nameLookup.length];
+        if (cand && !usedNames.has(cand)) { firstName = cand; break; }
+      }
       const fallback = settlementCoords[ss[0].name] || { x: 250, y: 350 };
       const synthUuid = 0xc0000000 | (seed & 0x0fffffff);
       cs.push({
@@ -1078,6 +1118,18 @@ async function main() {
         weaponUpgrade: 0,
       }]);
     }
+    // Dedupe character names BEFORE emission — drop chars we can't
+    // disambiguate. Leader has priority for the un-suffixed name. Runs
+    // AFTER synthesis so synth leaders are deduped too.
+    cs.sort((a, b) => (b.isLeader ? 1 : 0) - (a.isLeader ? 1 : 0));
+    const dedupedKeep = [];
+    for (const c of cs) {
+      const resolved = resolveUniqueFirstName(c, usedNames, nameLookupSet);
+      if (resolved === null) { stats.droppedDupes++; continue; }
+      dedupedKeep.push(c);
+    }
+    cs.length = 0;
+    for (const c of dedupedKeep) cs.push(c);
     const tr = currentTreasuryByFaction[facId];
     const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity);
     const trTag = tr != null ? ` (treasury ${tr})` : "";
