@@ -927,10 +927,20 @@ async function main() {
   }
   const savePath = argv[0];
   let deployTarget = null;
+  let deployRequested = false;
   let userModDir = null;
   const positional = [];
   for (let i = 1; i < argv.length; i++) {
-    if (argv[i] === "--deploy") { deployTarget = argv[++i]; continue; }
+    if (argv[i] === "--deploy") {
+      deployRequested = true;
+      // Optional inline target: consume next arg ONLY if it looks like a path
+      // (not another --flag). With no inline target, fall through to
+      // auto-pick at deploy time.
+      if (i + 1 < argv.length && !argv[i+1].startsWith("--")) {
+        deployTarget = argv[++i];
+      }
+      continue;
+    }
     if (argv[i] === "--mod-dir") { userModDir = argv[++i]; continue; }
     positional.push(argv[i]);
   }
@@ -1347,7 +1357,37 @@ async function main() {
   }
 
   // --deploy: copy into the target campaign dir with backup
-  if (deployTarget) {
+  if (deployRequested) {
+    // Auto-pick target if none specified — same logic as deploy script
+    if (!deployTarget) {
+      const modsRoots = [
+        "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/My Mods",
+        "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/Local Mods",
+      ];
+      let best = null;
+      function walkPick(dir, depth) {
+        if (depth > 12) return;
+        let entries;
+        try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+        for (const e of entries) {
+          if (!e.isDirectory()) continue;
+          const sub = path.join(dir, e.name);
+          if (e.name === "imperial_campaign" && fs.existsSync(path.join(sub, "descr_strat.txt"))) {
+            const mtime = fs.statSync(sub).mtimeMs;
+            if (!best || mtime > best.mtime) best = { path: sub, mtime };
+          }
+          walkPick(sub, depth + 1);
+        }
+      }
+      for (const r of modsRoots) walkPick(r, 0);
+      if (best) {
+        deployTarget = best.path;
+        console.log(`\n(auto-picked deploy target: ${deployTarget})`);
+      } else {
+        console.error("\n❌ --deploy with no target specified, and no installed mod's imperial_campaign found. Pass explicit target.");
+        process.exit(1);
+      }
+    }
     const target = path.join(deployTarget, "descr_strat.txt");
     const backup = path.join(deployTarget, "descr_strat.txt.backup");
     if (!fs.existsSync(deployTarget)) {
