@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.666",
+    date: "2026-05-27",
+    items: [
+      { type: "fix", text: "**Prefer `original_overrides/**/descr_strat.txt` over the legacy `world/maps/campaign/*` layout when resolving the active campaign file.** RIS-style mods ship their live imperial_campaign descr_strat under `data/original_overrides/<bucket>/world/maps/campaign/imperial_campaign/` — that's what the engine reads. The old resolver was picking up `data/world/maps/campaign/alternate_campaign/descr_strat.txt` first, so the save-to-descr-strat generator parsed the wrong faction declarations (wrong starting denari, wrong superfaction). Now matches what the game actually loads." },
+    ],
+  },
+  {
     version: "0.9.665",
     date: "2026-05-26",
     items: [
