@@ -1258,8 +1258,15 @@ async function main() {
     for (const c of dedupedKeep) cs.push(c);
     const tr = currentTreasuryByFaction[facId];
     const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity);
-    const trTag = tr != null ? ` (treasury ${tr})` : "";
-    blocks.push(`;;; ${facId} — ${ss.length} settlements, ${block.emittedCount} characters (+${block.recordCount} family records, ${block.relativeCount} relatives)${trTag}`);
+    // Per-faction summary header: human-readable digest at the top of
+    // each faction block so a glance at the file tells you what's in it.
+    const trTag = tr != null ? `treasury=${tr.toLocaleString()}` : "treasury=(bundled-default)";
+    const leader = cs.find(c => c.isLeader);
+    const leaderTag = leader ? `leader=${leader.firstName}${leader.lastName ? ' ' + leader.lastName : ''}${leader.synthesized ? ' [SYNTH]' : ''}` : "leader=(none)";
+    const totalPop = ss.reduce((a, s) => a + ((populationByCity && populationByCity[s.name]) || 0), 0);
+    const popTag = totalPop > 0 ? `population=${totalPop.toLocaleString()}` : "population=(unknown)";
+    blocks.push(`;;; ${facId} ─ ${ss.length} settlements / ${block.emittedCount} chars / ${block.relativeCount} family-links`);
+    blocks.push(`;;;   ${trTag}, ${leaderTag}, ${popTag}`);
     blocks.push(block.text);
     blocks.push("");
     stats.factions++;
