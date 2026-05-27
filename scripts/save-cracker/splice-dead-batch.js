@@ -20,7 +20,10 @@ const fs = require("fs");
 const path = require("path");
 
 const SRC = "C:/Users/vtarn/Downloads/save_Autosave   Dummies   Turn 960 Start.sav";
-const OUT_DIR = "C:/Users/vtarn/Downloads/";
+// Write directly to the RTW Remastered saves dir so the test files show up
+// in the in-game Load Game menu immediately. Downloads-only copies are
+// confusing — you'd need to copy them in manually before they're loadable.
+const OUT_DIR = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/";
 const DEAD = Buffer.from("/portraits/dead/", "ascii");
 
 function locateRecords(buf) {

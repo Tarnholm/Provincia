@@ -19,7 +19,9 @@
 const fs = require("fs");
 
 const SRC = "C:/Users/vtarn/Downloads/save_Autosave   Dummies   Turn 960 Start.sav";
-const OUT = "C:/Users/vtarn/Downloads/";
+// Write directly to the RTW Remastered saves dir so test files show up in
+// the Load Game menu without a manual copy step.
+const OUT = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/";
 const DEAD = Buffer.from("/portraits/dead/", "ascii");
 
 // Find each dead-record's TRUE start, which is the position of the u16
