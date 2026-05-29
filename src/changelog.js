@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.738",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**AOR map colours: Oscan hierarchy.** `aor_oscan` (the broad primary bucket) now uses the Italics colour; its secondary sub-AORs `aor_samnite` and `aor_lucanian` use the Samnites and Lucanians colours respectively (use the Primary/Secondary toggle to switch layers). `aor_campanian` has no faction of its own, so it stays on the cycling palette." },
+      { type: "change", text: "**`aor_oscan_southern` is now a Specialty AOR** (it gates spearmen, not a region) — so it shows under the AOR Units “Specialty” tab rather than cluttering the regional roster." },
+    ],
+  },
+  {
     version: "0.9.737",
     date: "2026-05-29",
     items: [

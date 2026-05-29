@@ -915,7 +915,7 @@ const PRIMARY_AOR_TO_FACTION = {
   // Italic / Mediterranean sub-cultures promoted to primary
   indian:       "mauryan",
   venedic:      "venedae",
-  oscan:        "samnites",
+  oscan:        "italics",     // broad Oscan bucket; sub-AORs samnite/lucanian/campanian are secondary
   etruscan:     "volsinii",   // tag is aor_etruscan (not aor_etrurian)
   umbrian:      "sarsinates",
   messapian:    "messapians",
@@ -951,6 +951,10 @@ const SECONDARY_AOR_TO_FACTION = {
   prienian:     "priene",
   milesian:     "miletus",
   chian:        "chios",
+  // Oscan sub-AORs (secondary layer under aor_oscan). campanian has no faction
+  // of its own → stays on the cycling palette.
+  samnite:      "samnites",
+  lucanian:     "lucanians",
 };
 // AOR precedence overrides. When BOTH `winner` and `loser` co-tag a region,
 // the winner takes the primary slot (driving the fill) and the loser drops
