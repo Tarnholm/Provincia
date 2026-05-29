@@ -862,6 +862,26 @@ function getAors(tags) {
   return out;
 }
 
+// Evaluate strategic-`resource` recruit gates against a region's resource set
+// (from resources_*.json — e.g. elephants). Elephant units are gated on
+// `resource elephants` (NOT a hidden_resource), so the recruit/AOR filters must
+// honour it or elephants show in regions with no elephant resource. NOTE:
+// `\bresource` does NOT match inside `hidden_resource` — the underscore is a
+// word char, so there's no word boundary before "resource" there.
+function resourceReqAllows(requires, resourceSet) {
+  if (!requires) return true;
+  // Positive `resource X` (with `not resource X` stripped first) must be present.
+  const noNeg = requires.replace(/\bnot\s+resource\s+\S+/g, "");
+  for (const m of noNeg.matchAll(/\bresource\s+(\S+)/g)) {
+    if (!resourceSet.has(m[1].toLowerCase())) return false;
+  }
+  // Excluded `not resource X` must be absent.
+  for (const m of requires.matchAll(/\bnot\s+resource\s+(\S+)/g)) {
+    if (resourceSet.has(m[1].toLowerCase())) return false;
+  }
+  return true;
+}
+
 // Primary AORs are the 15 broad cultural buckets that span entire regions
 // of the map. Anything not in this set is treated as a "secondary" — a
 // narrower sub-cultural / regional recruitment zone (aor_thessalian inside
@@ -16474,7 +16494,11 @@ function App() {
                         const tagSet = new Set(
                           String(r.tags || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
                         );
-                        if (![...tagSet].some(t => t.startsWith("aor_"))) return [];
+                        // Region strategic resources (elephants, etc.) — elephant
+                        // units are gated on `resource elephants`, not an aor_ tag.
+                        const resourceList = (resourcesData && (resourcesData[r.region] || resourcesData[r.city])) || [];
+                        const resourceSet = new Set(resourceList.map(x => String(x.type || "").toLowerCase()).filter(Boolean));
+                        if (![...tagSet].some(t => t.startsWith("aor_")) && resourceSet.size === 0) return [];
                         const byUnit = new Map(); // unit → {unit, aors:Set, only:Set, except:Set}
                         for (const chain of Object.keys(buildingRecruits)) {
                           if (chain === "__aliases") continue;
@@ -16488,24 +16512,32 @@ function App() {
                               if (!reqs) continue;
                               // AI-only freebie lines duplicate the player line — skip.
                               if (/\bnot\s+is_player\b/.test(reqs)) continue;
-                              // Positive hidden_resources (strip negatives first).
-                              const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+                              // Positives only (strip negative hidden_resource / resource).
+                              const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "").replace(/\bnot\s+resource\s+\S+/g, "");
                               const posAors = [];
                               for (const m of positives.matchAll(/\bhidden_resource\s+(aor_\w+)/g)) posAors.push(m[1].toLowerCase());
-                              if (posAors.length === 0) continue; // not an AOR recruit line
+                              const posResources = [];
+                              for (const m of positives.matchAll(/\bresource\s+(\S+)/g)) posResources.push(m[1].toLowerCase());
+                              // AOR-zone line = gated by an aor_ hidden_resource OR a
+                              // strategic resource (e.g. elephants → resource elephants).
+                              if (posAors.length === 0 && posResources.length === 0) continue;
                               // Every positive hidden_resource must be in the region.
                               let ok = true;
                               for (const m of positives.matchAll(/\bhidden_resource\s+(\S+)/g)) {
                                 if (!tagSet.has(m[1].toLowerCase())) { ok = false; break; }
                               }
                               if (!ok) continue;
+                              // Strategic-resource gates (resource / not resource).
+                              if (!resourceReqAllows(reqs, resourceSet)) continue;
                               // No excluded hidden_resource may be present.
                               for (const m of reqs.matchAll(/\bnot\s+hidden_resource\s+(\S+)/g)) {
                                 if (tagSet.has(m[1].toLowerCase())) { ok = false; break; }
                               }
                               if (!ok) continue;
                               const matchedAors = posAors.filter(a => tagSet.has(a));
-                              if (matchedAors.length === 0) continue;
+                              const matchedResources = posResources.filter(rr => resourceSet.has(rr));
+                              const zones = [...matchedAors, ...matchedResources];
+                              if (zones.length === 0) continue;
                               // Faction notes. `not factions {…}` → except; a
                               // positive `factions {…}` without `all` → only.
                               let only = null, except = null;
@@ -16522,7 +16554,7 @@ function App() {
                               }
                               let e = byUnit.get(rec.unit);
                               if (!e) { e = { unit: rec.unit, aors: new Set(), only: new Set(), except: new Set() }; byUnit.set(rec.unit, e); }
-                              for (const a of matchedAors) e.aors.add(a);
+                              for (const a of zones) e.aors.add(a);
                               if (only) for (const f of only) e.only.add(f);
                               if (except) for (const f of except) e.except.add(f);
                             }
@@ -16570,6 +16602,11 @@ function App() {
                           || ""
                         ).toLowerCase();
                         const culture = factionCultures?.[ownerId] || null;
+                        // Region strategic resources — elephant units require
+                        // `resource elephants`; without this gate they'd appear
+                        // in every region. Same set used by the AOR roster.
+                        const recruitResourceList = (resourcesData && (resourcesData[r.region] || resourcesData[r.city])) || [];
+                        const regionResourceSet = new Set(recruitResourceList.map(x => String(x.type || "").toLowerCase()).filter(Boolean));
                         const seen = new Set();
                         const result = [];
                         // unit name → Set of chain types that expose it.
@@ -16681,6 +16718,9 @@ function App() {
                                   }
                                   if (!hrOk) continue;
                                 }
+                                // Strategic-resource gate (e.g. elephant units
+                                // need `resource elephants` present in the region).
+                                if (!resourceReqAllows(rec.requires, regionResourceSet)) continue;
                                 // Building / tier requirements. Two flavours:
                                 //   - Tier aliases (mic_tier_2, gov_tier_3, colony_tier_1, culture_tier_2)
                                 //     expand to one or more building_present_min_level clauses (OR-joined).
@@ -16822,6 +16862,8 @@ function App() {
                                 }
                                 if (!hrOk) continue;
                               }
+                              // Strategic-resource gate (elephants need resource elephants).
+                              if (!resourceReqAllows(rec.requires, regionResourceSet)) continue;
                               if (unitOwnership) {
                                 const owners = unitOwnership[rec.unit];
                                 if (!owners) continue;

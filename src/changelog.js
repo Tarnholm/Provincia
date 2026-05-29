@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.736",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**Elephant (and other strategic-resource) units now require the resource in the region.** Elephant units are gated on `resource elephants` (a strategic resource placed on the map), not an aor_ hidden-resource — the recruit/AOR filters previously ignored `resource` gates entirely, so elephants could appear in regions with no elephant resource. Both the normal Recruitable panel and the AOR roster now honour `resource X` / `not resource X` against the region's actual resources. AOR mode also now surfaces resource-gated units (e.g. elephants group under an \"elephants\" zone)." },
+      { type: "feature", text: "**AOR mode: 3-way faction filter toggle** (Factional / All factions / Both) in the AOR Units panel header. \"Factional\" shows only units locked to specific factions (e.g. a faction's own elephant/native variant), \"All factions\" shows the generic AOR units any faction can train, \"Both\" shows everything. Persists across sessions." },
+    ],
+  },
+  {
     version: "0.9.735",
     date: "2026-05-29",
     items: [

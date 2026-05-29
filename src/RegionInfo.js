@@ -1034,6 +1034,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // building, hoveredRecruit = unit name when hovering a recruit card.
   const [hoveredChain, setHoveredChain] = useState(null);
   const [hoveredRecruit, setHoveredRecruit] = useState(null);
+  // AOR-mode unit filter: "factional" (units locked to specific factions),
+  // "everybody" (the generic AOR units any faction can train), or "both".
+  const [aorFilter, setAorFilter] = useState(() => { try { return localStorage.getItem("aorFilter") || "both"; } catch { return "both"; } });
+  useEffect(() => { try { localStorage.setItem("aorFilter", aorFilter); } catch {} }, [aorFilter]);
   // Hidden-resource hover: chip in the tags row → highlight every
   // recruit gated on that HR. Builds on the existing recruit/building
   // cross-link.
@@ -2501,7 +2505,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: aorUnits != null ? "#dca64a" : "#9fc78a" }}>{aorUnits != null ? "AOR Units:" : "Recruitable:"}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.85rem", color: aorUnits != null ? "#dca64a" : "#9fc78a" }}>{aorUnits != null ? "AOR Units:" : "Recruitable:"}</div>
+            {aorUnits != null && (
+              <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
+                {[["factional", "Factional"], ["everybody", "All factions"], ["both", "Both"]].map(([val, label]) => (
+                  <button key={val} onClick={() => setAorFilter(val)} title={`Show ${label.toLowerCase()} AOR units`}
+                    style={{
+                      fontSize: "0.6rem", padding: "1px 6px", borderRadius: 3, cursor: "pointer",
+                      border: "1px solid " + (aorFilter === val ? "#dca64a" : "rgba(255,255,255,0.18)"),
+                      background: aorFilter === val ? "rgba(220,166,74,0.25)" : "rgba(0,0,0,0.3)",
+                      color: aorFilter === val ? "#f0d090" : "#bbb", fontWeight: aorFilter === val ? 700 : 400,
+                    }}>{label}</button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div style={widgetBody}>
         {aorUnits != null ? (() => {
@@ -2522,11 +2541,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             if (u.except && u.except.length) return { short: `not: ${shortFactions(u.except)}`, full: `all except ${u.except.map(factionLabel).join(", ")}`, color: "#e8a060", bg: "rgba(200,120,40,0.9)" };
             return null;
           };
-          const sorted = aorUnits.slice().sort((a, b) => {
+          // Factional = locked to specific factions (has `only`); everybody =
+          // the generic AOR units (no `only`). "both" shows all.
+          const passesFilter = (u) => {
+            const factional = !!(u.only && u.only.length);
+            return aorFilter === "both" || (aorFilter === "factional" ? factional : !factional);
+          };
+          const sorted = aorUnits.slice().filter(passesFilter).sort((a, b) => {
             const ta = (a.aors || []).slice().sort().join(","), tb = (b.aors || []).slice().sort().join(",");
             if (ta !== tb) return ta.localeCompare(tb);
             return cleanUnit(a.unit).localeCompare(cleanUnit(b.unit));
           });
+          if (sorted.length === 0) {
+            return <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>No {aorFilter === "factional" ? "faction-specific" : aorFilter === "everybody" ? "all-faction" : ""} AOR units here</span>;
+          }
           return (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gridAutoRows: "min-content", gap: 3, flex: 1, minHeight: 0, overflowY: "auto" }}>
               {sorted.map((u, i) => {
