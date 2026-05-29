@@ -49,6 +49,7 @@ const {
   parseReligionByCity,
   deriveEngineFactionOrder,
   identifyFactionRecordOwners,
+  identifyPlayerFactionFromSave,
   parseModInfo,
 } = require("../src/saveCrackerExtras.js");
 const { parseDescrRegions: parseDR2, buildRegionCoords } = require("../src/descrStratGeneral.js");
@@ -1664,11 +1665,19 @@ async function main() {
   const { decls: factionDecls, descrOrder } = loadFactionDeclarations(stratPath);
   const engineOrder = deriveEngineFactionOrder(descrOrder);
   const chainLevels = loadChainLevels(modDataDir);
+  // descr_sm_factions DECLARATION order — the order the engine indexes the
+  // treasury records AND the diplomacy matrix by (cracked 2026-05-29). The old
+  // `engineOrder` (a rebel-shuffle of descr_strat order) mis-attributes both.
+  // Object.keys preserves declaration order from loadFactionNamelists.
   const { settlementToRegion, regionToSettlement } = loadSettlementToRegion(modDataDir);
   const settlementCoords = loadSettlementCoords(modDataDir);
   const nameLookup = loadNameLookup(modDataDir);
   const namelists = loadNamelists(modDataDir);
   const factionNamelists = loadFactionNamelists(modDataDir);
+  // descr_sm_factions declaration order (index → faction). Used for treasury +
+  // diplomacy mapping (the engine's real index order). Falls back to engineOrder.
+  const smOrder = (factionNamelists && Object.keys(factionNamelists).length > 2)
+    ? Object.keys(factionNamelists) : engineOrder;
   // Gender oracle: lowercased firstName → "female" or "male" based on which
   // namelist (`_women` vs `_men`) the name appears in. Used to enrich
   // characters whose gender byte is 0 ("unknown") — about 95% of records
@@ -1773,13 +1782,36 @@ async function main() {
   const currentTreasuryByFaction = {};
   for (const t of treasuriesRaw) {
     if (typeof t.factionId !== "number") continue;
-    const name = engineOrder[t.factionId];
+    const name = smOrder[t.factionId];
     if (!name) continue;
     // If multiple records exist for the same faction (rare), keep the largest
     // — the smaller is usually a junk match.
     if (currentTreasuryByFaction[name] == null || t.treasury > currentTreasuryByFaction[name]) {
       currentTreasuryByFaction[name] = t.treasury;
     }
+  }
+  // PLAYER treasury override. The major playable factions (incl. the player)
+  // don't get a clean factionId byte in their economic record, so the loop
+  // above misses them. But the FIRST sub=6 record by offset is ALWAYS the
+  // player (saveCracker crack), and its treasury is reliable. Identify the
+  // player and set its denari from that record.
+  const sub6 = treasuriesRaw.filter(t => t.knowledgeSize !== undefined).sort((a, b) => a.offset - b.offset);
+  let playerFaction = null;
+  try { playerFaction = identifyPlayerFactionFromSave(buf, treasuriesRaw); } catch {}
+  if (!playerFaction && sub6.length) {
+    // knowledgeSize signature for the 6 majors (stable across saves).
+    const KNOWN_KNOWLEDGE = { 414: "romans_julii", 173: "carthage", 161: "antigonid", 207: "ptolemaic", 250: "seleucid", 83: "bactria" };
+    playerFaction = KNOWN_KNOWLEDGE[sub6[0].knowledgeSize] || null;
+    // denari match against source as a last resort (works at T1).
+    if (!playerFaction) {
+      for (const [fac, d] of Object.entries(factionDecls)) {
+        if (d && d.denari === sub6[0].treasury) { playerFaction = fac; break; }
+      }
+    }
+  }
+  if (playerFaction && sub6.length) {
+    currentTreasuryByFaction[playerFaction] = sub6[0].treasury;
+    console.log(`[player-treasury] ${playerFaction} = ${sub6[0].treasury} (first sub=6 record, knowledge=${sub6[0].knowledgeSize})`);
   }
   console.log(`[${Date.now() - t0}ms] treasuries — ${treasuriesRaw.length} records, ${Object.keys(currentTreasuryByFaction).length} mapped to factions`);
 
@@ -1789,9 +1821,9 @@ async function main() {
   // one first; if it returns null, fall back to a relaxed locator that
   // matches the same {0, key, 200, attitude} invariant without the key
   // range check.
-  let diploMatrix = parseDiplomacyMatrix(buf, engineOrder);
+  let diploMatrix = parseDiplomacyMatrix(buf, smOrder);
   if (!diploMatrix) {
-    diploMatrix = parseDiplomacyMatrixRelaxed(buf, engineOrder);
+    diploMatrix = parseDiplomacyMatrixRelaxed(buf, smOrder);
     if (diploMatrix) {
       console.log(`[${Date.now() - t0}ms]   (used relaxed locator for diplomacy matrix)`);
     }

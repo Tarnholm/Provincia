@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.740",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**AOR map now recolours instantly when you click Primary / Secondary in the Areas of Recruitment sidebar.** The map's recolor effect wasn't watching the Primary/Secondary toggle, so the colours only updated on the next unrelated redraw — now the sidebar button drives the map directly." },
+      { type: "fix", text: "**save→descr_strat: player treasury and faction mapping fixed.** Treasuries and the diplomacy matrix are now mapped by descr_sm_factions declaration order (the engine's real index order), not the old rebel-shuffled descr_strat order that mis-attributed them. The player faction's denari is now read from its record (the first sub=6 record) instead of emitting 0 — e.g. Carthage turn-3 now exports denari 43075." },
+    ],
+  },
+  {
     version: "0.9.739",
     date: "2026-05-29",
     items: [
