@@ -956,10 +956,12 @@ const SECONDARY_AOR_TO_FACTION = {
   prienian:     "priene",
   milesian:     "miletus",
   chian:        "chios",
-  // Oscan sub-AORs (secondary layer under aor_oscan). campanian has no faction
-  // of its own → stays on the cycling palette.
+  // Oscan / Italic sub-AORs (secondary layer under aor_oscan).
   samnite:      "samnites",
   lucanian:     "lucanians",
+  campanian:    "capua",
+  italiote:     "taras",
+  sabellian:    "ardiaei",   // no dedicated Sabellian faction — borrow Ardiaei's colour
 };
 // AOR precedence overrides. When BOTH `winner` and `loser` co-tag a region,
 // the winner takes the primary slot (driving the fill) and the loser drops

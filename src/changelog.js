@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.742",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**More Italic AOR secondary colours:** `aor_italiote` → Taras, `aor_campanian` → Capua, `aor_sabellian` → Ardiaei (no dedicated Sabellian faction exists, so it borrows Ardiaei's colour). (`aor_deuteroi` was already a Specialty AOR.)" },
+    ],
+  },
+  {
     version: "0.9.741",
     date: "2026-05-29",
     items: [
