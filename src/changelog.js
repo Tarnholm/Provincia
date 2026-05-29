@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.739",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**AOR map: removed the diagonal stripes.** Now that Primary and Secondary AORs are separate toggle views, each region gets a single solid zone colour driven by the active layer (Primary or Secondary) — no more striping overlay. Regions with no AOR in the selected layer fall back to their other-layer zone, or muted neutral if they have none." },
+    ],
+  },
+  {
     version: "0.9.738",
     date: "2026-05-29",
     items: [

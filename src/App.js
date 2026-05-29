@@ -6196,17 +6196,13 @@ function App() {
           (r, pr, pg, pb) => {
             const rgbKey = `${pr},${pg},${pb}`;
             const list = aorByRegionKey[rgbKey];
-            // Option-3 fill: in secondary view, inherit the region's primary
-            // AOR colour so e.g. all greek-family regions stay green even
-            // when toggling to view sub-AORs. Stripes still differentiate
-            // the secondaries via cycling palette. If the region has no
-            // primary at all (rare — secondary-only tag), the layered fill
-            // (= first AOR in the layer-ordered list) is the fallback.
+            // Solid single-colour fill driven by the Primary/Secondary toggle:
+            // `list` is layer-ordered (selected layer first, other layer as
+            // fallback), so list[0] is THIS region's AOR for the active layer.
+            // No stripes — each view shows exactly one zone colour per region.
             let base;
             if (!list || list.length === 0) {
               base = [80, 75, 70]; // muted neutral for regions with no AOR
-            } else if (aorView === "secondary" && primaryByRegionKey[rgbKey]) {
-              base = aorColors[primaryByRegionKey[rgbKey]] || aorColors[list[0]];
             } else {
               base = aorColors[list[0]];
             }
@@ -6218,54 +6214,9 @@ function App() {
               Math.max(0, Math.min(255, base[2] + v)),
             ];
           }));
-        // Stripe overlay for multi-AOR regions — same hi-res diagonal
-        // pattern as cultures-mode ethnicities. For regions with 3+ AORs
-        // we cycle through colors based on diagonal phase so all AORs
-        // show up rather than just the first two.
-        const multiAor = Object.entries(aorByRegionKey).filter(([, l]) => l.length >= 2);
-        if (multiAor.length > 0) {
-          const S = 8;
-          const sW = W * S, sH = H * S;
-          const PERIOD = 48;
-          const HALF = 4;
-          const stripeCanvas = document.createElement("canvas");
-          stripeCanvas.width = sW; stripeCanvas.height = sH;
-          const sCtx = stripeCanvas.getContext("2d");
-          const sImg = sCtx.createImageData(sW, sH);
-          const sd = sImg.data;
-          const multiSet = new Map(multiAor); // rgbKey → AOR list
-          for (let y = 0; y < H; y++) {
-            for (let x = 0; x < W; x++) {
-              const i = (y * W + x) * 4;
-              const key = `${pxData[i]},${pxData[i+1]},${pxData[i+2]}`;
-              const list = multiSet.get(key);
-              if (!list || list.length < 2) continue;
-              for (let sy = 0; sy < S; sy++) {
-                for (let sx = 0; sx < S; sx++) {
-                  const hx = x * S + sx, hy = y * S + sy;
-                  const diag = (hx * 2 + hy) / Math.sqrt(5);
-                  const pos = ((diag % PERIOD) + PERIOD) % PERIOD;
-                  const dist = Math.abs(pos - PERIOD / 2);
-                  if (dist < HALF) {
-                    // Pick which non-primary AOR's color to use based on
-                    // the stripe-band index (so regions with 3+ AORs
-                    // show all of them in rotation, not just the second).
-                    const bandIdx = Math.floor(diag / PERIOD) % (list.length - 1);
-                    const colorAor = list[1 + bandIdx];
-                    const col = aorColors[colorAor] || [200, 200, 200];
-                    const di = (hy * sW + hx) * 4;
-                    sd[di] = col[0]; sd[di+1] = col[1]; sd[di+2] = col[2]; sd[di+3] = 230;
-                  }
-                }
-              }
-            }
-          }
-          sCtx.putImageData(sImg, 0, 0);
-          setStripeOverlay(stripeCanvas);
-          console.log(`[aor] stripe overlay drawn for ${multiAor.length} multi-AOR regions`);
-        } else {
-          setStripeOverlay(null);
-        }
+        // No stripe overlay in AOR mode — the Primary/Secondary toggle is the
+        // single source of truth for which zone colours a region (solid fill).
+        setStripeOverlay(null);
       } else if (colorMode === "culture") {
         const cultureColors = {};
         let ci = 0;
