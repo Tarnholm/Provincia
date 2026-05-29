@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.733",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**Diplomacy matrix fully cracked & fixed.** The runtime diplomacy matrix (239×239, 267-byte cells) is now located by a self-aligning locator: it finds the cell signature, then snaps to the true (0,0) by maximising symmetry among the *non-neutral* state cells. The old locator used symmetry over ALL cells — dominated by the ~95% neutral cells — and locked the wrong offset, which is what produced the phantom wars and wrong ally lists. Validated to 99.9% against clean Julii (faction index 0) and Carthage (index 4) turn 1/2/3 saves." },
+      { type: "fix", text: "**`att=600` is correctly classified as WAR again.** v0.9.732 reclassified it as merely \"hostile\" — that was a misdiagnosis of the locator bug above. With the corrected locator, the +12 state field maps exactly to descr_strat faction_relationships (0=allied, 200=neutral, 600=at war). Carthage turn 1 now reads: at war only with rebels, allied with gades/masaesyli/massylii — exactly its in-game starting diplomacy." },
+      { type: "improvement", text: "**Alliances/protectorates read from the bond field (+20).** Formal alliances (bond 54/55) are surfaced as trade/ally partners independent of the attitude value, matching the descr_strat 199 (alliance) pairs." },
+    ],
+  },
+  {
     version: "0.9.732",
     date: "2026-05-29",
     items: [

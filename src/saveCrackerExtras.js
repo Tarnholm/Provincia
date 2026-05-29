@@ -706,19 +706,23 @@ function parseAllFactionDiplomacy(buf, factionOrder) {
 // dynamically): [u32 0][u32 key][u32 200 baseline][u32 attitude][u32 flag]...
 // Stable invariants: +0==0, +4==key, +8==200. attitude(+12) & flag(+16) change
 // live. See memory reference_diplomacy_matrix + scripts/save-cracker/dig-warhunt-*.
-// Stance lookup. Corrected 2026-05-29: att=600 is NOT war (verified against
-// Julii T7 — has 4 cells at att=600 but in-game only at war with the slave
-// faction which sits at att=200). att=600 reflects "high hostility / initial
-// descr_strat enemy tag" but never gets surfaced in-game as an actual war.
-// The active-war list lives outside this matrix (encoding unknown). To avoid
-// surfacing phantom wars, att>=600 now classifies as "hostile" not "war".
+// Stance lookup. The +12 STATE field encodes the formal diplomatic relationship
+// (== descr_strat faction_relationships): 0=allied(199), 200=neutral(200),
+// 600=AT WAR(201). FULLY CRACKED & validated 2026-05-29 to 99.9% against clean
+// Julii (idx 0) AND Carthage (idx 4) T1/T2/T3 replica saves — see memory
+// provincia-diplomacy-matrix-cracked. NOTE: an earlier build (v0.9.732) wrongly
+// reclassified 600 as "hostile, not war"; that was a misdiagnosis caused by the
+// OLD locator reading mis-aligned cells. With the self-aligning locator below,
+// 600=war is correct (Carthage T1 reads: at war only with slave, allied with
+// gades/masaesyli/massylii — exactly in-game truth).
 const DIPLO_STANCE = {
-  0: "allied", 200: "neutral", 400: "hostile", 600: "hostile", 850: "hostile", 1000: "hostile",
+  0: "allied", 200: "neutral", 400: "hostile", 600: "war", 850: "war", 1000: "war",
 };
 function stanceOf(v) {
   if (v === 0) return "allied";
-  if (v >= 400) return "hostile";   // att=400, 600, 850, 1000 are all hostile signals (NOT formal war)
-  return "neutral";                  // 200 and anything below 400
+  if (v >= 600) return "war";        // 600 = at war (faction_relationships 201)
+  if (v >= 400) return "hostile";    // 400 = transient hostility/drift, not a formal war
+  return "neutral";                  // 200 neutral (and anything below 400)
 }
 
 // Engine placeholder / non-diplomatic factions whose attitude cells are
@@ -733,57 +737,61 @@ function isDiplomaticFaction(name) {
   return !!name && !DIPLO_PLACEHOLDER_RE.test(String(name).toLowerCase());
 }
 
-// Locate the matrix: scan for the cell signature, measure the smallest stride
-// giving a full-row run (avoids 2×stride aliasing). Returns {base, stride, key}.
+// Locate the matrix AND self-align to its true (0,0) cell — crib-free.
+// Cell signature (stride S: 267 RIS / 115 vanilla): +0==0, +4==key(const),
+// +8==200, +16==2; the live fields are STATE(+12), bond(+20), agg(+24).
+// Alignment: the STATE field is symmetric (war/ally are mutual) and non-neutral
+// cells are sparse, so the TRUE offset maximizes symmetry(state(r,c)==state(c,r))
+// AMONG non-200 cells (~100%); any wrong offset scrambles the (r,c)<->(c,r)
+// pairing. This replaced the old `calibrateMatrixC` symmetry-over-all-cells,
+// which was dominated by the ~95% neutral cells and locked the wrong offset
+// (the root cause of the phantom-wars / wrong-ally bug). Validated 2026-05-29
+// against Julii & Carthage T1/T2/T3 — see memory provincia-diplomacy-matrix-cracked.
+// Returns {base, stride, key, C:0, symmetry} where base = cellStart(0,0)+8 so the
+// existing +4/+12/+16 reader offsets are unchanged.
 function locateDiplomacyMatrix(buf, N) {
-  const okAtt = (v) => v >= 0 && v <= 1000;
-  const limit = Math.min(buf.length - 64, 0x400000); // matrix base seen ~0xf8000; cap scan
+  const sig = (o) => o >= 0 && o + 20 <= buf.length &&
+    buf.readUInt32LE(o) === 0 && buf.readUInt32LE(o + 8) === 200 && buf.readUInt32LE(o + 16) === 2;
+  const stateAt = (base, stride, r, c) => {
+    const o = base + (r * N + c) * stride + 12;
+    return (o >= 0 && o + 4 <= buf.length) ? buf.readInt32LE(o) : null;
+  };
+  const limit = Math.min(buf.length - 64, 0x800000); // matrix seen ~1.1 MB in; cap scan
   for (let p = 0x4000; p < limit; p++) {
-    if (buf.readUInt32LE(p) !== 0) continue;
+    if (!sig(p)) continue;
     const key = buf.readUInt32LE(p + 4);
     if (key < 1 || key > 64) continue;
-    if (buf.readUInt32LE(p + 8) !== 200) continue;
-    if (!okAtt(buf.readUInt32LE(p + 12))) continue;
-    if (buf.readUInt32LE(p + 16) !== 2) continue;
-    const runFor = (s) => {
-      let good = 0;
-      for (let k = 0; k < N + 2; k++) {
-        const o = p + k * s;
-        if (o + 12 >= buf.length) break;
-        if (buf.readUInt32LE(o) === 0 && buf.readUInt32LE(o + 4) === key && buf.readUInt32LE(o + 8) === 200) good++;
-        else break;
-      }
-      return good;
-    };
+    // detect stride: smallest s giving an N-long run of same-key signature cells
+    let stride = 0;
     for (let s = 80; s <= 400; s++) {
-      if (p + s + 12 >= buf.length) break;
-      if (buf.readUInt32LE(p + s) === 0 && buf.readUInt32LE(p + s + 4) === key && buf.readUInt32LE(p + s + 8) === 200) {
-        if (runFor(s) >= N) return { base: p + 8, stride: s, key };
-      }
+      if (p + s + 20 > buf.length) break;
+      if (!sig(p + s) || buf.readUInt32LE(p + s + 4) !== key) continue;
+      let run = 0;
+      for (let k = 0; k < N; k++) { if (sig(p + k * s)) run++; else break; }
+      if (run >= N) { stride = s; break; }
     }
+    if (!stride) continue;
+    // rough (0,0): walk back over contiguous signature cells
+    let rough = p;
+    while (sig(rough - stride)) rough -= stride;
+    // self-align via non-neutral STATE symmetry
+    let best = { frac: -1, base: rough, k: 0 };
+    for (let k = -40; k <= 40; k++) {
+      const base = rough + k * stride;
+      let sym = 0, tot = 0;
+      for (let r = 0; r < N; r++) for (let c = r + 1; c < N; c++) {
+        const a = stateAt(base, stride, r, c), b = stateAt(base, stride, c, r);
+        if (a == null || b == null) continue;
+        if (a !== 200 || b !== 200) { tot++; if (a === b) sym++; }
+      }
+      const frac = tot ? sym / tot : 0;
+      if (frac > best.frac || (frac === best.frac && Math.abs(k) < Math.abs(best.k))) best = { frac, base, k };
+    }
+    // a real matrix locks at ~100% symmetry; reject false-positive regions
+    if (best.frac < 0.8) continue;
+    return { base: best.base + 8, stride, key, C: 0, symmetry: best.frac };
   }
   return null;
-}
-
-// Self-calibrate the index constant C via matrix symmetry (att(A,B)==att(B,A)).
-function calibrateMatrixC(buf, m, N) {
-  const at = (A, B, C) => {
-    const off = m.base + (A * N + B + C) * m.stride + 4;
-    if (off < 0 || off + 4 > buf.length) return null;
-    return buf.readUInt32LE(off);
-  };
-  let bestC = -1, best = -1;
-  for (let C = -3; C <= 3; C++) {
-    let sym = 0, tot = 0;
-    for (let A = 1; A < N; A += 7) for (let B = A + 1; B < N; B += 5) {
-      const v1 = at(A, B, C), v2 = at(B, A, C);
-      if (v1 == null || v2 == null) continue;
-      tot++; if (v1 === v2) sym++;
-    }
-    const score = tot ? sym / tot : 0;
-    if (score > best) { best = score; bestC = C; }
-  }
-  return { C: bestC, symmetry: best };
 }
 
 // Parse the full diplomacy attitude matrix into per-faction named stance lists.
@@ -795,16 +803,11 @@ function parseDiplomacyMatrix(buf, factionOrder) {
   const N = factionOrder.length;
   const m = locateDiplomacyMatrix(buf, N);
   if (!m) return null;
-  // calibrateMatrixC scored "best symmetry" globally, which fired off-by-one
-  // for RIS (239 factions): symmetry was higher at C=-1 because of noisy
-  // asymmetric cells, but the actual semantic layout starts at C=0. Anchor
-  // verified against Julii T1 (6 Italian protectorates: bruttians/capua/
-  // lucanians/salluvii/taras/volsinii) — these only line up with C=0.
-  m.C = 0;
-  // Keep the calibration call for the symmetry diagnostic in _meta.
-  const cal = { C: 0, symmetry: 1 };
-  // Per-cell reader: att (core_attitudes, +12), bond (+20: 6 normal / 54
-  // protectorate-alliance / 55 special), agg (faction_aggression, +24, signed).
+  // locateDiplomacyMatrix returns the TRUE (0,0) base, self-aligned via
+  // non-neutral STATE symmetry (m.C is 0). m.symmetry ~1.0 on a real lock.
+  const cal = { C: m.C, symmetry: m.symmetry };
+  // Per-cell reader: STATE (+12: 0 allied / 200 neutral / 600 war), bond
+  // (+20: 6 none / 54 alliance|protectorate / 55 special), agg (+24, signed).
   const cellAt = (A, B) => {
     const o = m.base + (A * N + B + m.C) * m.stride;
     if (o < 0 || o + 20 > buf.length) return null;
@@ -852,7 +855,7 @@ function makeDiplomacyPairReader(buf, factionOrder) {
   const N = factionOrder.length;
   const m = locateDiplomacyMatrix(buf, N);
   if (!m) return null;
-  m.C = 0;
+  // m.base/m.C already self-aligned to the true (0,0) by locateDiplomacyMatrix.
   const nameToIdx = new Map();
   for (let i = 0; i < N; i++) nameToIdx.set(factionOrder[i].toLowerCase(), i);
   return (factionA, factionB) => {
