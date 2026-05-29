@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.747",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**Scripts: “Save back to mod” now writes descr_strat to BOTH the base campaign copy and the original_overrides copy** when a mod ships both. Previously it wrote only the first one found, so the engine could keep loading a stale descr_strat from the other location (symptom: ran Heavy Industry, but Athens still showed the old marble building in-game). Each copy is backed up before overwrite." },
+    ],
+  },
+  {
     version: "0.9.746",
     date: "2026-05-29",
     items: [

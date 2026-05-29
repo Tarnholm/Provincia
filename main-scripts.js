@@ -2004,6 +2004,20 @@ function findModFile(dataDir, campaignName, fileName) {
   return null;
 }
 
+// Like findModFile but returns ALL existing campaign-level copies (base AND the
+// original_overrides copy). A mod can ship both, and the engine may load either
+// the base or the override depending on the override's scope — so when we write
+// a processed file back (e.g. descr_strat with new buildings) we must update
+// EVERY copy, or the game can keep loading the stale one (the "Athens still has
+// marble" bug). Excludes world/maps/base for campaign-specific files.
+function findAllCampaignFileLocations(dataDir, campaignName, fileName) {
+  const candidates = [
+    path.join(dataDir, 'world', 'maps', 'campaign', campaignName, fileName),
+    path.join(dataDir, 'original_overrides', 'resource_quantity', 'world', 'maps', 'campaign', campaignName, fileName),
+  ];
+  return candidates.filter(p => fs.existsSync(p));
+}
+
 // Save processed files back to the mod folder
 ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
   try {
@@ -2021,8 +2035,8 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
       return { success: false, error: 'No descr_strat.txt found. Run the pipeline first.' };
     }
 
-    const stratDest = findModFile(dataDir, campaignName, 'descr_strat.txt');
-    if (!stratDest) {
+    const stratDests = findAllCampaignFileLocations(dataDir, campaignName, 'descr_strat.txt');
+    if (stratDests.length === 0) {
       // No existing file found — create in standard campaign dir
       const fallback = path.join(dataDir, 'world', 'maps', 'campaign', campaignName, 'descr_strat.txt');
       if (!fs.existsSync(path.dirname(fallback))) {
@@ -2031,13 +2045,16 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
       fs.copyFileSync(stratSrc, fallback);
       saved.push(`descr_strat.txt → ${path.dirname(fallback)}`);
     } else {
-      // Backup and overwrite at the found location
-      const stratBackupDir = path.join(path.dirname(stratDest), '_backups');
-      fs.mkdirSync(stratBackupDir, { recursive: true });
-      fs.copyFileSync(stratDest, path.join(stratBackupDir, `descr_strat_${timestamp}.txt`));
-      fs.copyFileSync(stratSrc, stratDest);
-      saved.push(`descr_strat.txt → ${path.dirname(stratDest)}`);
-      console.log(`[save-back] Saved descr_strat.txt to: ${stratDest}`);
+      // Write to EVERY existing copy (base campaign dir AND original_overrides)
+      // so the engine can't keep loading a stale one. Backup each first.
+      for (const stratDest of stratDests) {
+        const stratBackupDir = path.join(path.dirname(stratDest), '_backups');
+        fs.mkdirSync(stratBackupDir, { recursive: true });
+        fs.copyFileSync(stratDest, path.join(stratBackupDir, `descr_strat_${timestamp}.txt`));
+        fs.copyFileSync(stratSrc, stratDest);
+        saved.push(`descr_strat.txt → ${path.dirname(stratDest)}`);
+        console.log(`[save-back] Saved descr_strat.txt to: ${stratDest}`);
+      }
     }
 
     // --- Save descr_regions.txt (from hidden_resources step) ---
