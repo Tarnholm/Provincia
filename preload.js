@@ -10,7 +10,53 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // X-Ref scan: "where is this used?" Returns { byFile: { fileName: [{line, text}] }, totalMatches }.
   xrefFind: (name) => ipcRenderer.invoke("sps:xref-find", name),
   // Mod-validation: returns { summary, danglingChains, danglingLevels, stratErrors, missingLocale, orphanedChains }.
-  validateMod: () => ipcRenderer.invoke("sps:validate-mod"),
+  validateMod: (dataDir) => ipcRenderer.invoke("sps:validate-mod", dataDir),
+  // Portrait coverage audit — per-culture data/ui/<culture>/portraits/portraits/
+  // {young,old} presence + file count. Returns { cultures: [...], summary, error }.
+  validatePortraits: (dataDir) => ipcRenderer.invoke("sps:validate-portraits", dataDir),
+  // Multi-section mod-data validators against live dataDir. Returns
+  // { namelistEmpty, namelistSingle, stratTraitRefs, stratAncillaryRefs,
+  //   stratUnitRefs, factionCulture } — each with `issues` + `error`.
+  validateModExtra: (dataDir) => ipcRenderer.invoke("sps:validate-mod-extra", dataDir),
+  // Per-faction captain banner file coverage: each faction needs
+  // captain_portrait_<X>.tga.dds + captain_card_<X>.tga (+ rebel variants).
+  // Missing files cause record.m_card_path.is_valid() Failed crashes.
+  validateCaptainBanners: (dataDir) => ipcRenderer.invoke("sps:validate-captain-banners", dataDir),
+  // Auto-fix: seed missing captain banner files from a same-culture donor
+  // faction. Returns { copied: N, copies: [...], noDonor: [...], error }.
+  autofixCaptainBanners: (dataDir) => ipcRenderer.invoke("sps:autofix-captain-banners", dataDir),
+  // descr_regions consistency: regions in strat not in regions file, settlement
+  // mismatches, duplicate tile colors, orphan regions.
+  validateDescrRegions: (dataDir) => ipcRenderer.invoke("sps:validate-descr-regions", dataDir),
+  // Region scrolls: every settlement should carry
+  // `building { type hinterland_region region_base }`. Returns
+  // { missing: [{region, line}], total, error }.
+  validateRegionScrolls: (dataDir) => ipcRenderer.invoke("sps:validate-region-scrolls", dataDir),
+  // descr_sm_factions structural completeness per faction.
+  validateSmFactions: (dataDir) => ipcRenderer.invoke("sps:validate-sm-factions", dataDir),
+  // Auto-fix: seed missing data/ui/<target>/portraits/portraits/young|old
+  // dirs by copying tgas from any culture that has them populated.
+  autofixPortraits: (dataDir) => ipcRenderer.invoke("sps:autofix-portraits", dataDir),
+  // AOR coverage report: { aors: [{name, count}, ...], error }. Sorted by
+  // descending region count. Renderer compares against its own primary/
+  // secondary maps to surface uncovered tags.
+  aorCoverage: (dataDir) => ipcRenderer.invoke("sps:aor-coverage", dataDir),
+  // EDB hidden_resource cross-ref vs descr_regions.
+  validateEdbResources: (dataDir) => ipcRenderer.invoke("sps:validate-edb-resources", dataDir),
+  // Building constructed-image coverage per culture, plus auto-fix that
+  // copies the base image to the _constructed slot.
+  validateBuildingImages: (dataDir) => ipcRenderer.invoke("sps:validate-building-images", dataDir),
+  autofixBuildingImages: (dataDir) => ipcRenderer.invoke("sps:autofix-building-images", dataDir),
+  // Mercenary / unit type localization coverage.
+  validateUnitLocalization: (dataDir) => ipcRenderer.invoke("sps:validate-unit-localization", dataDir),
+  // Per-faction unit image coverage + cross-faction auto-fix.
+  validateUnitImages: (dataDir) => ipcRenderer.invoke("sps:validate-unit-images", dataDir),
+  autofixUnitImages: (dataDir) => ipcRenderer.invoke("sps:autofix-unit-images", dataDir),
+  // Reads RTW's message_log.txt and counts known cosmetic / engine-internal
+  // patterns + extracts undefined script toggles + missing localised strings.
+  scanLogWarnings: (logPath) => ipcRenderer.invoke("sps:scan-log-warnings", logPath),
+  // Texture power-of-2 dimension check across ancillary + building TGAs.
+  validateTextureDimensions: (dataDir) => ipcRenderer.invoke("sps:validate-texture-dimensions", dataDir),
   // Mac dev-pill button: load the bundled RIS subset + sample save so the
   // app works without the game installed. Returns { ok, dataDir, saveDir,
   // saveFile, campaign }.
@@ -21,9 +67,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Victory-conditions helper: region-list CSV in → region,owner_faction CSV out.
   vcRegionOwnersCsv: (modDataDir, campaign) => ipcRenderer.invoke("vc-region-owners-csv", modDataDir, campaign),
   selectFolder: () => ipcRenderer.invoke("select-folder"),
+  // Scan a known path WITHOUT a dialog. Used to auto-reimport on launch
+  // from the last-imported location.
+  scanFolder: (dir) => ipcRenderer.invoke("scan-folder", dir),
   readFile: (filePath) => ipcRenderer.invoke("read-file", filePath),
   readFileBinary: (filePath) => ipcRenderer.invoke("read-file-binary", filePath),
   saveFile: (name, content) => ipcRenderer.invoke("save-file", name, content),
+  // User-chosen path via Save As dialog. Returns the saved path or null on cancel.
+  saveFileAs: (defaultName, content, filterDesc, filterExts) =>
+    ipcRenderer.invoke("save-file-as", defaultName, content, filterDesc, filterExts),
+  // Unified save cracker — call this instead of touching saveCrackerExtras
+  // directly. Returns { header, playerFaction, factions:{[name]:{treasury,regionCount,...,diplomacy}}, settlements, characters, _stats }
+  // or { error } on failure.
+  crackSave: (savePath, modDataDir) => ipcRenderer.invoke("crack-save", savePath, modDataDir),
   writeBinaryFile: (name, dataBuf) => ipcRenderer.invoke("write-binary-file", name, dataBuf),
   copyFile: (src, destName) => ipcRenderer.invoke("copy-file", src, destName),
   readCampaignFile: (name) => ipcRenderer.invoke("read-campaign-file", name),

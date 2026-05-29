@@ -234,6 +234,7 @@ let modFactionDisplayNames = null; // { internal faction id → display name } �
 let modFactionCultures = null; // { factionId: cultureFolderName } — "roman", "greek", "barbarian", etc.
 let modFactionOrder = null; // [factionId, ...] in descr_sm_factions.txt declaration order — index = save's cracked factionId byte
 let modAiPersonalityOrder = null; // [personalityName, ...] in feral_descr_ai_personality.txt order — index = save's cracked aiPersonalityIndex byte
+let modAiByFaction = null; // { factionName: "ai_<type>" } parsed from descr_strat — authoritative starting AI personality per faction. Used as fallback for save records where the cracked aiPersonalityIndex is missing (sub=8 layout) or wrong.
 let modInitialOwnerByCity = null; // { settlementName → factionId } from descr_strat (turn 0 ground truth)
 // 0.9.437: per-settlement descr_strat `faction_creator` — the rebel-default
 // FOR THAT SETTLEMENT (which faction it joins on rebellion). Distinct from
@@ -1046,6 +1047,38 @@ function loadModCharacterData(modDataDir) {
       }
     } catch (e) { console.warn("[ai_personality]", src, e.message); }
   }
+
+  // Parse descr_strat for `faction X, ai_Y` → modAiByFaction map. Authoritative
+  // starting AI personality per faction; doesn't go stale within a campaign in
+  // RTW (engine never reassigns ai_type at runtime — it's static-from-descr_strat).
+  // Used as fallback when the save-cracked aiPersonalityIndex is unavailable
+  // (sub=8 record layout, ~91% of records on RIS T1017) or wrong.
+  modAiByFaction = {};
+  try {
+    const dsCandidates = [
+      path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+      path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "original_overrides", "descr_strat.txt"),
+    ];
+    if (findRelatedModDirs) {
+      for (const d of findRelatedModDirs(modDataDir, "world/maps/campaign/imperial_campaign/descr_strat.txt")) {
+        dsCandidates.push(path.join(d, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
+      }
+    }
+    let parsedDs = null;
+    for (const dsPath of dsCandidates) {
+      if (!fs.existsSync(dsPath)) continue;
+      try {
+        parsedDs = descrGen.parseDescrStrat(fs.readFileSync(dsPath, "utf8"));
+        break;
+      } catch {}
+    }
+    if (parsedDs && Array.isArray(parsedDs.factions)) {
+      for (const f of parsedDs.factions) {
+        if (f.name && f.ai) modAiByFaction[f.name.toLowerCase()] = f.ai;
+      }
+    }
+    console.log(`[ai_personality] descr_strat fallback seeded: ${Object.keys(modAiByFaction).length} factions with ai_<type>`);
+  } catch (e) { console.warn("[ai_personality] descr_strat fallback failed:", e.message); }
 
   // Build initial settlement ownership from descr_regions + descr_strat.
   // This is the turn-0 ground truth; conquests during play are not captured
@@ -2286,6 +2319,63 @@ function createWindow() {
 // separately so that after selecting a save, the import dialog doesn't open
 // in the saves directory (Electron/Windows otherwise shares state).
 let lastImportDir = null;
+// Scan a known folder for campaign data — same scan logic as
+// select-folder but skips the dialog. Used by auto-reimport on launch.
+async function scanFolderForCampaigns(dir) {
+  const campaignFiles = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga"];
+  const sharedFiles = ["descr_sm_factions.txt"];
+  const allNeeded = [...campaignFiles, ...sharedFiles];
+  const dirFiles = new Map();
+  const addHit = (dirPath, fileName, filePath) => {
+    if (!dirFiles.has(dirPath)) dirFiles.set(dirPath, {});
+    dirFiles.get(dirPath)[fileName] = filePath;
+  };
+  const scan = (dirPath, depth) => {
+    if (depth > 7) return;
+    try {
+      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile()) {
+          const lower = entry.name.toLowerCase();
+          for (const n of allNeeded) {
+            if (lower === n.toLowerCase()) addHit(dirPath, n, path.join(dirPath, entry.name));
+          }
+        } else if (entry.isDirectory()) {
+          scan(path.join(dirPath, entry.name), depth + 1);
+        }
+      }
+    } catch {}
+  };
+  scan(dir, 0);
+  const campaigns = [];
+  let baseFound = {};
+  const sharedFound = {};
+  for (const [dirPath, files] of dirFiles) {
+    const dirName = path.basename(dirPath).toLowerCase();
+    if (dirName === "base" && campaignFiles.some(f => files[f])) {
+      baseFound = { ...files };
+    } else if (files["descr_strat.txt"]) {
+      campaigns.push({ name: path.basename(dirPath), dir: dirPath, found: { ...files } });
+    }
+    for (const sf of sharedFiles) {
+      if (files[sf] && !sharedFound[sf]) sharedFound[sf] = files[sf];
+    }
+  }
+  // Merge base files into each campaign (base provides shared descr_regions etc.)
+  for (const camp of campaigns) {
+    for (const [k, v] of Object.entries(baseFound)) {
+      if (!camp.found[k]) camp.found[k] = v;
+    }
+  }
+  return { dir, campaigns, sharedFound };
+}
+
+// Scan a known path (no dialog) — used by auto-reimport on launch.
+ipcMain.handle("scan-folder", async (_evt, dir) => {
+  if (!dir || !fs.existsSync(dir)) return null;
+  return await scanFolderForCampaigns(dir);
+});
+
 ipcMain.handle("select-folder", async () => {
   const result = await dialog.showOpenDialog({
     properties: ["openDirectory"],
@@ -5525,9 +5615,35 @@ ipcMain.handle("get-user-data-path", () => {
   return app.getPath("userData");
 });
 
+// IPC: unified save cracker. Anywhere in the app that wants per-faction data
+// (regions, treasury, characters, diplomacy) should call this — NOT reach into
+// saveCrackerExtras directly, which has fields that look right but are wrong
+// (regionCount returns 4 for Carthage when ownerByCity correctly shows 41).
+// Returns { header, playerFaction, factions, settlements, characters, diplomacy, ownerByCity, _stats }.
+ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
+  try {
+    const { crackSave } = require("./src/saveCracker.js");
+    const buf = fs.readFileSync(savePath);
+    return crackSave(buf, modDataDir);
+  } catch (e) {
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: save a campaign data file. Writes to userData (authoritative store).
 // In dev, also mirrors to build/ so the React dev server can fetch it.
 // In packaged apps, build/ lives inside the read-only asar — skip it.
+// Save-as dialog wrapper for ad-hoc CSV exports etc. Renderer-driven.
+ipcMain.handle("save-file-as", async (_event, defaultName, content, filterDesc, filterExts) => {
+  const result = await dialog.showSaveDialog({
+    defaultPath: defaultName,
+    filters: [{ name: filterDesc || "All Files", extensions: filterExts || ["*"] }],
+  });
+  if (result.canceled || !result.filePath) return null;
+  fs.writeFileSync(result.filePath, content, "utf8");
+  return result.filePath;
+});
+
 ipcMain.handle("save-file", async (_event, name, content) => {
   try {
     const userDir = path.join(app.getPath("userData"), "campaign_data");
@@ -5872,8 +5988,20 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
           const rec = factionTreasuries[o.recordIndex];
           const aiIdx = rec && typeof rec.aiPersonalityIndex === "number" ? rec.aiPersonalityIndex : null;
           o.aiPersonalityIndex = aiIdx;
-          o.aiPersonality = (modAiPersonalityOrder && aiIdx != null && aiIdx >= 0 && aiIdx < modAiPersonalityOrder.length)
+          // Save-cracked aiPersonalityIndex is unreliable: the sub=8 record
+          // layout (~91% of records on RIS T1017) doesn't decode the byte at
+          // all (returns null), and the sub=6 layout's +135 offset returns
+          // shifted values (ptolemaic reports ai_antigonid, seleucid reports
+          // ai_ptolemaic, etc — off by one or worse). Until the layout is
+          // re-cracked, prefer the descr_strat-declared `ai_<type>` as the
+          // authoritative source (RTW never reassigns at runtime, so this
+          // matches in-game behaviour). Save-cracked value is a last resort.
+          const facName = (o.factionName || "").toLowerCase();
+          const fromDescrStrat = modAiByFaction ? modAiByFaction[facName] : null;
+          const fromSave = (modAiPersonalityOrder && aiIdx != null && aiIdx >= 0 && aiIdx < modAiPersonalityOrder.length)
             ? modAiPersonalityOrder[aiIdx] : null;
+          o.aiPersonality = fromDescrStrat || fromSave || null;
+          o.aiPersonalitySource = fromDescrStrat ? "descr_strat" : (fromSave ? "save" : null);
         }
         savePlayerFaction = cxIdentifyPlayerFromSave(saveBuf, factionTreasuries);
         factionDiplomacy = cxParseDiplomacy(saveBuf, factionTreasuries);
@@ -7163,9 +7291,13 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
         const rec = factionTreasuries[o.recordIndex];
         const aiIdx = rec && typeof rec.aiPersonalityIndex === "number" ? rec.aiPersonalityIndex : null;
         o.aiPersonalityIndex = aiIdx;
-        o.aiPersonality = (modAiPersonalityOrder && aiIdx != null && aiIdx >= 0 && aiIdx < modAiPersonalityOrder.length)
-          ? modAiPersonalityOrder[aiIdx]
-          : null;
+        // Prefer descr_strat fallback (see calibrate path for full rationale).
+        const facName = (o.factionName || "").toLowerCase();
+        const fromDescrStrat = modAiByFaction ? modAiByFaction[facName] : null;
+        const fromSave = (modAiPersonalityOrder && aiIdx != null && aiIdx >= 0 && aiIdx < modAiPersonalityOrder.length)
+          ? modAiPersonalityOrder[aiIdx] : null;
+        o.aiPersonality = fromDescrStrat || fromSave || null;
+        o.aiPersonalitySource = fromDescrStrat ? "descr_strat" : (fromSave ? "save" : null);
       }
       const named = factionRecordOwners.filter(o => o.factionName).length;
       const byId = factionRecordOwners.filter(o => o.source === "factionId").length;

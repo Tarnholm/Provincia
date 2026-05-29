@@ -5623,6 +5623,10 @@
             "level": "governors_villa"
           },
           {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
             "type": "defenses",
             "level": "wooden_pallisade"
           },
@@ -42467,6 +42471,10 @@
           {
             "type": "core_building",
             "level": "governors_villa"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
           },
           {
             "type": "defenses",

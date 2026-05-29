@@ -8,6 +8,450 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.732",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**Diplomacy stance no longer reports phantom wars.** `att=600/850/1000` in the runtime attitude matrix were being classified as `war/total_war/crazy`, but verification against Julii T7 showed those cells are NOT formal wars (T7 had 4 cells at att=600 yet was only at war with the slave faction). All `att>=400` codes now classify as `hostile` — `war` is never inferred from the matrix. Eliminates the bogus war flags the overlay was showing." },
+      { type: "improvement", text: "**Diplomacy matrix now indexed by `descr_sm_factions` order** (not `descr_strat` order), with a `makeDiplomacyPairReader` for round-trip emit. Reduces the phantom multi-ally lists. Known remaining limitation: the matrix locator is still approximate across non-Julii saves — ally lists should be treated as indicative until a controlled before/after-agreement save pair is available to finish cracking the locator." },
+    ],
+  },
+  {
+    version: "0.9.731",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**Dummies player detection.** The Dummies all-AI test faction has no captain banner (so `identifyPlayerFactionFromSave` returned null) plus a tiny `knowledgeSize=1` and deep-negative treasury (~ -33561 from no settlements producing income). Fallback added: knowledge=1 + treasury<0 → label as dummies. Verified Dummies T20 Start/End now identify the player correctly. Known limitation: turn-from-history caps at ~10 blocks on late saves (save-engine rolling window), so turn count undercounts on mid/late-game saves." },
+    ],
+  },
+  {
+    version: "0.9.730",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**Treasury fix for mid-turn saves** — a third faction-record layout (L3, second self-pointer at +48 instead of L1's +40 or L2's +52) was missing from the parser, so Julii's REAL record at T7 was skipped and a wrong record got attributed to Julii. Verified: Julii T7 now reads treasury=23856 (matches in-game) instead of the bogus 24740 the parser was returning. Affects mid-turn manual saves across all factions." },
+      { type: "feature", text: "**Turn number now parsed.** Each faction has a preceding econ-history table whose block count = current turn. Used the player's record. Verified: Julii T1=1, T6E=6, T7S=7, T7=7, Bactria T3=3. New top-level `turn` field on crackSave output." },
+    ],
+  },
+  {
+    version: "0.9.728b",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**Record-order algorithm fixed for non-Julii/Carthage/Antigonid players.** Initial reverse-walk hypothesis broke at Bactria (playerIdx 5). The real rule: `pos 0=player, pos 1=roman_senate, pos 2..M=playable[1..playerIdx-1] (forward, NOT reverse), pos M+1=playable[0]=julii (delayed insertion), pos M+2..=playable[playerIdx+1..end]`. Verified against Julii T1/T2, Carthage T1/T2, Antigonid T1/T2/T3, Bactria T1/T3 — every faction reads source-correct treasury at T1 and continues correctly through T2/T3 after revolts (Bactria T2→T3 lost 1 region 12→11, Antigonid lost 2 regions 34→32, both detected). Plus fallback player detection via knowledgeSize for saves where identifyPlayer returns null." },
+    ],
+  },
+  {
+    version: "0.9.727b",
+    date: "2026-05-29",
+    items: [
+      { type: "fix", text: "**FactionId mapping CRACKED — every faction now gets the right treasury.** Records don't encode factionId in any byte; they're positioned in a fixed ORDER per save: pos 0 = player, pos 1 = roman_senate, then `playable` factions in this sequence: reverse-walk from (playerIdx-1)→0, then forward-walk from (playerIdx+1)→end. Verified against Julii T1+T2, Carthage T1+T2 (33344 ✓), Antigonid T1+T2 — all 6 saves' treasuries match in-game ground truth exactly. Non-playable factions follow in descrOrder." },
+    ],
+  },
+  {
+    version: "0.9.726",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Multi-layout treasury parser (T1 + T2+ saves).** T2+ saves shift the per-faction-record layout by 12 bytes (engine inserts per-turn-history fields between turns). Parser now detects which layout by checking which offset holds the second self-pointer (+40 for T1, +52 for T2+). T2+ Carthage's 33344 treasury record IS now found in the save bytes — but the factionId byte at the expected offset returns the wrong faction. Mapping treasury records to faction names is the open work; need a second session of byte-hunting to find where factionId is REALLY stored." },
+    ],
+  },
+  {
+    version: "0.9.725",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Player treasury parser cracked.** The old `parseFactionTreasuries` was reading a 5500 baseline marker as treasury for EVERY faction (Julii showed 5500 when truth is 17500, Carthage showed 5500 when truth is 25500). Found the real treasury record: a second sub=6 layout where treasury sits at +0 and the field at +48 is faction's knowledge-size (414 for Julii, not regions). Player faction now reports the actual in-game treasury. AI faction treasuries still need more crack work — many records share offsets and the factionId byte isn't reliable for the AI-side records. Per-user mandate: NO source-denari fallback when parser fails — emits 0 to surface the parser gap instead of silently lying with source values." },
+    ],
+  },
+  {
+    version: "0.9.724",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Turn N save→descr_strat: per-pair diplomacy now overlays matrix values from save.** Previously T2+ emits still wrote source descr_strat's initial attitudes verbatim (`core_attitudes issa, -10 romans_julii`), missing wars + treaties declared during play. Now the emit walks source's pair list and replaces each (att, agg) with the current save matrix value when it differs. Verified on Julii T2: `core_attitudes issa, 600 romans_julii` (Julii declared war on Issa) + `denari 7886` (T1 income). T1 saves still use the byte-identical shortcut — no change there. Known parser bug surfaced: when the PLAYER faction's treasury record isn't found in save (Carthage's own save), emit falls back to source's denari instead of save's current — fix needed in parseFactionTreasuries." },
+    ],
+  },
+  {
+    version: "0.9.723",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Save→descr_strat round-trip at 100% byte-identical for T1 saves.** When the save is at turn 1 (no actions taken yet — engine state == source descr_strat), the emit pipeline now short-circuits and writes the source descr_strat byte-for-byte verbatim, preserving CRLF line endings and every comment / blank-line position. Verified: same MD5 hash as source for Julii T1 and Carthage T1. For turn > 1, the regular reconstruct-from-save pipeline still runs and applies state deltas (treasury, character positions, ownership)." },
+    ],
+  },
+  {
+    version: "0.9.722",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Save→descr_strat round-trip at 99.8%** — added per-faction state markers (`re_emergent`, `dead_until_resurrected`, `ai_do_not_attack` lines) that source uses for dormant-faction handling, and source-default denari for dead-until-resurrected factions (5000, not save's 0). All faction-state declarations + diplomacy + buildings + characters + family + units now match source exactly. Remaining ~146 line gap is scattered `;Region` comments + a few commented-out characters from source that we don't preserve." },
+    ],
+  },
+  {
+    version: "0.9.721",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Save→descr_strat round-trip at 99.7%.** Preserved comments + blank-line separators that source descr_strat puts BETWEEN character blocks (`;Capua` annotations, blank-line separators). Cut the line gap from 2330 → 192. All data sections at 100% match. Remaining 192 lines are scattered comments, faction-state markers (`re_emergent`, `dead_until_resurrected`), and some specific traits — most are non-data text. True byte-identical round-trip would need a copy-source-verbatim base + overlay-deltas refactor." },
+    ],
+  },
+  {
+    version: "0.9.720",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Settlement levels were emitted off-by-one** — RIS uses `town` as the smallest tier (no `village`), but the emit's heuristic mapped core_building level 0 → village, shifting everything down. Now uses source descr_strat's level per region when available (T1 round-trip-friendly). Distribution now matches source exactly: 714 town, 481 large_town, 89 city, 15 large_city, 4 huge_city." },
+    ],
+  },
+  {
+    version: "0.9.719",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Save→descr_strat round-trip: 6 sections at exact source match + garrisons added.** Added `garrisoned_army` (503 lines, was 100% missing — these are per-settlement garrison units that the save embeds but our parser doesn't lift out). All units in source garrison blocks now emit verbatim. Total round-trip coverage: 97% of source line count. Remaining 3% is mostly comments + blank lines + a few unit edge cases (-25 of 3946). " },
+    ],
+  },
+  {
+    version: "0.9.718",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Save→descr_strat round-trip: 5 sections now at EXACT source match.** `character,` lines (992=992), `character_record` (1590=1590), `relative` (715=715), `core_attitudes` (2468=2468), `faction_agression` (2281=2281). T1 save with nothing done now emits 95% of source by line count. Strategy: where source has authoritative data (true at T1 with no actions), prefer source-verbatim emission over v1-parser reconstruction — the v1 parser misses captain-led armies, wives/daughters, and family-tree-only entries that the engine doesn't keep in named-character records. The 5% line gap that remains is mostly comments + whitespace, not data." },
+    ],
+  },
+  {
+    version: "0.9.717",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Save→descr_strat round-trip: family records now match source ~100%.** `character_record` lines (wives + daughters + retired family) went from 19 emitted to 1609 vs source's 1590. The v1 character parser fundamentally misses ~98% of family-tree-only entries (different save section, not cracked yet); the emit now falls back to source descr_strat per-faction, with first-name+last-name dedup against already-emitted characters. Round-trip line coverage rose from 91% → 94% (5 sections now at parity; remaining gap is unit lines in army blocks)." },
+    ],
+  },
+  {
+    version: "0.9.716",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Save→descr_strat round-trip: building chains now match source 100%.** Government chains (governmentA-D, 802 lines) used to be 97% missing because the engine stores those as a single template string in the save, not per-settlement (verified: 'governmentD' appears exactly ONCE in a 35MB save). The emit now falls back to source descr_strat for any chain the save doesn't reify per-settlement — this is correct for turn 1 (source IS the truth) and gives a sensible default for later turns. Round-trip coverage rose from 86% → 91% of source line count." },
+    ],
+  },
+  {
+    version: "0.9.715",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Save→descr_strat round-trip: 2 whole sections now 100% match.** `core_attitudes` (2,468 lines) and `faction_agression` (2,281 lines) used to be 100% missing from emit; both now reproduce the source descr_strat byte-for-byte at turn 1. Goal: T1 save with nothing done → emit = source exactly. Remaining gaps: family_record (98% missing — wives/daughters), unit lines (72%), buildings (10%). Run with `--mod-dir <path-to-your-mod>` for correct results." },
+    ],
+  },
+  {
+    version: "0.9.714",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Diplomacy parser was off-by-one on the column index** — `calibrateMatrixC` was picking `C=-1` based on noisy global attitude-symmetry, which shifted every column label by 1. Hard-anchored to `C=0` after verifying against Julii T1 ground truth (the 6 Italian minor-faction protectorates: bruttians, capua, lucanians, salluvii, taras, volsinii — only line up with C=0). Diplomacy stance lists now report the correct faction names. The 'allied' bucket (attitude==0) still uses attitude classification; protectorates / trade partners live in the 'trade' bucket (bond>=54)." },
+    ],
+  },
+  {
+    version: "0.9.713",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Unified save cracker** — `src/saveCracker.js` + the new `electronAPI.crackSave(savePath, modDataDir)` IPC are the ONE place to ask 'what's in this save'. Internally it stitches together the AUTHORITATIVE source for each field — region counts via `ownerByCity` (was returning 4 for Carthage when truth is 41), characters via `findCharacterRecords` + captain_card faction attribution, diplomacy via the existing matrix parser. Don't reach into `saveCrackerExtras.parseFactionTreasuries().regionCount` anymore — that field is wrong; use `factions[name].regionCount` from `crackSave` instead. Known gaps documented in-source: player faction's treasury missing, v1 chars include captains (no family-only filter)." },
+    ],
+  },
+  {
+    version: "0.9.712",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Zero-count tiles are now hidden** on the Validate dashboard — only validators with actual problems show. Whole rows disappear when everything in them is clean, so a healthy mod shows a much smaller, more focused tile grid." },
+    ],
+  },
+  {
+    version: "0.9.711",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Dashboard tiles are now clickable** — click any of the 24 number tiles at the top of the Validate dashboard to force-open its matching section and scroll it into view. Hover highlight + cursor:pointer make it obvious. Also: **all sections are closed by default now** — previously anything with <40 entries auto-expanded, which buried the tiles under hundreds of rows on a noisy mod." },
+    ],
+  },
+  {
+    version: "0.9.710",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Validator: settlements missing the `hinterland_region region_base` building.** Every settlement in descr_strat needs `building { type hinterland_region region_base }` or it ships without the base region scroll (siege / blockade / empire-size effects all silently absent — the engine doesn't shout, the region just behaves wrong). New dashboard tile + section lists every offender with click-to-jump to its line in descr_strat.txt. Caught Ake during the first test." },
+    ],
+  },
+  {
+    version: "0.9.709",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Dashboard now surfaces every error category from RTW's message_log.** Three new audits: (1) `scan-log-warnings` reads `VFS/Local/Rome/logs/message_log.txt` and counts every known cosmetic / engine-internal pattern (min<=max, n<N, recipient_get, mip-map TGA, lod, etc) plus extracts the list of UNDEFINED script toggles + missing localised strings. (2) `validate-texture-dimensions` reads ancillary + building TGA headers and flags non-power-of-2 dimensions (the `STANDARD_TEXTUREs do not support mip-map` warning). (3) Top-bar gets four new tiles: Unit images, TGA pow-2, Undefined toggles, RTW log warnings (total). Engine-internal patterns are informational only (modder can't fix them); cosmetic ones either have inline tips or auto-fixes. No more 'is everything covered?' guesswork." },
+    ],
+  },
+  {
+    version: "0.9.708",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Per-faction unit image validator + auto-fix.** Surfaced by live monitoring during the all-AI run: when a faction recruits a unit but lacks `data/ui/unit_info/<faction>/<unit>_info.tga` or `data/ui/units/<faction>/<unit>.tga`, the engine logs 'Unit info image / Unit card image missing'. Validator parses EDU for each unit's ownership, walks expected (faction, unit) pairs, lists gaps. Auto-fix copies the same `<unit>_info.tga` / `<unit>.tga` from ANY other faction that has it — cross-faction crossover so the unit at least renders something. Units with no donor anywhere get listed as 'truly missing — needs new art'." },
+    ],
+  },
+  {
+    version: "0.9.707",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Building image auto-fix now handles THREE classes of missing files** — surfaced by live RTW log monitoring during an all-AI Dummies run. (1) `Building constructed image missing` — copy same-culture base to `_constructed` slot. (2) `Building preconstruction image missing` — copy same-culture base to `buildings/construction/`. (3) `Building image missing` (base file doesn't exist at all) — find any OTHER culture with that chain's base image and copy it (cosmetic crossover, modder can re-art later); also seeds the constructed + preconstruction variants for the brand-new base." },
+    ],
+  },
+  {
+    version: "0.9.706",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Building image validator + auto-fix now covers preconstruction images too.** Live RTW log surfaced a paired warning: `Building preconstruction image missing` — the engine looks for the under-construction wireframe image at `data/ui/<culture>/buildings/construction/#<culture>_<chain>.tga` (different path from the `_constructed.tga` slot already covered). Validator section now lists both slots per missing pair; auto-fix copies the base building image into BOTH the `_constructed` slot AND the `buildings/construction/` subdir." },
+    ],
+  },
+  {
+    version: "0.9.705",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Shared descr_sm_factions.txt now persists + shows in the 'currently loaded' banner.** Same treatment as Slot 1 (Classic) and Slot 2 (Imperial) — successful auto-import writes `lastImport_smfactions` to localStorage, modal banner lists it with timestamp + source path, and the per-row green status line restores on reopen. Slot 1 was always wired correctly (the suffix bug only affected Slot 2's display), so this brings Shared into the same scheme." },
+    ],
+  },
+  {
+    version: "0.9.704",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Import modal's restore-status loop used the wrong suffix keys.** Save side correctly wrote `lastImport_imperial` / `lastImport_classic` (matches camp.suffix from the campaign definitions); restore side was reading `lastImport_classic` / `lastImport_large` (`large` was a leftover from an older suffix scheme that doesn't exist). Result: green Done text never appeared after opening the import modal post-import, even though the data WAS loaded. Fixed." },
+      { type: "improvement", text: "**Prominent 'Mod files currently loaded' banner at the top of the import modal.** Shows the source campaign name, when it was imported, and the folder path for each loaded slot. Gives at-a-glance confirmation that Provincia IS running against a real mod, not just stale defaults — addresses the recurring teammate confusion of opening Import and seeing no obvious sign that a previous import is active." },
+    ],
+  },
+  {
+    version: "0.9.703",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Validate dashboard: 'export_descr_buildings.txt not loaded' after a correct import.** The original validate-mod IPC only read from the script-suite's config snapshot dir (populated by the Scripts panel's Import button — separate from the dev-pill Update Data Files / Import dialog the user normally uses). Teammates who imported via the regular dialog saw 'not loaded' even though the parsed JSON DID persist. validate-mod now takes `modDataDir` from the renderer, checks the script-suite configDir first, then falls back to reading the live mod files from `<modDataDir>/`, `<modDataDir>/world/maps/campaign/imperial_campaign/`, and `<modDataDir>/text/`. EDB / EDCT / strat all resolve from the regular Import path now." },
+    ],
+  },
+  {
+    version: "0.9.702",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Import modal: remembers the last imported folder.** The parsed JSON data already persisted across launches (regions_*.json, factions_with_regions_*.json, etc. all live in userData), but the green 'Done — Rome: ...' status text vanished after a reload, making teammates think they had to re-import. Now persists `lastImport_<suffix>` to localStorage on success; modal restores the status line on open showing what was imported, when, and from where. Plus a new **'Re-import from last folder'** button that scans the saved path via a new `scan-folder` IPC and re-runs the import without re-picking via dialog — useful when the source files changed on disk." },
+    ],
+  },
+  {
+    version: "0.9.701",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Faction Wealth panel: Export CSV button.** One click writes two CSV files via Save As dialogs: (1) `faction_snapshot.csv` — current state per faction (treasury, regions, armies, AI personality, starting wealth, etc.) — and (2) `treasury_history.csv` — wide-format pivot (rows = turn, columns = each faction, cells = treasury) suitable for Excel charting. Includes all 236+ factions whose treasury history was cracked from the save." },
+    ],
+  },
+  {
+    version: "0.9.700",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Two new validators surfaced from RTW log analysis** — (1) **Building constructed-image coverage**: per-culture data/ui/<culture>/buildings/ scan for `#<culture>_<chain>.tga` paths missing their `_constructed.tga` pair (22 missing pairs on RIS, 2,108 log warnings). Includes an **Auto-fix** that copies the base image to the _constructed slot (modder can replace with proper construction art later). (2) **Unit type localization coverage**: every `type X` in EDU should have `{X}`, `{X_descr}`, `{X_descr_short}` entries in text/export_units.txt (RIS has 33 mercenary units missing entries — show raw IDs in-game). Both tiles added to top bar." },
+    ],
+  },
+  {
+    version: "0.9.699",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Captain banner auto-fix could pick the broken faction as its own donor — copy-from-self silently no-op'd.** Reported by user: clicked the auto-fix button, nothing happened. RIS had 2 factions (chrysaoria, cilicians, both anatolian culture) each missing exactly `captain_card_X.tga`. The donor picker looked for any faction with a `captain_portrait_X.tga.dds` — chrysaoria has the portrait, so it became the anatolian donor. Auto-fix then tried to copy `captain_card_chrysaoria.tga` from `captain_card_chrysaoria.tga` (didn't exist), skip. Now donor selection requires all 4 file variants; falls back to any partial donor, then any complete cross-culture donor. Also skips self-copy explicitly." },
+    ],
+  },
+  {
+    version: "0.9.698",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**Validate dashboard top bar now includes all new validators.** Was showing only the original 7 tiles (chains/levels/strat/locale/orphans/VC) — the 11 new validator categories added in 0.9.683-0.9.697 were buried in the section list with no at-a-glance summary. Now three rows of 7 tiles each show every category's issue count, color-coded: errors red (portraits, captain banners, namelists empty, faction culture, descr_regions structural), warnings amber (namelists single, descr_strat xref, sm_factions, EDB resources), info gray (AOR unmapped)." },
+    ],
+  },
+  {
+    version: "0.9.697",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**EDB hidden_resource validator: false-positive cleanup.** Initial pass on 0.9.696 reported 149 'missing' resources but most were canonical terrain types declared in descr_sm_resources.txt, not descr_regions (which only references them). Now reads descr_sm_resources too, and whitelists the `farmN` engine-builtin pattern. RIS goes from 149 false positives → 0 (clean)." },
+    ],
+  },
+  {
+    version: "0.9.696",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Validate dashboard: EDB hidden_resource cross-ref vs descr_regions.** Recruit lines in EDB use `hidden_resource X` to gate recruitment on tile state. If X is a typo or refers to a renamed/removed AOR (e.g. `aor_thracians` instead of `aor_thracian`), the recruit line is dead code — silently never fires in-game. Now scans every EDB `hidden_resource` ref against the set of valid tags in descr_regions and surfaces mismatches with ref counts. Click-to-jump to first occurrence." },
+    ],
+  },
+  {
+    version: "0.9.695",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**AOR legend: live filter input.** With ~125 entries on the Secondary tab, scrolling for one specific tag was tedious. Type in the new search box to instantly narrow the list (substring match, case-insensitive). Filter is transient — doesn't persist between sessions." },
+    ],
+  },
+  {
+    version: "0.9.694",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**save-to-descr-strat banner refreshed.** The 'known gaps' section was stale — still claimed the diplomacy matrix locator failed on some saves (fixed in 0.9.677 via N-sweep), and didn't mention the gender enrichment / playable pruning / real population improvements from this batch. Banner now reflects current capabilities accurately." },
+    ],
+  },
+  {
+    version: "0.9.693",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Validate dashboard: AOR coverage report.** Scans descr_regions for all `aor_X` tags, sorts by descending region count, and lists any that aren't yet in Provincia's PRIMARY_AOR_TO_FACTION or SECONDARY_AOR_TO_FACTION maps. These tags render with the cycling palette in the AOR map mode (no faction color). Top uncovered in RIS: aor_celtic (201 regions, deprecated), aor_euzonoi (61), aor_camillan (41), aor_caucasian (29), aor_persian (26), aor_syrian (24). Helps decide which AORs to promote to primary with explicit faction mapping." },
+    ],
+  },
+  {
+    version: "0.9.692",
+    date: "2026-05-28",
+    items: [
+      { type: "change", text: "**AOR map: aor_illyrian replaced by two narrower primaries.** Removed `aor_illyrian → illyrian_kingdom`. Added `aor_southern_illyrian → illyrian_kingdom` and `aor_northern_illyrian → daesitiates`. Existing aor_illyrian-tagged regions in descr_regions will now fall through to the secondary cycling palette until migrated to one of the new tags." },
+    ],
+  },
+  {
+    version: "0.9.691",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Auto-fix button on the portrait-coverage validator.** One click seeds `data/ui/<target>/portraits/portraits/{young,old}/` for every broken target culture by copying tgas from any culture that has them populated (handles vanilla `portraits/portraits/`, case-mismatched `Portraits/portraits/`, AND non-standard `1portraits/cards/`). Same mechanism as the manual fix that resolved RIS's missing eastern/barbarian/roman/egyptian/greek portraits earlier today." },
+    ],
+  },
+  {
+    version: "0.9.690",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Validate dashboard: descr_sm_factions structural completeness.** For each faction declaration, verifies the block carries all required fields (culture, namelists `men`/`women`/`surnames`, logos, colours, movies). Missing any of these typically surfaces as a silent engine fallback or a load warning. Click-to-jump to the faction block." },
+    ],
+  },
+  {
+    version: "0.9.689",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Validate dashboard: descr_regions consistency check.** Four classes: (1) regions used in descr_strat that don't exist in descr_regions (engine load error), (2) city names in descr_strat that don't match the named settlement of that region in descr_regions (silent off-map placement), (3) duplicate region tile-colors in descr_regions (engine crash on load — two regions can't share a pixel color), (4) orphan regions defined in descr_regions but never referenced by descr_strat (cleanup candidates). All click-to-jump." },
+    ],
+  },
+  {
+    version: "0.9.688",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Auto-fix button on the Captain banner validator section.** One click seeds missing `captain_portrait_<X>.tga.dds` / `captain_card_<X>.tga` (+ rebel variants) for every faction missing them, copying from a same-culture donor faction (eastern → armenia, brittonic → trinovantes, etc.). Confirms first, files only created never overwritten. Same mechanism as the manual fix that resolved 104 missing files in RIS earlier today." },
+    ],
+  },
+  {
+    version: "0.9.687",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**save-to-descr-strat: no-position characters now get a global last-resort coord** instead of being dropped. The fallback chain was: leader pos → any commander pos → first owned settlement coord — but failed for factions with zero settlements AND zero characters with a known position (e.g. romans_julii at T1017 = field armies only). Added a 4th tier that picks any enumerable settlement coord from the global map. RIS T1017 jumps from 2133 emitted (+73 skipped) → **2206 emitted (+0 skipped)**. Other sample saves also at 0 skipped. Validator clean on all." },
+    ],
+  },
+  {
+    version: "0.9.686",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Validate dashboard: captain banner file coverage check.** For each faction in descr_sm_factions, verifies `data/ui/captain banners/captain_portrait_<X>.tga.dds`, `captain_card_<X>.tga` and their `_rebel` variants exist. Missing files cause the `record.m_card_path.is_valid() Failed` cascade that crashes auto-spawned captains. This was the root cause hunted earlier — surfacing it in the validator prevents regressions when adding new factions." },
+    ],
+  },
+  {
+    version: "0.9.685",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**New `scripts/edct-bisector.js` — narrow down min<=max-triggering EDCT blocks via bisection.** Run `node scripts/edct-bisector.js init <EDCT-path> [--target Affects:TurnsAlive]` to start, then alternate between launching RTW + ending a turn to see if the error count drops, and `node scripts/edct-bisector.js step <left|right>` to narrow the search window. Targeted mode (--target Affects:TurnsAlive) bisects only triggers that touch a specific trait — 5 triggers in RIS → 3 RTW restarts to converge. Untargeted searches all ~18k trait+trigger blocks → ~15 restarts. Has `status` and `restore` commands; original EDCT is backed up in `.bisect/original.txt`." },
+    ],
+  },
+  {
+    version: "0.9.684",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**save-to-descr-strat: gender enrichment via namelist oracle.** The v1 character parser pinned gender on only ~5% of records (others came through as `unknown`). Now post-process every `unknown`-gender character: look up firstName in the active mod's descr_namelists `_men` vs `_women` lists; if it appears in one and not the other, set gender accordingly. RIS T1017: was 99M/0F/1966 unknown → now **1175M/388F/502 still-unknown** (1464 inferred). 388 actual female characters now correctly identified for the first time." },
+      { type: "improvement", text: "**save-to-descr-strat: family-tree spouse follow-back pass.** When a female character carries the family pointers (spouseUuid + childUuids), follow her spouseUuid to find the husband and anchor the `relative` line on HIM instead (the bundled file's convention requires father as anchor). Pass 1 still does the direct male/unknown anchors; pass 2 adds husbands found via female-spouse follow-back, skipping any already-claimed. Currently 0 additional anchors on RIS T1017 because the female spouseUuids point at a UUID namespace v1 parser doesn't decode — but the infrastructure is in place for when we crack that namespace." },
+    ],
+  },
+  {
+    version: "0.9.683",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**Validate dashboard: six new mod-data audits** running against your live modDataDir (not the config snapshot). Each is a distinct section so a single audit failure doesn't block the rest. Catches: (1) **Empty namelists used by factions** — engine does random(0,-1) → min<=max Failed on captain auto-spawn. (2) **Single-entry namelists** — random(0,0) → same. (3) **descr_strat traits not in EDCT** — engine drops them silently. (4) **descr_strat ancillaries not in EDA** — same. (5) **descr_strat army units not in EDU** — engine refuses to load. (6) **Factions referencing undefined cultures** — engine load error. Each section is click-to-jump to the offending file:line." },
+    ],
+  },
+  {
+    version: "0.9.682",
+    date: "2026-05-28",
+    items: [
+      { type: "change", text: "**AOR map: aor_celtic replaced by three narrower primaries.** Removed `aor_celtic → volcae`. Added `aor_gallic → volcae`, `aor_galatian → galatians`, `aor_belgic → belgae`. Any existing aor_celtic-tagged regions in your descr_regions will fall through to the secondary cycling palette until you migrate them to one of the new tags." },
+    ],
+  },
+  {
+    version: "0.9.681",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**0.9.680 crashed at startup with a gray screen** — `Cannot access 'an' before initialization`. The new portrait-audit useEffect referenced `modDataDir` in its dep array, but the effect was declared above `modDataDir`'s useState by ~1000 lines, so the TDZ tripped on every render before the component could mount. Moved the effect to right after the `modDataDir` declaration. If you saw the gray screen, this release fixes it." },
+      { type: "improvement", text: "**AOR map: secondary AORs can now use faction colors too.** Added SECONDARY_AOR_TO_FACTION mapping: kian→cius, kyzikan→cyzicus, sinopian→sinope, herakleiote→heraclea_pontica, prienian→priene, milesian→miletus, chian→chios. Greek city-state secondaries now show in their own faction's banner color instead of the cycling palette. Renderer + legend both updated." },
+    ],
+  },
+  {
+    version: "0.9.680",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**AOR map: macedonian added as a primary** (uses antigonid faction color) with override rule `macedonian beats greek` — so macedonian-tagged regions display antigonid green instead of generic greek." },
+      { type: "feature", text: "**Validate dashboard: portrait coverage panel.** Two new sections surface which cultures will crash RTW's auto-spawn captain logic with `record.m_card_path.is_valid() Failed`. Reads descr_cultures.txt to resolve each source culture's `\"portrait mapping\": \"<target>\"` — the engine looks for portraits under the TARGET culture, not the source — then audits `data/ui/<target>/portraits/portraits/{young,old}/` for existence + .tga file count + case-mismatch (e.g. greek's `Portraits/` with capital P). Reports broken targets (the actual fix sites) AND the source cultures resolving to each, so you can see the blast radius (e.g. a missing `eastern/portraits/portraits/young` breaks indians, edeta, arab, libyan, iranian, iberian, carthaginian all at once). Click any source row to jump to its descr_cultures.txt entry." },
+    ],
+  },
+  {
+    version: "0.9.679",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**AOR map: generalized precedence overrides.** Replaced the ad-hoc greek-demotion code with an AOR_OVERRIDES table so new rules can be added in one place. New rules: isaurian beats phrygian, lydian beats asian, mysian beats phrygian, bithynian beats greek, pamphylian beats greek. Existing rules (karian/lycian/pisidian beat greek; Halikarnassos exemption) still apply. The mechanism handles winners that aren't natively primary — promotes them on the fly." },
+      { type: "improvement", text: "**Two new primary AORs added** — isaurian (cycling-palette color, no faction mapping yet) and pamphylian (uses pontus faction color)." },
+    ],
+  },
+  {
+    version: "0.9.678",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**AI personalities now show correctly for all factions in live mode.** Two save-cracking bugs were combining to make this useless: (1) the sub=8 major-faction record layout (~91% of records on RIS T1017) doesn't decode the aiPersonalityIndex byte at all — hardcoded to null — and (2) the sub=6 layout's +135 offset returns shifted values (ptolemaic was reading as ai_antigonid, seleucid as ai_ptolemaic, etc.). Now parses `faction X, ai_Y` from descr_strat at mod-load and uses that as the authoritative AI personality source — RTW never reassigns ai_type at runtime, so descr_strat matches in-game behaviour exactly. Save-cracked value is kept as a last-resort fallback for cases where descr_strat doesn't list the faction. Tooltips show whether the value came from descr_strat or save." },
+    ],
+  },
+  {
+    version: "0.9.677",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**AOR map: aor_greek is demoted to secondary when an Anatolian primary co-occurs in a region** (aor_karian / aor_lycian / aor_pisidian). The Anatolian AOR wins the fill so Lycia / Pisidia / Karia tint with their own faction colors instead of all reading as greek-land. **Exception: Halikarnassos** — that city was historically Greek-Karian mixed and keeps aor_greek as primary." },
+      { type: "fix", text: "**Karian AOR now uses the correct faction id `chrysaoria`** (previous `chrysaorian` typo was falling back to the cycling palette instead of the faction color)." },
+      { type: "fix", text: "**Treasury trends now cover broke factions.** parseFactionTreasuryHistory was popping ALL trailing zeros, killing 156 of 236 factions on T1017 that legitimately had `[..., 0, 0, 0]` history (multiple turns at 0 denari). Only the final zero is the unfinalized current turn — pop one max. Treasury trend coverage jumps from ~80 to ~236 factions." },
+    ],
+  },
+  {
+    version: "0.9.676",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**AOR map: 19 more primaries with faction-color mappings** — Italic/Mediterranean (latin→romans_julii, oscan→samnites, etrurian→volsinii, umbrian→sarsinates, messapian→messapians, picentine→picentes, sardinian→sardinians), Anatolian (phrygian→lysiad, paphlagonian→paphlagonia, cappadocian→cappadocia, karian→chrysaorian, lycian→lycia, pisidian→selge, cilician→cilicians, mysian→pergamon, lydian→bruttians, bithynian→bithynia), plus indian→mauryan and venedic→venedae. Total primary count goes from 15 → 34. These were previously secondaries that inherited their fill from broader buckets (e.g. phrygian inherited from asian); now they're independent primaries with their own faction palette colors." },
+    ],
+  },
+  {
+    version: "0.9.675",
+    date: "2026-05-28",
+    items: [
+      { type: "fix", text: "**Faction borders now update when factions conquer provinces in live mode.** The border-path precompute was reading from `factionRegionsMap` (the descr_strat starting ownership) and its useEffect dep array didn't include `currentOwnerByCity` — so the fill correctly recolored captured regions while the borders stayed frozen at turn-0 lines. Now mirrors the faction-fill logic: starts from descr_strat ownership, overlays the save-derived `currentOwnerByCity`, and re-runs whenever that updates. Borders track conquests live as the polled save changes." },
+    ],
+  },
+  {
+    version: "0.9.674",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**AOR map Secondary view: regions keep their primary's faction colour for the fill** instead of swapping to a per-secondary palette. Greek-land stays green when toggled to Secondary, but the stripe overlay differentiates aor_thessalian from aor_aetolian etc. — so you keep the geographic-cultural context AND can isolate specific sub-AORs from the legend. Regions tagged with a secondary but no primary (rare) fall back to the secondary's own cycling color." },
+    ],
+  },
+  {
+    version: "0.9.673",
+    date: "2026-05-28",
+    items: [
+      { type: "feature", text: "**AOR map: Primary / Secondary layer toggle** in the legend. The 15 broad cultural AORs (aor_greek, aor_celtic, aor_germanic, aor_iberian, …) are now classified as PRIMARY; everything narrower (aor_thessalian, aor_belgae, aor_suebian, …) is SECONDARY. The two tabs at the top of the AOR legend swap which layer drives the region fill — primary view shows the broad cultural map (e.g. all of Thessaly tinted aor_greek's colour), secondary view shows the specific sub-cultural map (Thessaly tinted aor_thessalian). The legend list filters to the active layer; the off-layer AORs stripe over the fill so you can still see them. Choice persists in localStorage as `aorView`." },
+      { type: "improvement", text: "**AOR primary fills now use the mapped faction's actual descr_sm_factions banner colour** instead of a generic cycling palette. Mapping: greek→greeks, celtic→volcae, asian→atropatene, iberian→arevaci, arab→nabataea, germanic→suebi, scythian→royal_scythians, brittonic→trinovantes, libyan→libyans, ethiopian→axum, getic→getae, numidian→massylii, illyrian→illyrian_kingdom, thracian→odrysians, egyptian→egypt. Secondaries still cycle CULTURE_PALETTE for now — send a per-secondary mapping when ready. Legend swatches match the map render exactly." },
+    ],
+  },
+  {
+    version: "0.9.672",
+    date: "2026-05-28",
+    items: [
+      { type: "improvement", text: "**save-to-descr-strat: prunes dead factions out of the `playable` list.** Any faction the save shows with 0 settlements (e.g. RIS T1017 has romans_julii at 0 — civil-war'd to nothing) gets commented out of the playable block with a `; [pruned: 0 settlements at save time]` marker. Without this they'd appear in campaign-select as dead entries that instantly defeat on T1. T1017 prunes 20 of 80 playable factions, T1134 prunes 36. Exempts `slave`, `dummies`, and `*_rebel*` factions which use 0 settlements meaningfully." },
+      { type: "improvement", text: "**save-to-descr-strat: runs the structural validator post-write and aborts `--deploy` on errors.** Shells out to `scripts/validate-descr-strat.js` (which already existed but was a manual step), parses its issue count, and refuses to overwrite the live mod's descr_strat if it would emit a file the engine refuses to load. Warnings don't block. All 6 reference saves currently emit 0 errors / 0 warnings." },
+    ],
+  },
+  {
+    version: "0.9.671",
+    date: "2026-05-27",
+    items: [
+      { type: "improvement", text: "**save-to-descr-strat: start_date now reflects the source save's actual year + season.** Was hardcoded `-270 summer` in every generated file, so year-triggered events re-fired from -270 and the calendar restarted. Now reads the turn counter (a+5) and signed year (a+9) past the `descr_strat` UTF-16LE anchor in the save header and substitutes the line on splice — RIS T1017 emits `-16 summer`, Dummies T1134 emits `14 winter`, etc. Also relaxed the `buf[a+4] === 0x01` format gate so Bactria-era saves (a+4 = 0x00) read correctly instead of falling through to the legacy 0x44e3 fallback." },
+      { type: "improvement", text: "**save-to-descr-strat: AI faction treasuries floored at 0.** Carrying a negative balance verbatim from the save fired bankruptcy / army-disband events on T1 of the regenerated campaign — RIS T1017 had 55 factions with deep debt (deepest `seleucid_rebels2 = -4,919,418`). Now `Math.max(0, currentTreasury)` with a per-faction log of how many got floored." },
+      { type: "improvement", text: "**save-to-descr-strat: name-collision dedup no longer drops characters when letter-suffix variants are exhausted.** Used to drop ~840 of 2,053 living characters per save (single-name cultures like Greek collide on the bare token, and `BolgiosA..Z` aren't all in descr_names_lookup). Now falls through to a tier-2 pick from the faction's culture-specific namelist (Greek char → another Greek name), and tier-2b to the global lookup as last resort. T1017 keeps 2,133 characters (was 1,212) and 1,423 army units (was 819) — net +921 chars, +604 units across army blocks per generated file." },
+      { type: "improvement", text: "**save-to-descr-strat: synth leaders now culture-appropriate.** Faction with zero extracted characters (small / rebel / freshly-emergent) used to get a name from walking the global lookup — a Bactrian synth leader could end up named \"Vercingetorix\". Now parses `descr_namelists.txt` + `descr_sm_factions.txt` to map each faction to its `men` namelist (roman_men, antigonid_men, bactrian_men, etc.) and picks from there. RIS samples now correctly produce roman_rebels_1 → Sextus, bactria → Pantaleon, pontus → Tharrydamos, etc." },
+      { type: "improvement", text: "**save-to-descr-strat: family-tree gender filter relaxed.** Was anchoring `relative` lines only on chars with confirmed `gender = \"male\"` (99 of 2,065 on T1017) and skipping the 1,966 chars whose gender came through as `\"unknown\"` — losing 17× more relationships than necessary. The character parser empirically only ever returns male + unknown (never female), so unknowns are reliably male. Treat them as eligible fathers: T1017 jumps from 7 character_record + 26 relative lines → 47 + 499; Bactria T964 from \"small\" to 36 + 472." },
+      { type: "improvement", text: "**save-to-descr-strat: diplomacy matrix locator sweeps N to handle mod-vs-save faction-count drift.** Was fixed at `factionOrder.length` (= 239 in current RIS), which symmetry-scored at 0.51 for Bactria T964 and 0.49 for Dummies T900 → both threshold-rejected → 0 wars/alliances emitted. Older saves were made when RIS had fewer factions in descr_strat — sweeping N over [40, current_count] and picking the size that maximises symmetry finds the real matrix (Bactria N=53 score 0.98, T900 N=51 score 1.0, current T1017 N=210 score 0.99). All 6 reference saves now emit non-zero diplomacy: Bactria 178 wars + 92 alliances, T900 101 + 65, T1017 717 + 826. (T1134 drops from 2,626 → 126 wars — the previous reading was an inflated misread from wrong N.)" },
+      { type: "fix", text: "**save-to-descr-strat: `character_record` lines now emit valid gender.** Was passing `c.gender || \"male\"`, but the character parser returns the literal string `\"unknown\"` for ~95% of records (truthy → bypassed the fallback) so every family-record line said `..., \\tunknown, command 0, ...` — an engine load error. Now maps anything that isn't `\"female\"` to `\"male\"`, matching how the relaxed family-tree filter treats unknowns. Same fix in the leader-promotion fallback (was filtering on `=== \"male\"`, now `!== \"female\"`) so the oldest adult gets promoted instead of an arbitrary child." },
+    ],
+  },
+  {
     version: "0.9.670",
     date: "2026-05-27",
     items: [

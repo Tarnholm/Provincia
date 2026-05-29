@@ -1625,7 +1625,7 @@
   "Homeritis": {
     "garrison": [
       {
-        "character": "Zamir Ali Zarih II",
+        "character": "Zamir Ali Zarih",
         "faction": "himyar",
         "x": 751,
         "y": 66,
@@ -1964,7 +1964,7 @@
   "Kattabaneia": {
     "garrison": [
       {
-        "character": "Zamir Ali Zarih II",
+        "character": "Zamir Ali Zarih",
         "faction": "qataban",
         "x": 768,
         "y": 84,
@@ -2194,7 +2194,7 @@
   "Sabaia": {
     "garrison": [
       {
-        "character": "Zamir Ali Zarih II",
+        "character": "Zamir Ali Zarih",
         "faction": "saba",
         "x": 759,
         "y": 88,
@@ -2485,7 +2485,7 @@
   "Qarnawu": {
     "garrison": [
       {
-        "character": "Zamir Ali Zarih II",
+        "character": "Zamir Ali Zarih",
         "faction": "minaeans",
         "x": 748,
         "y": 98,
@@ -2818,7 +2818,7 @@
   "Ssabwat": {
     "garrison": [
       {
-        "character": "Zamir Ali Zarih II",
+        "character": "Zamir Ali Zarih",
         "faction": "hadhramaut",
         "x": 803,
         "y": 113,
@@ -6623,7 +6623,7 @@
   "Gerrhaia": {
     "garrison": [
       {
-        "character": "Zamir Ali Zarih II",
+        "character": "Zamir Ali Zarih",
         "faction": "gerrha",
         "x": 763,
         "y": 252,
@@ -28825,7 +28825,7 @@
     ],
     "field": [
       {
-        "character": "Aulus",
+        "character": "Seppiis",
         "faction": "mamertines",
         "x": 315,
         "y": 349,
@@ -39904,7 +39904,7 @@
   "Bruttium": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Paapiis",
         "faction": "bruttians",
         "x": 325,
         "y": 366,
@@ -39971,7 +39971,7 @@
   "Chonia": {
     "garrison": [
       {
-        "character": "Aulus",
+        "character": "Kerrins",
         "faction": "bruttians",
         "x": 335,
         "y": 366,
@@ -43405,18 +43405,6 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman rorarii",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman rorarii",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -46898,7 +46886,7 @@
   "Lucania": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Markos",
         "faction": "lucanians",
         "x": 321,
         "y": 380,
@@ -47587,7 +47575,7 @@
   "Poseidonia": {
     "garrison": [
       {
-        "character": "Statis",
+        "character": "Statiis",
         "faction": "romans_julii",
         "x": 312,
         "y": 382,
@@ -47599,7 +47587,19 @@
             "weapon": 0
           },
           {
-            "name": "roman rorarii",
+            "name": "aor oscan spearmen southern",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "aor oscan spearmen southern",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "aor oscan javelinmen",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -48974,7 +48974,7 @@
   "Salentinia": {
     "garrison": [
       {
-        "character": "Aulus",
+        "character": "Bosat",
         "faction": "messapians",
         "x": 340,
         "y": 384,
@@ -49801,7 +49801,7 @@
   "Lucania_Vetus": {
     "garrison": [
       {
-        "character": "Aulus",
+        "character": "Vettius",
         "faction": "lucanians",
         "x": 320,
         "y": 386,
@@ -49845,7 +49845,7 @@
   "Calabria": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Dazos",
         "faction": "messapians",
         "x": 343,
         "y": 386,
@@ -51141,7 +51141,7 @@
   "Hirpinia": {
     "garrison": [
       {
-        "character": "Aulus",
+        "character": "Heriis",
         "faction": "samnites",
         "x": 315,
         "y": 388,
@@ -51748,7 +51748,7 @@
   "Parthenope": {
     "garrison": [
       {
-        "character": "Nymphius",
+        "character": "Niumpsis",
         "faction": "romans_julii",
         "x": 303,
         "y": 389,
@@ -53017,7 +53017,7 @@
   "Campania": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Minatis",
         "faction": "capua",
         "x": 303,
         "y": 392,
@@ -53077,7 +53077,7 @@
     ],
     "field": [
       {
-        "character": "Aulus",
+        "character": "Auls",
         "faction": "capua",
         "x": 302,
         "y": 393,
@@ -53883,42 +53883,6 @@
           {
             "name": "roman general",
             "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman rorarii",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman rorarii",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman leves",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman leves",
-            "exp": 0,
             "armour": 0,
             "weapon": 0
           }
@@ -57028,7 +56992,7 @@
   "Pentria-Carricinia": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Numeriis",
         "faction": "samnites",
         "x": 306,
         "y": 398,
@@ -62461,18 +62425,6 @@
             "exp": 0,
             "armour": 0,
             "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
           }
         ],
         "age": 20,
@@ -63364,18 +63316,6 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -65814,7 +65754,7 @@
   "Velzna": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Larth",
         "faction": "volsinii",
         "x": 280,
         "y": 415,
@@ -65875,7 +65815,7 @@
     ],
     "field": [
       {
-        "character": "Aulus",
+        "character": "Velthur",
         "faction": "volsinii",
         "x": 278,
         "y": 413,
@@ -66689,7 +66629,7 @@
   "Picenum": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Apaes",
         "faction": "picentes",
         "x": 296,
         "y": 418,
@@ -66749,7 +66689,7 @@
     ],
     "field": [
       {
-        "character": "Aulus",
+        "character": "Pompo",
         "faction": "picentes",
         "x": 295,
         "y": 421,
@@ -70540,18 +70480,6 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -74646,18 +74574,6 @@
             "exp": 0,
             "armour": 0,
             "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
           }
         ],
         "age": 41,
@@ -75043,18 +74959,6 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -75900,7 +75804,7 @@
   "Sassinia": {
     "garrison": [
       {
-        "character": "Titus",
+        "character": "Nurtins",
         "faction": "sarsinates",
         "x": 281,
         "y": 433,
@@ -75958,7 +75862,7 @@
         "charType": "general"
       },
       {
-        "character": "Aulus",
+        "character": "Vuvkis",
         "faction": "sarsinates",
         "x": 281,
         "y": 433,

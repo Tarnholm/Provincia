@@ -1308,7 +1308,7 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "akarnania_men",
+			"men":      "acarnania_men",
 			"women":    "greek_women",
 			"surnames": "blank_surnames",
 		},
@@ -1495,7 +1495,7 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "akragas_men",
+			"men":      "acragas_men",
 			"women":    "greek_women",
 			"surnames": "blank_surnames",
 		},
@@ -3121,7 +3121,7 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "athenian_men",
+			"men":      "athens_men",
 			"women":    "greek_women",
 			"surnames": "blank_surnames",
 		},
@@ -3987,8 +3987,8 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "boeotian_men",
-			"women":    "boeotian_women",
+			"men":      "boeotia_men",
+			"women":    "boeotia_women",
 			"surnames": "blank_surnames",
 		},
 
@@ -4394,9 +4394,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "oscan_men",
+			"women":    "oscan_women",
+			"surnames": "bruttians_surnames",
 		},
 
 		;;information for when this faction emerges
@@ -5133,9 +5133,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "campanian_men",
+			"women":    "campanian_women",
+			"surnames": "campanian_surnames",
 		},
 
 		;;information for when this faction emerges
@@ -10632,9 +10632,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "italics_men",
+			"women":    "italics_women",
+			"surnames": "italics_surnames",
 		},
 
 		;;information for when this faction emerges
@@ -11569,9 +11569,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "oscan_men",
+			"women":    "oscan_women",
+			"surnames": "lucanians_surnames",
 		},
 
 		;;information for when this faction emerges
@@ -12809,9 +12809,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "iapygian_men",
+			"women":    "iapygian_women",
+			"surnames": "iapygian_surnames",
 		},
 
 		"logos":
@@ -14581,9 +14581,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "picentes_men",
+			"women":    "sabellic_women",
+			"surnames": "picentes_surnames",
 		},
 
 		"logos":
@@ -15519,9 +15519,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "oscan_men",
+			"women":    "oscan_women",
+			"surnames": "samnites_surnames",
 		},
 
 		;;information for when this faction emerges
@@ -15662,7 +15662,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "italic",
+		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -15684,9 +15684,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "umbrian_men",
+			"women":    "umbrian_women",
+			"surnames": "umbrian_surnames",
 		},
 
 		"logos":
@@ -16872,8 +16872,8 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "syracusan_men",
-			"women":    "syracusan_women",
+			"men":      "syracuse_men",
+			"women":    "syracuse_women",
 			"surnames": "blank_surnames",
 		},
 
@@ -18874,9 +18874,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "blank_surnames",
+			"men":      "etruscan_men",
+			"women":    "etruscan_women",
+			"surnames": "etruscan_surnames",
 		},
 
 		"logos":

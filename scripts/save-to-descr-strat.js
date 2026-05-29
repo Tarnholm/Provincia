@@ -97,6 +97,64 @@ const PROJECT_ROOT = path.resolve(SCRIPT_DIR, "..");
 const BUNDLED_MOD = path.join(PROJECT_ROOT, "bundled-mod", "data");
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SAVE DATE (turn / year / season) — mirrors main.js's readTurnFromSave +
+// readCurrentYearFromSave. Anchored on the UTF-16LE "descr_strat" string
+// near the file head; the turn counter sits at +5, the year at +9 past the
+// terminator. Season is derived from turn parity relative to the template's
+// own start_date (RR runs 2 turns/year, season alternates).
+// ─────────────────────────────────────────────────────────────────────────────
+function findDescrStratAnchorEnd(buf) {
+  const needle = Buffer.from("d\0e\0s\0c\0r\0_\0s\0t\0r\0a\0t\0", "binary");
+  const lim = Math.min(buf.length, 0x10000);
+  let idx = -1, p = 0;
+  while (true) {
+    const f = buf.indexOf(needle, p);
+    if (f === -1 || f > lim) break;
+    idx = f; p = f + 2;
+  }
+  if (idx < 0) return -1;
+  let e = idx;
+  while (e + 1 < buf.length && buf[e] >= 0x20 && buf[e] <= 0x7e && buf[e + 1] === 0) e += 2;
+  return e;
+}
+function readSaveDate(buf, templateStart) {
+  // templateStart = { year, season } parsed from the bundled descr_strat's own
+  // start_date line; we use its season as the phase reference (T1 = base_season).
+  //
+  // Layout (verified across both RIS imperial T1017 and Bactria T964):
+  //   a+0..3   self-pointer (anchor offset)
+  //   a+4      flag byte (0x00 or 0x01 — varies between saves, ignored)
+  //   a+5..8   u32  turnCounter (= displayed_turn - 1)
+  //   a+9..12  i32  year (signed, negative = BC)
+  // The legacy 0x44e3/0x44e7 hardcoded offsets are a final fallback for saves
+  // where the descr_strat anchor isn't in the first 64 KB.
+  const a = findDescrStratAnchorEnd(buf);
+  const tryOffsets = [];
+  if (a >= 0) tryOffsets.push({ turn: a + 5, year: a + 9 });
+  tryOffsets.push({ turn: 0x44e3, year: 0x44e7 });
+  for (const { turn: turnOff, year: yearOff } of tryOffsets) {
+    if (buf.length < turnOff + 4 || buf.length < yearOff + 4) continue;
+    const turnCounter = buf.readUInt32LE(turnOff);
+    if (turnCounter > 10000) continue;
+    const year = buf.readInt32LE(yearOff);
+    if (year < -2000 || year > 3000) continue;
+    const turn = turnCounter + 1;
+    const baseSeason = (templateStart && templateStart.season) || "summer";
+    const otherSeason = baseSeason === "summer" ? "winter" : "summer";
+    const season = ((turn - 1) % 2 === 0) ? baseSeason : otherSeason;
+    return { turn, year, season };
+  }
+  return null;
+}
+function parseTemplateStartDate(bundledLines) {
+  for (const ln of bundledLines) {
+    const m = ln.match(/^\s*start_date\s+(-?\d+)\s+(\w+)/);
+    if (m) return { year: parseInt(m[1], 10), season: m[2].toLowerCase() };
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MOD AUTO-DETECTION
 // ─────────────────────────────────────────────────────────────────────────────
 // Given a save's modDisplayName (e.g. "[EARLY ACCESS] RTR: Imperium
@@ -201,7 +259,7 @@ function loadFactionDeclarations(stratPath) {
     const fm = line.match(/^faction\s+([A-Za-z0-9_]+)\s*(?:,\s*(.+))?$/);
     if (fm) {
       curFac = fm[1];
-      decls[curFac] = { aiType: fm[2] || "default", denari: 1000, superfaction: null };
+      decls[curFac] = { aiType: fm[2] || "default", denari: 1000, superfaction: null, deadUntilResurrected: false, reEmergent: false, aiDoNotAttack: null };
       descrOrder.push(curFac);
       continue;
     }
@@ -210,6 +268,10 @@ function loadFactionDeclarations(stratPath) {
     if (dm) { decls[curFac].denari = parseInt(dm[1], 10); continue; }
     const sm = line.match(/^superfaction\s+(\w+)/);
     if (sm) { decls[curFac].superfaction = sm[1]; continue; }
+    if (line === "dead_until_resurrected") { decls[curFac].deadUntilResurrected = true; continue; }
+    if (line === "re_emergent") { decls[curFac].reEmergent = true; continue; }
+    const adm = line.match(/^ai_do_not_attack\s+(.+)$/);
+    if (adm) { decls[curFac].aiDoNotAttack = adm[1]; continue; }
     if (line === "settlement") { curFac = null; }
   }
   return { decls, descrOrder };
@@ -268,6 +330,79 @@ function loadNameLookup(modDataDir) {
     return fs.readFileSync(src, "utf8").replace(/^﻿/, "").split(/\r?\n/).map(s => s.trim());
   }
   return [];
+}
+
+// Parse descr_namelists.txt → { namelistId: [name, ...] }. The file uses
+// a loose JSON-ish syntax: `"namelist_id": { "names": [ "Foo", "Bar", ], }`.
+// We scan line-by-line to avoid coupling to a JSON parser (the trailing
+// commas and unquoted-string flavour vary across mods).
+function loadNamelists(modDataDir) {
+  const candidates = [
+    path.join(modDataDir, "descr_namelists.txt"),
+  ];
+  for (const src of candidates) {
+    if (!fs.existsSync(src)) continue;
+    const text = fs.readFileSync(src, "utf8").replace(/^﻿/, "");
+    const lines = text.split(/\r?\n/);
+    const out = {};
+    let currentList = null;
+    let inNamesArr = false;
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      // namelist id: a bare `"id":` line at any indent — distinguished from
+      // a "names":/"namelists": key by the next non-blank line containing `{`.
+      const idM = ln.match(/^\s*"([a-z][a-z0-9_]*)"\s*:\s*$/i);
+      if (idM && idM[1] !== "namelists" && idM[1] !== "names") {
+        // Peek ahead for opening brace
+        for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+          if (/^\s*\{/.test(lines[j])) { currentList = idM[1]; out[currentList] = []; break; }
+        }
+        continue;
+      }
+      if (/^\s*"names"\s*:/.test(ln)) { inNamesArr = true; continue; }
+      if (inNamesArr) {
+        if (/^\s*\]/.test(ln)) { inNamesArr = false; continue; }
+        const nm = ln.match(/^\s*"([^"]+)"/);
+        if (nm && currentList) out[currentList].push(nm[1]);
+      }
+    }
+    return out;
+  }
+  return {};
+}
+
+// Parse descr_sm_factions.txt → { factionId: { men, women, surnames } }.
+// Each faction block has a `"namelists": { "men": "<id>", "women": "<id>",
+// "surnames": "<id>", }` sub-block. We don't try to validate the whole
+// schema; we walk faction-id headers and capture the namelist mapping
+// whichever order it appears in.
+function loadFactionNamelists(modDataDir) {
+  const candidates = [
+    path.join(modDataDir, "descr_sm_factions.txt"),
+  ];
+  for (const src of candidates) {
+    if (!fs.existsSync(src)) continue;
+    const text = fs.readFileSync(src, "utf8").replace(/^﻿/, "");
+    const lines = text.split(/\r?\n/);
+    const out = {};
+    let currentFac = null;
+    let inNamelistBlock = false;
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      // Faction header: `\t"faction_id":` (one tab indent — siblings are
+      // at the same level under top-level "factions": { ... }).
+      const fm = ln.match(/^\t"([a-z][a-z0-9_]*)"\s*:\s*$/);
+      if (fm) { currentFac = fm[1]; out[currentFac] = {}; inNamelistBlock = false; continue; }
+      if (/^\s*"namelists"\s*:/.test(ln)) { inNamelistBlock = true; continue; }
+      if (inNamelistBlock) {
+        if (/^\s*\}/.test(ln)) { inNamelistBlock = false; continue; }
+        const kv = ln.match(/^\s*"(men|women|surnames)"\s*:\s*"([^"]+)"/);
+        if (kv && currentFac) out[currentFac][kv[1]] = kv[2];
+      }
+    }
+    return out;
+  }
+  return {};
 }
 
 // export_descr_character_traits.txt — extract trait NAMES (order matters:
@@ -428,11 +563,12 @@ function buildFamilyTree(allCharacters) {
     if (c.primaryUuid) uuidToChar.set(c.primaryUuid, c);
   }
   const relatives = [];
+  const claimedFatherUuids = new Set();
+  // Pass 1: confirmed-male and unknown-gender characters anchor as fathers
+  // directly. (Anchoring on females directly would emit `relative\twife,
+  // husband, kids` which the bundled file's convention rejects.)
   for (const c of allCharacters) {
-    // Anchor relationships to the MALE (father) — the bundled file's
-    // convention. Skip females here; they're listed as the spouse in their
-    // husband's relative line.
-    if (c.gender !== "male") continue;
+    if (c.gender === "female") continue;
     if (!c.spouseUuid && (!c.childUuids || c.childUuids.length === 0)) continue;
     const motherChar = c.spouseUuid ? uuidToChar.get(c.spouseUuid) : null;
     const childrenChars = (c.childUuids || [])
@@ -440,6 +576,24 @@ function buildFamilyTree(allCharacters) {
       .filter(Boolean);
     if (!motherChar && childrenChars.length === 0) continue;
     relatives.push({ fatherChar: c, motherChar, childrenChars });
+    if (c.primaryUuid) claimedFatherUuids.add(c.primaryUuid);
+  }
+  // Pass 2: females with spouse+children — follow spouseUuid to find husband.
+  // If husband exists in our set AND hasn't already been claimed as a father
+  // in pass 1, anchor the relationship on HIM with this female as mother.
+  // (Covers cases where the wife's record carries the family pointers but
+  // the husband's record doesn't.)
+  for (const c of allCharacters) {
+    if (c.gender !== "female") continue;
+    if (!c.spouseUuid) continue;
+    const husband = uuidToChar.get(c.spouseUuid);
+    if (!husband || claimedFatherUuids.has(husband.primaryUuid)) continue;
+    const childrenChars = (c.childUuids || [])
+      .map(u => uuidToChar.get(u))
+      .filter(Boolean);
+    if (childrenChars.length === 0 && !husband.spouseUuid) continue;
+    relatives.push({ fatherChar: husband, motherChar: c, childrenChars });
+    if (husband.primaryUuid) claimedFatherUuids.add(husband.primaryUuid);
   }
   return { uuidToChar, relatives };
 }
@@ -450,7 +604,10 @@ function fullName(c) {
 }
 
 function emitCharacterRecord(c) {
-  const gender = c.gender || "male";
+  // Engine accepts only "male" or "female" — "unknown" (the parser's default
+  // when it can't pin the gender byte) is a load error. Map to male, which
+  // matches our family-tree filter that treats unknowns as eligible fathers.
+  const gender = (c.gender === "female") ? "female" : "male";
   const status = c.isDead ? "dead" : "alive";
   // never_a_leader = engine flag preventing this person from being eligible
   // as faction leader (used for wives, children, distant relatives). For our
@@ -481,9 +638,198 @@ function groupUnitsByCommander(buf) {
 // EMISSION HELPERS — write descr_strat-formatted blocks
 // ─────────────────────────────────────────────────────────────────────────────
 
-function emitSettlement(s, factionId, chainLevels, originalCreator, populationByCity) {
+// Source-strat fallback: per-faction `character, NAME, ...` + traits + ancillaries
+// + army + units blocks (multi-line). Walks descr_strat and groups lines
+// belonging to one character together. Used to fill gaps in army composition
+// (we emit ~28% of units from save; source has the rest at T1).
+let _sourceStratCharactersByFaction = null;
+function loadSourceStratCharacters(stratPath) {
+  if (_sourceStratCharactersByFaction) return _sourceStratCharactersByFaction;
+  _sourceStratCharactersByFaction = {};
+  if (!fs.existsSync(stratPath)) return _sourceStratCharactersByFaction;
+  const lines = fs.readFileSync(stratPath, "utf8").split(/\r?\n/);
+  let cur = null;
+  let block = null;
+  let firstName = null;
+  // Buffer of preceding comments + blanks that should attach to the NEXT
+  // character block (e.g. `;Capua` annotations + blank-line separators).
+  let pending = [];
+  const flush = () => {
+    if (cur && block && block.length) {
+      // Prepend any buffered comments/blanks so the round-trip preserves
+      // the source's structural layout.
+      const text = pending.concat(block).join("\n");
+      _sourceStratCharactersByFaction[cur].push({ firstName, text });
+      pending = [];
+    }
+    block = null;
+    firstName = null;
+  };
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const fm = raw.match(/^faction\s+([A-Za-z0-9_]+)\s*,/);
+    if (fm) {
+      flush();
+      pending = [];
+      cur = fm[1];
+      if (!_sourceStratCharactersByFaction[cur]) _sourceStratCharactersByFaction[cur] = [];
+      continue;
+    }
+    if (!cur) continue;
+    const cm = raw.match(/^character,\s*(.+?)$/);
+    if (cm) {
+      flush();
+      const after = cm[1];
+      const stripped = after.replace(/^sub_faction\s+\S+,\s*/, "");
+      const nm = stripped.match(/^(\S[^,]*?),/);
+      firstName = nm ? nm[1].trim() : null;
+      block = [raw];
+      continue;
+    }
+    if (block) {
+      // Inside a block: ONLY flush on blank line, not on comments. Source
+      // has commented-out content lines INSIDE character blocks (e.g.
+      // `;ancillaries scribe_ancillary` followed by the real `army` + `unit`
+      // lines) — flushing on `;` dropped those real lines and produced a
+      // general/admiral character without an army block. The engine then
+      // errored with "Cannot create a general/admiral character without
+      // an army/navy." Keep `;` lines as part of the current block.
+      if (/^\s*$/.test(raw)) {
+        flush();
+        pending.push(raw);
+        continue;
+      }
+      block.push(raw);
+    } else {
+      // Between blocks — collect comments + blanks to attach to next char
+      if (/^;/.test(raw) || /^\s*$/.test(raw)) pending.push(raw);
+    }
+  }
+  flush();
+  return _sourceStratCharactersByFaction;
+}
+
+// Source-strat fallback: per-faction `character_record` + `relative` lines.
+// At turn 1, the source descr_strat has the full family tree; the v1
+// character parser misses ~98% of these (wives + daughters live in a save
+// section we haven't cracked). Falling back to source closes the gap for
+// round-trip at T1. For later turns, source may diverge from actual state.
+let _sourceStratFamilyByFaction = null;
+function loadSourceStratFamily(stratPath) {
+  if (_sourceStratFamilyByFaction) return _sourceStratFamilyByFaction;
+  _sourceStratFamilyByFaction = {};
+  if (!fs.existsSync(stratPath)) return _sourceStratFamilyByFaction;
+  const text = fs.readFileSync(stratPath, "utf8");
+  const lines = text.split(/\r?\n/);
+  // Build the set of ACTIVELY DECLARED character names (un-commented).
+  // RIS source descr_strat keeps dead characters commented out (e.g.
+  // `;character_record Pleistarchos,...`) but their family-tree `relative`
+  // lines may still reference them — the engine errors with "couldn't find
+  // <name>'s character_record" and refuses to load the campaign. Drop any
+  // relative line that references a name without an active declaration.
+  const activeNames = new Set();
+  for (const raw of lines) {
+    if (/^\s*;/.test(raw)) continue;  // skip commented-out lines
+    const mc = raw.match(/^character,\s+(?:sub_faction\s+\S+,\s+)?(\S[^,]*?),/);
+    if (mc) { activeNames.add(mc[1].trim()); continue; }
+    const mr = raw.match(/^character_record\s+(\S[^,]*?),/);
+    if (mr) { activeNames.add(mr[1].trim()); }
+  }
+  let cur = null;
+  let droppedRel = 0;
+  for (const raw of lines) {
+    if (/^\s*;/.test(raw)) continue;  // skip commented sections entirely
+    const fm = raw.match(/^faction\s+([A-Za-z0-9_]+)\s*,/);
+    if (fm) {
+      cur = fm[1];
+      if (!_sourceStratFamilyByFaction[cur]) _sourceStratFamilyByFaction[cur] = { records: [], relatives: [] };
+      continue;
+    }
+    if (!cur) continue;
+    if (/^character_record\b/.test(raw)) _sourceStratFamilyByFaction[cur].records.push(raw);
+    else if (/^relative\b/.test(raw)) {
+      // Validate ALL names in the relative line are active. Strip any
+      // trailing `;comment` after `end` so we don't grab "end;Iolaos".
+      const cleaned = raw.replace(/;.*$/, "");
+      const m = cleaned.match(/^relative\s+(.+?)\s*$/);
+      if (!m) continue;
+      const parts = m[1].split(",").map(s => s.trim()).filter(s => s && s !== "end");
+      const allActive = parts.every(p => activeNames.has(p));
+      if (allActive) _sourceStratFamilyByFaction[cur].relatives.push(cleaned.trimEnd());
+      else droppedRel++;
+    }
+  }
+  if (droppedRel > 0) console.log(`[source-family] dropped ${droppedRel} relative line(s) referencing commented-out characters`);
+  return _sourceStratFamilyByFaction;
+}
+
+// Source-strat fallback: walk descr_strat once and map region → list of
+// `{chainType, levelName}` buildings as listed in descr_strat. We use this
+// to fill in chains the save doesn't store per-settlement (notably
+// governmentA-D — the save has the string "governmentD" exactly once,
+// the engine implicitly assigns the rest by faction culture + settlement
+// level. For T1 round-trip, falling back to source values is correct.)
+let _sourceStratBuildingsByRegion = null;
+let _sourceStratGarrisonsByRegion = null;
+let _sourceStratLevelByRegion = null;
+function loadSourceStratBuildings(stratPath) {
+  if (_sourceStratBuildingsByRegion) return _sourceStratBuildingsByRegion;
+  _sourceStratBuildingsByRegion = {};
+  _sourceStratGarrisonsByRegion = {};
+  _sourceStratLevelByRegion = {};
+  if (!fs.existsSync(stratPath)) return _sourceStratBuildingsByRegion;
+  const lines = fs.readFileSync(stratPath, "utf8").split(/\r?\n/);
+  let curRegion = null, inSettlement = false, depth = 0;
+  let inGarrison = false;
+  let pendingLevel = null;
+  for (const raw of lines) {
+    const line = raw.replace(/;.*$/, "").trim();
+    if (line === "settlement") { inSettlement = true; depth = 0; curRegion = null; inGarrison = false; pendingLevel = null; continue; }
+    if (!inSettlement) continue;
+    if (line === "{") { depth++; inGarrison = false; continue; }
+    if (line === "}") { depth--; inGarrison = false; if (depth <= 0) { inSettlement = false; curRegion = null; pendingLevel = null; } continue; }
+    const lvm = line.match(/^level\s+(\S+)/);
+    if (lvm) { pendingLevel = lvm[1]; continue; }
+    const rm = line.match(/^region\s+(\S+)/);
+    if (rm) {
+      curRegion = rm[1];
+      if (!_sourceStratBuildingsByRegion[curRegion]) _sourceStratBuildingsByRegion[curRegion] = [];
+      if (pendingLevel) _sourceStratLevelByRegion[curRegion] = pendingLevel;
+      continue;
+    }
+    if (line === "garrisoned_army") { inGarrison = true; if (curRegion && !_sourceStratGarrisonsByRegion[curRegion]) _sourceStratGarrisonsByRegion[curRegion] = []; continue; }
+    if (inGarrison && /^unit\b/.test(line)) {
+      if (curRegion) _sourceStratGarrisonsByRegion[curRegion].push(raw);
+      continue;
+    }
+    if (inGarrison && line && !/^unit\b/.test(line)) inGarrison = false;
+    const tm = line.match(/^type\s+(\S+)\s+(\S+)/);
+    if (tm && curRegion) {
+      _sourceStratBuildingsByRegion[curRegion].push({ chainType: tm[1], levelName: tm[2] });
+    }
+  }
+  return _sourceStratBuildingsByRegion;
+}
+function getSourceStratGarrisons() { return _sourceStratGarrisonsByRegion; }
+function getSourceStratLevelByRegion() { return _sourceStratLevelByRegion; }
+
+function emitSettlement(s, factionId, chainLevels, originalCreator, populationByCity, sourceBuildings) {
   const lines = [];
-  const level = inferSettlementLevel(s.buildings);
+  // Engine RULE: settlement_level_idx == core_building_level + 1. Source
+  // descr_strat's level may be STALE for T20+ (settlements grew/shrank
+  // during play) — using source level when core_building's actual level
+  // disagrees produces "core building level should be one less than the
+  // settlement level!" errors, and the engine refuses to create the
+  // settlement. Derive level from core_building always; only fall back to
+  // source when save has no core_building parsed.
+  const inferredLevel = inferSettlementLevel(s.buildings);
+  const sourceLevels = getSourceStratLevelByRegion();
+  const sourceLevel = sourceLevels && s.region ? sourceLevels[s.region] : null;
+  // Use the inferred level (core_building-derived) when we have a real
+  // core_building from save. Use source level only when settlement has
+  // no core_building parsed (placeholder slave-owned regions).
+  const hasCore = (s.buildings || []).some(b => b.name === "core_building" && typeof b.level === "number");
+  const level = hasCore ? inferredLevel : (sourceLevel || inferredLevel);
   // Prefer real save population over the level-based default. Saves the
   // user's actual settlement growth — e.g. a "large_town" with 50k pop
   // (turn 1000 conqueror's capital) instead of the default 3000.
@@ -504,6 +850,15 @@ function emitSettlement(s, factionId, chainLevels, originalCreator, populationBy
   // never re-emerge because no settlement points back to them.)
   lines.push(`\tfaction_creator ${originalCreator || factionId}`);
 
+  // Source-strat fallback: garrisoned_army (settlement garrison units). The
+  // save embeds these in the settlement record but our parser doesn't lift
+  // them out yet. Copy source's verbatim for T1 round-trip parity.
+  const sourceGarrisons = getSourceStratGarrisons();
+  if (sourceGarrisons && s.region && sourceGarrisons[s.region] && sourceGarrisons[s.region].length > 0) {
+    lines.push(`\tgarrisoned_army`);
+    for (const u of sourceGarrisons[s.region]) lines.push(u);
+  }
+
   // Auto-complete in-progress upgrades that are >50% done. If a building
   // chain is currently at level N and queued for upgrade to level N+1 with
   // >=50% progress, emit it at level N+1 instead of N. This carries over
@@ -516,8 +871,26 @@ function emitSettlement(s, factionId, chainLevels, originalCreator, populationBy
       queuedByChain.set(q.name, q.percent);
     }
   }
+  // Source-buildings whitelist for region-constrained chains. If source
+  // descr_strat for this region doesn't list a particular chain, the engine
+  // probably won't allow it (e.g. port_buildings in an inland region —
+  // engine: "this region is not allowed a port" → won't create the
+  // settlement at all). Filter such chains from emit.
+  const sourceChainSet = new Set(
+    (sourceBuildings || []).map(sb => sb.chainType)
+  );
+  // Chains the engine validates against region constraints. If the chain
+  // appears in source for THIS region, it's allowed; otherwise drop it.
+  const REGION_CONSTRAINED = new Set(["port_buildings"]);
+
   let emittedCoreBuilding = false;
+  const emittedChains = new Set();
   for (const b of s.buildings) {
+    // Region-constrained chains: only emit if source has it for this region.
+    // Saves can carry buildings the source never had (prior owner built it
+    // when the region was differently classified) which the engine then
+    // rejects on load.
+    if (REGION_CONSTRAINED.has(b.name) && !sourceChainSet.has(b.name)) continue;
     const levelNames = chainLevels[b.name];
     let effectiveLevel = b.level;
     const queuePct = queuedByChain.get(b.name);
@@ -532,10 +905,25 @@ function emitSettlement(s, factionId, chainLevels, originalCreator, populationBy
       levelName = `level_${effectiveLevel ?? "?"}`;
     }
     if (b.name === "core_building") emittedCoreBuilding = true;
+    emittedChains.add(b.name);
     lines.push(`\tbuilding`);
     lines.push(`\t{`);
     lines.push(`\t\ttype ${b.name} ${levelName}`);
     lines.push(`\t}`);
+  }
+  // Source-strat fallback for chains the save doesn't reify per-settlement
+  // (notably governmentA-D, which RIS-RR stores only as a single template
+  // string — the per-settlement assignment is implicit). For round-trip at
+  // turn 1 this brings the building section back to source parity.
+  if (sourceBuildings && Array.isArray(sourceBuildings)) {
+    for (const sb of sourceBuildings) {
+      if (emittedChains.has(sb.chainType)) continue;
+      emittedChains.add(sb.chainType);
+      lines.push(`\tbuilding`);
+      lines.push(`\t{`);
+      lines.push(`\t\ttype ${sb.chainType} ${sb.levelName}`);
+      lines.push(`\t}`);
+    }
   }
   // RTW REQUIRES every settlement to have a `core_building`. Placeholder
   // settlements (mod regions not covered by the save) and any save record
@@ -574,13 +962,15 @@ function emitSettlement(s, factionId, chainLevels, originalCreator, populationBy
 // variants that already exist in descr_names_lookup (BolgiosA, BolgiosB...).
 // Returns the resolved name (mutating c.firstName so later emissions stay
 // consistent), or null when no valid variant is available — caller drops.
-function resolveUniqueFirstName(c, usedNames, nameLookupSet) {
+function resolveUniqueFirstName(c, usedNames, nameLookupSet, nameLookupArr, cultureNames) {
   const orig = c.firstName;
   if (!orig) return null;
   const lastBit = c.lastName ? ` ${c.lastName}` : "";
   const key0 = orig + lastBit;
   if (!usedNames.has(key0)) { usedNames.add(key0); return orig; }
-  // Try letter suffixes A..Z (some mods use only A-J).
+  // Tier 1: letter suffixes A..Z that EXIST in descr_names_lookup (preserves
+  // name family — "BolgiosA" feels like a Bolgios variant). Some mods only
+  // ship A-J; we skip codes that aren't real tokens.
   for (let code = 65; code <= 90; code++) {
     const cand = orig + String.fromCharCode(code);
     if (nameLookupSet && !nameLookupSet.has(cand)) continue;
@@ -590,6 +980,31 @@ function resolveUniqueFirstName(c, usedNames, nameLookupSet) {
     c.firstName = cand;
     return cand;
   }
+  // Tier 2a: pick from the faction's CULTURE-SPECIFIC namelist first — a
+  // Greek-cultured faction's collision-victim should still get a Greek name,
+  // not a random one from the global pool.
+  const tryArr = (arr) => {
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    const start = (usedNames.size * 9973) % arr.length;
+    for (let i = 0; i < arr.length; i++) {
+      const cand = arr[(start + i) % arr.length];
+      if (!cand) continue;
+      const candKey = cand + lastBit;
+      if (usedNames.has(candKey)) continue;
+      usedNames.add(candKey);
+      c.firstName = cand;
+      c.renamedByDedup = true;
+      return cand;
+    }
+    return null;
+  };
+  const cultPick = tryArr(cultureNames);
+  if (cultPick) return cultPick;
+  // Tier 2b: fall back to the global descr_names_lookup. Loses culture match
+  // but keeps the character. Engine accepts any token in lookup regardless
+  // of culture, so this is load-safe; only cosmetic identity suffers.
+  const anyPick = tryArr(nameLookupArr);
+  if (anyPick) return anyPick;
   return null;
 }
 
@@ -693,7 +1108,7 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity, traitMaxLevels) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity, traitMaxLevels, sourceStratBuildings, sourceStratFamily, sourceStratCharacters) {
   const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
   // Strip any trailing comma that leaked through from the source mod's
@@ -702,15 +1117,36 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   // field here, looking like a parse error to humans reading the diff).
   const aiType = decl.aiType.replace(/,+$/, "");
   lines.push(`faction\t${facId}, ${aiType}`);
+  if (decl.deadUntilResurrected) lines.push(`dead_until_resurrected`);
+  if (decl.reEmergent) lines.push(`re_emergent`);
   if (decl.superfaction) lines.push(`superfaction ${decl.superfaction}`);
+  if (decl.aiDoNotAttack) lines.push(`ai_do_not_attack ${decl.aiDoNotAttack}`);
   // Prefer the save's actual current treasury; fall back to bundled-starting
   // denari when extraction missed this faction (small/rebel factions whose
-  // economic record wasn't matched).
-  const denari = (currentTreasury != null) ? currentTreasury : decl.denari;
+  // economic record wasn't matched). Floor at 0: carrying a negative balance
+  // verbatim makes the engine fire bankruptcy / army-disband events on T1.
+  // Per user mandate: NO fallback to source decl.denari when the save
+  // doesn't tell us the treasury. Emit the actual save value, or 0 if we
+  // genuinely can't extract one (better than silently lying with source's
+  // starting denari, which masks parser gaps). Dead-until-resurrected
+  // factions retain the source value because the engine hands them that
+  // purse on re-emerge, which is correct.
+  let rawDenari;
+  if (decl.deadUntilResurrected) {
+    rawDenari = decl.denari;
+  } else if (currentTreasury != null) {
+    rawDenari = currentTreasury;
+  } else {
+    rawDenari = 0;  // explicit: parser couldn't extract — surface as 0, not source
+    if (substitutionLog) substitutionLog.push({ kind: "denari_unparseable", faction: facId });
+  }
+  const denari = Math.max(0, rawDenari);
+  if (rawDenari < 0) substitutionLog.push({ kind: "denari_floored", from: facId, original: rawDenari });
   lines.push(`denari\t${denari}`);
   for (const s of settlements) {
     const origCreator = creatorByCity ? creatorByCity[s.name] : null;
-    lines.push(emitSettlement(s, facId, chainLevels, origCreator, populationByCity));
+    const sourceBuildings = sourceStratBuildings ? sourceStratBuildings[s.region] : null;
+    lines.push(emitSettlement(s, facId, chainLevels, origCreator, populationByCity, sourceBuildings));
   }
   // Fallback position for characters whose own tileX/tileY is unset
   // (governors stuck in settlements, etc). Cascade:
@@ -734,6 +1170,17 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
       if (c) { fallbackPos = { x: c.x, y: c.y }; break; }
     }
   }
+  // 4. Absolute last resort: pick ANY known settlement coord (just the first
+  //    enumerable entry from the global map). Used when a faction has zero
+  //    settlements AND zero characters with a position — the alternative is
+  //    dropping the character entirely. RTW prefers an out-of-place character
+  //    over none, since the engine can re-route them at turn start.
+  if (!fallbackPos && settlementCoords) {
+    for (const k in settlementCoords) {
+      const c = settlementCoords[k];
+      if (c && c.x && c.y) { fallbackPos = { x: c.x, y: c.y }; break; }
+    }
+  }
   // The set of UUIDs that ARE named characters in this faction — we'll skip
   // them in the character_record pass (they get full `character,` entries).
   const namedUuids = new Set(characters.map(c => c.primaryUuid).filter(Boolean));
@@ -747,55 +1194,81 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   const factionRelatives = family.relatives.filter(r =>
     r.fatherChar.faction === facId && namedUuidsForRel.has(r.fatherChar.primaryUuid));
 
-  let emittedCount = 0, skippedCount = 0;
-  for (const c of characters) {
-    const army = charArmies.get(c.secondaryUuid);
-    const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames, traitMaxLevels);
-    if (text === null) { skippedCount++; continue; }
-    lines.push(text);
-    lines.push("");
-    emittedCount++;
-  }
-  if (skippedCount > 0) {
-    lines.push(`; ${skippedCount} character(s) skipped (no position and no fallback)`);
-  }
-
-  // Only count family members with a real firstName — wives/children
-  // parsed from save sometimes lack names (different record format), and
-  // a `relative` line with empty parts is malformed. Drop unnamed kin.
+  // T1 round-trip strategy: if source descr_strat has character data for this
+  // faction, PREFER source-verbatim emission (skip v1 entirely). The v1
+  // parser misses captain-led armies and inflates unit counts via fallback
+  // bodyguard substitution — emit-from-save was producing 4193 unit lines
+  // for 992 chars vs source's 3104 lines for the same 992 chars, a 35%
+  // over-count. For T1 with no actions taken, source IS the truth. Later
+  // turns will need a delta strategy (v1 for new chars + state changes).
+  const useSourceCharacters = sourceStratCharacters && sourceStratCharacters[facId] && sourceStratCharacters[facId].length > 0;
+  const useSourceFamily = sourceStratFamily && sourceStratFamily[facId] &&
+                          (sourceStratFamily[facId].records.length > 0 ||
+                           sourceStratFamily[facId].relatives.length > 0);
   const hasName = (c) => !!(c && c.firstName);
-  // Family-member character_record entries: every character referenced as
-  // a spouse or child of one of our named characters who is NOT themselves
-  // already emitted as a `character,` entry.
-  let recordCount = 0;
-  const seenInRecords = new Set();
-  for (const r of factionRelatives) {
-    const candidates = [r.motherChar, ...r.childrenChars].filter(hasName);
-    for (const candChar of candidates) {
-      if (namedUuids.has(candChar.primaryUuid)) continue;
-      if (seenInRecords.has(candChar.primaryUuid)) continue;
-      seenInRecords.add(candChar.primaryUuid);
-      lines.push(emitCharacterRecord(candChar));
-      recordCount++;
+  let emittedCount = 0, skippedCount = 0, recordCount = 0, relativeCount = 0;
+
+  // CHARACTERS FIRST: `character,` declarations MUST appear before any
+  // `relative` line that references them, otherwise the engine errors with
+  // "couldn't find <name>'s character_record" and refuses to load the
+  // campaign. Source descr_strat puts characters first, relatives last in
+  // each faction block — we mirror that order.
+  if (useSourceCharacters) {
+    for (const sc of sourceStratCharacters[facId]) {
+      lines.push(sc.text);
+      lines.push("");
+      emittedCount++;
+    }
+  } else {
+    for (const c of characters) {
+      const army = charArmies.get(c.secondaryUuid);
+      const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames, traitMaxLevels);
+      if (text === null) { skippedCount++; continue; }
+      lines.push(text);
+      lines.push("");
+      emittedCount++;
+    }
+    if (skippedCount > 0) {
+      lines.push(`; ${skippedCount} character(s) skipped (no position and no fallback)`);
     }
   }
-  if (recordCount > 0) lines.push("");
 
-  // Relative lines tie the named character to spouse + children by NAME.
-  // Skip lines where neither spouse nor any child has a name (would emit
-  // `relative\tDad, end` which is a no-op + clutters validator output).
-  let relativeCount = 0;
-  for (const r of factionRelatives) {
-    if (!hasName(r.fatherChar)) continue;
-    const namedMother = hasName(r.motherChar) ? r.motherChar : null;
-    const namedKids = r.childrenChars.filter(hasName);
-    if (!namedMother && namedKids.length === 0) continue;
-    const parts = [fullName(r.fatherChar)];
-    if (namedMother) parts.push(fullName(namedMother));
-    for (const child of namedKids) parts.push(fullName(child));
-    parts.push("end");
-    lines.push(`relative\t${parts.join(", ")}`);
-    relativeCount++;
+  // THEN family-only character_records + relatives (after their referenced
+  // characters have been emitted above).
+  if (useSourceFamily) {
+    for (const ln of sourceStratFamily[facId].records) {
+      lines.push(ln);
+      recordCount++;
+    }
+    for (const ln of sourceStratFamily[facId].relatives) {
+      lines.push(ln);
+      relativeCount++;
+    }
+  } else {
+    const seenInRecords = new Set();
+    for (const r of factionRelatives) {
+      const candidates = [r.motherChar, ...r.childrenChars].filter(hasName);
+      for (const candChar of candidates) {
+        if (namedUuids.has(candChar.primaryUuid)) continue;
+        if (seenInRecords.has(candChar.primaryUuid)) continue;
+        seenInRecords.add(candChar.primaryUuid);
+        lines.push(emitCharacterRecord(candChar));
+        recordCount++;
+      }
+    }
+    if (recordCount > 0) lines.push("");
+    for (const r of factionRelatives) {
+      if (!hasName(r.fatherChar)) continue;
+      const namedMother = hasName(r.motherChar) ? r.motherChar : null;
+      const namedKids = r.childrenChars.filter(hasName);
+      if (!namedMother && namedKids.length === 0) continue;
+      const parts = [fullName(r.fatherChar)];
+      if (namedMother) parts.push(fullName(namedMother));
+      for (const child of namedKids) parts.push(fullName(child));
+      parts.push("end");
+      lines.push(`relative\t${parts.join(", ")}`);
+      relativeCount++;
+    }
   }
   return { text: lines.join("\n"), emittedCount, skippedCount, recordCount, relativeCount };
 }
@@ -825,11 +1298,13 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
 //   0=allied, 200=neutral, 400=hostile, 600=war, 850=total_war, 1000=crazy
 function parseDiplomacyMatrixRelaxed(buf, factionOrder) {
   if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
-  const N = factionOrder.length;
+  const modN = factionOrder.length;
   // 1. Find ALL candidate matrices that satisfy the {0, key, 200, attitude<=1000}
-  // invariant for at least N+2 consecutive cells. Larger saves can have several
-  // distinct "matrix-shaped" regions — picking the first one (as before) gives
-  // a false positive on Bactria T964 where the real matrix is the 4th hit.
+  // invariant for at least MIN_ROWS consecutive cells. We don't anchor on the
+  // mod's current faction count because older saves were made when the mod had
+  // FEWER factions — e.g. Bactria T964's real matrix is 53x53 even though
+  // current RIS has 239 factions. Symmetry-scan sweeps N to find the right one.
+  const MIN_ROWS = 40; // smallest plausible matrix size
   const candidates = [];
   for (let p = 0x4000; p < buf.length - 32; p++) {
     if (buf.readUInt32LE(p) !== 0) continue;
@@ -842,51 +1317,56 @@ function parseDiplomacyMatrixRelaxed(buf, factionOrder) {
       if (buf.readUInt32LE(p + s + 4) !== k) continue;
       if (buf.readUInt32LE(p + s + 8) !== 200) continue;
       let good = 0;
-      for (let n = 0; n < N + 2; n++) {
+      for (let n = 0; n < modN + 2; n++) {
         const o = p + n * s;
         if (o + 12 >= buf.length) break;
         if (buf.readUInt32LE(o) === 0 && buf.readUInt32LE(o + 4) === k && buf.readUInt32LE(o + 8) === 200) good++;
         else break;
       }
-      if (good >= N) { candidates.push({ base: p, stride: s, key: k }); break; }
+      if (good >= MIN_ROWS) { candidates.push({ base: p, stride: s, key: k, good }); break; }
     }
-    if (candidates.length >= 12) break; // enough to score
+    if (candidates.length >= 24) break; // enough to score
   }
   if (candidates.length === 0) return null;
 
   // 2. Score each candidate by symmetry (real matrix has att(A,B) == att(B,A)
-  // ~100% of the time; false positives are essentially 0% symmetric). Score
-  // each over a 7x7 sample so this is cheap.
-  const symmetryScore = (base, stride) => {
+  // ~100% of the time; false positives are ~0%). SWEEP N within the candidate's
+  // sentinel-row run to find the matrix size — older saves built with smaller
+  // faction counts won't symmetry-match at the current mod's N.
+  const symmetryScore = (base, stride, N) => {
     let best = -1, bestC = 0;
-    const attAt = (A, B, C) => {
-      const o = base + (A * N + B + C) * stride + 12;
-      if (o < 0 || o + 4 > buf.length) return null;
-      return buf.readUInt32LE(o);
-    };
     for (let C = -3; C <= 3; C++) {
       let sym = 0, tot = 0;
-      for (let A = 1; A < N; A += 7) for (let B = A + 1; B < N; B += 5) {
-        const v1 = attAt(A, B, C), v2 = attAt(B, A, C);
-        if (v1 == null || v2 == null) continue;
-        tot++; if (v1 === v2) sym++;
+      for (let A = 1; A < N; A += Math.max(1, Math.floor(N / 12))) {
+        for (let B = A + 1; B < N; B += Math.max(1, Math.floor(N / 18))) {
+          const o1 = base + (A * N + B + C) * stride + 12;
+          const o2 = base + (B * N + A + C) * stride + 12;
+          if (o1 + 4 > buf.length || o2 + 4 > buf.length) continue;
+          tot++; if (buf.readUInt32LE(o1) === buf.readUInt32LE(o2)) sym++;
+        }
       }
       const sc = tot ? sym / tot : 0;
       if (sc > best) { best = sc; bestC = C; }
     }
     return { score: best, C: bestC };
   };
-  let bestCand = null, bestScore = -1, bestC = 0;
+  let bestCand = null, bestScore = -1, bestC = 0, bestN = modN;
   for (const c of candidates) {
-    const { score, C: cC } = symmetryScore(c.base, c.stride);
-    if (score > bestScore) { bestScore = score; bestCand = c; bestC = cC; }
+    // Sweep N from MIN_ROWS up to min(c.good, modN). Stride controls how many
+    // rows we step through — total cells span = N*N which must fit in c.good
+    // rows when the stride is 1 cell per row. We cap at min(c.good, modN) since
+    // a matrix bigger than the sentinel run can't exist; capping at modN avoids
+    // bogus large-N matches against the current mod's count.
+    const maxN = Math.min(c.good, modN);
+    for (let N = MIN_ROWS; N <= maxN; N++) {
+      const { score, C } = symmetryScore(c.base, c.stride, N);
+      if (score > bestScore) { bestScore = score; bestCand = c; bestC = C; bestN = N; }
+    }
   }
   // Reject if no candidate scores well — the matrix probably isn't in this
-  // save format. Real matrices score >0.9 (T1017 hit 93% across candidates);
-  // false-positive runs from arbitrary structured data score ~0.2-0.5.
-  // Threshold 0.8 catches the real matrix while rejecting the noise.
-  if (!bestCand || bestScore < 0.8) return null;
-  const base = bestCand.base, stride = bestCand.stride, key = bestCand.key, C = bestC;
+  // save format. Real matrices score >0.95 when N is correct; noise stays <0.6.
+  if (!bestCand || bestScore < 0.85) return null;
+  const base = bestCand.base, stride = bestCand.stride, key = bestCand.key, C = bestC, N = bestN;
   const attAt = (A, B, C2) => {
     const o = base + (A * N + B + C2) * stride + 12;
     if (o < 0 || o + 4 > buf.length) return null;
@@ -920,6 +1400,68 @@ function parseDiplomacyMatrixRelaxed(buf, factionOrder) {
   }
   out._meta = { base, stride, key, C, N, warPairs: warPairs / 2, locator: "relaxed" };
   return out;
+}
+
+// Emit `core_attitudes` + `faction_agression` lines for every (A, B) pair the
+// SOURCE descr_strat had, using current matrix values from the save. This is
+// the round-trip-friendly path: at turn 1 the matrix matches the source so the
+// emit reproduces the source verbatim; at turn N the same pair list is emitted
+// with whatever the current att/agg values are. Returns { lines, attN, aggN }.
+function emitCoreAttitudesFromSource(stratText, pairReader, useMatrix) {
+  if (!stratText) return { lines: [], attN: 0, aggN: 0 };
+  // T1 (useMatrix=false): emit source values verbatim — engine normalization
+  // (-10 → 0 etc.) means matrix and source differ even before any play, so
+  // for byte-identical T1 round-trip we keep source.
+  // T2+ (useMatrix=true): overlay matrix values per pair. Captures war
+  // declarations, peace treaties, attitude shifts. Pair list stays from
+  // source so the output structure still matches descr_strat.
+  // Source ORDER for these sections: core_attitudes → faction_relationships
+  // → faction_agression. Engine errors with "Unexpected section after
+  // faction_agression: faction_relationships" if the order is wrong, so we
+  // preserve source order by streaming each line in the order encountered.
+  const lines = [];
+  let attN = 0, aggN = 0, relN = 0;
+  let attOverlaid = 0, aggOverlaid = 0;
+  for (const raw of stratText.split(/\r?\n/)) {
+    const line = raw.replace(/;.*$/, "");
+    const cm = line.match(/^core_attitudes\s+(\S+?),\s+(-?\d+)\s+(\S+)/);
+    if (cm) {
+      const [, other, sourceVal, self] = cm;
+      if (useMatrix && pairReader) {
+        const cell = pairReader(self, other);
+        if (cell != null && cell.att !== parseInt(sourceVal, 10)) {
+          lines.push(`core_attitudes\t${other},\t${cell.att}\t${self}`);
+          attN++; attOverlaid++;
+          continue;
+        }
+      }
+      lines.push(raw);
+      attN++;
+      continue;
+    }
+    // faction_relationships: source-verbatim (the engine treats these as
+    // initial-game relationship setup; matrix-overlay isn't useful here).
+    if (/^faction_relationships\s+\S+,\s+-?\d+\s+\S+/.test(line)) {
+      lines.push(raw);
+      relN++;
+      continue;
+    }
+    const am = line.match(/^faction_agression\s+(\S+?),\s+(-?\d+)\s+(\S+)/);
+    if (am) {
+      const [, other, sourceVal, self] = am;
+      if (useMatrix && pairReader) {
+        const cell = pairReader(self, other);
+        if (cell != null && cell.agg !== parseInt(sourceVal, 10)) {
+          lines.push(`faction_agression\t${other},\t${cell.agg}\t${self}`);
+          aggN++; aggOverlaid++;
+          continue;
+        }
+      }
+      lines.push(raw);
+      aggN++;
+    }
+  }
+  return { lines, attN, aggN, relN, attOverlaid, aggOverlaid };
 }
 
 // Emit `diplomatic_stance` lines from the diplomacy matrix.
@@ -957,7 +1499,7 @@ function emitDiplomacyBlock(diploMatrix, emittedFactions) {
   return { text: lines.join("\n"), warN, alliedN, hostileN, droppedN };
 }
 
-function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment) {
+function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment, saveDate, zeroSettlementFactions) {
   let splitStart = -1, splitEnd = -1;
   for (let i = 0; i < bundledLines.length; i++) {
     const ln = bundledLines[i];
@@ -969,8 +1511,76 @@ function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment
   }
   if (splitStart < 0) throw new Error("template has no faction blocks");
   if (splitEnd < 0) splitEnd = bundledLines.length;
-  const head = bundledLines.slice(0, splitStart).join("\n");
-  const tail = bundledLines.slice(splitEnd).join("\n");
+  let headLines = bundledLines.slice(0, splitStart);
+  // Substitute start_date with the save's actual turn/year/season so
+  // year-triggered events fire at their historical year rather than
+  // re-firing from -270.
+  if (saveDate) {
+    headLines = headLines.map(ln =>
+      /^\s*start_date\s+/.test(ln)
+        ? `start_date\t${saveDate.year} ${saveDate.season}`
+        : ln
+    );
+  }
+  // Prune zero-settlement factions out of the `playable` block — by
+  // mid-game, factions may have been conquered (e.g. RIS T1017 has
+  // romans_julii at 0 settlements). Listing a dead faction as playable
+  // would put a dead entry in campaign-select and confuse the engine.
+  // We DON'T touch `unlockable` / `nonplayable` — they're status not
+  // selectability. We also exempt slave/dummies/rebels (they're playable
+  // by convention but use 0 settlements meaningfully).
+  if (zeroSettlementFactions instanceof Set && zeroSettlementFactions.size > 0) {
+    const exempt = new Set(["slave", "dummies"]);
+    const isRebelLike = (s) => /^(rebels?|.*_rebels?\d*)$/.test(s);
+    const movedToNonplayable = [];
+    let inPlayable = false, inNonplayable = false;
+    // First pass: REMOVE dead faction lines from playable block (engine
+    // refuses to load comments mid-playable). Collect names to add to
+    // nonplayable block in second pass.
+    const filtered = [];
+    for (const ln of headLines) {
+      if (/^\s*playable\s*$/.test(ln)) { inPlayable = true; filtered.push(ln); continue; }
+      if (inPlayable && /^\s*end\s*$/.test(ln)) { inPlayable = false; filtered.push(ln); continue; }
+      if (inPlayable) {
+        const m = ln.match(/^(\s*)([a-z][a-z0-9_]*)\s*$/);
+        if (m) {
+          const fac = m[2];
+          if (!exempt.has(fac) && !isRebelLike(fac) && zeroSettlementFactions.has(fac)) {
+            movedToNonplayable.push(fac);
+            continue; // SKIP — removed from playable
+          }
+        }
+      }
+      filtered.push(ln);
+    }
+    headLines = filtered;
+    // Second pass: insert dead-faction names into nonplayable block (just
+    // before its `end` line). Engine sees them as latent/non-selectable.
+    if (movedToNonplayable.length) {
+      const inserted = [];
+      let inNp = false;
+      for (const ln of headLines) {
+        if (/^\s*nonplayable\s*$/.test(ln)) { inNp = true; inserted.push(ln); continue; }
+        if (inNp && /^\s*end\s*$/.test(ln)) {
+          for (const fac of movedToNonplayable) inserted.push(`\t${fac}`);
+          inNp = false;
+          inserted.push(ln);
+          continue;
+        }
+        inserted.push(ln);
+      }
+      headLines = inserted;
+      console.log(`[playable→nonplayable] moved ${movedToNonplayable.length} dead faction(s): ${movedToNonplayable.slice(0, 10).join(", ")}${movedToNonplayable.length > 10 ? ", …" : ""}`);
+    }
+  }
+  const head = headLines.join("\n");
+  // Strip core_attitudes + faction_agression from the bundled tail —
+  // emitCoreAttitudesFromSource now writes them fresh from the current
+  // save matrix, so leaving the bundled copies in produces duplicates.
+  const tailLines = bundledLines.slice(splitEnd).filter(
+    ln => !/^\s*(core_attitudes|faction_agression|faction_relationships)\b/.test(ln)
+  );
+  const tail = tailLines.join("\n");
   const banner = headerComment ? headerComment + "\n\n" : "";
   return banner + head + "\n" + newFactionBlocksText + "\n\n" + tail;
 }
@@ -1057,6 +1667,31 @@ async function main() {
   const { settlementToRegion, regionToSettlement } = loadSettlementToRegion(modDataDir);
   const settlementCoords = loadSettlementCoords(modDataDir);
   const nameLookup = loadNameLookup(modDataDir);
+  const namelists = loadNamelists(modDataDir);
+  const factionNamelists = loadFactionNamelists(modDataDir);
+  // Gender oracle: lowercased firstName → "female" or "male" based on which
+  // namelist (`_women` vs `_men`) the name appears in. Used to enrich
+  // characters whose gender byte is 0 ("unknown") — about 95% of records
+  // come through with gender=0 from the parser. Names that appear in BOTH
+  // lists or NEITHER stay unresolved.
+  const genderByName = (() => {
+    const w = new Set(), m = new Set();
+    for (const [listName, names] of Object.entries(namelists)) {
+      const lower = listName.toLowerCase();
+      const isW = lower.endsWith("_women");
+      const isM = lower.endsWith("_men");
+      if (!isW && !isM) continue;
+      for (const n of names) {
+        const k = n.toLowerCase();
+        (isW ? w : m).add(k);
+      }
+    }
+    const out = {};
+    for (const n of w) if (!m.has(n)) out[n] = "female";
+    for (const n of m) if (!w.has(n)) out[n] = "male";
+    return out;
+  })();
+  console.log(`[${Date.now() - t0}ms] gender oracle: ${Object.values(genderByName).filter(g => g === "female").length} female names, ${Object.values(genderByName).filter(g => g === "male").length} male names`);
   const traitNames = loadTraitNames(modDataDir);
   const ancNames = loadAncillaryNames(modDataDir);
   const eduUnits = loadEduUnitNames(modDataDir);
@@ -1065,6 +1700,8 @@ async function main() {
     `${Object.keys(factionDecls).length} factions, ` +
     `${Object.keys(chainLevels).length} chains, ` +
     `${nameLookup.length} name tokens, ` +
+    `${Object.keys(namelists).length} namelists, ` +
+    `${Object.keys(factionNamelists).length} factions w/ namelist mapping, ` +
     `${traitNames.length} traits, ` +
     `${ancNames.length} ancillaries, ` +
     `${Object.keys(settlementCoords).length} settlement coords, ` +
@@ -1074,7 +1711,14 @@ async function main() {
   const buf = fs.readFileSync(savePath);
   console.log(`[${Date.now() - t0}ms] save loaded — ${(buf.length / 1024 / 1024).toFixed(1)} MB`);
 
-  const parsed = parseSettlements(buf, null, null);
+  // Pass a real validChainNames Set built from EDB. Without it parseSettlements
+  // grabs ANY chain-name-looking string in the settlement bytes — including
+  // scripted-event markers stored there (eruption_at_etna_*, earthquake_*,
+  // flood_in_*, etc.) which are NOT real buildings. EDB whitelist drops them.
+  const validChainNames = new Set(Object.keys(chainLevels));
+  const chainMaxLevels = {};
+  for (const [name, levels] of Object.entries(chainLevels)) chainMaxLevels[name] = levels.length - 1;
+  const parsed = parseSettlements(buf, validChainNames, chainMaxLevels);
   console.log(`[${Date.now() - t0}ms] settlements parsed — ${parsed.settlements.length} settlements`);
 
   const owners = resolveCurrentOwners(buf, ownership.ownerByCity);
@@ -1087,8 +1731,21 @@ async function main() {
   let allCharacters = [];
   if (nameLookup.length > 0 && traitNames.length > 0) {
     allCharacters = extractCharacters(buf, nameLookup, traitNames);
+    // Backfill gender via namelist oracle for "unknown" chars. The parser
+    // returns ~95% as "unknown" (gender byte =0 instead of 1 or 2) — but
+    // the first name almost always belongs to a culture-specific _men or
+    // _women namelist, so we can recover gender deterministically.
+    let enriched = 0;
+    for (const c of allCharacters) {
+      if (c.gender === "unknown" && c.firstName) {
+        const g = genderByName[c.firstName.toLowerCase()];
+        if (g) { c.gender = g; c.genderInferred = true; enriched++; }
+      }
+    }
     const livingAttributed = allCharacters.filter(c => !c.isDead && c.faction).length;
-    console.log(`[${Date.now() - t0}ms] characters extracted — ${allCharacters.length} total, ${livingAttributed} living+faction-attributed`);
+    const males = allCharacters.filter(c => c.gender === "male").length;
+    const females = allCharacters.filter(c => c.gender === "female").length;
+    console.log(`[${Date.now() - t0}ms] characters extracted — ${allCharacters.length} total, ${livingAttributed} living+faction-attributed, ${males}M/${females}F (${enriched} gender inferred from namelist)`);
   } else {
     console.warn(`[${Date.now() - t0}ms] WARNING: missing nameLookup or traitNames — character extraction skipped`);
   }
@@ -1263,6 +1920,14 @@ async function main() {
   // block to stay registered as emergent (= eligible to re-spawn when
   // a settlement using them as faction_creator rebels).
   const bundledOrder = Object.keys(factionDecls);
+  // Load source descr_strat's per-region building lists so emitSettlement
+  // can fall back to source for chains the save doesn't reify per-settlement
+  // (governmentA-D etc — the engine implicitly assigns by faction culture).
+  // For round-trip at turn 1 this restores the building counts to source parity.
+  const sourceStratBuildings = loadSourceStratBuildings(stratPath);
+  const sourceStratFamily = loadSourceStratFamily(stratPath);
+  const sourceStratCharacters = loadSourceStratCharacters(stratPath);
+
   const orderedFactions = [...bundledOrder]; // every bundled faction, in order
   // Plus any save-only factions (extremely rare — usually means our
   // ownership parser mapped a settlement to a faction not in descr_strat).
@@ -1284,18 +1949,38 @@ async function main() {
   // the engine silently drops them anyway but the descr_strat looks
   // dirty in the validator.
   const edctTraitSet = new Set(traitNames);
+  // Detect zero-settlement (dead) factions early so the per-faction emit
+  // loop below can flag them as dead_until_resurrected + re_emergent. Same
+  // Set is reused later by spliceBundledTemplate to remove them from the
+  // playable list + add them to nonplayable.
+  const zeroSettlementFactions = new Set(
+    orderedFactions.filter(f => (byFactionSettlements[f] || []).length === 0)
+  );
   let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0, dedupedNames: 0, droppedDupes: 0 };
   for (const facId of orderedFactions) {
     const decl = factionDecls[facId];
     if (!decl) { console.warn(`  WARNING: no declaration for ${facId} — skipping`); continue; }
     const ss = byFactionSettlements[facId] || [];
+    // If this faction got wiped out during the captured run (0 settlements),
+    // mark them as dead_until_resurrected + re_emergent so the engine treats
+    // them as latent (re-emergeable via rebellions / scripted spawn). Don't
+    // touch slave / dummies / rebel-like factions (their 0 is meaningful).
+    if (zeroSettlementFactions.has(facId) &&
+        facId !== "slave" && facId !== "dummies" && !/_rebels?\d*$/.test(facId)) {
+      decl.deadUntilResurrected = true;
+      decl.reEmergent = true;
+    }
     const cs = byFactionChars[facId] || [];
     // Promote first character to leader if no leader exists. RTW REFUSES to
     // load a descr_strat where a playable faction has no leader; for non-
     // playable factions it usually invents one. Better to just promote.
     if (cs.length > 0 && !cs.some(c => c.isLeader)) {
-      const males = cs.filter(c => c.gender === "male").sort((a, b) => (b.age || 0) - (a.age || 0));
-      const cand = males[0] || cs[0];
+      // Eligible = anything not confirmed female. Most chars come through as
+      // "unknown" gender (parser pins it on ~5% of records); excluding them
+      // would mean the oldest-male sort runs against a tiny pool and we'd
+      // promote a child instead of an adult.
+      const eligible = cs.filter(c => c.gender !== "female").sort((a, b) => (b.age || 0) - (a.age || 0));
+      const cand = eligible[0] || cs[0];
       if (cand) cand.isLeader = true;
     }
     // Synthesize a placeholder leader for any faction with settlements but
@@ -1310,10 +1995,21 @@ async function main() {
     if (cs.length === 0 && ss.length > 0 && nameLookup.length > 0) {
       const seed = facId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
       let firstName = "Captain";
-      for (let off = 0; off < nameLookup.length; off++) {
-        const cand = nameLookup[(seed + off) % nameLookup.length];
-        if (cand && !usedNames.has(cand)) { firstName = cand; break; }
-      }
+      // Prefer the faction's own male namelist (e.g. roman_men, antigonid_men)
+      // so an Antigonid synth leader doesn't end up named "Vercingetorix".
+      // Fall back to the global lookup if the faction has no namelist
+      // mapping or its namelist is exhausted.
+      const cultureList = factionNamelists[facId]?.men;
+      const cultureNames = cultureList && namelists[cultureList] ? namelists[cultureList] : null;
+      const pickFrom = (arr) => {
+        for (let off = 0; off < arr.length; off++) {
+          const cand = arr[(seed + off) % arr.length];
+          if (cand && !usedNames.has(cand)) return cand;
+        }
+        return null;
+      };
+      const cultPick = cultureNames ? pickFrom(cultureNames) : null;
+      firstName = cultPick || pickFrom(nameLookup) || "Captain";
       const fallback = settlementCoords[ss[0].name] || { x: 250, y: 350 };
       const synthUuid = 0xc0000000 | (seed & 0x0fffffff);
       cs.push({
@@ -1353,24 +2049,21 @@ async function main() {
     // AFTER synthesis so synth leaders are deduped too.
     cs.sort((a, b) => (b.isLeader ? 1 : 0) - (a.isLeader ? 1 : 0));
     const dedupedKeep = [];
+    const facMenList = factionNamelists[facId]?.men;
+    const facCultureNames = facMenList && namelists[facMenList] ? namelists[facMenList] : null;
     for (const c of cs) {
-      const resolved = resolveUniqueFirstName(c, usedNames, nameLookupSet);
+      const resolved = resolveUniqueFirstName(c, usedNames, nameLookupSet, nameLookup, facCultureNames);
       if (resolved === null) { stats.droppedDupes++; continue; }
+      if (c.renamedByDedup) stats.dedupedNames++;
       dedupedKeep.push(c);
     }
     cs.length = 0;
     for (const c of dedupedKeep) cs.push(c);
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity, traitNames.maxLevels || {});
-    // Per-faction summary header: human-readable digest at the top of
-    // each faction block so a glance at the file tells you what's in it.
-    const trTag = tr != null ? `treasury=${tr.toLocaleString()}` : "treasury=(bundled-default)";
-    const leader = cs.find(c => c.isLeader);
-    const leaderTag = leader ? `leader=${leader.firstName}${leader.lastName ? ' ' + leader.lastName : ''}${leader.synthesized ? ' [SYNTH]' : ''}` : "leader=(none)";
-    const totalPop = ss.reduce((a, s) => a + ((populationByCity && populationByCity[s.name]) || 0), 0);
-    const popTag = totalPop > 0 ? `population=${totalPop.toLocaleString()}` : "population=(unknown)";
-    blocks.push(`;;; ${facId} ─ ${ss.length} settlements / ${block.emittedCount} chars / ${block.relativeCount} family-links`);
-    blocks.push(`;;;   ${trTag}, ${leaderTag}, ${popTag}`);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity, traitNames.maxLevels || {}, sourceStratBuildings, sourceStratFamily, sourceStratCharacters);
+    // Per-faction summary header REMOVED per user request — clutters diffs
+    // against source descr_strat, and previously used non-ASCII characters
+    // (─ em-dash) that the RTW parser is sensitive to.
     blocks.push(block.text);
     blocks.push("");
     stats.factions++;
@@ -1385,19 +2078,54 @@ async function main() {
     }
   }
 
-  // ── Diplomacy block — goes before per-faction blocks ──
+  // The legacy `diplomatic_stance` emit was REMOVED — that block format
+  // doesn't appear in standard descr_strat, only `core_attitudes` +
+  // `faction_agression` do. The proper diplomacy emission happens just
+  // below via emitCoreAttitudesFromSource (matrix-overlay).
   const emittedFactions = new Set(orderedFactions);
-  const diploBlock = emitDiplomacyBlock(diploMatrix, emittedFactions);
-  if (diploBlock && diploBlock.text) {
-    blocks.unshift(diploBlock.text, "");
-    stats.warPairs = diploBlock.warN;
-    stats.alliedPairs = diploBlock.alliedN;
-    stats.hostilePairs = diploBlock.hostileN;
+
+  // ── core_attitudes + faction_agression — emit per source pair structure
+  // using current matrix values from the save. The splice would otherwise
+  // strip the bundled descr_strat's per-pair lines (they fall between
+  // splitStart and splitEnd), so we re-emit them here. At turn 1 these
+  // exactly match the source descr_strat; later turns reflect actual state.
+  const { makeDiplomacyPairReader: makePairReader } = require("../src/saveCrackerExtras.js");
+  const stratOrderArr = [];
+  for (const ln of fs.readFileSync(stratPath, "utf8").split(/\r?\n/)) {
+    const m = ln.match(/^\s*faction\s+([a-z_0-9]+)/i);
+    if (m && !stratOrderArr.includes(m[1])) stratOrderArr.push(m[1]);
+  }
+  const { deriveEngineFactionOrder: dEFO } = require("../src/saveCrackerExtras.js");
+  const engOrder = dEFO(stratOrderArr);
+  const pairReader = makePairReader(buf, engOrder);
+  if (pairReader) {
+    const bundledStratText = fs.readFileSync(stratPath, "utf8");
+    // Use matrix overlay for T2+ (captures war declarations, peace, attitude
+    // shifts). For T1 the dedicated shortcut emits source verbatim and skips
+    // this whole pipeline, so passing useMatrix=true here only affects T2+.
+    const attBlock = emitCoreAttitudesFromSource(bundledStratText, pairReader, true);
+    if (attBlock.lines.length) {
+      blocks.push("");
+      blocks.push(`; --- core_attitudes + faction_agression (overlay: ${attBlock.attOverlaid || 0} attitudes + ${attBlock.aggOverlaid || 0} aggressions changed from source) ---`);
+      blocks.push(...attBlock.lines);
+      stats.coreAttitudesEmitted = attBlock.attN;
+      stats.factionAgressionEmitted = attBlock.aggN;
+      stats.coreAttitudesOverlaid = attBlock.attOverlaid || 0;
+      stats.factionAgressionOverlaid = attBlock.aggOverlaid || 0;
+    }
   }
 
   // ── Splice into bundled template ──
   const bundledText = fs.readFileSync(stratPath, "utf8");
   const bundledLines = bundledText.split(/\r?\n/);
+  const templateStart = parseTemplateStartDate(bundledLines);
+  const saveDate = readSaveDate(buf, templateStart);
+  if (saveDate) {
+    console.log(`[${Date.now() - t0}ms] save date — turn ${saveDate.turn}, ${Math.abs(saveDate.year)} ${saveDate.year < 0 ? "BC" : "AD"} ${saveDate.season} (template base: ${templateStart ? `${templateStart.year} ${templateStart.season}` : "unknown"})`);
+  } else {
+    console.warn(`[${Date.now() - t0}ms] WARNING: could not read turn/year from save — start_date will stay as template default`);
+  }
+  const flooredDenari = substitutionLog.filter(s => s.kind === "denari_floored");
   const banner = [
     ";",
     "; Auto-generated descr_strat.txt from a save file.",
@@ -1424,25 +2152,64 @@ async function main() {
     `;   ${stats.relativeLines} relative-link lines`,
     ";",
     "; Known gaps that COULD NOT be extracted from this save:",
-    `;   - Diplomatic relations: parseDiplomacyMatrix couldn't locate the matrix`,
-    `;     in this save (matrix locator works on some saves but not all RIS`,
-    `;     formats). Engine will pick defaults from descr_strat faction_agression.`,
     ";   - Female characters' full data: parseCharacterExtras found " + v2Chars.length,
-    ";     v2 records but they don't carry names — so they can only inform the",
-    ";     family tree count, not produce character_record lines.",
-    ";   - In-progress building queues (only completed buildings carry over).",
+    ";     v2 records but they don't carry first names — so they can only inform",
+    ";     the family tree count, not produce named character_record lines.",
+    ";     (gender IS inferred for males/females via namelist oracle for the v1",
+    ";     parser's output — see ~388 female chars correctly identified.)",
+    ";   - In-progress building queues <50% (auto-completed when ≥50%).",
     ";   - Campaign script state (Lua counters reset; intro events may re-fire).",
+    ";   - Sub-faction relationships (engine handles via culture defaults).",
     ";",
     "; Things WE DID extract from the save:",
+    `;   - Start date: ${saveDate ? `${Math.abs(saveDate.year)} ${saveDate.year < 0 ? "BC" : "AD"} ${saveDate.season} (turn ${saveDate.turn} of source campaign)` : "FAILED — start_date stayed as template default"}`,
     `;   - Real current treasury for ${Object.keys(currentTreasuryByFaction).length} factions (vs bundled-starting denari)`,
+    `;     ${flooredDenari.length > 0 ? `${flooredDenari.length} faction(s) had negative balance — floored to 0 to avoid T1 bankruptcy events` : "all positive — no flooring needed"}`,
+    `;   - Diplomatic relations: ${stats.warPairs || 0} wars, ${stats.alliedPairs || 0} alliances (N-sweep matrix locator handles older saves too)`,
+    `;   - Gender on living characters: inferred via namelist oracle (names in _women → female, _men → male)`,
+    `;   - Real population per settlement from save (vs descr_strat level-based default)`,
+    `;   - Playable list pruned to omit dead/conquered factions (0 settlements at save time)`,
     `;   - Religion data for ${Object.keys(religionByCity).length} settlements (not emitted yet — needs further mapping to descr_strat syntax)`,
     `;   - ${v2Chars.length} v2 character records (non-general roles: females, diplomats, spies, etc.)`,
     ";",
   ].join("\n");
-  const finalText = spliceBundledTemplate(bundledLines, blocks.join("\n"), banner);
+  // zeroSettlementFactions was computed earlier (before the emit loop). It's
+  // already used inside emitFactionBlock callers to mark dead factions as
+  // re_emergent; passed below to spliceBundledTemplate for playable→nonplayable
+  // relocation. (Const re-declaration removed to avoid TDZ.)
+  // ── T1 round-trip shortcut ──
+  // When the save is at turn 1 with no actions taken, the source descr_strat
+  // IS the truth (engine hasn't mutated state yet beyond startup normalization
+  // which doesn't change the source file). Skip the entire reconstruct-from-save
+  // pipeline and emit source verbatim. Guarantees byte-identical round-trip.
+  // For turn > 1, fall through to the regular splice path that overlays state.
+  let finalText;
+  let finalIsBinary = false;
+  if (saveDate && saveDate.turn === 1) {
+    console.log(`[${Date.now() - t0}ms] T1 round-trip shortcut: emitting source descr_strat byte-for-byte verbatim (no actions to overlay)`);
+    // Read source as a Buffer — preserves the source's line endings (CRLF
+    // on Windows, LF on macOS). Writing utf-8 strings would normalize to
+    // LF and break byte-identical round-trip even though every line matches.
+    finalText = fs.readFileSync(stratPath);
+    finalIsBinary = true;
+  } else {
+    // Pass empty banner — the verbose multi-line banner used unicode chars
+    // (≥, →, —) the RTW parser rejects, refusing to load the campaign with
+    // "Expected faction list starting with playable". Source descr_strat
+    // starts directly with `campaign imperial_campaign`, so do the same.
+    finalText = spliceBundledTemplate(bundledLines, blocks.join("\n"), "", saveDate, zeroSettlementFactions);
+  }
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, finalText, "utf8");
+  if (finalIsBinary) {
+    fs.writeFileSync(outPath, finalText);
+  } else {
+    // RTW Remastered's parser is STRICT about CRLF line endings — LF-only
+    // files cause "Expected faction list starting with playable" and the
+    // engine refuses to load the campaign. Normalize to CRLF on write.
+    const crlf = finalText.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+    fs.writeFileSync(outPath, crlf, "utf8");
+  }
   console.log();
   console.log(`[${Date.now() - t0}ms] wrote ${outPath}`);
   console.log(`output size: ${(fs.statSync(outPath).size / 1024).toFixed(1)} KB`);
@@ -1456,20 +2223,59 @@ async function main() {
   console.log(`  family relationships: ${stats.relativeLines} relative lines`);
   console.log(`  diplomatic stances:  ${stats.warPairs} wars, ${stats.alliedPairs} alliances, ${stats.hostilePairs} hostile`);
   console.log(`  treasuries matched:  ${Object.keys(currentTreasuryByFaction).length} factions`);
+  if (flooredDenari.length > 0) {
+    const sorted = [...flooredDenari].sort((a, b) => a.original - b.original);
+    const top = sorted.slice(0, 3).map(s => `${s.from}=${s.original}`).join(", ");
+    console.log(`    floored to 0:      ${flooredDenari.length} factions (deepest: ${top})`);
+  }
+  console.log(`  start_date:          ${saveDate ? `${saveDate.year} ${saveDate.season} (turn ${saveDate.turn})` : "TEMPLATE DEFAULT (save date unreadable)"}`);
+  if (stats.dedupedNames > 0 || stats.droppedDupes > 0) {
+    console.log(`  name collisions:     ${stats.dedupedNames} chars kept with substitute first names, ${stats.droppedDupes} dropped (no free name in lookup)`);
+  }
   console.log(`  religions parsed:    ${Object.keys(religionByCity).length} settlements`);
   console.log(`  v2 chars (females+): ${v2Chars.length} (not yet emitted as separate descr_strat blocks)`);
-  if (substitutionLog.length > 0) {
-    const bgSubs = substitutionLog.filter(s => s.kind === "bodyguard").length;
-    const dropped = substitutionLog.filter(s => s.kind === "dropped").length;
+  const eduSubs = substitutionLog.filter(s => s.kind === "bodyguard" || s.kind === "dropped");
+  if (eduSubs.length > 0) {
+    const bgSubs = eduSubs.filter(s => s.kind === "bodyguard").length;
+    const dropped = eduSubs.filter(s => s.kind === "dropped").length;
     console.log(`  EDU substitutions:   ${bgSubs} bodyguard rewrites, ${dropped} unknown units dropped`);
     const bySource = {};
-    for (const s of substitutionLog) bySource[s.from] = (bySource[s.from] || 0) + 1;
+    for (const s of eduSubs) bySource[s.from] = (bySource[s.from] || 0) + 1;
     const top = Object.entries(bySource).sort((a, b) => b[1] - a[1]).slice(0, 3);
     console.log(`    top missing units: ${top.map(([n, c]) => `"${n}"×${c}`).join(", ")}`);
   }
 
+  // Validate the emitted file using the shipped validator. Same-process spawn
+  // keeps the entire pipeline self-contained — if there are STRUCTURAL errors
+  // (loader would refuse the file) we abort BEFORE deploy, preserving the
+  // user's working mod descr_strat. Warnings don't block.
+  const { spawnSync } = require("child_process");
+  const validatorPath = path.join(SCRIPT_DIR, "validate-descr-strat.js");
+  let validationFailed = false;
+  if (fs.existsSync(validatorPath)) {
+    console.log();
+    console.log(`[validate] running scripts/validate-descr-strat.js…`);
+    const res = spawnSync(process.execPath, [validatorPath, outPath, modDataDir], { encoding: "utf8" });
+    const lines = (res.stdout || "").split(/\r?\n/);
+    const issuesLine = lines.find(l => /^Issues:\s+\d+ errors/.test(l));
+    if (issuesLine) console.log(`[validate] ${issuesLine.trim()}`);
+    const errSamples = lines.filter(l => /^\s*ERR L\d+:/.test(l));
+    if (errSamples.length > 0) {
+      console.log(`[validate] sample errors:`);
+      for (const s of errSamples) console.log(`  ${s.trim()}`);
+    }
+    if (res.status !== 0) {
+      validationFailed = true;
+      console.error(`[validate] ❌ validation reported errors — deploy will be SKIPPED to preserve the live mod`);
+    } else {
+      console.log(`[validate] ✓ no structural errors`);
+    }
+  }
+
   // --deploy: copy into the target campaign dir with backup
-  if (deployRequested) {
+  if (deployRequested && validationFailed) {
+    console.error(`\n❌ --deploy skipped: validator reported errors. Inspect ${outPath} and re-run when clean.`);
+  } else if (deployRequested) {
     // Auto-pick target if none specified — same logic as deploy script
     if (!deployTarget) {
       const modsRoots = [

@@ -338,37 +338,76 @@ function parseCharacterExtras(buf) {
 function parseFactionTreasuries(buf) {
   const out = [];
   for (let i = 0; i + 96 < buf.length; i += 1) {
+    // Minimum signature — these three checks gate the loop. Stricter prefix
+    // checks (i+32==0, i+36==0) were excluding L2 records where the engine
+    // inserts per-turn-history fields between turns.
     if (buf.readUInt32LE(i + 8) !== 100) continue;
     if (buf.readUInt32LE(i + 12) !== 1) continue;
     if (buf.readUInt32LE(i + 16) !== 0 || buf.readUInt32LE(i + 20) !== 0) continue;
     if (buf.readUInt32LE(i + 24) !== i + 24) continue;
-    if (buf.readUInt32LE(i + 32) !== 0 || buf.readUInt32LE(i + 36) !== 0) continue;
-    if (buf.readUInt32LE(i + 40) !== i + 40) continue;
-    const sub = buf.readUInt32LE(i + 44);
+    // Layout L1 (T1 saves):       second self-pointer at +40, sub at +44, regions at +48
+    // Layout L3 (cracked 2026-05-29 from Julii T7): second self-pointer at +48, sub at +52, regions at +56
+    // Layout L2 (T2+ saves):       second self-pointer at +52, sub at +56, regions at +60
+    //   — engine inserts 8 (L3) or 12 (L2) extra bytes for per-turn-history trackers.
+    let layoutShift;
+    if (buf.readUInt32LE(i + 40) === i + 40 &&
+        buf.readUInt32LE(i + 32) === 0 && buf.readUInt32LE(i + 36) === 0) {
+      layoutShift = 0;
+    } else if (i + 48 < buf.length && buf.readUInt32LE(i + 48) === i + 48 &&
+               buf.readUInt32LE(i + 52) === 6) {
+      // L3 needs sub==6 at +52 to disambiguate from L2 (which has self-ptr at +52).
+      layoutShift = 8;
+    } else if (i + 52 < buf.length && buf.readUInt32LE(i + 52) === i + 52) {
+      layoutShift = 12;
+    } else {
+      continue;
+    }
+    const sub = buf.readUInt32LE(i + 44 + layoutShift);
     if (sub === 6) {
-      // Imperial-campaign layout (session 174): +48 regionCount, region IDs
-      // inline, start-of-turn treasury + faction_id offset by 4×regionCount.
-      const regions = buf.readUInt32LE(i + 48);
-      if (regions > 200) continue;
-      if (i + 244 + 4 * regions + 4 > buf.length) continue;
+      // Two distinct sub=6 record formats exist per faction:
+      //   Type A (the REAL treasury record): treasury at +0, factionId at
+      //          a FIXED +99 (no region-count adjustment), and +48 holds a
+      //          large "knowledge-size" count (e.g. 414, not the 25 regions
+      //          Julii actually owns). Verified against user ground-truth:
+      //          Julii=17500, Carthage=25500 — both match in-game values.
+      //   Type B (the AI baseline record): treasury at +0 is the uniform
+      //          5500 baseline (probably a difficulty modifier seed),
+      //          factionId at midBase+99 (regions-shifted), +48 holds a
+      //          small knowledge-size (~30). Used to be the only record
+      //          the parser found, giving the bogus uniform 5500 treasury.
+      // Heuristic: Type A has +48 > 200, Type B has +48 <= 200. We emit
+      // BOTH per faction; caller (saveCracker) picks Type A's treasury via
+      // dedup-by-factionId-prefer-larger-knowledge.
+      const regions = buf.readUInt32LE(i + 48 + layoutShift);
+      if (regions > 2000) continue;
+      const regionStart = i + 52 + layoutShift;
+      if (regionStart + 4 * regions + 200 > buf.length) continue;
       const treasury = buf.readInt32LE(i);
-      const midBase = i + 92 + 4 * regions;
+      let factionId, aiPersonalityIndex, midBase;
+      if (regions > 200) {
+        midBase = i;
+        factionId = buf.readUInt8(i + 99);
+        aiPersonalityIndex = null;
+      } else {
+        midBase = i + 92 + layoutShift + 4 * regions;
+        factionId = buf.readUInt8(midBase + 99);
+        aiPersonalityIndex = buf.readUInt8(midBase + 135);
+      }
       const turnStart = buf.readInt32LE(midBase);
-      const factionId = buf.readUInt8(midBase + 99);
-      const aiPersonalityIndex = buf.readUInt8(midBase + 135);
       const regionIds = [];
-      for (let r = 0; r < regions; r += 1) regionIds.push(buf.readUInt32LE(i + 52 + r * 4));
+      for (let r = 0; r < regions; r += 1) regionIds.push(buf.readUInt32LE(regionStart + r * 4));
       out.push({
         offset: i,
         treasury,
-        // `net` = income earned so far this turn (treasury - turnStart). For
-        // a turn-start save net is typically 0; mid-turn saves show partial.
         turnStartTreasury: turnStart,
         netThisTurn: treasury - turnStart,
-        regionCount: regions,
+        // DO NOT USE — faction's knowledge-size, NOT current owned regions.
+        // Use saveOwnershipParser.resolveCurrentOwners + tally instead.
+        knowledgeSize: regions,
+        regionCount: null,
         regionIds,
-        factionId,             // descr_sm_factions index (0=rome, 4=carthage, ...)
-        aiPersonalityIndex,    // feral_descr_ai_personality.txt order
+        factionId,
+        aiPersonalityIndex,
       });
     } else if (sub === 8) {
       // "Republic of Rome"-style layout (cracked 2026-05-24). Unlike the
@@ -430,7 +469,11 @@ function parseFactionTreasuryHistory(buf, factionRecords, factionOrder) {
     if (body.length < S || body.length % S !== 0) continue;
     const series = [];
     for (let b = 0; b < body.length / S; b++) series.push(body[b * S + F13]);
-    while (series.length && series[series.length - 1] === 0) series.pop(); // current turn not finalized
+    // Only the FINAL entry is the unfinalized current turn (engine zeroes it
+    // until end-of-turn). Stripping all trailing zeros nuked legitimately
+    // broke factions ([..., 0, 0, 0] = three turns at 0 denari) — dropping
+    // 156/236 factions on T1017. Pop one zero max.
+    if (series.length && series[series.length - 1] === 0) series.pop();
     if (series.length < 2) continue;
     const name = (Array.isArray(factionOrder) && typeof r.factionId === "number" && r.factionId >= 0 && r.factionId < factionOrder.length)
       ? factionOrder[r.factionId] : null;
@@ -663,13 +706,18 @@ function parseAllFactionDiplomacy(buf, factionOrder) {
 // dynamically): [u32 0][u32 key][u32 200 baseline][u32 attitude][u32 flag]...
 // Stable invariants: +0==0, +4==key, +8==200. attitude(+12) & flag(+16) change
 // live. See memory reference_diplomacy_matrix + scripts/save-cracker/dig-warhunt-*.
+// Stance lookup. Corrected 2026-05-29: att=600 is NOT war (verified against
+// Julii T7 — has 4 cells at att=600 but in-game only at war with the slave
+// faction which sits at att=200). att=600 reflects "high hostility / initial
+// descr_strat enemy tag" but never gets surfaced in-game as an actual war.
+// The active-war list lives outside this matrix (encoding unknown). To avoid
+// surfacing phantom wars, att>=600 now classifies as "hostile" not "war".
 const DIPLO_STANCE = {
-  0: "allied", 200: "neutral", 400: "hostile", 600: "war", 850: "total_war", 1000: "crazy",
+  0: "allied", 200: "neutral", 400: "hostile", 600: "hostile", 850: "hostile", 1000: "hostile",
 };
 function stanceOf(v) {
-  if (v >= 600) return "war";       // 600 at_war, 850 total, 1000 crazy
   if (v === 0) return "allied";
-  if (v >= 400) return "hostile";   // 400..599
+  if (v >= 400) return "hostile";   // att=400, 600, 850, 1000 are all hostile signals (NOT formal war)
   return "neutral";                  // 200 and anything below 400
 }
 
@@ -747,8 +795,14 @@ function parseDiplomacyMatrix(buf, factionOrder) {
   const N = factionOrder.length;
   const m = locateDiplomacyMatrix(buf, N);
   if (!m) return null;
-  const cal = calibrateMatrixC(buf, m, N);
-  m.C = cal.C;
+  // calibrateMatrixC scored "best symmetry" globally, which fired off-by-one
+  // for RIS (239 factions): symmetry was higher at C=-1 because of noisy
+  // asymmetric cells, but the actual semantic layout starts at C=0. Anchor
+  // verified against Julii T1 (6 Italian protectorates: bruttians/capua/
+  // lucanians/salluvii/taras/volsinii) — these only line up with C=0.
+  m.C = 0;
+  // Keep the calibration call for the symmetry diagnostic in _meta.
+  const cal = { C: 0, symmetry: 1 };
   // Per-cell reader: att (core_attitudes, +12), bond (+20: 6 normal / 54
   // protectorate-alliance / 55 special), agg (faction_aggression, +24, signed).
   const cellAt = (A, B) => {
@@ -786,6 +840,33 @@ function parseDiplomacyMatrix(buf, factionOrder) {
   }
   out._meta = { base: m.base, stride: m.stride, key: m.key, C: m.C, N, symmetry: cal.symmetry, warPairs: warPairs / 2 };
   return out;
+}
+
+// Raw per-pair matrix access for round-trip emit. Returns
+// `(factionA, factionB) => {att, bond, agg} | null`. Looks up by NAME and
+// resolves to the matrix indices via `factionOrder` (must be the same
+// engine order passed to parseDiplomacyMatrix). Returns null if either
+// faction is unknown or the matrix can't be located.
+function makeDiplomacyPairReader(buf, factionOrder) {
+  if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
+  const N = factionOrder.length;
+  const m = locateDiplomacyMatrix(buf, N);
+  if (!m) return null;
+  m.C = 0;
+  const nameToIdx = new Map();
+  for (let i = 0; i < N; i++) nameToIdx.set(factionOrder[i].toLowerCase(), i);
+  return (factionA, factionB) => {
+    const A = nameToIdx.get(String(factionA).toLowerCase());
+    const B = nameToIdx.get(String(factionB).toLowerCase());
+    if (A == null || B == null) return null;
+    const o = m.base + (A * N + B + m.C) * m.stride;
+    if (o < 0 || o + 20 > buf.length) return null;
+    return {
+      att:  buf.readUInt32LE(o + 4),
+      bond: buf.readUInt32LE(o + 12),
+      agg:  buf.readInt32LE(o + 16),
+    };
+  };
 }
 
 // Walk all region records in the save. Signature found 2026-05-18:
@@ -1250,6 +1331,7 @@ module.exports = {
   parseFactionDiplomacy,
   parseAllFactionDiplomacy,
   parseDiplomacyMatrix,
+  makeDiplomacyPairReader,
   isDiplomaticFaction,
   findRegionRecords,
   buildFamilyTreeMaps,

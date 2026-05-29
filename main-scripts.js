@@ -204,17 +204,36 @@ ipcMain.handle('sps:xref-find', async (_, name) => {
 //   5. Orphaned chains           — `building <X>` blocks with zero external
 //                                   refs AND zero descr_strat prebuilts
 //                                   (candidates for removal).
-ipcMain.handle('sps:validate-mod', async () => {
+ipcMain.handle('sps:validate-mod', async (_evt, modDataDir) => {
+  // Two sources for the validator's input files:
+  //   (1) configDir: where the script suite's Scripts panel stages files.
+  //       This is the historical source. Empty unless you've used Scripts.
+  //   (2) modDataDir: the LIVE mod data dir (passed in from the dashboard
+  //       useEffect — same path the other validators use). Falls back here
+  //       when configDir doesn't have the file, so users who imported via
+  //       the regular dev-pill Import flow (not Scripts) still get a full
+  //       audit. Was a recurring teammate report.
   const configDir = path.join(PROJECT_ROOT, 'config');
   const read = (n) => {
-    const p = path.join(configDir, n);
-    return fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : null;
+    const cp = path.join(configDir, n);
+    if (fs.existsSync(cp)) return fs.readFileSync(cp, 'utf-8');
+    if (modDataDir) {
+      // Most files live at modDataDir/<name>; descr_strat / win_conditions
+      // live under world/maps/campaign/imperial_campaign/.
+      const candidates = [
+        path.join(modDataDir, n),
+        path.join(modDataDir, 'world', 'maps', 'campaign', 'imperial_campaign', n),
+        path.join(modDataDir, 'text', n),
+      ];
+      for (const p of candidates) if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8');
+    }
+    return null;
   };
   const summary = { danglingChains: 0, danglingLevels: 0, stratErrors: 0, missingLocale: 0, orphanedChains: 0, vcMalformed: 0, vcOrphanFactions: 0 };
   const out = { summary, danglingChains: [], danglingLevels: [], stratErrors: [], missingLocale: [], orphanedChains: [], vcMalformed: [], vcOrphanFactions: [] };
   try {
     const edb = read('export_descr_buildings.txt');
-    if (!edb) return { ...out, error: 'export_descr_buildings.txt not loaded — import a mod first.' };
+    if (!edb) return { ...out, error: 'export_descr_buildings.txt not loaded — open the Scripts panel to import the mod, or use the regular Import dialog with a modDataDir set.' };
     const buildings = parseEDB(edb);
     // Index chains + levels.
     const chainLevels = {};      // chain → Set<level>
@@ -367,6 +386,1283 @@ ipcMain.handle('sps:validate-mod', async () => {
   } catch (e) {
     return { ...out, error: e.message };
   }
+});
+
+// Extra mod-data validators. Runs alongside the existing validate-mod IPC
+// (which works from the config snapshot) but operates on the LIVE dataDir,
+// so it sees the user's actual current state for things the snapshot
+// doesn't cover. Returns parallel result sections; the UI can render each
+// independently and the failure of one doesn't block the rest.
+ipcMain.handle('sps:validate-mod-extra', async (_, dataDir) => {
+  const out = {
+    namelistEmpty: { issues: [], error: null },
+    namelistSingle: { issues: [], error: null },
+    stratTraitRefs: { issues: [], error: null },
+    stratAncillaryRefs: { issues: [], error: null },
+    stratUnitRefs: { issues: [], error: null },
+    factionCulture: { issues: [], error: null },
+    error: null,
+  };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  const readUtf8 = (p) => { try { return fs.readFileSync(p, 'utf8'); } catch { return null; } };
+  const readUtf16 = (p) => { try { return fs.readFileSync(p, 'utf16le').replace(/^﻿/, ''); } catch { return null; } };
+
+  // ── 1+2. Namelist coverage: empty + single-entry lists that are referenced
+  // by descr_sm_factions. (Single-entry _men/_women trigger random(0,0)
+  // → min<=max Failed on captain auto-spawn.)
+  try {
+    const namelistText = readUtf8(path.join(dataDir, 'descr_namelists.txt'));
+    const smText = readUtf8(path.join(dataDir, 'descr_sm_factions.txt'));
+    if (namelistText && smText) {
+      const nlSizes = {};
+      {
+        const lines = namelistText.split(/\r?\n/);
+        let cur = null, inNames = false;
+        for (let i = 0; i < lines.length; i++) {
+          const ln = lines[i];
+          const idM = ln.match(/^\s*"([a-z][a-z0-9_]*)"\s*:\s*$/i);
+          if (idM && idM[1] !== 'namelists' && idM[1] !== 'names') {
+            for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+              if (/^\s*\{/.test(lines[j])) { cur = idM[1]; nlSizes[cur] = 0; break; }
+            }
+            continue;
+          }
+          if (/^\s*"names"\s*:/.test(ln)) { inNames = true; continue; }
+          if (inNames) {
+            if (/^\s*\]/.test(ln)) { inNames = false; continue; }
+            if (/^\s*"([^"]+)"/.test(ln) && cur) nlSizes[cur]++;
+          }
+        }
+      }
+      const facUses = {};  // namelistId → [{ faction, slot }]
+      {
+        const lines = smText.split(/\r?\n/);
+        let cur = null, inNL = false;
+        for (let i = 0; i < lines.length; i++) {
+          const ln = lines[i];
+          const fm = ln.match(/^\t"([a-z_0-9]+)":/);
+          if (fm) { cur = fm[1]; inNL = false; continue; }
+          if (/^\s*"namelists"\s*:/.test(ln)) { inNL = true; continue; }
+          if (inNL) {
+            if (/^\s*\}/.test(ln)) { inNL = false; continue; }
+            const kv = ln.match(/^\s*"(men|women|surnames)"\s*:\s*"([^"]+)"/);
+            if (kv && cur) {
+              facUses[kv[2]] = facUses[kv[2]] || [];
+              facUses[kv[2]].push({ faction: cur, slot: kv[1] });
+            }
+          }
+        }
+      }
+      for (const [name, count] of Object.entries(nlSizes)) {
+        const uses = facUses[name];
+        if (!uses || uses.length === 0) continue; // unused, not a runtime bug
+        if (count === 0) {
+          out.namelistEmpty.issues.push({
+            namelist: name,
+            usedBy: uses.length,
+            uses: uses.slice(0, 6),
+          });
+        } else if (count === 1) {
+          out.namelistSingle.issues.push({
+            namelist: name,
+            usedBy: uses.length,
+            uses: uses.slice(0, 6),
+          });
+        }
+      }
+    } else {
+      if (!namelistText) out.namelistEmpty.error = 'descr_namelists.txt not found';
+      if (!smText) out.namelistEmpty.error = (out.namelistEmpty.error || '') + ' descr_sm_factions.txt not found';
+      out.namelistSingle.error = out.namelistEmpty.error;
+    }
+  } catch (e) {
+    out.namelistEmpty.error = e.message;
+    out.namelistSingle.error = e.message;
+  }
+
+  // ── 3+4+5. descr_strat references vs EDCT/EDA/EDU
+  // We parse descr_strat for trait/ancillary/unit names and cross-check.
+  const stratPath = path.join(dataDir, 'world', 'maps', 'campaign', 'imperial_campaign', 'descr_strat.txt');
+  const stratText = readUtf8(stratPath);
+  const loadTraitSet = () => {
+    const t = readUtf8(path.join(dataDir, 'export_descr_character_traits.txt'));
+    if (!t) return null;
+    const set = new Set();
+    for (const ln of t.split(/\r?\n/)) {
+      const m = ln.match(/^\s*Trait\s+(\S+)/);
+      if (m) set.add(m[1]);
+    }
+    return set;
+  };
+  const loadAncSet = () => {
+    const t = readUtf8(path.join(dataDir, 'export_descr_ancillaries.txt'));
+    if (!t) return null;
+    const set = new Set();
+    for (const ln of t.split(/\r?\n/)) {
+      const m = ln.match(/^Ancillary\s+(\S+)/);
+      if (m) set.add(m[1]);
+    }
+    return set;
+  };
+  const loadUnitSet = () => {
+    const t = readUtf8(path.join(dataDir, 'export_descr_unit.txt'));
+    if (!t) return null;
+    const set = new Set();
+    for (const ln of t.split(/\r?\n/)) {
+      const m = ln.match(/^type\s+(.+?)\s*$/);
+      if (m) set.add(m[1].trim());
+    }
+    return set;
+  };
+  try {
+    if (stratText) {
+      const stratLines = stratText.split(/\r?\n/);
+      const traits = loadTraitSet();
+      const ancs = loadAncSet();
+      const units = loadUnitSet();
+      // Walk descr_strat
+      let currentFaction = null, currentChar = null;
+      for (let i = 0; i < stratLines.length; i++) {
+        const ln = stratLines[i];
+        const fm = ln.match(/^faction\s+(\w+)/);
+        if (fm) { currentFaction = fm[1]; currentChar = null; continue; }
+        const cm = ln.match(/^character\s*,?\s*([^,]+),/);
+        if (cm) { currentChar = cm[1].trim(); continue; }
+        const tm = ln.match(/^\s*traits\s+(.+)$/);
+        if (tm && traits) {
+          for (const part of tm[1].split(',')) {
+            const m = part.trim().match(/^(\S+)\s+\d+/);
+            if (m && !traits.has(m[1])) {
+              out.stratTraitRefs.issues.push({
+                trait: m[1], faction: currentFaction, character: currentChar,
+                file: 'descr_strat.txt', line: i + 1,
+              });
+            }
+          }
+        }
+        const am = ln.match(/^\s*ancillaries\s+(.+)$/);
+        if (am && ancs) {
+          for (const part of am[1].split(',')) {
+            const name = part.trim();
+            if (name && !ancs.has(name)) {
+              out.stratAncillaryRefs.issues.push({
+                ancillary: name, faction: currentFaction, character: currentChar,
+                file: 'descr_strat.txt', line: i + 1,
+              });
+            }
+          }
+        }
+        const um = ln.match(/^\s*unit\s+(.+?)\s+exp\s+\d+/);
+        if (um && units) {
+          const unit = um[1].trim();
+          if (!units.has(unit)) {
+            out.stratUnitRefs.issues.push({
+              unit, faction: currentFaction, character: currentChar,
+              file: 'descr_strat.txt', line: i + 1,
+            });
+          }
+        }
+      }
+      if (!traits) out.stratTraitRefs.error = 'export_descr_character_traits.txt not found';
+      if (!ancs) out.stratAncillaryRefs.error = 'export_descr_ancillaries.txt not found';
+      if (!units) out.stratUnitRefs.error = 'export_descr_unit.txt not found';
+    } else {
+      const err = 'descr_strat.txt not found at ' + stratPath;
+      out.stratTraitRefs.error = err;
+      out.stratAncillaryRefs.error = err;
+      out.stratUnitRefs.error = err;
+    }
+  } catch (e) {
+    const err = e.message;
+    out.stratTraitRefs.error = out.stratTraitRefs.error || err;
+    out.stratAncillaryRefs.error = out.stratAncillaryRefs.error || err;
+    out.stratUnitRefs.error = out.stratUnitRefs.error || err;
+  }
+
+  // ── 6. Faction → culture cross-ref: each faction's culture must exist in descr_cultures
+  try {
+    const smText = readUtf8(path.join(dataDir, 'descr_sm_factions.txt'));
+    const cultText = readUtf8(path.join(dataDir, 'descr_cultures.txt'));
+    if (smText && cultText) {
+      const knownCultures = new Set();
+      {
+        const lines = cultText.split(/\r?\n/);
+        let cur = null;
+        for (let i = 0; i < lines.length; i++) {
+          const idM = lines[i].match(/^\s*"([a-z][a-z0-9_]*)"\s*:\s*$/i);
+          if (idM && idM[1] !== 'cultures') {
+            for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+              if (/^\s*\{/.test(lines[j])) { knownCultures.add(idM[1]); break; }
+            }
+          }
+        }
+      }
+      const lines = smText.split(/\r?\n/);
+      let cur = null;
+      for (let i = 0; i < lines.length; i++) {
+        const fm = lines[i].match(/^\t"([a-z_0-9]+)":/);
+        if (fm) { cur = fm[1]; continue; }
+        const cm = lines[i].match(/"culture"\s*:\s*"([a-z_0-9]+)"/);
+        if (cm && cur && !knownCultures.has(cm[1])) {
+          out.factionCulture.issues.push({
+            faction: cur, culture: cm[1],
+            file: 'descr_sm_factions.txt', line: i + 1,
+          });
+        }
+      }
+    } else {
+      out.factionCulture.error = 'descr_sm_factions.txt or descr_cultures.txt not found';
+    }
+  } catch (e) { out.factionCulture.error = e.message; }
+
+  return out;
+});
+
+// descr_sm_factions structural completeness. Each faction declaration
+// should carry: namelists{men, women, surnames}, logos, colours, culture,
+// movies. Missing any of these surfaces as engine warnings (silent
+// fallback) or load errors. Reports per faction.
+ipcMain.handle('sps:validate-sm-factions', async (_, dataDir) => {
+  const out = { incomplete: [], summary: { total: 0, complete: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const smPath = path.join(dataDir, 'descr_sm_factions.txt');
+    if (!fs.existsSync(smPath)) { out.error = 'descr_sm_factions.txt not found'; return out; }
+    const lines = fs.readFileSync(smPath, 'utf8').split(/\r?\n/);
+    const facBlocks = [];
+    for (let i = 0; i < lines.length; i++) {
+      const fm = lines[i].match(/^\t"([a-z_0-9]+)":/);
+      if (fm) facBlocks.push({ name: fm[1], start: i });
+    }
+    facBlocks.push({ start: lines.length });
+    for (let i = 0; i < facBlocks.length - 1; i++) {
+      const fac = facBlocks[i];
+      out.summary.total++;
+      const blockText = lines.slice(fac.start, facBlocks[i + 1].start).join('\n');
+      const present = {
+        culture: /"culture"\s*:/.test(blockText),
+        men: /"men"\s*:\s*"\w+"/.test(blockText),
+        women: /"women"\s*:\s*"\w+"/.test(blockText),
+        surnames: /"surnames"\s*:\s*"\w+"/.test(blockText),
+        logos: /"logos"\s*:/.test(blockText),
+        colours: /"colours"\s*:/.test(blockText),
+        movies: /"movies"\s*:/.test(blockText),
+      };
+      const missing = Object.entries(present).filter(([, v]) => !v).map(([k]) => k);
+      if (missing.length === 0) out.summary.complete++;
+      else out.incomplete.push({ faction: fac.name, missing, line: fac.start + 1 });
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Log-noise scan. Reads RTW's message_log.txt and counts the
+// engine-side / cosmetic patterns that aren't directly actionable but
+// are useful to see at a glance. Also extracts the list of UNDEFINED
+// script toggles the engine warned about (one of the few actionable
+// log-only items — fix is to add console_command declarations).
+ipcMain.handle('sps:scan-log-warnings', async (_, logPath) => {
+  const out = {
+    counts: {}, undefinedToggles: [], lostLocStrings: [], lastModified: null, error: null,
+  };
+  // Auto-pick the message log if not given.
+  if (!logPath) {
+    const candidates = [
+      "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/logs/message_log.txt",
+    ];
+    for (const c of candidates) if (fs.existsSync(c)) { logPath = c; break; }
+  }
+  if (!logPath || !fs.existsSync(logPath)) { out.error = `message_log.txt not found (path=${logPath || 'auto'})`; return out; }
+  try {
+    out.lastModified = fs.statSync(logPath).mtime.toISOString();
+    const text = fs.readFileSync(logPath, 'utf8');
+    // Don't split into lines for the big patterns — count via regex matchAll
+    // which is faster on multi-MB logs.
+    const PATTERNS = {
+      "min <= max Failed": /min <= max Failed/g,
+      "recipient_get (AI diplomacy)": /recipient_get\(\) ==/g,
+      "n < N Failed (array bounds)": /n < N Failed/g,
+      "lowest_lod_id Failed": /lowest_lod_id Failed/g,
+      "flee_dx assertion": /flee_dx >= -1/g,
+      "uni_char_string length": /uni_char_string->length Failed/g,
+      "income >= 0 Failed": /income >= 0 Failed/g,
+      "STANDARD_TEXTUREs mip-map warning": /STANDARD_TEXTUREs do not support mip-map/g,
+      "Building image missing (base)": /^Building image missing /gm,
+      "Building constructed image missing": /Building constructed image missing/g,
+      "Building preconstruction image missing": /Building preconstruction image missing/g,
+      "Unit info image missing": /Unit info image .* missing/g,
+      "Unit card image missing": /Unit card image .* missing/g,
+      "Missing unit type string": /Missing unit type string/g,
+      "record.m_card_path.is_valid Failed (CRASH-CLASS)": /record\.m_card_path\.is_valid\(\) Failed/g,
+      "is_valid() Failed (CRASH-CLASS)": /^is_valid\(\) Failed$/gm,
+    };
+    for (const [label, re] of Object.entries(PATTERNS)) {
+      out.counts[label] = (text.match(re) || []).length;
+    }
+    // Undefined script toggles
+    const seen = new Set();
+    for (const m of text.matchAll(/Toggle:\s*"([^"]+)"\s*is undefined/g)) seen.add(m[1]);
+    out.undefinedToggles = [...seen].sort();
+    // Missing localised strings (one-offs, but valid mod-side fix)
+    const lost = new Set();
+    for (const m of text.matchAll(/Warning:\s*localised string\s+(\S+)\s+does not exist/g)) lost.add(m[1]);
+    out.lostLocStrings = [...lost].sort();
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Texture dimensions check. RTW's STANDARD_TEXTUREs warning fires when a
+// TGA isn't power-of-2. Mostly cosmetic (engine still loads them) but
+// surface so the modder can resize. Scans data/ui/ancillaries_cards/
+// and data/ui/<culture>/buildings/ since those are the main offenders.
+ipcMain.handle('sps:validate-texture-dimensions', async (_, dataDir) => {
+  const out = { nonPow2: [], summary: { scanned: 0, bad: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const uiDir = path.join(dataDir, 'ui');
+    if (!fs.existsSync(uiDir)) { out.error = 'ui dir not found'; return out; }
+    const isPow2 = (n) => n > 0 && (n & (n - 1)) === 0;
+    const readTgaDims = (filepath) => {
+      try {
+        const fd = fs.openSync(filepath, 'r');
+        const buf = Buffer.alloc(18);
+        fs.readSync(fd, buf, 0, 18, 0);
+        fs.closeSync(fd);
+        const w = buf.readUInt16LE(12);
+        const h = buf.readUInt16LE(14);
+        return { w, h };
+      } catch { return null; }
+    };
+    // Scan dirs we care about
+    const scanDirs = [
+      path.join(uiDir, 'ancillaries_cards'),
+      path.join(uiDir, 'ancillaries'),
+    ];
+    // Also each culture's buildings/
+    try {
+      for (const ent of fs.readdirSync(uiDir, { withFileTypes: true })) {
+        if (!ent.isDirectory()) continue;
+        const skip = ['ancillaries','ancillaries_cards','captain banners','captain_banners','faction_icons','generic','pips','resources','unit_info','units','EVENTPICS'];
+        if (skip.includes(ent.name)) continue;
+        scanDirs.push(path.join(uiDir, ent.name, 'buildings'));
+      }
+    } catch {}
+    for (const d of scanDirs) {
+      if (!fs.existsSync(d)) continue;
+      let files; try { files = fs.readdirSync(d); } catch { continue; }
+      for (const f of files) {
+        if (!/\.tga$/i.test(f)) continue;
+        const full = path.join(d, f);
+        const dims = readTgaDims(full);
+        if (!dims) continue;
+        out.summary.scanned++;
+        if (!isPow2(dims.w) || !isPow2(dims.h)) {
+          out.summary.bad++;
+          if (out.nonPow2.length < 200) out.nonPow2.push({ file: f, dir: path.relative(dataDir, d).replace(/\\/g, '/'), w: dims.w, h: dims.h });
+        }
+      }
+    }
+    out.nonPow2.sort((a, b) => a.dir.localeCompare(b.dir) || a.file.localeCompare(b.file));
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Unit image coverage. The engine looks per-faction for:
+//   * `data/ui/unit_info/<faction>/<unit>_info.tga` — battle UI info panel
+//   * `data/ui/units/<faction>/<unit>.tga`         — campaign UI unit card
+// When a faction recruits/owns a unit that lacks its image, the engine
+// logs "Unit info image ... missing" / "Unit card image ... missing".
+// Surfaces dozens per save in RIS during AI auto-recruit. Validator lists
+// gaps; auto-fix copies from any other faction that has the same unit.
+ipcMain.handle('sps:validate-unit-images', async (_, dataDir) => {
+  const out = { missingInfo: [], missingCard: [], summary: { totalUnits: 0, missingInfoCount: 0, missingCardCount: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const eduPath = path.join(dataDir, 'export_descr_unit.txt');
+    const uiInfoDir = path.join(dataDir, 'ui', 'unit_info');
+    const uiUnitsDir = path.join(dataDir, 'ui', 'units');
+    if (!fs.existsSync(eduPath)) { out.error = 'export_descr_unit.txt not found'; return out; }
+    // Parse EDU for type → ownership (factions)
+    const eduText = fs.readFileSync(eduPath, 'utf8');
+    const lines = eduText.split(/\r?\n/);
+    const unitsByFaction = {}; // faction → Set of unitName (dictionary key)
+    let curType = null, curDict = null;
+    for (const ln of lines) {
+      const tm = ln.match(/^type\s+(.+?)\s*$/);
+      if (tm) { curType = tm[1].trim(); curDict = null; continue; }
+      const dm = ln.match(/^dictionary\s+(\S+)/);
+      if (dm) curDict = dm[1].trim();
+      const om = ln.match(/^ownership\s+(.+)$/);
+      if (om && curDict) {
+        for (const f of om[1].split(',').map(s => s.trim()).filter(Boolean)) {
+          if (f === 'slave' || f === 'mercenary' || f === 'all') continue;
+          unitsByFaction[f] = unitsByFaction[f] || new Set();
+          unitsByFaction[f].add(curDict);
+        }
+      }
+    }
+    // For each (faction, unit), check info + card files
+    for (const [faction, units] of Object.entries(unitsByFaction)) {
+      const fInfoDir = path.join(uiInfoDir, faction);
+      const fCardDir = path.join(uiUnitsDir, faction);
+      const infoSet = fs.existsSync(fInfoDir) ? new Set(fs.readdirSync(fInfoDir)) : new Set();
+      const cardSet = fs.existsSync(fCardDir) ? new Set(fs.readdirSync(fCardDir)) : new Set();
+      for (const u of units) {
+        out.summary.totalUnits++;
+        const infoFile = `${u}_info.tga`;
+        const cardFile = `${u}.tga`;
+        if (!infoSet.has(infoFile)) {
+          out.missingInfo.push({ faction, unit: u, expected: `unit_info/${faction}/${infoFile}` });
+          out.summary.missingInfoCount++;
+        }
+        if (!cardSet.has(cardFile)) {
+          out.missingCard.push({ faction, unit: u, expected: `units/${faction}/${cardFile}` });
+          out.summary.missingCardCount++;
+        }
+      }
+    }
+    out.missingInfo.sort((a, b) => a.faction.localeCompare(b.faction) || a.unit.localeCompare(b.unit));
+    out.missingCard.sort((a, b) => a.faction.localeCompare(b.faction) || a.unit.localeCompare(b.unit));
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Auto-fix: copy <unit>_info.tga and <unit>.tga from any faction that has
+// them to factions that don't. Cross-faction crossover; modder can re-art
+// later. Skips units with no source anywhere.
+ipcMain.handle('sps:autofix-unit-images', async (_, dataDir) => {
+  const out = { copied: 0, copies: [], skipped: [], error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const eduPath = path.join(dataDir, 'export_descr_unit.txt');
+    const uiInfoDir = path.join(dataDir, 'ui', 'unit_info');
+    const uiUnitsDir = path.join(dataDir, 'ui', 'units');
+    if (!fs.existsSync(eduPath)) { out.error = 'export_descr_unit.txt not found'; return out; }
+    const eduText = fs.readFileSync(eduPath, 'utf8');
+    const lines = eduText.split(/\r?\n/);
+    const unitsByFaction = {};
+    let curDict = null;
+    for (const ln of lines) {
+      const tm = ln.match(/^type\s+(.+?)\s*$/);
+      if (tm) { curDict = null; continue; }
+      const dm = ln.match(/^dictionary\s+(\S+)/);
+      if (dm) curDict = dm[1].trim();
+      const om = ln.match(/^ownership\s+(.+)$/);
+      if (om && curDict) {
+        for (const f of om[1].split(',').map(s => s.trim()).filter(Boolean)) {
+          if (f === 'all') continue;
+          unitsByFaction[f] = unitsByFaction[f] || new Set();
+          unitsByFaction[f].add(curDict);
+        }
+      }
+    }
+    // Build a per-unit donor index for info + card.
+    const infoDonors = {}; // unitName → fullPath
+    const cardDonors = {};
+    if (fs.existsSync(uiInfoDir)) {
+      for (const fac of fs.readdirSync(uiInfoDir)) {
+        const dir = path.join(uiInfoDir, fac);
+        try { for (const f of fs.readdirSync(dir)) {
+          const m = f.match(/^(.+)_info\.tga$/i);
+          if (m && !infoDonors[m[1]]) infoDonors[m[1]] = path.join(dir, f);
+        } } catch {}
+      }
+    }
+    if (fs.existsSync(uiUnitsDir)) {
+      for (const fac of fs.readdirSync(uiUnitsDir)) {
+        const dir = path.join(uiUnitsDir, fac);
+        try { for (const f of fs.readdirSync(dir)) {
+          const m = f.match(/^(.+)\.tga$/i);
+          if (m && !cardDonors[m[1]]) cardDonors[m[1]] = path.join(dir, f);
+        } } catch {}
+      }
+    }
+    for (const [faction, units] of Object.entries(unitsByFaction)) {
+      const fInfoDir = path.join(uiInfoDir, faction);
+      const fCardDir = path.join(uiUnitsDir, faction);
+      for (const u of units) {
+        const infoFile = `${u}_info.tga`;
+        const cardFile = `${u}.tga`;
+        const infoDst = path.join(fInfoDir, infoFile);
+        const cardDst = path.join(fCardDir, cardFile);
+        if (!fs.existsSync(infoDst)) {
+          if (infoDonors[u]) {
+            try {
+              if (!fs.existsSync(fInfoDir)) fs.mkdirSync(fInfoDir, { recursive: true });
+              fs.copyFileSync(infoDonors[u], infoDst);
+              out.copied++;
+              if (out.copies.length < 50) out.copies.push({ to: `unit_info/${faction}/${infoFile}`, from: infoDonors[u] });
+            } catch {}
+          } else {
+            out.skipped.push({ faction, unit: u, type: 'info' });
+          }
+        }
+        if (!fs.existsSync(cardDst)) {
+          if (cardDonors[u]) {
+            try {
+              if (!fs.existsSync(fCardDir)) fs.mkdirSync(fCardDir, { recursive: true });
+              fs.copyFileSync(cardDonors[u], cardDst);
+              out.copied++;
+              if (out.copies.length < 50) out.copies.push({ to: `units/${faction}/${cardFile}`, from: cardDonors[u] });
+            } catch {}
+          } else {
+            out.skipped.push({ faction, unit: u, type: 'card' });
+          }
+        }
+      }
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Building image coverage. THREE classes of missing images:
+//   (1) base `#<culture>_<chain>.tga` exists, but the `_constructed.tga`
+//       variant is missing → engine logs "Building constructed image missing"
+//   (2) base `#<culture>_<chain>.tga` exists, but the under-construction
+//       variant at `buildings/construction/#<culture>_<chain>.tga` is
+//       missing → "Building preconstruction image missing"
+//   (3) the base file ITSELF is missing for this culture (the chain exists
+//       in EDB and a same-culture faction tries to build it) → "Building
+//       image missing". Auto-fix needs a different-culture donor for the
+//       same chain.
+// Live log surfaced all three on the all-AI Dummies run.
+ipcMain.handle('sps:validate-building-images', async (_, dataDir) => {
+  const out = { missing: [], summary: { totalChecked: 0, missingConstructed: 0, missingPreconstruction: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const uiDir = path.join(dataDir, 'ui');
+    if (!fs.existsSync(uiDir)) { out.error = `ui dir not found`; return out; }
+    const cultures = fs.readdirSync(uiDir, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !['ancillaries','ancillaries_cards','captain banners','captain_banners','faction_icons','generic','pips','resources','unit_info','units','EVENTPICS'].includes(e.name))
+      .map(e => e.name);
+    for (const culture of cultures) {
+      const bDir = path.join(uiDir, culture, 'buildings');
+      if (!fs.existsSync(bDir)) continue;
+      let files;
+      try { files = fs.readdirSync(bDir); } catch { continue; }
+      const set = new Set(files);
+      // Preconstruction dir is buildings/construction/
+      const preDir = path.join(bDir, 'construction');
+      let preSet = new Set();
+      if (fs.existsSync(preDir)) {
+        try { preSet = new Set(fs.readdirSync(preDir)); } catch {}
+      }
+      for (const f of files) {
+        const m = f.match(new RegExp(`^#${culture}_(.+)\\.tga$`, 'i'));
+        if (!m || /_constructed$/.test(m[1])) continue;
+        out.summary.totalChecked++;
+        const constructed = `#${culture}_${m[1]}_constructed.tga`;
+        const missingC = !set.has(constructed) && !set.has(constructed.toLowerCase());
+        const preconstructed = `#${culture}_${m[1]}.tga`;
+        const missingP = !preSet.has(preconstructed) && !preSet.has(preconstructed.toLowerCase());
+        if (missingC) out.summary.missingConstructed++;
+        if (missingP) out.summary.missingPreconstruction++;
+        if (missingC || missingP) {
+          out.missing.push({
+            culture, chain: m[1],
+            missingConstructed: missingC,
+            missingPreconstruction: missingP,
+          });
+        }
+      }
+    }
+    out.missing.sort((a, b) => a.culture.localeCompare(b.culture) || a.chain.localeCompare(b.chain));
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Auto-fix: three-class building-image seeder.
+//   (1) Missing _constructed slot → copy from base #<culture>_<chain>.tga (same culture)
+//   (2) Missing buildings/construction/ slot → copy from base (same culture)
+//   (3) Missing base image entirely → find any OTHER culture with that
+//       chain's image and copy it (cosmetic crossover, modder can re-art
+//       later). Skips chains absent in every culture (engine doesn't want
+//       those for any faction).
+ipcMain.handle('sps:autofix-building-images', async (_, dataDir) => {
+  const out = { copied: 0, copies: [], error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const uiDir = path.join(dataDir, 'ui');
+    if (!fs.existsSync(uiDir)) { out.error = `ui dir not found`; return out; }
+    const cultures = fs.readdirSync(uiDir, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !['ancillaries','ancillaries_cards','captain banners','captain_banners','faction_icons','generic','pips','resources','unit_info','units','EVENTPICS'].includes(e.name))
+      .map(e => e.name);
+    // First pass: build the UNION of all <chain>s that any culture has.
+    // Also remember which cultures have each chain (donor candidates for #3).
+    const chainDonors = {}; // chain → [{culture, path}, ...]
+    for (const culture of cultures) {
+      const bDir = path.join(uiDir, culture, 'buildings');
+      if (!fs.existsSync(bDir)) continue;
+      let files; try { files = fs.readdirSync(bDir); } catch { continue; }
+      for (const f of files) {
+        const m = f.match(new RegExp(`^#${culture}_(.+)\\.tga$`, 'i'));
+        if (!m || /_constructed$/.test(m[1])) continue;
+        const chain = m[1];
+        chainDonors[chain] = chainDonors[chain] || [];
+        chainDonors[chain].push({ culture, path: path.join(bDir, f) });
+      }
+    }
+    // Pass 2: for each culture, seed missing constructed + preconstruction
+    // for its OWN base images, plus copy from donor culture for any chain
+    // absent in this culture but present elsewhere.
+    for (const culture of cultures) {
+      const bDir = path.join(uiDir, culture, 'buildings');
+      if (!fs.existsSync(bDir)) {
+        // Skip cultures that have no buildings dir at all — unlikely to
+        // be a real culture that needs auto-seeded crossovers.
+        continue;
+      }
+      let files; try { files = fs.readdirSync(bDir); } catch { continue; }
+      const set = new Set(files);
+      const preDir = path.join(bDir, 'construction');
+      let preSet = new Set();
+      if (fs.existsSync(preDir)) { try { preSet = new Set(fs.readdirSync(preDir)); } catch {} }
+      // (1) + (2) — for existing base images in this culture.
+      for (const f of files) {
+        const m = f.match(new RegExp(`^#${culture}_(.+)\\.tga$`, 'i'));
+        if (!m || /_constructed$/.test(m[1])) continue;
+        const constructed = `#${culture}_${m[1]}_constructed.tga`;
+        if (!set.has(constructed)) {
+          try {
+            fs.copyFileSync(path.join(bDir, f), path.join(bDir, constructed));
+            out.copied++;
+            if (out.copies.length < 50) out.copies.push({ from: f, to: constructed });
+          } catch {}
+        }
+        const preconstructed = `#${culture}_${m[1]}.tga`;
+        if (!preSet.has(preconstructed)) {
+          try {
+            if (!fs.existsSync(preDir)) fs.mkdirSync(preDir, { recursive: true });
+            fs.copyFileSync(path.join(bDir, f), path.join(preDir, preconstructed));
+            out.copied++;
+            if (out.copies.length < 50) out.copies.push({ from: f, to: `construction/${preconstructed}` });
+          } catch {}
+        }
+      }
+      // (3) — for chains this culture doesn't have, but another does.
+      for (const [chain, donors] of Object.entries(chainDonors)) {
+        const expected = `#${culture}_${chain}.tga`;
+        if (set.has(expected)) continue; // already there
+        const donor = donors.find(d => d.culture !== culture);
+        if (!donor) continue;
+        try {
+          fs.copyFileSync(donor.path, path.join(bDir, expected));
+          out.copied++;
+          if (out.copies.length < 50) out.copies.push({ from: `${donor.culture}/${path.basename(donor.path)}`, to: `${culture}/buildings/${expected}` });
+          // Also seed its constructed + preconstruction since base is brand-new.
+          const constructed = `#${culture}_${chain}_constructed.tga`;
+          try { fs.copyFileSync(donor.path, path.join(bDir, constructed)); out.copied++; } catch {}
+          try {
+            if (!fs.existsSync(preDir)) fs.mkdirSync(preDir, { recursive: true });
+            fs.copyFileSync(donor.path, path.join(preDir, expected));
+            out.copied++;
+          } catch {}
+        } catch {}
+      }
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Mercenary / unit type localization coverage. Each `type X` in EDU should
+// have `{X}`, `{X_descr}`, `{X_descr_short}` entries in text/export_units.txt.
+// Missing entries show the raw ID in-game (e.g. "merc_roman_velite_remastered"
+// instead of "Roman Velite"). Cosmetic but noisy.
+ipcMain.handle('sps:validate-unit-localization', async (_, dataDir) => {
+  const out = { missing: [], summary: { totalUnits: 0, missingNames: 0, missingDescr: 0, missingDescrShort: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const eduPath = path.join(dataDir, 'export_descr_unit.txt');
+    const locPath = path.join(dataDir, 'text', 'export_units.txt');
+    if (!fs.existsSync(eduPath)) { out.error = 'export_descr_unit.txt not found'; return out; }
+    if (!fs.existsSync(locPath)) { out.error = 'text/export_units.txt not found'; return out; }
+    const eduText = fs.readFileSync(eduPath, 'utf8');
+    const units = [];
+    for (const ln of eduText.split(/\r?\n/)) {
+      const m = ln.match(/^type\s+(.+?)\s*$/);
+      if (m) units.push(m[1].trim());
+    }
+    out.summary.totalUnits = units.length;
+    // export_units.txt is UTF-16 LE. Extract every {token} into a Set.
+    const locText = fs.readFileSync(locPath, 'utf16le').replace(/^﻿/, '');
+    const locTokens = new Set();
+    for (const m of locText.matchAll(/\{([^}]+)\}/g)) locTokens.add(m[1]);
+    for (const u of units) {
+      const missingParts = [];
+      if (!locTokens.has(u)) { missingParts.push('name'); out.summary.missingNames++; }
+      if (!locTokens.has(u + '_descr')) { missingParts.push('descr'); out.summary.missingDescr++; }
+      if (!locTokens.has(u + '_descr_short')) { missingParts.push('descr_short'); out.summary.missingDescrShort++; }
+      if (missingParts.length > 0) out.missing.push({ unit: u, missing: missingParts });
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// EDB hidden_resource cross-ref. EDB recruitment uses `hidden_resource X`
+// to gate recruit lines on tile state. If X is `aor_thracian` but descr_regions
+// has no `aor_thracian` tag (e.g. typo, faction renamed), the recruit line
+// is dead code — silently never fires. Surface as warnings.
+ipcMain.handle('sps:validate-edb-resources', async (_, dataDir) => {
+  const out = { missingResources: [], summary: { totalRefs: 0, missingCount: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const regsPath = path.join(dataDir, 'world', 'maps', 'base', 'descr_regions.txt');
+    const edbPath = path.join(dataDir, 'export_descr_buildings.txt');
+    if (!fs.existsSync(regsPath)) { out.error = 'descr_regions.txt not found'; return out; }
+    if (!fs.existsSync(edbPath)) { out.error = 'export_descr_buildings.txt not found'; return out; }
+    // Build set of valid hidden_resource names from BOTH descr_regions
+    // AND descr_sm_resources.txt. The latter declares the canonical
+    // resource list (terrain types, hidden tags, mineable goods, etc.);
+    // descr_regions just references them per-tile.
+    const regsText = fs.readFileSync(regsPath, 'utf8');
+    const validRes = new Set();
+    for (const m of regsText.matchAll(/\b(aor_\w+|homeland_\w+|rel_\w+)\b/g)) validRes.add(m[1]);
+    for (const m of regsText.matchAll(/^\t([a-z_0-9, ]+)$/gm)) {
+      for (const tok of m[1].split(/\s*,\s*/)) if (tok && /^[a-z_0-9]+$/.test(tok)) validRes.add(tok);
+    }
+    // descr_sm_resources.txt: each `"<name>": {` is a top-level resource.
+    const smResPath = path.join(dataDir, 'descr_sm_resources.txt');
+    if (fs.existsSync(smResPath)) {
+      const smResText = fs.readFileSync(smResPath, 'utf8');
+      const smLines = smResText.split(/\r?\n/);
+      for (let i = 0; i < smLines.length; i++) {
+        const idM = smLines[i].match(/^\s*"([a-z][a-z0-9_]*)"\s*:\s*$/i);
+        if (idM && idM[1] !== "resources") {
+          for (let j = i + 1; j < Math.min(i + 4, smLines.length); j++) {
+            if (/^\s*\{/.test(smLines[j])) { validRes.add(idM[1]); break; }
+          }
+        }
+      }
+    }
+    // Whitelist engine-builtin resource names that don't appear in either
+    // descr_regions or descr_sm_resources (RTW provides these implicitly).
+    const isBuiltin = (res) => /^farm(\d+)?$/.test(res);
+    // Walk EDB, find every hidden_resource X.
+    const edbText = fs.readFileSync(edbPath, 'utf8');
+    const seen = new Map();  // resource → [lines]
+    const edbLines = edbText.split(/\r?\n/);
+    for (let i = 0; i < edbLines.length; i++) {
+      const ln = edbLines[i];
+      const code = ln.split(';', 1)[0];
+      for (const m of code.matchAll(/hidden_resource\s+([a-z_0-9]+)/g)) {
+        out.summary.totalRefs++;
+        const res = m[1];
+        if (!validRes.has(res) && !isBuiltin(res)) {
+          seen.set(res, seen.get(res) || []);
+          seen.get(res).push(i + 1);
+        }
+      }
+    }
+    for (const [res, lines] of seen) {
+      out.missingResources.push({ resource: res, refCount: lines.length, firstLine: lines[0] });
+      out.summary.missingCount += lines.length;
+    }
+    out.missingResources.sort((a, b) => b.refCount - a.refCount || a.resource.localeCompare(b.resource));
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// AOR coverage report. Scans descr_regions for all `aor_X` tags, counts
+// how many regions each covers, and returns the list. The renderer
+// compares against its PRIMARY_AOR_TO_FACTION + SECONDARY_AOR_TO_FACTION
+// constants to surface uncovered tags. Provincia-side decision (which to
+// promote to primary), so we just enumerate; classification is the
+// renderer's job.
+ipcMain.handle('sps:aor-coverage', async (_, dataDir) => {
+  const out = { aors: [], error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const regsPath = path.join(dataDir, 'world', 'maps', 'base', 'descr_regions.txt');
+    if (!fs.existsSync(regsPath)) { out.error = 'descr_regions.txt not found'; return out; }
+    const text = fs.readFileSync(regsPath, 'utf8');
+    const counts = {};
+    const re = /aor_(\w+)/g;
+    let m;
+    while ((m = re.exec(text)) !== null) counts[m[1]] = (counts[m[1]] || 0) + 1;
+    out.aors = Object.entries(counts).map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// descr_regions consistency check. Three classes of issues:
+//   1. Regions in descr_strat that don't exist in descr_regions
+//   2. Settlements in descr_strat that don't match the named settlement of
+//      their declared region in descr_regions
+//   3. Duplicate region pixel-colors in descr_regions (engine crash on load)
+ipcMain.handle('sps:validate-descr-regions', async (_, dataDir) => {
+  const out = { stratMissingRegion: [], stratWrongSettlement: [], duplicateColors: [], orphanRegions: [], error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const regsPath = path.join(dataDir, 'world', 'maps', 'base', 'descr_regions.txt');
+    const stratPath = path.join(dataDir, 'world', 'maps', 'campaign', 'imperial_campaign', 'descr_strat.txt');
+    if (!fs.existsSync(regsPath)) { out.error = `descr_regions.txt not found at ${regsPath}`; return out; }
+    if (!fs.existsSync(stratPath)) { out.error = `descr_strat.txt not found at ${stratPath}`; return out; }
+
+    // Parse descr_regions blocks. Format: each region is 5 non-blank lines —
+    // region_name, settlement_name, faction, hidden_resources, tile_color_rgb.
+    const regs = {};  // regionName → { settlement, color, line }
+    const regsLines = fs.readFileSync(regsPath, 'utf8').split(/\r?\n/);
+    let i = 0;
+    while (i < regsLines.length) {
+      const ln = regsLines[i];
+      if (!ln || ln.startsWith(';') || ln.startsWith('\t')) { i++; continue; }
+      // Non-tab line = region name. Walk to gather subsequent tabbed lines.
+      const name = ln.trim();
+      const block = { settlement: null, color: null, line: i + 1 };
+      let j = i + 1;
+      let tabIdx = 0;
+      while (j < regsLines.length && (regsLines[j].startsWith('\t') || !regsLines[j].trim() || regsLines[j].startsWith(';'))) {
+        const t = regsLines[j].trim();
+        if (t && !t.startsWith(';')) {
+          if (tabIdx === 0) block.settlement = t;
+          else if (tabIdx === 3) block.color = t;  // 4th tabbed entry is color
+          tabIdx++;
+        }
+        j++;
+      }
+      if (name && name !== 'Terra_Incognita') regs[name] = block;
+      i = j;
+    }
+    // Duplicate color detection
+    const colorMap = {};
+    for (const [name, r] of Object.entries(regs)) {
+      if (!r.color) continue;
+      colorMap[r.color] = colorMap[r.color] || [];
+      colorMap[r.color].push({ region: name, line: r.line });
+    }
+    for (const [col, regions] of Object.entries(colorMap)) {
+      if (regions.length > 1) {
+        out.duplicateColors.push({ color: col, regions });
+      }
+    }
+    // descr_strat region/settlement cross-check
+    const stratLines = fs.readFileSync(stratPath, 'utf8').split(/\r?\n/);
+    let curRegion = null;
+    const stratRegionUsage = new Set();
+    for (let k = 0; k < stratLines.length; k++) {
+      const ln = stratLines[k];
+      const rm = ln.match(/^\s*region\s+(\S+)/);
+      if (rm) {
+        curRegion = rm[1];
+        stratRegionUsage.add(curRegion);
+        if (!regs[curRegion]) {
+          out.stratMissingRegion.push({ region: curRegion, file: 'descr_strat.txt', line: k + 1 });
+        }
+        continue;
+      }
+      // settlement under `creator <faction>` then `region <name>` is usually
+      // followed by `; <CityName>` and `	settlement / { city <Name>` etc.
+      // For a quick check, look at lines like `\t\tcity <Name>` after `region`.
+      const cm = ln.match(/^\s*city\s+(\S+)/);
+      if (cm && curRegion && regs[curRegion] && regs[curRegion].settlement && cm[1] !== regs[curRegion].settlement) {
+        out.stratWrongSettlement.push({
+          region: curRegion,
+          stratSays: cm[1],
+          regionsExpects: regs[curRegion].settlement,
+          file: 'descr_strat.txt', line: k + 1,
+        });
+      }
+    }
+    // Orphan regions: in descr_regions but not used by descr_strat
+    for (const name of Object.keys(regs)) {
+      if (!stratRegionUsage.has(name)) {
+        out.orphanRegions.push({ region: name, settlement: regs[name].settlement, file: 'descr_regions.txt', line: regs[name].line });
+      }
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Check that every settlement in descr_strat has `building { type
+// hinterland_region region_base }`. The engine doesn't loudly complain when
+// it's missing, but the region scroll then renders without the base
+// siege/blockade/empire-size effects — easy to ship a region with the
+// building stripped during edits.
+ipcMain.handle('sps:validate-region-scrolls', async (_, dataDir) => {
+  const out = { missing: [], total: 0, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const stratPath = path.join(dataDir, 'world', 'maps', 'campaign', 'imperial_campaign', 'descr_strat.txt');
+    if (!fs.existsSync(stratPath)) { out.error = `descr_strat.txt not found at ${stratPath}`; return out; }
+    const lines = fs.readFileSync(stratPath, 'utf8').split(/\r?\n/);
+    // Walk settlement blocks. A settlement starts with `settlement` and ends
+    // at the next matching closing brace; capture region name + scan for the
+    // `type hinterland_region region_base` line within.
+    let i = 0;
+    while (i < lines.length) {
+      const ln = lines[i];
+      if (!/^\s*settlement\b/.test(ln)) { i++; continue; }
+      // Walk to opening brace, then track depth to find the matching close.
+      let j = i + 1;
+      while (j < lines.length && !/^\s*\{/.test(lines[j])) j++;
+      if (j >= lines.length) break;
+      let depth = 1; j++;
+      const blockStart = i;
+      let region = null;
+      let hasRegionBase = false;
+      for (; j < lines.length && depth > 0; j++) {
+        const t = lines[j];
+        if (/\{/.test(t)) depth += (t.match(/\{/g) || []).length;
+        if (/\}/.test(t)) depth -= (t.match(/\}/g) || []).length;
+        if (depth < 0) break;
+        const rm = t.match(/^\s*region\s+(\S+)/);
+        if (rm) region = rm[1];
+        // Match `type hinterland_region region_base` regardless of leading
+        // whitespace. We don't require it to be on its own line because
+        // RTW's parser tolerates both.
+        if (/\btype\s+hinterland_region\s+region_base\b/.test(t)) hasRegionBase = true;
+      }
+      out.total++;
+      if (!hasRegionBase) {
+        out.missing.push({ region: region || '(unknown region)', line: blockStart + 1 });
+      }
+      i = j;
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Auto-fix: seed `data/ui/<target>/portraits/portraits/{young,old}/` for
+// every broken target culture by copying tgas from any culture that has
+// them populated. Mirrors the manual fix run earlier. Backs up nothing —
+// pure copy-if-missing.
+ipcMain.handle('sps:autofix-portraits', async (_, dataDir) => {
+  const out = { copied: 0, sources: [], missingDonor: [], error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const uiDir = path.join(dataDir, 'ui');
+    const cultDir = path.join(dataDir, 'descr_cultures.txt');
+    if (!fs.existsSync(uiDir)) { out.error = `ui dir not found at ${uiDir}`; return out; }
+    if (!fs.existsSync(cultDir)) { out.error = `descr_cultures.txt not found`; return out; }
+    // Parse target cultures (portrait mapping targets)
+    const text = fs.readFileSync(cultDir, 'utf8');
+    const lines = text.split(/\r?\n/);
+    const mapping = {};
+    let cur = null;
+    for (let i = 0; i < lines.length; i++) {
+      const code = lines[i].split(';;', 1)[0];
+      const idM = code.match(/^\s*"([a-z][a-z0-9_]*)"\s*:\s*$/i);
+      if (idM && idM[1] !== "cultures") {
+        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+          if (/^\s*\{/.test(lines[j])) { cur = idM[1]; break; }
+        }
+        continue;
+      }
+      const pmM = code.match(/"portrait mapping"\s*:\s*"([a-z][a-z0-9_]*)"/i);
+      if (pmM && cur) mapping[cur] = pmM[1];
+    }
+    const targets = [...new Set(Object.values(mapping))];
+    // Find a donor culture with populated young/old dirs (case-tolerant).
+    const findPopulated = () => {
+      for (const ent of fs.readdirSync(uiDir, { withFileTypes: true })) {
+        if (!ent.isDirectory()) continue;
+        // Try both "portraits" and "Portraits"
+        for (const p of ['portraits', 'Portraits']) {
+          const young = path.join(uiDir, ent.name, p, 'portraits', 'young');
+          const old = path.join(uiDir, ent.name, p, 'portraits', 'old');
+          if (fs.existsSync(young) && fs.existsSync(old)) {
+            const yCount = fs.readdirSync(young).filter(f => /\.tga$/i.test(f)).length;
+            const oCount = fs.readdirSync(old).filter(f => /\.tga$/i.test(f)).length;
+            if (yCount > 0 && oCount > 0) return { culture: ent.name, youngDir: young, oldDir: old };
+          }
+        }
+        // Also try scythian-style 1portraits/cards
+        const cardsY = path.join(uiDir, ent.name, '1portraits', 'cards', 'young', 'generals');
+        const cardsO = path.join(uiDir, ent.name, '1portraits', 'cards', 'old', 'generals');
+        if (fs.existsSync(cardsY) && fs.existsSync(cardsO)) {
+          const yCount = fs.readdirSync(cardsY).filter(f => /\.tga$/i.test(f)).length;
+          const oCount = fs.readdirSync(cardsO).filter(f => /\.tga$/i.test(f)).length;
+          if (yCount > 0 && oCount > 0) return { culture: ent.name, youngDir: cardsY, oldDir: cardsO };
+        }
+      }
+      return null;
+    };
+    const donor = findPopulated();
+    if (!donor) { out.error = 'no culture has populated young/old portraits to use as donor'; return out; }
+    out.donor = { culture: donor.culture, youngDir: donor.youngDir, oldDir: donor.oldDir };
+    for (const target of targets) {
+      const tgtYoung = path.join(uiDir, target, 'portraits', 'portraits', 'young');
+      const tgtOld = path.join(uiDir, target, 'portraits', 'portraits', 'old');
+      fs.mkdirSync(tgtYoung, { recursive: true });
+      fs.mkdirSync(tgtOld, { recursive: true });
+      let copied = 0;
+      for (const f of fs.readdirSync(donor.youngDir)) {
+        if (!/\.tga$/i.test(f)) continue;
+        const dst = path.join(tgtYoung, f);
+        if (fs.existsSync(dst)) continue;
+        fs.copyFileSync(path.join(donor.youngDir, f), dst);
+        copied++;
+      }
+      for (const f of fs.readdirSync(donor.oldDir)) {
+        if (!/\.tga$/i.test(f)) continue;
+        const dst = path.join(tgtOld, f);
+        if (fs.existsSync(dst)) continue;
+        fs.copyFileSync(path.join(donor.oldDir, f), dst);
+        copied++;
+      }
+      out.sources.push({ target, copied });
+      out.copied += copied;
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Auto-fix: seed missing captain banner files from a same-culture donor
+// faction. Mirrors the manual fix run earlier on RIS (104 missing factions
+// → 395 files copied from same-culture donors). Backs up nothing — pure
+// copy-if-missing, never overwrites. Returns { copied: N, copies: [...],
+// noDonor: [...], error }.
+ipcMain.handle('sps:autofix-captain-banners', async (_, dataDir) => {
+  const out = { copied: 0, copies: [], noDonor: [], error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const cbDir = path.join(dataDir, 'ui', 'captain banners');
+    const smPath = path.join(dataDir, 'descr_sm_factions.txt');
+    if (!fs.existsSync(cbDir)) { out.error = `captain banners dir not found at ${cbDir}`; return out; }
+    if (!fs.existsSync(smPath)) { out.error = 'descr_sm_factions.txt not found'; return out; }
+    const smText = fs.readFileSync(smPath, 'utf8');
+    // Parse faction → culture map
+    const facCulture = {};
+    let cur = null;
+    for (const ln of smText.split(/\r?\n/)) {
+      const fm = ln.match(/^\t"([a-z_0-9]+)":/);
+      if (fm) { cur = fm[1]; continue; }
+      const cm = ln.match(/"culture"\s*:\s*"([a-z_0-9]+)"/);
+      if (cm && cur && !facCulture[cur]) facCulture[cur] = cm[1];
+    }
+    // Existing files (per variant)
+    const files = new Set(fs.readdirSync(cbDir));
+    const facHas = (fac) => ({
+      portrait: files.has(`captain_portrait_${fac}.tga.dds`),
+      card: files.has(`captain_card_${fac}.tga`),
+      rebelPortrait: files.has(`captain_portrait_${fac}_rebel.tga.dds`),
+      rebelCard: files.has(`captain_card_${fac}_rebel.tga`),
+    });
+    // Donor per culture: the first faction that has ALL 4 variants. If no
+    // complete donor exists for a culture, fall back to any faction with at
+    // least the base portrait + card. (Earlier version of this picked any
+    // faction with just a portrait, which could pick a faction that itself
+    // needed seeding — copy-from-self silently no-ops.)
+    const donorByCulture = {};
+    const partialDonorByCulture = {};
+    for (const [fac, cult] of Object.entries(facCulture)) {
+      const h = facHas(fac);
+      if (h.portrait && h.card && h.rebelPortrait && h.rebelCard && !donorByCulture[cult]) {
+        donorByCulture[cult] = fac;
+      }
+      if (h.portrait && h.card && !partialDonorByCulture[cult]) {
+        partialDonorByCulture[cult] = fac;
+      }
+    }
+    const pickDonor = (cult) => donorByCulture[cult] || partialDonorByCulture[cult] || null;
+    // For each faction missing any variant, copy from same-culture donor.
+    // Cross-cultural fallback: if no same-culture donor, pick from any
+    // culture's complete donor (better than dropping the faction).
+    const anyDonor = Object.values(donorByCulture)[0] || Object.values(partialDonorByCulture)[0] || null;
+    for (const fac of Object.keys(facCulture)) {
+      const cult = facCulture[fac];
+      const donor = pickDonor(cult) || anyDonor;
+      if (!donor) { out.noDonor.push({ faction: fac, culture: cult }); continue; }
+      if (donor === fac) continue; // skip self-copy (donor IS this faction)
+      const variants = [
+        ['captain_portrait_', '.tga.dds'],
+        ['captain_card_', '.tga'],
+        ['captain_portrait_', '_rebel.tga.dds'],
+        ['captain_card_', '_rebel.tga'],
+      ];
+      for (const [pref, suf] of variants) {
+        const src = path.join(cbDir, pref + donor + suf);
+        const dst = path.join(cbDir, pref + fac + suf);
+        if (fs.existsSync(src) && !fs.existsSync(dst)) {
+          fs.copyFileSync(src, dst);
+          out.copied++;
+          if (out.copies.length < 50) out.copies.push({ from: pref + donor + suf, to: pref + fac + suf });
+        }
+      }
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Captain banner coverage. Each faction needs `data/ui/captain banners/
+// captain_portrait_<faction>.tga.dds` + `captain_card_<faction>.tga` for
+// the engine's auto-spawned captain UI. Missing files trigger
+// record.m_card_path.is_valid() Failed cascades and eventually crash.
+// This was the root cause we discovered earlier (104 missing in RIS).
+ipcMain.handle('sps:validate-captain-banners', async (_, dataDir) => {
+  const out = { missing: [], summary: { factionsTotal: 0, factionsOk: 0, factionsMissing: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  try {
+    const smPath = path.join(dataDir, 'descr_sm_factions.txt');
+    const cbDir = path.join(dataDir, 'ui', 'captain banners');
+    if (!fs.existsSync(smPath)) { out.error = 'descr_sm_factions.txt not found'; return out; }
+    if (!fs.existsSync(cbDir)) { out.error = `captain banners dir not found at ${cbDir}`; return out; }
+    const smText = fs.readFileSync(smPath, 'utf8');
+    const facs = [];
+    for (const ln of smText.split(/\r?\n/)) {
+      const m = ln.match(/^\t"([a-z_0-9]+)":/);
+      if (m) facs.push(m[1]);
+    }
+    const have = new Set(fs.readdirSync(cbDir));
+    for (const fac of facs) {
+      out.summary.factionsTotal++;
+      const portrait = `captain_portrait_${fac}.tga.dds`;
+      const card = `captain_card_${fac}.tga`;
+      const rebelP = `captain_portrait_${fac}_rebel.tga.dds`;
+      const rebelC = `captain_card_${fac}_rebel.tga`;
+      const missingFiles = [];
+      if (!have.has(portrait)) missingFiles.push(portrait);
+      if (!have.has(card)) missingFiles.push(card);
+      if (!have.has(rebelP)) missingFiles.push(rebelP);
+      if (!have.has(rebelC)) missingFiles.push(rebelC);
+      if (missingFiles.length === 0) out.summary.factionsOk++;
+      else {
+        out.summary.factionsMissing++;
+        out.missing.push({ faction: fac, missing: missingFiles });
+      }
+    }
+  } catch (e) { out.error = e.message; }
+  return out;
+});
+
+// Portrait coverage audit. Engine resolves portraits through descr_cultures'
+// `"portrait mapping": "<target>"` field — so a source culture like `indian`
+// may point at the `eastern` portrait pool. We:
+//   1. Parse descr_cultures.txt → { sourceCulture: targetCulture }
+//   2. For each unique TARGET, check data/ui/<target>/portraits/portraits/
+//      {young,old} (the engine's actual lookup path).
+//   3. Report per source-culture so the modder sees which sources will hit
+//      record.m_card_path.is_valid() Failed because their target is empty.
+ipcMain.handle('sps:validate-portraits', async (_, dataDir) => {
+  const out = { sources: [], targets: [], mapping: {}, summary: { okSources: 0, brokenSources: 0, okTargets: 0, brokenTargets: 0 }, error: null };
+  if (!dataDir) { out.error = 'no dataDir provided'; return out; }
+  const uiDir = path.join(dataDir, 'ui');
+  if (!fs.existsSync(uiDir)) { out.error = `data/ui not found at ${uiDir}`; return out; }
+  // 1. Parse descr_cultures.txt for source → target portrait mapping.
+  const cultPath = path.join(dataDir, 'descr_cultures.txt');
+  if (!fs.existsSync(cultPath)) { out.error = `descr_cultures.txt not found at ${cultPath}`; return out; }
+  let cultText;
+  try { cultText = fs.readFileSync(cultPath, 'utf8'); } catch (e) { out.error = e.message; return out; }
+  const cultLines = cultText.split(/\r?\n/);
+  // Walk top-level `"<name>":` keys inside the cultures array, capturing
+  // each block's `"portrait mapping": "<target>"` value. Tolerant of
+  // tabs, comments, and the loose JSON-ish layout RR uses.
+  const mapping = {};
+  let currentSrc = null;
+  for (let i = 0; i < cultLines.length; i++) {
+    const raw = cultLines[i];
+    const code = raw.split(';;', 1)[0]; // strip ;;-style comments
+    const srcM = code.match(/^\s*"([a-z][a-z0-9_]*)"\s*:\s*$/i);
+    if (srcM) {
+      // Skip the outer "cultures" key
+      if (srcM[1] === 'cultures') continue;
+      // Heuristic: a culture block is followed within a few lines by `{`
+      let isBlock = false;
+      for (let j = i + 1; j < Math.min(i + 4, cultLines.length); j++) {
+        if (/^\s*\{/.test(cultLines[j])) { isBlock = true; break; }
+      }
+      if (isBlock) currentSrc = srcM[1];
+      continue;
+    }
+    const pmM = code.match(/"portrait mapping"\s*:\s*"([a-z][a-z0-9_]*)"/i);
+    if (pmM && currentSrc) mapping[currentSrc] = pmM[1];
+  }
+  out.mapping = mapping;
+  // 2. Audit each unique TARGET culture's actual portrait directory.
+  const tgaCount = (d) => {
+    try { return fs.readdirSync(d).filter(f => /\.tga$/i.test(f)).length; } catch { return -1; }
+  };
+  const auditTarget = (target) => {
+    const cBase = path.join(uiDir, target);
+    const facts = { target, status: 'ok', notes: [], youngCount: 0, oldCount: 0, expectedPath: `data/ui/${target}/portraits/portraits/{young,old}` };
+    if (!fs.existsSync(cBase)) {
+      facts.status = 'missing-culture-dir';
+      facts.notes.push(`data/ui/${target}/ does not exist — no source can resolve a portrait`);
+      return facts;
+    }
+    const portraitsBase = path.join(cBase, 'portraits');
+    if (!fs.existsSync(portraitsBase)) {
+      // Look for case-mismatched variants
+      let alt = null;
+      try {
+        for (const ent of fs.readdirSync(cBase, { withFileTypes: true })) {
+          if (ent.isDirectory() && ent.name.toLowerCase() === 'portraits' && ent.name !== 'portraits') { alt = ent.name; break; }
+        }
+      } catch {}
+      facts.status = alt ? 'case-mismatch' : 'missing-portraits-dir';
+      facts.notes.push(alt
+        ? `data/ui/${target}/${alt}/ has wrong case — engine expects lowercase "portraits"`
+        : `data/ui/${target}/portraits/ does not exist`);
+      return facts;
+    }
+    const portraitsPortraits = path.join(portraitsBase, 'portraits');
+    if (!fs.existsSync(portraitsPortraits)) {
+      let alt = null;
+      try {
+        for (const ent of fs.readdirSync(portraitsBase, { withFileTypes: true })) {
+          if (ent.isDirectory() && ent.name.toLowerCase() === 'portraits' && ent.name !== 'portraits') { alt = ent.name; break; }
+        }
+      } catch {}
+      facts.status = alt ? 'case-mismatch' : 'missing-portraits-portraits-dir';
+      facts.notes.push(alt
+        ? `data/ui/${target}/portraits/${alt}/ has wrong case — engine expects lowercase "portraits"`
+        : `data/ui/${target}/portraits/portraits/ does not exist (auto-spawned captains will fail)`);
+      return facts;
+    }
+    const youngDir = path.join(portraitsPortraits, 'young');
+    const oldDir = path.join(portraitsPortraits, 'old');
+    facts.youngCount = tgaCount(youngDir);
+    facts.oldCount = tgaCount(oldDir);
+    const missingYoung = facts.youngCount < 0;
+    const missingOld = facts.oldCount < 0;
+    if (missingYoung && missingOld) {
+      facts.status = 'no-young-old';
+      facts.notes.push('both young/ and old/ directories missing');
+    } else if (missingYoung || missingOld) {
+      facts.status = 'partial';
+      if (missingYoung) facts.notes.push('young/ directory missing');
+      if (missingOld) facts.notes.push('old/ directory missing');
+    } else if (facts.youngCount === 0 || facts.oldCount === 0) {
+      facts.status = 'empty';
+      if (facts.youngCount === 0) facts.notes.push('young/ has 0 .tga files');
+      if (facts.oldCount === 0) facts.notes.push('old/ has 0 .tga files');
+    } else {
+      facts.status = 'ok';
+    }
+    return facts;
+  };
+  const uniqueTargets = [...new Set(Object.values(mapping))].sort();
+  const targetFactsByName = {};
+  for (const t of uniqueTargets) {
+    const f = auditTarget(t);
+    targetFactsByName[t] = f;
+    out.targets.push(f);
+    if (f.status === 'ok') out.summary.okTargets++;
+    else out.summary.brokenTargets++;
+  }
+  // 3. Per-source-culture rollup.
+  for (const [src, target] of Object.entries(mapping)) {
+    const tFacts = targetFactsByName[target] || { status: 'unknown', notes: [] };
+    const ok = tFacts.status === 'ok';
+    out.sources.push({
+      source: src,
+      target,
+      status: tFacts.status,
+      youngCount: tFacts.youngCount || 0,
+      oldCount: tFacts.oldCount || 0,
+      notes: tFacts.notes,
+    });
+    if (ok) out.summary.okSources++; else out.summary.brokenSources++;
+  }
+  // Surface unmapped sources too (cultures present in descr_cultures but
+  // without a "portrait mapping" line — engine probably falls back to
+  // their own name).
+  out.sources.sort((a, b) => {
+    const order = { 'missing-culture-dir': 0, 'missing-portraits-dir': 1, 'missing-portraits-portraits-dir': 2, 'no-young-old': 3, 'partial': 4, 'case-mismatch': 5, 'empty': 6, 'ok': 7, 'unknown': 8 };
+    return (order[a.status] - order[b.status]) || a.source.localeCompare(b.source);
+  });
+  return out;
 });
 
 ipcMain.handle('sps:jump-to', async (_, fileName, searchText, line) => {

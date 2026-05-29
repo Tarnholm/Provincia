@@ -556,18 +556,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -730,18 +718,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -872,18 +848,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -948,18 +912,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -1021,18 +973,6 @@
     "units": [
       {
         "name": "roman general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -1201,42 +1141,6 @@
       {
         "name": "roman general",
         "exp": 1,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
         "armour": 0,
         "weapon": 0
       }
@@ -1478,18 +1382,6 @@
     "units": [
       {
         "name": "roman general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -2128,7 +2020,7 @@
     ]
   },
   {
-    "name": "Nymphius",
+    "name": "Niumpsis",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Neapolis",
@@ -2218,7 +2110,7 @@
     ]
   },
   {
-    "name": "Statis",
+    "name": "Statiis",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Paestum",
@@ -2296,7 +2188,19 @@
         "weapon": 0
       },
       {
-        "name": "roman rorarii",
+        "name": "aor oscan spearmen southern",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor oscan spearmen southern",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor oscan javelinmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -42653,7 +42557,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Paapiis",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Consentia",
@@ -42713,7 +42617,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Kerrins",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Petelia",
@@ -44566,7 +44470,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Minatis",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Capua",
@@ -44626,7 +44530,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Auls",
     "charType": "general",
     "armyClass": "field",
     "location": "Outside Capua",
@@ -55145,7 +55049,7 @@
     "_garrisoned": true
   },
   {
-    "name": "Zamir Ali Zarih II",
+    "name": "Zamir Ali Zarih",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Gerrha",
@@ -55601,7 +55505,7 @@
     "_garrisoned": true
   },
   {
-    "name": "Zamir Ali Zarih II",
+    "name": "Zamir Ali Zarih",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Sabbatha",
@@ -56652,7 +56556,7 @@
     "_garrisoned": true
   },
   {
-    "name": "Zamir Ali Zarih II",
+    "name": "Zamir Ali Zarih",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Sapphar",
@@ -62916,7 +62820,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Markos",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Grumentum",
@@ -62976,7 +62880,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Vettius",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Potentia",
@@ -64442,7 +64346,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Seppiis",
     "charType": "general",
     "armyClass": "field",
     "location": "",
@@ -65954,7 +65858,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Dazos",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Brundisium",
@@ -66026,7 +65930,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Bosat",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Uria",
@@ -66430,7 +66334,7 @@
     "_garrisoned": true
   },
   {
-    "name": "Zamir Ali Zarih II",
+    "name": "Zamir Ali Zarih",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Karna",
@@ -70845,7 +70749,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Apaes",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Asculum",
@@ -70905,7 +70809,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Pompo",
     "charType": "general",
     "armyClass": "field",
     "location": "",
@@ -71426,7 +71330,7 @@
     "_garrisoned": true
   },
   {
-    "name": "Zamir Ali Zarih II",
+    "name": "Zamir Ali Zarih",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Tamna",
@@ -72539,7 +72443,7 @@
     "_garrisoned": true
   },
   {
-    "name": "Zamir Ali Zarih II",
+    "name": "Zamir Ali Zarih",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Marib",
@@ -72983,7 +72887,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Numeriis",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Bovianum",
@@ -73043,7 +72947,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Heriis",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Compsa",
@@ -73207,7 +73111,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Nurtins",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Sarsina",
@@ -73267,7 +73171,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Vuvkis",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Compsa",
@@ -81337,7 +81241,7 @@
     ]
   },
   {
-    "name": "Titus",
+    "name": "Larth",
     "charType": "general",
     "armyClass": "garrison",
     "location": "Volsinii",
@@ -81398,7 +81302,7 @@
     ]
   },
   {
-    "name": "Aulus",
+    "name": "Velthur",
     "charType": "general",
     "armyClass": "field",
     "location": "",

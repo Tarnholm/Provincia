@@ -862,6 +862,131 @@ function getAors(tags) {
   return out;
 }
 
+// Primary AORs are the 15 broad cultural buckets that span entire regions
+// of the map. Anything not in this set is treated as a "secondary" — a
+// narrower sub-cultural / regional recruitment zone (aor_thessalian inside
+// aor_greek, aor_belgae inside aor_celtic, etc). The AOR map toggle uses
+// this to let the user view either layer in isolation.
+// Each primary AOR maps to a representative faction whose descr_sm_factions
+// colour drives that AOR's fill. RIS-specific mapping; if the active mod
+// doesn't ship one of these factions, the renderer falls back to the
+// cycling CULTURE_PALETTE for that AOR. PRIMARY_AOR_TAGS is derived from
+// this map so the two stay in lockstep.
+const PRIMARY_AOR_TO_FACTION = {
+  // Broad cultural buckets
+  greek:        "greeks",
+  gallic:       "volcae",       // replaces broader aor_celtic
+  galatian:     "galatians",
+  belgic:       "belgae",
+  asian:        "atropatene",
+  iberian:      "arevaci",
+  arab:         "nabataea",
+  germanic:     "suebi",
+  scythian:     "royal_scythians",
+  brittonic:    "trinovantes",
+  libyan:       "libyans",
+  ethiopian:    "axum",
+  getic:        "getae",
+  numidian:     "massylii",
+  southern_illyrian: "illyrian_kingdom",  // replaces broader aor_illyrian
+  northern_illyrian: "daesitiates",
+  thracian:     "odrysians",
+  egyptian:     "egypt",
+  // Italic / Mediterranean sub-cultures promoted to primary
+  indian:       "mauryan",
+  venedic:      "venedae",
+  oscan:        "samnites",
+  etrurian:     "volsinii",
+  umbrian:      "sarsinates",
+  messapian:    "messapians",
+  picentine:    "picentes",
+  latin:        "romans_julii",
+  sardinian:    "sardinians",
+  // Anatolian sub-cultures promoted to primary
+  phrygian:     "lysiad",
+  paphlagonian: "paphlagonia",
+  cappadocian:  "cappadocia",
+  karian:       "chrysaoria",
+  lycian:       "lycia",
+  pisidian:     "selge",
+  cilician:     "cilicians",
+  mysian:       "pergamon",
+  lydian:       "bruttians",
+  bithynian:    "bithynia",
+  // Promoted to primary by the per-region override rules below.
+  isaurian:     null,        // cycling palette (no faction mapping yet)
+  pamphylian:   "pontus",    // shares pontus's faction color
+  macedonian:   "antigonid", // shares antigonid's faction color
+};
+const PRIMARY_AOR_TAGS = new Set(Object.keys(PRIMARY_AOR_TO_FACTION));
+// Secondary AORs that should still use a faction colour (not the cycling
+// palette). These are mostly Greek city-states / Anatolian ports that the
+// user wants colour-matched to their corresponding faction even though
+// they're not promoted to primary.
+const SECONDARY_AOR_TO_FACTION = {
+  kian:         "cius",
+  kyzikan:      "cyzicus",
+  sinopian:     "sinope",
+  herakleiote:  "heraclea_pontica",
+  prienian:     "priene",
+  milesian:     "miletus",
+  chian:        "chios",
+};
+// AOR precedence overrides. When BOTH `winner` and `loser` co-tag a region,
+// the winner takes the primary slot (driving the fill) and the loser drops
+// to secondary (stripe overlay). `except` is an optional list of city names
+// where the rule is suspended (e.g. Halikarnassos keeps greek as primary
+// even though it's tagged with karian — historically Greek-Karian mixed).
+// Rules are applied in order; later ones can override earlier.
+const AOR_OVERRIDES = [
+  // Anatolian primaries override the broad greek bucket
+  { winner: "karian",    loser: "greek",     except: ["halikarnassos"] },
+  { winner: "lycian",    loser: "greek" },
+  { winner: "pisidian",  loser: "greek" },
+  { winner: "bithynian", loser: "greek" },
+  { winner: "pamphylian", loser: "greek" },
+  { winner: "macedonian", loser: "greek" },
+  // Anatolian sub-relationships
+  { winner: "isaurian",  loser: "phrygian" },
+  { winner: "lydian",    loser: "asian" },
+  { winner: "mysian",    loser: "phrygian" },
+];
+function splitAorsByLayer(tags, cityName) {
+  const all = getAors(tags);
+  const primary = [], secondary = [];
+  // First pass: bucket by membership in PRIMARY_AOR_TAGS.
+  for (const a of all) {
+    if (PRIMARY_AOR_TAGS.has(a)) primary.push(a);
+    else secondary.push(a);
+  }
+  // Apply precedence overrides: when both winner+loser are present, demote
+  // loser → secondary, promote winner → primary front. Works regardless of
+  // which bucket each starts in (e.g. isaurian starts in primary; greek
+  // also starts in primary; pamphylian also primary now).
+  const city = (cityName || "").toLowerCase();
+  for (const rule of AOR_OVERRIDES) {
+    if (rule.except && rule.except.includes(city)) continue;
+    if (!all.includes(rule.winner) || !all.includes(rule.loser)) continue;
+    // Demote loser to head of secondary
+    const pIdx = primary.indexOf(rule.loser);
+    if (pIdx >= 0) {
+      primary.splice(pIdx, 1);
+      if (!secondary.includes(rule.loser)) secondary.unshift(rule.loser);
+    }
+    // Promote winner to head of primary
+    const sIdx = secondary.indexOf(rule.winner);
+    if (sIdx >= 0) {
+      secondary.splice(sIdx, 1);
+      if (!primary.includes(rule.winner)) primary.unshift(rule.winner);
+    } else if (primary.includes(rule.winner)) {
+      // Already primary — just move to front so it wins fill ordering
+      primary.splice(primary.indexOf(rule.winner), 1);
+      primary.unshift(rule.winner);
+    }
+  }
+  return { primary, secondary, all };
+}
+
 const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "garrison", "happiness", "income", "public_order"]);
 
 // Per-tile geography palette. Decoded from RTW's map_ground_types.tga whose
@@ -1557,11 +1682,9 @@ function App() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [dashResult, setDashResult] = useState(null);
   const [dashLoading, setDashLoading] = useState(false);
-  useEffect(() => {
-    if (!showDashboard || !window.electronAPI?.validateMod) return;
-    setDashLoading(true);
-    window.electronAPI.validateMod().then(r => setDashResult(r)).catch(e => setDashResult({ error: e?.message })).finally(() => setDashLoading(false));
-  }, [showDashboard]);
+  const [portraitAudit, setPortraitAudit] = useState(null);
+  // (The validate-mod effect that uses modDataDir is declared further down
+  // after the modDataDir useState — avoids the TDZ that bit 0.9.680.)
   // 2026-05-26: Save entity-budget health — engine's ~65,536 (2^16) pointer
   // registry is shared between live characters AND per-faction dynasty-pool
   // (dead) records. Long campaigns bloat the dead pool steadily (~8.6/turn);
@@ -1997,6 +2120,16 @@ function App() {
   const [colorMode, setColorMode] = useState(
     () => localStorage.getItem("colorMode") || "faction"
   );
+  // AOR map: which AOR per region drives the fill colour. "primary" = the
+  // broadest (most-common globally — e.g. aor_greek across all greek regions);
+  // "secondary" = the narrowest (least-common — e.g. aor_thessalian, the
+  // specific sub-region). Persisted so the user keeps their chosen view.
+  const [aorView, setAorView] = useState(
+    () => localStorage.getItem("aorView") || "primary"
+  );
+  useEffect(() => { localStorage.setItem("aorView", aorView); }, [aorView]);
+  // Live filter for AOR legend rows; not persisted (transient UI state).
+  const [aorLegendFilter, setAorLegendFilter] = useState("");
 
   // Prevent zooming out past the fitted view
   const minZoom = 1,
@@ -2539,6 +2672,158 @@ function App() {
   const factionDisplayMapRef = useRef({});
 
   const [modDataDir, setModDataDir] = useState(null);
+  // Portrait audit — fires when the Validate dashboard opens. Declared here
+  // (after modDataDir's useState) to avoid TDZ — referencing modDataDir in
+  // a useEffect dep array BEFORE its const declaration crashed the whole
+  // render in 0.9.680 with "Cannot access 'an' before initialization".
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validatePortraits || !modDataDir) {
+      setPortraitAudit(null);
+      return;
+    }
+    window.electronAPI.validatePortraits(modDataDir)
+      .then(r => setPortraitAudit(r))
+      .catch(e => setPortraitAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  // Original validate-mod check (chains/levels/strat/locale/orphans/VC).
+  // Reads from script-suite config dir first, falls back to live modDataDir
+  // when configDir doesn't have the file — so dev-pill Import (which doesn't
+  // touch the script-suite config dir) also satisfies the validator.
+  useEffect(() => {
+    if (!showDashboard || !window.electronAPI?.validateMod) return;
+    setDashLoading(true);
+    window.electronAPI.validateMod(modDataDir).then(r => setDashResult(r)).catch(e => setDashResult({ error: e?.message })).finally(() => setDashLoading(false));
+  }, [showDashboard, modDataDir]);
+  // Extra mod-data audits: namelist empties + descr_strat cross-refs.
+  const [modExtraAudit, setModExtraAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateModExtra || !modDataDir) {
+      setModExtraAudit(null);
+      return;
+    }
+    window.electronAPI.validateModExtra(modDataDir)
+      .then(r => setModExtraAudit(r))
+      .catch(e => setModExtraAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [captainBannerAudit, setCaptainBannerAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateCaptainBanners || !modDataDir) {
+      setCaptainBannerAudit(null);
+      return;
+    }
+    window.electronAPI.validateCaptainBanners(modDataDir)
+      .then(r => setCaptainBannerAudit(r))
+      .catch(e => setCaptainBannerAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [descrRegionsAudit, setDescrRegionsAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateDescrRegions || !modDataDir) {
+      setDescrRegionsAudit(null);
+      return;
+    }
+    window.electronAPI.validateDescrRegions(modDataDir)
+      .then(r => setDescrRegionsAudit(r))
+      .catch(e => setDescrRegionsAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [regionScrollsAudit, setRegionScrollsAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateRegionScrolls || !modDataDir) {
+      setRegionScrollsAudit(null);
+      return;
+    }
+    window.electronAPI.validateRegionScrolls(modDataDir)
+      .then(r => setRegionScrollsAudit(r))
+      .catch(e => setRegionScrollsAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [smFactionsAudit, setSmFactionsAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateSmFactions || !modDataDir) {
+      setSmFactionsAudit(null);
+      return;
+    }
+    window.electronAPI.validateSmFactions(modDataDir)
+      .then(r => setSmFactionsAudit(r))
+      .catch(e => setSmFactionsAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [aorCoverage, setAorCoverage] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.aorCoverage || !modDataDir) {
+      setAorCoverage(null);
+      return;
+    }
+    window.electronAPI.aorCoverage(modDataDir)
+      .then(r => setAorCoverage(r))
+      .catch(e => setAorCoverage({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [edbResAudit, setEdbResAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateEdbResources || !modDataDir) {
+      setEdbResAudit(null);
+      return;
+    }
+    window.electronAPI.validateEdbResources(modDataDir)
+      .then(r => setEdbResAudit(r))
+      .catch(e => setEdbResAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [buildingImagesAudit, setBuildingImagesAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateBuildingImages || !modDataDir) {
+      setBuildingImagesAudit(null);
+      return;
+    }
+    window.electronAPI.validateBuildingImages(modDataDir)
+      .then(r => setBuildingImagesAudit(r))
+      .catch(e => setBuildingImagesAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [unitLocAudit, setUnitLocAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateUnitLocalization || !modDataDir) {
+      setUnitLocAudit(null);
+      return;
+    }
+    window.electronAPI.validateUnitLocalization(modDataDir)
+      .then(r => setUnitLocAudit(r))
+      .catch(e => setUnitLocAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [unitImagesAudit, setUnitImagesAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateUnitImages || !modDataDir) {
+      setUnitImagesAudit(null);
+      return;
+    }
+    window.electronAPI.validateUnitImages(modDataDir)
+      .then(r => setUnitImagesAudit(r))
+      .catch(e => setUnitImagesAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
+  const [logWarningsAudit, setLogWarningsAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard || !window.electronAPI?.scanLogWarnings) return;
+    window.electronAPI.scanLogWarnings(null)
+      .then(r => setLogWarningsAudit(r))
+      .catch(e => setLogWarningsAudit({ error: e?.message }));
+  }, [showDashboard]);
+  const [textureDimsAudit, setTextureDimsAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateTextureDimensions || !modDataDir) {
+      setTextureDimsAudit(null);
+      return;
+    }
+    window.electronAPI.validateTextureDimensions(modDataDir)
+      .then(r => setTextureDimsAudit(r))
+      .catch(e => setTextureDimsAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
   // Crosstalk with Manipula (the recruitment tool): both apps edit the same
   // C:\RIS\RIS\data. When Manipula saves recruitment to
   // export_descr_buildings.txt, the main process file-watches it and notifies
@@ -5819,50 +6104,88 @@ function App() {
             return [Math.max(0,Math.min(255,baseCol[0]+v)), Math.max(0,Math.min(255,baseCol[1]+v)), Math.max(0,Math.min(255,baseCol[2]+v))];
           }));
       } else if (colorMode === "aor") {
-        // AOR map mode. Each region's `aor_X` tags are turned into a colour
-        // set; the FIRST AOR fills the region and the rest stripe over it.
-        //
-        // 0.9.634: pick each region's DOMINANT AOR as the primary fill —
-        // the AOR that appears in the most regions globally (the broad
-        // ethnic identity for the area). E.g. a region tagged
-        // `aor_suebian, aor_germanic` fills as `aor_germanic` (the dominant
-        // ethnic family of the area) and the more specific `aor_suebian`
-        // overlays as stripes. Sort each region's AOR list by global
-        // frequency DESCENDING with alphabetic tiebreak; palette assignment
-        // walks the dominant ones first so they each claim a distinct
-        // palette slot (which matters because cycling only kicks in past
-        // the palette size).
+        // AOR map mode. Each region's `aor_X` tags are split into the
+        // 15-tag PRIMARY bucket (broad cultural — aor_greek / aor_celtic /
+        // …) and a SECONDARY bucket (specific — aor_thessalian, aor_belgae,
+        // etc). `aorView` decides which layer drives the fill colour:
+        //   "primary"   → fill = first primary AOR; secondary AORs stripe.
+        //   "secondary" → fill = first secondary AOR; primary AORs stripe.
+        // Inside each layer we still sort by global frequency descending so
+        // dominant tags claim distinct palette slots before rarer ones
+        // start cycling — same logic as the old single-layer render.
         const aorFreq = {};
         for (const r of Object.values(regions)) {
           for (const a of getAors(r.tags)) aorFreq[a] = (aorFreq[a] || 0) + 1;
         }
         const aorByRegionKey = {};
+        // Per-region primary AOR (driving the inherited fill colour when in
+        // secondary view). Stored separately from aorByRegionKey because
+        // that list is layer-reordered for stripe rendering; the fill
+        // override needs to know "what primary does this region belong to"
+        // regardless of stripe ordering.
+        const primaryByRegionKey = {};
         for (const [key, r] of Object.entries(regions)) {
-          const raw = getAors(r.tags);
-          if (raw.length === 0) continue;
-          aorByRegionKey[key] = raw.slice().sort((a, b) => {
+          const { primary, secondary } = splitAorsByLayer(r.tags, r.city);
+          if (primary.length === 0 && secondary.length === 0) continue;
+          const sortByFreq = (a, b) => {
             const da = aorFreq[a] || 0, db = aorFreq[b] || 0;
             return da !== db ? db - da : a.localeCompare(b);
-          });
+          };
+          const primSorted = primary.slice().sort(sortByFreq);
+          const secSorted = secondary.slice().sort(sortByFreq);
+          // The first entry drives fill; the rest overlay as stripes.
+          // Cross-layer fallback: if the selected layer is empty for this
+          // region, fall back to the other layer rather than leaving it
+          // muted-neutral (which would lose information).
+          const ordered = (aorView === "secondary")
+            ? [...secSorted, ...primSorted]
+            : [...primSorted, ...secSorted];
+          aorByRegionKey[key] = ordered;
+          if (primSorted.length > 0) primaryByRegionKey[key] = primSorted[0];
         }
+        // Palette assignment: primary AORs pull the colour of their mapped
+        // faction from descr_sm_factions (e.g. aor_greek → greeks → that
+        // faction's primary banner colour). Secondaries cycle through
+        // CULTURE_PALETTE for now — replace with a per-secondary mapping
+        // when one's available. Faction-color lookups go through the
+        // already-loaded factionColors map (lowercase keys).
         const aorColors = {};
-        let ai = 0;
+        let ai = 0, facColorHits = 0, facColorMisses = 0;
         for (const list of Object.values(aorByRegionKey)) {
           for (const a of list) {
-            if (!aorColors[a]) {
+            if (aorColors[a]) continue;
+            // Try primary mapping first, then secondary mapping, then cycling palette.
+            const facId = PRIMARY_AOR_TO_FACTION[a] || SECONDARY_AOR_TO_FACTION[a];
+            const fc = facId ? factionColors[facId.toLowerCase()] : null;
+            if (fc && Array.isArray(fc.primary)) {
+              aorColors[a] = fc.primary;
+              facColorHits++;
+            } else {
+              if (facId) facColorMisses++;
               aorColors[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
               ai++;
             }
           }
         }
-        console.log(`[aor] palette built: ${Object.keys(aorColors).length} unique AORs across ${Object.keys(aorByRegionKey).length} regions`);
+        console.log(`[aor] palette built: ${Object.keys(aorColors).length} unique AORs across ${Object.keys(aorByRegionKey).length} regions (${facColorHits} faction-colored, ${facColorMisses} primary-mapped but faction-color missing, ${ai} palette-cycled)`);
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
           (r, pr, pg, pb) => {
             const rgbKey = `${pr},${pg},${pb}`;
             const list = aorByRegionKey[rgbKey];
-            const base = (list && list.length > 0)
-              ? aorColors[list[0]]
-              : [80, 75, 70]; // muted neutral for regions with no AOR
+            // Option-3 fill: in secondary view, inherit the region's primary
+            // AOR colour so e.g. all greek-family regions stay green even
+            // when toggling to view sub-AORs. Stripes still differentiate
+            // the secondaries via cycling palette. If the region has no
+            // primary at all (rare — secondary-only tag), the layered fill
+            // (= first AOR in the layer-ordered list) is the fallback.
+            let base;
+            if (!list || list.length === 0) {
+              base = [80, 75, 70]; // muted neutral for regions with no AOR
+            } else if (aorView === "secondary" && primaryByRegionKey[rgbKey]) {
+              base = aorColors[primaryByRegionKey[rgbKey]] || aorColors[list[0]];
+            } else {
+              base = aorColors[list[0]];
+            }
             if (devFlatColors) return base;
             const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
             return [
@@ -7661,7 +7984,12 @@ function App() {
     });
   }, [regions, offscreen, imgSize, editsTick, paintMode]);
 
-  // Precompute faction border path for Borders toggle
+  // Precompute faction border path for Borders toggle. Mirrors the faction
+  // colorMode fill logic: starts from descr_strat ownership (factionRegionsMap)
+  // and overlays currentOwnerByCity when a save is loaded so the borders
+  // reflect mid-campaign conquests. Without the currentOwnerByCity dep, the
+  // borders would stay frozen at turn-0 lines even as fill recolours
+  // captured regions (user report 2026-05-28).
   useEffect(() => {
     if (!offscreen || !regions || Object.keys(regions).length === 0 || Object.keys(factionRegionsMap).length === 0) {
       setFactionBorderPath(null);
@@ -7679,6 +8007,14 @@ function App() {
         }
       }
     }
+    // Live override: apply save-derived ownership on top of descr_strat
+    // starting state. Same shape as the faction-fill renderer above.
+    if (currentOwnerByCity) {
+      for (const [rgbKey, r] of Object.entries(regions)) {
+        const liveOwner = currentOwnerByCity[r.city];
+        if (liveOwner) rgbToOwner[rgbKey] = liveOwner;
+      }
+    }
     const schedule = (cb) => {
       if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(cb, { timeout: 2000 });
       else setTimeout(cb, 0);
@@ -7687,7 +8023,7 @@ function App() {
       setFactionBorderPath(prerenderGroupBorderPath(regions, offscreen, imgSize,
         (r, rgbStr) => rgbToOwner[rgbStr] || r.faction || null));
     });
-  }, [regions, offscreen, imgSize, factionRegionsMap]);
+  }, [regions, offscreen, imgSize, factionRegionsMap, currentOwnerByCity]);
 
   // Precompute group border paths for dev map modes
   useEffect(() => {
@@ -11623,7 +11959,12 @@ function App() {
           return da !== db ? db - da : a.localeCompare(b);
         });
         for (const a of list) {
-          if (!seen[a]) {
+          if (seen[a]) continue;
+          const facId = PRIMARY_AOR_TO_FACTION[a] || SECONDARY_AOR_TO_FACTION[a];
+          const fc = facId ? factionColors[facId.toLowerCase()] : null;
+          if (fc && Array.isArray(fc.primary)) {
+            seen[a] = fc.primary;
+          } else {
             seen[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
             ai++;
           }
@@ -11672,14 +12013,51 @@ function App() {
         });
       };
 
+      // Primary/secondary breakdown for the layer toggle. Counts come from
+      // counts[] which is the per-AOR region tally we just built above.
+      const primaryCount = entries.filter(([n]) => PRIMARY_AOR_TAGS.has(n)).length;
+      const secondaryCount = entries.length - primaryCount;
+      const tabBase = {
+        flex: 1, padding: "3px 6px", fontSize: "0.7rem", textAlign: "center",
+        cursor: "pointer", borderRadius: 3, userSelect: "none",
+        transition: "background 0.12s, color 0.12s",
+      };
+      const tabActive = { background: "rgba(255,255,255,0.14)", color: "#fff", fontWeight: 600 };
+      const tabIdle = { background: "transparent", color: "#bbb" };
       return (
         <div style={panelStyle}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
             Areas of Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
           </div>
           {!legendCollapsed && (
+            <>
+              <div
+                style={{ display: "flex", gap: 2, marginBottom: 4, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 4 }}
+                title="Primary = AORs mapped in PRIMARY_AOR_TO_FACTION (faction colours). Secondary = the narrower sub-cultural / regional AORs."
+              >
+                <div style={{ ...tabBase, ...(aorView === "primary" ? tabActive : tabIdle) }} onClick={() => setAorView("primary")}>
+                  Primary ({primaryCount})
+                </div>
+                <div style={{ ...tabBase, ...(aorView === "secondary" ? tabActive : tabIdle) }} onClick={() => setAorView("secondary")}>
+                  Secondary ({secondaryCount})
+                </div>
+              </div>
+              <input
+                value={aorLegendFilter}
+                onChange={(e) => setAorLegendFilter(e.target.value)}
+                placeholder="Filter AORs…"
+                style={{
+                  width: "100%", marginBottom: 4, padding: "3px 6px",
+                  fontSize: "0.72rem", borderRadius: 3,
+                  background: "rgba(0,0,0,0.30)", color: "#eee",
+                  border: "1px solid rgba(255,255,255,0.10)", outline: "none",
+                }}
+              />
             <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "30vh", overflowY: "auto" }}>
-              {entries.map(([name, col]) => {
+              {entries
+                .filter(([n]) => aorView === "primary" ? PRIMARY_AOR_TAGS.has(n) : !PRIMARY_AOR_TAGS.has(n))
+                .filter(([n]) => !aorLegendFilter || n.toLowerCase().includes(aorLegendFilter.toLowerCase()))
+                .map(([name, col]) => {
                 const isActive = activeSet && activeSet.has(name);
                 const dimmed = activeSet && !isActive;
                 return (
@@ -11715,6 +12093,7 @@ function App() {
                 <br />Click an entry to isolate · Shift-click to add · Click again to clear.
               </div>
             </div>
+            </>
           )}
         </div>
       );
@@ -13136,7 +13515,7 @@ function App() {
         const r = dashResult;
         const jumpTo = (file, snippet, line) => window.electronAPI?.scriptsJumpTo?.(file, snippet || null, line || null);
         const Section = ({ title, count, color, children }) => (
-          <details open={count > 0 && count <= 40} style={{ marginTop: 8 }}>
+          <details data-dash-section={title} style={{ marginTop: 8 }}>
             <summary style={{ cursor: "pointer", padding: "6px 8px", borderRadius: 4, fontSize: "0.82rem", background: count > 0 ? "rgba(255,255,255,0.04)" : "transparent" }}>
               <span style={{ color, fontWeight: 600 }}>● </span>
               <b>{title}</b> <span style={{ color: "#888", fontVariantNumeric: "tabular-nums" }}>({count})</span>
@@ -13144,6 +13523,22 @@ function App() {
             {count > 0 && <div style={{ padding: "6px 6px 0", maxHeight: 280, overflowY: "auto" }}>{children}</div>}
           </details>
         );
+        // Tile → Section bridge. Each tile carries the prefix of its target
+        // Section's title; click forces it open and scrolls it into view.
+        // Substring match keeps tiles working when a section gets a suffix
+        // appended (e.g. "(of 234 total)").
+        const openSectionByTitle = (titlePrefix) => {
+          if (!titlePrefix) return;
+          const sections = document.querySelectorAll('details[data-dash-section]');
+          for (const d of sections) {
+            const t = d.getAttribute('data-dash-section') || '';
+            if (t.startsWith(titlePrefix) || t.includes(titlePrefix)) {
+              d.open = true;
+              d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              return;
+            }
+          }
+        };
         const Row = ({ label, file, line, text, onClick }) => (
           <div
             onClick={onClick}
@@ -13185,27 +13580,86 @@ function App() {
               ) : (() => {
                 const s = r.summary || {};
                 const totalIssues = (s.danglingChains || 0) + (s.danglingLevels || 0) + (s.stratErrors || 0) + (s.missingLocale || 0);
+                // New validators rolled into the top bar so the user sees
+                // every category at-a-glance (added 0.9.683-0.9.697).
+                const pBrokenTargets = (portraitAudit?.targets || []).filter(t => t.status !== 'ok').length;
+                const cbMissing = (captainBannerAudit?.missing || []).length;
+                const nlEmpty = (modExtraAudit?.namelistEmpty?.issues || []).length;
+                const nlSingle = (modExtraAudit?.namelistSingle?.issues || []).length;
+                const stratXref = (modExtraAudit?.stratTraitRefs?.issues || []).length +
+                                  (modExtraAudit?.stratAncillaryRefs?.issues || []).length +
+                                  (modExtraAudit?.stratUnitRefs?.issues || []).length;
+                const facCult = (modExtraAudit?.factionCulture?.issues || []).length;
+                const drIssues = (descrRegionsAudit?.stratMissingRegion || []).length +
+                                 (descrRegionsAudit?.stratWrongSettlement || []).length +
+                                 (descrRegionsAudit?.duplicateColors || []).length;
+                const smIncomplete = (smFactionsAudit?.incomplete || []).length;
+                const edbMissing = (edbResAudit?.missingResources || []).length;
                 return (
                   <>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, marginBottom: 10 }}>
-                      {[
-                        ["Dangling chains", s.danglingChains, "#f87171"],
-                        ["Dangling levels", s.danglingLevels, "#fb923c"],
-                        ["descr_strat errors", s.stratErrors, "#facc15"],
-                        ["Missing locale", s.missingLocale, "#a78bfa"],
-                        ["Orphaned chains", s.orphanedChains, "#9ca3af"],
-                        ["VC malformed", s.vcMalformed, "#f87171"],
-                        ["VC orphans", s.vcOrphanFactions, "#f87171"],
-                      ].map(([label, n, color]) => (
-                        <div key={label} style={{
-                          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)",
-                          borderRadius: 6, padding: "8px 10px", textAlign: "center",
-                        }}>
-                          <div style={{ fontSize: "1.4rem", fontWeight: 700, color: (n || 0) > 0 ? color : "#4ade80", fontVariantNumeric: "tabular-nums" }}>{n || 0}</div>
-                          <div style={{ fontSize: "0.66rem", color: "#888", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</div>
-                        </div>
-                      ))}
-                    </div>
+                    {/* Tile rows. The 4th tuple element is the prefix of the matching <Section title=…>;
+                        clicking a tile force-opens that section and scrolls it into view. Tiles
+                        with count 0 still scroll-jump (the empty section will say "all OK"). */}
+                    {[
+                      [
+                        ["Dangling chains", s.danglingChains, "#f87171", "Dangling chain references"],
+                        ["Dangling levels", s.danglingLevels, "#fb923c", "Dangling level references"],
+                        ["descr_strat errors", s.stratErrors, "#facc15", "descr_strat settlement errors"],
+                        ["Missing locale", s.missingLocale, "#a78bfa", "Missing localization keys"],
+                        ["Orphaned chains", s.orphanedChains, "#9ca3af", "Orphaned chains"],
+                        ["VC malformed", s.vcMalformed, "#f87171", "descr_win_conditions malformed lines"],
+                        ["VC orphans", s.vcOrphanFactions, "#f87171", "VC orphan factions"],
+                      ],
+                      [
+                        ["Portraits broken", pBrokenTargets, "#f87171", "Portrait coverage — broken target cultures"],
+                        ["Captain banners missing", cbMissing, "#f87171", "Captain banner files missing per faction"],
+                        ["Namelists empty", nlEmpty, "#f87171", "Empty namelists used by factions"],
+                        ["Namelists single-entry", nlSingle, "#fbbf24", "Single-entry namelists used by factions"],
+                        ["descr_strat xref", stratXref, "#fbbf24", "descr_strat traits not in EDCT"],
+                        ["Faction culture", facCult, "#f87171", "Factions referencing undefined cultures"],
+                        ["descr_regions issues", drIssues, "#f87171", "descr_strat regions not in descr_regions"],
+                      ],
+                      [
+                        ["sm_factions incomplete", smIncomplete, "#fbbf24", "descr_sm_factions: incomplete faction blocks"],
+                        ["EDB resource refs", edbMissing, "#fbbf24", "EDB hidden_resource refs not in descr_regions"],
+                        ["AOR unmapped", (aorCoverage?.aors || []).filter(a => !PRIMARY_AOR_TAGS.has(a.name) && !SECONDARY_AOR_TO_FACTION[a.name]).length, "#9ca3af", "AOR tags in descr_regions not yet mapped"],
+                        ["Building images", (buildingImagesAudit?.missing || []).length, "#fbbf24", "Building images missing"],
+                        ["Unit localization", (unitLocAudit?.missing || []).length, "#9ca3af", "Unit type strings missing"],
+                        ["Unit images", ((unitImagesAudit?.missingInfo || []).length + (unitImagesAudit?.missingCard || []).length), "#fbbf24", "Per-faction unit images missing"],
+                        ["TGA pow-2", (textureDimsAudit?.nonPow2 || []).length, "#9ca3af", "Non-power-of-2 TGA dimensions"],
+                        ["Undefined toggles", (logWarningsAudit?.undefinedToggles || []).length, "#fbbf24", "Campaign script: undefined toggles"],
+                        ["RTW log warnings (total)", Object.values(logWarningsAudit?.counts || {}).reduce((a, b) => a + b, 0), "#9ca3af", "RTW log: cosmetic"],
+                        ["Missing region_base", (regionScrollsAudit?.missing || []).length, "#f87171", "Settlements missing hinterland_region region_base"],
+                      ],
+                    ].map((row, rowIdx) => {
+                      // Hide tiles with 0 issues — the clean ones aren't actionable.
+                      // If a whole row goes to zero, skip the row entirely so we
+                      // don't leave a blank grid gap.
+                      const visible = row.filter(([, n]) => (n || 0) > 0);
+                      if (visible.length === 0) return null;
+                      return (
+                      <div key={rowIdx} style={{ display: "grid", gridTemplateColumns: `repeat(${visible.length}, 1fr)`, gap: 8, marginBottom: 10 }}>
+                        {visible.map(([label, n, color, sectionTitle]) => (
+                          <div
+                            key={label}
+                            onClick={() => openSectionByTitle(sectionTitle)}
+                            title={sectionTitle ? `Click → jump to "${sectionTitle}"` : ""}
+                            style={{
+                              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)",
+                              borderRadius: 6, padding: "8px 10px", textAlign: "center",
+                              cursor: sectionTitle ? "pointer" : "default",
+                              transition: "background 0.1s",
+                            }}
+                            onMouseEnter={sectionTitle ? (e) => e.currentTarget.style.background = "rgba(255,255,255,0.07)" : undefined}
+                            onMouseLeave={sectionTitle ? (e) => e.currentTarget.style.background = "rgba(255,255,255,0.03)" : undefined}
+                          >
+                            <div style={{ fontSize: "1.4rem", fontWeight: 700, color: (n || 0) > 0 ? color : "#4ade80", fontVariantNumeric: "tabular-nums" }}>{n || 0}</div>
+                            <div style={{ fontSize: "0.66rem", color: "#888", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</div>
+                          </div>
+                        ))}
+                      </div>
+                      );
+                    })}
                     {totalIssues === 0 && (
                       <div style={{ padding: 12, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 6, color: "#86efac", fontSize: "0.82rem" }}>
                         ✓ No correctness issues found. The {(s.orphanedChains || 0)} orphaned chains below are candidates for cleanup but not bugs.
@@ -13246,6 +13700,431 @@ function App() {
                         <Row key={i} label={`${d.faction} — not a playable faction in descr_strat`} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
                       ))}
                     </Section>
+                    {portraitAudit && !portraitAudit.error && (() => {
+                      const broken = (portraitAudit.sources || []).filter(s => s.status !== 'ok');
+                      const brokenTargets = (portraitAudit.targets || []).filter(t => t.status !== 'ok');
+                      return (
+                        <>
+                          <Section title={`Portrait coverage — broken target cultures (auto-spawned captains crash on these)`} count={brokenTargets.length} color="#f87171">
+                            {brokenTargets.length > 0 && window.electronAPI?.autofixPortraits && (
+                              <div style={{ padding: "4px 8px" }}>
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`Auto-seed missing data/ui/<target>/portraits/portraits/{young,old}/ for ${brokenTargets.length} cultures by copying tgas from any culture that has them? Files only created, never overwritten.`)) return;
+                                    const r = await window.electronAPI.autofixPortraits(modDataDir);
+                                    if (r.error) { alert(`Auto-fix failed: ${r.error}`); return; }
+                                    alert(`Seeded ${r.copied} files across ${r.sources.length} target cultures from donor=${r.donor?.culture || '?'}.\n\nDashboard will re-audit on close+reopen.`);
+                                  }}
+                                  style={{
+                                    background: "rgba(34,197,94,0.20)", border: "1px solid rgba(34,197,94,0.45)",
+                                    color: "#bbf7d0", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.72rem",
+                                    fontWeight: 600,
+                                  }}
+                                >Auto-fix: copy tgas from any populated culture</button>
+                              </div>
+                            )}
+                            {brokenTargets.map((t, i) => (
+                              <Row key={i}
+                                label={`${t.target}: ${t.status} — ${(t.notes || []).join("; ")}`}
+                                file={t.expectedPath}
+                              />
+                            ))}
+                            {brokenTargets.length === 0 && <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>All {(portraitAudit.targets || []).length} target portrait cultures have valid young/old directories.</div>}
+                          </Section>
+                          <Section title={`Portrait coverage — source cultures resolving to a broken target`} count={broken.length} color="#fbbf24">
+                            {broken.map((s, i) => (
+                              <Row key={i}
+                                label={`${s.source} → portrait_mapping=${s.target} (${s.status})`}
+                                file="descr_cultures.txt"
+                                onClick={() => jumpTo("descr_cultures.txt", `"${s.source}":`, null)}
+                              />
+                            ))}
+                            {broken.length === 0 && <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>All {(portraitAudit.sources || []).length} source cultures map to a target with valid portraits.</div>}
+                          </Section>
+                        </>
+                      );
+                    })()}
+                    {portraitAudit && portraitAudit.error && (
+                      <Section title="Portrait coverage — audit failed" count={1} color="#f87171">
+                        <Row label={portraitAudit.error} />
+                      </Section>
+                    )}
+                    {modExtraAudit && !modExtraAudit.error && (
+                      <>
+                        <Section title="Empty namelists used by factions (auto-spawn random(0,-1) → min<=max Failed)" count={(modExtraAudit.namelistEmpty?.issues || []).length} color="#f87171">
+                          {(modExtraAudit.namelistEmpty?.issues || []).map((d, i) => (
+                            <Row key={i}
+                              label={`${d.namelist} (used by ${d.usedBy}: ${d.uses.map(u => u.faction + '/' + u.slot).join(', ')}${d.usedBy > 6 ? '…' : ''})`}
+                              file="descr_namelists.txt"
+                              onClick={() => jumpTo("descr_namelists.txt", `"${d.namelist}":`, null)}
+                            />
+                          ))}
+                        </Section>
+                        <Section title="Single-entry namelists used by factions (random(0,0) → min<=max Failed every captain spawn)" count={(modExtraAudit.namelistSingle?.issues || []).length} color="#fbbf24">
+                          {(modExtraAudit.namelistSingle?.issues || []).map((d, i) => (
+                            <Row key={i}
+                              label={`${d.namelist} (used by ${d.usedBy}: ${d.uses.map(u => u.faction + '/' + u.slot).join(', ')}${d.usedBy > 6 ? '…' : ''})`}
+                              file="descr_namelists.txt"
+                              onClick={() => jumpTo("descr_namelists.txt", `"${d.namelist}":`, null)}
+                            />
+                          ))}
+                        </Section>
+                        <Section title="descr_strat traits not in EDCT (engine drops them silently)" count={(modExtraAudit.stratTraitRefs?.issues || []).length} color="#fbbf24">
+                          {(modExtraAudit.stratTraitRefs?.issues || []).slice(0, 100).map((d, i) => (
+                            <Row key={i}
+                              label={`${d.trait} (${d.faction} → ${d.character || '?'})`}
+                              file={d.file} line={d.line}
+                              onClick={() => jumpTo(d.file, null, d.line)}
+                            />
+                          ))}
+                        </Section>
+                        <Section title="descr_strat ancillaries not in EDA" count={(modExtraAudit.stratAncillaryRefs?.issues || []).length} color="#fbbf24">
+                          {(modExtraAudit.stratAncillaryRefs?.issues || []).slice(0, 100).map((d, i) => (
+                            <Row key={i}
+                              label={`${d.ancillary} (${d.faction} → ${d.character || '?'})`}
+                              file={d.file} line={d.line}
+                              onClick={() => jumpTo(d.file, null, d.line)}
+                            />
+                          ))}
+                        </Section>
+                        <Section title="descr_strat army units not in EDU (engine refuses to load)" count={(modExtraAudit.stratUnitRefs?.issues || []).length} color="#f87171">
+                          {(modExtraAudit.stratUnitRefs?.issues || []).slice(0, 100).map((d, i) => (
+                            <Row key={i}
+                              label={`${d.unit} (${d.faction} → ${d.character || '?'})`}
+                              file={d.file} line={d.line}
+                              onClick={() => jumpTo(d.file, null, d.line)}
+                            />
+                          ))}
+                        </Section>
+                        <Section title="Factions referencing undefined cultures" count={(modExtraAudit.factionCulture?.issues || []).length} color="#f87171">
+                          {(modExtraAudit.factionCulture?.issues || []).map((d, i) => (
+                            <Row key={i}
+                              label={`${d.faction} → culture=${d.culture} (not in descr_cultures.txt)`}
+                              file={d.file} line={d.line}
+                              onClick={() => jumpTo(d.file, null, d.line)}
+                            />
+                          ))}
+                        </Section>
+                      </>
+                    )}
+                    {modExtraAudit && modExtraAudit.error && (
+                      <Section title="Mod-data audit failed" count={1} color="#f87171">
+                        <Row label={modExtraAudit.error} />
+                      </Section>
+                    )}
+                    {captainBannerAudit && !captainBannerAudit.error && (
+                      <Section
+                        title={`Captain banner files missing per faction (each missing file triggers record.m_card_path.is_valid() Failed crash)`}
+                        count={(captainBannerAudit.missing || []).length}
+                        color="#f87171"
+                      >
+                        {(captainBannerAudit.missing || []).length > 0 && window.electronAPI?.autofixCaptainBanners && (
+                          <div style={{ padding: "4px 8px" }}>
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Auto-seed missing captain banner files for ${(captainBannerAudit.missing || []).length} factions by copying from a same-culture donor faction? Files will only be CREATED, never overwritten.`)) return;
+                                const r = await window.electronAPI.autofixCaptainBanners(modDataDir);
+                                if (r.error) { alert(`Auto-fix failed: ${r.error}`); return; }
+                                alert(`Seeded ${r.copied} files across ${(captainBannerAudit.missing || []).length} factions. ${r.noDonor.length ? r.noDonor.length + ' factions had no same-culture donor available.' : ''}\n\nDashboard will re-audit on close+reopen.`);
+                              }}
+                              style={{
+                                background: "rgba(34,197,94,0.20)", border: "1px solid rgba(34,197,94,0.45)",
+                                color: "#bbf7d0", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.72rem",
+                                fontWeight: 600,
+                              }}
+                            >Auto-fix: copy from same-culture donors</button>
+                          </div>
+                        )}
+                        {(captainBannerAudit.missing || []).slice(0, 100).map((d, i) => (
+                          <Row key={i}
+                            label={`${d.faction} — missing: ${d.missing.join(', ')}`}
+                            file="data/ui/captain banners/"
+                          />
+                        ))}
+                        {(captainBannerAudit.missing || []).length === 0 && (
+                          <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>
+                            All {captainBannerAudit.summary?.factionsTotal || '?'} factions have their captain_portrait + captain_card files (and rebel variants).
+                          </div>
+                        )}
+                      </Section>
+                    )}
+                    {captainBannerAudit && captainBannerAudit.error && (
+                      <Section title="Captain banner audit failed" count={1} color="#f87171">
+                        <Row label={captainBannerAudit.error} />
+                      </Section>
+                    )}
+                    {descrRegionsAudit && !descrRegionsAudit.error && (
+                      <>
+                        <Section title="descr_strat regions not in descr_regions (engine load error)" count={(descrRegionsAudit.stratMissingRegion || []).length} color="#f87171">
+                          {(descrRegionsAudit.stratMissingRegion || []).slice(0, 100).map((d, i) => (
+                            <Row key={i} label={d.region} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                          ))}
+                        </Section>
+                        <Section title="descr_strat city name doesn't match descr_regions for that region" count={(descrRegionsAudit.stratWrongSettlement || []).length} color="#fbbf24">
+                          {(descrRegionsAudit.stratWrongSettlement || []).slice(0, 100).map((d, i) => (
+                            <Row key={i} label={`${d.region}: strat=${d.stratSays} vs regions=${d.regionsExpects}`} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                          ))}
+                        </Section>
+                        <Section title="Duplicate region tile-colors in descr_regions (engine crash on load)" count={(descrRegionsAudit.duplicateColors || []).length} color="#f87171">
+                          {(descrRegionsAudit.duplicateColors || []).slice(0, 100).map((d, i) => (
+                            <Row key={i} label={`color ${d.color}: ${d.regions.map(r => r.region).join(', ')}`} file="descr_regions.txt" />
+                          ))}
+                        </Section>
+                        <Section title="Orphan regions (in descr_regions, never used by descr_strat)" count={(descrRegionsAudit.orphanRegions || []).length} color="#9ca3af">
+                          {(descrRegionsAudit.orphanRegions || []).slice(0, 100).map((d, i) => (
+                            <Row key={i} label={`${d.region} (settlement: ${d.settlement || '?'})`} file={d.file} line={d.line} onClick={() => jumpTo(d.file, null, d.line)} />
+                          ))}
+                        </Section>
+                      </>
+                    )}
+                    {descrRegionsAudit && descrRegionsAudit.error && (
+                      <Section title="descr_regions audit failed" count={1} color="#f87171">
+                        <Row label={descrRegionsAudit.error} />
+                      </Section>
+                    )}
+                    {regionScrollsAudit && !regionScrollsAudit.error && (
+                      <Section
+                        title={`Settlements missing hinterland_region region_base building${regionScrollsAudit.total ? ` (of ${regionScrollsAudit.total} total)` : ''}`}
+                        count={(regionScrollsAudit.missing || []).length}
+                        color="#f87171"
+                      >
+                        {(regionScrollsAudit.missing || []).slice(0, 200).map((d, i) => (
+                          <Row key={i} label={d.region} file="descr_strat.txt" line={d.line} onClick={() => jumpTo("descr_strat.txt", null, d.line)} />
+                        ))}
+                        {(regionScrollsAudit.missing || []).length === 0 && (
+                          <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>
+                            All {regionScrollsAudit.total} settlements have hinterland_region region_base. Region scrolls render correctly.
+                          </div>
+                        )}
+                      </Section>
+                    )}
+                    {regionScrollsAudit && regionScrollsAudit.error && (
+                      <Section title="Region-scroll audit failed" count={1} color="#f87171">
+                        <Row label={regionScrollsAudit.error} />
+                      </Section>
+                    )}
+                    {smFactionsAudit && !smFactionsAudit.error && (
+                      <Section
+                        title={`descr_sm_factions: incomplete faction blocks (missing required fields)`}
+                        count={(smFactionsAudit.incomplete || []).length}
+                        color="#fbbf24"
+                      >
+                        {(smFactionsAudit.incomplete || []).slice(0, 100).map((d, i) => (
+                          <Row key={i}
+                            label={`${d.faction} — missing: ${d.missing.join(', ')}`}
+                            file="descr_sm_factions.txt" line={d.line}
+                            onClick={() => jumpTo("descr_sm_factions.txt", `"${d.faction}":`, d.line)}
+                          />
+                        ))}
+                        {(smFactionsAudit.incomplete || []).length === 0 && (
+                          <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>
+                            All {smFactionsAudit.summary?.total || '?'} factions have culture, men/women/surnames namelists, logos, colours, movies.
+                          </div>
+                        )}
+                      </Section>
+                    )}
+                    {smFactionsAudit && smFactionsAudit.error && (
+                      <Section title="descr_sm_factions audit failed" count={1} color="#f87171">
+                        <Row label={smFactionsAudit.error} />
+                      </Section>
+                    )}
+                    {aorCoverage && !aorCoverage.error && (() => {
+                      const uncovered = (aorCoverage.aors || []).filter(a => !PRIMARY_AOR_TAGS.has(a.name) && !SECONDARY_AOR_TO_FACTION[a.name]);
+                      return (
+                        <Section
+                          title={`AOR tags in descr_regions not yet mapped in Provincia (cycling palette, no faction color)`}
+                          count={uncovered.length}
+                          color="#9ca3af"
+                        >
+                          {uncovered.slice(0, 60).map((a, i) => (
+                            <Row key={i}
+                              label={`aor_${a.name} — ${a.count} region(s)`}
+                              file="descr_regions.txt"
+                            />
+                          ))}
+                          {uncovered.length === 0 && (
+                            <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>
+                              All {(aorCoverage.aors || []).length} AORs in descr_regions are mapped.
+                            </div>
+                          )}
+                        </Section>
+                      );
+                    })()}
+                    {aorCoverage && aorCoverage.error && (
+                      <Section title="AOR coverage report failed" count={1} color="#f87171">
+                        <Row label={aorCoverage.error} />
+                      </Section>
+                    )}
+                    {edbResAudit && !edbResAudit.error && (
+                      <Section
+                        title={`EDB hidden_resource refs not in descr_regions (dead-code recruit lines, silently never fire)`}
+                        count={(edbResAudit.missingResources || []).length}
+                        color="#fbbf24"
+                      >
+                        {(edbResAudit.missingResources || []).slice(0, 100).map((d, i) => (
+                          <Row key={i}
+                            label={`${d.resource} — ${d.refCount} EDB ref(s); first at L${d.firstLine}`}
+                            file="export_descr_buildings.txt"
+                            line={d.firstLine}
+                            onClick={() => jumpTo("export_descr_buildings.txt", null, d.firstLine)}
+                          />
+                        ))}
+                      </Section>
+                    )}
+                    {edbResAudit && edbResAudit.error && (
+                      <Section title="EDB resource audit failed" count={1} color="#f87171">
+                        <Row label={edbResAudit.error} />
+                      </Section>
+                    )}
+                    {buildingImagesAudit && !buildingImagesAudit.error && (
+                      <Section
+                        title={`Building images missing — constructed + preconstruction (UI shows blank in-game)`}
+                        count={(buildingImagesAudit.missing || []).length}
+                        color="#fbbf24"
+                      >
+                        {(buildingImagesAudit.missing || []).length > 0 && window.electronAPI?.autofixBuildingImages && (
+                          <div style={{ padding: "4px 8px" }}>
+                            <button
+                              onClick={async () => {
+                                const s = buildingImagesAudit.summary || {};
+                                if (!confirm(`Auto-seed ${s.missingConstructed || 0} missing _constructed.tga + ${s.missingPreconstruction || 0} missing buildings/construction/ images by copying the matching base #<culture>_<chain>.tga? Files only created, never overwritten.`)) return;
+                                const r = await window.electronAPI.autofixBuildingImages(modDataDir);
+                                if (r.error) { alert(`Auto-fix failed: ${r.error}`); return; }
+                                alert(`Seeded ${r.copied} building image files (constructed + preconstruction). Dashboard will re-audit on close+reopen.`);
+                              }}
+                              style={{
+                                background: "rgba(34,197,94,0.20)", border: "1px solid rgba(34,197,94,0.45)",
+                                color: "#bbf7d0", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.72rem",
+                                fontWeight: 600,
+                              }}
+                            >Auto-fix: copy base → both slots</button>
+                          </div>
+                        )}
+                        {(buildingImagesAudit.missing || []).slice(0, 80).map((d, i) => {
+                          const parts = [];
+                          if (d.missingConstructed) parts.push(`_constructed.tga`);
+                          if (d.missingPreconstruction) parts.push(`construction/`);
+                          return (
+                            <Row key={i}
+                              label={`${d.culture} → ${d.chain} — missing: ${parts.join(', ')}`}
+                              file={`data/ui/${d.culture}/buildings/`}
+                            />
+                          );
+                        })}
+                      </Section>
+                    )}
+                    {unitLocAudit && !unitLocAudit.error && (
+                      <Section
+                        title={`Unit type strings missing in text/export_units.txt (shows raw ID in-game)`}
+                        count={(unitLocAudit.missing || []).length}
+                        color="#9ca3af"
+                      >
+                        {(unitLocAudit.missing || []).slice(0, 100).map((d, i) => (
+                          <Row key={i}
+                            label={`${d.unit} — missing: ${d.missing.join(', ')}`}
+                            file="text/export_units.txt"
+                          />
+                        ))}
+                      </Section>
+                    )}
+                    {textureDimsAudit && !textureDimsAudit.error && (
+                      <Section
+                        title={`Non-power-of-2 TGA dimensions (STANDARD_TEXTUREs mip-map warning)`}
+                        count={(textureDimsAudit.nonPow2 || []).length}
+                        color="#9ca3af"
+                      >
+                        {(textureDimsAudit.nonPow2 || []).slice(0, 80).map((d, i) => (
+                          <Row key={i}
+                            label={`${d.dir}/${d.file} — ${d.w}×${d.h} (resize to nearest pow-2)`}
+                            file={`${d.dir}/${d.file}`}
+                          />
+                        ))}
+                        {(textureDimsAudit.nonPow2 || []).length === 0 && (
+                          <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>
+                            All {textureDimsAudit.summary?.scanned || '?'} ancillary + building TGAs are power-of-2.
+                          </div>
+                        )}
+                      </Section>
+                    )}
+                    {logWarningsAudit && !logWarningsAudit.error && (
+                      <>
+                        <Section
+                          title={`RTW log: cosmetic & engine-internal warnings (from message_log.txt — informational, fix where possible)`}
+                          count={Object.values(logWarningsAudit.counts || {}).reduce((a, b) => a + b, 0)}
+                          color="#9ca3af"
+                        >
+                          <div style={{ fontSize: "0.7rem", color: "#888", padding: "2px 8px" }}>
+                            log last modified: {logWarningsAudit.lastModified ? new Date(logWarningsAudit.lastModified).toLocaleString() : "?"}
+                          </div>
+                          {Object.entries(logWarningsAudit.counts || {}).sort((a, b) => b[1] - a[1]).map(([label, n]) => (
+                            <Row key={label} label={`${label}: ${n.toLocaleString()}`} file="message_log.txt" />
+                          ))}
+                        </Section>
+                        <Section
+                          title={`Campaign script: undefined toggles (engine defaults; fix: add console_command declarations)`}
+                          count={(logWarningsAudit.undefinedToggles || []).length}
+                          color="#fbbf24"
+                        >
+                          {(logWarningsAudit.undefinedToggles || []).map((t, i) => (
+                            <Row key={i} label={t} file="RIS_Campaign_Script.txt" />
+                          ))}
+                        </Section>
+                        <Section
+                          title={`Missing localised strings (engine fell back to raw key)`}
+                          count={(logWarningsAudit.lostLocStrings || []).length}
+                          color="#9ca3af"
+                        >
+                          {(logWarningsAudit.lostLocStrings || []).map((s, i) => (
+                            <Row key={i} label={s} file="text/" />
+                          ))}
+                        </Section>
+                      </>
+                    )}
+                    {unitImagesAudit && !unitImagesAudit.error && (() => {
+                      const total = (unitImagesAudit.missingInfo || []).length + (unitImagesAudit.missingCard || []).length;
+                      return (
+                        <Section
+                          title={`Per-faction unit images missing (unit_info + units card slots)`}
+                          count={total}
+                          color="#fbbf24"
+                        >
+                          {total > 0 && window.electronAPI?.autofixUnitImages && (
+                            <div style={{ padding: "4px 8px" }}>
+                              <button
+                                onClick={async () => {
+                                  const s = unitImagesAudit.summary || {};
+                                  if (!confirm(`Auto-seed ${s.missingInfoCount || 0} missing unit_info tgas + ${s.missingCardCount || 0} missing unit card tgas by copying from any other faction that has them? Files only created, never overwritten.`)) return;
+                                  const r = await window.electronAPI.autofixUnitImages(modDataDir);
+                                  if (r.error) { alert(`Auto-fix failed: ${r.error}`); return; }
+                                  alert(`Seeded ${r.copied} unit image files. ${r.skipped.length ? r.skipped.length + ' had no donor in any faction (truly missing — needs new art).' : ''}\nDashboard will re-audit on close+reopen.`);
+                                }}
+                                style={{
+                                  background: "rgba(34,197,94,0.20)", border: "1px solid rgba(34,197,94,0.45)",
+                                  color: "#bbf7d0", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.72rem",
+                                  fontWeight: 600,
+                                }}
+                              >Auto-fix: copy from other factions</button>
+                            </div>
+                          )}
+                          {(unitImagesAudit.missingInfo || []).slice(0, 50).map((d, i) => (
+                            <Row key={"info-"+i} label={`${d.faction}/${d.unit} — missing _info.tga`} file={`data/ui/unit_info/${d.faction}/`} />
+                          ))}
+                          {(unitImagesAudit.missingCard || []).slice(0, 50).map((d, i) => (
+                            <Row key={"card-"+i} label={`${d.faction}/${d.unit} — missing card .tga`} file={`data/ui/units/${d.faction}/`} />
+                          ))}
+                        </Section>
+                      );
+                    })()}
+                    {buildingImagesAudit && buildingImagesAudit.error && (
+                      <Section title="Building images audit failed" count={1} color="#f87171">
+                        <Row label={buildingImagesAudit.error} />
+                      </Section>
+                    )}
+                    {unitLocAudit && unitLocAudit.error && (
+                      <Section title="Unit localization audit failed" count={1} color="#f87171">
+                        <Row label={unitLocAudit.error} />
+                      </Section>
+                    )}
                   </>
                 );
               })()}
@@ -17284,6 +18163,25 @@ function App() {
       {/* ── Dev File Import Modal ──────────────────────────────────── */}
       {showFileImport && devMode && (() => {
         const isElectron = !!(window.electronAPI && window.electronAPI.isElectron);
+        // Restore the last-import green status text from localStorage on
+        // mount so users see "Done — Rome: ..." persisted across launches
+        // (the parsed JSON data IS persisted; this just brings back the
+        // visual feedback).
+        setTimeout(() => {
+          for (const suffix of ["classic", "imperial", "smfactions"]) {
+            try {
+              const raw = localStorage.getItem("lastImport_" + suffix);
+              if (!raw) continue;
+              const li = JSON.parse(raw);
+              const el = document.getElementById("dev-status-" + suffix);
+              if (el && el.textContent === "") {
+                const date = li.at ? new Date(li.at).toLocaleString() : "previous session";
+                el.textContent = `${li.status}  ·  imported ${date} from ${li.folder}`;
+                el.style.color = "#7c4";
+              }
+            } catch {}
+          }
+        }, 0);
         const overlayStyle = {
           position: "fixed", inset: 0, zIndex: 9999,
           background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
@@ -17606,8 +18504,26 @@ function App() {
             // Update the campaign label to match the imported folder name
             const prettyName = formatCampaignName(campaignResult.name);
             setCampaignLabels(prev => ({ ...prev, [camp.key]: prettyName }));
-            setStatus(camp.suffix, `Done — ${prettyName}: ${res.updated.join(", ")}` + (missingNames.length > 0 ? ` | Not found: ${missingNames.join(", ")}` : ""), "#7c4");
+            const statusText = `Done — ${prettyName}: ${res.updated.join(", ")}` + (missingNames.length > 0 ? ` | Not found: ${missingNames.join(", ")}` : "");
+            setStatus(camp.suffix, statusText, "#7c4");
             setFileImportDone(true);
+            // Persist last-import metadata so the next launch can:
+            // (1) re-show the green "Done" status text in the import modal
+            //     (otherwise teammates see a blank Import dialog and think
+            //     nothing's loaded, even though the parsed JSON files DO
+            //     persist on disk),
+            // (2) auto-rescan that same folder if the user wants a true
+            //     re-import (button below).
+            try {
+              const lastImport = {
+                folder: campaignResult.dir,
+                campaign: campaignResult.name,
+                suffix: camp.suffix,
+                status: statusText,
+                at: new Date().toISOString(),
+              };
+              localStorage.setItem("lastImport_" + camp.suffix, JSON.stringify(lastImport));
+            } catch {}
           } else {
             setStatus(camp.suffix, `No data parsed. Found: ${foundNames.join(", ") || "none"}`, "#c44");
           }
@@ -17635,8 +18551,17 @@ function App() {
                 setFactionColors(parsed);
                 if (window.electronAPI.saveFile) await window.electronAPI.saveFile("descr_sm_factions.txt", text);
                 if (window.electronAPI.saveUserFile) await window.electronAPI.saveUserFile("faction_colors.json", JSON.stringify(parsed));
+                const statusText = `Auto-loaded ${count} faction colours`;
                 const el = document.getElementById("dev-status-smfactions");
-                if (el) { el.textContent = `Auto-loaded ${count} faction colours`; el.style.color = "#7c4"; }
+                if (el) { el.textContent = statusText; el.style.color = "#7c4"; }
+                // Persist same shape as the per-slot import — so the modal
+                // banner + slot status can restore on next open.
+                try {
+                  localStorage.setItem("lastImport_smfactions", JSON.stringify({
+                    folder: result.sharedFound["descr_sm_factions.txt"],
+                    count, status: statusText, at: new Date().toISOString(),
+                  }));
+                } catch {}
               }
             }
           }
@@ -17691,6 +18616,27 @@ function App() {
           }
         };
 
+        // Build the "currently loaded" banner data from localStorage. Shown
+        // at the top of the modal so the user can see at a glance that
+        // Provincia IS running against a real mod, not stale defaults.
+        const loadedImports = (() => {
+          const out = [];
+          for (const suffix of ["classic", "imperial", "smfactions"]) {
+            try {
+              const raw = localStorage.getItem("lastImport_" + suffix);
+              if (!raw) continue;
+              const li = JSON.parse(raw);
+              if (li && li.folder) out.push({ suffix, ...li });
+            } catch {}
+          }
+          return out;
+        })();
+        const labelFor = (suffix) => {
+          if (suffix === "classic") return "Slot 1";
+          if (suffix === "imperial") return "Slot 2 (active)";
+          if (suffix === "smfactions") return "Shared (descr_sm_factions.txt)";
+          return suffix;
+        };
         return (
           <div style={overlayStyle} onClick={(e) => { if (e.target === e.currentTarget) setShowFileImport(false); }}>
             <div style={modalStyle}>
@@ -17700,6 +18646,25 @@ function App() {
                   background: "none", border: "none", color: "#888", fontSize: "1.4rem", cursor: "pointer",
                 }}>&times;</button>
               </div>
+              {loadedImports.length > 0 && (
+                <div style={{
+                  marginBottom: 14, padding: "10px 14px", borderRadius: 8,
+                  background: "rgba(124,196,68,0.10)", border: "1px solid rgba(124,196,68,0.40)",
+                  color: "#cef0a8", fontSize: "0.82rem",
+                }}>
+                  <div style={{ fontWeight: 700, marginBottom: 4, color: "#a8e574" }}>✓ Mod files currently loaded</div>
+                  {loadedImports.map((li, i) => (
+                    <div key={li.suffix} style={{ marginTop: i > 0 ? 6 : 0, fontFamily: "monospace", fontSize: "0.74rem", color: "#a8e574" }}>
+                      <strong>{labelFor(li.suffix)}:</strong> {li.campaign || (li.count != null ? `${li.count} factions` : "loaded")} — imported {li.at ? new Date(li.at).toLocaleString() : "previous session"}
+                      <br />
+                      <span style={{ color: "#779948" }}>↳ {li.folder}</span>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: "0.7rem", color: "#779948", marginTop: 6 }}>
+                    Re-pick a folder below to update, or use the "Re-import from last folder" button if the source files changed on disk.
+                  </div>
+                </div>
+              )}
               <p style={{ color: "#aaa", fontSize: "0.82rem", marginTop: 0, marginBottom: 12 }}>
                 Select the campaign folder. The app finds and loads only these files:
               </p>
@@ -17821,6 +18786,39 @@ function App() {
                     background: "#333", color: "#ccc", cursor: "pointer",
                   }}>Cancel</button>
                 )}
+                {!fileImportDone && isElectron && window.electronAPI?.scanFolder && (() => {
+                  // Show a quick "Re-import from last folder" button if
+                  // there's a saved last-import path. Lets the teammate
+                  // refresh from the same folder without re-picking.
+                  let last = null;
+                  for (const suffix of ["classic", "imperial"]) {
+                    try {
+                      const raw = localStorage.getItem("lastImport_" + suffix);
+                      if (raw) { const li = JSON.parse(raw); if (li.folder) { last = li; break; } }
+                    } catch {}
+                  }
+                  if (!last) return null;
+                  return (
+                    <button
+                      onClick={async () => {
+                        const scan = await window.electronAPI.scanFolder(last.folder);
+                        if (!scan || !scan.campaigns || scan.campaigns.length === 0) {
+                          alert(`No campaign data found at ${last.folder}.\nThe folder may have moved or been deleted — pick a new one via the standard Import flow.`);
+                          return;
+                        }
+                        // Find the matching campaign and re-trigger import on it.
+                        const camp = (CAMPAIGNS && CAMPAIGNS[mapCampaign]) || { suffix: "large", key: mapCampaign };
+                        const matching = scan.campaigns.find(c => c.name === last.campaign) || scan.campaigns[0];
+                        await importCampaignFiles(matching, camp);
+                      }}
+                      style={{
+                        padding: "6px 16px", borderRadius: 6, border: "1px solid #7c4",
+                        background: "rgba(124,196,68,0.18)", color: "#cef0a8", cursor: "pointer", fontWeight: 600,
+                      }}
+                      title={`Last imported from ${last.folder}`}
+                    >Re-import from last folder</button>
+                  );
+                })()}
                 {fileImportDone && (
                   <button onClick={() => { setShowFileImport(false); window.location.reload(); }} style={{
                     padding: "6px 16px", borderRadius: 6, border: "1px solid #e8a030",
@@ -18589,9 +19587,60 @@ function App() {
                 <span style={{ fontWeight: 700, fontSize: "1rem", color: "#dca64a" }}>
                   💰 Faction Wealth
                 </span>
-                <button onClick={() => setShowWealthPanel(false)}
-                  style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1.1rem", cursor: "pointer", padding: 0 }}
-                  title="Close (Esc)">×</button>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {window.electronAPI?.saveFileAs && (
+                    <button
+                      title="Export treasury history + faction snapshot as two CSV files"
+                      onClick={async () => {
+                        // Build snapshot CSV from current rows
+                        const csvEscape = (v) => {
+                          if (v == null) return "";
+                          const s = String(v);
+                          return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                        };
+                        const snapshotHeader = ["faction","display_name","ai_personality","current_treasury","wealth_is_live","turn_start_treasury","starting_wealth","current_regions","starting_regions","current_armies"];
+                        const snapshotRows = [snapshotHeader.join(",")];
+                        for (const r of rows) {
+                          snapshotRows.push([
+                            r.faction, r.name, r.aiPersonality || "",
+                            r.wealth ?? "", r.wealthIsLive ? "yes" : "no",
+                            r.wealthTurnStart ?? "",
+                            factionWealth[r.faction] != null ? factionWealth[r.faction] : (factionWealth[r.faction?.toLowerCase()] ?? ""),
+                            r.regions, r.startingRegions, r.armies,
+                          ].map(csvEscape).join(","));
+                        }
+                        const snapshotCsv = snapshotRows.join("\n");
+                        // Treasury history wide format: rows=turn, cols=each faction
+                        const tHist = treasuryHistory || {};
+                        const tFactions = Object.keys(tHist).sort();
+                        const maxTurns = tFactions.reduce((m, f) => Math.max(m, (tHist[f] || []).length), 0);
+                        const histRows = [["turn", ...tFactions].map(csvEscape).join(",")];
+                        for (let t = 0; t < maxTurns; t++) {
+                          const row = [t + 1];
+                          for (const f of tFactions) row.push(tHist[f]?.[t] ?? "");
+                          histRows.push(row.map(csvEscape).join(","));
+                        }
+                        const histCsv = histRows.join("\n");
+                        // Save snapshot first
+                        const snapPath = await window.electronAPI.saveFileAs("faction_snapshot.csv", snapshotCsv, "CSV Files", ["csv"]);
+                        if (snapPath) {
+                          // Then history
+                          const histPath = await window.electronAPI.saveFileAs("treasury_history.csv", histCsv, "CSV Files", ["csv"]);
+                          if (histPath) {
+                            alert(`Exported:\n  ${snapPath}\n  ${histPath}\n\nSnapshot: ${rows.length} factions × ${snapshotHeader.length} columns.\nHistory: ${maxTurns} turns × ${tFactions.length} factions (${tFactions.length === 0 ? "no treasury history loaded — load a save first" : "wide format, pivot in Excel"}).`);
+                          }
+                        }
+                      }}
+                      style={{
+                        background: "rgba(220,166,74,0.18)", border: "1px solid rgba(220,166,74,0.4)",
+                        color: "#dca64a", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: "0.72rem", fontWeight: 600,
+                      }}
+                    >Export CSV</button>
+                  )}
+                  <button onClick={() => setShowWealthPanel(false)}
+                    style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1.1rem", cursor: "pointer", padding: 0 }}
+                    title="Close (Esc)">×</button>
+                </div>
               </div>
               <div style={{ overflowY: "auto", padding: "4px 8px" }}>
                 <div style={{
