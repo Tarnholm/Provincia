@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.749",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**Greek / Aegean / Pontic-coast AOR secondary colours** (17 mappings): byzantine→Byzantium, mesembrian & tomian→Pentapolis, istrian→Histria, thessalian→Thessaly, akarnanian→Acarnania, ambrakiote→Epirus, aitolian→Aetolia, boiotian→Boeotia, athenian→Athens, argive→Argos, megalopolitan & arcadian→Megalopolis, achaian→Achaea, elean→Elis, messenian→Messene, rhodian→Rhodes." },
+    ],
+  },
+  {
     version: "0.9.748",
     date: "2026-05-29",
     items: [
