@@ -939,6 +939,11 @@ const PRIMARY_AOR_TO_FACTION = {
   macedonian:   "antigonid", // shares antigonid's faction color
 };
 const PRIMARY_AOR_TAGS = new Set(Object.keys(PRIMARY_AOR_TO_FACTION));
+// Specialty AORs (BARE names, aor_ stripped) — unit/reform-specific zones, not
+// geographic. They're handled only in the AOR Units "Specialty" tab and are
+// excluded from BOTH the Primary and Secondary map layers + the legend.
+// Keep in sync with RegionInfo.SPECIALTY_AOR_TAGS (which uses full aor_ tags).
+const SPECIALTY_AOR_BARE = new Set(["camillan", "euzonoi", "deuteroi", "oscan_southern"]);
 // Secondary AORs that should still use a faction colour (not the cycling
 // palette). These are mostly Greek city-states / Anatolian ports that the
 // user wants colour-matched to their corresponding faction even though
@@ -978,8 +983,10 @@ const AOR_OVERRIDES = [
 function splitAorsByLayer(tags, cityName) {
   const all = getAors(tags);
   const primary = [], secondary = [];
-  // First pass: bucket by membership in PRIMARY_AOR_TAGS.
+  // First pass: bucket by membership in PRIMARY_AOR_TAGS. Specialty AORs are
+  // skipped entirely — they never colour the map (Specialty tab only).
   for (const a of all) {
+    if (SPECIALTY_AOR_BARE.has(a)) continue;
     if (PRIMARY_AOR_TAGS.has(a)) primary.push(a);
     else secondary.push(a);
   }
@@ -11945,7 +11952,9 @@ function App() {
           }
         }
       }
-      const entries = Object.entries(seen).sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));
+      const entries = Object.entries(seen)
+        .filter(([n]) => !SPECIALTY_AOR_BARE.has(n)) // specialty AORs aren't map zones
+        .sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));
       if (entries.length === 0) {
         return (
           <div style={panelStyle}>

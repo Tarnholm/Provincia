@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.741",
+    date: "2026-05-29",
+    items: [
+      { type: "change", text: "**Specialty AORs no longer appear in the Secondary map layer or legend.** `aor_camillan`, `aor_euzonoi`, `aor_deuteroi` and `aor_oscan_southern` are unit/reform-specific zones, not geographic — they're now excluded from both the Primary and Secondary AOR map layers and the legend, and shown only in the AOR Units “Specialty” tab." },
+    ],
+  },
+  {
     version: "0.9.740",
     date: "2026-05-29",
     items: [
