@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.735",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**AOR units now take over the Recruitable panel in AOR mode** and render as unit cards (same grid as the normal recruitable list) instead of a separate text widget. Units with a faction restriction get a coloured outline plus a small caption — green \"only: …\" or amber \"not: …\" — with the full faction list in the hover tooltip; the card also lists its aor_ tag(s) on hover. Cards without a resolved icon fall back to the unit name so the grid stays readable." },
+      { type: "fix", text: "**AOR map: `aor_etruscan` is now a primary AOR** coloured with Volsinii's faction colour (the map previously keyed it as `aor_etrurian`, a tag that doesn't exist in the data, so Etruscan regions fell through to the cycling palette)." },
+    ],
+  },
+  {
     version: "0.9.734",
     date: "2026-05-29",
     items: [

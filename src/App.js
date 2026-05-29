@@ -896,7 +896,7 @@ const PRIMARY_AOR_TO_FACTION = {
   indian:       "mauryan",
   venedic:      "venedae",
   oscan:        "samnites",
-  etrurian:     "volsinii",
+  etruscan:     "volsinii",   // tag is aor_etruscan (not aor_etrurian)
   umbrian:      "sarsinates",
   messapian:    "messapians",
   picentine:    "picentes",
@@ -16528,8 +16528,25 @@ function App() {
                             }
                           }
                         }
+                        const names = [...byUnit.keys()];
+                        if (names.length === 0) return [];
+                        // Resolve unit-card icons exactly like the recruitable
+                        // grid so AOR cards look identical. AOR units are
+                        // `ownership all`; use the region owner for card art.
+                        const ownerId = (
+                          (currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (initialOwnerByCity && initialOwnerByCity[r.city])
+                          || r.faction || ""
+                        ).toLowerCase();
+                        const dictMap = unitOwnership?.__dictionary || {};
+                        if (ownerId) {
+                          prefetchUnitIcons(modDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
+                        }
                         return [...byUnit.values()].map(e => ({
-                          unit: e.unit, aors: [...e.aors], only: [...e.only], except: [...e.except],
+                          unit: e.unit,
+                          faction: ownerId,
+                          icon: ownerId ? getCachedUnitIcon(ownerId, e.unit) : null,
+                          aors: [...e.aors], only: [...e.only], except: [...e.except],
                         }));
                       })()}
                       recruitable={(() => {
