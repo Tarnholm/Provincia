@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.744",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**Illyrian/Balkan AOR secondary colours:** aor_dardanian→Dardania, aor_issaian→Issa, aor_daesitiate→Daesitiates, aor_iapodian→Iapodes, aor_liburnian→Liburni, aor_histrian→Histri, aor_labeataean→Labeatae. (`aor_delmatian` isn't present in the region data, so it was skipped.)" },
+    ],
+  },
+  {
     version: "0.9.743",
     date: "2026-05-29",
     items: [

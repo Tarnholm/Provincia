@@ -971,6 +971,14 @@ const SECONDARY_AOR_TO_FACTION = {
   campanian:    "capua",
   italiote:     "taras",
   sabellian:    "ardiaei",   // no dedicated Sabellian faction — borrow Ardiaei's colour
+  // Illyrian / Balkan secondaries
+  dardanian:    "dardania",
+  issaian:      "issa",
+  daesitiate:   "daesitiates",
+  iapodian:     "iapodes",
+  liburnian:    "liburni",   // faction id is "liburni"
+  histrian:     "histri",
+  labeataean:   "labeatae",
 };
 // AOR precedence overrides. When BOTH `winner` and `loser` co-tag a region,
 // the winner takes the primary slot (driving the fill) and the loser drops
