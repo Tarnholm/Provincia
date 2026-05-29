@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.746",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**AOR colour: aor_scordiscian → Scordisci.**" },
+    ],
+  },
+  {
     version: "0.9.745",
     date: "2026-05-29",
     items: [

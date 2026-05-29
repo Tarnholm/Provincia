@@ -980,6 +980,7 @@ const SECONDARY_AOR_TO_FACTION = {
   histrian:     "histri",
   labeataean:   "labeatae",
   dalmatian:    "delmatae",
+  scordiscian:  "scordisci",
 };
 // AOR precedence overrides. When BOTH `winner` and `loser` co-tag a region,
 // the winner takes the primary slot (driving the fill) and the loser drops
