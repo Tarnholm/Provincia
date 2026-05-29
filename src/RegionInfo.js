@@ -310,6 +310,7 @@ const CATEGORY_ORDER = ["Terrain", "Climate", "Irrigation", "Port", "Fertility",
 const SPECIALTY_AOR_TAGS = new Set([
   "aor_camillan", "aor_euzonoi", "aor_deuteroi",
   "aor_oscan_southern", // mainly spearmen — a unit-specific AOR, not a region
+  "aor_thracian_hillmen",
 ]);
 
 // Normalize arrays; split comma-delimited strings into individual tags

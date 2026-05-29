@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.748",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**More Thracian/Balkan AOR colours:** aor_bessian→Bessi, aor_paionian→Paeonia, aor_kabylean→Cabyle, aor_galato-thracian→Triballi, aor_thynian→Asti. And **aor_thracian_hillmen is now a Specialty AOR** (unit-specific, excluded from the regional map/legend)." },
+    ],
+  },
+  {
     version: "0.9.747",
     date: "2026-05-29",
     items: [

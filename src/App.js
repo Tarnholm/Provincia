@@ -943,7 +943,7 @@ const PRIMARY_AOR_TAGS = new Set(Object.keys(PRIMARY_AOR_TO_FACTION));
 // geographic. They're handled only in the AOR Units "Specialty" tab and are
 // excluded from BOTH the Primary and Secondary map layers + the legend.
 // Keep in sync with RegionInfo.SPECIALTY_AOR_TAGS (which uses full aor_ tags).
-const SPECIALTY_AOR_BARE = new Set(["camillan", "euzonoi", "deuteroi", "oscan_southern"]);
+const SPECIALTY_AOR_BARE = new Set(["camillan", "euzonoi", "deuteroi", "oscan_southern", "thracian_hillmen"]);
 // Deterministic palette slot for an AOR with no faction-mapped colour — derived
 // from the AOR name so the colour is STABLE across renders/sessions (the old
 // order-dependent cycling counter made unmapped AORs change colour each time).
@@ -981,6 +981,11 @@ const SECONDARY_AOR_TO_FACTION = {
   labeataean:   "labeatae",
   dalmatian:    "delmatae",
   scordiscian:  "scordisci",
+  bessian:      "bessi",
+  paionian:     "paeonia",
+  kabylean:     "cabyle",
+  "galato-thracian": "triballi",
+  thynian:      "asti",
 };
 // AOR precedence overrides. When BOTH `winner` and `loser` co-tag a region,
 // the winner takes the primary slot (driving the fill) and the loser drops
