@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.743",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**AOR map: unmapped AORs now have a stable colour.** AORs without a faction-mapped colour previously used an order-dependent cycling palette, so they shuffled colours every render/session. They now get a deterministic colour derived from the AOR name — stable over time, and consistent between the map and the legend." },
+      { type: "fix", text: "**save→descr_strat: faction order fixed (diplomacy + treasury).** The exporter was reading only the ~143 factions that have namelists as its faction-index order; it now reads the full descr_sm_factions declaration order (239). This makes the live diplomacy matrix locate correctly (it was timing out and falling back to a slow scan that emitted starting-state diplomacy) — Carthage turn-3 now overlays 780 attitude + 1341 aggression changes from the save — and treasury attribution rises from 130 to 221 factions." },
+    ],
+  },
+  {
     version: "0.9.742",
     date: "2026-05-29",
     items: [

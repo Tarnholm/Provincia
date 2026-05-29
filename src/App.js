@@ -944,6 +944,15 @@ const PRIMARY_AOR_TAGS = new Set(Object.keys(PRIMARY_AOR_TO_FACTION));
 // excluded from BOTH the Primary and Secondary map layers + the legend.
 // Keep in sync with RegionInfo.SPECIALTY_AOR_TAGS (which uses full aor_ tags).
 const SPECIALTY_AOR_BARE = new Set(["camillan", "euzonoi", "deuteroi", "oscan_southern"]);
+// Deterministic palette slot for an AOR with no faction-mapped colour — derived
+// from the AOR name so the colour is STABLE across renders/sessions (the old
+// order-dependent cycling counter made unmapped AORs change colour each time).
+function stableAorColorIndex(name, n) {
+  let h = 0;
+  const s = String(name);
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % n;
+}
 // Secondary AORs that should still use a faction colour (not the cycling
 // palette). These are mostly Greek city-states / Anatolian ports that the
 // user wants colour-matched to their corresponding faction even though
@@ -6183,7 +6192,7 @@ function App() {
         // when one's available. Faction-color lookups go through the
         // already-loaded factionColors map (lowercase keys).
         const aorColors = {};
-        let ai = 0, facColorHits = 0, facColorMisses = 0;
+        let facColorHits = 0, facColorMisses = 0;
         for (const list of Object.values(aorByRegionKey)) {
           for (const a of list) {
             if (aorColors[a]) continue;
@@ -6195,12 +6204,11 @@ function App() {
               facColorHits++;
             } else {
               if (facId) facColorMisses++;
-              aorColors[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
-              ai++;
+              aorColors[a] = CULTURE_PALETTE[stableAorColorIndex(a, CULTURE_PALETTE.length)];
             }
           }
         }
-        console.log(`[aor] palette built: ${Object.keys(aorColors).length} unique AORs across ${Object.keys(aorByRegionKey).length} regions (${facColorHits} faction-colored, ${facColorMisses} primary-mapped but faction-color missing, ${ai} palette-cycled)`);
+        console.log(`[aor] palette built: ${Object.keys(aorColors).length} unique AORs across ${Object.keys(aorByRegionKey).length} regions (${facColorHits} faction-colored, ${facColorMisses} primary-mapped but faction-color missing, stable-hash palette for the rest)`);
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
           (r, pr, pg, pb) => {
             const rgbKey = `${pr},${pg},${pb}`;
@@ -11936,7 +11944,6 @@ function App() {
         for (const a of getAors(r.tags)) counts[a] = (counts[a] || 0) + 1;
       }
       const seen = {};
-      let ai = 0;
       for (const r of Object.values(regions)) {
         const list = getAors(r.tags).slice().sort((a, b) => {
           const da = counts[a] || 0, db = counts[b] || 0;
@@ -11949,8 +11956,7 @@ function App() {
           if (fc && Array.isArray(fc.primary)) {
             seen[a] = fc.primary;
           } else {
-            seen[a] = CULTURE_PALETTE[ai % CULTURE_PALETTE.length];
-            ai++;
+            seen[a] = CULTURE_PALETTE[stableAorColorIndex(a, CULTURE_PALETTE.length)];
           }
         }
       }

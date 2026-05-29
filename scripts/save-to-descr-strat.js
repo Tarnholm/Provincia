@@ -1674,10 +1674,21 @@ async function main() {
   const nameLookup = loadNameLookup(modDataDir);
   const namelists = loadNamelists(modDataDir);
   const factionNamelists = loadFactionNamelists(modDataDir);
-  // descr_sm_factions declaration order (index → faction). Used for treasury +
-  // diplomacy mapping (the engine's real index order). Falls back to engineOrder.
-  const smOrder = (factionNamelists && Object.keys(factionNamelists).length > 2)
-    ? Object.keys(factionNamelists) : engineOrder;
+  // FULL descr_sm_factions declaration order (ALL factions, in order) — the
+  // engine's real index order for treasury records AND the diplomacy matrix.
+  // NB: loadFactionNamelists only captures the ~143 factions that have a
+  // namelist mapping, so we re-read the faction headers here with a permissive
+  // one-tab regex to get all 239 in declaration order. Falls back to engineOrder.
+  const smOrder = (() => {
+    try {
+      const ord = [];
+      for (const ln of fs.readFileSync(path.join(modDataDir, "descr_sm_factions.txt"), "utf8").replace(/^﻿/, "").split(/\r?\n/)) {
+        const m = ln.match(/^\t"([a-z_0-9]+)"\s*:/);
+        if (m) ord.push(m[1]);
+      }
+      return ord.length > 2 ? ord : engineOrder;
+    } catch { return engineOrder; }
+  })();
   // Gender oracle: lowercased firstName → "female" or "male" based on which
   // namelist (`_women` vs `_men`) the name appears in. Used to enrich
   // characters whose gender byte is 0 ("unknown") — about 95% of records
@@ -2122,14 +2133,10 @@ async function main() {
   // splitStart and splitEnd), so we re-emit them here. At turn 1 these
   // exactly match the source descr_strat; later turns reflect actual state.
   const { makeDiplomacyPairReader: makePairReader } = require("../src/saveCrackerExtras.js");
-  const stratOrderArr = [];
-  for (const ln of fs.readFileSync(stratPath, "utf8").split(/\r?\n/)) {
-    const m = ln.match(/^\s*faction\s+([a-z_0-9]+)/i);
-    if (m && !stratOrderArr.includes(m[1])) stratOrderArr.push(m[1]);
-  }
-  const { deriveEngineFactionOrder: dEFO } = require("../src/saveCrackerExtras.js");
-  const engOrder = dEFO(stratOrderArr);
-  const pairReader = makePairReader(buf, engOrder);
+  // Use descr_sm_factions order (smOrder) — the engine's real matrix index
+  // order — so the live att/agg overlay reads the correct cell per pair.
+  // (The old rebel-shuffled engineOrder mis-aligned it, so nothing overlaid.)
+  const pairReader = makePairReader(buf, smOrder);
   if (pairReader) {
     const bundledStratText = fs.readFileSync(stratPath, "utf8");
     // Use matrix overlay for T2+ (captures war declarations, peace, attitude
