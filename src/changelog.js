@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.737",
+    date: "2026-05-29",
+    items: [
+      { type: "feature", text: "**AOR mode: Regional vs Specialty zone tabs.** Some AORs gate a specific unit-type or reform-era roster rather than a geographic culture (e.g. `aor_camillan` = Roman manipular-era units in Italy; `aor_euzonoi` / `aor_deuteroi` = specific Greek troop classes). These are now kept out of the default **Regional** view and shown under a **Specialty** tab, so they no longer clutter the normal cultural/regional roster. (Curated list — extend as more are found.)" },
+      { type: "feature", text: "**AOR mode: faction picker in Factional view.** When the Factional filter is on and the region's roster spans multiple factions (a Greek region can span 50+), a chip row lets you narrow to a single faction (or All). Previously you'd just see the whole faction-locked set — in Italy that's only the Roman factions, which is correct, but Greek/eastern regions needed the picker." },
+    ],
+  },
+  {
     version: "0.9.736",
     date: "2026-05-29",
     items: [

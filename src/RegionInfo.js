@@ -301,6 +301,16 @@ const CATEGORY_COLOURS = {
 // redundant noise.
 const CATEGORY_ORDER = ["Terrain", "Climate", "Irrigation", "Port", "Fertility", "Hazards & Trade", "Hidden Resource"];
 
+// "Specialty" AORs gate a specific unit-type or reform-era roster rather than a
+// geographic culture/region (e.g. aor_camillan = Roman manipular-era units in
+// Italy; aor_euzonoi / aor_deuteroi = specific Greek troop classes). They're
+// kept out of the default "Regional" AOR view and shown under a "Specialty" tab.
+// This is a CURATED list — semantic, not derivable from the recruit data
+// (aor_smyrnaian/aor_mariandynian are places, not specialties). Extend as needed.
+const SPECIALTY_AOR_TAGS = new Set([
+  "aor_camillan", "aor_euzonoi", "aor_deuteroi",
+]);
+
 // Normalize arrays; split comma-delimited strings into individual tags
 function listOrEmpty(val) {
   if (!val) return [];
@@ -1038,6 +1048,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // "everybody" (the generic AOR units any faction can train), or "both".
   const [aorFilter, setAorFilter] = useState(() => { try { return localStorage.getItem("aorFilter") || "both"; } catch { return "both"; } });
   useEffect(() => { try { localStorage.setItem("aorFilter", aorFilter); } catch {} }, [aorFilter]);
+  // Zone tab: "regional" (cultural AORs + resources) vs "specialty" (curated
+  // unit/reform AORs). Faction picker: a specific faction id (or "all") to
+  // narrow factional units when the region's roster spans many factions.
+  const [aorZoneView, setAorZoneView] = useState(() => { try { return localStorage.getItem("aorZoneView") || "regional"; } catch { return "regional"; } });
+  useEffect(() => { try { localStorage.setItem("aorZoneView", aorZoneView); } catch {} }, [aorZoneView]);
+  const [aorFactionPick, setAorFactionPick] = useState("all");
   // Hidden-resource hover: chip in the tags row → highlight every
   // recruit gated on that HR. Builds on the existing recruit/building
   // cross-link.
@@ -2505,22 +2521,31 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ fontWeight: 700, fontSize: "0.85rem", color: aorUnits != null ? "#dca64a" : "#9fc78a" }}>{aorUnits != null ? "AOR Units:" : "Recruitable:"}</div>
-            {aorUnits != null && (
-              <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
-                {[["factional", "Factional"], ["everybody", "All factions"], ["both", "Both"]].map(([val, label]) => (
-                  <button key={val} onClick={() => setAorFilter(val)} title={`Show ${label.toLowerCase()} AOR units`}
-                    style={{
-                      fontSize: "0.6rem", padding: "1px 6px", borderRadius: 3, cursor: "pointer",
-                      border: "1px solid " + (aorFilter === val ? "#dca64a" : "rgba(255,255,255,0.18)"),
-                      background: aorFilter === val ? "rgba(220,166,74,0.25)" : "rgba(0,0,0,0.3)",
-                      color: aorFilter === val ? "#f0d090" : "#bbb", fontWeight: aorFilter === val ? 700 : 400,
-                    }}>{label}</button>
-                ))}
+          {aorUnits != null ? (() => {
+            const seg = (active) => ({
+              fontSize: "0.6rem", padding: "1px 6px", borderRadius: 3, cursor: "pointer",
+              border: "1px solid " + (active ? "#dca64a" : "rgba(255,255,255,0.18)"),
+              background: active ? "rgba(220,166,74,0.25)" : "rgba(0,0,0,0.3)",
+              color: active ? "#f0d090" : "#bbb", fontWeight: active ? 700 : 400,
+            });
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#dca64a" }}>AOR Units:</div>
+                <div style={{ display: "flex", gap: 2 }}>
+                  {[["regional", "Regional"], ["specialty", "Specialty"]].map(([val, label]) => (
+                    <button key={val} onClick={() => { setAorZoneView(val); setAorFactionPick("all"); }} title={`Show ${label.toLowerCase()} AORs`} style={seg(aorZoneView === val)}>{label}</button>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
+                  {[["factional", "Factional"], ["everybody", "All factions"], ["both", "Both"]].map(([val, label]) => (
+                    <button key={val} onClick={() => { setAorFilter(val); setAorFactionPick("all"); }} title={`Show ${label.toLowerCase()} AOR units`} style={seg(aorFilter === val)}>{label}</button>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })() : (
+            <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#9fc78a" }}>Recruitable:</div>
+          )}
         </div>
         <div style={widgetBody}>
         {aorUnits != null ? (() => {
@@ -2541,22 +2566,61 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             if (u.except && u.except.length) return { short: `not: ${shortFactions(u.except)}`, full: `all except ${u.except.map(factionLabel).join(", ")}`, color: "#e8a060", bg: "rgba(200,120,40,0.9)" };
             return null;
           };
-          // Factional = locked to specific factions (has `only`); everybody =
-          // the generic AOR units (no `only`). "both" shows all.
-          const passesFilter = (u) => {
+          // Zone tab: regional (cultural AORs + resources) vs specialty (curated
+          // unit/reform AORs like aor_camillan). Faction filter: factional (units
+          // locked to specific factions) / everybody (factions { all }) / both.
+          const isSpecialtyZone = (z) => SPECIALTY_AOR_TAGS.has(z);
+          const zonePass = (u) => {
+            const zones = u.aors || [];
+            return aorZoneView === "specialty" ? zones.some(isSpecialtyZone) : zones.some((z) => !isSpecialtyZone(z));
+          };
+          const factionPass = (u) => {
             const factional = !!(u.only && u.only.length);
             return aorFilter === "both" || (aorFilter === "factional" ? factional : !factional);
           };
-          const sorted = aorUnits.slice().filter(passesFilter).sort((a, b) => {
+          let pool = aorUnits.filter((u) => zonePass(u) && factionPass(u));
+          // Faction picker (factional mode): the distinct factions across the pool,
+          // so a Greek region's 50-faction roster can be narrowed to one faction.
+          let factionOptions = [];
+          if (aorFilter === "factional") {
+            const fset = new Set();
+            for (const u of pool) for (const f of (u.only || [])) fset.add(f);
+            factionOptions = [...fset].sort((a, b) => factionLabel(a).localeCompare(factionLabel(b)));
+            if (aorFactionPick !== "all" && fset.has(aorFactionPick)) {
+              pool = pool.filter((u) => (u.only || []).includes(aorFactionPick));
+            }
+          }
+          const sorted = pool.slice().sort((a, b) => {
             const ta = (a.aors || []).slice().sort().join(","), tb = (b.aors || []).slice().sort().join(",");
             if (ta !== tb) return ta.localeCompare(tb);
             return cleanUnit(a.unit).localeCompare(cleanUnit(b.unit));
           });
+          const segChip = (active) => ({
+            fontSize: "0.55rem", padding: "0px 5px", borderRadius: 8, cursor: "pointer",
+            border: "1px solid " + (active ? "#dca64a" : "rgba(255,255,255,0.18)"),
+            background: active ? "rgba(220,166,74,0.25)" : "rgba(0,0,0,0.3)",
+            color: active ? "#f0d090" : "#bbb", fontWeight: active ? 700 : 400, whiteSpace: "nowrap",
+          });
+          const factionPicker = (aorFilter === "factional" && factionOptions.length > 1) ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 2, flexShrink: 0, marginBottom: 1 }}>
+              <button onClick={() => setAorFactionPick("all")} style={segChip(aorFactionPick === "all")}>All ({factionOptions.length})</button>
+              {factionOptions.map((fid) => (
+                <button key={fid} onClick={() => setAorFactionPick(fid)} title={factionLabel(fid)} style={segChip(aorFactionPick === fid)}>{factionLabel(fid)}</button>
+              ))}
+            </div>
+          ) : null;
           if (sorted.length === 0) {
-            return <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>No {aorFilter === "factional" ? "faction-specific" : aorFilter === "everybody" ? "all-faction" : ""} AOR units here</span>;
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {factionPicker}
+                <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>No matching AOR units here</span>
+              </div>
+            );
           }
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gridAutoRows: "min-content", gap: 3, flex: 1, minHeight: 0, overflowY: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minHeight: 0 }}>
+              {factionPicker}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gridAutoRows: "min-content", gap: 3, flex: 1, minHeight: 0, overflowY: "auto" }}>
               {sorted.map((u, i) => {
                 const note = noteFor(u);
                 const aorLabel = (u.aors || []).map((a) => a.replace(/^aor_/, "")).join(", ");
@@ -2578,6 +2642,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   </div>
                 );
               })}
+              </div>
             </div>
           );
         })() : (() => {
