@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.734",
+    date: "2026-05-29",
+    items: [
+      { type: "feature", text: "**AOR mode: click a region to see its full Area-of-Recruitment roster.** When the map is in AOR colour mode, clicking a region now shows an \"AOR Units\" panel listing every AOR unit the region's land enables — grouped by aor_ tag and **owner-independent**, so the correct units appear no matter who holds the region. Each unit carries a faction-restriction note where one applies (e.g. Achaian Hoplites appear under aor_achaian flagged \"all except Achaea\", and the native Achaea-only variant is flagged \"Achaea only\"). Honors `not hidden_resource` exclusions (so e.g. aor_asian units don't show in Greek regions). The panel only appears in AOR mode." },
+    ],
+  },
+  {
     version: "0.9.733",
     date: "2026-05-29",
     items: [

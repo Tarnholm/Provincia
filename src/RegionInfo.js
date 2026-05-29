@@ -478,7 +478,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -2599,6 +2599,77 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         </div>
       </div>
       </Movable>
+
+      {/* AOR Units — Movable widget. Shown ONLY in AOR map mode (App passes
+          aorUnits non-null there). Full owner-independent roster of the
+          region's recruitment zone, grouped by aor_ tag, with per-unit
+          faction-restriction notes (e.g. Achaian Hoplites under aor_achaian
+          flagged "all except Achaea"). */}
+      {aorUnits != null && (
+      <Movable id="region.aorunits" title="AOR Units" designMode={designMode} colBox={colBox}
+        defaultPct={{ x: 0.7857, y: 0.345, w: 0.2090, h: 0.158 }}>
+      <div className={panelInnerClass} style={panelInner}>
+        <div style={widgetHeader}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#dca64a" }}>AOR Units:</div>
+        </div>
+        <div style={widgetBody}>
+        {(() => {
+          if (!aorUnits || aorUnits.length === 0) {
+            return <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>No AOR units for this region</span>;
+          }
+          // Group units by each AOR tag that gates them (a unit gated by two
+          // AORs appears under both — that's informative, not a bug).
+          const groups = new Map();
+          for (const u of aorUnits) {
+            for (const a of (u.aors || [])) {
+              if (!groups.has(a)) groups.set(a, []);
+              groups.get(a).push(u);
+            }
+          }
+          const sortedTags = [...groups.keys()].sort();
+          const cleanUnit = (t) => String(t || "").replace(/^aor\s+/i, "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+          // Cap long faction lists in the visible chip; the full list goes in
+          // the hover title. RIS gates some units on 40+ explicit factions.
+          const capList = (arr) => {
+            const n = arr.map(factionLabel);
+            return n.length > 4 ? `${n.slice(0, 4).join(", ")}, +${n.length - 4} more` : n.join(", ");
+          };
+          const noteFor = (u) => {
+            if (u.only && u.only.length) return { text: `${capList(u.only)} only`, full: `${u.only.map(factionLabel).join(", ")} only`, color: "#9fc78a" };
+            if (u.except && u.except.length) return { text: `all except ${capList(u.except)}`, full: `all except ${u.except.map(factionLabel).join(", ")}`, color: "#e8a060" };
+            return null;
+          };
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minHeight: 0, overflowY: "auto" }}>
+              {sortedTags.map((tag) => {
+                const units = groups.get(tag).slice().sort((a, b) => cleanUnit(a.unit).localeCompare(cleanUnit(b.unit)));
+                return (
+                  <div key={tag}>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#dca64a", marginBottom: 2 }}>
+                      {tag.replace(/^aor_/, "")} <span style={{ color: "#888", fontWeight: 400 }}>({units.length})</span>
+                    </div>
+                    {units.map((u, i) => {
+                      const note = noteFor(u);
+                      return (
+                        <div key={i}
+                          onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", name: u.unit, label: cleanUnit(u.unit) }); } }}
+                          style={{ fontSize: "0.7rem", color: "#ddd", lineHeight: 1.5, paddingLeft: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                          title={u.unit.replace(/_/g, " ") + (note ? ` — ${note.full}` : "")}>
+                          • {cleanUnit(u.unit)}
+                          {note && <span style={{ color: note.color, fontStyle: "italic" }}> · {note.text}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+        </div>
+      </div>
+      </Movable>
+      )}
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode} colBox={colBox}

@@ -16457,6 +16457,81 @@ function App() {
                         for (const a of arms) for (const u of a.units || []) out.push(u);
                         return out;
                       })()}
+                      aorUnits={(() => {
+                        // AOR MODE ONLY: the FULL Area-of-Recruitment roster a
+                        // region's land enables — owner- and building-INDEPENDENT,
+                        // so the correct AOR units show no matter who holds it.
+                        // A unit qualifies if some `hidden_resource aor_X` it
+                        // requires is present in the region's tags (and no
+                        // `not hidden_resource` it lists is present). Faction
+                        // gating is NOT used to include/exclude — instead we
+                        // capture it as a per-unit note ("Carthage only", "all
+                        // except Achaea") so e.g. Achaian Hoplites still appear
+                        // under aor_achaian, flagged as unavailable to Achaea.
+                        if (colorMode !== "aor") return null;
+                        const r = lockedRegionInfo || regionInfo;
+                        if (!r || !buildingRecruits) return null;
+                        const tagSet = new Set(
+                          String(r.tags || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+                        );
+                        if (![...tagSet].some(t => t.startsWith("aor_"))) return [];
+                        const byUnit = new Map(); // unit → {unit, aors:Set, only:Set, except:Set}
+                        for (const chain of Object.keys(buildingRecruits)) {
+                          if (chain === "__aliases") continue;
+                          const lvls = buildingRecruits[chain];
+                          if (!lvls || typeof lvls !== "object") continue;
+                          for (const lvl of Object.keys(lvls)) {
+                            const recs = lvls[lvl];
+                            if (!Array.isArray(recs)) continue;
+                            for (const rec of recs) {
+                              const reqs = rec.requires || "";
+                              if (!reqs) continue;
+                              // AI-only freebie lines duplicate the player line — skip.
+                              if (/\bnot\s+is_player\b/.test(reqs)) continue;
+                              // Positive hidden_resources (strip negatives first).
+                              const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+                              const posAors = [];
+                              for (const m of positives.matchAll(/\bhidden_resource\s+(aor_\w+)/g)) posAors.push(m[1].toLowerCase());
+                              if (posAors.length === 0) continue; // not an AOR recruit line
+                              // Every positive hidden_resource must be in the region.
+                              let ok = true;
+                              for (const m of positives.matchAll(/\bhidden_resource\s+(\S+)/g)) {
+                                if (!tagSet.has(m[1].toLowerCase())) { ok = false; break; }
+                              }
+                              if (!ok) continue;
+                              // No excluded hidden_resource may be present.
+                              for (const m of reqs.matchAll(/\bnot\s+hidden_resource\s+(\S+)/g)) {
+                                if (tagSet.has(m[1].toLowerCase())) { ok = false; break; }
+                              }
+                              if (!ok) continue;
+                              const matchedAors = posAors.filter(a => tagSet.has(a));
+                              if (matchedAors.length === 0) continue;
+                              // Faction notes. `not factions {…}` → except; a
+                              // positive `factions {…}` without `all` → only.
+                              let only = null, except = null;
+                              const noNeg = reqs.replace(/\bnot\s+factions\s*\{[^}]*\}/g, "");
+                              const posF = noNeg.match(/\bfactions\s*\{\s*([^}]*)\}/);
+                              if (posF) {
+                                const ids = posF[1].split(/[,\s]+/).map(s => s.trim().toLowerCase()).filter(Boolean).filter(x => x !== "all");
+                                if (ids.length) only = ids;
+                              }
+                              const negF = reqs.match(/\bnot\s+factions\s*\{\s*([^}]*)\}/);
+                              if (negF) {
+                                const ids = negF[1].split(/[,\s]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
+                                if (ids.length) except = ids;
+                              }
+                              let e = byUnit.get(rec.unit);
+                              if (!e) { e = { unit: rec.unit, aors: new Set(), only: new Set(), except: new Set() }; byUnit.set(rec.unit, e); }
+                              for (const a of matchedAors) e.aors.add(a);
+                              if (only) for (const f of only) e.only.add(f);
+                              if (except) for (const f of except) e.except.add(f);
+                            }
+                          }
+                        }
+                        return [...byUnit.values()].map(e => ({
+                          unit: e.unit, aors: [...e.aors], only: [...e.only], except: [...e.except],
+                        }));
+                      })()}
                       recruitable={(() => {
                         // Compute the union of recruit entries the city can
                         // currently train. RTW building chains are cumulative:
