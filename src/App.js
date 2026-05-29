@@ -979,6 +979,7 @@ const SECONDARY_AOR_TO_FACTION = {
   liburnian:    "liburni",   // faction id is "liburni"
   histrian:     "histri",
   labeataean:   "labeatae",
+  dalmatian:    "delmatae",
 };
 // AOR precedence overrides. When BOTH `winner` and `loser` co-tag a region,
 // the winner takes the primary slot (driving the fill) and the loser drops

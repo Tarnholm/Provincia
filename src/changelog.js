@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.745",
+    date: "2026-05-29",
+    items: [
+      { type: "improvement", text: "**AOR colour: aor_dalmatian → Delmatae** (completes the Illyrian set; the tag is spelled `aor_dalmatian`)." },
+    ],
+  },
+  {
     version: "0.9.744",
     date: "2026-05-29",
     items: [
