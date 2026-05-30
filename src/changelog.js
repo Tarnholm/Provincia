@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.751",
+    date: "2026-05-31",
+    items: [
+      { type: "feature", text: "**End-of-turn event log from saves** — births, deaths, marriages, adoptions, settlement sieges/captures/losses, governor appointments and faction defeats are now decoded directly from the save (each tagged with its faction). Exposed on `crackSave().events`; a `diffTurn()` between two consecutive saves yields exactly \"what happened last turn\" — an authoritative, structured alternative to scraping message_log.txt." },
+    ],
+  },
+  {
     version: "0.9.750",
     date: "2026-05-31",
     items: [

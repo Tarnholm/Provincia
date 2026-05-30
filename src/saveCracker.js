@@ -20,6 +20,7 @@ const { buildInitialOwnership } = require("./ownershipParser.js");
 const { findCharacterRecords } = require("./characterParser.js");
 const { parseFamilyRecords, indexFamily, attributeFamilyFactions } = require("./familyRecordParser.js");
 const { parseSieges } = require("./siegeParser.js");
+const { parseEventLog } = require("./eventLogParser.js");
 const x = require("./saveCrackerExtras.js");
 
 // Faction attribution for character records — characters appear in a block
@@ -285,6 +286,11 @@ function crackSave(saveBuf, modDataDir) {
   const settlementList = (settlements && settlements.settlements) || [];
   const sieges = parseSieges(saveBuf, settlementList);
 
+  // End-of-turn event log — sieges/captures/births/deaths/marriages/defeats,
+  // each tagged with the owning faction (cracked 2026-05-31, src/eventLogParser.js).
+  // diffTurn() against the previous save yields "what happened last turn".
+  const events = parseEventLog(saveBuf, stratOrder);
+
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
   // — that field is broken: returns 4 for Carthage when truth is 41).
@@ -438,6 +444,7 @@ function crackSave(saveBuf, modDataDir) {
     },
     diplomacy,                  // { factionName: {war, allied, hostile, trade}, _meta }
     sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, targetSettlement }]
+    events,                     // end-of-turn event log [{ type, faction, subject, title, body }]
     ownerByCity: ownersOut.ownerByCity || {},
     _stats: {
       ms: Date.now() - t0,
@@ -449,6 +456,7 @@ function crackSave(saveBuf, modDataDir) {
       familyFemales: family.filter((r) => r.gender === "female").length,
       familyAttributed: family.filter((r) => r.faction).length,
       sieges: sieges.length,
+      events: events.length,
       wars: diplomacy ? diplomacy._meta?.warPairs : null,
       saveSizeBytes: saveBuf.length,
     },
