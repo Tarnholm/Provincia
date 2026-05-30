@@ -83,6 +83,27 @@ const RX = {
   charDeath: /^(.+?)\(([a-z_]+):([a-z_ ]+)\)\(([0-9a-f]+)\):death_type\((DET_[A-Z]+)\)/,
   // Name(uuid:faction:role):DYING:start(x,y):end(x,y):death_type(DET_XXX)
   charDying: /^(.+?)\(([0-9a-f]+):([a-z_]+):([a-z_ ]+)\):DYING:start\((\d+),(\d+)\):end\((\d+),(\d+)\):death_type\((DET_[A-Z]+)\)/,
+
+  // --- Confirmed RIS-imperial campaign/script events (2026-05-31 probe) ---
+  // These are emitted by the engine's campaign-state machine and RIS scripts;
+  // they're the player-facing/scripted events useful for testing reforms,
+  // victory progress (triumph points), and scripted settlement flips.
+  //
+  // faction(seleucid) captures Abai from slave. Reason - CAPTURED
+  // Reason is one of CAPTURED / OCCUPIED / SACKED / etc.
+  settlementCapture: /^faction\(([a-z_0-9]+)\) captures (.+?) from ([a-z_0-9]+)\. Reason - ([A-Z_]+)$/,
+  // New Character - Faction(romans_julii) named character(Quintus Ogulnius Gallus)
+  newCharacter: /^New Character - Faction\(([a-z_0-9]+)\) named character\((.+?)\)\s*$/,
+  // setting capital(Rome:223955f6060:romans_julii) for faction(romans_julii)
+  setCapital: /^setting capital\((.+?):([0-9a-f]+):([a-z_0-9]+)\) for faction\(([a-z_0-9]+)\)/,
+  // attaching region Roma(696) to faction(romans_julii), giving them 5 triumph points
+  attachRegion: /^attaching region (.+?)\((\d+)\) to faction\(([a-z_0-9]+)\), giving them (\d+) triumph points/,
+  // Biggus Dickus (0:age 16) has married Prisca(age 21)
+  marriage: /^(.+?)\((?:[0-9a-f]+):age (\d+)\) has married (.+?)\(age (\d+)\)$/,
+  // region(3) - harvest status(poor), famine threat(ok)
+  harvestStatus: /^region\((\d+)\) - harvest status\(([a-z]+)\), famine threat\(([a-z]+)\)$/,
+  // Created a port attached to settlement 'Rome', faction 'romans_julii'
+  portCreated: /^Created a port attached to settlement '([^']+)', faction '([a-z_0-9]+)'/,
 };
 
 // Take the last 8 hex chars of a uuid — normalizes long memory-pointer UUIDs
@@ -259,6 +280,52 @@ function parseLine(line) {
       fromX: +m[5], fromY: +m[6], toX: +m[7], toY: +m[8],
       deathType: m[9],
       alive: m[9] === "DET_ALIVE",
+    };
+  }
+  if ((m = RX.settlementCapture.exec(line))) {
+    return {
+      type: "settlement_capture",
+      faction: m[1], settlement: m[2].trim(),
+      fromFaction: m[3], reason: m[4],
+    };
+  }
+  if ((m = RX.newCharacter.exec(line))) {
+    return {
+      type: "new_character",
+      faction: m[1], name: m[2].trim(),
+    };
+  }
+  if ((m = RX.setCapital.exec(line))) {
+    return {
+      type: "set_capital",
+      settlement: m[1].trim(), settlementUuid: shortUuid(m[2]),
+      settlementFaction: m[3], faction: m[4],
+    };
+  }
+  if ((m = RX.attachRegion.exec(line))) {
+    return {
+      type: "attach_region",
+      region: m[1].trim(), regionId: +m[2],
+      faction: m[3], triumphPoints: +m[4],
+    };
+  }
+  if ((m = RX.marriage.exec(line))) {
+    return {
+      type: "marriage",
+      name: m[1].trim(), age: +m[2],
+      spouse: m[3].trim(), spouseAge: +m[4],
+    };
+  }
+  if ((m = RX.harvestStatus.exec(line))) {
+    return {
+      type: "harvest_status",
+      regionId: +m[1], harvest: m[2], famineThreat: m[3],
+    };
+  }
+  if ((m = RX.portCreated.exec(line))) {
+    return {
+      type: "port_created",
+      settlement: m[1], faction: m[2],
     };
   }
   return null;

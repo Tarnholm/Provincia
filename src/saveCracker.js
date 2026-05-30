@@ -18,6 +18,8 @@ const { parseSettlements } = require("./buildingParser.js");
 const { resolveCurrentOwners } = require("./saveOwnershipParser.js");
 const { buildInitialOwnership } = require("./ownershipParser.js");
 const { findCharacterRecords } = require("./characterParser.js");
+const { parseFamilyRecords, indexFamily, attributeFamilyFactions } = require("./familyRecordParser.js");
+const { parseSieges } = require("./siegeParser.js");
 const x = require("./saveCrackerExtras.js");
 
 // Faction attribution for character records — characters appear in a block
@@ -246,6 +248,43 @@ function crackSave(saveBuf, modDataDir) {
     assignFactions(v1Chars, markers);
   }
 
+  // Full family roster — wives, daughters, young sons, dead relatives. These
+  // are NOT in v1 (no trait list to anchor on); they live in a separate
+  // fixed-stride family table. Cracked 2026-05-30 (see
+  // src/familyRecordParser.js + rtw-sav-parser findings-family-2026-05-30).
+  // Each record carries name, age, gender, alive/dead, and father/spouse/child
+  // UUID links. Family HEADS (adult male generals) are in v1, not here, so we
+  // resolve link names against BOTH this table and the v1 character set.
+  let family = [];
+  if (nameLookup.length) {
+    family = parseFamilyRecords(saveBuf, nameLookup);
+    // Build a uuid->name map from v1 generals so father/spouse links that
+    // point at a trait-anchored head still resolve to a name.
+    const extraUuidNames = new Map();
+    for (const c of v1Chars) {
+      const uuid = c.uuid != null ? c.uuid : c.characterUuid;
+      const nm = c.fullName || c.name ||
+        (c.firstName ? (c.lastName ? `${c.firstName} ${c.lastName}` : c.firstName) : null);
+      if (uuid != null && nm) extraUuidNames.set(uuid >>> 0, nm);
+    }
+    indexFamily(family, extraUuidNames);
+    // Attribute family members to factions via the UUID link graph (they have
+    // no per-faction marker of their own). Adds `.faction` to each record.
+    attributeFamilyFactions(family, v1Chars);
+  }
+  // Per-faction family rollup (generals from v1 + their wives/children/dead
+  // relatives from the family table) — what the round-trip needs to emit a
+  // complete `character_record` set.
+  const familyByFaction = {};
+  for (const r of family) {
+    if (r.faction) (familyByFaction[r.faction] ||= []).push(r);
+  }
+
+  // Active sieges — siege-ID links the besieging army to the besieged
+  // settlement (cracked 2026-05-30, src/siegeParser.js). Empty when none active.
+  const settlementList = (settlements && settlements.settlements) || [];
+  const sieges = parseSieges(saveBuf, settlementList);
+
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
   // — that field is broken: returns 4 for Carthage when truth is 41).
@@ -391,11 +430,14 @@ function crackSave(saveBuf, modDataDir) {
     factions,
     settlements: settlements && settlements.settlements ? settlements.settlements : [],
     characters: {
-      v1: v1Chars,              // 9 male generals + named sons per faction
-      v2Count: v2Chars.length,  // 498 total — includes wives/daughters but no role/faction
-      // KNOWN GAP: no clean "full family per faction" parser — see notes above
+      v1: v1Chars,              // trait-anchored: generals/agents (name, traits, age, pos)
+      v2Count: v2Chars.length,  // role/uuid records (no names)
+      family,                   // FULL family roster incl. women: name, age, gender,
+                                // alive, faction, fatherUuid/spouseUuid/childUuids (+resolved names)
+      familyByFaction,          // family records grouped by attributed faction
     },
     diplomacy,                  // { factionName: {war, allied, hostile, trade}, _meta }
+    sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, targetSettlement }]
     ownerByCity: ownersOut.ownerByCity || {},
     _stats: {
       ms: Date.now() - t0,
@@ -403,6 +445,10 @@ function crackSave(saveBuf, modDataDir) {
       settlements: (settlements && settlements.settlements || []).length,
       v1Characters: v1Chars.length,
       v2Characters: v2Chars.length,
+      familyMembers: family.length,
+      familyFemales: family.filter((r) => r.gender === "female").length,
+      familyAttributed: family.filter((r) => r.faction).length,
+      sieges: sieges.length,
       wars: diplomacy ? diplomacy._meta?.warPairs : null,
       saveSizeBytes: saveBuf.length,
     },

@@ -4782,6 +4782,27 @@ function App() {
       try {
         console.log(`[save-snapshot] file="${file}" treas=${Array.isArray(data?.factionTreasuries) ? data.factionTreasuries.length : "none"} owners=${Array.isArray(data?.factionRecordOwners) ? data.factionRecordOwners.length : "none"} income=${data?.incomeByCity ? Object.keys(data.incomeByCity).length : "none"} diplo=${data?.allFactionDiplomacy ? Object.keys(data.allFactionDiplomacy).length : "none"}`);
       } catch {}
+      // Merge save-parsed siege turns-remaining into activeSieges (cracked
+      // 2026-05-30 — main.js attaches data.sieges via src/siegeParser.js). The
+      // besieger's turn counter resets to 5 and counts down; 0 = ripe to fall.
+      // The message-log path supplies the general + map coords; the save supplies
+      // the authoritative turns-remaining keyed by besieged settlement name.
+      try {
+        if (Array.isArray(data?.sieges)) {
+          setActiveSieges(prev => {
+            const next = { ...prev };
+            for (const s of data.sieges) {
+              if (!s.targetSettlement) continue;
+              next[s.targetSettlement] = {
+                ...(next[s.targetSettlement] || {}),
+                turnsRemaining: s.turnsRemaining,
+                fromSave: true,
+              };
+            }
+            return next;
+          });
+        }
+      } catch (e) { console.warn("[save-snapshot] siege-turns merge failed:", e?.message); }
       // Clear the assault-wiped-settlements list on every save refresh.
       // The wipe was added in 0.9.267 to drop a defender's units from the
       // captured-settlement's panel during the live moment between the
@@ -7394,6 +7415,9 @@ function App() {
       const mh = (CAMPAIGNS[mapCampaign]?.mapHeight || 350) - 1;
       const siegeR = Math.max(3 / totalScale, 0.8);
       for (const [name, siege] of Object.entries(activeSieges)) {
+        // A save-only siege (no message-log "begun" event yet) has turns but no
+        // map coords — skip the map marker for it (the textual list still shows it).
+        if (siege.x == null || siege.y == null) continue;
         const mapX = siege.x;
         const mapY = mh - siege.y; // flip Y from log coords to map coords
         const sx = mapX * totalScale + baseOffsetX + offset.x;
@@ -7416,6 +7440,21 @@ function App() {
         ctx.strokeStyle = "rgba(255, 60, 60, 0.8)";
         ctx.lineWidth = Math.max(0.4 / totalScale, 0.1);
         ctx.stroke();
+        // Turns-remaining label (from the save crack): how many turns until the
+        // settlement falls. Drawn just above the siege circle.
+        if (siege.turnsRemaining != null) {
+          const label = `${siege.turnsRemaining}t`;
+          const fontPx = Math.max(2.6 / totalScale, 0.7);
+          ctx.font = `bold ${fontPx}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          const ly = mapY + 0.5 - siegeR - fontPx * 0.25;
+          ctx.lineWidth = Math.max(0.5 / totalScale, 0.12);
+          ctx.strokeStyle = "rgba(0,0,0,0.85)";
+          ctx.strokeText(label, mapX + 0.5, ly);
+          ctx.fillStyle = "rgba(255,210,80,0.98)";
+          ctx.fillText(label, mapX + 0.5, ly);
+        }
         ctx.restore();
       }
     }

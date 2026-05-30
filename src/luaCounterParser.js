@@ -138,8 +138,41 @@ function readCounter(buf, name) {
   return null;
 }
 
+// Classify a counter table into semantic buckets. CONFIRMED against the RIS
+// imperial RIS_Campaign_Script.txt (2026-05-31): every `id_*` counter is a
+// faction's script-load-time UUID (constant for the life of a campaign);
+// `*_reform_*`, `num_battles_*`, `*Rebellion_*`, `*_recruit_*` etc. are live
+// script state that ticks as the campaign plays.
+//
+// IMPORTANT caveat on `turn_number`: in RIS it is NOT a usable turn index. The
+// script (NewTurnStart monitor) does `inc 1; if >0 then inc -4`, oscillating
+// 0 -> -3 -> -2 -> -1 -> -3 -> ... purely as a season toggle. Read it as a
+// signed i32 and do NOT treat it as the real turn. The engine turn comes from
+// the econ-history block count elsewhere in the save (see Provincia memory).
+function classifyCounters(records) {
+  const factionIds = {};   // name -> uuid value
+  const scriptState = {};  // name -> value (live, mutable)
+  const engineCounters = {}; // turn_number / setup flags
+  for (const r of records) {
+    if (/^id_/.test(r.name)) {
+      factionIds[r.name] = r.value;
+    } else if (
+      r.name === "turn_number" ||
+      /first_time_setup|first_setup|has_game_reloaded|capital_first_setup/.test(r.name)
+    ) {
+      // Store signed i32 for turn_number since RIS pushes it negative.
+      engineCounters[r.name] =
+        r.value >= 0x80000000 ? r.value - 0x100000000 : r.value;
+    } else {
+      scriptState[r.name] = r.value;
+    }
+  }
+  return { factionIds, scriptState, engineCounters };
+}
+
 module.exports = {
   findLuaCounters,
   indexCountersByName,
   readCounter,
+  classifyCounters,
 };

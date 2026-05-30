@@ -149,6 +149,7 @@ const { parseSettlements } = require("./src/buildingParser.js");
 const { buildInitialOwnership } = require("./src/ownershipParser.js");
 const { resolveCurrentOwners, findSettlementGovernors } = require("./src/saveOwnershipParser.js");
 const { findAllSettlementMarkers } = require("./src/buildingParser.js");
+const { parseSieges } = require("./src/siegeParser.js");
 const { findFactionRecords, summarizeFactionArray } = require("./src/factionRecordParser.js");
 const { findLuaCounters, indexCountersByName } = require("./src/luaCounterParser.js");
 const {
@@ -7809,6 +7810,17 @@ async function reparseLatestSave() {
         }
       } catch (e) { console.warn("[save-watch] army-faction re-attribution failed:", e.message); }
     }
+    // Active sieges + turns-remaining (cracked 2026-05-30, src/siegeParser.js).
+    // Each siege links the besieging army to the besieged settlement via a
+    // siege-ID; the besieger record carries a turn counter (resets to 5,
+    // decrements each turn, 0 = ripe to fall). Drives the live siege-turns UI.
+    try {
+      const sgMarkers = findAllSettlementMarkers(saveBuf);
+      newData.sieges = parseSieges(saveBuf, sgMarkers);
+      if (newData.sieges.length) {
+        console.log(`[save-watch] sieges: ${newData.sieges.map(s => `${s.targetSettlement || "?"}=${s.turnsRemaining}t`).join(", ")}`);
+      }
+    } catch (e) { console.warn("[save-watch] siege parse failed:", e.message); newData.sieges = []; }
     emitSaveProgress("Done", 100);
     win.webContents.send("save-snapshot", { file: latestFile, data: newData });
     // Re-anchor live-log tracking to the moment of this save. Save state

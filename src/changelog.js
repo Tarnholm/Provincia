@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.750",
+    date: "2026-05-31",
+    items: [
+      { type: "feature", text: "**Live siege turns** — besieged settlements now show a turns-remaining label (e.g. \"5t\") on the live map, decoded straight from the save's siege record (the besieger's turn counter resets to 5 and counts down; 0 = ripe to fall)." },
+      { type: "improvement", text: "**Full family roster from saves** — wives, daughters, young sons and dead relatives are now parsed from the save (name, age, gender, alive/dead, and father/spouse/child links), not just the trait-anchored generals. Members are attributed to factions via the family link graph (~91% coverage). Exposed on `crackSave().characters.family` / `familyByFaction`." },
+      { type: "improvement", text: "**Save reader internals**: new siege + vision (fog-of-war) parsers; Lua counter classification (id / script-state / engine buckets) with the RIS `turn_number` season-toggle trap documented; 7 new message-log event types (triumph points, settlement captures, marriages, births, governor appointments)." },
+    ],
+  },
+  {
     version: "0.9.749",
     date: "2026-05-29",
     items: [
