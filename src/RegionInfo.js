@@ -547,7 +547,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     // KEEP IN SYNC with saveCrackerExtras.DIPLO_PLACEHOLDER_RE (the decoder uses
     // the same rule to keep these out of the matrix; this is the display-side
     // safety net so an already-cached matrix also renders correctly).
-    const PLACEHOLDER_RE = /(_rebels|^slave$|^slaves$|^rebels$|^dummies$)/;
+    const PLACEHOLDER_RE = /(_rebels|^slave$|^slaves$|^rebels$|^dummies$|^italics$)/;
     const isRealFaction = (n) => n && !PLACEHOLDER_RE.test(n);
     const isFreePeoples = (n) => /^(slave|slaves|rebels)$/.test(n);
     const nameOf = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");

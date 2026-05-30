@@ -730,9 +730,12 @@ function stanceOf(v) {
 //   • slave / rebels  — the generic independent "Free Peoples"
 //   • dummies         — RIS's bankrupt placeholder slot (-50000 denari, dies T2)
 //   • *_rebels        — per-faction respawn markers (roman_rebels_1, seleucid_rebels2, …)
+//   • italics         — RIS's territory-less Italic-rebel slot (ai_rome, not playable,
+//                       owns 0 settlements); shows as a phantom "war" target with no
+//                       faction on the map. Effectively Free Peoples. (2026-05-31)
 // SINGLE SOURCE OF TRUTH — exported so the renderer uses the exact same rule
 // (avoids each consumer filtering differently, which let `dummies` leak through).
-const DIPLO_PLACEHOLDER_RE = /(_rebels|^slave$|^slaves$|^rebels$|^dummies$)/;
+const DIPLO_PLACEHOLDER_RE = /(_rebels|^slave$|^slaves$|^rebels$|^dummies$|^italics$)/;
 function isDiplomaticFaction(name) {
   return !!name && !DIPLO_PLACEHOLDER_RE.test(String(name).toLowerCase());
 }

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.757",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**`italics` no longer shows as a war target.** RIS's `italics` is a territory-less Italic-rebel slot (`ai_rome`, not playable, owns 0 settlements) — it appeared as a phantom \"at war\" entry with no faction on the map. It's now treated as Free Peoples in both the live diplomacy matrix and the starting-state view, matching the other rebel placeholders (slave / *_rebels / dummies)." },
+    ],
+  },
+  {
     version: "0.9.756",
     date: "2026-05-31",
     items: [
