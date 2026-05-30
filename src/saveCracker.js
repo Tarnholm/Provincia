@@ -21,6 +21,8 @@ const { findCharacterRecords } = require("./characterParser.js");
 const { parseFamilyRecords, indexFamily, attributeFamilyFactions } = require("./familyRecordParser.js");
 const { parseSieges } = require("./siegeParser.js");
 const { parseEventLog } = require("./eventLogParser.js");
+const { parseSettlementFields } = require("./settlementFieldsParser.js");
+const { findAllSettlementMarkers } = require("./buildingParser.js");
 const x = require("./saveCrackerExtras.js");
 
 // Faction attribution for character records — characters appear in a block
@@ -291,6 +293,13 @@ function crackSave(saveBuf, modDataDir) {
   // diffTurn() against the previous save yields "what happened last turn".
   const events = parseEventLog(saveBuf, stratOrder);
 
+  // Per-settlement runtime fields (population growth, income, public order,
+  // governor) — cracked 2026-05-31, src/settlementFieldsParser.js. Keyed by name.
+  let settlementFields = {};
+  try {
+    settlementFields = parseSettlementFields(saveBuf, findAllSettlementMarkers(saveBuf));
+  } catch (e) { /* leave empty on failure */ }
+
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
   // — that field is broken: returns 4 for Carthage when truth is 41).
@@ -445,6 +454,7 @@ function crackSave(saveBuf, modDataDir) {
     diplomacy,                  // { factionName: {war, allied, hostile, trade}, _meta }
     sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, targetSettlement }]
     events,                     // end-of-turn event log [{ type, faction, subject, title, body }]
+    settlementFields,           // { city: { populationGrowth, income, publicOrder, governorUuid, ... } }
     ownerByCity: ownersOut.ownerByCity || {},
     _stats: {
       ms: Date.now() - t0,

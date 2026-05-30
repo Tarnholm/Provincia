@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.752",
+    date: "2026-05-31",
+    items: [
+      { type: "improvement", text: "**Per-settlement runtime fields from saves** — population growth (this turn's net change), income, current public order (plus the raw order-breakdown line-items), and the governor character link are now decoded from the save and exposed on `crackSave().settlementFields`. Verified against turn-to-turn ground truth (the projected→committed population roll-forward holds exactly)." },
+    ],
+  },
+  {
     version: "0.9.751",
     date: "2026-05-31",
     items: [
