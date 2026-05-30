@@ -1,0 +1,98 @@
+// scripts/inspect-save.js — one-command inspection of an RTW Remastered save.
+//
+// Runs the production crackSave() and prints a complete human-readable report:
+// turn/player, treasuries, active sieges (with turns-remaining), end-of-turn
+// events, family roster, per-settlement growth/income/order, and diplomacy.
+// Useful for testing the game from saves without launching Provincia.
+//
+// Usage:
+//   node scripts/inspect-save.js <save.sav> [--mod <modDataDir>] [--faction <name>] [--json]
+//
+// --mod defaults to C:\RIS\RIS\data. --faction defaults to the detected player.
+
+"use strict";
+const fs = require("fs");
+const path = require("path");
+const { crackSave } = require("../src/saveCracker.js");
+
+function parseArgs(argv) {
+  const a = { save: null, mod: "C:\\RIS\\RIS\\data", faction: null, json: false };
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--mod") a.mod = argv[++i];
+    else if (argv[i] === "--faction") a.faction = argv[++i];
+    else if (argv[i] === "--json") a.json = true;
+    else if (!a.save) a.save = argv[i];
+  }
+  return a;
+}
+
+function pad(s, n) { s = String(s); return s.length >= n ? s : s + " ".repeat(n - s.length); }
+function padl(s, n) { s = String(s); return s.length >= n ? s : " ".repeat(n - s.length) + s; }
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (!args.save) {
+    console.error("usage: node scripts/inspect-save.js <save.sav> [--mod <dir>] [--faction <name>] [--json]");
+    process.exit(1);
+  }
+  if (!fs.existsSync(args.save)) { console.error("save not found:", args.save); process.exit(1); }
+
+  const buf = fs.readFileSync(args.save);
+  const r = crackSave(buf, args.mod);
+  if (args.json) { console.log(JSON.stringify(r, null, 2)); return; }
+
+  const fac = args.faction || r.playerFaction;
+  console.log(`\n=== ${path.basename(args.save)} ===`);
+  console.log(`turn ${r.turn}   player ${r.playerFaction}   factions ${r._stats.factions}   (${(buf.length / 1e6).toFixed(1)} MB)`);
+
+  // Treasuries — top 10 by value
+  const trs = Object.entries(r.factions)
+    .filter(([, f]) => f.treasury != null)
+    .sort((a, b) => b[1].treasury - a[1].treasury);
+  console.log(`\n-- treasuries (top 10 of ${trs.length}) --`);
+  for (const [name, f] of trs.slice(0, 10)) {
+    console.log(`  ${pad(name, 18)} ${padl(f.treasury, 8)}   regions ${f.regionCount}`);
+  }
+
+  // Active sieges with turns-remaining
+  console.log(`\n-- active sieges (${r.sieges.length}) --`);
+  for (const s of r.sieges.slice(0, 25)) {
+    console.log(`  ${pad(s.targetSettlement || "(fort/unknown)", 20)} ${s.turnsRemaining}t  army=${s.besiegerArmyUuid}`);
+  }
+
+  // Event log — counts + a few samples
+  const hist = {};
+  for (const e of r.events) hist[e.type] = (hist[e.type] || 0) + 1;
+  console.log(`\n-- event log (${r.events.length} total) --`);
+  console.log("  " + Object.entries(hist).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${t}:${n}`).join("  "));
+
+  // Family roster for the chosen faction
+  const fam = (r.characters.familyByFaction && r.characters.familyByFaction[fac]) || [];
+  console.log(`\n-- family: ${fac} (${fam.length} members; ${fam.filter(m => m.gender === "female").length} female, ${fam.filter(m => !m.alive).length} dead) --`);
+  for (const m of fam.slice(0, 20)) {
+    const rel = m.spouseName ? `spouse ${m.spouseName}` : (m.fatherName ? `child of ${m.fatherName}` : "");
+    console.log(`  ${pad(m.fullName, 26)} ${pad(m.gender, 6)} age ${padl(m.age == null ? "?" : m.age, 3)} ${m.alive ? "alive" : "DEAD "}  ${rel}`);
+  }
+
+  // Settlements for the chosen faction — growth/income/order
+  const cities = (r.factions[fac] && r.factions[fac].regions) || [];
+  console.log(`\n-- settlements: ${fac} (${cities.length}) --`);
+  for (const city of cities.slice(0, 20)) {
+    const sf = r.settlementFields[city];
+    if (!sf) { console.log(`  ${city}`); continue; }
+    const g = sf.populationGrowth;
+    console.log(`  ${pad(city, 18)} pop ${padl(sf.committedPopulation, 6)} growth ${padl(g == null ? "?" : (g >= 0 ? "+" + g : g), 5)} income ${padl(sf.income, 5)} order ${padl(sf.publicOrder == null ? "?" : Math.round(sf.publicOrder), 4)}`);
+  }
+
+  // Diplomacy for the chosen faction
+  const dip = r.diplomacy && r.diplomacy[fac];
+  if (dip) {
+    console.log(`\n-- diplomacy: ${fac} --`);
+    console.log(`  war:    ${dip.war.join(", ") || "—"}`);
+    console.log(`  allied: ${dip.allied.join(", ") || "—"}`);
+    console.log(`  trade:  ${dip.trade.join(", ") || "—"}`);
+  }
+  console.log("");
+}
+
+main();
