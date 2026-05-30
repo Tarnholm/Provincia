@@ -84,6 +84,17 @@ function main() {
     console.log(`  ${pad(city, 18)} pop ${padl(sf.committedPopulation, 6)} growth ${padl(g == null ? "?" : (g >= 0 ? "+" + g : g), 5)} income ${padl(sf.income, 5)} order ${padl(sf.publicOrder == null ? "?" : Math.round(sf.publicOrder), 4)}`);
   }
 
+  // Scripted-event / disaster schedule
+  if (r.eventSchedule && r.eventSchedule.records.length) {
+    const recs = r.eventSchedule.records;
+    const random = recs.filter((e) => e.isRandom).length;
+    console.log(`\n-- scripted-event schedule (${recs.length}: ${recs.length - random} static, ${random} random-appended) --`);
+    for (const e of recs.filter((x) => !x.isRandom).slice(0, 12)) {
+      const pos = e.x != null ? `(${e.x},${e.y})` : "";
+      console.log(`  ${pad(e.category, 11)} ${pad(e.label, 26)} ${padl(Math.abs(e.year) + (e.year < 0 ? "BC" : "AD"), 6)} ${pad(e.season, 6)} ${pos}${e.warning ? "  [warning]" : ""}`);
+    }
+  }
+
   // Diplomacy for the chosen faction
   const dip = r.diplomacy && r.diplomacy[fac];
   if (dip) {
