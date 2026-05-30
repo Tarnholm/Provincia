@@ -29,7 +29,11 @@ const ready = buf && nameLookup && traitNames;
 const d = ready ? describe : describe.skip;
 
 d("characterParser — Macedon T0 stat regression", () => {
-  const recs = findCharacterRecords(buf, nameLookup, traitNames, null);
+  // `describe.skip` still EXECUTES this callback to collect test names, so guard
+  // the parse: when the (local-only) fixture is absent, `ready` is false and the
+  // tests are skipped — but this line would still run findCharacterRecords(null)
+  // and throw during collection. Only parse when the fixture actually loaded.
+  const recs = ready ? findCharacterRecords(buf, nameLookup, traitNames, null) : [];
 
   test("Antigonos II Gonatas (age 50 leader) reads Command 7 / Influence 6 / Management 5", () => {
     const leader = recs.find((c) => c.age === 50 && c.command === 7 && c.influence === 6 && c.management === 5);
