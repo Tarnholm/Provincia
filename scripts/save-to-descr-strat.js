@@ -53,6 +53,7 @@ const {
   parseModInfo,
 } = require("../src/saveCrackerExtras.js");
 const { parseDescrRegions: parseDR2, buildRegionCoords } = require("../src/descrStratGeneral.js");
+const { parseFamilyRecords, indexFamily, attributeFamilyFactions } = require("../src/familyRecordParser.js");
 
 // Inlined from src/characterParserV2.js (not exported there). Each faction's
 // character block is preceded by a `captain_card_<faction>.tga` ASCII path
@@ -1109,7 +1110,7 @@ function emitCharacter(c, armyUnits, fallbackPos, ancNames, eduUnits, factionBod
   return lines.join("\n");
 }
 
-function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity, traitMaxLevels, sourceStratBuildings, sourceStratFamily, sourceStratCharacters) {
+function emitFactionBlock(facId, decl, settlements, characters, charArmies, chainLevels, family, ancNames, currentTreasury, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, creatorByCity, edctTraitNames, populationByCity, traitMaxLevels, sourceStratBuildings, sourceStratFamily, sourceStratCharacters, turnNumber, crackedFamilyByFaction, crackedFamilyByUuid) {
   const factionBodyguard = factionBodyguardByFaction[facId] || fallbackBodyguardUnit;
   const lines = [];
   // Strip any trailing comma that leaked through from the source mod's
@@ -1203,11 +1204,38 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   // over-count. For T1 with no actions taken, source IS the truth. Later
   // turns will need a delta strategy (v1 for new chars + state changes).
   const useSourceCharacters = sourceStratCharacters && sourceStratCharacters[facId] && sourceStratCharacters[facId].length > 0;
-  const useSourceFamily = sourceStratFamily && sourceStratFamily[facId] &&
+  // Cracked CURRENT family for turn>1: emit the live roster (births/deaths
+  // since T1) instead of the stale source family. Gated on turn>1 AND the
+  // cracked parser resolving at least one family member for this faction;
+  // otherwise fall back to source family (the T1 verbatim path never reaches
+  // here). See the cracked-family build in main() (familyRecordParser).
+  const crackedFam = (crackedFamilyByFaction && crackedFamilyByFaction[facId]) || [];
+  const useCrackedFamily = turnNumber > 1 && crackedFam.length > 0;
+  const useSourceFamily = !useCrackedFamily && sourceStratFamily && sourceStratFamily[facId] &&
                           (sourceStratFamily[facId].records.length > 0 ||
                            sourceStratFamily[facId].relatives.length > 0);
   const hasName = (c) => !!(c && c.firstName);
   let emittedCount = 0, skippedCount = 0, recordCount = 0, relativeCount = 0;
+
+  // Track every character NAME declared earlier in THIS faction block (as a
+  // `character` head or a `character_record`). The engine refuses to load a
+  // campaign whose `relative` line references an undeclared name ("couldn't
+  // find <name>'s character_record"), so the cracked-family emit below drops
+  // any relative whose names aren't all in this set. Mirrors the source-family
+  // `allActive` validation pattern (loadSourceStratFamily).
+  const declaredNames = new Set();
+  const declareNameFromCharLine = (text) => {
+    // `text` may be a MULTI-LINE source block (prepended ;comments + blanks,
+    // the `character,` line, then ancillaries/army/unit lines). Scan each line
+    // for the `character,` declaration. Format: `character,\t<Name>, ...` or
+    // `character, sub_faction X, <Name>, ...`.
+    for (const ln of text.split("\n")) {
+      // Source uses `character,\t<Name>`; the from-save emitCharacter uses
+      // `character\t<Name>` (tab, no comma). Accept either separator.
+      const m = ln.match(/^character[,\t]\s*(?:sub_faction\s+\S+,\s*)?(\S[^,]*?),/);
+      if (m) { declaredNames.add(m[1].trim()); return; }
+    }
+  };
 
   // CHARACTERS FIRST: `character,` declarations MUST appear before any
   // `relative` line that references them, otherwise the engine errors with
@@ -1218,6 +1246,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
     for (const sc of sourceStratCharacters[facId]) {
       lines.push(sc.text);
       lines.push("");
+      declareNameFromCharLine(sc.text);
       emittedCount++;
     }
   } else {
@@ -1227,6 +1256,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
       if (text === null) { skippedCount++; continue; }
       lines.push(text);
       lines.push("");
+      declareNameFromCharLine(text);
       emittedCount++;
     }
     if (skippedCount > 0) {
@@ -1236,7 +1266,116 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
 
   // THEN family-only character_records + relatives (after their referenced
   // characters have been emitted above).
-  if (useSourceFamily) {
+  if (useCrackedFamily) {
+    // CRACKED CURRENT family (turn>1). Emit a character_record for every
+    // cracked member of this faction NOT already declared as a `character`
+    // head, then anchor `relative` lines on the family heads.
+    //
+    // Name resolution: a member's father/spouse/child UUID resolves to a name
+    // via the cracked record's pre-computed *Name fields (indexFamily already
+    // resolved them against the cracked table + v1 generals). We only emit a
+    // record/relationship once its NAME is in `declaredNames`, and we DROP any
+    // relative whose names aren't all declared — guaranteeing the output stays
+    // engine-loadable (no dangling references).
+    const recName = (r) => (r && r.fullName) ? r.fullName.trim() : null;
+
+    // 1) character_record for non-head members. Skip members already declared
+    //    as a `character` head (same name) and de-dup repeated names.
+    for (const r of crackedFam) {
+      const nm = recName(r);
+      if (!nm) continue;
+      if (declaredNames.has(nm)) continue; // already a head or emitted
+      // emitCharacterRecord expects {firstName,lastName,gender,age,isDead,...}.
+      // Adapt the cracked record (firstName/surname/age/gender/alive) to it.
+      const adapted = {
+        firstName: r.firstName,
+        lastName: r.surname || null,
+        gender: r.gender,
+        age: r.age != null ? r.age : 1,
+        isDead: !r.alive,
+        isLeader: false,
+        isHeir: false,
+      };
+      lines.push(emitCharacterRecord(adapted));
+      declaredNames.add(nm);
+      recordCount++;
+    }
+    if (recordCount > 0) lines.push("");
+
+    // 2) relative lines. Anchor on MALE family members (heads/fathers) so the
+    //    line reads `relative <father>, <wife>, <children...>, end` — matching
+    //    the source convention (anchoring on a wife would be rejected). For
+    //    each potential father, gather his spouse + children by UUID via the
+    //    cracked table, resolve to names, and emit only if EVERY name is
+    //    declared. byUuid lets us resolve spouse/child names even when the
+    //    member's own *Name field is blank.
+    const byUuid = crackedFamilyByUuid || new Map();
+    const nameOfUuid = (uuid) => {
+      if (!uuid) return null;
+      const m = byUuid.get(uuid >>> 0);
+      return m ? recName(m) : null;
+    };
+    const seenAnchor = new Set();
+    for (const r of crackedFam) {
+      if (r.gender !== "male") continue; // anchor relationships on males
+      const fatherName = recName(r);
+      if (!fatherName || !declaredNames.has(fatherName)) continue;
+      if (seenAnchor.has(r.uuid >>> 0)) continue;
+      const spouseName = r.spouseName || nameOfUuid(r.spouseUuid);
+      const childNames = (r.childUuids || []).map(nameOfUuid).filter(Boolean);
+      const haveSpouse = spouseName && declaredNames.has(spouseName);
+      const declaredKids = childNames.filter(n => declaredNames.has(n));
+      if (!haveSpouse && declaredKids.length === 0) continue;
+      const parts = [fatherName];
+      if (haveSpouse) parts.push(spouseName);
+      for (const k of declaredKids) parts.push(k);
+      parts.push("end");
+      lines.push(`relative\t${parts.join(", ")}`);
+      seenAnchor.add(r.uuid >>> 0);
+      relativeCount++;
+    }
+    // Heads from the v1 character stream (declared as `character`) whose
+    // spouse/children are cracked family members but who themselves are NOT in
+    // the cracked table — anchor those too, resolving links from the cracked
+    // members back to this head.
+    const isCrackedMale = (uuid) => {
+      const m = byUuid.get((uuid || 0) >>> 0);
+      return !!(m && m.gender === "male");
+    };
+    const headFamily = new Map(); // head name -> { spouse:string|null, kids:Set }
+    const ensureHead = (nm) => {
+      let e = headFamily.get(nm);
+      if (!e) { e = { spouse: null, kids: new Set() }; headFamily.set(nm, e); }
+      return e;
+    };
+    for (const r of crackedFam) {
+      const nm = recName(r);
+      if (!nm || !declaredNames.has(nm)) continue;
+      // Child of a v1 head (head not itself a cracked male = not handled above)?
+      const fatherNm = r.fatherName || nameOfUuid(r.fatherUuid);
+      if (fatherNm && fatherNm !== nm && declaredNames.has(fatherNm) && !isCrackedMale(r.fatherUuid)) {
+        ensureHead(fatherNm).kids.add(nm);
+      }
+      // Spouse of a v1 head? (a wife whose spouseUuid points at a head not in
+      // the cracked table) — record her as the head's spouse.
+      const spouseNm = r.spouseName || nameOfUuid(r.spouseUuid);
+      if (r.gender === "female" && spouseNm && spouseNm !== nm &&
+          declaredNames.has(spouseNm) && !isCrackedMale(r.spouseUuid)) {
+        ensureHead(spouseNm).spouse = nm;
+      }
+    }
+    for (const [headNm, e] of headFamily) {
+      const kids = [...e.kids].filter(n => declaredNames.has(n));
+      const spouse = e.spouse && declaredNames.has(e.spouse) ? e.spouse : null;
+      if (!spouse && kids.length === 0) continue;
+      const parts = [headNm];
+      if (spouse) parts.push(spouse);
+      for (const k of kids) parts.push(k);
+      parts.push("end");
+      lines.push(`relative\t${parts.join(", ")}`);
+      relativeCount++;
+    }
+  } else if (useSourceFamily) {
     for (const ln of sourceStratFamily[facId].records) {
       lines.push(ln);
       recordCount++;
@@ -1773,6 +1912,49 @@ async function main() {
   const family = buildFamilyTree(allCharacters);
   console.log(`[${Date.now() - t0}ms] family tree — ${family.relatives.length} parent-anchor relationships, ${family.uuidToChar.size} indexed by uuid`);
 
+  // CRACKED CURRENT family roster — wives, daughters, young sons, and dead
+  // relatives that the trait-anchored v1 parser misses (they have no trait
+  // list to anchor on). Parsed from the fixed-stride family table
+  // (src/familyRecordParser.js, cracked 2026-05-30). Each record carries
+  // name/age/gender/alive + father/spouse/child UUID links, attributed to a
+  // faction via the UUID link graph against the v1 generals. This reflects the
+  // CURRENT state (members born/died since T1) — used for turn>1 round-trip so
+  // T2+ emits the live roster instead of the stale source family. Heads (adult
+  // male generals) live in v1/allCharacters, NOT here; they appear here only as
+  // link targets, so we resolve link names against BOTH sets.
+  let crackedFamilyByFaction = {};
+  let crackedFamilyByUuid = new Map();
+  if (nameLookup.length) {
+    try {
+      const crackedFamily = parseFamilyRecords(buf, nameLookup);
+      const extraUuidNames = new Map();
+      for (const c of allCharacters) {
+        if (c.primaryUuid != null) extraUuidNames.set(c.primaryUuid >>> 0, fullName(c));
+      }
+      indexFamily(crackedFamily, extraUuidNames);
+      attributeFamilyFactions(crackedFamily, allCharacters);
+      for (const r of crackedFamily) {
+        crackedFamilyByUuid.set(r.uuid >>> 0, r);
+        if (r.faction) (crackedFamilyByFaction[r.faction] ||= []).push(r);
+      }
+      const attributed = crackedFamily.filter(r => r.faction).length;
+      console.log(`[${Date.now() - t0}ms] cracked family — ${crackedFamily.length} records, ${attributed} faction-attributed across ${Object.keys(crackedFamilyByFaction).length} factions`);
+    } catch (e) {
+      console.warn(`[${Date.now() - t0}ms] WARNING: cracked family parse failed (${e.message}) — turn>1 will fall back to source family`);
+      crackedFamilyByFaction = {};
+      crackedFamilyByUuid = new Map();
+    }
+  }
+
+  // Turn number (needed BEFORE the emit loop to gate the cracked-family emit;
+  // the canonical saveDate is re-read later for the banner/splice). For turn>1
+  // we emit the cracked CURRENT family; turn 1 uses the verbatim shortcut.
+  const _templateStartEarly = fs.existsSync(stratPath)
+    ? parseTemplateStartDate(fs.readFileSync(stratPath, "utf8").split(/\r?\n/))
+    : null;
+  const _saveDateEarly = readSaveDate(buf, _templateStartEarly);
+  const turnNumber = _saveDateEarly ? _saveDateEarly.turn : 1;
+
   // Armies (units grouped by commander UUID)
   const charArmies = groupUnitsByCommander(buf);
   console.log(`[${Date.now() - t0}ms] units grouped — ${charArmies.size} commanders with armies`);
@@ -2103,7 +2285,7 @@ async function main() {
     cs.length = 0;
     for (const c of dedupedKeep) cs.push(c);
     const tr = currentTreasuryByFaction[facId];
-    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity, traitNames.maxLevels || {}, sourceStratBuildings, sourceStratFamily, sourceStratCharacters);
+    const block = emitFactionBlock(facId, decl, ss, cs, charArmies, chainLevels, family, ancNames, tr, settlementCoords, eduUnits, factionBodyguardByFaction, fallbackBodyguardUnit, substitutionLog, ownership.creatorByCity, edctTraitSet, populationByCity, traitNames.maxLevels || {}, sourceStratBuildings, sourceStratFamily, sourceStratCharacters, turnNumber, crackedFamilyByFaction, crackedFamilyByUuid);
     // Per-faction summary header REMOVED per user request — clutters diffs
     // against source descr_strat, and previously used non-ASCII characters
     // (─ em-dash) that the RTW parser is sensitive to.
