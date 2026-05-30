@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.755",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Critical packaging fix** — the new save-parser modules added in 0.9.750–754 (siege / family / event-log / settlement-fields / event-schedule / vision) were not included in the packaged build's file whitelist, so the bundled app could fail to start or the save-cracker could error. All six modules are now bundled. (Source/dev runs were unaffected; this only impacts the packaged installer.)" },
+    ],
+  },
+  {
     version: "0.9.754",
     date: "2026-05-31",
     items: [
