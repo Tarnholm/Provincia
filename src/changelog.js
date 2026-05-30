@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.753",
+    date: "2026-05-31",
+    items: [
+      { type: "improvement", text: "**Scripted-event schedule from saves** — the campaign's historical events and disasters (volcano/earthquake/flood/storm/plague/locusts) are now decoded from the save's `descr_events` table with year, season, map position, scale and the eruption `warning` flag. Exposed on `crackSave().eventSchedule`; the static schedule is distinguished from engine-appended random disasters, and \"pending\" events are those dated after the current turn." },
+    ],
+  },
+  {
     version: "0.9.752",
     date: "2026-05-31",
     items: [

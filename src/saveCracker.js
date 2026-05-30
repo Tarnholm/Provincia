@@ -22,6 +22,7 @@ const { parseFamilyRecords, indexFamily, attributeFamilyFactions } = require("./
 const { parseSieges } = require("./siegeParser.js");
 const { parseEventLog } = require("./eventLogParser.js");
 const { parseSettlementFields } = require("./settlementFieldsParser.js");
+const { parseEventSchedule } = require("./eventScheduleParser.js");
 const { findAllSettlementMarkers } = require("./buildingParser.js");
 const x = require("./saveCrackerExtras.js");
 
@@ -300,6 +301,12 @@ function crackSave(saveBuf, modDataDir) {
     settlementFields = parseSettlementFields(saveBuf, findAllSettlementMarkers(saveBuf));
   } catch (e) { /* leave empty on failure */ }
 
+  // Scripted-event / disaster schedule (descr_events table) — cracked
+  // 2026-05-31, src/eventScheduleParser.js. Static historical events + appended
+  // runtime random disasters; "pending" = records dated after the current turn.
+  let eventSchedule = null;
+  try { eventSchedule = parseEventSchedule(saveBuf); } catch (e) { /* leave null */ }
+
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
   // — that field is broken: returns 4 for Carthage when truth is 41).
@@ -455,6 +462,7 @@ function crackSave(saveBuf, modDataDir) {
     sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, targetSettlement }]
     events,                     // end-of-turn event log [{ type, faction, subject, title, body }]
     settlementFields,           // { city: { populationGrowth, income, publicOrder, governorUuid, ... } }
+    eventSchedule,              // { count, records:[{category,label,year,season,x,y,scale,warning,isRandom}] }
     ownerByCity: ownersOut.ownerByCity || {},
     _stats: {
       ms: Date.now() - t0,
