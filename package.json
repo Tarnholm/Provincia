@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.755",
+  "version": "0.9.756",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -37,6 +37,7 @@
   },
   "build": {
     "extends": null,
+    "beforeBuild": "scripts/clean-dist-installers.js",
     "appId": "com.example.interactive-map",
     "productName": "Provincia",
     "directories": {

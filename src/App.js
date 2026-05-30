@@ -17741,6 +17741,7 @@ function App() {
                       factionDiplomacy={factionDiplomacy}
                       allFactionDiplomacy={allFactionDiplomacy}
                       diplomacyMatrix={diplomacyMatrix}
+                      liveActive={liveLogActive}
                       treasuryHistory={treasuryHistory}
                       factionWealth={factionWealth}
                       factionRelationships={factionRelationships}

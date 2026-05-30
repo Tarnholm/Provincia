@@ -490,7 +490,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -552,7 +552,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const isFreePeoples = (n) => /^(slave|slaves|rebels)$/.test(n);
     const nameOf = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
     const entryOf = (id) => ({ id, name: nameOf(id) });
-    const mtxRow = (diplomacyMatrix && diplomacyMatrix[fidLower]) || null;
+    // Only trust the runtime matrix when a live save is ACTIVELY loaded.
+    // Otherwise `diplomacyMatrix` is the STALE matrix from the last live save
+    // (it's persisted to localStorage), which would render last-session's wars
+    // as if they were the current/starting state — e.g. showing Roman Julii at
+    // war with factions it only fought later. In non-live we fall through to the
+    // descr_strat starting diplomacy (startWars/startAllies/startProtects) below.
+    const mtxRow = (liveActive && diplomacyMatrix && diplomacyMatrix[fidLower]) || null;
     let liveWar = [], liveAllied = [], liveHostile = [], liveTrade = [];
     if (mtxRow) {
       liveWar = (mtxRow.war || []).filter(isRealFaction).map(entryOf);
@@ -564,13 +570,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     }
     let atWarWithAll = false;
     let isPlaceholderFaction = false;
-    if (!PLACEHOLDER_RE.test(fidLower)) {
+    // Only augment from the runtime matrix when a live save is active (mtxRow is
+    // gated on liveActive). In non-live we leave liveWar/liveTrade empty so the
+    // render falls through to the descr_strat starting-state branch below —
+    // otherwise the implicit slave-war push would keep hasLiveNamed true and
+    // re-show the stale matrix's wars as if current.
+    if (mtxRow && !PLACEHOLDER_RE.test(fidLower)) {
       // A real faction: it's also permanently at war with the independent
       // "Free Peoples" (slave). The save's matrix only encodes DECLARED faction
       // wars, not this implicit default (verified: NPC rows omit slave), so
       // surface it explicitly (user request 2026-05-24).
       if (!liveWar.some((e) => e.id === "slave")) liveWar.push(entryOf("slave"));
-    } else if (isFreePeoples(fidLower)) {
+    } else if (mtxRow && isFreePeoples(fidLower)) {
       // The independent "Free Peoples" itself — permanently AT WAR with every
       // faction, never allied. The engine keeps no real diplomacy for it, so its
       // raw row decodes as Allied toward everyone (the old "92 allies" bug).
@@ -582,7 +593,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         : [];
       liveWar = everyone.map(entryOf).sort((a, b) => a.name.localeCompare(b.name));
       atWarWithAll = liveWar.length > 0;
-    } else {
+    } else if (mtxRow) {
       // `dummies` / per-faction respawn markers — engine placeholders with no
       // real diplomacy. Show nothing rather than garbage (e.g. the bogus
       // "dummies at war with Macedon").
@@ -598,6 +609,25 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       const protSet = new Set([...startProtects, ...startProtectedBy].map((p) => p.id));
       liveAllied = liveAllied.filter((a) => !protSet.has(a.id));
     }
+    // descr_strat folds Ally + Trade into the one `199` relationship, so a
+    // faction has trade agreements with everyone it's allied to AND its
+    // protectorates. Surface that in the starting (non-live) view.
+    const startTrade = (() => {
+      const seen = new Set(); const out = [];
+      for (const e of [...startAllies, ...startProtects]) {
+        if (!seen.has(e.id)) { seen.add(e.id); out.push(e); }
+      }
+      return out;
+    })();
+    // Collapse rebel/placeholder war targets (slave, *_rebels) into a single
+    // "Free Peoples" entry, matching the in-game diplomacy view — so e.g. Roman
+    // Julii's start wars (slave + roman_rebels) read as "Free Peoples" rather
+    // than listing each engine placeholder. Real declared foes are kept as-is.
+    const startWarsDisplay = (() => {
+      const real = startWars.filter((w) => isRealFaction(w.id));
+      const hadFreePeoples = startWars.some((w) => !isRealFaction(w.id));
+      return hadFreePeoples ? [{ id: "slave", name: nameOf("slave") }, ...real] : real;
+    })();
     // Starting-treasury fallback (descr_strat) so EVERY region shows
     // something — the live treasury records only exist for the ~23 major
     // NPC factions, so the player's own provinces and minor/rebel factions
@@ -634,7 +664,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       locked: liveDiplo ? liveDiplo.locked : 0,
       // 0.9.546: NAMED live diplomacy from the attitude matrix.
       hasLiveNamed, liveWar, liveAllied, liveHostile, liveTrade, atWarWithAll, isPlaceholderFaction,
-      startAllies, startWars, startProtects, startProtectedBy,
+      startAllies, startWars, startProtects, startProtectedBy, startTrade, startWarsDisplay,
     };
   }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
 
@@ -2003,8 +2033,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 ) : ((factionState.startWars && factionState.startWars.length) || (factionState.startAllies && factionState.startAllies.length) || (factionState.startProtects && factionState.startProtects.length) || (factionState.startProtectedBy && factionState.startProtectedBy.length)) ? (
                   <>
                     <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#777" }}>(at campaign start)</span></div>
-                    {diploLine("⚔", "war", "#e8a0a0", factionState.startWars)}
+                    {diploLine("⚔", "war", "#e8a0a0", factionState.startWarsDisplay || factionState.startWars)}
                     {diploLine("🤝", "allied", "#9ed09e", factionState.startAllies)}
+                    {diploLine("🔄", "trade", "#8fc9d6", factionState.startTrade)}
                     {diploLine("🛡", "protects", "#9cc0e0", factionState.startProtects)}
                     {diploLine("🛡", "protectorate of", "#9cc0e0", factionState.startProtectedBy)}
                   </>

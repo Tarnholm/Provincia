@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.756",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Non-live diplomacy showed stale wars.** The runtime diplomacy matrix is cached across sessions, so with no save loaded a faction's panel showed the *last live save's* wars (e.g. Roman Julii appearing at war with factions it only fought later). The non-live panel now shows the true descr_strat **starting state**: at war with Free Peoples only (rebel placeholders folded in), and **trade agreements listed for allies + protectorates**. The runtime matrix is used only when a live save is actively loaded." },
+      { type: "fix", text: "**Builds no longer pile up in dist/.** Old `Provincia Setup *.exe` installers (24 GB had accumulated) are now removed automatically before each build via a `beforeBuild` hook; only the current build remains." },
+    ],
+  },
+  {
     version: "0.9.755",
     date: "2026-05-31",
     items: [
