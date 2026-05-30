@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.754",
+    date: "2026-05-31",
+    items: [
+      { type: "improvement", text: "**Diplomacy: protectorates + relationship timers.** The save's diplomacy now distinguishes a plain **alliance** (bond 54/54) from a **protectorate** (54/55 — the suzerain is surfaced as `faction.protectorates`), and exposes per-pair **turns-allied** and **turns-at-war** counters. Verified across consecutive turns (counters tick 0→1→2)." },
+      { type: "improvement", text: "**RIS campaign-script state** — the save's Lua persistent counters are decoded and bucketed into faction IDs, live script state (reform / rebellion / battle timers), and engine flags, exposed on `crackSave().scriptCounters`. (Note: RIS's `turn_number` counter is a season toggle, not the real turn — the real turn comes from the econ-history block count.)" },
+    ],
+  },
+  {
     version: "0.9.753",
     date: "2026-05-31",
     items: [

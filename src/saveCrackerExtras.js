@@ -806,12 +806,28 @@ function parseDiplomacyMatrix(buf, factionOrder) {
   // locateDiplomacyMatrix returns the TRUE (0,0) base, self-aligned via
   // non-neutral STATE symmetry (m.C is 0). m.symmetry ~1.0 on a real lock.
   const cal = { C: m.C, symmetry: m.symmetry };
-  // Per-cell reader: STATE (+12: 0 allied / 200 neutral / 600 war), bond
-  // (+20: 6 none / 54 alliance|protectorate / 55 special), agg (+24, signed).
+  // Per-cell reader. m.base = cellStart+8, so reader-offset X == cell-offset X+8.
+  // DEEP-DECODE 2026-05-31 (probes/diplo-deep) — full per-pair field map:
+  //   cell+12 STATE  0 allied / 200 neutral / 600 war   (reader +4)
+  //   cell+20 BOND   6 none / 54 ally-or-client / 55 SUZERAIN  (reader +12)
+  //          → 54/54 symmetric = plain alliance; 54/55 ASYMMETRIC = PROTECTORATE
+  //            (the 55-holder is the suzerain, the 54-holder the client state).
+  //            rel199 + bond6 = trade-rights/non-aggression pact (no military bond).
+  //   cell+24 AGG    aggression, signed; live-drifts (reader +16)
+  //   cell+32 TURNS-ALLIED  per-pair counter, +1/turn while allied   (reader +24)
+  //   cell+36 TURNS-AT-WAR  per-pair counter, +1/turn while at war    (reader +28)
+  //   cell+68 TURNS-IN-STATE generic relationship-age counter         (reader +60)
+  // No per-pair tribute/ceasefire-timer in the cell (proven negative). +4/+60/+76/
+  // +84/+256.. are GLOBAL turn-stamps replicated identically in every cell (NOT
+  // relation data). See probes/diplo-deep/FINDINGS.txt.
   const cellAt = (A, B) => {
     const o = m.base + (A * N + B + m.C) * m.stride;
-    if (o < 0 || o + 20 > buf.length) return null;
-    return { att: buf.readUInt32LE(o + 4), bond: buf.readUInt32LE(o + 12), agg: buf.readInt32LE(o + 16) };
+    if (o < 0 || o + 64 > buf.length) return null;
+    return {
+      att: buf.readUInt32LE(o + 4), bond: buf.readUInt32LE(o + 12), agg: buf.readInt32LE(o + 16),
+      turnsAllied: buf.readUInt32LE(o + 24), turnsAtWar: buf.readUInt32LE(o + 28),
+      turnsInState: buf.readUInt32LE(o + 60),
+    };
   };
   const out = {};
   let warPairs = 0;
@@ -820,7 +836,7 @@ function parseDiplomacyMatrix(buf, factionOrder) {
     if (!name || !isDiplomaticFaction(name)) continue; // skip placeholder rows
     // `rel` carries the RAW numbers for every non-neutral cell — consumed by
     // the dev-mode "raw diplomacy numbers" view (right-click the widget).
-    const rec = { war: [], allied: [], hostile: [], trade: [], rel: [] };
+    const rec = { war: [], allied: [], hostile: [], trade: [], protectorates: [], suzerains: [], rel: [] };
     for (let B = 0; B < N; B++) {
       if (B === A) continue;
       const bName = factionOrder[B];
@@ -832,12 +848,24 @@ function parseDiplomacyMatrix(buf, factionOrder) {
       if (s === "war") { rec.war.push(bName); warPairs++; }
       else if (s === "allied") rec.allied.push(bName);
       else if (s === "hostile") rec.hostile.push(bName);
-      // Trade rights = the alliance "bond" (descr_strat folds Ally + Trade into
-      // one 199 relationship; protectorates, also bonded, are scripted). The
-      // engine records that bond at cell +12: 6 = none, 54 = alliance/protectorate,
-      // 55 = special. Verified bond>=54 == the exact trade-partner set (Macedon T0).
-      if (c.bond >= 54) rec.trade.push(bName);
-      if (v !== 200 || c.bond !== 6) rec.rel.push({ to: bName, att: v, bond: c.bond, agg: c.agg });
+      // Military bond at cell +20 (reader bond): 6=none, 54=ally-or-client side,
+      // 55=SUZERAIN side. DEEP-DECODE 2026-05-31 (probes/diplo-deep): a 54/55
+      // ASYMMETRIC pair is a PROTECTORATE — the 55-holder is the suzerain, the
+      // 54-holder its client. 54/54 symmetric = plain alliance. cellAt(A,B) is A's
+      // view toward B, so A holding 55 ⇒ A is B's suzerain (B is A's protectorate).
+      if (c.bond >= 54) rec.trade.push(bName);       // any military bond (ally|protectorate)
+      // Protectorate orientation in THIS reader (verified via makeDiplomacyPairReader):
+      // cellAt(A,B).bond===55 means A is the CLIENT and B is A's SUZERAIN
+      // (reader(gades,carthage)=55, reader(samnites,romans_julii)=55). So:
+      //   A holds 55 ⇒ B is A's suzerain (A is B's protectorate)
+      //   A holds 54 with B holding 55 ⇒ B is A's protectorate
+      //   54/54 symmetric ⇒ plain alliance (no protectorate either way)
+      if (c.bond === 55) rec.suzerains.push(bName); // B is A's suzerain
+      else if (c.bond === 54) {
+        const back = cellAt(B, A);
+        if (back && back.bond === 55) rec.protectorates.push(bName); // B is A's protectorate
+      }
+      if (v !== 200 || c.bond !== 6) rec.rel.push({ to: bName, att: v, bond: c.bond, agg: c.agg, turnsAllied: c.turnsAllied, turnsAtWar: c.turnsAtWar });
     }
     out[name.toLowerCase()] = rec;
   }

@@ -23,6 +23,7 @@ const { parseSieges } = require("./siegeParser.js");
 const { parseEventLog } = require("./eventLogParser.js");
 const { parseSettlementFields } = require("./settlementFieldsParser.js");
 const { parseEventSchedule } = require("./eventScheduleParser.js");
+const { findLuaCounters, classifyCounters } = require("./luaCounterParser.js");
 const { findAllSettlementMarkers } = require("./buildingParser.js");
 const x = require("./saveCrackerExtras.js");
 
@@ -307,6 +308,13 @@ function crackSave(saveBuf, modDataDir) {
   let eventSchedule = null;
   try { eventSchedule = parseEventSchedule(saveBuf); } catch (e) { /* leave null */ }
 
+  // RIS campaign-script state — Lua persistent counters bucketed into
+  // factionIds / scriptState (reform/rebellion/battle timers) / engineCounters.
+  // NB engineCounters.turn_number is a RIS season-toggle, NOT the turn index
+  // (use `turn` above). See luaCounterParser.classifyCounters.
+  let scriptCounters = null;
+  try { scriptCounters = classifyCounters(findLuaCounters(saveBuf)); } catch (e) { /* leave null */ }
+
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
   // — that field is broken: returns 4 for Carthage when truth is 41).
@@ -463,6 +471,7 @@ function crackSave(saveBuf, modDataDir) {
     events,                     // end-of-turn event log [{ type, faction, subject, title, body }]
     settlementFields,           // { city: { populationGrowth, income, publicOrder, governorUuid, ... } }
     eventSchedule,              // { count, records:[{category,label,year,season,x,y,scale,warning,isRandom}] }
+    scriptCounters,             // { factionIds, scriptState (reform/rebellion timers), engineCounters }
     ownerByCity: ownersOut.ownerByCity || {},
     _stats: {
       ms: Date.now() - t0,
