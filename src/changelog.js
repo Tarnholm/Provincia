@@ -15,6 +15,7 @@ const CHANGELOG = [
       { type: "feature", text: "**Siege status.** A besieged settlement now shows a banner with how many turns it's been under siege and the besieger's assault countdown — at a glance, how close it is to falling." },
       { type: "feature", text: "**Trade partners.** A settlement's card now lists who it trades with by land and sea (with faction), derived from region adjacency, ports and diplomacy. The per-link value is shown as a clearly-labelled relative estimate (not the engine's exact gold)." },
       { type: "feature", text: "**Unit movement points.** The map army tooltip now shows each unit's remaining movement points (so you can see which units still have moves left this turn)." },
+      { type: "fix", text: "**Treasury attribution on long campaigns.** On mid/late-game saves, faction treasuries (and the treasury sparkline) could be bound to the wrong faction — e.g. a wiped 0-region faction showing 190k while a 113-region empire showed a pittance. Treasuries are now keyed by record position, so each faction's money is attributed correctly. Turn-1 values are unchanged." },
     ],
   },
   {
