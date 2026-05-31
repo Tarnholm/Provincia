@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.769",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Hotfix: app failed to launch on 0.9.768.** A new save-insights state block was declared after the map-draw code that reads it, causing a crash on startup (\"Cannot access … before initialization\"). The declarations were moved ahead of their use; the app launches normally and all 0.9.768 features are intact." },
+    ],
+  },
+  {
     version: "0.9.768",
     date: "2026-05-31",
     items: [

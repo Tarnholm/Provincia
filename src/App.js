@@ -4107,6 +4107,24 @@ function App() {
     try { return localStorage.getItem("pinnedSaveFile") || null; } catch { return null; }
   });
   const [liveHistory, setLiveHistory] = useState([]); // all events across sessions, persisted
+  // ── UI batch 2 (2026-05-31): Save-insights panel state. MUST be declared here,
+  // above the map-draw code (~line 7565) that reads saveEventSchedule/
+  // showScheduleMarkers during render — declaring it later caused a temporal-
+  // dead-zone crash ("Cannot access ... before initialization") on launch.
+  // First three datasets ride the live save-snapshot (main.attachLiveSaveExtras);
+  // the timeline is fetched on demand via the scan-saves-timeline IPC.
+  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
+  const [lastTurnEvents, setLastTurnEvents] = useState(null);       // diffTurn result or null (no prior snapshot)
+  const [saveEventSchedule, setSaveEventSchedule] = useState(null); // disaster / scripted-event table
+  const [saveFactionKnowledge, setSaveFactionKnowledge] = useState(null); // per-faction scouting summary
+  const [showScheduleMarkers, setShowScheduleMarkers] = useState(() => {
+    try { return localStorage.getItem("showScheduleMarkers") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showScheduleMarkers", showScheduleMarkers ? "1" : "0"); } catch {}
+  }, [showScheduleMarkers]);
+  const [campaignTimeline, setCampaignTimeline] = useState(null);   // scan-saves-timeline result
+  const [timelineScanning, setTimelineScanning] = useState(false);
   const [liveSliderTurn, setLiveSliderTurn] = useState(null); // null = live/latest, number = rewound to turn N
   const [livePlayback, setLivePlayback] = useState(false); // true = auto-advancing turns
   const livePlaybackRef = useRef(null); // interval ID
@@ -8147,21 +8165,8 @@ function App() {
   const [showWealthPanel, setShowWealthPanel] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
 
-  // ── UI batch 2 (2026-05-31): Save-insights panel state. The first three
-  // datasets ride the live save-snapshot (main.js attachLiveSaveExtras); the
-  // timeline is fetched on demand via the scan-saves-timeline IPC.
-  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
-  const [lastTurnEvents, setLastTurnEvents] = useState(null);      // diffTurn result or null (no prior snapshot)
-  const [saveEventSchedule, setSaveEventSchedule] = useState(null); // disaster / scripted-event table
-  const [saveFactionKnowledge, setSaveFactionKnowledge] = useState(null); // per-faction scouting summary
-  const [showScheduleMarkers, setShowScheduleMarkers] = useState(() => {
-    try { return localStorage.getItem("showScheduleMarkers") === "1"; } catch { return false; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("showScheduleMarkers", showScheduleMarkers ? "1" : "0"); } catch {}
-  }, [showScheduleMarkers]);
-  const [campaignTimeline, setCampaignTimeline] = useState(null);  // scan-saves-timeline result
-  const [timelineScanning, setTimelineScanning] = useState(false);
+  // (UI batch 2 save-insights state was hoisted up near the other early useState
+  // declarations — see ~line 4110 — to avoid a temporal-dead-zone crash.)
 
   // Preload effect body lives here; the iconsPreloaded state is declared
   // earlier in the component so the splash auto-hide effect can depend on it.
