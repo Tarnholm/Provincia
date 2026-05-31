@@ -48,4 +48,28 @@ describe("findUnitRecords", () => {
     expect(navy.length).toBeGreaterThan(50);
     expect(navy.every((u) => u.soldiers > 0)).toBe(true);
   });
+
+  test("reads movementPoints at +4 for a non-bodyguard (commanderUuid==0) line unit", () => {
+    // Verbatim 65-byte unit record lifted from a real RoR "Turn 3 Start"
+    // autosave: a "roman leves" with no commander (uuid==0). Confirmed
+    // 2026-05-31 — the variant-A header float at regionEnd+4 holds movement
+    // points (here 128.0) even when commanderUuid is 0. Earlier the parser
+    // only read MP for bodyguards, so line units reported movementPoints=null.
+    const hex =
+      "0c 00 72 6f 6d 61 6e 20 6c 65 76 65 73 00 00 ee 83 41 ac fe 15 84 12 " +
+      "00 00 00 00 2c 01 00 00 03 00 00 00 04 00 52 00 6f 00 6d 00 61 00 ff " +
+      "ff ff ff 00 00 00 00 00 00 00 43 a0 00 00 00 a0 00 00 00";
+    const body = Buffer.from(hex.replace(/\s+/g, ""), "hex");
+    // Pad with trailing zeros so the parser's forward bounds checks pass.
+    const buf = Buffer.concat([body, Buffer.alloc(128)]);
+    const recs = findUnitRecords(buf);
+    const leves = recs.find((u) => u.name === "roman leves");
+    expect(leves).toBeTruthy();
+    expect(leves.region).toBe("Roma");
+    expect(leves.commanderUuid).toBe(null); // non-bodyguard
+    expect(leves.soldiers).toBe(160);
+    expect(leves.maxSoldiers).toBe(160);
+    // The crack under test: MP read from the +4 float of the variant-A header.
+    expect(leves.movementPoints).toBeCloseTo(128.0, 3);
+  });
 });

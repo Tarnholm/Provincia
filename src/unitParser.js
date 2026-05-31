@@ -116,13 +116,25 @@ function findUnitRecords(buf) {
     // UI then rendered as "122/96" instead of the correct "96/122". The
     // byte dump confirmed +8 holds max and +12 holds current.
     let soldiers = 0, maxSoldiers = 0, commanderUuid = 0;
-    // Movement points remaining for the unit (bodyguard records mirror the
-    // character's current MP here; non-bodyguard variant-A units have
-    // something else at +4 and the value gets sanity-rejected below).
-    // Save-cracker dossier 2026-05-10: f32 at commanderUuid + 4, drops by
-    // ~7.4 per tile moved. Triple-validated against save_rome5..sav vs
-    // save_rome6.sav (one Roman general moves 1 tile, only field that
-    // changes is this float + a position byte).
+    // Movement points remaining for the unit. The variant-A unit header is a
+    // fixed 16-byte block at the post-region anchor (regionEnd):
+    //   +0  u32  commanderUuid (0 for non-bodyguard units)
+    //   +4  f32  movementPoints (MP remaining this turn)
+    //   +8  u32  maxSoldiers
+    //   +12 u32  currentSoldiers
+    // Save-cracker dossier 2026-05-10: f32 at +4 drops by ~7.4 per tile moved
+    // (triple-validated on a general moving 1 tile, save_rome5 vs save_rome6).
+    //
+    // 2026-05-31 (this session): the +4 float is the MP field for NON-bodyguard
+    // combat units too, not just bodyguards. CONFIRMED by diffing the RoR
+    // Turn-2-End → Turn-3-Start autosaves: across 3196 non-bodyguard units the
+    // only header bytes that change are +4..+6 (the MP float) and +12 (current
+    // soldiers); +0..+3 (uuid=0) and +8 (max) never change. At turn start the
+    // float resets to a per-unit-type maximum — roman equites (cavalry) 216→241,
+    // roman triarii/principes/hastati/leves (infantry) 166→185, naval 108/256 —
+    // exactly the by-type MP refresh expected. The old code rejected these by
+    // only reading MP when commanderUuid was set, so all line units showed
+    // movementPoints=null. We now read +4 for any variant-A unit.
     let movementPoints = null;
     if (regionEnd + 24 < buf.length) {
       const at0 = buf.readUInt32LE(regionEnd + 0);
@@ -132,13 +144,19 @@ function findUnitRecords(buf) {
         commanderUuid = at4;
         maxSoldiers = buf.readUInt16LE(regionEnd + 16);
         soldiers = buf.readUInt16LE(regionEnd + 20);
+        // Variant-B header is shifted (filler at +0, uuid at +4); the MP float
+        // offset for this layout is not yet pinned, so leave movementPoints null.
       } else {
         commanderUuid = at0;
         maxSoldiers = buf.readUInt16LE(regionEnd + 8);
         soldiers = buf.readUInt16LE(regionEnd + 12);
-        if (commanderUuid && commanderUuid !== 0xffffffff) {
+        // Read MP at +4 for BOTH bodyguards (commanderUuid set) and line units
+        // (commanderUuid == 0). Accept any finite float in a generous 0..2000
+        // range — a fully-spent unit can read ~0 mid-turn, and naval/cavalry
+        // maxima run higher than the old 10..500 bodyguard window.
+        if (commanderUuid !== 0xffffffff) {
           const mp = buf.readFloatLE(regionEnd + 4);
-          if (Number.isFinite(mp) && mp >= 10 && mp <= 500) movementPoints = mp;
+          if (Number.isFinite(mp) && mp >= 0 && mp <= 2000) movementPoints = mp;
         }
       }
     }
@@ -225,6 +243,7 @@ function findUnitRecords(buf) {
       weaponUpgrade,
       armourUpgrade,
       passengerUuids,
+      _regionEnd: regionEnd, // internal anchor for offset probes (post-region terminator)
     });
     i = regionEnd;
   }
