@@ -42,9 +42,25 @@
 //         1-3; switches on (discrete 4 or 8) on 25-26/31 cities at turns 5 & 8,
 //         co-active with s2 tax on 24/26; off again (0/34) by turn 34. A tax-
 //         bracket/administration line that matures after the opening turns.
+//   s9  = HEALTH / SEWERAGE happiness bonus. On turn-START saves (so the         CONFIRMED
+//         one-turn compute deferral has settled) s9>0 ⇔ a sanitation/health
+//         building is present, with ZERO mismatches on julii2/3 & RoR-T2Start
+//         (14 tp / 11 tn each) and 1/40 on carthage2. Dose-responds to health
+//         TIER: health0→s9≈0, h1→1.1, h2→2.6, h3→3.4, h4→6.0 (Rome). Trade
+//         (4 false-neg on julii2) and temple (24 false-neg on carthage2) both
+//         fail the same test, so it is HEALTH specifically, not generic dev.
+//         (rtw-sav-parser/docs/findings-order-slots-v4-2026-05-31.md)
 //   s0/s3 = buildings & settlement-size happiness bonuses                      HYPOTHESIS
-//   s9/s1 = population/trade-scaled happiness bonuses (corr pop ~0.7,          HYPOTHESIS
-//           corr happiness-buildings ~0.5-0.6 — real but not slot-separable)
+//         s0 is STATIC per settlement (100% invariant across opening turns:
+//         25/25 julii, 41/41 Carthage, 25/25 RoR) and building-/pop-/creator-/
+//         government-independent — a scenario-baked base-order value, not a
+//         building-tier function. s3 rises weakly across temple/health/trade
+//         tiers alike with no single-category separation.
+//   s1  = signed POPULATION/DEVELOPMENT-scaled happiness (recomputed per turn,  HYPOTHESIS
+//         deferred one turn from a fresh start). Negative in tiny towns
+//         (health0→-0.26, trade0→-0.87), rises with temple/health/trade tier
+//         together — a fused city-development line, not slot-separable to one
+//         source.
 //   s5/s8/s16 = always 0 (reserved modifier slots); s6/s13/s15/s17 = rare/unmapped
 //
 // NOTE: slot index = orderBreakdown[i] read at marker−1490+4·i. (Distance lives
@@ -83,6 +99,7 @@ function settlementFieldsAt(buf, markerOffset) {
     capitalBonus: orderBreakdown[10],             // s10 capital-status bonus   CONFIRMED
     startTransientBonus: orderBreakdown[7],       // s7  turn-1-only transient  CONFIRMED
     taxAdminLine: orderBreakdown[14],             // s14 mid-campaign tax line  CONFIRMED
+    healthBonus: orderBreakdown[9],               // s9  health/sewerage bonus  CONFIRMED
   };
   return {
     committedPopulation,
