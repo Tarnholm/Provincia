@@ -151,6 +151,13 @@ const { resolveCurrentOwners, findSettlementGovernors } = require("./src/saveOwn
 const { findAllSettlementMarkers } = require("./src/buildingParser.js");
 const { parseSieges } = require("./src/siegeParser.js");
 const { parseSettlementFields } = require("./src/settlementFieldsParser.js");
+// Live-watch surfacing of already-cracked save data (UI batch 2, 2026-05-31):
+//  - event LOG (end-of-turn scroll) → "last turn" diff (src/eventLogParser.js)
+//  - event SCHEDULE (disaster / scripted-event table) → list + map markers
+//  - faction KNOWLEDGE (per-faction scouting summary) → AI fog readout
+const { parseEventLog: cxParseEventLog, diffTurn: cxDiffTurn } = require("./src/eventLogParser.js");
+const { parseEventSchedule: cxParseEventSchedule } = require("./src/eventScheduleParser.js");
+const { parseFactionKnowledge: cxParseFactionKnowledge } = require("./src/factionKnowledgeParser.js");
 const { findFactionRecords, summarizeFactionArray } = require("./src/factionRecordParser.js");
 const { findLuaCounters, indexCountersByName } = require("./src/luaCounterParser.js");
 const {
@@ -5667,6 +5674,40 @@ ipcMain.handle("crack-trade-network", async (_event, savePath, modDataDir, campa
   }
 });
 
+// IPC: campaign-timeline scan (UI batch 2, feature 3). The app watches ONE
+// live save; this scans a chosen folder of saves (e.g. the Feral autosave dir
+// or a crash-save bundle), cracks each, sorts by the CRACKED turn number (not
+// filename), and returns the per-turn arc + turn-to-turn deltas for the
+// dominant (or all) campaign(s). Reuses scripts/campaign-timeline.js's
+// buildTimeline + computeDelta verbatim, so the CLI and the in-app view share
+// one source of truth — INCLUDING the family chain-break guard (deltas across
+// different save chains are flagged, never fabricated). Heavy (cracks every
+// save), so it's an explicit on-demand action, never on the hot live path.
+ipcMain.handle("scan-saves-timeline", async (_event, dir, modDataDir, opts) => {
+  try {
+    const { buildTimeline, computeDelta } = require("./scripts/campaign-timeline.js");
+    if (!dir || !fs.existsSync(dir)) return { error: "Folder not found: " + dir };
+    const factionOverride = opts && opts.faction ? opts.faction : null;
+    const allCampaigns = !!(opts && opts.allCampaigns);
+    const { campaigns, errors, scanned } = buildTimeline([dir], modDataDir, factionOverride, allCampaigns);
+    // Strip the internal-only fields (mirrors campaign-timeline.js --json) and
+    // attach per-turn deltas so the renderer doesn't need the parser modules.
+    const strip = (r) => { const { _ownerByCity, _diplomacy, _family, ...keep } = r; return keep; };
+    return {
+      scanned,
+      errors,
+      campaigns: campaigns.map((c) => ({
+        player: c.player,
+        saves: c.rows.length,
+        turns: c.rows.map(strip),
+        deltas: c.rows.slice(1).map((r, i) => ({ fromTurn: c.rows[i].turn, toTurn: r.turn, ...computeDelta(c.rows[i], r) })),
+      })),
+    };
+  } catch (e) {
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: save a campaign data file. Writes to userData (authoritative store).
 // In dev, also mirrors to build/ so the React dev server can fetch it.
 // In packaged apps, build/ lives inside the read-only asar — skip it.
@@ -7595,6 +7636,101 @@ ipcMain.handle("get-latest-save-mtime", (_event, saveDir) => {
   } catch { return null; }
 });
 
+// ── UI batch 2 (2026-05-31): surface already-cracked save data on the live
+// watch path. Attaches three additive fields to `newData` so they ride the
+// existing `save-snapshot` IPC to App.js with NO preload change:
+//   • eventLog        — full end-of-turn event-scroll records (eventLogParser)
+//   • lastTurnEvents  — diffTurn(prev save's eventLog, this save's eventLog):
+//                       what happened during the elapsed turn, grouped by type
+//                       and tagged with faction. null when no prior snapshot.
+//   • eventSchedule   — disaster / scripted-event table (eventScheduleParser):
+//                       list + map-marker source. PENDING = dated after now.
+//   • factionKnowledge— per-faction scouting SUMMARY (factionKnowledgeParser):
+//                       { perFaction:{name:{knownTiles,knownSettlements}}, ... }
+//                       LIGHT only (no per-tile fog overlay — that needs the
+//                       tile resolver + map_regions.tga, too heavy per snapshot).
+// The faction-order needed for tagging is the descr_strat declaration order
+// (engine order = that with the first rebel slot rotated to the end). We read
+// it once from the active descr_strat and cache it per modDataDir.
+let _stratOrderCache = { dir: null, order: null };
+function getStratFactionOrder(modDataDir) {
+  if (!modDataDir) return [];
+  if (_stratOrderCache.dir === modDataDir && _stratOrderCache.order) return _stratOrderCache.order;
+  const candidates = [
+    path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(modDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(modDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  let order = [];
+  for (const src of candidates) {
+    try {
+      if (!fs.existsSync(src)) continue;
+      const text = fs.readFileSync(src, "utf8");
+      for (const line of text.split(/\r?\n/)) {
+        const m = line.match(/^\s*faction\s+([a-z_0-9]+)/i);
+        if (m && !order.includes(m[1])) order.push(m[1]);
+      }
+      break;
+    } catch { /* try next candidate */ }
+  }
+  _stratOrderCache = { dir: modDataDir, order };
+  return order;
+}
+
+// Group last-turn diff events into the UI's summary buckets. Each event is
+// already tagged with `.faction` (descr_strat order) by parseEventLog. We pass
+// through the raw type so the panel can label/icon precisely. Returns null when
+// there is no previous snapshot to diff against (UI shows "—").
+function buildLastTurnSummary(prevEventLog, currEventLog) {
+  if (!Array.isArray(prevEventLog) || !Array.isArray(currEventLog)) return null;
+  const newEvents = cxDiffTurn(prevEventLog, currEventLog);
+  // Keep the shape close to the parser's records so the renderer can group.
+  return newEvents.map((e) => ({
+    type: e.type,
+    recordClass: e.recordClass,
+    faction: e.faction || null,
+    subject: e.subject,
+    title: e.title || null,
+    body: e.body || null,
+  }));
+}
+
+// Compute the three additive fields on `newData`. Pure (no IPC). Called from
+// BOTH the initial save-watch-start parse and every incremental reparse. The
+// `prevEventLog` is the PREVIOUS snapshot's eventLog (held in lastSaveData) so
+// we can diff the elapsed turn; pass null on the first load.
+function attachLiveSaveExtras(newData, saveBuf, modDataDir, prevEventLog) {
+  const stratOrder = getStratFactionOrder(modDataDir);
+  // 1. End-of-turn event log + last-turn diff.
+  try {
+    const eventLog = cxParseEventLog(saveBuf, stratOrder);
+    newData.eventLog = eventLog;
+    newData.lastTurnEvents = buildLastTurnSummary(prevEventLog, eventLog); // null on first load
+    if (newData.lastTurnEvents && newData.lastTurnEvents.length) {
+      console.log(`[save-watch] last-turn events: ${newData.lastTurnEvents.length} new (of ${eventLog.length} total in log)`);
+    }
+  } catch (e) { console.warn("[save-watch] event-log parse failed:", e.message); newData.eventLog = newData.eventLog || []; }
+  // 2. Scripted-event / disaster schedule.
+  try {
+    newData.eventSchedule = cxParseEventSchedule(saveBuf) || null;
+    if (newData.eventSchedule) {
+      console.log(`[save-watch] event schedule: ${newData.eventSchedule.count} records (${newData.eventSchedule.records.filter(r => r.isRandom).length} runtime-random)`);
+    }
+  } catch (e) { console.warn("[save-watch] event-schedule parse failed:", e.message); newData.eventSchedule = null; }
+  // 3. Per-faction scouting summary (LIGHT — no per-tile overlay).
+  try {
+    const engineOrder = cxDeriveEngineOrder(stratOrder); // KNOWING faction = engine order
+    const fk = cxParseFactionKnowledge(saveBuf, stratOrder); // tuple OWNER = strat order
+    const perFaction = {};
+    for (const r of fk.records) {
+      const name = engineOrder[r.factionIndex];
+      if (name) perFaction[name] = { knownTiles: r.tupleCount, knownSettlements: r.fullCount };
+    }
+    newData.factionKnowledge = { perFaction, factionsWithTail: fk.records.length, totalTuples: fk.totalTuples };
+    console.log(`[save-watch] faction knowledge: ${fk.records.length} factions with scouting tails, ${fk.totalTuples} tuples`);
+  } catch (e) { console.warn("[save-watch] faction-knowledge parse failed:", e.message); newData.factionKnowledge = null; }
+}
+
 // Single-flight + tail-coalescing lock for reparses. fs.watch fires bursts
 // during multi-MB save writes — even with a 1.5s debounce, a second event
 // can arrive while a 5s parse is still running. The previous version
@@ -7873,6 +8009,11 @@ async function reparseLatestSave() {
       const sfMarkers = findAllSettlementMarkers(saveBuf);
       newData.settlementFields = parseSettlementFields(saveBuf, sfMarkers);
     } catch (e) { console.warn("[save-watch] settlement-fields parse failed:", e.message); newData.settlementFields = {}; }
+    // UI batch 2: event log + last-turn diff, disaster schedule, scouting
+    // summary. `lastSaveData` here is still the PREVIOUS snapshot (it's not
+    // reassigned to newData until after the send below), so its `.eventLog`
+    // is the right "before" set for the turn-elapsed diff.
+    attachLiveSaveExtras(newData, saveBuf, activeModDataDir, lastSaveData ? lastSaveData.eventLog : null);
     emitSaveProgress("Done", 100);
     win.webContents.send("save-snapshot", { file: latestFile, data: newData });
     // Re-anchor live-log tracking to the moment of this save. Save state
@@ -8106,6 +8247,11 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
         lastSaveData.sieges = lastSaveData.sieges || [];
         lastSaveData.settlementFields = lastSaveData.settlementFields || {};
       }
+      // UI batch 2: event log, disaster schedule, scouting summary. No prior
+      // snapshot on the very first load → lastTurnEvents stays null (UI: "—").
+      try {
+        attachLiveSaveExtras(lastSaveData, saveBuf, activeModDataDir, null);
+      } catch (e) { console.warn("[save-watch] initial live-extras failed:", e.message); }
       emitSaveProgress("Done", 100);
       const bCount = Object.keys(lastSaveData.buildings || {}).length;
       const aCount = Object.keys(lastSaveData.armies || {}).length;

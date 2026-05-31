@@ -85,6 +85,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // topPartnersHypothesis[] } } }, ... } or { error }. Pass savePath=null to reuse the
   // live watcher's in-memory save buffer. Computed on demand (slow: walks the map TGA).
   crackTradeNetwork: (savePath, modDataDir, campaign) => ipcRenderer.invoke("crack-trade-network", savePath, modDataDir, campaign),
+  // Campaign-timeline scan (UI batch 2). Cracks every .sav under `dir`, sorts by
+  // cracked turn, returns { scanned, errors, campaigns:[{player, saves, turns[],
+  // deltas[]}] } or { error }. opts = { faction?, allCampaigns? }. Heavy/on-demand.
+  scanSavesTimeline: (dir, modDataDir, opts) => ipcRenderer.invoke("scan-saves-timeline", dir, modDataDir, opts),
   writeBinaryFile: (name, dataBuf) => ipcRenderer.invoke("write-binary-file", name, dataBuf),
   copyFile: (src, destName) => ipcRenderer.invoke("copy-file", src, destName),
   readCampaignFile: (name) => ipcRenderer.invoke("read-campaign-file", name),
