@@ -15431,12 +15431,26 @@ function App() {
                           const uname = typeof u === 'string' ? u : (u.name || '');
                           const soldiers = typeof u === 'object' ? u.soldiers : null;
                           const maxSoldiers = typeof u === 'object' ? u.maxSoldiers : null;
+                          // Per-unit MP remaining (Feature 4, 2026-05-31). The save
+                          // stores CURRENT MP but not the per-type max, so we show
+                          // "MP remaining" only — never a definitive moved flag. A
+                          // near-zero reading flags a unit that has spent its move.
+                          const mp = (typeof u === 'object' && typeof u.movementPoints === 'number') ? u.movementPoints : null;
+                          const spent = mp != null && mp < 1; // heuristic: ~0 MP ⇒ effectively out of moves
                           return (
                             <div key={i} style={{ color: "#ddd", paddingLeft: 6, display: "flex", justifyContent: "space-between", gap: 8 }}>
                               <span>{uname.replace(/_/g, " ")}</span>
-                              {typeof soldiers === 'number' && typeof maxSoldiers === 'number' && maxSoldiers > 0 ? (
-                                <span style={{ color: "#9ba", fontVariantNumeric: "tabular-nums" }}>{soldiers}/{maxSoldiers}</span>
-                              ) : null}
+                              <span style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                                {mp != null ? (
+                                  <span style={{ color: spent ? "#c88" : "#8ab", fontVariantNumeric: "tabular-nums", fontSize: "0.72rem" }}
+                                    title="Movement points remaining this turn (f32 at the unit record +4). The save does not store the per-unit-type maximum, so this is MP remaining only — not a definitive moved/not-moved flag.">
+                                    {spent ? "spent" : `${mp.toFixed(0)} MP`}
+                                  </span>
+                                ) : null}
+                                {typeof soldiers === 'number' && typeof maxSoldiers === 'number' && maxSoldiers > 0 ? (
+                                  <span style={{ color: "#9ba", fontVariantNumeric: "tabular-nums" }}>{soldiers}/{maxSoldiers}</span>
+                                ) : null}
+                              </span>
                             </div>
                           );
                         })}

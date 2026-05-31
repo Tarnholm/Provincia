@@ -1701,6 +1701,12 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       xp: u.xp || 0,
       weapon: u.weaponUpgrade || 0,
       armour: u.armourUpgrade || 0,
+      // MP remaining for this unit (f32 at the unit header +4; read for ALL
+      // variant-A units 2026-05-31, not just bodyguards). The save stores the
+      // CURRENT MP but NOT the per-unit-type max, so the UI can only honestly
+      // show "MP remaining" — not a definitive moved/not-moved. null when
+      // unreadable (e.g. variant-B layout).
+      movementPoints: typeof u.movementPoints === "number" ? u.movementPoints : null,
     });
   }
   // Group characters who share the same army. A character links to an army
@@ -1955,6 +1961,10 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
         maxSoldiers: u.maxSoldiers,
         region: u.region || null,
         exp: 0,
+        // Per-unit MP remaining (f32 at unit header +4; all variant-A units).
+        // Current MP only — the save has no per-type max, so it's labelled as
+        // "MP remaining" in the map tooltip, never a definitive moved flag.
+        movementPoints: typeof u.movementPoints === "number" ? u.movementPoints : null,
       })),
       // Passengers: family members / other characters stacked in this army.
       passengers: passengers.map(p => ({
