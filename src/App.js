@@ -7,6 +7,7 @@ import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import InfoPopup from "./InfoPopup";
 import ArmyUnitsModal from "./ArmyUnitsModal";
 import SearchPalette from "./SearchPalette";
+import SaveInsightsPanel from "./SaveInsightsPanel";
 import FactionIcon, { preloadIcon, preloadModIcon } from "./FactionIcon";
 import Tooltip from "./Tooltip";
 import "./App.css";
@@ -4916,6 +4917,11 @@ function App() {
       if (data && data.aliveCount != null) setAliveCount(data.aliveCount);
       if (data && data.deadCount != null) setDeadCount(data.deadCount);
       if (data && data.inPlaceDeadCount != null) setInPlaceDeadCount(data.inPlaceDeadCount);
+      // UI batch 2: last-turn diff, disaster schedule, scouting summary.
+      // `lastTurnEvents` is null on the first load (no prior snapshot to diff).
+      if (data) setLastTurnEvents(data.lastTurnEvents ?? null);
+      if (data && data.eventSchedule !== undefined) setSaveEventSchedule(data.eventSchedule);
+      if (data && data.factionKnowledge !== undefined) setSaveFactionKnowledge(data.factionKnowledge);
       if (file) setLiveSaveFile(file);
       // Re-detect faction on every save — catches campaign switches while live
       // mode stays active (e.g. user quits Dummies and loads a Julii save).
@@ -5048,7 +5054,12 @@ function App() {
         if (d.characterExtras) setCharacterExtras(d.characterExtras);
         if (d.v1PortraitsByCoord) setV1PortraitsByCoord(d.v1PortraitsByCoord);
         if (d.familyTreeMaps) setFamilyTreeMaps(d.familyTreeMaps);
-        console.log(`[live-init] cracker-extras: treas=${Array.isArray(d.factionTreasuries) ? d.factionTreasuries.length : "none"} owners=${Array.isArray(d.factionRecordOwners) ? d.factionRecordOwners.length : "none"} diplo=${d.allFactionDiplomacy ? Object.keys(d.allFactionDiplomacy).length : "none"}`);
+        // UI batch 2: last-turn diff (null on first load), disaster schedule,
+        // scouting summary — populated on initial Live load too.
+        setLastTurnEvents(d.lastTurnEvents ?? null);
+        if (d.eventSchedule !== undefined) setSaveEventSchedule(d.eventSchedule);
+        if (d.factionKnowledge !== undefined) setSaveFactionKnowledge(d.factionKnowledge);
+        console.log(`[live-init] cracker-extras: treas=${Array.isArray(d.factionTreasuries) ? d.factionTreasuries.length : "none"} owners=${Array.isArray(d.factionRecordOwners) ? d.factionRecordOwners.length : "none"} diplo=${d.allFactionDiplomacy ? Object.keys(d.allFactionDiplomacy).length : "none"} sched=${d.eventSchedule ? d.eventSchedule.count : "none"} fk=${d.factionKnowledge ? d.factionKnowledge.factionsWithTail : "none"}`);
       }
       if (result?.baseline) setLiveSaveFile(result.baseline);
       if (result?.baseline) {
@@ -5129,6 +5140,32 @@ function App() {
       .catch((e) => { if (!cancelled) { setTradeNetwork(null); console.warn("[trade-network] error:", e?.message); } });
     return () => { cancelled = true; };
   }, [liveSaveFile, modDataDir, mapCampaign, liveSaveDir]);
+
+  // UI batch 2 (feature 3): scan a chosen saves folder into a campaign timeline.
+  // On-demand (cracks every save) — never on the live path. Defaults the folder
+  // picker to the live saves dir when one is active.
+  const runTimelineScan = useCallback(async () => {
+    const api = window.electronAPI;
+    if (!api || !api.scanSavesTimeline || !modDataDir) return;
+    let dir = null;
+    if (api.selectFolder) {
+      try { dir = await api.selectFolder(); } catch { /* cancelled */ }
+    }
+    if (!dir) dir = liveSaveDir || null; // fallback to the active live dir
+    if (!dir) { pushToast("Pick a saves folder to scan.", "info"); return; }
+    setTimelineScanning(true);
+    setCampaignTimeline(null);
+    try {
+      const r = await api.scanSavesTimeline(dir, modDataDir, {});
+      setCampaignTimeline(r);
+      if (r && r.error) pushToast(`Timeline scan: ${r.error}`, "warn");
+      else if (r) pushToast(`Charted ${r.scanned} save(s) across ${r.campaigns?.length || 0} campaign(s).`, "info");
+    } catch (e) {
+      setCampaignTimeline({ error: e?.message || String(e) });
+    } finally {
+      setTimelineScanning(false);
+    }
+  }, [modDataDir, liveSaveDir, pushToast]);
 
   // Effect: playback auto-advance (1.5s per turn)
   useEffect(() => {
@@ -6034,6 +6071,7 @@ function App() {
       }
       if (e.key === "Escape") {
         // Esc cascade — close whatever overlay is open, then clear selection.
+        setShowInsightsPanel((cur) => (cur ? false : cur));
         setInfoPopup((cur) => { if (cur) return null; return cur; });
         setDevContextMenu((cur) => { if (cur) return null; return cur; });
         setLegendFilter((cur) => { if (cur) return null; return cur; });
@@ -7518,6 +7556,48 @@ function App() {
       }
     }
 
+    // Draw scripted-event / natural-disaster markers from the save's event
+    // schedule (UI batch 2). Each record's (x,y) is a WORLD TILE coordinate —
+    // the SAME space as army positions — so image Y is flipped exactly like the
+    // army markers below: mapY = (imgSize.height - 1) - y. Only records that
+    // carry a position are drawable; positionless historic events are list-only.
+    // PENDING (year > current campaign year) draw brighter; fired/historic dimmer.
+    if (showScheduleMarkers && saveEventSchedule && Array.isArray(saveEventSchedule.records)) {
+      const CAT_GLYPH = {
+        volcano: "🌋", earthquake: "🌍", flood: "🌊", storm: "⛈",
+        plague: "☣", locusts: "🦗", riot: "🔥", famine: "🍂",
+        fire: "🔥", historic: "📜", emergent_faction: "⚔",
+      };
+      const fontPx = Math.max(3.4 / totalScale, 0.9);
+      ctx.save();
+      ctx.font = `${fontPx}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const curYr = saveCurrentYear;
+      for (const r of saveEventSchedule.records) {
+        if (r.x == null || r.y == null) continue;
+        const mapY = (imgSize.height - 1) - r.y;
+        const drawX = r.x + 0.5, drawMapY = mapY + 0.5;
+        const sx = drawX * totalScale + baseOffsetX + offset.x;
+        const sy = drawMapY * totalScale + baseOffsetY + offset.y;
+        if (sx < -20 || sx > canvasSize.width + 20 || sy < -20 || sy > canvasSize.height + 20) continue;
+        const pending = curYr != null && r.year != null && r.year > curYr;
+        ctx.globalAlpha = pending ? 1 : 0.55;
+        // Halo ring so the glyph reads against any map mode.
+        ctx.beginPath();
+        ctx.arc(drawX, drawMapY, fontPx * 0.75, 0, Math.PI * 2);
+        ctx.fillStyle = pending ? "rgba(220,150,40,0.30)" : "rgba(120,120,120,0.25)";
+        ctx.fill();
+        if (r.warning) {
+          ctx.strokeStyle = "rgba(255,180,60,0.95)";
+          ctx.lineWidth = Math.max(0.6 / totalScale, 0.15);
+          ctx.stroke();
+        }
+        ctx.fillText(CAT_GLYPH[r.category] || "•", drawX, drawMapY);
+      }
+      ctx.restore();
+    }
+
     // Draw army markers when the Armies overlay toggle is on — works over
     // any colorMode, not just a dedicated armies map mode. Uses armiesToRender
     // which picks the save-parsed live armies when available, else falls
@@ -7783,6 +7863,9 @@ function App() {
     showFieldArmies,
     showNavies,
     factionColors,
+    showScheduleMarkers,
+    saveEventSchedule,
+    saveCurrentYear,
   ]);
 
   // Load map image (PNG or TGA depending on campaign)
@@ -8063,6 +8146,22 @@ function App() {
   }, [loadCampaignData, mapCampaign]);
   const [showWealthPanel, setShowWealthPanel] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
+
+  // ── UI batch 2 (2026-05-31): Save-insights panel state. The first three
+  // datasets ride the live save-snapshot (main.js attachLiveSaveExtras); the
+  // timeline is fetched on demand via the scan-saves-timeline IPC.
+  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
+  const [lastTurnEvents, setLastTurnEvents] = useState(null);      // diffTurn result or null (no prior snapshot)
+  const [saveEventSchedule, setSaveEventSchedule] = useState(null); // disaster / scripted-event table
+  const [saveFactionKnowledge, setSaveFactionKnowledge] = useState(null); // per-faction scouting summary
+  const [showScheduleMarkers, setShowScheduleMarkers] = useState(() => {
+    try { return localStorage.getItem("showScheduleMarkers") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("showScheduleMarkers", showScheduleMarkers ? "1" : "0"); } catch {}
+  }, [showScheduleMarkers]);
+  const [campaignTimeline, setCampaignTimeline] = useState(null);  // scan-saves-timeline result
+  const [timelineScanning, setTimelineScanning] = useState(false);
 
   // Preload effect body lives here; the iconsPreloaded state is declared
   // earlier in the component so the splash auto-hide effect can depend on it.
@@ -11061,6 +11160,14 @@ function App() {
             style={{ ...btnStyle(showResourcesOverlay), minWidth: 0 }}>Resources</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
             style={{ ...btnStyle(showArmies), minWidth: 0 }}>Armies</button>
+          {/* UI batch 2: disaster/scripted-event map markers (positioned events). */}
+          <button className="map-mode-btn" onClick={() => setShowScheduleMarkers(prev => !prev)}
+            title="Mark scripted-event & natural-disaster sites (volcanoes, earthquakes, floods, …) on the map from the save's event schedule."
+            style={{ ...btnStyle(showScheduleMarkers), minWidth: 0 }}>Events</button>
+          {/* UI batch 2: Save-insights panel (last turn, event schedule, timeline, scouting). */}
+          <button className="map-mode-btn" onClick={() => setShowInsightsPanel(prev => !prev)}
+            title="Open Save Insights — last-turn summary, disaster/event schedule, campaign timeline, and per-faction AI scouting."
+            style={{ ...btnStyle(showInsightsPanel), minWidth: 0 }}>Insights</button>
           <button className="map-mode-btn" onClick={() => setShowTileInspect(prev => !prev)}
             title="Hover-to-inspect: show a small tooltip with the hovered tile's region, owner, and terrain type. Terrain shows once the geography data is loaded (open Geography mode once)."
             style={{ ...btnStyle(showTileInspect), minWidth: 0 }}>Inspect</button>
@@ -19723,6 +19830,22 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+      {/* UI batch 2 (2026-05-31): Save Insights panel. */}
+      {showInsightsPanel && (
+        <SaveInsightsPanel
+          onClose={() => setShowInsightsPanel(false)}
+          lastTurnEvents={lastTurnEvents}
+          eventSchedule={saveEventSchedule}
+          factionKnowledge={saveFactionKnowledge}
+          currentYear={saveCurrentYear}
+          showScheduleMarkers={showScheduleMarkers}
+          onToggleScheduleMarkers={() => setShowScheduleMarkers(prev => !prev)}
+          timeline={campaignTimeline}
+          scanning={timelineScanning}
+          onScanTimeline={runTimelineScan}
+          modDataDir={modDataDir}
+        />
       )}
       {showWealthPanel && (() => {
         // Faction Wealth panel — sortable list of factions with starting
