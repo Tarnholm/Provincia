@@ -5641,6 +5641,31 @@ ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
   }
 });
 
+// IPC: trade-network derivation (src/tradeNetwork.js). DERIVED, not stored in
+// the save — computes road/sea connectivity + trade-rights gating to list each
+// settlement's trade partners (CONFIRMED structure) plus a relative trade-score
+// (HYPOTHESIS, clearly labelled in the UI). Computed on demand per save-file
+// change, not on the hot live-watch path (it loads + walks the map TGA, so it's
+// too slow to run every snapshot). savePath may be either a full path or, when
+// the live watcher is active, omitted to use the last watched save buffer.
+ipcMain.handle("crack-trade-network", async (_event, savePath, modDataDir, campaign) => {
+  try {
+    const { computeTradeNetwork } = require("./src/tradeNetwork.js");
+    let buf;
+    if (savePath && fs.existsSync(savePath)) {
+      buf = fs.readFileSync(savePath);
+    } else if (lastSaveBuf) {
+      buf = lastSaveBuf; // live-watch path: reuse the buffer already in memory
+    } else {
+      return { error: "no save buffer available" };
+    }
+    const opts = campaign ? { campaign } : {};
+    return computeTradeNetwork(buf, modDataDir, opts);
+  } catch (e) {
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: save a campaign data file. Writes to userData (authoritative store).
 // In dev, also mirrors to build/ so the React dev server can fetch it.
 // In packaged apps, build/ lives inside the read-only asar — skip it.

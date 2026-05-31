@@ -80,6 +80,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // directly. Returns { header, playerFaction, factions:{[name]:{treasury,regionCount,...,diplomacy}}, settlements, characters, _stats }
   // or { error } on failure.
   crackSave: (savePath, modDataDir) => ipcRenderer.invoke("crack-save", savePath, modDataDir),
+  // Trade-network derivation (src/tradeNetwork.js). Returns { trade: { settlements:
+  // { name: { faction, landPartners[], seaPartners[], partners[], tradeScoreHypothesis,
+  // topPartnersHypothesis[] } } }, ... } or { error }. Pass savePath=null to reuse the
+  // live watcher's in-memory save buffer. Computed on demand (slow: walks the map TGA).
+  crackTradeNetwork: (savePath, modDataDir, campaign) => ipcRenderer.invoke("crack-trade-network", savePath, modDataDir, campaign),
   writeBinaryFile: (name, dataBuf) => ipcRenderer.invoke("write-binary-file", name, dataBuf),
   copyFile: (src, destName) => ipcRenderer.invoke("copy-file", src, destName),
   readCampaignFile: (name) => ipcRenderer.invoke("read-campaign-file", name),

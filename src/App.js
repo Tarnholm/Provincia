@@ -2283,6 +2283,12 @@ function App() {
   const [savePopulationByCity, setSavePopulationByCity] = useState(null); // { city: u32 } live population from save parser (u32 at settlement.offset-1494, save-cracker session 2)
   const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
   const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
+  // 2026-05-31: per-settlement runtime fields incl. the CONFIRMED public-order
+  // breakdown slots (src/settlementFieldsParser.js). { city: { order, orderBreakdown, ... } }.
+  const [saveSettlementFields, setSaveSettlementFields] = useState(null);
+  // 2026-05-31: on-demand trade network (computeTradeNetwork via crack-trade-network IPC),
+  // computed once per save-file change. { settlements: { name: { faction, landPartners, seaPartners, ... } }, ... }.
+  const [tradeNetwork, setTradeNetwork] = useState(null);
   // 0.9.542: faction-level save data is now PERSISTED to localStorage and
   // rehydrated on launch, so one sync (live snapshot or 🎯 Calibrate) keeps
   // the Diplomacy & Treasury widget populated for EVERY faction across app
@@ -5063,6 +5069,8 @@ function App() {
       setSaveGovernorByCity(null);
       setSaveCharactersByRegion(null);
       setSaveUnitsByRegion(null);
+      setSaveSettlementFields(null);
+      setTradeNetwork(null);
       setBuiltBuildingsByCity(null);
       setQueuedBuildingsByCity(null);
       setInitialOwnerByCity(null);
@@ -5070,6 +5078,33 @@ function App() {
       setLiveSaveFile(null);
     };
   }, [liveLogActive, liveLogDir, liveSaveDir, pinnedSaveFile]);
+
+  // Effect: compute the trade network ONCE per save-file change (Feature 3).
+  // computeTradeNetwork walks the map TGA + EDB, so it's too slow for the hot
+  // live-watch path — we run it on demand here, keyed on liveSaveFile. The main
+  // process reuses its in-memory save buffer (savePath=null) when live.
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api || !api.crackTradeNetwork) return;
+    if (!liveSaveFile || !modDataDir) { setTradeNetwork(null); return; }
+    let cancelled = false;
+    // imperial uses the imperial_campaign dir; let the parser default for others.
+    const campaignDir = mapCampaign === "imperial" ? "imperial_campaign" : undefined;
+    const savePath = liveSaveDir ? `${liveSaveDir}\\${liveSaveFile}` : null;
+    api.crackTradeNetwork(savePath, modDataDir, campaignDir)
+      .then((r) => {
+        if (cancelled) return;
+        if (r && !r.error && r.trade) {
+          setTradeNetwork(r);
+          try { console.log(`[trade-network] ${Object.keys(r.trade.settlements || {}).length} settlements, ${r.stats?.ms}ms`); } catch {}
+        } else {
+          setTradeNetwork(null);
+          if (r && r.error) console.warn("[trade-network] failed:", r.error);
+        }
+      })
+      .catch((e) => { if (!cancelled) { setTradeNetwork(null); console.warn("[trade-network] error:", e?.message); } });
+    return () => { cancelled = true; };
+  }, [liveSaveFile, modDataDir, mapCampaign, liveSaveDir]);
 
   // Effect: playback auto-advance (1.5s per turn)
   useEffect(() => {
