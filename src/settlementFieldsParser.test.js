@@ -37,4 +37,37 @@ describe("parseSettlementFields", () => {
       }
     }
   });
+
+  // CONFIRMED order-breakdown slot mapping (2026-05-31). Pinned against the
+  // real Carthage turn-1 save when present on this machine (skips otherwise).
+  // s11 = distance-to-capital penalty (0 at the capital, grows with distance);
+  // s12 = religious/cultural-unrest penalty (0 for the culturally-homogeneous
+  // Carthaginian empire); s2 = tax (0 before any tax rate is set, e.g. turn 1).
+  const CARTHAGE_SAVE = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_Carthage1.sav";
+  test("order slot s11 = distance-to-capital, s12 = religion, s2 = tax (Carthage T1)", () => {
+    if (!fs.existsSync(CARTHAGE_SAVE)) return; // machine-local asset
+    const buf = fs.readFileSync(CARTHAGE_SAVE);
+    const fields = parseSettlementFields(buf, findAllSettlementMarkers(buf));
+    const cap = fields["Carthage"];   // faction capital
+    const far = fields["Tingi"];      // far-flung holding (dist ~188 tiles)
+    expect(cap).toBeTruthy();
+    expect(far).toBeTruthy();
+
+    // s11 distance-to-capital: 0 at the capital, clearly positive far away.
+    expect(cap.order.distanceToCapitalPenalty).toBe(0);
+    expect(far.order.distanceToCapitalPenalty).toBeGreaterThanOrEqual(5);
+    expect(far.order.distanceToCapitalPenalty).toBeGreaterThan(cap.order.distanceToCapitalPenalty);
+
+    // s12 religious/cultural unrest: zero throughout the homogeneous Carthaginian empire.
+    expect(cap.order.religiousUnrestPenalty).toBe(0);
+    expect(far.order.religiousUnrestPenalty).toBe(0);
+
+    // s2 tax: zero at a fresh turn-1 start (no tax rate processed yet).
+    expect(cap.order.tax).toBe(0);
+
+    // named slots are a faithful view onto the raw array.
+    expect(cap.order.distanceToCapitalPenalty).toBe(cap.orderBreakdown[11]);
+    expect(cap.order.religiousUnrestPenalty).toBe(cap.orderBreakdown[12]);
+    expect(cap.order.tax).toBe(cap.orderBreakdown[2]);
+  });
 });
