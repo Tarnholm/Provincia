@@ -4802,6 +4802,8 @@ function App() {
               next[s.targetSettlement] = {
                 ...(next[s.targetSettlement] || {}),
                 turnsRemaining: s.turnsRemaining,
+                turnsUnderSiege: s.turnsUnderSiege,
+                siegeWindow: s.siegeWindow,
                 fromSave: true,
               };
             }
@@ -4834,6 +4836,7 @@ function App() {
       if (data && data.populationByCity) setSavePopulationByCity(data.populationByCity);
       if (data && data.incomeByCity) setSaveIncomeByCity(data.incomeByCity);
       if (data && data.sizeByCity) setSaveSizeByCity(data.sizeByCity);
+      if (data && data.settlementFields) setSaveSettlementFields(data.settlementFields);
       if (data && data.treasuryByFaction) setSaveTreasuryRecords(data.treasuryByFaction);
       if (data && data.saveHeader) setSaveHeader(data.saveHeader);
       if (data && data.factionDiscovered) setFactionDiscovered(data.factionDiscovered);
@@ -4950,6 +4953,27 @@ function App() {
         if (d.populationByCity) setSavePopulationByCity(d.populationByCity);
         if (d.incomeByCity) setSaveIncomeByCity(d.incomeByCity);
         if (d.sizeByCity) setSaveSizeByCity(d.sizeByCity);
+        if (d.settlementFields) setSaveSettlementFields(d.settlementFields);
+        // Merge save-derived siege turns on the INITIAL load too (the
+        // snapshot handler did this, but the first live load skipped it).
+        try {
+          if (Array.isArray(d.sieges)) {
+            setActiveSieges(prev => {
+              const next = { ...prev };
+              for (const s of d.sieges) {
+                if (!s.targetSettlement) continue;
+                next[s.targetSettlement] = {
+                  ...(next[s.targetSettlement] || {}),
+                  turnsRemaining: s.turnsRemaining,
+                  turnsUnderSiege: s.turnsUnderSiege,
+                  siegeWindow: s.siegeWindow,
+                  fromSave: true,
+                };
+              }
+              return next;
+            });
+          }
+        } catch (e) { console.warn("[live-init] siege-turns merge failed:", e?.message); }
         if (d.treasuryByFaction) setSaveTreasuryRecords(d.treasuryByFaction);
         // New parser outputs were missing from the initial-load path — until
         // the user triggered a save, Units / Built / Queued stayed empty.
@@ -17877,6 +17901,59 @@ function App() {
                           const r = lockedRegionInfo || regionInfo;
                           if (!r || !r.city) return null;
                           return saveSizeByCity[r.city] || null;
+                        } catch { return null; }
+                      })()}
+                      orderFields={(() => {
+                        // CONFIRMED public-order breakdown slots for the
+                        // settlement (src/settlementFieldsParser.js, cracked
+                        // 2026-05-31). Gate by player-ownership like tax/happiness:
+                        // the order total field was only verified for the player's
+                        // own settlements. The breakdown slots themselves are
+                        // faction-agnostic, but we keep the same gate for honesty.
+                        try {
+                          if (!liveLogActive || !saveSettlementFields) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          const sf = saveSettlementFields[r.city];
+                          if (!sf || !sf.order) return null;
+                          if (playerFaction) {
+                            const owner = (currentOwnerByCity && currentOwnerByCity[r.city])
+                              || (initialOwnerByCity && initialOwnerByCity[r.city]);
+                            if (owner && owner !== playerFaction) return null;
+                          }
+                          return sf;
+                        } catch { return null; }
+                      })()}
+                      siegeInfo={(() => {
+                        // Active siege on this settlement (src/siegeParser.js).
+                        // activeSieges is keyed by besieged settlement name and
+                        // carries the save-derived turnsUnderSiege (counts UP),
+                        // turnsRemaining (besieger countdown), siegeWindow (static).
+                        try {
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city || !activeSieges) return null;
+                          const s = activeSieges[r.city];
+                          if (!s || !s.fromSave) return null;
+                          return s;
+                        } catch { return null; }
+                      })()}
+                      tradeInfo={(() => {
+                        // On-demand trade network for this settlement
+                        // (computeTradeNetwork). Partners are settlement names;
+                        // each partner's faction resolves via the same map.
+                        try {
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city || !tradeNetwork || !tradeNetwork.trade) return null;
+                          const setts = tradeNetwork.trade.settlements || {};
+                          const me = setts[r.city];
+                          if (!me) return null;
+                          const factionOf = (name) => (setts[name] && setts[name].faction) || null;
+                          return {
+                            landPartners: (me.landPartners || []).map(n => ({ name: n, faction: factionOf(n) })),
+                            seaPartners: (me.seaPartners || []).map(n => ({ name: n, faction: factionOf(n) })),
+                            tradeScoreHypothesis: me.tradeScoreHypothesis,
+                            topPartnersHypothesis: (me.topPartnersHypothesis || []).map(p => ({ ...p, faction: factionOf(p.partner) })),
+                          };
                         } catch { return null; }
                       })()}
                       recruitingNow={(() => {

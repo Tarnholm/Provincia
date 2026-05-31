@@ -490,7 +490,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -1420,6 +1420,112 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             </div>
           );
         })() : null}
+        {orderFields && orderFields.order ? (() => {
+          // CONFIRMED public-order breakdown slots (src/settlementFieldsParser.js,
+          // cracked 2026-05-31). Penalty slots are stored as positive magnitudes
+          // but SUBTRACT from order; bonus slots ADD. We render each non-zero
+          // CONFIRMED contribution with its real sign. The unmapped/HYPOTHESIS
+          // slots (s0/s1/s3 etc.) are intentionally omitted — never shown as a
+          // fabricated number. Magnitudes are the engine's internal units (the
+          // order total sits on a ~0..400 scale, not 0-100%), so this row reads
+          // as relative contributions, not literal percentage points.
+          const o = orderFields.order;
+          const items = [
+            { label: "Tax",             v: o.tax,                       sign: +1 }, // signed already
+            { label: "Distance",        v: o.distanceToCapitalPenalty,  sign: -1 },
+            { label: "Foreign culture", v: o.foreignCulturePenalty,     sign: -1 },
+            { label: "Religious unrest",v: o.religiousUnrestPenalty,    sign: -1 },
+            { label: "Health",          v: o.healthBonus,               sign: +1 },
+            { label: "Capital",         v: o.capitalBonus,              sign: +1 },
+            { label: "Tax admin",       v: o.taxAdminLine,              sign: +1 },
+            { label: "Campaign start",  v: o.startTransientBonus,       sign: +1 },
+          ];
+          const parts = [];
+          for (const it of items) {
+            if (typeof it.v !== "number" || Math.abs(it.v) < 0.05) continue;
+            // `tax` carries its own sign; the rest are stored as magnitudes and
+            // the slot identity (penalty vs bonus) supplies the sign.
+            const signed = it.label === "Tax" ? it.v : it.sign * Math.abs(it.v);
+            parts.push({ label: it.label, signed });
+          }
+          if (parts.length === 0) return null;
+          const fmt = (n) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(Math.round(n * 10) / 10)}`;
+          return (
+            <div style={{ marginBottom: 2, paddingLeft: 6, fontSize: "0.72rem", color: "#bbb", lineHeight: 1.5 }}
+              title="Confirmed public-order contributions decoded from the save (src/settlementFieldsParser.js, 2026-05-31). Penalty slots subtract, bonus slots add; magnitudes are the engine's internal order units (the order total runs ~0..400, not 0-100%), so treat these as relative contributions. Unmapped/hypothesis slots are not shown.">
+              {parts.map((p, i) => (
+                <span key={p.label}>
+                  {i > 0 ? <span style={{ color: "#666" }}> · </span> : null}
+                  <span>{p.label} </span>
+                  <span style={{ color: p.signed >= 0 ? "#7ed27e" : "#e89060", fontVariantNumeric: "tabular-nums" }}>{fmt(p.signed)}</span>
+                </span>
+              ))}
+            </div>
+          );
+        })() : null}
+        {siegeInfo ? (() => {
+          // Active siege on this settlement (src/siegeParser.js). turnsUnderSiege
+          // counts UP each turn (CONFIRMED); turnsRemaining is the besieger's
+          // countdown (resets to 5, 0 = ripe to assault — HYPOTHESIS on exact
+          // semantics); siegeWindow is the static per-settlement threshold.
+          const under = typeof siegeInfo.turnsUnderSiege === "number" ? siegeInfo.turnsUnderSiege : null;
+          const remain = typeof siegeInfo.turnsRemaining === "number" ? siegeInfo.turnsRemaining : null;
+          const window = typeof siegeInfo.siegeWindow === "number" ? siegeInfo.siegeWindow : null;
+          return (
+            <div style={{ marginTop: 4, marginBottom: 2, padding: "4px 8px", borderRadius: 5, background: "rgba(180,40,40,0.18)", border: "1px solid rgba(220,80,80,0.5)" }}
+              title="Active siege decoded from the save (src/siegeParser.js). 'Under siege' counts up each turn (confirmed); 'assault in' is the besieger's countdown (5 at start, 0 = ready to assault); 'window' is the static per-settlement siege threshold.">
+              <strong style={{ color: "#ff9a8a" }}>⚔ Under siege</strong>
+              {under != null ? <span style={{ color: "#eee", marginLeft: 6 }}>{under} turn{under === 1 ? "" : "s"}</span> : <span style={{ color: "#888", marginLeft: 6 }}>—</span>}
+              {remain != null ? (
+                <span style={{ color: "#e8a030", marginLeft: 8, fontSize: "0.74rem" }}>
+                  · besieger assault in {remain} turn{remain === 1 ? "" : "s"}
+                </span>
+              ) : null}
+              {window != null ? (
+                <span style={{ color: "#999", marginLeft: 8, fontSize: "0.7rem" }}>· window {window}</span>
+              ) : null}
+            </div>
+          );
+        })() : null}
+        {tradeInfo && (() => {
+          // Trade partners (computeTradeNetwork). Partners are CONFIRMED
+          // connectivity; the trade score is a relative HYPOTHESIS estimate.
+          const land = tradeInfo.landPartners || [];
+          const sea = tradeInfo.seaPartners || [];
+          if (land.length === 0 && sea.length === 0) return null;
+          const renderList = (arr) => arr.slice(0, 8).map((p, i) => (
+            <span key={p.name + i}>
+              {i > 0 ? <span style={{ color: "#666" }}>, </span> : null}
+              <span style={{ color: "#dde" }}>{p.name}</span>
+              {p.faction ? <span style={{ color: "#889", fontSize: "0.68rem" }}> ({p.faction.replace(/_/g, " ")})</span> : null}
+            </span>
+          ));
+          return (
+            <div style={{ marginTop: 4, marginBottom: 2, fontSize: "0.72rem", lineHeight: 1.5 }}>
+              <div style={{ color: "#9cc", fontWeight: 600 }}
+                title="Trade partners derived from road/sea connectivity + trade rights (src/tradeNetwork.js). Partner reachability is CONFIRMED structure; the trade-score number below is a relative estimate, NOT the engine's gold value.">
+                Trade partners
+                {typeof tradeInfo.tradeScoreHypothesis === "number" ? (
+                  <span style={{ color: "#888", fontWeight: 400, marginLeft: 6 }}>
+                    score {tradeInfo.tradeScoreHypothesis.toFixed(2)} <em>(relative estimate, unverified)</em>
+                  </span>
+                ) : null}
+              </div>
+              {land.length > 0 ? (
+                <div style={{ color: "#bbb", paddingLeft: 6 }}>
+                  <span style={{ color: "#9b8" }}>Land:</span> {renderList(land)}
+                  {land.length > 8 ? <span style={{ color: "#888" }}> +{land.length - 8} more</span> : null}
+                </div>
+              ) : null}
+              {sea.length > 0 ? (
+                <div style={{ color: "#bbb", paddingLeft: 6 }}>
+                  <span style={{ color: "#7ad" }}>Sea:</span> {renderList(sea)}
+                  {sea.length > 8 ? <span style={{ color: "#888" }}> +{sea.length - 8} more</span> : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })()}
         {devMode && rgb && (() => {
           // Show both decimal RGB and hex, plus a swatch + colour-tinted
           // hex so the row reads as the colour it represents — easier

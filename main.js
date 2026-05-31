@@ -150,6 +150,7 @@ const { buildInitialOwnership } = require("./src/ownershipParser.js");
 const { resolveCurrentOwners, findSettlementGovernors } = require("./src/saveOwnershipParser.js");
 const { findAllSettlementMarkers } = require("./src/buildingParser.js");
 const { parseSieges } = require("./src/siegeParser.js");
+const { parseSettlementFields } = require("./src/settlementFieldsParser.js");
 const { findFactionRecords, summarizeFactionArray } = require("./src/factionRecordParser.js");
 const { findLuaCounters, indexCountersByName } = require("./src/luaCounterParser.js");
 const {
@@ -7865,6 +7866,13 @@ async function reparseLatestSave() {
         console.log(`[save-watch] sieges: ${newData.sieges.map(s => `${s.targetSettlement || "?"}=${s.turnsRemaining}t`).join(", ")}`);
       }
     } catch (e) { console.warn("[save-watch] siege parse failed:", e.message); newData.sieges = []; }
+    // Per-settlement runtime fields, incl. the CONFIRMED public-order
+    // breakdown slots (src/settlementFieldsParser.js, cracked 2026-05-31).
+    // Drives the public-order contribution row in the RegionInfo card.
+    try {
+      const sfMarkers = findAllSettlementMarkers(saveBuf);
+      newData.settlementFields = parseSettlementFields(saveBuf, sfMarkers);
+    } catch (e) { console.warn("[save-watch] settlement-fields parse failed:", e.message); newData.settlementFields = {}; }
     emitSaveProgress("Done", 100);
     win.webContents.send("save-snapshot", { file: latestFile, data: newData });
     // Re-anchor live-log tracking to the moment of this save. Save state
@@ -8084,6 +8092,19 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
             }
           }
         } catch (e) { console.warn("[save-watch] army-faction re-attribution failed:", e.message); }
+      }
+      // Sieges + per-settlement runtime fields on the INITIAL live load too
+      // (the incremental reparse path computed these, but the first snapshot
+      // skipped them — so a besieged city / order breakdown only appeared
+      // after the user ended a turn). Mirror reparseLatestSave here.
+      try {
+        const sgMarkers = findAllSettlementMarkers(saveBuf);
+        lastSaveData.sieges = parseSieges(saveBuf, sgMarkers);
+        lastSaveData.settlementFields = parseSettlementFields(saveBuf, sgMarkers);
+      } catch (e) {
+        console.warn("[save-watch] initial siege/settlement-fields parse failed:", e.message);
+        lastSaveData.sieges = lastSaveData.sieges || [];
+        lastSaveData.settlementFields = lastSaveData.settlementFields || {};
       }
       emitSaveProgress("Done", 100);
       const bCount = Object.keys(lastSaveData.buildings || {}).length;
