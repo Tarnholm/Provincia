@@ -25,6 +25,7 @@ const { parseEventLog } = require("./eventLogParser.js");
 const { parseSettlementFields } = require("./settlementFieldsParser.js");
 const { parseEventSchedule } = require("./eventScheduleParser.js");
 const { findLuaCounters, classifyCounters } = require("./luaCounterParser.js");
+const { parseTurn } = require("./turnParser.js");
 const { parseFactionKnowledge } = require("./factionKnowledgeParser.js");
 const { findAllSettlementMarkers } = require("./buildingParser.js");
 const x = require("./saveCrackerExtras.js");
@@ -487,12 +488,22 @@ function crackSave(saveBuf, modDataDir) {
     };
   }
 
-  // Turn number (cracked 2026-05-29). Each faction record is preceded by an
-  // econ-history table whose blocks count = turn number. Use the PLAYER's
-  // record. Verified on Julii T1=1, T6E=6, T7S=7, T7=7. (Falls back to null
-  // if player not identified or no Type A record.)
-  let turn = null;
-  if (playerFaction && trByName.has(playerFaction)) {
+  // Turn number — CONFIRMED literal counter (cracked 2026-05-31, turnParser.js).
+  // Reads the campaign-date record (`…descr_strat.txt` + marker, then
+  // u32 turnsElapsed + i32 currentYear). EXACT at any turn — replaces the old
+  // econ-history-block-count heuristic, which SATURATED (~10) on long campaigns
+  // (it returned turn 10 for a known "Turn 34 Start" save). Also yields the
+  // current campaign year + season-within-year (4 turns/year for RIS).
+  // Validated 11/11: julii/Carthage 1/2/3, Carthage T2E/T3S, RoR T5/T8/T34.
+  const turnInfo = parseTurn(saveBuf);
+  let turn = turnInfo ? turnInfo.turn : null;
+  const currentYear = turnInfo ? turnInfo.year : null;
+  const seasonIndex = turnInfo ? turnInfo.seasonIndex : null;
+
+  // Fallback (only if the date-record signature is absent): the legacy
+  // econ-history-block count before the player record. Capped/approximate on
+  // long campaigns — kept solely so `turn` is non-null on odd save layouts.
+  if (turn == null && playerFaction && trByName.has(playerFaction)) {
     const r = trByName.get(playerFaction);
     for (let off = r.offset - 4; off >= r.offset - 100000 && off >= 0; off -= 4) {
       if (saveBuf.readUInt32LE(off) === off) {
@@ -509,6 +520,8 @@ function crackSave(saveBuf, modDataDir) {
     header,
     playerFaction,
     turn,
+    currentYear,                // current campaign year (BC negative); null if unknown
+    seasonIndex,                // 0..3 within the year (4 turns/year); null if unknown
     factions,
     settlements: settlements && settlements.settlements ? settlements.settlements : [],
     characters: {
