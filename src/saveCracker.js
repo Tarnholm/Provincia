@@ -123,75 +123,12 @@ function readSmFactionsOrder(modDataDir) {
   return out;
 }
 
-// Read the `playable` block from descr_strat — list of factions selectable
-// at campaign start. Cracked 2026-05-29: the save's per-faction record
-// ORDER follows this list, with the player pulled to position 0.
-function readPlayableFromStrat(modDataDir) {
-  const candidates = [
-    path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-    path.join(modDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
-    path.join(modDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
-  ];
-  for (const src of candidates) {
-    if (!fs.existsSync(src)) continue;
-    const text = fs.readFileSync(src, "utf8");
-    const out = [];
-    let inBlock = false;
-    for (const raw of text.split(/\r?\n/)) {
-      const line = raw.trim();
-      if (line === "playable") { inBlock = true; continue; }
-      if (inBlock && line === "end") break;
-      if (!inBlock) continue;
-      if (line.startsWith(";") || !line) continue;
-      // Faction name (may have tab indent which `trim` already stripped)
-      if (/^[a-z][a-z0-9_]*$/i.test(line)) out.push(line);
-    }
-    return out;
-  }
-  return [];
-}
-
-// Position → factionId mapping for sub=6 records in imperial-campaign saves.
-// Cracked 2026-05-29 against Julii/Carthage/Antigonid/Bactria T1 ground truth.
-//
-// Rule:
-//   pos 0     = player faction
-//   pos 1     = roman_senate (a special faction always at this slot)
-//   pos 2..M  = playable[1..playerIdx-1] (the "before player" run, but
-//               EXCLUDING playable[0]=julii which is delayed)
-//   pos M+1   = playable[0] = julii (always inserted after the before-player run)
-//   pos M+2.. = playable[playerIdx+1..end] (the "after player" run)
-//   pos N+1.. = non-playable factions in descrOrder
-//
-// Special case: when player IS julii (idx 0), playable[0] is the player itself
-// so there's no separate julii insertion — order is just [julii, senate, ...rest].
-function buildRecordOrderToFactionName(playable, descrOrder, playerFaction) {
-  const out = [];
-  out.push(playerFaction);
-  out.push("roman_senate");
-  const pIdx = playable.indexOf(playerFaction);
-  if (pIdx === 0) {
-    // Player is playable[0] (julii). Just forward from idx 1.
-    for (let j = 1; j < playable.length; j++) out.push(playable[j]);
-  } else if (pIdx > 0) {
-    // "before player" run: playable[1..pIdx-1]
-    for (let j = 1; j < pIdx; j++) out.push(playable[j]);
-    // Then playable[0] = julii (delayed)
-    out.push(playable[0]);
-    // "after player" run: playable[pIdx+1..end]
-    for (let j = pIdx + 1; j < playable.length; j++) out.push(playable[j]);
-  } else {
-    // Player not in playable list (shouldn't happen for imperial campaign)
-    for (const f of playable) if (f !== playerFaction) out.push(f);
-  }
-  // Append non-playable factions in descrOrder
-  const used = new Set(out);
-  for (const f of descrOrder) if (!used.has(f) && !/_rebels?\d*$/.test(f) && f !== "slave") {
-    out.push(f);
-    used.add(f);
-  }
-  return out;
-}
+// NOTE (2026-05-31): readPlayableFromStrat + buildRecordOrderToFactionName were
+// removed. They built a "player-pulled-to-front" record order used by the OLD
+// current-treasury attribution, which mis-keyed treasuries on mid/late saves.
+// Current treasury is now keyed by record ARRAY POSITION into descr_sm order
+// (smOrder), matching the treasury-HISTORY keying. See the keying block in
+// crackSave + docs/findings-treasury-attribution-2026-05-31.md.
 
 function loadNameLookup(modDataDir) {
   const candidates = [
@@ -386,27 +323,6 @@ function crackSave(saveBuf, modDataDir) {
     (charsByFaction[c.faction] ||= []).push(c);
   }
 
-  // Knowledge-based factionId mapping for sub=6 records (cracked 2026-05-29).
-  // Each playable faction has a STABLE knowledge-size signature in the engine
-  // (verified across saves: Julii=414, Carthage=173, Antigonid=161, etc).
-  // We prefer this over position-based mapping because mid-turn manual saves
-  // have jumbled record ordering — only end-of-turn autosaves canonicalize
-  // order. Knowledge is stable regardless of save timing.
-  //
-  // Built empirically from T1 saves (Julii, Carthage, Antigonid, Bactria
-  // crossed against source denari for uniqueness). 9 factions known; extend
-  // as more saves come in.
-  const KNOWLEDGE_TO_FACTION = {
-    414: "romans_julii",
-    250: "seleucid",
-    207: "ptolemaic",
-    175: "epirus",
-    173: "carthage",
-    161: "antigonid",
-    83:  "bactria",
-    69:  "cyrene",
-    15:  "indians",
-  };
   let playerFaction = x.identifyPlayerFactionFromSave(saveBuf, treasuriesRaw);
   // Fallback: identifyPlayer fails for some factions (verified: Bactria T1).
   // Position 0 of sub=6 records is ALWAYS the player — derive the player by
@@ -445,31 +361,54 @@ function crackSave(saveBuf, modDataDir) {
       playerFaction = "dummies";
     }
   }
-  const playable = readPlayableFromStrat(modDataDir);
-  const recordOrder = playerFaction ? buildRecordOrderToFactionName(playable, stratOrder, playerFaction) : [];
-
-  // Sort sub=6 records by offset.
-  const sub6 = treasuriesRaw
-    .filter(t => t.knowledgeSize !== undefined)
-    .sort((a, b) => a.offset - b.offset);
-  const trByName = new Map();
-  // First pass: assign by knowledge signature where known. This is robust
-  // against mid-turn save record jumbling.
-  const claimedRecords = new Set();
-  for (const r of sub6) {
-    const fac = KNOWLEDGE_TO_FACTION[r.knowledgeSize];
-    if (fac && !trByName.has(fac)) {
-      trByName.set(fac, r);
-      claimedRecords.add(r.offset);
-    }
+  // ── current-treasury → faction keying (fixed 2026-05-31) ──────────────
+  // parseFactionTreasuries emits EXACTLY ONE record per faction, in
+  // descr_sm_factions declaration order, 1:1 by ARRAY POSITION once sorted by
+  // offset (239 records <-> 239 descr_sm factions). So the correct faction for
+  // record i is smOrder[i] — the SAME positional keying the treasury-HISTORY
+  // fix uses (docs/findings-treasury-history-keying-2026-05-31.md), now applied
+  // to current treasury too.
+  //
+  // The OLD logic keyed by (a) a per-faction knowledge-size signature, then
+  // (b) a position fallback into buildRecordOrderToFactionName. Both were
+  // unreliable on mid/late saves:
+  //   - The knowledge signature is NOT unique (e.g. on a T34 RoR save the minor
+  //     factions bessi & sparta share bactria's=83 / cyrene's=69 sigs), and on
+  //     late saves most minor/rebel factions collapse to tiny shared sigs
+  //     (1/2/4), so the signature can't disambiguate them.
+  //   - buildRecordOrderToFactionName rebuilt an order that drifted from the
+  //     real record layout, mis-attributing the (real) treasuries of those
+  //     records to the wrong faction names. On the T34 save this bound a
+  //     191983-denarii record to a 0-region faction (paeonia) while a
+  //     113-region empire (seleucid) showed a tiny treasury under the wrong key.
+  //   - The per-record factionId BYTE is ALSO wrong here (off-by-one starting at
+  //     the carthage record, repeats 0 for several records) — same drift the
+  //     history fix documented. Record ARRAY POSITION is the reliable identity.
+  //
+  // Verified on julii1 (T1) AND the T34 RoR save: each major faction's stable
+  // knowledge signature lands on exactly its smOrder position (romans_julii@0,
+  // carthage@4, antigonid@5, ptolemaic@6, seleucid@7, bactria@8, ...).
+  //
+  // PLAYER SWAP: the one deviation from raw smOrder is that the PLAYER faction's
+  // record is moved to position 0, and the faction that naturally occupies
+  // position 0 (smOrder[0] == romans_julii) is moved to the player's natural
+  // smOrder slot. I.e. positions 0 and `playerSlot` are SWAPPED. When the player
+  // IS smOrder[0] (a Julii campaign) the swap is the identity, which is why the
+  // simpler "idx -> smOrder" keying already validates on julii saves. Confirmed
+  // on save_Carthage1 (player=carthage): rec0=carthage(173, the player) and the
+  // displaced romans_julii(414) sits at carthage's natural slot 4.
+  const orderedRecords = treasuriesRaw.slice().sort((a, b) => a.offset - b.offset);
+  // Build the positional faction-name order, applying the player swap.
+  const positionOrder = smOrder.slice();
+  const playerSlot = playerFaction ? smOrder.indexOf(playerFaction) : -1;
+  if (playerSlot > 0) {
+    positionOrder[0] = playerFaction;        // player record sits at position 0
+    positionOrder[playerSlot] = smOrder[0];  // displaced smOrder[0] takes player's slot
   }
-  // Second pass: position-based fallback for records WITHOUT a known
-  // knowledge signature. These are the smaller / less-distinguishable
-  // factions (rebels, dummy, regional minors).
-  const remaining = sub6.filter(r => !claimedRecords.has(r.offset));
-  const remainingOrder = recordOrder.filter(name => !trByName.has(name));
-  for (let i = 0; i < remaining.length && i < remainingOrder.length; i++) {
-    trByName.set(remainingOrder[i], remaining[i]);
+  const trByName = new Map();
+  for (let i = 0; i < orderedRecords.length && i < positionOrder.length; i++) {
+    const name = positionOrder[i];
+    if (name && !trByName.has(name)) trByName.set(name, orderedRecords[i]);
   }
 
   const factions = {};

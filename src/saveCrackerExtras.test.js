@@ -11,6 +11,7 @@
 
 import { describe, test, expect } from "vitest";
 import fs from "fs";
+import { createRequire } from "node:module";
 import {
   parseCharacterExtras,
   identifyPlayerFactionFromSave,
@@ -20,6 +21,8 @@ import {
   parseDiplomacyMatrix,
   parseFactionTreasuryHistory,
 } from "./saveCrackerExtras.js";
+const require = createRequire(import.meta.url);
+const { crackSave } = require("./saveCracker.js");
 
 const MACEDON_T0_PATH = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_macedon t0.sav";
 const SM_FACTIONS_PATH = "C:\\RIS\\RIS\\data\\descr_sm_factions.txt";
@@ -325,5 +328,78 @@ describeIfJulii("parseFactionTreasuryHistory — correct faction keying (julii1/
     expect(hist.antigonid[0]).toBeLessThan(23000);
     // They must differ — the cross-wire made one the other.
     expect(hist.carthage[0]).not.toBe(hist.antigonid[0]);
+  });
+});
+
+// ── crackSave current-treasury ATTRIBUTION keying (fixed 2026-05-31) ───────
+// Bug: on mid/late saves, current treasury was mis-attributed to the WRONG
+// faction NAMES. The values were right but bound to the wrong factions — e.g.
+// on the T34 Republic-of-Rome save a 0-region faction (paeonia) was shown
+// holding 191,983 denarii while a 113-region empire (seleucid) appeared to hold
+// almost nothing under the wrong key. Same root cause as the treasury-HISTORY
+// off-by-one: the old logic keyed by a non-unique knowledge signature + a
+// player-pulled-to-front order that drifted from the real record layout. FIX:
+// key current treasury by record ARRAY POSITION into descr_sm order (with the
+// player faction swapped to position 0), 1:1, exactly like the history fix.
+const MOD_DATA = "C:\\RIS\\RIS\\data";
+const T34_PATH = "C:\\dev\\crash-saves-v7.2\\2026-05-30__Thibaud_Borny__save_Autosave_Republic_of_Rome_Turn_34_Start\\save_Autosave   Republic of Rome   Turn 34 Start.sav";
+const t34 = loadSaveIfPresent(T34_PATH);
+const carthage1 = loadSaveIfPresent(`${SAVE_DIR}\\save_Carthage1.sav`);
+const describeIfT34 = (t34 && fs.existsSync(MOD_DATA)) ? describe : describe.skip;
+
+describeIfT34("crackSave — current-treasury attribution keying (T34 Republic of Rome)", () => {
+  // The T34 save is ~45 MB; crack it ONCE and share the result (a per-test
+  // crack blows the default 5s timeout).
+  let factions;
+  const cracked = crackSave(t34, MOD_DATA);
+  factions = cracked.factions;
+
+  test("major empires are keyed to their knowledge-signature-confirmed treasuries", () => {
+    // These values are pinned by each major faction's STABLE engine knowledge
+    // signature (seleucid=250, ptolemaic=207, carthage=173, antigonid=161,
+    // bactria=83, romans_julii=414), which uniquely identifies the record
+    // regardless of save timing. They must land on the correct faction NAME.
+    expect(factions.seleucid.treasury).toBe(39326);     // 113-region empire
+    expect(factions.ptolemaic.treasury).toBe(29853);    // 86-region empire
+    expect(factions.carthage.treasury).toBe(14756);
+    expect(factions.antigonid.treasury).toBe(9600);
+    expect(factions.bactria.treasury).toBe(3802);
+    expect(factions.romans_julii.treasury).toBe(10528); // the player
+  });
+
+  test("0-region factions do NOT hold the misattributed mega-treasuries", () => {
+    // Pre-fix these 0-region factions were bound to 191983 / 175363 / 34988.
+    for (const name of ["paeonia", "gades", "arados", "minaeans"]) {
+      const f = factions[name];
+      if (!f) continue;
+      if (f.regionCount === 0) {
+        expect(f.treasury, `${name} (0 regions) must not hold a mega-treasury`).toBeLessThan(150000);
+      }
+    }
+    // Specifically: the bug bound 191983 to paeonia (0 regions).
+    expect(factions.paeonia.treasury).not.toBe(191983);
+  });
+
+  test("seleucid (113 regions) is the richest among the major empire factions", () => {
+    const majors = ["seleucid", "ptolemaic", "carthage", "antigonid", "bactria", "romans_julii"];
+    const sel = factions.seleucid.treasury;
+    for (const m of majors) {
+      if (m === "seleucid") continue;
+      expect(sel, `seleucid >= ${m}`).toBeGreaterThanOrEqual(factions[m].treasury);
+    }
+  });
+}, 30000);
+
+// PLAYER-SWAP regression: when the player is NOT romans_julii, the player's
+// record sits at position 0 and romans_julii is displaced to the player's
+// natural descr_sm slot. The keying must swap them back. save_Carthage1 is the
+// canonical case (player=carthage; carthage starts with 25500, julii with 17500).
+const describeIfCarthage1 = (carthage1 && fs.existsSync(MOD_DATA)) ? describe : describe.skip;
+describeIfCarthage1("crackSave — player-swap treasury keying (Carthage T1)", () => {
+  test("player carthage keeps 25500 and displaced romans_julii keeps 17500", () => {
+    const { factions, playerFaction } = crackSave(carthage1, MOD_DATA);
+    expect(playerFaction).toBe("carthage");
+    expect(factions.carthage.treasury).toBe(25500);
+    expect(factions.romans_julii.treasury).toBe(17500);
   });
 });
