@@ -18,6 +18,18 @@
 // no-siege baseline): b[p+4]==0 && b[p+5]==1 && u32(p)==u32(p+14) && u32(p+18)==0.
 // The target settlement is the nearest settlement record preceding the 2nd
 // occurrence of the siegeID.
+//
+// TARGET (defender) side, at the 2nd occurrence T of the 4-byte siegeID
+// (inside the besieged settlement record; b[T-1]==0x01):
+//   T+0  u32 siegeID
+//   T+4  u32 siegeWindow      (STATIC per settlement: 5 or 6; the siege "budget"/
+//                              threshold, does NOT change over turns)
+//   T+8  u32 turnsUnderSiege  (defender-side counter; counts UP +1 each turn)
+// CONFIRMED 2026-05-31 (findings-siege-defender-2026-05-31.md) on a controlled
+// same-campaign consecutive-autosave pair (RoR Turn 2 End -> Turn 3 Start): all
+// 9 ongoing sieges matched by siegeID+armyUUID showed turnsUnderSiege += 1 and
+// siegeWindow unchanged. So the defender side IS a separate counter from the
+// besieger's turnsRemaining (which resets and counts DOWN), and it counts UP.
 
 "use strict";
 
@@ -53,6 +65,17 @@ function parseSieges(buf, settlements) {
     // siege-ID occurrence (smallest positive offset−targetLoc).
     let target = null;
     const targetLoc = locs.find((l) => Math.abs(l - p) > 64);
+    // Defender-side counters live at the target occurrence (CONFIRMED 2026-05-31):
+    //   targetLoc+4 = siegeWindow (static), targetLoc+8 = turnsUnderSiege (counts up).
+    let turnsUnderSiege = null;
+    let siegeWindow = null;
+    if (targetLoc != null) {
+      if (targetLoc + 8 <= buf.length) siegeWindow = buf.readUInt32LE(targetLoc + 4);
+      if (targetLoc + 12 <= buf.length) turnsUnderSiege = buf.readUInt32LE(targetLoc + 8);
+      // Sanity-bound: these are small counts; reject implausible reads.
+      if (siegeWindow != null && (siegeWindow === 0 || siegeWindow > 100)) siegeWindow = null;
+      if (turnsUnderSiege != null && turnsUnderSiege > 100) turnsUnderSiege = null;
+    }
     if (targetLoc != null && Array.isArray(settlements)) {
       let bestS = null;
       for (const s of settlements) {
@@ -66,6 +89,8 @@ function parseSieges(buf, settlements) {
       besiegerArmyUuid: uuid,
       siegeId,
       turnsRemaining, // HYP: turns until the settlement falls (5 at start, 0 = ripe)
+      turnsUnderSiege, // CONFIRMED: defender-side counter; counts UP +1 each turn (null if unresolved)
+      siegeWindow,     // CONFIRMED: static per-settlement siege budget/threshold (5 or 6); null if unresolved
       targetSettlement: target,
       offset: p,
     });

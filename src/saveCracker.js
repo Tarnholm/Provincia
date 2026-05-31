@@ -532,7 +532,7 @@ function crackSave(saveBuf, modDataDir) {
       familyByFaction,          // family records grouped by attributed faction
     },
     diplomacy,                  // { factionName: {war, allied, hostile, trade}, _meta }
-    sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, targetSettlement }]
+    sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, turnsUnderSiege, siegeWindow, targetSettlement }]
     events,                     // end-of-turn event log [{ type, faction, subject, title, body }]
     settlementFields,           // { city: { populationGrowth, income, publicOrder, governorUuid, ... } }
     eventSchedule,              // { count, records:[{category,label,year,season,x,y,scale,warning,isRandom}] }
