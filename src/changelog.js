@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.770",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Diplomacy now shows your real wars.** In live mode the \"at war\" list was empty because every war target the game tracks as a rebel/emergent faction (the House of Aemilii, the House of Cornelii, and the Free Peoples) was being filtered out as a \"placeholder\". Wars are now shown regardless — named emergent houses by name, with the generic independents folded into a single \"Free Peoples\" — so Provincia's war list matches the in-game diplomacy. (Starting/non-live diplomacy is unchanged.)" },
+    ],
+  },
+  {
     version: "0.9.769",
     date: "2026-05-31",
     items: [
