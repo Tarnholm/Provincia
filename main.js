@@ -1439,6 +1439,103 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       }
     }
   }
+  // Faction-block markers: every faction's character/unit run in the save
+  // is preceded by a `captain_card_<faction>.tga` ASCII path. Each unit's
+  // file offset tells us which faction's block it sits in, and therefore
+  // which faction commands the army it's part of.
+  // 0.9.774: HOISTED above the charactersByRegion build (was below at
+  // ~1825). The v1 faction-tag pass needs to run BEFORE we snapshot each
+  // character into charactersByRegion, otherwise the region entries get
+  // faction=null and the live commander-info → portrait swap falls back to
+  // the bodyguard unit icon (live leader/general portrait bug). factionMarkers
+  // / factionAtOffset only depend on saveBuf, so they're safe to define here
+  // and remain in scope for the army-labelling loops further down.
+  const factionMarkers = (function() {
+    const out = [];
+    const pattern = Buffer.from("captain_card_", "ascii");
+    let p = 0;
+    while ((p = saveBuf.indexOf(pattern, p)) !== -1) {
+      let end = p + pattern.length;
+      let factionName = "";
+      while (end < saveBuf.length && saveBuf[end] !== 0x2e /* . */) {
+        const b = saveBuf[end];
+        if (b < 0x20 || b > 0x7e) break;
+        factionName += String.fromCharCode(b);
+        end++;
+      }
+      if (factionName.length > 0 && factionName.length < 30) {
+        out.push({ pos: p, faction: factionName });
+      }
+      p += pattern.length;
+    }
+    out.sort((a, b) => a.pos - b.pos);
+    return out;
+  })();
+  // Binary search the most recent faction marker preceding `off`.
+  const factionAtOffset = (off) => {
+    let lo = 0, hi = factionMarkers.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (factionMarkers[mid].pos <= off) lo = mid + 1; else hi = mid;
+    }
+    return lo > 0 ? factionMarkers[lo - 1].faction : null;
+  };
+  // 0.9.774: nearest marker AT OR AFTER `off`. The player faction's own
+  // character block is written near the TOP of the save — BEFORE the first
+  // `captain_card_<faction>.tga` path appears (verified on RIS Republic-of-
+  // Rome T1: Quintus/Marcus/Servius at offset ~22,619,662 vs the first
+  // marker — itself romans_julii — at 22,627,784). So preceding-marker
+  // lookup returns null for them. The block immediately precedes its own
+  // faction's first marker, so the nearest FOLLOWING marker is the right
+  // attribution. Used ONLY as a fallback when factionAtOffset misses, so
+  // it can't override a correctly-preceding marker.
+  const factionAtOrAfterOffset = (off) => {
+    let lo = 0, hi = factionMarkers.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (factionMarkers[mid].pos < off) lo = mid + 1; else hi = mid;
+    }
+    return lo < factionMarkers.length ? factionMarkers[lo].faction : null;
+  };
+
+  // 0.9.497: tag every v1 character with their faction via the captain_card
+  // marker preceding their record. The v1 parser doesn't set c.faction
+  // itself, so every char came out faction="" — which broke the stats cache
+  // because the cache keys include faction and renderer lookups by
+  // `<name>||<faction>` then by `<name>||` missed every char whose name
+  // collides with another faction's (e.g. Achaios). Also bridges from v2
+  // chars (which DO have faction) by matching primaryUuid as a higher-
+  // confidence source. Tag count is logged so we can verify in provincia.log.
+  {
+    const v2ByPrimaryUuid = new Map();
+    for (const c of charsV2) {
+      if (c.primaryUuid) v2ByPrimaryUuid.set(c.primaryUuid, c);
+    }
+    let taggedByV2 = 0, taggedByMarker = 0, taggedByAfter = 0, untagged = 0;
+    for (const c of characters) {
+      if (c.faction) continue;
+      // Prefer v2 match (most authoritative source — v2 picks up the
+      // captain_card markers in its own assignFactions pass).
+      const v2 = c.primaryUuid && v2ByPrimaryUuid.get(c.primaryUuid);
+      if (v2 && v2.faction) { c.faction = v2.faction; taggedByV2++; continue; }
+      // Fall back to the captain_card marker preceding this character's
+      // file offset — same logic the unit-record path uses.
+      if (c.offset != null) {
+        const f = factionAtOffset(c.offset);
+        if (f) { c.faction = f; taggedByMarker++; continue; }
+        // 0.9.774: the player faction's char block precedes ALL markers
+        // (see factionAtOrAfterOffset). Use the nearest following marker so
+        // the player's own leader/heirs/generals (Quintus/Marcus/Servius on
+        // RIS Rome T1) get a faction → culture → real portrait instead of
+        // the bodyguard unit icon.
+        const fa = factionAtOrAfterOffset(c.offset);
+        if (fa) { c.faction = fa; taggedByAfter++; continue; }
+      }
+      untagged++;
+    }
+    console.log(`[v1-faction-tag] tagged ${taggedByV2}/${characters.length} via v2 uuid match, ${taggedByMarker} via captain_card marker, ${taggedByAfter} via following marker (pre-first-marker block), ${untagged} still untagged`);
+  }
+
   // Index by region for easy UI consumption
   const charactersByRegion = {};
   for (const c of characters) {
@@ -1458,6 +1555,16 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       isLeader: c.isLeader,
       isHeir: c.isHeir,
       isDead: c.isDead,
+      // 0.9.774: carry the v1 character's faction into the region entry.
+      // saveCharactersByRegion is the PRIMARY source for the live
+      // commander-info → bodyguard-swap portrait path (App.js builds the
+      // commanderInfo map from c.faction). Before this the v1 entry omitted
+      // faction entirely, so every live garrison/field general arrived with
+      // faction=null → culture couldn't resolve → portrait fell back to the
+      // bodyguard unit icon. The faction-tag pass is hoisted ABOVE this
+      // build (see the captain_card marker block) so c.faction is populated
+      // by the time we snapshot here.
+      faction: c.faction || null,
       // secondaryUuid matches a unit's commanderUuid — used to label armies.
       secondaryUuid: c.secondaryUuid,
       // x,y from the world-object record (may be null for some characters
@@ -1818,73 +1925,6 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
   for (const c of characters) {
     if (c.secondaryUuid) v1CharByCmdUuid.set(c.secondaryUuid, c);
   }
-  // Faction-block markers: every faction's character/unit run in the save
-  // is preceded by a `captain_card_<faction>.tga` ASCII path. Each unit's
-  // file offset tells us which faction's block it sits in, and therefore
-  // which faction commands the army it's part of.
-  const factionMarkers = (function() {
-    const out = [];
-    const pattern = Buffer.from("captain_card_", "ascii");
-    let p = 0;
-    while ((p = saveBuf.indexOf(pattern, p)) !== -1) {
-      let end = p + pattern.length;
-      let factionName = "";
-      while (end < saveBuf.length && saveBuf[end] !== 0x2e /* . */) {
-        const b = saveBuf[end];
-        if (b < 0x20 || b > 0x7e) break;
-        factionName += String.fromCharCode(b);
-        end++;
-      }
-      if (factionName.length > 0 && factionName.length < 30) {
-        out.push({ pos: p, faction: factionName });
-      }
-      p += pattern.length;
-    }
-    out.sort((a, b) => a.pos - b.pos);
-    return out;
-  })();
-  // Binary search the most recent faction marker preceding `off`.
-  const factionAtOffset = (off) => {
-    let lo = 0, hi = factionMarkers.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (factionMarkers[mid].pos <= off) lo = mid + 1; else hi = mid;
-    }
-    return lo > 0 ? factionMarkers[lo - 1].faction : null;
-  };
-
-  // 0.9.497: tag every v1 character with their faction via the captain_card
-  // marker preceding their record. The v1 parser doesn't set c.faction
-  // itself (per the TODO at line 1646 before this fix), so every char came
-  // out faction="" — which broke the stats cache because the cache keys
-  // include faction and renderer lookups by `<name>||<faction>` then by
-  // `<name>||` missed every char whose name collides with another faction's
-  // (e.g. Achaios). Also bridges from v2 chars (which DO have faction) by
-  // matching primaryUuid as a higher-confidence source. Tag count is
-  // logged so we can verify in provincia.log.
-  {
-    const v2ByPrimaryUuid = new Map();
-    for (const c of charsV2) {
-      if (c.primaryUuid) v2ByPrimaryUuid.set(c.primaryUuid, c);
-    }
-    let taggedByV2 = 0, taggedByMarker = 0, untagged = 0;
-    for (const c of characters) {
-      if (c.faction) continue;
-      // Prefer v2 match (most authoritative source — v2 picks up the
-      // captain_card markers in its own assignFactions pass).
-      const v2 = c.primaryUuid && v2ByPrimaryUuid.get(c.primaryUuid);
-      if (v2 && v2.faction) { c.faction = v2.faction; taggedByV2++; continue; }
-      // Fall back to the captain_card marker preceding this character's
-      // file offset — same logic the unit-record path uses (line ~1651).
-      if (c.offset != null) {
-        const f = factionAtOffset(c.offset);
-        if (f) { c.faction = f; taggedByMarker++; continue; }
-      }
-      untagged++;
-    }
-    console.log(`[v1-faction-tag] tagged ${taggedByV2}/${characters.length} via v2 uuid match, ${taggedByMarker} via captain_card marker, ${untagged} still untagged`);
-  }
-
   for (const [cmdUuid, armyUnits] of unitsByCommander) {
     const key = "U:" + cmdUuid;
     if (armyMap.has(key)) continue;
@@ -2197,6 +2237,13 @@ function parseSettlementBuildings(saveBuf) {
   }
   return { buildingsByCity, queuedByCity };
 }
+
+// 0.9.774: export the live-save character/unit parser for headless probes
+// (scripts/probe-*). This is the parser that builds charactersByRegion for
+// the renderer's LIVE-mode commander-info → portrait path — distinct from
+// src/saveCracker.js's crackSave. Exporting it lets scripts assert the
+// faction/culture propagation fix without spinning up the Electron GUI.
+module.exports = { parseCharactersAndUnits, loadModCharacterData };
 
 const isDev = !app.isPackaged;
 // Toggle dev server usage (HMR). Set DEV_USE_SERVER=1 to load http://localhost:3000
