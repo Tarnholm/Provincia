@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.776",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Family tree: calmer animations.** Newly-born cards were doing a springy scale-bounce and characters who died wobbled side-to-side, re-firing on every live update — too much motion. Births now do a small soft fade-in and deaths simply fade, so the tree stays calm during live play." },
+    ],
+  },
+  {
     version: "0.9.775",
     date: "2026-06-01",
     items: [
