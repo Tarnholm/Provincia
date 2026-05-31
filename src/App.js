@@ -16,6 +16,7 @@ import "./CustomScrollArea.css";
 import TGA from "./tga";
 import WelcomeScreen from "./WelcomeScreen";
 import { displayFirstName, displayFullName } from "./displayName";
+import { isGarrisonUnit } from "./garrisonClassify";
 import UpdateBanner from "./UpdateBanner";
 import FamilyTree from "./FamilyTree";
 import Toasts from "./Toasts";
@@ -16466,10 +16467,6 @@ function App() {
                               ? saveGovernorByCity[r.city].uuid
                               : null;
                             const cmdsAtSettlement = new Set();
-                            const cmdToFaction = new Map();
-                            for (const a of (armiesToRender || [])) {
-                              if (a.commanderUuid && a.faction) cmdToFaction.set(a.commanderUuid, a.faction.toLowerCase());
-                            }
                             if (settlementTile) {
                               for (const a of (armiesToRender || [])) {
                                 if (!a.commanderUuid) continue;
@@ -16491,23 +16488,58 @@ function App() {
                             // siege bodyguard from showing up in a
                             // messapian city's defender list even when
                             // his live position resolves to that region.
-                            const sameFaction = (cmd) => {
-                              if (!cmd || !ownerFaction) return false;
-                              const f = cmdToFaction.get(cmd);
-                              return f && f === ownerFaction;
-                            };
+                            // 0.9.77x garrison/field-army fix.
+                            //
+                            // A unit belongs in the GARRISON panel iff it is
+                            // physically INSIDE the settlement. The only
+                            // honest in-settlement signals the save gives us:
+                            //   (1) commander-LESS defenders (cmd==0) — the
+                            //       engine's leaderless town garrison;
+                            //   (2) the appointed GOVERNOR's stack (his
+                            //       bodyguard + foot) — the governor commands
+                            //       the city's defence from inside the walls;
+                            //   (3) any commander standing EXACTLY on the
+                            //       settlement tile (cmdsAtSettlement) — a
+                            //       general who has marched his stack into the
+                            //       city to defend it.
+                            //
+                            // What is NOT garrison: a same-faction general
+                            // whose stack sits on a FIELD tile in the
+                            // settlement's region (possibly 1-3 tiles from the
+                            // walls). That is a FIELD ARMY and the engine draws
+                            // it as a separate stack on the map.
+                            //
+                            // The previous "sameFaction → garrison" clause
+                            // folded EVERY friendly general in the region into
+                            // the garrison. Live bug (Rome, romans_julii,
+                            // turn 1): the settlement tile is (285,404) where
+                            // the governor Quintus Ogulnius_Gallus stands with
+                            // his 15-unit garrison stack; two OTHER Roman
+                            // generals — Marcus at (283,402) and Servius at
+                            // (282,404) — stand on field tiles a couple of
+                            // tiles away. All three are romans_julii, so the
+                            // sameFaction clause wrongly swept Marcus's and
+                            // Servius's field stacks into Rome's Garrison
+                            // panel. The Field-armies panel already excludes
+                            // ONLY the governor + on-tile stacks (see below),
+                            // so those two also (correctly) appeared as field
+                            // armies — i.e. they were double-listed, wrong in
+                            // the garrison. Dropping the sameFaction clause
+                            // makes the two panels symmetric: in-settlement =
+                            // garrison, everything else commanded = field.
+                            const garrisonDecisions = []; // [garrison] diag
+                            const garrisonCtx = { governorUuid, cmdsAtSettlement };
                             normalised = rawFresh
                               .filter((u) => {
-                                if (!u.commanderUuid && !u.inferredCmd) return true;
-                                if (governorUuid && (u.commanderUuid === governorUuid || u.inferredCmd === governorUuid)) return true;
-                                if (cmdsAtSettlement.has(u.commanderUuid) || cmdsAtSettlement.has(u.inferredCmd)) return true;
-                                // Final inclusive case: any commanded unit
-                                // whose commander's faction matches the
-                                // region owner is part of the city's
-                                // defence. Keeps friendly stacks
-                                // co-located with defenders inside.
-                                if (sameFaction(u.commanderUuid) || sameFaction(u.inferredCmd)) return true;
-                                return false;
+                                const cmd = u.commanderUuid || u.inferredCmd || null;
+                                const inGarrison = isGarrisonUnit(u, garrisonCtx);
+                                const reason = inGarrison
+                                  ? (!cmd ? "leaderless defender (cmd=0)"
+                                     : (governorUuid && (u.commanderUuid === governorUuid || u.inferredCmd === governorUuid)) ? "governor's stack"
+                                     : "commander on settlement tile")
+                                  : "field-army (commander off settlement tile)";
+                                garrisonDecisions.push({ unit: u.name, cmd: cmd ? cmd.toString(16) : null, inGarrison, reason });
+                                return inGarrison;
                               })
                               .map((u) => ({
                                 unit: u.name,
@@ -16527,6 +16559,17 @@ function App() {
                                 // (0.9.410). Only set on bodyguard units.
                                 commanderUuid: u.commanderUuid || null,
                               }));
+                            // [garrison] diagnostic — grouping decisions +
+                            // counts for the region currently shown. Reaches
+                            // provincia.log (the auto-update diagnosis window).
+                            try {
+                              const kept = garrisonDecisions.filter((d) => d.inGarrison);
+                              const dropped = garrisonDecisions.filter((d) => !d.inGarrison);
+                              const droppedCmds = [...new Set(dropped.map((d) => d.cmd).filter(Boolean))];
+                              console.log(`[garrison] ${r.city || r.region}: ${rawFresh.length} region units → ${kept.length} garrison, ${dropped.length} routed to field armies` +
+                                `${droppedCmds.length ? ` (field cmds: ${droppedCmds.join(", ")})` : ""}` +
+                                ` | settlementTile=${settlementTile ? `${settlementTile.x},${settlementTile.y}` : "?"} cmdsAtSettlement=${cmdsAtSettlement.size} governorUuid=${governorUuid ? governorUuid.toString(16) : "none"}`);
+                            } catch (e) { /* logging must never break render */ }
                           } else if (legacy) {
                             normalised = legacy.map((u) => ({
                               unit: typeof u === "string" ? u : (u.unit || u.name),
