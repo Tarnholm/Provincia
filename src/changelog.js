@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.772",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Leader/general portraits showed the bodyguard icon.** The portrait loader only understood the vanilla portrait folder layout, so it found none of the RIS mod's portraits (which sit directly in the age-bucket folder as plain .tga) and fell back to the generic bodyguard unit image. It now reads both layouts (and decodes plain .tga vs .tga.dds correctly), so character portraits show real faces again." },
+    ],
+  },
+  {
     version: "0.9.771",
     date: "2026-05-31",
     items: [
