@@ -293,8 +293,13 @@ function scrubVerdict(scrubFilter, char) {
 
 function scrubAnimFor(verdict) {
   if (!verdict) return null;
-  if (verdict.bornThisTurn) return "bouncein";
-  if (verdict.diedThisTurn) return "wiggle";
+  // Calm, settled motion (was "bouncein"/"wiggle"). The old spring-overshoot
+  // entrance and side-to-side rotation wobble made cards visibly "bounce" on
+  // every live-save snapshot (and on each scrub step). A birth now does a soft
+  // crossfade (240ms, no overshoot, 3px settle); a death does NOTHING here
+  // because the card already fades via the `fadeOut` opacity transition — the
+  // extra rotation wobble was pure jitter. Result: cards settle, not oscillate.
+  if (verdict.bornThisTurn) return "crossfade";
   return null;
 }
 
