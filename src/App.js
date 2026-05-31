@@ -16099,33 +16099,69 @@ function App() {
                         // Bridge misses (coord mismatch) → savePath=null
                         // → renderer's hash pool (matches family tree
                         // for its own misses).
-                        // 0.9.460: user confirmed family tree IS correct,
-                        // garrison IS wrong. Family tree uses coordToPortrait
-                        // (mostly misses) → hash fallback. The HASH RESULT
-                        // is what the user wants in-game. Garrison should
-                        // use the SAME hash. Force savePath=null on every
-                        // entry so the IPC's hash pool always fires — same
-                        // algorithm as family tree for chars where its
-                        // coord misses (which is most). v1's c.portrait is
-                        // cross-contaminated (Demetrios III's record's
-                        // forward-scan grabbed a woman's portrait path);
-                        // don't use it.
+                        // 0.9.460 (SUPERSEDED): forced savePath=null on every
+                        // entry on the theory that "the family tree uses the
+                        // hash fallback too, so matching the hash is correct."
+                        // That theory was true in 0.9.460 but is now WRONG: the
+                        // family tree was since rebuilt (0.9.513–0.9.525) to
+                        // resolve a per-character engine-exact portrait via
+                        // v1PortraitsByCoord (keyed by tile x,y) and the
+                        // persisted statsCache[name].portrait — NOT the hash.
+                        // So the family tree shows the real face while this
+                        // forced-null path made every commander/army card take
+                        // an arbitrary DJB2 name-hash pick from the culture pool
+                        // → Rome's Quintus Ogulnius etc. rendered a wrong
+                        // (steppe/Scythian-looking) portrait.
+                        //
+                        // 0.9.775: route the SAME per-character portrait the
+                        // family tree resolves to the commander card. main.js
+                        // now attaches `portraitCardsPath` to each
+                        // saveCharactersByRegion entry, resolved IDENTICALLY to
+                        // the family tree's v1PortraitsByCoord (first non-bad
+                        // candidate, /dead/ rejected on alive chars, rewritten
+                        // to the small /cards/ path). When it's present the IPC
+                        // fast-path loads that exact file; when it's missing we
+                        // try the persisted statsCache portrait by name (the
+                        // family tree's secondary key), and only when neither
+                        // resolves do we leave savePath=null so the renderer's
+                        // hash pool fires — now a pure FALLBACK, not the default.
+                        // Verified: scripts/probe-commander-portrait-match.js
+                        // (560/948 Rome T1 chars match the family tree exactly,
+                        // 0 mismatches).
+                        let _ciResolvedSave = 0, _ciStatsFallback = 0, _ciHashFallback = 0;
+                        const _statsPortraitByName = (fn, ln, fac) => {
+                          if (!statsCache) return null;
+                          const f = (fn || "").toLowerCase();
+                          const l = (ln || "").replace(/_/g, " ").toLowerCase();
+                          const c = (fac || "").toLowerCase();
+                          const e = statsCache[`${f}|${l}|${c}`]
+                            || statsCache[`${f}||${c}`]
+                            || statsCache[`${f}||`];
+                          return (e && e.portrait) || null;
+                        };
                         if (saveCharactersByRegion && typeof saveCharactersByRegion === "object") {
                           for (const region of Object.keys(saveCharactersByRegion)) {
                             for (const c of (saveCharactersByRegion[region] || [])) {
                               if (!c.secondaryUuid) continue;
+                              let savePath = c.portraitCardsPath || null;
+                              if (savePath) _ciResolvedSave++;
+                              if (!savePath) {
+                                savePath = _statsPortraitByName(c.firstName, c.lastName, c.faction);
+                                if (savePath) _ciStatsFallback++;
+                              }
+                              if (!savePath) _ciHashFallback++;
                               m.set(c.secondaryUuid, {
                                 firstName: c.firstName || null,
                                 lastName: c.lastName || null,
                                 faction: c.faction || null,
                                 age: typeof c.age === "number" ? c.age : null,
-                                savePath: null,
+                                savePath,
                               });
                             }
                           }
                           if (typeof window !== "undefined" && !window.__commanderInfoLogged) {
                             window.__commanderInfoLogged = true;
-                            console.log(`[commander-info] 0.9.460: forced savePath=null on all entries; all garrison portraits go through IPC hash pool (matches family tree for chars where its coord misses)`);
+                            console.log(`[commander-info] 0.9.775: resolved savePath from v1 portraitCardsPath for ${_ciResolvedSave} commanders, statsCache name fallback for ${_ciStatsFallback}, hash-pool fallback for ${_ciHashFallback} (matches family tree per-character portrait; hash is now fallback only)`);
                           }
                         }
                         // Augment with governors. saveGovernorByCity is the
@@ -16134,9 +16170,12 @@ function App() {
                         // region attached (Milon-in-Taras was the reported case
                         // — name visible in the garrison panel via the governor
                         // map but not in saveCharactersByRegion → no portrait
-                        // swap). Governors don't carry portrait data themselves
-                        // so we leave savePath null; the IPC's name+faction
-                        // hash-pick from the right culture pool fills in.
+                        // swap). The governor-uuid map itself carries no portrait
+                        // path, but 0.9.775 tries the persisted statsCache
+                        // portrait by name+faction (the same secondary key the
+                        // family tree uses) so a governor missing from
+                        // saveCharactersByRegion can still get their real face;
+                        // null leaves the IPC hash-pick as the last resort.
                         if (saveGovernorByCity && typeof saveGovernorByCity === "object") {
                           for (const city of Object.keys(saveGovernorByCity)) {
                             const g = saveGovernorByCity[city];
@@ -16148,7 +16187,7 @@ function App() {
                               lastName: g.lastName || null,
                               faction: owner || null,
                               age: typeof g.age === "number" ? g.age : null,
-                              savePath: null,
+                              savePath: _statsPortraitByName(g.firstName, g.lastName, owner),
                             });
                           }
                         }

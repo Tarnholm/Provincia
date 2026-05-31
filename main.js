@@ -1605,6 +1605,29 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       primaryUuid: c.primaryUuid || null,
       childUuids: Array.isArray(c.childUuids) ? c.childUuids : [],
       portrait: c.portraits[0] || null,
+      // 0.9.775: engine-exact /cards/ portrait, resolved IDENTICALLY to the
+      // family tree's v1PortraitsByCoord (see the v1-portrait-bridge block
+      // below + src/FamilyTree.js). The raw `portrait` (c.portraits[0]) above
+      // can be a generic 000 / a /dead/ stub the forward-scan grabbed; the
+      // family tree instead picks the first NON-bad candidate (preferring the
+      // large /portraits/portraits/ variant) and rewrites it to the small
+      // /cards/ path the unit cards load. The commander/army-card portrait
+      // path (App.js commanderInfo → RegionInfo CommanderPortraitImg) was
+      // forcing savePath=null (0.9.460) → an arbitrary DJB2 name-hash pick
+      // that landed on a wrong-looking face (e.g. Rome's Quintus Ogulnius
+      // showing a steppe/Scythian portrait). Attaching the family tree's exact
+      // pick here lets the commander card use the SAME per-character portrait
+      // the family tree shows; the hash pool stays a pure fallback for chars
+      // this resolver can't place. Verified: scripts/probe-commander-portrait-
+      // match.js (560/948 Rome chars now match the family tree, 0 mismatches).
+      portraitCardsPath: (() => {
+        const ports = Array.isArray(c.portraits) ? c.portraits : [];
+        const isBadPath = (p) => !p || (!c.isDead && /\/dead\//i.test(p));
+        const goodLarge = ports.find((p) => !isBadPath(p) && /\/portraits\/portraits\//i.test(p));
+        const goodAny = ports.find((p) => !isBadPath(p));
+        const pick = goodLarge || goodAny;
+        return pick ? pick.replace(/\/portraits\/portraits\//i, "/portraits/cards/") : null;
+      })(),
       // 0.9.420: character stats (command, influence, management, loyalty).
       // Verified against in-game ground truth for Antigonos II Gonatas
       // (Macedon T0 RIS: Command 7, Influence 6, Management 5).
