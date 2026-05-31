@@ -2091,6 +2091,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               </div>
               {(() => {
                 // 0.9.549: treasury-over-time sparkline (f13 per-turn checkpoints).
+                // Only meaningful with a live campaign: pre-game (non-live) there is
+                // no turn history, and treasuryHistory may be stale from a prior live
+                // session (persisted), so showing a "wealth trend" then is misleading.
+                if (!liveActive) return null;
                 const fid = ownerFactionId ? String(ownerFactionId).toLowerCase() : null;
                 const series = fid && treasuryHistory ? treasuryHistory[fid] : null;
                 if (!series || series.length < 2) return null;
