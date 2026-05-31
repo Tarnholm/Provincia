@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.768",
+    date: "2026-05-31",
+    items: [
+      { type: "feature", text: "**Public-order breakdown.** A settlement's card now shows *why* its public order is what it is — the confirmed contributions (tax, distance-to-capital, foreign-culture, religious unrest, health, capital bonus, settling bonus) with their signs, instead of just the net figure." },
+      { type: "feature", text: "**Siege status.** A besieged settlement now shows a banner with how many turns it's been under siege and the besieger's assault countdown — at a glance, how close it is to falling." },
+      { type: "feature", text: "**Trade partners.** A settlement's card now lists who it trades with by land and sea (with faction), derived from region adjacency, ports and diplomacy. The per-link value is shown as a clearly-labelled relative estimate (not the engine's exact gold)." },
+      { type: "feature", text: "**Unit movement points.** The map army tooltip now shows each unit's remaining movement points (so you can see which units still have moves left this turn)." },
+    ],
+  },
+  {
     version: "0.9.767",
     date: "2026-05-31",
     items: [
