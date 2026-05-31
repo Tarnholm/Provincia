@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.766",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Diplomacy now reads on more save types.** The diplomacy-matrix locator only recognised the layout used by single-faction imperial campaigns; on \"Republic of Rome\"-style saves (a mixed key column + a few signature gaps per row) it failed to find the matrix and showed no diplomacy at all. The detector is now key-agnostic and gap-tolerant, so those saves read correctly (e.g. a turn-5 Julii campaign now shows war with 3 factions and 7 alliances). Saves that already worked are unchanged, and unreadable/atypical saves still fall back gracefully without hanging." },
+      { type: "improvement", text: "**Public-order breakdown: three more sources named.** The per-settlement order breakdown now also identifies the capital-status bonus, the start-of-campaign settling bonus, and the mid-campaign tax-administration line — on top of the tax, foreign-culture, distance-to-capital, and religious-unrest lines already mapped." },
+    ],
+  },
+  {
     version: "0.9.765",
     date: "2026-05-31",
     items: [
