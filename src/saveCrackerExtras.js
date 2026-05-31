@@ -775,47 +775,80 @@ function locateDiplomacyMatrix(buf, N) {
     const o = base + (r * N + c) * stride + 12;
     return (o >= 0 && o + 4 <= buf.length) ? buf.readInt32LE(o) : null;
   };
-  const limit = Math.min(buf.length - 64, 0x800000); // matrix seen ~1.1 MB in; cap scan
-  // The per-candidate symmetry check is O(N²)·81 (~2.3M cell reads). On a normal
-  // save the real matrix locks within a few candidates, but a save with a large
-  // matrix-LIKE byte region (zeroed/structured memory matching the 0/200/2
-  // signature) can present tens of thousands of candidates and hang here (seen
-  // on the Raymond "Turn 5 Start" RIS save). Two guards keep it bounded:
-  //  (1) after a stride is found, advance p by `stride` — a matrix-like run is
-  //      re-detected at every byte otherwise, so collapse it to one eval/cell.
-  //  (2) a global work budget: if the expensive symmetry reads exceed it before
-  //      a lock, bail to null (diplomacy unavailable) rather than hang.
+  // Scan the WHOLE file (cracked 2026-05-31): the prior 0x800000 (8 MB) cap was
+  // never the miss-cause (real matrices sit ~1.1 MB in, below the cap), but a
+  // cap risks future late-matrix saves and gives no upside now that work is
+  // bounded below. Keep a tail margin for the 20-byte cell read.
+  const limit = buf.length - 64;
+  // The per-candidate symmetry check is O(N²) per k-offset. On a normal save the
+  // real matrix locks within a few candidates, but a Republic-of-Rome / RIS save
+  // can present tens of thousands of matrix-LIKE byte regions (uniform-key zeroed
+  // memory matching the 0/200/2 signature). Guards keep it bounded:
+  //  (1) skip-ahead by `stride` past any region once its rough(0,0) is evaluated.
+  //  (2) early-reject a k-alignment the moment accumulated mismatches make
+  //      frac>=0.8 unreachable, so each bad candidate costs far less than a full
+  //      O(N²) sweep — this lets the budget survive to reach the real matrix.
+  //  (3) a global work budget: bail to null rather than hang.
   let work = 0;
   const WORK_BUDGET = 300_000_000; // ~a few seconds; normal saves lock in << this
+  // CRACK 2026-05-31 (Raymond "Republic of Rome Turn 5"): the matrix's `key`
+  // field (+4) is NOT constant across cells on every save. On clean imperial
+  // saves (Julii/Macedon) every cell shares one key (10), but RR saves carry a
+  // MIXED key column (cell(0,1)=10, then 14, plus a few 1/2) — see
+  // findings-diplo-locator-2026-05-31. The OLD stride detector required an
+  // N-run of SAME-key signature cells, so it never recognised the real matrix
+  // (its cells aren't uniform-key) and instead matched uniform-key noise regions
+  // elsewhere, exhausting the budget → null. FIX: detect stride from the cell
+  // SIGNATURE run only (key-agnostic). The symmetry sweep is the real
+  // discriminator. `key` is still returned (from the rough row's first cell) for
+  // diagnostics, but is no longer a gate.
+  const HALF_PAIRS = (N * (N - 1)) / 2;
+  // The matrix's signature is NOT perfect across a full row: the diagonal cell
+  // (faction-vs-itself) plus a handful of mixed-key/mixed-state cells fail sig.
+  // On clean imperial saves the row is 239/239 sig; on RR saves (Raymond T5) it
+  // is ~231/239 (8 gaps). Requiring a PERFECT N-run (old `run >= N`) therefore
+  // missed the real RR matrix entirely. Accept a near-complete strided run
+  // instead (>=90% of N cells pass sig over N steps) — high enough that random
+  // byte regions can't fake it, tolerant of the genuine per-row gaps.
+  const MIN_RUN = Math.ceil(N * 0.9);
   for (let p = 0x4000; p < limit; p++) {
     if (!sig(p)) continue;
-    const key = buf.readUInt32LE(p + 4);
-    if (key < 1 || key > 64) continue;
-    // detect stride: smallest s giving an N-long run of same-key signature cells
+    // detect stride: smallest s giving a near-complete strided run of signature
+    // cells over N steps (key-agnostic; gap-tolerant — see crack notes above).
     let stride = 0;
     for (let s = 80; s <= 400; s++) {
       if (p + s + 20 > buf.length) break;
-      if (!sig(p + s) || buf.readUInt32LE(p + s + 4) !== key) continue;
+      if (!sig(p + s)) continue;
       let run = 0;
-      for (let k = 0; k < N; k++) { if (sig(p + k * s)) run++; else break; }
-      if (run >= N) { stride = s; break; }
+      for (let k = 0; k < N; k++) { if (sig(p + k * s)) run++; }
+      if (run >= MIN_RUN) { stride = s; break; }
     }
     if (!stride) continue;
-    // rough (0,0): walk back over contiguous signature cells
+    // rough (0,0): walk back over contiguous signature cells. NOTE the true
+    // diagonal cell(0,0) does NOT pass sig (+0 is a self-pointer 0x01000001, not
+    // 0) on real matrices, so the walk-back stops one cell late — the k-sweep
+    // below corrects that off-by-one alignment.
     let rough = p;
     while (sig(rough - stride)) rough -= stride;
+    const key = buf.readUInt32LE(rough + 4);
     // self-align via non-neutral STATE symmetry
     let best = { frac: -1, base: rough, k: 0 };
     for (let k = -40; k <= 40; k++) {
       const base = rough + k * stride;
       let sym = 0, tot = 0;
-      for (let r = 0; r < N; r++) for (let c = r + 1; c < N; c++) {
+      // Early-reject budget: once mismatches exceed 20% of the *maximum possible*
+      // pairs (HALF_PAIRS), this alignment can never reach frac>=0.8, so stop.
+      const maxMis = Math.floor(HALF_PAIRS * 0.2);
+      let mis = 0, evald = 0;
+      let bailed = false;
+      for (let r = 0; r < N && !bailed; r++) for (let c = r + 1; c < N; c++) {
         const a = stateAt(base, stride, r, c), b = stateAt(base, stride, c, r);
+        evald++;
         if (a == null || b == null) continue;
-        if (a !== 200 || b !== 200) { tot++; if (a === b) sym++; }
+        if (a !== 200 || b !== 200) { tot++; if (a === b) sym++; else if (++mis > maxMis) { bailed = true; break; } }
       }
-      work += (N * (N - 1)) / 2;
-      const frac = tot ? sym / tot : 0;
+      work += evald;
+      const frac = bailed ? 0 : (tot ? sym / tot : 0);
       if (frac > best.frac || (frac === best.frac && Math.abs(k) < Math.abs(best.k))) best = { frac, base, k };
       if (best.frac >= 0.999) break; // a real matrix locks at ~100% — stop sweeping
     }
