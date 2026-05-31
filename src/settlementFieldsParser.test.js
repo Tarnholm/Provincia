@@ -111,4 +111,48 @@ describe("parseSettlementFields", () => {
     // s10 capital bonus is invariant across the campaign's opening turns.
     expect(f3["Carthage"].order.capitalBonus).toBe(maxV);
   });
+
+  // CONFIRMED 2026-05-31 (findings-order-slots-v4): s9 = HEALTH/SEWERAGE happiness.
+  // On a turn-START save (deferral settled) s9>0 ⇔ a sanitation/health building is
+  // present, and the magnitude dose-responds to health tier. Pinned on julii2
+  // (turn 2 start: 14 tp / 11 tn, zero mismatches) cross-referencing the building
+  // parser's `health`/`hospitals` (tag=sanitation) chains.
+  test("order slot s9 = health/sewerage bonus (presence ⇔ sanitation building, julii T2)", () => {
+    const sv = path.join(SAVES_DIR, "save_julii2.sav");
+    if (!fs.existsSync(sv)) return; // machine-local asset
+    const buf = fs.readFileSync(sv);
+    const fields = parseSettlementFields(buf, findAllSettlementMarkers(buf));
+    const r = crackSave(buf, "C:\\RIS\\RIS\\data");
+    const own = (r.factions[r.playerFaction] && r.factions[r.playerFaction].regions) || [];
+    expect(own.length).toBeGreaterThan(10);
+
+    const { parseSettlements } = require("./buildingParser.js");
+    const blds = {};
+    for (const st of parseSettlements(buf, null, null).settlements) {
+      blds[st.name] = (st.buildings || []).map((b) => b.name);
+    }
+    const hasHealth = (name) =>
+      (blds[name] || []).some((n) => n === "health" || n === "hospitals");
+
+    // s9 presence must agree with a health building's presence, with no
+    // mismatches across the player's own cities on this turn-start save.
+    let mismatch = 0, tp = 0, tn = 0;
+    for (const name of own) {
+      const f = fields[name];
+      if (!f) continue;
+      const s9 = f.order.healthBonus > 0;
+      const h = hasHealth(name);
+      if (s9 && h) tp++;
+      else if (!s9 && !h) tn++;
+      else mismatch++;
+    }
+    expect(tp).toBeGreaterThan(5);
+    expect(tn).toBeGreaterThan(5);
+    expect(mismatch).toBe(0);
+
+    // Rome has the highest-tier health building and the highest s9 in the empire.
+    expect(fields["Rome"].order.healthBonus).toBeGreaterThanOrEqual(5);
+    // named slot is a faithful view of the raw array.
+    expect(fields["Rome"].order.healthBonus).toBe(fields["Rome"].orderBreakdown[9]);
+  }, 30000); // parseSettlements scans the whole save — allow extra time
 });
