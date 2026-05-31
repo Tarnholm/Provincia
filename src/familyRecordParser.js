@@ -9,7 +9,6 @@
 //
 // RECORD ANCHOR (each family member):
 //   p              u32 self-pointer == its own byte offset
-//   p-7            u32 == 0xffffffff  (header sentinel)
 //   p+4            u32 character UUID
 //   p+16           u32 == 30 (0x1e)   (record-type constant)
 //   p+51           u32 firstName index (into descr_names_lookup)
@@ -20,6 +19,17 @@
 //                  the bundled sample mod), so we AUTO-DETECT it per save as the
 //                  modal marker-position value across candidate anchors rather
 //                  than hardcoding. Pass an explicit `marker` to override.
+//
+// LATE-SAVE FIX (2026-05-31): an earlier version also required a 0xffffffff
+// "header sentinel" at p-7. That sentinel only holds for family members whose
+// preceding bytes are the null-pad layout. On real (mid/late) campaigns MOST
+// members instead carry an assigned portrait — their record is preceded by a
+// "/NNN.tga" portrait-path string + portrait index, so p-7 is NOT 0xffffffff.
+// Requiring the sentinel silently dropped every portrait-bearing member: a
+// Turn-34 RIS save read only 304 of 2185 real members. The selfptr + 30@+16 +
+// name@+51 + modal-marker quartet is already a strong anchor (the marker alone
+// dominates the candidate tally ~45:1 over the noise floor), so the sentinel is
+// dropped. See docs/findings-family-latesave-2026-05-31.md.
 //
 // FIELDS, relative to m = markerOff + 4 (anchored at the marker because the
 // variable name/surname length shifts everything before it):
@@ -44,12 +54,14 @@ function isNameIndex(nameLookup, v) {
   return !!n && n.length >= 3 && /^[A-Z][a-z]/.test(n);
 }
 
-// A candidate anchor is a self-pointer (value==offset) preceded by the
-// 0xffffffff header sentinel, with the record-type constant 30 and a valid
-// name index at +51. Returns {nameOff, hasSurname, markerOff} or null.
+// A candidate anchor is a self-pointer (value==offset) with the record-type
+// constant 30 at +16 and a valid name index at +51. (No p-7 sentinel — see the
+// LATE-SAVE FIX note above; it dropped every portrait-bearing member.) The
+// modal-marker filter applied by the caller rejects the residual self-pointer
+// false positives. Returns {nameOff, hasSurname, markerOff} or null.
 function anchorAt(buf, p, nameLookup) {
+  if (p < 16) return null;
   if (buf.readUInt32LE(p) !== (p >>> 0)) return null;
-  if (buf.readUInt32LE(p - 7) !== 0xffffffff) return null;
   if (buf.readUInt32LE(p + 16) !== 30) return null;
   const nameOff = p + 51;
   if (!isNameIndex(nameLookup, buf.readUInt32LE(nameOff))) return null;
