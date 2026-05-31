@@ -14,6 +14,9 @@
 const fs = require("fs");
 const path = require("path");
 const { crackSave } = require("../src/saveCracker.js");
+const { parseFactionKnowledge } = require("../src/factionKnowledgeParser.js");
+const { buildTileIndex } = require("../src/tileResolver.js");
+const { deriveEngineFactionOrder } = require("../src/saveCrackerExtras.js");
 
 function parseArgs(argv) {
   const a = { save: null, mod: "C:\\RIS\\RIS\\data", faction: null, json: false };
@@ -111,6 +114,23 @@ function main() {
     const top = Object.entries(pf).sort((a, b) => b[1].knownSettlements - a[1].knownSettlements).slice(0, 8);
     for (const [n, v] of top) console.log(`  ${pad(n, 18)} knows ${padl(v.knownSettlements, 4)} settlements`);
     if (pf[fac]) console.log(`  → ${fac}: ${pf[fac].knownSettlements} settlements / ${pf[fac].knownTiles} observations`);
+    // Resolve the chosen faction's scouted settlements to NAMES. The faction
+    // record array is in ENGINE order (rebel-slot rotated); a faction's record
+    // index = engineOrder.indexOf(faction). tag-27 tile coords → names via the
+    // tileResolver. (Player faction has no AI-tuple cache, so prints nothing.)
+    try {
+      const smOrder = fs.readFileSync(path.join(args.mod, "descr_sm_factions.txt"), "utf8")
+        .split(/\r?\n/).map((l) => { const m = l.match(/^\t"([a-z_0-9]+)":/); return m ? m[1] : null; }).filter(Boolean);
+      const idx = deriveEngineFactionOrder(smOrder).indexOf(fac);
+      if (idx >= 0) {
+        const fk = parseFactionKnowledge(buf, smOrder, { tileIndex: buildTileIndex(args.mod) });
+        const mine = fk.records.find((rec) => rec.factionIndex === idx);
+        if (mine) {
+          const names = mine.tuples.filter((t) => t.tag === 27 && t.settlement).map((t) => t.settlement);
+          if (names.length) console.log(`     ${fac} scouted (${names.length}): ${names.slice(0, 20).join(", ")}${names.length > 20 ? " …" : ""}`);
+        }
+      }
+    } catch (e) { /* name resolution optional */ }
   }
   console.log("");
 }
