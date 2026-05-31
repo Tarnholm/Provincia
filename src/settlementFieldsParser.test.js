@@ -3,6 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseSettlementFields } from "./settlementFieldsParser.js";
 import { findAllSettlementMarkers } from "./buildingParser.js";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const { crackSave } = require("./saveCracker.js");
 
 const SAVE = path.join("bundled-mod", "saves", "sample.sav");
 
@@ -69,5 +72,43 @@ describe("parseSettlementFields", () => {
     expect(cap.order.distanceToCapitalPenalty).toBe(cap.orderBreakdown[11]);
     expect(cap.order.religiousUnrestPenalty).toBe(cap.orderBreakdown[12]);
     expect(cap.order.tax).toBe(cap.orderBreakdown[2]);
+  });
+
+  // CONFIRMED 2026-05-31 (findings-order-slots-v3): s10 = capital-status bonus,
+  // s7 = turn-1-only start transient. Pinned against the real local saves.
+  const SAVES_DIR = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves";
+  test("order slot s10 = capital bonus (single high city = Carthage), s7 = turn-1 transient", () => {
+    const t1 = path.join(SAVES_DIR, "save_Carthage1.sav");
+    const t3 = path.join(SAVES_DIR, "save_carthage3.sav");
+    if (!fs.existsSync(t1) || !fs.existsSync(t3)) return; // machine-local assets
+
+    const buf1 = fs.readFileSync(t1);
+    const f1 = parseSettlementFields(buf1, findAllSettlementMarkers(buf1));
+
+    // s10 capital bonus: within the PLAYER FACTION'S OWN cities, exactly one
+    // carries the high value, and it is the capital (Carthage). (Globally other
+    // factions' capitals also carry it — the bonus is per-faction, one per empire.)
+    const r1 = crackSave(buf1, "C:\\RIS\\RIS\\data");
+    const own = (r1.factions[r1.playerFaction] && r1.factions[r1.playerFaction].regions) || [];
+    expect(own.length).toBeGreaterThan(10);
+    const s10 = own.map((name) => ({ name, v: f1[name] ? f1[name].order.capitalBonus : 0 }));
+    const maxV = Math.max(...s10.map((c) => c.v));
+    const topCities = s10.filter((c) => c.v === maxV);
+    expect(maxV).toBeGreaterThanOrEqual(4);          // capital bonus is a clear positive
+    expect(topCities.length).toBe(1);                 // exactly one capital per faction
+    expect(topCities[0].name).toBe("Carthage");
+    expect(f1["Carthage"].order.capitalBonus).toBe(f1["Carthage"].orderBreakdown[10]);
+
+    // s7 start transient: nonzero on the player's own frontier cities at turn 1
+    // (Tingi=2, Hadrumetum=4), and 0 once that faction has ended its first turn.
+    expect(f1["Tingi"].order.startTransientBonus).toBeGreaterThan(0);
+    expect(f1["Hadrumetum"].order.startTransientBonus).toBeGreaterThan(0);
+
+    const f3 = parseSettlementFields(fs.readFileSync(t3), findAllSettlementMarkers(fs.readFileSync(t3)));
+    expect(f3["Tingi"].order.startTransientBonus).toBe(0);       // transient gone by turn 3
+    expect(f3["Hadrumetum"].order.startTransientBonus).toBe(0);
+
+    // s10 capital bonus is invariant across the campaign's opening turns.
+    expect(f3["Carthage"].order.capitalBonus).toBe(maxV);
   });
 });

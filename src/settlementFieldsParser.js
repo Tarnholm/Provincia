@@ -29,14 +29,22 @@
 //         faction-scoped corr(distance)=0.99 in Carthage AND Seleucid territory)
 //   s12 = RELIGIOUS / cultural-unrest penalty (0 in culturally-homogeneous     CONFIRMED
 //         empires e.g. Carthage; flat ≈4 across Greek-over-Eastern Seleucid)
-//   s10 = CAPITAL-status happiness bonus (≈6 at the faction capital, ~0        HYPOTHESIS
-//         elsewhere; verified at Carthage=6 and Seleucia=6, near-0 in others)
+//   s10 = CAPITAL-status happiness bonus. EXACTLY ONE city per faction carries  CONFIRMED
+//         the high value (Carthage=6 on all 5 Carthaginian saves; Rome=4..5 on
+//         all 7 Julii/RoR saves; Capua=5 after the T34 capital relocation), and
+//         that city is always the faction capital (its s11 distance penalty = 0).
+//         Anti-distance shape: invariant across turns, single-city, ≈0 elsewhere.
+//   s7  = START-OF-CAMPAIGN transient bonus. Nonzero ONLY on turn-1 saves        CONFIRMED
+//         (36/41 Carthage, 17/25 Julii at T1, incl. RoR-T1End); EXACTLY 0 on
+//         every own city at turns 2,3,5,8. The lone T34 hit (Arpi=1) is a
+//         freshly-acquired settlement re-triggering it. A turn-1 placeholder.
+//   s14 = mid-campaign TAX/economic-management line (turn-gated). 0 at turns     CONFIRMED
+//         1-3; switches on (discrete 4 or 8) on 25-26/31 cities at turns 5 & 8,
+//         co-active with s2 tax on 24/26; off again (0/34) by turn 34. A tax-
+//         bracket/administration line that matures after the opening turns.
 //   s0/s3 = buildings & settlement-size happiness bonuses                      HYPOTHESIS
-//   s9/s1 = population/trade-scaled happiness bonuses (corr pop ~0.7-0.8)      HYPOTHESIS
-//   s7  = start-of-campaign transient bonus (populated turn-1 on every         HYPOTHESIS
-//         faction, →0 after the first end-turn; not a stable runtime source)
-//   s14 = tax-bracket / economic-management line (active mid-campaign; was     UNMAPPED
-//         inactive turn-2 but broadly active by turn-5 — needs controlled diff)
+//   s9/s1 = population/trade-scaled happiness bonuses (corr pop ~0.7,          HYPOTHESIS
+//           corr happiness-buildings ~0.5-0.6 — real but not slot-separable)
 //   s5/s8/s16 = always 0 (reserved modifier slots); s6/s13/s15/s17 = rare/unmapped
 //
 // NOTE: slot index = orderBreakdown[i] read at marker−1490+4·i. (Distance lives
@@ -72,7 +80,9 @@ function settlementFieldsAt(buf, markerOffset) {
     foreignCulturePenalty: orderBreakdown[4],     // s4  flat foreign-culture   CONFIRMED
     distanceToCapitalPenalty: orderBreakdown[11], // s11 distance penalty       CONFIRMED
     religiousUnrestPenalty: orderBreakdown[12],   // s12 religion/culture       CONFIRMED
-    capitalBonus: orderBreakdown[10],             // s10 capital-status bonus   HYPOTHESIS
+    capitalBonus: orderBreakdown[10],             // s10 capital-status bonus   CONFIRMED
+    startTransientBonus: orderBreakdown[7],       // s7  turn-1-only transient  CONFIRMED
+    taxAdminLine: orderBreakdown[14],             // s14 mid-campaign tax line  CONFIRMED
   };
   return {
     committedPopulation,
