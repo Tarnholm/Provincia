@@ -25,10 +25,19 @@
 // THIS IS AN ENGINE-APPROXIMATION. It models trade CONNECTIVITY and PARTNERS
 // (CONFIRMED structure). The actual trade GOLD value the engine computes depends
 // on distance, traded resources, route capacity, sea-lane length, blockades and
-// tariff settings. As a FIRST CUT we additionally attach a per-link relative
-// distance-DECAYED `value` (HYPOTHESIS, clearly labelled `valuesHypothesis` /
-// UNVERIFIED) — a shorter-route-scores-higher proxy, NOT the engine's gold. "Can
-// A trade with B, and roughly how near are they?" is what this answers.
+// tariff settings. We attach a per-link relative `value` (HYPOTHESIS, clearly
+// labelled `valuesHypothesis` / UNVERIFIED) that REFINES a shorter-route-scores-
+// higher distance decay by THREE more realistic signals (each bounded, centred
+// near 1, neutral when data is missing — never fabricated):
+//   • RESOURCE/TRADE-GOOD weight — partners holding rarer/higher trade-value
+//     goods (descr_sm_resources `trade value`, placed via descr_strat) trade more.
+//   • PORT/ROAD infrastructure multiplier — both-road and both-port links carry
+//     more than a bare land hop (the engine rewards trade infrastructure).
+//   • SETTLEMENT-SIZE weight — bigger markets (committedPopulation) trade more.
+// It is STILL a relative proxy, NOT the engine's gold. "Can A trade with B, and
+// roughly how valuable is that link relative to others?" is what this answers.
+// Per settlement we also emit `tradeScoreHypothesis` (its total relative trade
+// score) and `topPartnersHypothesis` (best partners by link value).
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Reuses Provincia's authoritative parsers (no duplication of cracked logic):
@@ -75,6 +84,120 @@ function loadEdbChains(modDataDir) {
     if (m) chains.add(m[1]);
   }
   return { chains, edbPath };
+}
+
+// ── Trade-good / resource weighting (HYPOTHESIS inputs) ───────────────────────
+// RTW:R defines, per resource, a `tier` and a `trade value` (0-3) in
+// data/descr_sm_resources.txt. Resources are PLACED on the map via descr_strat
+// `resource <type>, <qty>, <x>, <y>; <RegionName>` lines. We read the resource
+// CATALOGUE (tier + trade value) and the per-region PLACEMENTS, then give each
+// region a `goodsValue` = Σ over its placed resources of (tradeValue · qty),
+// plus a small bonus from the region's FARM LEVEL (FarmNN in descr_regions).
+//
+// CONFIRMED file layouts (read 2026-05-31 from C:\RIS\RIS\data):
+//   descr_sm_resources.txt  (JSON-ish): each resource block is
+//       "wine": { ... "tier": 3, "trade value": 1, ... }
+//     → resourceName -> { tier:int, tradeValue:int(0..3) }.
+//   descr_strat.txt resource lines:
+//       resource        wine,                   4,           302,  395; Campania
+//     i.e.  resource <type>, <quantity>, <x>, <y>; <RegionName>
+//     The trailing `; RegionName` comment tags the owning region and is present
+//     on ALL 5548 RIS lines (verified) and matches descr_regions region names;
+//     we use it as the region key (the x,y are map-tile coords, not TGA pixels,
+//     so the comment is the reliable, parser-cheap source).
+//   descr_regions.txt per-region block (tab-indented), CONFIRMED column order:
+//       1 RegionName / 2 Settlement / 3 owner faction / 4 rebel-people name /
+//       5 "R G B" colour / 6 tag list (contains FarmNN, base_port_level_N,
+//       rivertrade, mediterranean, terrain/climate/AOR) / 7 int (const 5) /
+//       8 int (== the FarmNN level) / 9 culture line.
+//     We read FarmNN from the line-6 tag list (the canonical farm level).
+//
+// NB All of this feeds the HYPOTHESIS relative `value` only — it is NOT the
+// engine's gold formula.
+function parseResourceCatalogue(modDataDir) {
+  // returns { resourceName: { tier, tradeValue } }. Only the `"resources": [...]`
+  // array carries trade values; later sections of the file (resource GROUPS,
+  // terrain/AOR tag masks) also have quoted keys, so we (a) only scan inside the
+  // top-level `"resources":` array and (b) keep only entries that actually have a
+  // `"trade value"` — the real resource blocks all do; tag/group keys don't.
+  const p = path.join(modDataDir, "descr_sm_resources.txt");
+  const out = {};
+  if (!fs.existsSync(p)) return out;
+  const text = fs.readFileSync(p, "utf8");
+  // strip ;; comments to avoid matching commented-out tiers
+  const lines = text.split(/\r?\n/).map((l) => l.replace(/;.*$/, ""));
+  let cur = null;
+  for (const line of lines) {
+    const head = line.match(/^\s*"([a-z_]+)"\s*:\s*$/);
+    if (head) { cur = head[1]; if (!(cur in out)) out[cur] = { tier: null, tradeValue: null }; continue; }
+    if (!cur) continue;
+    const tier = line.match(/"tier"\s*:\s*(\d+)/);
+    if (tier) out[cur].tier = +tier[1];
+    const tv = line.match(/"trade value"\s*:\s*(\d+)/);
+    if (tv) out[cur].tradeValue = +tv[1];
+  }
+  // Only the real resource blocks carry a `"trade value"`; later sections of the
+  // file (resource GROUPS, terrain/AOR tag masks) reuse the quoted-key syntax but
+  // have no trade value — drop them so the catalogue is exactly the trade goods.
+  for (const k of Object.keys(out)) if (out[k].tradeValue == null) delete out[k];
+  return out;
+}
+
+// Parse descr_strat resource lines → { regionName: [{ type, qty, tradeValue }] }.
+function parseRegionResources(stratPath, catalogue) {
+  const out = {};
+  if (!stratPath || !fs.existsSync(stratPath)) return out;
+  const text = fs.readFileSync(stratPath, "utf8");
+  for (const raw of text.split(/\r?\n/)) {
+    // resource <type>, <qty>, <x>, <y> ; RegionName
+    const m = raw.match(/^\s*resource\s+([a-z_]+)\s*,\s*(\d+)\s*,\s*\d+\s*,\s*\d+\s*;\s*([A-Za-z][A-Za-z0-9_\-]*)/);
+    if (!m) continue;
+    const type = m[1], qty = +m[2], region = m[3];
+    const tv = catalogue[type] ? (catalogue[type].tradeValue || 0) : 0;
+    (out[region] ||= []).push({ type, qty, tradeValue: tv });
+  }
+  return out;
+}
+
+// Parse FarmNN per region from descr_regions tag list → { regionName: farmLevel }.
+function parseRegionFarmLevels(regionsPath) {
+  const out = {};
+  if (!regionsPath || !fs.existsSync(regionsPath)) return out;
+  const text = fs.readFileSync(regionsPath, "utf8");
+  const lines = text.split(/\r?\n/);
+  // walk blocks: a non-indented region name, then the tag list is the line that
+  // contains a FarmNN token within the next few indented lines.
+  let region = null, sinceRegion = 0;
+  for (const raw of lines) {
+    const line = raw.replace(/;.*$/, "");
+    if (/^[A-Za-z]/.test(line)) { region = line.trim(); sinceRegion = 0; continue; }
+    if (region) {
+      sinceRegion++;
+      const fm = line.match(/\bFarm(\d+)\b/);
+      if (fm) { out[region] = +fm[1]; region = null; }
+      else if (sinceRegion > 8) region = null; // tag list is ~line 6; give up after
+    }
+  }
+  return out;
+}
+
+// Combine resource placements + farm level into a per-region relative goods
+// score (HYPOTHESIS). goodsValue = Σ(tradeValue·qty) over placed resources +
+// FARM_WEIGHT·farmLevel. tradeValue is 0..3, qty typically 1..6, farmLevel ~5..13.
+const FARM_WEIGHT = 0.5; // farming contributes modestly to tradeable surplus (HYP)
+function buildRegionGoods(regionResources, regionFarm) {
+  const out = {}; // region -> { goodsValue, resourceTradeSum, farmLevel, resources:[type] }
+  const regions = new Set([...Object.keys(regionResources), ...Object.keys(regionFarm)]);
+  for (const region of regions) {
+    const res = regionResources[region] || [];
+    let resourceTradeSum = 0;
+    const types = [];
+    for (const r of res) { resourceTradeSum += (r.tradeValue || 0) * (r.qty || 1); types.push(r.type); }
+    const farmLevel = regionFarm[region] != null ? regionFarm[region] : null;
+    const goodsValue = resourceTradeSum + (farmLevel != null ? FARM_WEIGHT * farmLevel : 0);
+    out[region] = { goodsValue, resourceTradeSum, farmLevel, resources: types };
+  }
+  return out;
 }
 
 // ── TGA region geometry ───────────────────────────────────────────────────────
@@ -383,8 +506,44 @@ function buildTradeRights(diplomacy, stratRelationships) {
 //   landPartners:[names], seaPartners:[names],
 //   valuesHypothesis:{partnerName: score}  // UNVERIFIED relative decay }.
 const SEA_DECAY_K = 6; // tuning constant for the sea distance decay (HYPOTHESIS)
-function computeTradeConnectivity(geometry, settlements, ownerByCity, region2settlement, settlement2region, flags, tradeRights) {
+
+// ── HYPOTHESIS value-refinement weights (all UNVERIFIED, relative-only) ────────
+// A link's refined value = baseDecay · partnerGoodsFactor · infraMult · popMult.
+//   • partnerGoodsFactor: rarer/higher-value trade goods at BOTH endpoints →
+//     more to exchange. Uses the geometric mean of the two regions' goodsValue
+//     mapped through 1 + GOODS_GAIN·tanh(g/GOODS_SCALE) so it stays bounded.
+//   • infraMult: both endpoints road-connected and/or ported → the engine
+//     rewards trade infrastructure; apply a modest multiplier.
+//   • popMult: bigger markets trade more; weight by the geometric mean of the
+//     two settlements' committedPopulation, bounded.
+// Each factor is centred near 1 so a bare/poor link ≈ the old pure-decay value
+// and a rich coastal hub link scores meaningfully higher — RELATIVE ordering
+// only, NOT engine gold.
+const GOODS_GAIN = 0.6, GOODS_SCALE = 6;    // goods bounded boost up to ~1.6×
+const INFRA_BOTH_ROAD = 1.15;               // both endpoints on the road net
+const INFRA_BOTH_PORT = 1.25;               // both endpoints sea-ported
+const POP_GAIN = 0.5, POP_SCALE = 8000;     // population bounded boost up to ~1.5×
+function computeTradeConnectivity(geometry, settlements, ownerByCity, region2settlement, settlement2region, flags, tradeRights, regionGoods, popByCity) {
   const { adjacency, regionSeas, seaToRegions, centroids } = geometry;
+  regionGoods = regionGoods || {};
+  popByCity = popByCity || {};
+  const goodsValOf = (region) => {
+    const g = region && regionGoods[region];
+    return g && g.goodsValue != null ? g.goodsValue : null;
+  };
+  // bounded goods factor for a LINK from region rA to region rB (geom-mean):
+  const goodsFactor = (rA, rB) => {
+    const a = goodsValOf(rA), b = goodsValOf(rB);
+    if (a == null || b == null) return 1;        // no data → neutral (no fabrication)
+    const g = Math.sqrt(Math.max(0, a) * Math.max(0, b));
+    return 1 + GOODS_GAIN * Math.tanh(g / GOODS_SCALE);
+  };
+  const popFactor = (cityA, cityB) => {
+    const a = popByCity[cityA], b = popByCity[cityB];
+    if (a == null || b == null) return 1;        // no data → neutral
+    const p = Math.sqrt(Math.max(0, a) * Math.max(0, b));
+    return 1 + POP_GAIN * Math.tanh(p / POP_SCALE);
+  };
   const mapDiag = Math.hypot(geometry.W || 1, geometry.H || 1) || 1;
   const seaDist = (rA, rB) => {
     const a = centroids && centroids[rA], b = centroids && centroids[rB];
@@ -454,6 +613,20 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
     const seaPartners = new Set();
     const valuesHypothesis = {}; // partnerName -> relative decayed score (UNVERIFIED)
     const bump = (t, v) => { if (!(t in valuesHypothesis) || v > valuesHypothesis[t]) valuesHypothesis[t] = +v.toFixed(4); };
+    const myGoods = goodsValOf(region);
+
+    // Refine a base distance-decay into the HYPOTHESIS link value by folding in
+    // the partner's trade goods, shared infrastructure, and market sizes. Each
+    // factor is bounded & centred near 1 (no fabrication when data is missing).
+    const refine = (baseDecay, partnerCity, partnerRegion, channel) => {
+      let v = baseDecay;
+      v *= goodsFactor(region, partnerRegion);          // resource/trade-good weight
+      v *= popFactor(name, partnerCity);                // settlement-size weight
+      const pf = flags[partnerCity] || {};
+      if (channel === "land" && f.road && pf.road) v *= INFRA_BOTH_ROAD; // both on road net
+      if (channel === "sea"  && f.seaPort && pf.seaPort) v *= INFRA_BOTH_PORT; // both ported
+      return v;
+    };
 
     // LAND: only if this settlement has a road and its region permits its own
     // faction (it always does) — find its land component for its own faction.
@@ -477,7 +650,8 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
           const owner = factionOf(t);
           if (owner && tradeRights(faction, owner)) {
             landPartners.add(t);
-            bump(t, 1 / (1 + hops)); // HYPOTHESIS: shorter land path = higher value
+            // HYPOTHESIS: shorter land path = higher base, refined by goods+infra+pop
+            bump(t, refine(1 / (1 + hops), t, r, "land"));
           }
         }
       }
@@ -497,22 +671,40 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
         if (owner && faction && tradeRights(faction, owner)) {
           seaPartners.add(t);
           const nd = seaDist(region, r); // 0..~1 normalised straight-line proxy
-          if (nd != null) bump(t, Math.exp(-SEA_DECAY_K * nd)); // HYPOTHESIS decay
+          if (nd != null) bump(t, refine(Math.exp(-SEA_DECAY_K * nd), t, r, "sea")); // HYP
         }
       }
     }
 
     const partners = new Set([...landPartners, ...seaPartners]);
+    // Per-settlement relative trade-SCORE (HYPOTHESIS): sum of its link values,
+    // nudged by its OWN goods endowment (a settlement with valuable goods is a
+    // better hub even before counting partners). UNVERIFIED, relative-only.
+    let linkSum = 0;
+    for (const v of Object.values(valuesHypothesis)) linkSum += v;
+    const ownGoodsFactor = myGoods != null ? 1 + GOODS_GAIN * Math.tanh(myGoods / GOODS_SCALE) : 1;
+    const tradeScoreHypothesis = +(linkSum * ownGoodsFactor).toFixed(4);
+    // top partners by HYPOTHESIS link value (descending)
+    const topPartnersHypothesis = Object.entries(valuesHypothesis)
+      .sort((a, b) => b[1] - a[1]).slice(0, 5)
+      .map(([partner, value]) => ({ partner, value }));
+    const rg = region ? regionGoods[region] : null;
     result[name] = {
       faction,
       region,
       road: !!f.road,
       seaPort: !!f.seaPort,
       riverPort: !!f.riverPort,
+      committedPopulation: popByCity[name] != null ? popByCity[name] : null,
+      goodsValueHypothesis: rg ? +rg.goodsValue.toFixed(3) : null, // region trade-good endowment (HYP input)
+      resources: rg ? rg.resources : [],                            // placed trade goods (descr_strat)
+      farmLevel: rg ? rg.farmLevel : null,                          // FarmNN (descr_regions)
       landPartners: [...landPartners].sort(),
       seaPartners: [...seaPartners].sort(),
       partners: [...partners].sort(),
-      valuesHypothesis, // UNVERIFIED relative distance-decay, NOT engine gold
+      valuesHypothesis,            // UNVERIFIED per-link relative value (decay×goods×infra×pop)
+      tradeScoreHypothesis,        // UNVERIFIED per-settlement total relative trade-score
+      topPartnersHypothesis,       // UNVERIFIED top partners by link value
     };
   }
   return { settlements: result, settlementCount: names.length };
@@ -558,8 +750,30 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
 
   const tradeRights = buildTradeRights(cr.diplomacy, stratRelationships);
 
+  // ── HYPOTHESIS value inputs: trade goods + farm level + population ──────────
+  // Resource catalogue (tier/trade value) and per-region placements come from
+  // the mod data; the engine LOADS the override descr_strat, so prefer it
+  // (findCampaignDescrStrat) for resource placements.
+  let regionGoods = {};
+  try {
+    const { findCampaignDescrStrat } = require("./ownershipParser.js");
+    const catalogue = parseResourceCatalogue(modDataDir);
+    const goodsStratPath = findCampaignDescrStrat(modDataDir) ||
+      path.join(modDataDir, "world", "maps", "campaign", opts.campaign || "imperial_campaign", "descr_strat.txt");
+    const regionResources = parseRegionResources(goodsStratPath, catalogue);
+    const regionFarm = parseRegionFarmLevels(regionsPath);
+    regionGoods = buildRegionGoods(regionResources, regionFarm);
+  } catch { /* HYPOTHESIS inputs are optional — neutral factors if unavailable */ }
+
+  // committedPopulation per settlement (start-of-turn market size) from crackSave.
+  const popByCity = {};
+  for (const [city, sf] of Object.entries(cr.settlementFields || {})) {
+    if (sf && sf.committedPopulation != null) popByCity[city] = sf.committedPopulation;
+  }
+
   const trade = computeTradeConnectivity(
-    geometry, settlements, cr.ownerByCity || {}, region2settlement, settlement2region, flags, tradeRights
+    geometry, settlements, cr.ownerByCity || {}, region2settlement, settlement2region, flags, tradeRights,
+    regionGoods, popByCity
   );
 
   // rollup stats
@@ -570,6 +784,9 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
     totalPartnerLinks += v.partners.length;
     if (v.partners.length === 0) isolated++;
   }
+  let regionsWithGoods = 0, settlementsWithPop = 0;
+  for (const g of Object.values(regionGoods)) if (g && g.goodsValue > 0) regionsWithGoods++;
+  settlementsWithPop = Object.keys(popByCity).length;
 
   return {
     playerFaction: cr.playerFaction,
@@ -592,6 +809,8 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
       withRiverPort,
       isolatedSettlements: isolated,
       avgPartnersPerSettlement: +(totalPartnerLinks / Math.max(1, Object.keys(trade.settlements).length)).toFixed(2),
+      regionsWithGoods,          // HYPOTHESIS input coverage: regions with a goods value
+      settlementsWithPopulation: settlementsWithPop, // HYP input coverage: pop-weighted markets
     },
   };
 }
@@ -603,6 +822,10 @@ module.exports = {
   buildTradeRights,
   computeTradeConnectivity,
   loadEdbChains,
+  parseResourceCatalogue,
+  parseRegionResources,
+  parseRegionFarmLevels,
+  buildRegionGoods,
   ROAD_CHAIN,
   SEA_PORT_CHAINS,
   RIVER_PORT_CHAINS,

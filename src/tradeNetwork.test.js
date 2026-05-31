@@ -4,6 +4,7 @@ import {
   buildTradeRights,
   settlementFlags,
   computeTradeNetwork,
+  buildRegionGoods,
   ROAD_CHAIN,
   SEA_PORT_CHAINS,
 } from "./tradeNetwork.js";
@@ -67,6 +68,32 @@ describe("tradeNetwork settlementFlags", () => {
   });
 });
 
+describe("tradeNetwork buildRegionGoods (HYPOTHESIS value inputs)", () => {
+  test("goodsValue = Σ(tradeValue·qty) + FARM_WEIGHT·farmLevel", () => {
+    const regionResources = {
+      Roma: [{ type: "wine", qty: 4, tradeValue: 1 }, { type: "purple_dye", qty: 2, tradeValue: 3 }],
+      Bare: [],
+    };
+    const regionFarm = { Roma: 11, Bare: 6, FarmOnly: 8 };
+    const g = buildRegionGoods(regionResources, regionFarm);
+    // Roma: 1*4 + 3*2 = 10 resource sum, + 0.5*11 = 5.5 farm → 15.5
+    expect(g.Roma.resourceTradeSum).toBe(10);
+    expect(g.Roma.farmLevel).toBe(11);
+    expect(g.Roma.goodsValue).toBeCloseTo(15.5, 5);
+    expect(g.Roma.resources).toEqual(["wine", "purple_dye"]);
+    // Bare: no resources, farm 6 → 3
+    expect(g.Bare.goodsValue).toBeCloseTo(3, 5);
+    // FarmOnly: farm present, no resource placements → 0.5*8 = 4
+    expect(g.FarmOnly.goodsValue).toBeCloseTo(4, 5);
+  });
+
+  test("missing farm level contributes nothing (no fabrication)", () => {
+    const g = buildRegionGoods({ X: [{ type: "iron", qty: 1, tradeValue: 1 }] }, {});
+    expect(g.X.farmLevel).toBe(null);
+    expect(g.X.goodsValue).toBe(1);
+  });
+});
+
 // Live-mod integration (dev box only) — gated on file existence.
 const liveOk = fs.existsSync(RIS_MOD) && fs.existsSync(JULII);
 describe.runIf(liveOk)("tradeNetwork integration (live RIS + julii1 save)", () => {
@@ -91,12 +118,14 @@ describe.runIf(liveOk)("tradeNetwork integration (live RIS + julii1 save)", () =
     expect([...black].some((s) => atlantic.has(s))).toBe(false);
   });
 
-  test("HYPOTHESIS valuesHypothesis: all link scores in (0,1]", () => {
+  test("HYPOTHESIS valuesHypothesis: all link scores finite, >0, bounded", () => {
+    // Refined value = baseDecay(≤1) × goods(≤~1.6) × pop(≤~1.5) × infra(≤1.25),
+    // so a link can exceed 1 but is bounded well under ~3.2. Relative-only.
     let n = 0, bad = 0;
     for (const v of Object.values(r.trade.settlements)) {
       for (const score of Object.values(v.valuesHypothesis || {})) {
         n++;
-        if (!(score > 0 && score <= 1)) bad++;
+        if (!(Number.isFinite(score) && score > 0 && score < 3.2)) bad++;
       }
     }
     expect(n).toBeGreaterThan(0);
@@ -107,5 +136,41 @@ describe.runIf(liveOk)("tradeNetwork integration (live RIS + julii1 save)", () =
     for (const v of Object.values(r.trade.settlements)) {
       for (const p of v.partners) expect(v.valuesHypothesis[p]).toBeGreaterThan(0);
     }
+  });
+
+  test("HYPOTHESIS: trade goods + population inputs are populated", () => {
+    expect(r.stats.regionsWithGoods).toBeGreaterThan(100);
+    expect(r.stats.settlementsWithPopulation).toBeGreaterThan(100);
+    // Rome carries placed trade goods + a farm level + a goods value.
+    const rome = r.trade.settlements["Rome"];
+    expect(rome.resources.length).toBeGreaterThan(0);
+    expect(rome.farmLevel).toBeGreaterThan(0);
+    expect(rome.goodsValueHypothesis).toBeGreaterThan(0);
+  });
+
+  test("HYPOTHESIS: per-settlement tradeScore is finite & relative; topPartners well-formed", () => {
+    let scored = 0;
+    for (const v of Object.values(r.trade.settlements)) {
+      expect(Number.isFinite(v.tradeScoreHypothesis)).toBe(true);
+      expect(v.tradeScoreHypothesis).toBeGreaterThanOrEqual(0);
+      // topPartners must be a subset of partners, sorted descending by value.
+      let prev = Infinity;
+      for (const tp of v.topPartnersHypothesis) {
+        expect(v.partners).toContain(tp.partner);
+        expect(tp.value).toBeLessThanOrEqual(prev);
+        prev = tp.value;
+      }
+      if (v.tradeScoreHypothesis > 0) scored++;
+    }
+    expect(scored).toBeGreaterThan(0);
+  });
+
+  test("HYPOTHESIS sanity: a big coastal trade hub outscores an isolated inland minor", () => {
+    // Rome (pop ~9000, road+port, rich goods) must outscore any 0-partner inland.
+    const rome = r.trade.settlements["Rome"];
+    const isolated = Object.values(r.trade.settlements)
+      .filter((v) => v.partners.length === 0 && !v.seaPort);
+    expect(rome.tradeScoreHypothesis).toBeGreaterThan(10);
+    for (const iso of isolated) expect(rome.tradeScoreHypothesis).toBeGreaterThan(iso.tradeScoreHypothesis);
   });
 });
