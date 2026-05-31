@@ -103,6 +103,15 @@ function main() {
     console.log(`  allied: ${dip.allied.join(", ") || "—"}`);
     console.log(`  trade:  ${dip.trade.join(", ") || "—"}`);
   }
+
+  // AI world-knowledge — how many settlements each faction has scouted
+  if (r.factionKnowledge && r.factionKnowledge.perFaction) {
+    const pf = r.factionKnowledge.perFaction;
+    console.log(`\n-- AI world-knowledge (${r.factionKnowledge.factionsWithTail} factions scouting; ${r.factionKnowledge.totalTuples} total observations) --`);
+    const top = Object.entries(pf).sort((a, b) => b[1].knownSettlements - a[1].knownSettlements).slice(0, 8);
+    for (const [n, v] of top) console.log(`  ${pad(n, 18)} knows ${padl(v.knownSettlements, 4)} settlements`);
+    if (pf[fac]) console.log(`  → ${fac}: ${pf[fac].knownSettlements} settlements / ${pf[fac].knownTiles} observations`);
+  }
   console.log("");
 }
 

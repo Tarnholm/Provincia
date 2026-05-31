@@ -122,6 +122,7 @@ function parseTail(buf, off, size, factionOrder) {
     const tag = f[0];
     if (tag === 27 && f.length >= 9) {
       const owner = f[5];
+      const rebel = f[8]; // named rebel-garrison identity; 239 = generic/none
       tuples.push({
         tag,
         tileX: f[1],
@@ -129,12 +130,19 @@ function parseTail(buf, off, size, factionOrder) {
         tier: f[3],
         prevTier: f[4] === 0xffffffff ? -1 : f[4],
         owner,
+        // NB: owner/rebel are strat 0-based faction indices; name resolution via
+        // factionOrder is off-by-one for indices ≳148 (descr_strat ordering offset)
+        // — fine for the common owner=238 (slave) case; verify high indices.
         ownerName: factionOrder && factionOrder[owner] ? factionOrder[owner] : null,
+        rebelFaction: rebel === 239 ? null : rebel, // descr_regions `rebel` line id
         culture: f[7],
         model: m.name,
       });
+    } else if (tag === 29 && f.length >= 6) {
+      // tag-29 = lightweight size update; f[5] = settlement size level << 14 (0..15)
+      tuples.push({ tag, sizeLevel: (f[5] >>> 14) & 0xf, model: m.name });
     } else {
-      tuples.push({ tag, model: m.name }); // tag 29/31 / other — raw
+      tuples.push({ tag, model: m.name }); // tag 31 (wonder) / other — raw
     }
     p = m.pos + 2 + m.len;
     mi++;

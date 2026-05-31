@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.759",
+    date: "2026-05-31",
+    items: [
+      { type: "improvement", text: "**Faction world-knowledge detail.** The decoded per-faction known-settlement tuples now also expose the observed **rebel-garrison faction** per settlement (maps to the region's `rebel` line) and the observed **settlement size-level**. The save inspector (`scripts/inspect-save.js`) gains an AI-knowledge view (top scouting factions + per-faction settlement counts)." },
+    ],
+  },
+  {
     version: "0.9.758",
     date: "2026-05-31",
     items: [
