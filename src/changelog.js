@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.767",
+    date: "2026-05-31",
+    items: [
+      { type: "improvement", text: "**Movement points now read for every unit.** Previously only general/bodyguard units reported their movement points; line and naval units showed nothing. The reader now decodes movement points for all units (so you can see which units have already moved this turn)." },
+      { type: "improvement", text: "**Public-order breakdown: health line identified.** The per-settlement order breakdown now also names the health/sewerage happiness contribution (it tracks the settlement's sanitation building tier)." },
+    ],
+  },
+  {
     version: "0.9.766",
     date: "2026-05-31",
     items: [
