@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.777",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Commander/army cards show the right face.** General and bodyguard portrait cards were picking an arbitrary face from the culture's pool (so Roman commanders could show steppe/nomad-looking faces), while the family tree showed the correct one. The cards now resolve each character's actual portrait the same way the family tree does — so a commander's card face matches their family-tree card. (Characters with no stored portrait still fall back to a pool pick.)" },
+    ],
+  },
+  {
     version: "0.9.776",
     date: "2026-06-01",
     items: [
