@@ -321,14 +321,20 @@ function crackSave(saveBuf, modDataDir) {
   // src/factionKnowledgeParser.js). Light summary only (the full per-tuple
   // tile/owner detail is available via parseFactionKnowledge on demand —
   // ~10k tuples is too heavy to ship in every crackSave payload). Keyed by the
-  // knowing faction's name (record index → descr_sm_factions order, the same
-  // index proven correct for the per-faction vision grids).
+  // knowing faction's name. The ff0aaff0 record array is in ENGINE order
+  // (deriveEngineFactionOrder = descr_strat order with the first rebel slot
+  // rotated to the end — the SAME order as the treasury records + diplomacy
+  // matrix), NOT sm/diplo order. Using diploOrder mislabeled ~192/238 records
+  // by one slot (cracked 2026-05-31, findings-record-faction-map). The tuple
+  // OWNER field (f5) uses descr_strat 0-based order, so pass stratOrder for
+  // ownerName resolution. Player's own record = engineOrder.indexOf(player);
+  // engineOrder[237] = slave = the global revealed-area record.
   let factionKnowledge = null;
   try {
-    const fk = parseFactionKnowledge(saveBuf, diploOrder);
+    const fk = parseFactionKnowledge(saveBuf, stratOrder); // stratOrder → tuple ownerName
     const perFaction = {};
     for (const r of fk.records) {
-      const name = diploOrder[r.factionIndex];
+      const name = engineOrder[r.factionIndex]; // engineOrder → the KNOWING faction
       if (name) perFaction[name] = { knownTiles: r.tupleCount, knownSettlements: r.fullCount };
     }
     factionKnowledge = { perFaction, factionsWithTail: fk.records.length, totalTuples: fk.totalTuples };

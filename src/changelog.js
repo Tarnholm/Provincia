@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.760",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Faction world-knowledge mislabeling.** The per-faction known-settlement summary tagged records with the wrong faction names — the in-save faction-record array is in *engine order* (the rebel-slot-rotated order used by the treasury records and diplomacy matrix), not descr_sm_factions order, so ~192/238 entries were off by one slot. Now labeled via the engine order and cross-checked geographically (99.4%). Owner names within tuples use descr_strat order. The player faction correctly doesn't appear in this AI-scouting summary — it keeps a separate own-empire ledger." },
+    ],
+  },
+  {
     version: "0.9.759",
     date: "2026-05-31",
     items: [
