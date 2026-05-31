@@ -32,6 +32,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "electron": "^41.2.1",
     "electron-builder": "^26.8.1",
+    "jsdom": "^29.1.1",
     "vite": "^7.3.2",
     "vitest": "^4.1.4"
   },
@@ -81,9 +82,18 @@
       "main": "main.js"
     },
     "extraResources": [
-      { "from": "scripts-suite-py", "to": "app_data" },
-      { "from": "python-runtime", "to": "python-runtime" },
-      { "from": "bundled-mod", "to": "bundled-mod" }
+      {
+        "from": "scripts-suite-py",
+        "to": "app_data"
+      },
+      {
+        "from": "python-runtime",
+        "to": "python-runtime"
+      },
+      {
+        "from": "bundled-mod",
+        "to": "bundled-mod"
+      }
     ],
     "publish": [
       {
