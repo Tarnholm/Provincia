@@ -6870,11 +6870,33 @@ function App() {
         const hasAnyData = withData > 0;
         if (!hasAnyData) { minV = 0; maxV = 0; }
         console.log(`[heatmap] mode ${colorMode}: range min=${minV} max=${maxV} (${withData} regions with data)`);
+        if (colorMode === "public_order" && hasAnyData) {
+          let g = 0, lg = 0, o = 0, rd = 0;
+          for (const v of happByRgb.values()) { if (v > 100) g++; else if (v >= 85) lg++; else if (v >= 75) o++; else rd++; }
+          console.log(`[public-order] bands: >100 darkgreen=${g}, 85-100 lightgreen=${lg}, 75-85 orange=${o}, <75 red=${rd}`);
+        }
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           if (!hasAnyData) return GREY;
           const k = `${pr},${pg},${pb}`;
           const val = happByRgb.get(k);
           if (typeof val !== "number") return GREY;
+          // Public order: discrete bands keyed on the in-game public-order %
+          // (the offset-30 value IS the % — verified vs julii1: Rome 300,
+          // Praeneste 140, Neapolis 75). >100 dark green, 85–100 light green,
+          // 75–85 orange, <75 red. (Happiness keeps the continuous gradient.)
+          if (colorMode === "public_order") {
+            let band;
+            if (val > 100) band = [34, 139, 34];        // dark green  (>100%)
+            else if (val >= 85) band = [124, 205, 110]; // light green (85–100%)
+            else if (val >= 75) band = [232, 150, 44];  // orange      (75–85%)
+            else band = [206, 52, 38];                  // red         (<75%)
+            const j = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+            return [
+              Math.max(0, Math.min(255, band[0] + j)),
+              Math.max(0, Math.min(255, band[1] + j)),
+              Math.max(0, Math.min(255, band[2] + j)),
+            ];
+          }
           const span = Math.max(0.001, maxV - minV);
           const t = Math.min(1, Math.max(0, (val - minV) / span));
           // Red (sad) → yellow → green (happy)

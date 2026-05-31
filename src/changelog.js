@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.773",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Garrison no longer includes field armies (live mode).** A settlement's Garrison panel was sweeping in any friendly general standing anywhere in the region — so generals out in the field near a city showed up as garrison *and* as field armies. The garrison now lists only the units actually in the settlement (leaderless defenders, the governor's stack, or a commander standing on the settlement tile); other commanded stacks stay in Field Armies. (e.g. Rome: 15-unit garrison under the governor, the 2 outside generals as separate field armies.)" },
+      { type: "improvement", text: "**Public-order map view: color bands.** The public-order map mode now uses clear bands by the in-game public-order %: above 100% dark green, 85–100% light green, 75–85% orange, below 75% red — instead of a relative gradient." },
+    ],
+  },
+  {
     version: "0.9.772",
     date: "2026-05-31",
     items: [
