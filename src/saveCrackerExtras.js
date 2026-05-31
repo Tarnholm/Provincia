@@ -447,6 +447,19 @@ function parseFactionTreasuries(buf) {
 //
 // Returns { factionName: [treasury_turn0, treasury_turn1, ...] } (trailing 0 of
 // the current incomplete turn dropped; factions with <2 points omitted).
+//
+// KEYING (fixed 2026-05-31): the history record's faction is its RECORD POSITION
+// in `factionRecords`, indexed into `factionOrder` (descr_sm_factions order),
+// NOT the record's `factionId` byte. On the imperial sub=6 layout (RIS julii
+// saves) the `factionId` byte is shifted by one slot starting at the carthage
+// record (roman_senate consumes the descr_sm slot but the byte read drifts) —
+// so `factionOrder[r.factionId]` cross-wired every faction's series to the next
+// faction's name (carthage's treasury timeline → "antigonid", etc). Validated
+// against consecutive julii1/2/3 saves: the series that physically precedes the
+// Nth record tracks the Nth faction's treasury timeline. The caller MUST pass
+// the descr_sm_factions order (smOrder), NOT engineOrder — engineOrder rotates
+// the first rebel slot to the end, which re-introduces a one-slot shift here.
+// See docs/findings-treasury-history-keying-2026-05-31.md.
 function findEconHistoryStart(buf, core) {
   // Walk backward from the faction record; the first u32 == its own offset
   // (self-pointer) is the econ-history object header.
@@ -459,7 +472,8 @@ function parseFactionTreasuryHistory(buf, factionRecords, factionOrder) {
   if (!Array.isArray(factionRecords) || factionRecords.length === 0) return null;
   const S = 23, F13 = 13;
   const out = {};
-  for (const r of factionRecords) {
+  for (let idx = 0; idx < factionRecords.length; idx += 1) {
+    const r = factionRecords[idx];
     const start = findEconHistoryStart(buf, r.offset);
     if (start < 0) continue;
     const f = [];
@@ -475,8 +489,10 @@ function parseFactionTreasuryHistory(buf, factionRecords, factionOrder) {
     // 156/236 factions on T1017. Pop one zero max.
     if (series.length && series[series.length - 1] === 0) series.pop();
     if (series.length < 2) continue;
-    const name = (Array.isArray(factionOrder) && typeof r.factionId === "number" && r.factionId >= 0 && r.factionId < factionOrder.length)
-      ? factionOrder[r.factionId] : null;
+    // Faction = RECORD POSITION (idx) → factionOrder, NOT r.factionId (the byte
+    // is off-by-one on imperial sub=6 records — see header note).
+    const name = (Array.isArray(factionOrder) && idx >= 0 && idx < factionOrder.length)
+      ? factionOrder[idx] : null;
     if (!name) continue;
     out[name.toLowerCase()] = series;
   }

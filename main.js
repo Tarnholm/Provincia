@@ -6033,8 +6033,13 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
         console.log(`[diplo-matrix] calibrate: NOT located`);
       }
       // 0.9.549: per-faction treasury-over-time history (f13 checkpoints).
+      // KEYED BY RECORD POSITION → descr_sm order (modFactionOrder), NOT
+      // engineOrder. parseFactionTreasuryHistory indexes factionOrder by the
+      // record's array position; engineOrder rotates the first rebel slot to the
+      // end, which shifts every faction's history series by one slot (carthage's
+      // timeline → "antigonid"). Fixed 2026-05-31 — see findings doc.
       if (factionTreasuries && factionTreasuries.length > 0) {
-        treasuryHistory = cxParseTreasuryHistory(saveBuf, factionTreasuries, calEngineOrder);
+        treasuryHistory = cxParseTreasuryHistory(saveBuf, factionTreasuries, modFactionOrder);
         console.log(`[treasury-history] calibrate: ${treasuryHistory ? Object.keys(treasuryHistory).length : 0} factions`);
       }
     } catch (fe) { console.warn("[calibrate] faction parse failed:", fe && fe.message); }
@@ -7349,9 +7354,13 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     }
   } catch (err) { console.warn("[diplo-matrix] parse failed:", err && err.message); }
   // 0.9.549: per-faction treasury-over-time history (f13 checkpoints).
+  // KEYED BY RECORD POSITION → descr_sm order (modFactionOrder), NOT engineOrder.
+  // parseFactionTreasuryHistory indexes factionOrder by the record's array
+  // position; engineOrder rotates the first rebel slot to the end, shifting every
+  // faction's history series by one slot. Fixed 2026-05-31 — see findings doc.
   try {
     if (factionTreasuries && factionTreasuries.length > 0) {
-      treasuryHistory = cxParseTreasuryHistory(data, factionTreasuries, engineOrder);
+      treasuryHistory = cxParseTreasuryHistory(data, factionTreasuries, modFactionOrder);
       console.log(`[treasury-history] ${treasuryHistory ? Object.keys(treasuryHistory).length : 0} factions`);
     }
   } catch (err) { console.warn("[treasury-history] parse failed:", err && err.message); }

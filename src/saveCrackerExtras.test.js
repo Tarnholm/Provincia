@@ -18,10 +18,12 @@ import {
   identifyFactionRecordOwners,
   parseAllFactionDiplomacy,
   parseDiplomacyMatrix,
+  parseFactionTreasuryHistory,
 } from "./saveCrackerExtras.js";
 
 const MACEDON_T0_PATH = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_macedon t0.sav";
 const SM_FACTIONS_PATH = "C:\\RIS\\RIS\\data\\descr_sm_factions.txt";
+const SAVE_DIR = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves";
 
 function loadSaveIfPresent(path) {
   try {
@@ -201,5 +203,81 @@ describeIfSaveAndOrder("saveCrackerExtras — factionId + all-faction diplomacy"
     // And no placeholder faction has a row of its own in the matrix.
     expect(m.slave).toBeUndefined();
     expect(m.dummies).toBeUndefined();
+  });
+});
+
+// ── parseFactionTreasuryHistory keying (fixed 2026-05-31) ──────────────────
+// The off-by-one bug: the function keyed each history series by the record's
+// `factionId` BYTE, which is shifted one slot on imperial sub=6 records, so
+// every faction's per-turn treasury series was cross-wired to the NEXT faction's
+// name (carthage's timeline labelled "antigonid", etc). FIX: key by the record's
+// POSITION in factionRecords, indexed into the descr_sm order. Validated against
+// three consecutive turns (save_julii1/2/3): a faction's history checkpoints
+// must track its OWN treasury timeline. Each f13 checkpoint is the end-of-turn
+// snapshot, taken a hair before the in-save current treasury (≈250 denarii of
+// rollover income), so we assert closeness within a small tolerance.
+const julii1 = loadSaveIfPresent(`${SAVE_DIR}\\save_julii1.sav`);
+const julii2 = loadSaveIfPresent(`${SAVE_DIR}\\save_julii2.sav`);
+const julii3 = loadSaveIfPresent(`${SAVE_DIR}\\save_julii3.sav`);
+const describeIfJulii = (julii1 && julii2 && julii3 && factionOrder) ? describe : describe.skip;
+
+describeIfJulii("parseFactionTreasuryHistory — correct faction keying (julii1/2/3)", () => {
+  // Starting treasuries (julii1) that uniquely crib each faction's identity.
+  const CRIB = {
+    carthage: 25500,
+    antigonid: 22000,
+    ptolemaic: 47000,
+    seleucid: 62500,
+    bactria: 11000,
+  };
+
+  test("each faction's history series tracks ITS OWN treasury timeline (not the next faction's)", () => {
+    const recs1 = parseFactionTreasuries(julii1);
+    const recs2 = parseFactionTreasuries(julii2);
+    const recs3 = parseFactionTreasuries(julii3);
+    // Records are positional + stable across consecutive turns.
+    expect(recs1.length).toBe(recs2.length);
+    expect(recs2.length).toBe(recs3.length);
+
+    const hist = parseFactionTreasuryHistory(julii3, recs3, factionOrder);
+    expect(hist).toBeTruthy();
+
+    const idxByName = {};
+    factionOrder.forEach((n, i) => { idxByName[n] = i; });
+
+    for (const [fac, startTreasury] of Object.entries(CRIB)) {
+      const i = idxByName[fac];
+      expect(i).toBeGreaterThanOrEqual(0);
+      // Identity crib: the record at this position really is this faction.
+      expect(recs1[i].treasury).toBe(startTreasury);
+
+      const series = hist[fac];
+      expect(series, `history series present for ${fac}`).toBeTruthy();
+      expect(series.length).toBeGreaterThanOrEqual(2);
+
+      // The faction's checkpoint timeline must match its own treasury timeline.
+      // Build the set of this faction's known treasuries across the 3 saves; the
+      // last 2 checkpoints must each be within tolerance of one of them.
+      const treasuries = [recs1[i].treasury, recs2[i].treasury, recs3[i].treasury];
+      const TOL = 800;
+      const last2 = series.slice(-2);
+      for (const cp of last2) {
+        const matches = treasuries.some((t) => Math.abs(cp - t) <= TOL);
+        expect(matches, `${fac} checkpoint ${cp} should match one of treasuries [${treasuries}]`).toBe(true);
+      }
+    }
+  });
+
+  test("carthage's series is NOT antigonid's (the exact off-by-one that was wired wrong)", () => {
+    const recs3 = parseFactionTreasuries(julii3);
+    const hist = parseFactionTreasuryHistory(julii3, recs3, factionOrder);
+    // Pre-fix, carthage's [25250,39900] timeline was emitted under "antigonid".
+    // Post-fix carthage owns it and antigonid owns [21454,41624].
+    expect(hist.carthage[0]).toBeGreaterThan(24000);
+    expect(hist.carthage[0]).toBeLessThan(26500);
+    expect(hist.antigonid[0]).toBeGreaterThan(20000);
+    expect(hist.antigonid[0]).toBeLessThan(23000);
+    // They must differ — the cross-wire made one the other.
+    expect(hist.carthage[0]).not.toBe(hist.antigonid[0]);
   });
 });
