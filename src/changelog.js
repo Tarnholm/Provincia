@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.775",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Public order now shows the real percentage.** The settlement card read a stale value through an old 100..200 mapping, so e.g. Rome showed 40% instead of its true ~295%. It now uses the confirmed per-settlement public-order value directly (Rome ~295, Praeneste 140, Neapolis 75), colored by the same bands as the map (>100 green, 85–100 light green, 75–85 orange, <75 red)." },
+    ],
+  },
+  {
     version: "0.9.774",
     date: "2026-05-31",
     items: [

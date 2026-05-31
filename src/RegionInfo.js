@@ -1433,24 +1433,27 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             </div>
           );
         })() : null}
-        {typeof happiness === "number" ? (() => {
-          // Raw save-cracker value sits roughly 100..200; RTW's UI clips it
-          // to a 0..100% bar. Linear map: 100 → 0%, 200 → 100% — that puts
-          // a "normal-tax neutral" reading near the middle of the bar,
-          // matching where the in-game public-order bar tends to sit on
-          // a stable city. Color: green/yellow/red traffic light.
-          const raw = happiness;
-          const pct = Math.max(0, Math.min(100, Math.round((raw - 100))));
-          const color = pct >= 60 ? "#7ed27e" : pct >= 30 ? "#e8a030" : "#e85050";
+        {(() => {
+          // Public order %. Prefer the CONFIRMED per-settlement value
+          // (orderFields.publicOrder = settlementFields offset-30 float) which
+          // IS the in-game %: Rome 295/300, Praeneste 140, Neapolis 75. The
+          // legacy `happiness` prop reads a stale settlement offset and mis-maps
+          // it (it showed 40% for Rome's 295), so it's only a fallback now.
+          const po = (orderFields && typeof orderFields.publicOrder === "number")
+            ? orderFields.publicOrder
+            : (typeof happiness === "number" ? happiness : null);
+          if (po == null) return null;
+          const pct = Math.round(po);
+          // Same bands as the public-order map view.
+          const color = pct > 100 ? "#3aa33a" : pct >= 85 ? "#7ed27e" : pct >= 75 ? "#e8a030" : "#e85050";
           return (
             <div style={{ marginBottom: 2 }}
-              title={`Public order (raw save value ${raw.toFixed(2)}, mapped to ${pct}%). Field at settlement_name_offset-30, decoded 2026-05-10 via the cracker.`}>
+              title={`Public order ${pct}% (settlement order value at offset-30). Bands: >100 green, 85–100 light green, 75–85 orange, <75 red.`}>
               <strong>Public order:</strong>{" "}
               <span style={{ color, fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
-              <span style={{ color: "#888", fontSize: "0.7rem", marginLeft: 6 }}>({raw.toFixed(0)})</span>
             </div>
           );
-        })() : null}
+        })()}
         {orderFields && orderFields.order ? (() => {
           // CONFIRMED public-order breakdown slots (src/settlementFieldsParser.js,
           // cracked 2026-05-31). Penalty slots are stored as positive magnitudes
