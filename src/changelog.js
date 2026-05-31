@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.763",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Save reader: correctness on long campaigns.** Three fixes that mattered on mid/late saves but were invisible on turn-1 captures. (1) **Family roster** — the parser dropped every family member that had a character portrait (a brittle byte-check held only for portrait-less members, which is most of a fresh game), so a turn-34 save read ~300 of ~2,200 relatives. Now reads the full living + historical roster. (2) **Turn number** — was inferred from a counter that saturates around turn 10, so a turn-34 save showed turn 10; now read from the campaign-date record (also exposes year and season), verified exact on every test save. (3) **Treasury history** — the per-turn treasury/income series (the faction sparkline + CSV export) was attributed to the wrong faction by a one-slot ordering shift; now keyed correctly." },
+    ],
+  },
+  {
     version: "0.9.762",
     date: "2026-05-31",
     items: [

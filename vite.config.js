@@ -38,4 +38,9 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
   },
+  test: {
+    // Never run tests out of agent git worktrees — they hold stale copies of
+    // src/*.test.js that double-count (and may lag behind) the real tree.
+    exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
+  },
 });

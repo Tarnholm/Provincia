@@ -28,9 +28,15 @@ describe("parseFamilyRecords", () => {
     // both genders present
     expect(recs.some((r) => r.gender === "male")).toBe(true);
     expect(recs.some((r) => r.gender === "female")).toBe(true);
-    // most records decode a plausible age (epoch auto-detected)
-    const withAge = recs.filter((r) => r.age != null).length;
-    expect(withAge).toBeGreaterThan(recs.length * 0.6);
+    // Living members should overwhelmingly decode a plausible age (epoch
+    // auto-detected). The full table is dominated by historical DEAD members,
+    // who carry no current age, so an all-records ratio is not a meaningful
+    // age-decode guard — gate on the living instead (~92% of living members
+    // on the bundled sample decode an age).
+    const living = recs.filter((r) => r.alive);
+    expect(living.length).toBeGreaterThan(100);
+    const livingWithAge = living.filter((r) => r.age != null).length;
+    expect(livingWithAge).toBeGreaterThan(living.length * 0.8);
   });
 
   test("spouse links are reciprocal (structural integrity)", () => {
