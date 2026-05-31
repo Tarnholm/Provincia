@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.758",
+    date: "2026-05-31",
+    items: [
+      { type: "feature", text: "**Per-faction AI world-knowledge.** Decoded the per-faction \"known settlements\" cache the engine keeps inside each faction record — what each faction has scouted of the map (tile, settlement tier, observed owner, culture per known settlement). `crackSave().factionKnowledge` now reports, per faction, how many map tiles/settlements it has discovered (107 factions carry this on a turn-1 RIS save). The full per-settlement detail is available via the new `factionKnowledgeParser`. This was the single largest previously-undecoded region of the save." },
+    ],
+  },
+  {
     version: "0.9.757",
     date: "2026-05-31",
     items: [

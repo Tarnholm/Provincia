@@ -24,6 +24,7 @@ const { parseEventLog } = require("./eventLogParser.js");
 const { parseSettlementFields } = require("./settlementFieldsParser.js");
 const { parseEventSchedule } = require("./eventScheduleParser.js");
 const { findLuaCounters, classifyCounters } = require("./luaCounterParser.js");
+const { parseFactionKnowledge } = require("./factionKnowledgeParser.js");
 const { findAllSettlementMarkers } = require("./buildingParser.js");
 const x = require("./saveCrackerExtras.js");
 
@@ -315,6 +316,24 @@ function crackSave(saveBuf, modDataDir) {
   let scriptCounters = null;
   try { scriptCounters = classifyCounters(findLuaCounters(saveBuf)); } catch (e) { /* leave null */ }
 
+  // Per-faction AI world-knowledge summary — how many map settlements each
+  // faction has scouted (FACTION_RECORD_TAIL, cracked 2026-05-31,
+  // src/factionKnowledgeParser.js). Light summary only (the full per-tuple
+  // tile/owner detail is available via parseFactionKnowledge on demand —
+  // ~10k tuples is too heavy to ship in every crackSave payload). Keyed by the
+  // knowing faction's name (record index → descr_sm_factions order, the same
+  // index proven correct for the per-faction vision grids).
+  let factionKnowledge = null;
+  try {
+    const fk = parseFactionKnowledge(saveBuf, diploOrder);
+    const perFaction = {};
+    for (const r of fk.records) {
+      const name = diploOrder[r.factionIndex];
+      if (name) perFaction[name] = { knownTiles: r.tupleCount, knownSettlements: r.fullCount };
+    }
+    factionKnowledge = { perFaction, factionsWithTail: fk.records.length, totalTuples: fk.totalTuples };
+  } catch (e) { /* leave null */ }
+
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
   // — that field is broken: returns 4 for Carthage when truth is 41).
@@ -472,6 +491,7 @@ function crackSave(saveBuf, modDataDir) {
     settlementFields,           // { city: { populationGrowth, income, publicOrder, governorUuid, ... } }
     eventSchedule,              // { count, records:[{category,label,year,season,x,y,scale,warning,isRandom}] }
     scriptCounters,             // { factionIds, scriptState (reform/rebellion timers), engineCounters }
+    factionKnowledge,           // { perFaction:{name:{knownTiles,knownSettlements}}, factionsWithTail, totalTuples }
     ownerByCity: ownersOut.ownerByCity || {},
     _stats: {
       ms: Date.now() - t0,
@@ -484,6 +504,7 @@ function crackSave(saveBuf, modDataDir) {
       familyAttributed: family.filter((r) => r.faction).length,
       sieges: sieges.length,
       events: events.length,
+      factionsWithKnowledge: factionKnowledge ? factionKnowledge.factionsWithTail : 0,
       wars: diplomacy ? diplomacy._meta?.warPairs : null,
       saveSizeBytes: saveBuf.length,
     },
