@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { parseFactionKnowledge, findFactionRecords } from "./factionKnowledgeParser.js";
+import { parseFactionKnowledge, findFactionRecords, resolveNames } from "./factionKnowledgeParser.js";
 
 const SAVE = path.join("bundled-mod", "saves", "sample.sav");
 
@@ -38,5 +38,30 @@ describe("parseFactionKnowledge", () => {
         }
       }
     }
+  });
+
+  test("resolveNames annotates tag-27 tuples from a tileIndex (stub)", () => {
+    // Pure unit test — no map files needed. A stub tileIndex maps one tile.
+    const records = [{
+      factionIndex: 0, tupleCount: 2, fullCount: 1,
+      tuples: [
+        { tag: 27, tileX: 100, tileY: 200 },
+        { tag: 29, sizeLevel: 3 }, // non-27: must be left untouched
+      ],
+    }];
+    const tileIndex = {
+      resolve: (x, y) => (x === 100 && y === 200 ? { region: "Latium", settlement: "Roma" } : null),
+    };
+    resolveNames(records, tileIndex);
+    expect(records[0].tuples[0].region).toBe("Latium");
+    expect(records[0].tuples[0].settlement).toBe("Roma");
+    expect(records[0].tuples[1].region).toBeUndefined();
+    // a tile with no settlement → explicit nulls
+    records[0].tuples[0].tileX = 5;
+    resolveNames(records, tileIndex);
+    expect(records[0].tuples[0].region).toBe(null);
+    expect(records[0].tuples[0].settlement).toBe(null);
+    // null tileIndex is a safe no-op
+    expect(() => resolveNames(records, null)).not.toThrow();
   });
 });

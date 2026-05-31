@@ -150,11 +150,34 @@ function parseTail(buf, off, size, factionOrder) {
   return tuples;
 }
 
+// OPTIONAL settlement-name resolution. `tileIndex` is a built index from
+// src/tileResolver.js buildTileIndex(modDataDir) (anything exposing
+// .resolve(tileX, tileY) → { region, settlement } | null works). Mutates each
+// tag-27 tuple in-place, adding `region` + `settlement` (null when the tile
+// has no settlement on this map). Returns `records` for chaining. This is
+// HEAVY (needs map_regions.tga) and OFF the crackSave hot path — call it on
+// demand for inspect-save / diff-saves. Safe to call with a null tileIndex
+// (no-op) so callers can wire it unconditionally.
+function resolveNames(records, tileIndex) {
+  if (!tileIndex || typeof tileIndex.resolve !== "function") return records;
+  for (const rec of records || []) {
+    for (const t of rec.tuples || []) {
+      if (t.tag !== 27) continue;
+      const hit = tileIndex.resolve(t.tileX, t.tileY);
+      t.region = hit ? hit.region : null;
+      t.settlement = hit ? hit.settlement : null;
+    }
+  }
+  return records;
+}
+
 // Parse the AI world-knowledge for every faction. `factionOrder` =
 // descr_sm_factions / descr_strat declaration order (0-based) for owner names.
+// `opts.tileIndex` (optional) = a tileResolver index; when supplied every
+// tag-27 tuple is annotated with `region`/`settlement` (see resolveNames).
 // Returns { records: [{factionIndex, tupleCount, fullCount, tuples}], totalTuples }.
 // Tuples are returned for every faction that has a populated tail (~107/238).
-function parseFactionKnowledge(buf, factionOrder = null) {
+function parseFactionKnowledge(buf, factionOrder = null, opts = {}) {
   const recs = findFactionRecords(buf);
   const out = [];
   let total = 0;
@@ -165,7 +188,8 @@ function parseFactionKnowledge(buf, factionOrder = null) {
     total += tuples.length;
     out.push({ factionIndex: i, tupleCount: tuples.length, fullCount: full, tuples });
   }
+  if (opts && opts.tileIndex) resolveNames(out, opts.tileIndex);
   return { records: out, totalTuples: total };
 }
 
-module.exports = { parseFactionKnowledge, findFactionRecords, parseTail, tailBounds };
+module.exports = { parseFactionKnowledge, resolveNames, findFactionRecords, parseTail, tailBounds };
