@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.771",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Family tree: missing members, wrong ages, missing leader.** Family members were keyed by first name only, so Roman families that reuse praenomina (Quintus, Gaius, Lucius…) overwrote each other — e.g. a child \"Quintus\" clobbered the 60-year-old faction leader Quintus Ogulnius Gallus down to age 4, and several family heads dropped out of the generals list entirely (showing ~14 instead of ~31). Members are now keyed by full name: the leader is restored at the correct age, and the full set of family heads + their relatives appears in the tree and the generals sidebar." },
+    ],
+  },
+  {
     version: "0.9.770",
     date: "2026-05-31",
     items: [
