@@ -101,6 +101,26 @@ function computeDiff(A, B) {
     }
   }
   d.knowledge.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  // Unit/army changes per faction (recruitment / casualties / disbandment)
+  const tally = (save) => {
+    const m = {};
+    for (const u of save.units || []) {
+      if (!u.faction) continue;
+      const t = m[u.faction] || (m[u.faction] = { units: 0, soldiers: 0 });
+      t.units++; t.soldiers += u.soldiers || 0;
+    }
+    return m;
+  };
+  const ua = tally(A), ub = tally(B);
+  d.units = [];
+  for (const f of new Set([...Object.keys(ua), ...Object.keys(ub)])) {
+    const a = ua[f] || { units: 0, soldiers: 0 }, b = ub[f] || { units: 0, soldiers: 0 };
+    if (a.units !== b.units || a.soldiers !== b.soldiers) {
+      d.units.push({ faction: f, unitsDelta: b.units - a.units, soldiersDelta: b.soldiers - a.soldiers });
+    }
+  }
+  d.units.sort((x, y) => Math.abs(y.soldiersDelta) - Math.abs(x.soldiersDelta));
+
   // Authoritative end-of-turn event-log delta
   d.events = diffTurn(A.events || [], B.events || []);
   return d;
@@ -134,6 +154,7 @@ function report(A, B, d, args) {
     for (const m of d.marriages.slice(0, 15)) console.log(`  married: ${m.name} ⚭ ${m.spouse}`);
   }
   if (d.treasury.length) { sec(`treasury movers (top 12 of ${d.treasury.length})`); for (const t of d.treasury.slice(0, 12)) console.log(`  ${t.faction}: ${t.from} → ${t.to} (${t.delta >= 0 ? "+" : ""}${t.delta})`); }
+  if (d.units.length) { sec(`unit/army changes (top 12 of ${d.units.length})`); for (const u of d.units.slice(0, 12)) console.log(`  ${u.faction}: ${u.unitsDelta >= 0 ? "+" : ""}${u.unitsDelta} units, ${u.soldiersDelta >= 0 ? "+" : ""}${u.soldiersDelta} soldiers`); }
   if (d.knowledge.length) { sec(`AI knowledge growth (top 10)`); for (const k of d.knowledge.slice(0, 10)) console.log(`  ${k.faction}: ${k.delta >= 0 ? "+" : ""}${k.delta} settlements`); }
   if (d.events.length) {
     const hist = {};

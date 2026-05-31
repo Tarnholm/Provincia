@@ -16,8 +16,9 @@ const path = require("path");
 
 const { parseSettlements } = require("./buildingParser.js");
 const { resolveCurrentOwners } = require("./saveOwnershipParser.js");
-const { buildInitialOwnership } = require("./ownershipParser.js");
+const { buildInitialOwnership, parseDescrRegions } = require("./ownershipParser.js");
 const { findCharacterRecords } = require("./characterParser.js");
+const { findUnitRecords } = require("./unitParser.js");
 const { parseFamilyRecords, indexFamily, attributeFamilyFactions } = require("./familyRecordParser.js");
 const { parseSieges } = require("./siegeParser.js");
 const { parseEventLog } = require("./eventLogParser.js");
@@ -340,6 +341,32 @@ function crackSave(saveBuf, modDataDir) {
     factionKnowledge = { perFaction, factionsWithTail: fk.records.length, totalTuples: fk.totalTuples };
   } catch (e) { /* leave null */ }
 
+  // Units & armies — per-unit type / soldiers / max / XP (src/unitParser.js,
+  // the same cracked parser the live path uses). Faction is attributed via the
+  // unit's region owner (ownerByCity); commander-led units are grouped into
+  // armies by commanderUuid, commander-less units are settlement garrisons.
+  let units = [], armies = [];
+  try {
+    const own = ownersOut.ownerByCity || {};
+    // unit.region is a REGION name; ownerByCity is keyed by SETTLEMENT name —
+    // map region→settlement via descr_regions, then look up the owner.
+    let r2s = {};
+    try { if (ownership.regionsPath) r2s = parseDescrRegions(ownership.regionsPath); } catch (e) { /* */ }
+    units = findUnitRecords(saveBuf);
+    for (const u of units) {
+      const city = (u.region && r2s[u.region]) || u.region;
+      u.faction = (city && own[city]) || null;
+    }
+    const byCmd = new Map();
+    for (const u of units) {
+      if (!u.commanderUuid) continue;
+      let a = byCmd.get(u.commanderUuid);
+      if (!a) { a = { commanderUuid: u.commanderUuid, region: u.region, faction: u.faction, unitCount: 0, soldiers: 0 }; byCmd.set(u.commanderUuid, a); }
+      a.unitCount++; a.soldiers += u.soldiers || 0;
+    }
+    armies = [...byCmd.values()];
+  } catch (e) { /* leave empty */ }
+
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
   // — that field is broken: returns 4 for Carthage when truth is 41).
@@ -498,6 +525,8 @@ function crackSave(saveBuf, modDataDir) {
     eventSchedule,              // { count, records:[{category,label,year,season,x,y,scale,warning,isRandom}] }
     scriptCounters,             // { factionIds, scriptState (reform/rebellion timers), engineCounters }
     factionKnowledge,           // { perFaction:{name:{knownTiles,knownSettlements}}, factionsWithTail, totalTuples }
+    units,                      // [{ name, region, faction, commanderUuid, soldiers, maxSoldiers, xp, ... }]
+    armies,                     // commander-led groupings: [{ commanderUuid, region, faction, unitCount, soldiers }]
     ownerByCity: ownersOut.ownerByCity || {},
     _stats: {
       ms: Date.now() - t0,
@@ -511,6 +540,8 @@ function crackSave(saveBuf, modDataDir) {
       sieges: sieges.length,
       events: events.length,
       factionsWithKnowledge: factionKnowledge ? factionKnowledge.factionsWithTail : 0,
+      units: units.length,
+      armies: armies.length,
       wars: diplomacy ? diplomacy._meta?.warPairs : null,
       saveSizeBytes: saveBuf.length,
     },

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.761",
+    date: "2026-05-31",
+    items: [
+      { type: "feature", text: "**Units & armies in `crackSave()`.** The save reader now also decodes the full unit roster (per-unit type, region, soldiers/max, XP) and groups commander-led units into armies, attributed to factions via region ownership. The save inspector shows a faction's military (stacks + soldiers), and the save-diff now reports per-faction recruitment / casualties between two saves. Completes crackSave's picture (it previously had characters but no units)." },
+    ],
+  },
+  {
     version: "0.9.760",
     date: "2026-05-31",
     items: [

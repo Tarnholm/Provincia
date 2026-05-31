@@ -77,6 +77,18 @@ function main() {
     console.log(`  ${pad(m.fullName, 26)} ${pad(m.gender, 6)} age ${padl(m.age == null ? "?" : m.age, 3)} ${m.alive ? "alive" : "DEAD "}  ${rel}`);
   }
 
+  // Military: the chosen faction's units & armies
+  if (Array.isArray(r.units)) {
+    const fUnits = r.units.filter((u) => u.faction === fac);
+    const fArmies = (r.armies || []).filter((a) => a.faction === fac);
+    const soldiers = fUnits.reduce((s, u) => s + (u.soldiers || 0), 0);
+    const garrison = fUnits.filter((u) => !u.commanderUuid).length;
+    console.log(`\n-- military: ${fac} (${fUnits.length} units, ${soldiers} soldiers; ${fArmies.length} field/garrison stacks, ${garrison} commander-less units) --`);
+    for (const a of fArmies.sort((x, y) => y.soldiers - x.soldiers).slice(0, 8)) {
+      console.log(`  army @${pad(a.region || "?", 16)} ${padl(a.unitCount, 2)} units / ${padl(a.soldiers, 5)} soldiers`);
+    }
+  }
+
   // Settlements for the chosen faction — growth/income/order
   const cities = (r.factions[fac] && r.factions[fac].regions) || [];
   console.log(`\n-- settlements: ${fac} (${cities.length}) --`);
