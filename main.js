@@ -714,12 +714,23 @@ function loadModCharacterData(modDataDir) {
       if (!byFaction[f]) byFaction[f] = { members: [], relatives: [], named: {} };
       return byFaction[f];
     };
+    // 0.9.770: key the `named` map by FULL name, not first name. Roman
+    // families share praenomina (Gaius, Lucius, Quintus, Gnaeus, Publius,
+    // Marcus...), so a first-name-only key collided distinct people. Worse,
+    // the character_record merge below then OVERWROTE an adult general's
+    // age/gender/alive with a same-praenomen CHILD's values — e.g. the Julii
+    // leader Quintus Ogulnius_Gallus (age 60) was clobbered to age 4 by the
+    // child "Quintus Iunius_Brutus", dropping 6 of 20 family heads below the
+    // age>=16 generals filter (tree showed 14 instead of 20). Full-name keys
+    // disambiguate; the relative graph already references full names too.
+    // See findings-family-tree-2026-05-31.md.
+    const nameKey = (first, last) => `${first}|${(last || "").replace(/_/g, " ")}`;
     // Index named characters (those with `character` lines) so we can
     // merge in their age/tags when they appear in relatives blocks.
     for (const c of fullCharRecords) {
       if (!c.faction) continue;
       const bucket = upsertFaction(c.faction);
-      bucket.named[c.firstName] = {
+      bucket.named[nameKey(c.firstName, c.lastName)] = {
         firstName: c.firstName, lastName: c.lastName,
         age: c.age, alive: true, gender: "male",
         tags: c.tags || [], role: c.charSubType || "named_character",
@@ -778,7 +789,10 @@ function loadModCharacterData(modDataDir) {
           const bucket = upsertFaction(currentFaction);
           // If this character_record refers to a named character we
           // already recorded, just enrich it. Otherwise add a new member.
-          const existing = bucket.named[first];
+          // 0.9.770: match on FULL name. A first-name match let a child's
+          // record clobber an adult general who shared the praenomen (see
+          // the named-map note above).
+          const existing = bucket.named[nameKey(first, lastName)];
           if (existing) {
             if (ageM) existing.age = parseInt(ageM[1]);
             existing.gender = gender;

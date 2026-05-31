@@ -232,7 +232,7 @@ function MemberCard({ char: rawChar, culture, modDataDir, portraitSize = 64, com
       ref={cardRef}
       data-anim-id={`fam-card-${char.firstName || "?"}-${char.lastName || ""}`}
       title={interactive ? tooltipFor(char) + "\n\n(left-click: center tree, right-click: info)" : tooltipFor(char)}
-      onClick={interactive && onSelectCharacter ? () => onSelectCharacter(char.firstName) : undefined}
+      onClick={interactive && onSelectCharacter ? () => onSelectCharacter(famKey(char)) : undefined}
       onContextMenu={onShowInfo ? (e) => { e.preventDefault(); onShowInfo({ type: "character", character: char, label: fullName }); } : undefined}
       style={{
       display: "inline-flex", flexDirection: "column", alignItems: "center",
@@ -371,7 +371,7 @@ function FamilyNode({ family, allByHead, culture, modDataDir, depth = 0, coordTo
               }} />
             )}
             {visibleChildren.map(({ c, v }, i) => {
-              const sub = allByHead && allByHead.get(c.firstName);
+              const sub = allByHead && allByHead.get(famKey(c));
               const subFamily = sub ? {
                 husband: c, wife: sub.spouse, children: sub.children || [],
               } : null;
@@ -406,51 +406,86 @@ function FamilyNode({ family, allByHead, culture, modDataDir, depth = 0, coordTo
 }
 
 // ── Resolve a faction's tree (mod-data) into an array of root families ──
+//
+// 0.9.770: identity is now a FULL-name key, not the bare first name. Roman
+// families re-use praenomina (Gaius, Lucius, Quintus...), so first-name keys
+// collided distinct people: byName.get("Gaius") returned whichever Gaius was
+// stored last, and familyByHead.get("Gaius") merged unrelated households —
+// collapsing the visible tree and dropping family heads. The `relative`
+// blocks already reference characters by full name ("Quintus Ogulnius_Gallus"),
+// so a full-name key resolves them unambiguously. See
+// findings-family-tree-2026-05-31.md.
+
+// Normalize a "First Surname" string (or a member object) to a stable key.
+// Surnames may carry underscores (Ogulnius_Gallus) — collapse to spaces so the
+// `character`/`character_record`/`relative` spellings all hash the same.
+export function famKey(nameOrChar) {
+  if (!nameOrChar) return "";
+  if (typeof nameOrChar === "object") {
+    const fn = nameOrChar.firstName || "";
+    const ln = (nameOrChar.lastName || "").replace(/_/g, " ").trim();
+    return ln ? `${fn} ${ln}` : fn;
+  }
+  return String(nameOrChar).replace(/_/g, " ").replace(/\s+/g, " ").trim();
+}
 
 function buildRoots(familyData) {
-  const byName = new Map();
-  for (const c of familyData.members) byName.set(c.firstName, c);
-  const childNames = new Set();
-  for (const rel of (familyData.relatives || [])) {
-    for (const c of (rel.children || [])) childNames.add(c.split(/\s+/)[0]);
+  const byName = new Map();      // full-name key -> member object
+  const byFirst = new Map();     // bare first name -> member (fallback only)
+  for (const c of familyData.members) {
+    byName.set(famKey(c), c);
+    if (!byFirst.has(c.firstName)) byFirst.set(c.firstName, c);
   }
-  const familyByHead = new Map();
+  // Resolve a relative-line name (full "First Surname") to a member object,
+  // preferring the exact full-name match, then a bare first-name fallback for
+  // sparse mods that only spell the praenomen, else a synthetic stub.
+  const resolve = (nm, extra) => {
+    const key = famKey(nm);
+    const hit = byName.get(key) || byFirst.get(key.split(/\s+/)[0]);
+    if (hit) return hit;
+    const parts = key.split(/\s+/);
+    return { firstName: parts[0], lastName: parts.slice(1).join(" ") || null, ...extra };
+  };
+  const childKeys = new Set();
   for (const rel of (familyData.relatives || [])) {
-    const husbandFirst = rel.husband.split(/\s+/)[0];
-    familyByHead.set(husbandFirst, {
-      spouse: rel.wife ? (byName.get(rel.wife.split(/\s+/)[0]) || { firstName: rel.wife, gender: "female" }) : null,
-      children: (rel.children || []).map(c => byName.get(c.split(/\s+/)[0]) || { firstName: c.split(/\s+/)[0] }),
+    for (const c of (rel.children || [])) childKeys.add(famKey(c));
+  }
+  const familyByHead = new Map(); // husband full-name key -> { spouse, children }
+  for (const rel of (familyData.relatives || [])) {
+    familyByHead.set(famKey(rel.husband), {
+      spouse: rel.wife ? resolve(rel.wife, { gender: "female" }) : null,
+      children: (rel.children || []).map(c => resolve(c, {})),
     });
   }
   const roots = (familyData.relatives || [])
-    .filter(rel => !childNames.has(rel.husband.split(/\s+/)[0]))
+    .filter(rel => !childKeys.has(famKey(rel.husband)))
     .map(rel => ({
-      husband: byName.get(rel.husband.split(/\s+/)[0]) || { firstName: rel.husband, age: null, alive: true },
-      wife: rel.wife ? (byName.get(rel.wife.split(/\s+/)[0]) || { firstName: rel.wife, gender: "female" }) : null,
-      children: (rel.children || []).map(c => byName.get(c.split(/\s+/)[0]) || { firstName: c.split(/\s+/)[0] }),
+      husband: resolve(rel.husband, { age: null, alive: true }),
+      wife: rel.wife ? resolve(rel.wife, { gender: "female" }) : null,
+      children: (rel.children || []).map(c => resolve(c, {})),
     }));
   return { roots, familyByHead };
 }
 
-// Find the tree that contains the given character (by firstName). Returns
+// Find the tree that contains the given character (by full-name key). Returns
 // the root family containing them (anywhere in the descent chain).
-function findRootContaining(roots, familyByHead, firstName) {
-  if (!firstName) return roots[0];
+function findRootContaining(roots, familyByHead, key) {
+  if (!key) return roots[0];
   for (const r of roots) {
-    if (containsName(r, familyByHead, firstName)) return r;
+    if (containsName(r, familyByHead, key)) return r;
   }
   return roots[0];
 }
-function containsName(family, familyByHead, name) {
+function containsName(family, familyByHead, key) {
   if (!family) return false;
-  if (family.husband && family.husband.firstName === name) return true;
-  if (family.wife && family.wife.firstName === name) return true;
+  if (family.husband && famKey(family.husband) === key) return true;
+  if (family.wife && famKey(family.wife) === key) return true;
   for (const c of (family.children || [])) {
-    if (c.firstName === name) return true;
-    const sub = familyByHead.get(c.firstName);
+    if (famKey(c) === key) return true;
+    const sub = familyByHead.get(famKey(c));
     if (sub) {
       const subFamily = { husband: c, wife: sub.spouse, children: sub.children || [] };
-      if (containsName(subFamily, familyByHead, name)) return true;
+      if (containsName(subFamily, familyByHead, key)) return true;
     }
   }
   return false;
@@ -569,12 +604,12 @@ function GeneralsList({ generals, selectedName, onSelect, culture, modDataDir, c
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {generals.map((g) => {
-        const isSel = g.firstName === selectedName;
+        const isSel = famKey(g) === selectedName;
         const dead = g.alive === false;
         return (
           <button
             key={g.firstName + (g.lastName || "")}
-            onClick={() => onSelect(g.firstName)}
+            onClick={() => onSelect(famKey(g))}
             style={{
               display: "flex", alignItems: "center", gap: 8,
               padding: "4px 8px",
@@ -897,7 +932,10 @@ export default function FamilyTree({ characterExtras, v1PortraitsByCoord, statsC
     const seenNames = new Set();
     const gens = factionData.members
       .filter(c => c.gender !== "female" && c.age != null && c.age >= 16 && c.alive !== false)
-      .filter(c => { if (seenNames.has(c.firstName)) return false; seenNames.add(c.firstName); return true; })
+      // 0.9.770: dedup by FULL name. First-name dedup collapsed distinct
+      // generals sharing a Roman praenomen (two Gaii, three Lucii...) into
+      // one sidebar row — a second way the Julii list lost members.
+      .filter(c => { const k = famKey(c); if (seenNames.has(k)) return false; seenNames.add(k); return true; })
       .sort((a, b) => {
         // Leader first, heir second, then by age descending
         const al = a.tags && a.tags.includes("leader") ? 0 : a.tags && a.tags.includes("heir") ? 1 : 2;
@@ -921,6 +959,13 @@ export default function FamilyTree({ characterExtras, v1PortraitsByCoord, statsC
         gens.unshift(husband);
       }
     }
+    // Diagnostic: which source fed the tree + the member/root/general counts,
+    // so provincia.log shows whether the praenomen-clobber regression is gone.
+    if (typeof console !== "undefined") {
+      const males = factionData.members.filter(c => c.gender !== "female").length;
+      const adults = factionData.members.filter(c => c.gender !== "female" && c.age != null && c.age >= 16 && c.alive !== false).length;
+      console.log(`[family-tree] source=modFamiliesByFaction[${selectedFaction}] members=${factionData.members.length} (males=${males}, adultMales>=16=${adults}) relatives=${(factionData.relatives || []).length} rootFamilies=${r.length} generals(sidebar)=${gens.length}`);
+    }
     return { roots: r, familyByHead: f, generals: gens };
   }, [factionData, pendingGenerals, selectedFaction]);
 
@@ -928,7 +973,7 @@ export default function FamilyTree({ characterExtras, v1PortraitsByCoord, statsC
   useEffect(() => {
     if (factionData) {
       const leader = generals.find(g => g.tags && g.tags.includes("leader")) || generals[0];
-      setSelectedGeneral(leader ? leader.firstName : null);
+      setSelectedGeneral(leader ? famKey(leader) : null);
     }
   }, [factionData, generals]);
 
