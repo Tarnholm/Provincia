@@ -222,7 +222,12 @@ function findFactionMarkers(buf) {
       factionName += String.fromCharCode(b);
       end++;
     }
-    if (factionName.length > 0 && factionName.length < 30) {
+    // Drop `captain_card_<faction>_rebel` markers: these are emergent-army UI
+    // banner assets (concentrated in the save's obituary tail), NOT per-faction
+    // character delimiters — keying off them bleeds dead characters onto phantom
+    // "<faction>_rebel" factions (same fix as saveCracker.findFactionMarkers).
+    // Genuine rebel slots are `_rebels` (plural) / `slave`, which this preserves.
+    if (factionName.length > 0 && factionName.length < 30 && !/_rebel$/.test(factionName)) {
       markers.push({ pos: p, faction: factionName });
     }
     p += pattern.length;
