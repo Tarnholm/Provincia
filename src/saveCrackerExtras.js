@@ -776,6 +776,17 @@ function locateDiplomacyMatrix(buf, N) {
     return (o >= 0 && o + 4 <= buf.length) ? buf.readInt32LE(o) : null;
   };
   const limit = Math.min(buf.length - 64, 0x800000); // matrix seen ~1.1 MB in; cap scan
+  // The per-candidate symmetry check is O(N²)·81 (~2.3M cell reads). On a normal
+  // save the real matrix locks within a few candidates, but a save with a large
+  // matrix-LIKE byte region (zeroed/structured memory matching the 0/200/2
+  // signature) can present tens of thousands of candidates and hang here (seen
+  // on the Raymond "Turn 5 Start" RIS save). Two guards keep it bounded:
+  //  (1) after a stride is found, advance p by `stride` — a matrix-like run is
+  //      re-detected at every byte otherwise, so collapse it to one eval/cell.
+  //  (2) a global work budget: if the expensive symmetry reads exceed it before
+  //      a lock, bail to null (diplomacy unavailable) rather than hang.
+  let work = 0;
+  const WORK_BUDGET = 300_000_000; // ~a few seconds; normal saves lock in << this
   for (let p = 0x4000; p < limit; p++) {
     if (!sig(p)) continue;
     const key = buf.readUInt32LE(p + 4);
@@ -803,12 +814,15 @@ function locateDiplomacyMatrix(buf, N) {
         if (a == null || b == null) continue;
         if (a !== 200 || b !== 200) { tot++; if (a === b) sym++; }
       }
+      work += (N * (N - 1)) / 2;
       const frac = tot ? sym / tot : 0;
       if (frac > best.frac || (frac === best.frac && Math.abs(k) < Math.abs(best.k))) best = { frac, base, k };
+      if (best.frac >= 0.999) break; // a real matrix locks at ~100% — stop sweeping
     }
     // a real matrix locks at ~100% symmetry; reject false-positive regions
-    if (best.frac < 0.8) continue;
-    return { base: best.base + 8, stride, key, C: 0, symmetry: best.frac };
+    if (best.frac >= 0.8) return { base: best.base + 8, stride, key, C: 0, symmetry: best.frac };
+    if (work > WORK_BUDGET) return null; // bounded: don't hang on matrix-like noise
+    p += stride; // rejected: skip this candidate region instead of re-evaluating every byte
   }
   return null;
 }

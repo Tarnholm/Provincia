@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.765",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Fixed a hang when reading certain saves.** The diplomacy-matrix locator could spin indefinitely on a save containing a large region of matrix-like bytes (reproduced on a real turn-5 campaign save), freezing the reader. It's now bounded — it skips past rejected regions and gives up gracefully (diplomacy simply shows as unavailable for that save) instead of locking up. No change to saves that already read correctly." },
+    ],
+  },
+  {
     version: "0.9.764",
     date: "2026-05-31",
     items: [
