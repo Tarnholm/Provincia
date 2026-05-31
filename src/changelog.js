@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.762",
+    date: "2026-05-31",
+    items: [
+      { type: "improvement", text: "**Trade-route derivation refined (dev tool).** The derived trade-network tool now grants cross-faction trade rights on *allied state* as well as a military bond — so pure trade-rights / non-aggression pacts (descr_strat rel199 + bond 6) are no longer missed, with the descr_strat starting alliances as a floor. Verified the sea logic: two ports trade by sea only when they share the *same connected sea body* (Sicily↔Carthage share the Mediterranean → yes; Atlantic↔Black Sea → no). Added a first-cut, clearly-labelled HYPOTHESIS trade-value per link (relative distance-decay, shorter routes score higher) — an approximation, NOT the engine's gold formula." },
+    ],
+  },
+  {
     version: "0.9.761",
     date: "2026-05-31",
     items: [

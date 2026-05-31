@@ -61,16 +61,16 @@
             "level": "irrigation_aquaducts"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "port_buildings",
             "level": "shipwright"
           },
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       },
@@ -209,12 +209,12 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_italic",
             "level": "temple_italic_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -937,16 +937,16 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_ionian",
             "level": "temple_ionian_1"
           },
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -1033,16 +1033,16 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_italic",
             "level": "temple_italic_1"
           },
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -1365,16 +1365,16 @@
             "level": "salted_fish_1"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_2"
-          },
-          {
             "type": "temple_complex_phoenician",
             "level": "temple_phoenician_2"
           },
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       },
@@ -2073,10 +2073,6 @@
             "level": "shipwright"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "sedentary_animal_husbandry",
             "level": "livestock_drive"
           },
@@ -2087,6 +2083,10 @@
           {
             "type": "autonomous_mint",
             "level": "autonomous_mint"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       },
@@ -2321,10 +2321,6 @@
             "level": "amphora_maker"
           },
           {
-            "type": "purple_dye_production",
-            "level": "purple_dye_1"
-          },
-          {
             "type": "rainfed_farming",
             "level": "contour_furrows"
           },
@@ -2339,6 +2335,10 @@
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "purple_dye_production",
+            "level": "purple_dye_1"
           }
         ]
       },
@@ -2449,12 +2449,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_phoenician",
             "level": "temple_phoenician_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -3098,10 +3098,6 @@
             "level": "mic_2"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "port_buildings",
             "level": "shipwright"
           },
@@ -3116,6 +3112,10 @@
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       },
@@ -3302,10 +3302,6 @@
             "level": "shipwright"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "temple_complex_ionian",
             "level": "temple_ionian_2"
           },
@@ -3316,6 +3312,10 @@
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
           }
         ]
       },
@@ -3404,6 +3404,10 @@
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       },
@@ -3610,10 +3614,6 @@
             "level": "honey_1"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
           },
@@ -3624,6 +3624,10 @@
           {
             "type": "temple_complex_ionian",
             "level": "temple_ionian_1"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       },
@@ -3914,16 +3918,16 @@
             "level": "mic_1"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
           {
             "type": "temple_complex_macedonian",
             "level": "temple_macedonian_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -4334,12 +4338,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -4394,10 +4398,6 @@
             "level": "canal_network"
           },
           {
-            "type": "marble_production",
-            "level": "marble_2"
-          },
-          {
             "type": "market",
             "level": "market"
           },
@@ -4408,6 +4408,10 @@
           {
             "type": "theatres",
             "level": "odeon"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_2"
           }
         ]
       },
@@ -4767,10 +4771,6 @@
             "level": "market"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "port_buildings",
             "level": "shipwright"
           },
@@ -4789,6 +4789,10 @@
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "artisans",
+            "level": "artisans"
           }
         ]
       },
@@ -4835,10 +4839,6 @@
             "level": "contour_furrows"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_2"
-          },
-          {
             "type": "temple_complex_judaean",
             "level": "temple_judaean_3"
           },
@@ -4849,6 +4849,10 @@
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_2"
           }
         ]
       },
@@ -4955,16 +4959,16 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_egyptian",
             "level": "temple_egyptian_1"
           },
           {
             "type": "textiles_production",
             "level": "textiles_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -5003,10 +5007,6 @@
             "level": "basin_irrigation"
           },
           {
-            "type": "marble_production",
-            "level": "marble_2"
-          },
-          {
             "type": "market",
             "level": "market"
           },
@@ -5025,6 +5025,10 @@
           {
             "type": "theatres",
             "level": "odeon"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_2"
           }
         ]
       },
@@ -5295,10 +5299,6 @@
             "level": "irrigation_ditches"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
           },
@@ -5313,6 +5313,10 @@
           {
             "type": "temple_complex_carian",
             "level": "temple_carian_1"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       },
@@ -5595,10 +5599,6 @@
             "level": "market"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "port_buildings",
             "level": "shipwright"
           },
@@ -5609,6 +5609,10 @@
           {
             "type": "timber_industry",
             "level": "lumber_camp"
+          },
+          {
+            "type": "artisans",
+            "level": "artisans"
           }
         ]
       },
@@ -5763,12 +5767,12 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_judaean",
             "level": "temple_judaean_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -6199,12 +6203,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_ionian",
             "level": "temple_ionian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -6319,12 +6323,12 @@
             "level": "trader"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_egyptian",
             "level": "temple_egyptian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -6783,10 +6787,6 @@
             "level": "irrigation_ditches"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
           },
@@ -6801,6 +6801,10 @@
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       },
@@ -6907,12 +6911,12 @@
             "level": "open_grazing_fields"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -7023,12 +7027,12 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_ionian",
             "level": "temple_ionian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -7191,12 +7195,12 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_lycian",
             "level": "temple_lycian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -7299,12 +7303,12 @@
             "level": "trader"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_pamphylian_greek",
             "level": "temple_pamphylian_greek_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -7455,12 +7459,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_phoenician",
             "level": "temple_phoenician_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -7855,12 +7859,12 @@
             "level": "trader"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_egyptian",
             "level": "temple_egyptian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -7999,16 +8003,16 @@
             "level": "trader"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_egyptian",
             "level": "temple_egyptian_1"
           },
           {
             "type": "textiles_production",
             "level": "textiles_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -8455,16 +8459,16 @@
             "level": "market"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_2"
-          },
-          {
             "type": "temple_complex_egyptian",
             "level": "temple_egyptian_2"
           },
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_2"
           }
         ]
       },
@@ -8547,16 +8551,16 @@
             "level": "shipwright"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "temple_complex_carian",
             "level": "temple_carian_2"
           },
           {
             "type": "theatres",
             "level": "odeon"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       }
@@ -8800,12 +8804,12 @@
             "level": "nomadic_herding"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_macedonian",
             "level": "temple_macedonian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -8916,12 +8920,12 @@
             "level": "trader"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_assyrian",
             "level": "temple_assyrian_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -8976,12 +8980,12 @@
             "level": "mic_1"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_arab",
             "level": "temple_arab_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -9112,12 +9116,12 @@
             "level": "irrigation_aquaducts"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_2"
-          },
-          {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_2"
           }
         ]
       },
@@ -9186,6 +9190,10 @@
           {
             "type": "autonomous_mint",
             "level": "autonomous_mint"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_2"
           }
         ]
       },
@@ -9400,12 +9408,12 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_pamphylian",
             "level": "temple_pamphylian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -9452,12 +9460,12 @@
             "level": "trader"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_lycaonian",
             "level": "temple_lycaonian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -9608,10 +9616,6 @@
             "level": "market"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_3"
           },
@@ -9622,6 +9626,10 @@
           {
             "type": "autonomous_mint",
             "level": "autonomous_mint"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       },
@@ -9724,10 +9732,6 @@
             "level": "collective_draw_rights"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "spices_trading",
             "level": "spices_1"
           },
@@ -9738,6 +9742,10 @@
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       },
@@ -9976,16 +9984,16 @@
             "level": "market"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_2"
           },
           {
             "type": "wine_industry",
             "level": "wine_2"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       },
@@ -10152,16 +10160,16 @@
             "level": "contour_furrows"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_2"
-          },
-          {
             "type": "temple_complex_aeolian",
             "level": "temple_aeolian_2"
           },
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_2"
           }
         ]
       },
@@ -10208,16 +10216,16 @@
             "level": "trader"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
           {
             "type": "temple_complex_aeolian",
             "level": "temple_aeolian_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -10808,12 +10816,12 @@
             "level": "olive_1"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_macedonian",
             "level": "temple_macedonian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -10948,10 +10956,6 @@
             "level": "mic_2"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_2"
-          },
-          {
             "type": "port_buildings",
             "level": "shipwright"
           },
@@ -10970,6 +10974,10 @@
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_2"
           }
         ]
       },
@@ -11072,10 +11080,6 @@
             "level": "trader"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
@@ -11086,6 +11090,10 @@
           {
             "type": "timber_industry",
             "level": "lumber_camp"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -11304,12 +11312,12 @@
             "level": "irrigation_aquaducts"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_2"
-          },
-          {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_2"
           }
         ]
       },
@@ -11420,12 +11428,12 @@
             "level": "mic_1"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_macedonian",
             "level": "temple_macedonian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -12516,12 +12524,12 @@
             "level": "trader"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_carian",
             "level": "temple_carian_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -13088,12 +13096,12 @@
             "level": "trader"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -13524,16 +13532,16 @@
             "level": "mic_1"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
           {
             "type": "temple_complex_macedonian",
             "level": "temple_macedonian_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -13772,12 +13780,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -14009,10 +14017,6 @@
             "level": "roads"
           },
           {
-            "type": "jewelry",
-            "level": "jewelry_1"
-          },
-          {
             "type": "market",
             "level": "market"
           },
@@ -14027,6 +14031,10 @@
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
           }
         ]
       },
@@ -14089,12 +14097,12 @@
             "level": "irrigation_aquaducts"
           },
           {
-            "type": "sulphur_industry",
-            "level": "sulphur_2"
-          },
-          {
             "type": "autonomous_mint",
             "level": "autonomous_mint"
+          },
+          {
+            "type": "sulphur_industry",
+            "level": "sulphur_2"
           }
         ]
       },
@@ -14211,6 +14219,10 @@
           {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_2"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
           }
         ]
       },
@@ -14501,16 +14513,16 @@
             "level": "trader"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_1"
           },
           {
             "type": "timber_industry",
             "level": "loggers"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       }
@@ -14756,12 +14768,12 @@
             "level": "mic_1"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_armenian",
             "level": "temple_armenian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -15336,10 +15348,6 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_1"
           },
@@ -15350,6 +15358,10 @@
           {
             "type": "wetland_pastoralism",
             "level": "reed_harvesting"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -15586,12 +15598,12 @@
             "level": "shipwright"
           },
           {
-            "type": "sulphur_industry",
-            "level": "sulphur_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_3"
+          },
+          {
+            "type": "sulphur_industry",
+            "level": "sulphur_1"
           }
         ]
       }
@@ -15872,10 +15884,6 @@
             "level": "trader"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
@@ -15886,6 +15894,10 @@
           {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       }
@@ -16256,12 +16268,12 @@
             "level": "mic_1"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -16548,16 +16560,16 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_illyrian",
             "level": "temple_illyrian_2"
           },
           {
             "type": "timber_industry",
             "level": "loggers"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -17046,10 +17058,6 @@
             "level": "mic_2"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "pottery_production",
             "level": "amphora_maker"
           },
@@ -17060,6 +17068,10 @@
           {
             "type": "timber_industry",
             "level": "lumber_camp"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       },
@@ -17167,10 +17179,6 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "sedentary_animal_husbandry",
             "level": "enclosures"
           },
@@ -17185,6 +17193,10 @@
           {
             "type": "justice_court",
             "level": "magistrate_court"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       }
@@ -17236,12 +17248,12 @@
             "level": "mic_2"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_thracian",
             "level": "temple_thracian_2"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       }
@@ -17394,12 +17406,12 @@
             "level": "terraces"
           },
           {
-            "type": "marble_production",
-            "level": "marble_2"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
+          },
+          {
+            "type": "mines",
+            "level": "mines+1"
           }
         ]
       },
@@ -17543,16 +17555,16 @@
             "level": "mic_2"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_2"
           },
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -19290,10 +19302,6 @@
             "level": "mic_2"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
@@ -19304,6 +19312,10 @@
           {
             "type": "timber_industry",
             "level": "loggers"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -19407,12 +19419,12 @@
             "level": "mic_2"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "temple_complex_thracian",
             "level": "temple_thracian_3"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       },
@@ -19496,16 +19508,16 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "salted_fish",
             "level": "salted_fish_1"
           },
           {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -19909,12 +19921,12 @@
             "level": "shifting_cultivation_fields"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_2"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -20034,16 +20046,16 @@
             "level": "irrigation_ditches"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
           },
           {
             "type": "temple_complex_cappadocian",
             "level": "temple_cappadocian_1"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       },
@@ -20309,12 +20321,12 @@
             "level": "mic_2"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -20487,10 +20499,6 @@
             "level": "irrigation_ditches"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
           },
@@ -20501,6 +20509,10 @@
           {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_2"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       },
@@ -20576,12 +20588,12 @@
             "level": "mic_2"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_2"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -20652,16 +20664,16 @@
             "level": "mic_1"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_1"
           },
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       }
@@ -21084,16 +21096,16 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_2"
           },
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -21218,10 +21230,6 @@
             "level": "hospital_1"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
           },
@@ -21244,6 +21252,10 @@
           {
             "type": "wine_industry",
             "level": "wine_2"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       }
@@ -21375,12 +21387,12 @@
             "level": "trader"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_iranian",
             "level": "temple_iranian_1"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -21527,6 +21539,10 @@
           {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_3"
+          },
+          {
+            "type": "smith",
+            "level": "blacksmith"
           }
         ]
       },
@@ -21687,16 +21703,16 @@
             "level": "mic_2"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_caucasian",
             "level": "temple_caucasian_2"
           },
           {
             "type": "timber_industry",
             "level": "loggers"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -22272,10 +22288,6 @@
             "level": "roads"
           },
           {
-            "type": "marble_production",
-            "level": "marble_2"
-          },
-          {
             "type": "market",
             "level": "market"
           },
@@ -22306,6 +22318,10 @@
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_2"
           }
         ]
       }
@@ -22511,12 +22527,12 @@
             "level": "mic_2"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_delmato_pannonian",
             "level": "temple_delmato_pannonian_2"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -22786,12 +22802,12 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_2"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -23333,6 +23349,10 @@
           {
             "type": "temple_complex_epirote",
             "level": "temple_epirote_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -23798,10 +23818,6 @@
             "level": "shipwright"
           },
           {
-            "type": "purple_dye_production",
-            "level": "purple_dye_1"
-          },
-          {
             "type": "salted_fish",
             "level": "salted_fish_2"
           },
@@ -23816,6 +23832,10 @@
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       }
@@ -24355,12 +24375,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_arab",
             "level": "temple_arab_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -25226,6 +25246,10 @@
           {
             "type": "wetland_pastoralism",
             "level": "reed_harvesting"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -25360,6 +25384,10 @@
           {
             "type": "temple_complex_scythian",
             "level": "temple_scythian_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -25569,10 +25597,6 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_iberian",
             "level": "temple_iberian_2"
           },
@@ -25583,6 +25607,10 @@
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -25895,10 +25923,6 @@
             "level": "roads"
           },
           {
-            "type": "jewelry",
-            "level": "jewelry_1"
-          },
-          {
             "type": "market",
             "level": "market"
           },
@@ -25917,6 +25941,10 @@
           {
             "type": "wine_industry",
             "level": "wine_2"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
           }
         ]
       },
@@ -26011,10 +26039,6 @@
             "level": "basin_irrigation"
           },
           {
-            "type": "jewelry",
-            "level": "jewelry_1"
-          },
-          {
             "type": "market",
             "level": "market"
           },
@@ -26029,6 +26053,10 @@
           {
             "type": "textiles_production",
             "level": "textiles_1"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
           }
         ]
       },
@@ -26933,12 +26961,12 @@
             "level": "nomadic_herding"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_scythian",
             "level": "temple_scythian_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -27048,6 +27076,10 @@
           {
             "type": "temple_complex_ethiopian",
             "level": "temple_ethiopian_2"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       },
@@ -27525,12 +27557,12 @@
             "level": "mic_2"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_iberian",
             "level": "temple_iberian_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -27582,16 +27614,16 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_germanic",
             "level": "temple_germanic_2"
           },
           {
             "type": "wetland_pastoralism",
             "level": "reed_harvesting"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -27641,6 +27673,10 @@
           {
             "type": "temple_complex_liburnian",
             "level": "temple_liburnian_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -28107,10 +28143,6 @@
             "level": "roads"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
           },
@@ -28121,6 +28153,10 @@
           {
             "type": "temple_complex_phrygian",
             "level": "temple_phrygian_2"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       }
@@ -30040,12 +30076,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_ionian",
             "level": "temple_ionian_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -30182,16 +30218,16 @@
             "level": "mic_2"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "olive_cultivation",
             "level": "olive_2"
           },
           {
             "type": "temple_complex_iberian",
             "level": "temple_iberian_3"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       },
@@ -30263,10 +30299,6 @@
             "level": "mic_2"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "port_buildings",
             "level": "shipwright"
           },
@@ -30277,6 +30309,10 @@
           {
             "type": "textiles_production",
             "level": "textiles_1"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       }
@@ -30417,12 +30453,12 @@
             "level": "mic_2"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_arab",
             "level": "temple_arab_2"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       }
@@ -30635,12 +30671,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -30772,16 +30808,16 @@
             "level": "shipwright"
           },
           {
-            "type": "smith",
-            "level": "blacksmith"
-          },
-          {
             "type": "temple_complex_mysian",
             "level": "temple_mysian_3"
           },
           {
             "type": "academic",
             "level": "academy"
+          },
+          {
+            "type": "smith",
+            "level": "blacksmith"
           }
         ]
       },
@@ -30881,10 +30917,6 @@
             "level": "basin_irrigation"
           },
           {
-            "type": "jewelry",
-            "level": "jewelry_1"
-          },
-          {
             "type": "market",
             "level": "market"
           },
@@ -30907,6 +30939,10 @@
           {
             "type": "wine_industry",
             "level": "wine_2"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
           }
         ]
       },
@@ -31132,12 +31168,12 @@
             "level": "mic_2"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "temple_complex_arab",
             "level": "temple_arab_2"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -31706,12 +31742,12 @@
             "level": "mic_2"
           },
           {
-            "type": "mines",
-            "level": "mines"
-          },
-          {
             "type": "temple_complex_arab",
             "level": "temple_arab_3"
+          },
+          {
+            "type": "mines",
+            "level": "mines"
           }
         ]
       },
@@ -32599,12 +32635,12 @@
             "level": "mic_2"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -32724,12 +32760,12 @@
             "level": "shipwright"
           },
           {
-            "type": "purple_dye_production",
-            "level": "purple_dye_1"
-          },
-          {
             "type": "temple_complex_phoenician",
             "level": "temple_phoenician_3"
+          },
+          {
+            "type": "purple_dye_production",
+            "level": "purple_dye_1"
           }
         ]
       }
@@ -33004,12 +33040,12 @@
             "level": "mic_2"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_assyrian",
             "level": "temple_assyrian_2"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -33421,16 +33457,16 @@
             "level": "irrigation_aquaducts"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_2"
-          },
-          {
             "type": "port_buildings",
             "level": "dockyard"
           },
           {
             "type": "academic",
             "level": "academy"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_2"
           }
         ]
       },
@@ -33489,12 +33525,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -33665,16 +33701,16 @@
             "level": "port"
           },
           {
-            "type": "stone_quarry",
-            "level": "stone_1"
-          },
-          {
             "type": "temple_complex_ionian",
             "level": "temple_ionian_1"
           },
           {
             "type": "wine_industry",
             "level": "wine_1"
+          },
+          {
+            "type": "stone_quarry",
+            "level": "stone_1"
           }
         ]
       },
@@ -33790,10 +33826,6 @@
             "level": "shipwright"
           },
           {
-            "type": "purple_dye_production",
-            "level": "purple_dye_1"
-          },
-          {
             "type": "temple_complex_dorian",
             "level": "temple_dorian_3"
           },
@@ -33804,6 +33836,10 @@
           {
             "type": "autonomous_mint",
             "level": "autonomous_mint"
+          },
+          {
+            "type": "purple_dye_production",
+            "level": "purple_dye_1"
           }
         ]
       },
@@ -34117,12 +34153,12 @@
             "level": "mic_2"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_2"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -34802,10 +34838,6 @@
             "level": "shipwright"
           },
           {
-            "type": "purple_dye_production",
-            "level": "purple_dye_1"
-          },
-          {
             "type": "spices_trading",
             "level": "spices_1"
           },
@@ -34816,6 +34848,10 @@
           {
             "type": "centralized_mint",
             "level": "centralized_mint"
+          },
+          {
+            "type": "purple_dye_production",
+            "level": "purple_dye_1"
           }
         ]
       }
@@ -35224,16 +35260,16 @@
             "level": "mic_2"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
           {
             "type": "temple_complex_venetic",
             "level": "temple_venetic_2"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -35337,10 +35373,6 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "shifting_cultivation",
             "level": "shifting_cultivation_fields"
           },
@@ -35351,6 +35383,10 @@
           {
             "type": "timber_industry",
             "level": "loggers"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       }
@@ -35809,10 +35845,6 @@
             "level": "shipwright"
           },
           {
-            "type": "smith",
-            "level": "blacksmith"
-          },
-          {
             "type": "temple_complex_celtic",
             "level": "temple_celtic_3"
           },
@@ -35823,6 +35855,10 @@
           {
             "type": "wine_industry",
             "level": "wine_2"
+          },
+          {
+            "type": "smith",
+            "level": "blacksmith"
           }
         ]
       },
@@ -38041,12 +38077,12 @@
             "level": "trader"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "timber_industry",
             "level": "loggers"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_1"
           }
         ]
       },
@@ -38633,12 +38669,12 @@
             "level": "shipwright"
           },
           {
-            "type": "salt_production",
-            "level": "salt_2"
-          },
-          {
             "type": "textiles_production",
             "level": "textiles_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_2"
           }
         ]
       },
@@ -40097,12 +40133,12 @@
             "level": "hospital_1"
           },
           {
-            "type": "marble_production",
-            "level": "marble_1"
-          },
-          {
             "type": "market",
             "level": "trader"
+          },
+          {
+            "type": "marble_production",
+            "level": "marble_1"
           }
         ]
       },
@@ -43085,10 +43121,6 @@
             "level": "market"
           },
           {
-            "type": "pitch_gathering",
-            "level": "pitch_2"
-          },
-          {
             "type": "port_buildings",
             "level": "shipwright"
           },
@@ -43099,6 +43131,10 @@
           {
             "type": "wetland_pastoralism",
             "level": "seasonal_pastures"
+          },
+          {
+            "type": "pitch_gathering",
+            "level": "pitch_2"
           }
         ]
       },
@@ -43429,12 +43465,12 @@
             "level": "port"
           },
           {
-            "type": "salt_production",
-            "level": "salt_1"
-          },
-          {
             "type": "textiles_production",
             "level": "textiles_1"
+          },
+          {
+            "type": "salt_production",
+            "level": "salt_1"
           }
         ]
       },
@@ -46025,12 +46061,12 @@
             "level": "canal_network"
           },
           {
-            "type": "jewelry",
-            "level": "jewelry_2"
-          },
-          {
             "type": "academic",
             "level": "academy"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_2"
           }
         ]
       },
@@ -46483,6 +46519,10 @@
           {
             "type": "market",
             "level": "market"
+          },
+          {
+            "type": "jewelry",
+            "level": "jewelry_1"
           }
         ]
       },

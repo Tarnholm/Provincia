@@ -39,6 +39,10 @@ const mine = Object.entries(sett).filter(([, v]) => v.faction === fac);
 console.log(`\n-- ${fac}: ${mine.length} settlements --`);
 for (const [name, v] of mine.slice(0, 20)) {
   const tags = [v.road ? "road" : null, v.seaPort ? "port" : null].filter(Boolean).join("+") || "—";
+  // top-3 nearest partners by the HYPOTHESIS (unverified) distance-decay value
+  const top = Object.entries(v.valuesHypothesis || {}).sort((a, b) => b[1] - a[1]).slice(0, 3)
+    .map(([n, s]) => `${n}:${s.toFixed(2)}`).join(", ");
   console.log(`  ${pad(name, 18)} [${pad(tags, 9)}] ${v.partners.length} partners  (land ${v.landPartners.length}, sea ${v.seaPartners.length})`);
+  if (top) console.log(`  ${pad("", 18)}  ~value(HYP, unverified): ${top}`);
 }
-console.log("");
+console.log("\n  NOTE: ~value is a HYPOTHESIS (distance-decay, shorter=higher) — NOT engine gold.\n");

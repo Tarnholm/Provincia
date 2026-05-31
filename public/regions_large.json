@@ -414,7 +414,7 @@
     "city": "Messana",
     "faction": "mamertines",
     "culture": "Mamertines",
-    "tags": "sicily, aor_campanian, homeland_mamertine, rel_ionian_4, rel_italic_2, Farm7, hills, mediterranean, base_port_level_3, irrigation_springs",
+    "tags": "sicily, aor_oscan, aor_campanian, homeland_mamertine, rel_ionian_4, rel_italic_2, Farm7, hills, mediterranean, base_port_level_3, irrigation_springs",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "ionian 70 italic 30"
@@ -5394,10 +5394,10 @@
     "city": "Sirmion",
     "faction": "ardiaei",
     "culture": "Amantinians",
-    "tags": "aor_galatian, aor_scordiscian, rel_celtic_4, rel_delmato_pannonian_2, Farm9, river_valley, temperate, rivertrade, irrigation_river",
+    "tags": "aor_northern_illyrian, aor_pannonian, rel_celtic_2, rel_delmato_pannonian_4, Farm9, river_valley, temperate, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
-    "ethnicities": "celtic 60 delmato_pannonian 40"
+    "ethnicities": "celtic 40 delmato_pannonian 60"
   },
   "73,43,46": {
     "region": "Tauriscia_Meridionalis",
@@ -5614,7 +5614,7 @@
     "city": "Byllis-Amantia",
     "faction": "ardiaei",
     "culture": "Bylliones-Amantes",
-    "tags": "aor_southern_illyrian, aor_greek, rel_illyrian_4, Farm6, hills, mediterranean, irrigation_river",
+    "tags": "aor_southern_illyrian, rel_illyrian_4, Farm6, hills, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "illyrian 100"
@@ -6044,7 +6044,7 @@
     "city": "Serdike",
     "faction": "odrysians",
     "culture": "Treres-Tilataeans",
-    "tags": "aor_galatian, rel_celtic_3, rel_triballian_1, rel_thracian_4, Farm6, plateau, continental, irrigation_river",
+    "tags": "aor_thracian, aor_galato-thracian, rel_celtic_3, rel_triballian_1, rel_thracian_4, Farm6, plateau, continental, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "celtic 40 triballian 15 thracian 45"
@@ -6124,7 +6124,7 @@
     "city": "Pautalia",
     "faction": "dentheletae",
     "culture": "Dentheletaeans",
-    "tags": "aor_thracian, homeland_dentheletan, aor_dentheletan, aor_thracian_hillmen, rel_thracian_4, Farm6, mountain_valley, continental, rivertrade, irrigation_river",
+    "tags": "aor_thracian, homeland_dentheletan, aor_thracian_hillmen, rel_thracian_4, Farm6, mountain_valley, continental, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "thracian 95 paeonian 5"
@@ -6184,10 +6184,10 @@
     "city": "Herakleia-Sintike",
     "faction": "odrysians",
     "culture": "Sintians-Odomantians",
-    "tags": "aor_thracian, aor_macedonian, aor_greek, aor_euzonoi, rel_macedonian_4, rel_thracian_3, Farm6, mountain_valley, humid_sub_tropical, rivertrade, irrigation_river",
+    "tags": "aor_thracian, rel_macedonian_3, rel_thracian_4, Farm6, mountain_valley, humid_sub_tropical, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
-    "ethnicities": "thracian 40 macedonian 60"
+    "ethnicities": "thracian 60 macedonian 40"
   },
   "235,182,125": {
     "region": "Hebros",
@@ -6374,7 +6374,7 @@
     "city": "Artakon_Teichos",
     "faction": "odrysians",
     "culture": "Artacians",
-    "tags": "aor_thracian, rel_thracian_4, rel_celtic_1, Farm5, forest, continental, irrigation_springs",
+    "tags": "aor_thracian, aor_galato-thracian, rel_thracian_4, rel_celtic_1, Farm5, forest, continental, irrigation_springs",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "thracian 85 triballian 5 celtic 10"
@@ -6384,7 +6384,7 @@
     "city": "Koilaleton_Teichos",
     "faction": "odrysians",
     "culture": "Coelaletians",
-    "tags": "homeland_odrysian, aor_thracian, aor_galato-thracian, rel_triballian_4, rel_celtic_1, Farm5, mountain_valley, continental, rivertrade, irrigation_river",
+    "tags": "homeland_odrysian, aor_thracian, rel_thracian_4, rel_triballian_1, Farm5, mountain_valley, continental, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "thracian 80 triballian 20"
@@ -7024,7 +7024,7 @@
     "city": "Samos",
     "faction": "athens",
     "culture": "Samians",
-    "tags": "aor_greek, rel_ionian_4, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_2, irrigation_springs",
+    "tags": "aor_greek, aor_ionian, rel_ionian_4, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_2, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "ionian 100"
@@ -7394,7 +7394,7 @@
     "city": "Stymbara",
     "faction": "paeonia",
     "culture": "Deuriopes-Pelagones",
-    "tags": "homeland_paionian, aor_paionian, rel_paeonian_4, rel_macedonian_3, Farm4, hills, continental",
+    "tags": "aor_thracian, homeland_paionian, aor_paionian, rel_paeonian_4, rel_macedonian_3, Farm4, hills, continental",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "paeonian 55 macedonian 45"
@@ -8264,7 +8264,7 @@
     "city": "Pergamon",
     "faction": "pergamon",
     "culture": "Pergamenes",
-    "tags": "aor_mysian, homeland_pergamene, aor_pergamene, aor_macedonian, aor_greek, asia_minor, merc_center, rel_mysian_4, rel_aeolian_3, Farm10, river_valley, mediterranean, base_port_level_2, irrigation_river",
+    "tags": "aor_mysian, homeland_pergamene, aor_pergamene, aor_greek, asia_minor, merc_center, rel_mysian_4, rel_aeolian_3, Farm10, river_valley, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "mysian 55 aeolian 45"
@@ -8414,7 +8414,7 @@
     "city": "Sardis",
     "faction": "selge",
     "culture": "Lydians",
-    "tags": "aor_lydian, aor_macedonian, aor_greek, asia_minor, merc_center_no_port, rel_lydian_4, rel_macedonian_2, rel_iranian_1, Farm10, river_valley, mediterranean, rivertrade, irrigation_river",
+    "tags": "aor_lydian, aor_greek, asia_minor, merc_center_no_port, rel_lydian_4, rel_macedonian_2, rel_iranian_1, Farm10, river_valley, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "macedonian 30 lydian 60 iranian 10"
@@ -8424,7 +8424,7 @@
     "city": "Thyateira",
     "faction": "athens",
     "culture": "Thyatirans",
-    "tags": "aor_lydian, aor_macedonian, hellenistic, aor_greek, asia_minor, rel_macedonian_4, rel_lydian_3, Farm6, hills, mediterranean, irrigation_river",
+    "tags": "aor_lydian, hellenistic, aor_greek, asia_minor, rel_macedonian_4, rel_lydian_3, Farm6, hills, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 60 lydian 40"
@@ -8454,7 +8454,7 @@
     "city": "Apameia-Kelainai",
     "faction": "selge",
     "culture": "Phrygians",
-    "tags": "aor_macedonian, aor_greek, asia_minor, rel_phrygian_4, rel_macedonian_2, Farm9, river_valley, continental, irrigation_river",
+    "tags": "aor_greek, asia_minor, rel_phrygian_4, rel_macedonian_2, Farm9, river_valley, continental, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "phrygian 70 macedonian 30"
@@ -8524,7 +8524,7 @@
     "city": "Blaundos",
     "faction": "selge",
     "culture": "Phrygians",
-    "tags": "aor_macedonian, aor_greek, asia_minor, rel_macedonian_4, rel_lydian_1, Farm5, plateau, continental",
+    "tags": "aor_greek, asia_minor, rel_macedonian_4, rel_lydian_1, Farm5, plateau, continental",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "macedonian 85 lydian 10 phrygian 5"
@@ -8564,7 +8564,7 @@
     "city": "Halikarnassos",
     "faction": "selge",
     "culture": "Carians",
-    "tags": "aor_karian, aor_greek, asia_minor, halikarnassos, merc_center, rel_dorian_4, rel_carian_3, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_3, irrigation_springs",
+    "tags": "aor_greek, asia_minor, halikarnassos, merc_center, rel_dorian_4, rel_carian_3, Farm6, small_islands_and_rocky_coast, mediterranean, base_port_level_3, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "dorian 60 carian 40"
@@ -8584,7 +8584,7 @@
     "city": "Mylasa",
     "faction": "chrysaoria",
     "culture": "Carians",
-    "tags": "aor_karian, aor_greek, asia_minor, rel_carian_4, rel_dorian_3, Farm7, hills, mediterranean, base_port_level_1, irrigation_springs",
+    "tags": "aor_karian, asia_minor, rel_carian_4, rel_dorian_3, Farm7, hills, mediterranean, base_port_level_1, irrigation_springs",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "carian 60 dorian 40"
@@ -8594,7 +8594,7 @@
     "city": "Kaunos",
     "faction": "chrysaoria",
     "culture": "Caunians",
-    "tags": "aor_karian, homeland_chrysaorian, aor_greek, asia_minor, rel_carian_4, rel_dorian_3, Farm6, wetlands, mediterranean, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "aor_karian, homeland_chrysaorian, asia_minor, rel_carian_4, rel_dorian_3, Farm6, wetlands, mediterranean, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "carian 60 dorian 40"
@@ -8604,10 +8604,10 @@
     "city": "Magnesia-Maiandros",
     "faction": "athens",
     "culture": "Carians",
-    "tags": "aor_karian, aor_greek, asia_minor, rel_carian_4, rel_macedonian_1, Farm12, floodplains_delta, mediterranean, rivertrade, irrigation_river",
+    "tags": "aor_greek, asia_minor, rel_aeolian_4, rel_carian_1, Farm12, floodplains_delta, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "12",
-    "ethnicities": "carian 80 macedonian 20"
+    "ethnicities": "aeolian 80 carian 20"
   },
   "36,61,125": {
     "region": "Euantheia",
@@ -8624,7 +8624,7 @@
     "city": "Aphrodisias",
     "faction": "chrysaoria",
     "culture": "Carians",
-    "tags": "aor_karian, aor_greek, asia_minor, rel_carian_4, rel_dorian_3, Farm6, plateau, mediterranean, rivertrade, irrigation_river",
+    "tags": "aor_karian, asia_minor, rel_carian_4, rel_dorian_3, Farm6, plateau, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "carian 60 dorian 40"
@@ -8634,7 +8634,7 @@
     "city": "Antiocheia-Alabanda",
     "faction": "chrysaoria",
     "culture": "Carians",
-    "tags": "aor_karian, homeland_chrysaorian, aor_greek, asia_minor, rel_carian_4, rel_dorian_2, Farm7, hills, mediterranean, irrigation_river",
+    "tags": "aor_karian, homeland_chrysaorian, asia_minor, rel_carian_4, rel_dorian_2, Farm7, hills, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "carian 65 dorian 35"
@@ -8644,7 +8644,7 @@
     "city": "Stratonikeia",
     "faction": "chrysaoria",
     "culture": "Carians",
-    "tags": "aor_karian, homeland_chrysaorian, aor_greek, asia_minor, merc_center_no_port, rel_carian_4, rel_dorian_1, rel_macedonian_1, Farm6, hills, mediterranean, irrigation_springs",
+    "tags": "aor_karian, homeland_chrysaorian, asia_minor, merc_center_no_port, rel_carian_4, rel_dorian_1, rel_macedonian_1, Farm6, hills, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "carian 65 dorian 15 macedonian 20"
@@ -8654,7 +8654,7 @@
     "city": "Patara",
     "faction": "lycia",
     "culture": "Lycians",
-    "tags": "homeland_lycian, aor_lycian, aor_greek, asia_minor, rel_lycian_4, rel_dorian_3, Farm5, mountains, mediterranean, base_port_level_2, irrigation_river",
+    "tags": "homeland_lycian, aor_lycian, asia_minor, rel_lycian_4, rel_dorian_3, Farm5, mountains, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "lycian 60 dorian 40"
@@ -8664,7 +8664,7 @@
     "city": "Telmessos",
     "faction": "lycia",
     "culture": "Lycians",
-    "tags": "homeland_lycian, aor_lycian, aor_greek, asia_minor, rel_lycian_4, rel_dorian_2, Farm5, mountains, mediterranean, base_port_level_2, irrigation_springs",
+    "tags": "homeland_lycian, aor_lycian, asia_minor, rel_lycian_4, rel_dorian_2, Farm5, mountains, mediterranean, base_port_level_2, irrigation_springs",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "lycian 70 dorian 30"
@@ -8684,7 +8684,7 @@
     "city": "Xanthos",
     "faction": "lycia",
     "culture": "Lycians",
-    "tags": "homeland_lycian, aor_lycian, aor_greek, asia_minor, merc_center_no_port, rel_lycian_4, rel_dorian_3, Farm7, mountain_valley, mediterranean, base_port_level_0, rivertrade, irrigation_river",
+    "tags": "homeland_lycian, aor_lycian, asia_minor, merc_center_no_port, rel_lycian_4, rel_dorian_3, Farm7, mountain_valley, mediterranean, base_port_level_0, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "lycian 60 dorian 40"
@@ -8694,7 +8694,7 @@
     "city": "Limyra",
     "faction": "lycia",
     "culture": "Lycians",
-    "tags": "homeland_lycian, aor_lycian, aor_greek, asia_minor, rel_lycian_4, rel_dorian_3, Farm7, mountain_valley, mediterranean, base_port_level_1, irrigation_river",
+    "tags": "homeland_lycian, aor_lycian, asia_minor, rel_lycian_4, rel_dorian_3, Farm7, mountain_valley, mediterranean, base_port_level_1, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "lycian 60 dorian 40"
@@ -8704,7 +8704,7 @@
     "city": "Myra",
     "faction": "lycia",
     "culture": "Lycians",
-    "tags": "homeland_lycian, aor_lycian, aor_greek, asia_minor, rel_lycian_4, rel_dorian_3, Farm6, mountains, mediterranean, base_port_level_2, irrigation_river",
+    "tags": "homeland_lycian, aor_lycian, asia_minor, rel_lycian_4, rel_dorian_3, Farm6, mountains, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "lycian 60 dorian 40"
@@ -8714,7 +8714,7 @@
     "city": "Tlos",
     "faction": "lycia",
     "culture": "Lycians",
-    "tags": "homeland_lycian, aor_lycian, aor_greek, asia_minor, rel_lycian_4, rel_dorian_2, Farm4, hills, mediterranean, irrigation_river",
+    "tags": "homeland_lycian, aor_lycian, asia_minor, rel_lycian_4, rel_dorian_2, Farm4, hills, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "lycian 70 dorian 30"
@@ -8724,7 +8724,7 @@
     "city": "Sagalassos",
     "faction": "selge",
     "culture": "Pisidians",
-    "tags": "aor_pisidian, aor_greek, asia_minor, rel_pisidian_4, rel_macedonian_2, Farm6, mountain_valley, mediterranean, irrigation_springs",
+    "tags": "aor_pisidian, asia_minor, rel_pisidian_4, rel_macedonian_2, Farm6, mountain_valley, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "pisidian 70 macedonian 30"
@@ -8734,7 +8734,7 @@
     "city": "Termessos",
     "faction": "selge",
     "culture": "Milyians",
-    "tags": "aor_pisidian, aor_greek, asia_minor, rel_pisidian_4, rel_dorian_1, Farm5, mountains, mediterranean, irrigation_springs",
+    "tags": "aor_pisidian, asia_minor, rel_pisidian_4, rel_dorian_1, Farm5, mountains, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "pisidian 80 dorian 20"
@@ -8744,7 +8744,7 @@
     "city": "Selge",
     "faction": "selge",
     "culture": "Selgians",
-    "tags": "homeland_selgian, aor_selgian, aor_pisidian, aor_greek, asia_minor, rel_pisidian_4, rel_dorian_3, Farm8, mountain_valley, mediterranean, irrigation_river",
+    "tags": "homeland_selgian, aor_selgian, aor_pisidian, asia_minor, rel_pisidian_4, rel_dorian_3, Farm8, mountain_valley, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "pisidian 60 dorian 40"
@@ -8754,7 +8754,7 @@
     "city": "Kibyra",
     "faction": "selge",
     "culture": "Cibyrans",
-    "tags": "aor_pisidian, aor_greek, asia_minor, rel_pisidian_4, rel_lydian_1, rel_macedonian_1, Farm6, plateau, mediterranean, irrigation_springs",
+    "tags": "aor_pisidian, asia_minor, rel_pisidian_4, rel_lydian_1, rel_macedonian_1, Farm6, plateau, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "lydian 20 pisidian 70 macedonian 10"
@@ -8764,7 +8764,7 @@
     "city": "Isinda",
     "faction": "selge",
     "culture": "Isindians",
-    "tags": "aor_pisidian, aor_greek, asia_minor, rel_pisidian_4, rel_macedonian_1, rel_ionian_1, Farm6, plateau, mediterranean",
+    "tags": "aor_pisidian, asia_minor, rel_pisidian_4, rel_macedonian_1, rel_ionian_1, Farm6, plateau, mediterranean",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "pisidian 60 macedonian 20 ionian 20"
@@ -8774,7 +8774,7 @@
     "city": "Pednelissos",
     "faction": "selge",
     "culture": "Pisidians",
-    "tags": "aor_pisidian, aor_greek, asia_minor, rel_pisidian_4, Farm5, karst_terrain, mediterranean, irrigation_springs",
+    "tags": "aor_pisidian, asia_minor, rel_pisidian_4, Farm5, karst_terrain, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "pisidian 90 macedonian 10"
@@ -8784,7 +8784,7 @@
     "city": "Antiocheia-Pisidia",
     "faction": "seleucid_rebels",
     "culture": "Phrygians",
-    "tags": "aor_phrygian, aor_macedonian, aor_greek, asia_minor, rel_phrygian_4, rel_macedonian_3, Farm6, mountain_valley, continental, irrigation_springs",
+    "tags": "aor_greek, asia_minor, rel_phrygian_4, rel_macedonian_3, Farm6, mountain_valley, continental, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "phrygian 60 macedonian 40"
@@ -8804,7 +8804,7 @@
     "city": "Side",
     "faction": "selge",
     "culture": "Pamphylians",
-    "tags": "aor_pamphylian, aor_greek, asia_minor, rel_pamphylian_4, rel_pamphylian_greek_3, Farm7, mountain_valley, mediterranean, base_port_level_3, irrigation_river",
+    "tags": "aor_pamphylian, asia_minor, rel_pamphylian_4, rel_pamphylian_greek_3, Farm7, mountain_valley, mediterranean, base_port_level_3, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "pamphylian 60 pamphylian_greek 40"
@@ -8814,7 +8814,7 @@
     "city": "Perge",
     "faction": "athens",
     "culture": "Pamphylians",
-    "tags": "aor_pamphylian, aor_greek, asia_minor, rel_pamphylian_greek_4, rel_pamphylian_2, Farm10, river_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "aor_pamphylian, asia_minor, rel_pamphylian_greek_4, rel_pamphylian_2, Farm10, river_valley, mediterranean, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "pamphylian 30 pamphylian_greek 65 dorian 5"
@@ -8824,7 +8824,7 @@
     "city": "Etenna-Kotenna",
     "faction": "selge",
     "culture": "Etennians-Cotennians",
-    "tags": "aor_etennian, aor_pisidian, aor_greek, asia_minor, rel_pisidian_4, rel_macedonian_1, Farm3, karst_terrain, continental, irrigation_springs",
+    "tags": "aor_etennian, aor_pisidian, asia_minor, rel_pisidian_4, rel_macedonian_1, Farm3, karst_terrain, continental, irrigation_springs",
     "farm_level": "5",
     "pop_level": "3",
     "ethnicities": "pisidian 80 macedonian 20"
@@ -8834,7 +8834,7 @@
     "city": "Aspendos",
     "faction": "athens",
     "culture": "Pamphylians",
-    "tags": "aor_pamphylian, aor_greek, asia_minor, merc_center, rel_pamphylian_greek_4, rel_pamphylian_1, Farm8, mountain_valley, mediterranean, rivertrade, irrigation_river",
+    "tags": "aor_pamphylian, asia_minor, merc_center, rel_pamphylian_greek_4, rel_pamphylian_1, Farm8, mountain_valley, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "pamphylian_greek 80 pamphylian 20"
@@ -9334,7 +9334,7 @@
     "city": "Antioch",
     "faction": "seleucid",
     "culture": "Antiochians",
-    "tags": "aor_macedonian, aor_judaean, homeland_macedonian, aor_greek, aor_syrian, merc_center_no_port, rel_assyrian_3, rel_macedonian_3, rel_ionian_3, rel_judaean_2, Farm12, river_valley, mediterranean, rivertrade, irrigation_river",
+    "tags": "aor_judaean, homeland_macedonian, aor_greek, aor_syrian, merc_center_no_port, rel_assyrian_3, rel_macedonian_3, rel_ionian_3, rel_judaean_2, Farm12, river_valley, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "12",
     "ethnicities": "assyrian 30 macedonian 25 ionian 25 judaean 20"
@@ -9394,7 +9394,7 @@
     "city": "Kyrrhos",
     "faction": "seleucid_rebels",
     "culture": "Cyrrhaeans",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, Farm7, hills, dry_sub_tropical, irrigation_river",
+    "tags": "aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, Farm7, hills, dry_sub_tropical, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "assyrian 40 macedonian 60"
@@ -9404,7 +9404,7 @@
     "city": "Heliou_Polis-Syria",
     "faction": "commagene",
     "culture": "Aramaeans",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, rel_assyrian_4, rel_macedonian_3, Farm7, mountain_valley, temperate, irrigation_springs",
+    "tags": "aor_greek, aor_syrian, rel_assyrian_4, rel_macedonian_3, Farm7, mountain_valley, temperate, irrigation_springs",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "assyrian 60 macedonian 40"
@@ -9474,7 +9474,7 @@
     "city": "Apameia-Syria",
     "faction": "seleucid",
     "culture": "Apameans",
-    "tags": "aor_macedonian, homeland_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_1, rel_phoenician_1, Farm11, river_valley, mediterranean, rivertrade, irrigation_river",
+    "tags": "homeland_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_1, rel_phoenician_1, Farm11, river_valley, mediterranean, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "11",
     "ethnicities": "macedonian 70 assyrian 20 phoenician 10"
@@ -9484,7 +9484,7 @@
     "city": "Seleukeia-Pieria",
     "faction": "seleucid",
     "culture": "Syrian_Pierians",
-    "tags": "aor_macedonian, homeland_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_2, rel_phoenician_1, Farm8, mountain_valley, mediterranean, base_port_level_3, rivertrade, irrigation_river",
+    "tags": "homeland_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_2, rel_phoenician_1, Farm8, mountain_valley, mediterranean, base_port_level_3, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "macedonian 60 assyrian 30 phoenician 10"
@@ -9494,7 +9494,7 @@
     "city": "Laodikeia-Paralos",
     "faction": "seleucid",
     "culture": "Laodiceans",
-    "tags": "aor_macedonian, homeland_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, rel_phoenician_1, Farm9, mountain_valley, mediterranean, base_port_level_2, irrigation_river",
+    "tags": "homeland_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, rel_phoenician_1, Farm9, mountain_valley, mediterranean, base_port_level_2, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "assyrian 40 macedonian 50 phoenician 10"
@@ -9514,7 +9514,7 @@
     "city": "Philadelpheia",
     "faction": "nabataea",
     "culture": "Ammonites",
-    "tags": "aor_macedonian, aor_greek, rel_macedonian_4, rel_arab_3, rel_phoenician_4, Farm6, plateau, mediterranean, irrigation_springs",
+    "tags": "aor_greek, rel_macedonian_4, rel_arab_3, rel_phoenician_4, Farm6, plateau, mediterranean, irrigation_springs",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "arab 25 phoenician 35 macedonian 40"
@@ -9564,7 +9564,7 @@
     "city": "Beroia-Syria",
     "faction": "seleucid_rebels",
     "culture": "Beroeans",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, rel_assyrian_4, rel_macedonian_3, Farm9, grassland, dry_sub_tropical",
+    "tags": "aor_greek, aor_syrian, rel_assyrian_4, rel_macedonian_3, Farm9, grassland, dry_sub_tropical",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "assyrian 50 macedonian 40 phoenician 5 cilician 5"
@@ -9574,7 +9574,7 @@
     "city": "Arethousa",
     "faction": "seleucid_rebels",
     "culture": "Emesans",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, emesan, rel_assyrian_4, rel_macedonian_3, Farm8, grassland, dry_sub_tropical, irrigation_river",
+    "tags": "aor_greek, aor_syrian, emesan, rel_assyrian_4, rel_macedonian_3, Farm8, grassland, dry_sub_tropical, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "assyrian 55 macedonian 45"
@@ -9654,7 +9654,7 @@
     "city": "Chalkis-Belos",
     "faction": "seleucid_rebels",
     "culture": "Macedonians",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_1, Farm8, hills, mediterranean",
+    "tags": "aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_1, Farm8, hills, mediterranean",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "macedonian 80 assyrian 20"
@@ -9704,7 +9704,7 @@
     "city": "Gamala",
     "faction": "osrhoene",
     "culture": "Judaeans",
-    "tags": "aor_macedonian, aor_greek, rel_macedonian_4, rel_assyrian_1, Farm7, plateau, mediterranean",
+    "tags": "aor_greek, rel_macedonian_4, rel_assyrian_1, Farm7, plateau, mediterranean",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "assyrian 20 macedonian 80"
@@ -9754,7 +9754,7 @@
     "city": "Gerasa",
     "faction": "commagene",
     "culture": "Arabs",
-    "tags": "aor_macedonian, aor_greek, rel_arab_4, rel_assyrian_2, rel_macedonian_4, Farm6, hills, mediterranean",
+    "tags": "aor_greek, rel_arab_4, rel_assyrian_2, rel_macedonian_4, Farm6, hills, mediterranean",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "arab 40 assyrian 20 macedonian 40"
@@ -9774,7 +9774,7 @@
     "city": "Alexandria",
     "faction": "ptolemaic",
     "culture": "Alexandrians",
-    "tags": "aor_judaean, aor_macedonian, homeland_macedonian, aor_greek, merc_center, rel_macedonian_4, rel_egyptian_3, rel_judaean_2, Farm13, floodplains_delta, mediterranean, base_port_level_3, rivertrade, irrigation_river",
+    "tags": "aor_judaean, homeland_macedonian, aor_greek, merc_center, rel_macedonian_4, rel_egyptian_3, rel_judaean_2, Farm13, floodplains_delta, mediterranean, base_port_level_3, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "13",
     "ethnicities": "macedonian 50 egyptian 30 judaean 20"
@@ -9794,7 +9794,7 @@
     "city": "Ptolemais-Hermeiou",
     "faction": "ptolemaic",
     "culture": "Egyptiotes",
-    "tags": "aor_macedonian, homeland_macedonian, aor_greek, rel_macedonian_4, rel_egyptian_1, Farm10, floodplains_delta, arid, rivertrade, irrigation_river",
+    "tags": "homeland_macedonian, aor_greek, rel_macedonian_4, rel_egyptian_1, Farm10, floodplains_delta, arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "10",
     "ethnicities": "macedonian 80 egyptian 20"
@@ -9834,7 +9834,7 @@
     "city": "Paraitonion",
     "faction": "ptolemaic_rebels",
     "culture": "Libyans",
-    "tags": "aor_libyan, aor_macedonian, aor_greek, rel_egyptian_4, rel_libyan_2, rel_macedonian_2, Farm5, steppe, hot_semi_arid, base_port_level_2",
+    "tags": "aor_libyan, aor_greek, rel_egyptian_4, rel_libyan_2, rel_macedonian_2, Farm5, steppe, hot_semi_arid, base_port_level_2",
     "farm_level": "5",
     "pop_level": "5",
     "ethnicities": "libyan 30 egyptian 50 macedonian 20"
@@ -9864,7 +9864,7 @@
     "city": "Arsinoe-Krokodeilon_Polis",
     "faction": "ptolemaic",
     "culture": "Crocodilopolitans",
-    "tags": "homeland_macedonian, aor_macedonian, rel_egyptian_4, rel_macedonian_1, Farm6, wetlands, hot_semi_arid, rivertrade, irrigation_lake",
+    "tags": "homeland_macedonian, rel_egyptian_4, rel_macedonian_1, Farm6, wetlands, hot_semi_arid, rivertrade, irrigation_lake",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "egyptian 75 macedonian 25"
@@ -9904,7 +9904,7 @@
     "city": "Oxyrhynchos",
     "faction": "egypt",
     "culture": "Egyptiotes",
-    "tags": "homeland_egyptian, aor_egyptian, aor_macedonian, rel_egyptian_4, rel_macedonian_1, Farm12, floodplains_delta, arid, rivertrade, irrigation_river",
+    "tags": "homeland_egyptian, aor_egyptian, rel_egyptian_4, rel_macedonian_1, Farm12, floodplains_delta, arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "12",
     "ethnicities": "macedonian 25 egyptian 75"
@@ -11494,7 +11494,7 @@
     "city": "Edessa",
     "faction": "osrhoene",
     "culture": "Osrhoenians",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, homeland_osrhoenian, rel_macedonian_4, rel_assyrian_3, Farm7, steppe, mediterranean, irrigation_river",
+    "tags": "aor_greek, aor_syrian, homeland_osrhoenian, rel_macedonian_4, rel_assyrian_3, Farm7, steppe, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "7",
     "ethnicities": "macedonian 60 assyrian 40"
@@ -11504,7 +11504,7 @@
     "city": "Antiocheia-Mygdonia",
     "faction": "osrhoene",
     "culture": "Aramaeans",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, rel_assyrian_4, rel_macedonian_2, rel_dorian_1, Farm6, steppe, dry_sub_tropical, irrigation_river",
+    "tags": "aor_greek, aor_syrian, rel_assyrian_4, rel_macedonian_2, rel_dorian_1, Farm6, steppe, dry_sub_tropical, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 30 assyrian 60 dorian 10"
@@ -11524,7 +11524,7 @@
     "city": "Doura-Europos",
     "faction": "seleucid_rebels",
     "culture": "Assyrians",
-    "tags": "aor_macedonian, aor_greek, rel_arab_4, rel_macedonian_3, rel_assyrian_3, Farm8, river_valley, hot_semi_arid, rivertrade, irrigation_river",
+    "tags": "aor_greek, rel_arab_4, rel_macedonian_3, rel_assyrian_3, Farm8, river_valley, hot_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "8",
     "ethnicities": "macedonian 30 arab 40 assyrian 30"
@@ -11534,7 +11534,7 @@
     "city": "Seleucia",
     "faction": "seleucid",
     "culture": "Babylonians",
-    "tags": "aor_macedonian, homeland_macedonian, aor_greek, aor_babylonian, merc_center_no_port, rel_mesopotamian_4, rel_macedonian_1, Farm13, floodplains_delta, hot_semi_arid, rivertrade, irrigation_river",
+    "tags": "homeland_macedonian, aor_greek, aor_babylonian, merc_center_no_port, rel_mesopotamian_4, rel_macedonian_1, Farm13, floodplains_delta, hot_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "13",
     "ethnicities": "macedonian 25 mesopotamian 75"
@@ -11554,7 +11554,7 @@
     "city": "Alexandreia-Charax",
     "faction": "characene",
     "culture": "Characenians",
-    "tags": "aor_macedonian, aor_greek, aor_babylonian, homeland_characenian, rel_macedonian_4, rel_iranian_1, rel_mesopotamian_3, Farm6, wetlands, hot_semi_arid, base_port_level_3, rivertrade, irrigation_river",
+    "tags": "aor_greek, aor_babylonian, homeland_characenian, rel_macedonian_4, rel_iranian_1, rel_mesopotamian_3, Farm6, wetlands, hot_semi_arid, base_port_level_3, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 55 iranian 10 mesopotamian 35"
@@ -11594,7 +11594,7 @@
     "city": "Nikephorion",
     "faction": "seleucid_rebels",
     "culture": "Aramaeans",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, rel_arab_3, Farm9, river_valley, hot_semi_arid, rivertrade, irrigation_river",
+    "tags": "aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, rel_arab_3, Farm9, river_valley, hot_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "9",
     "ethnicities": "macedonian 40 assyrian 30 arab 30"
@@ -11614,7 +11614,7 @@
     "city": "Apameia-Sittakene",
     "faction": "seleucid_rebels",
     "culture": "Babylonians",
-    "tags": "aor_macedonian, aor_greek, aor_babylonian, rel_macedonian_4, rel_mesopotamian_4, Farm6, wetlands, hot_semi_arid, rivertrade, irrigation_river",
+    "tags": "aor_greek, aor_babylonian, rel_macedonian_4, rel_mesopotamian_4, Farm6, wetlands, hot_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 50 mesopotamian 50"
@@ -11624,7 +11624,7 @@
     "city": "Artemita",
     "faction": "commagene",
     "culture": "Artemitans",
-    "tags": "aor_macedonian, aor_greek, aor_babylonian, rel_macedonian_4, rel_mesopotamian_4, rel_assyrian_3, Farm11, river_valley, hot_semi_arid, rivertrade, irrigation_river",
+    "tags": "aor_greek, aor_babylonian, rel_macedonian_4, rel_mesopotamian_4, rel_assyrian_3, Farm11, river_valley, hot_semi_arid, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "11",
     "ethnicities": "macedonian 40 mesopotamian 35 assyrian 25"
@@ -11634,7 +11634,7 @@
     "city": "Apameia-Zeugma",
     "faction": "seleucid_rebels",
     "culture": "Aramaeans",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, Farm6, hills, mediterranean, irrigation_river",
+    "tags": "aor_greek, aor_syrian, rel_macedonian_4, rel_assyrian_3, Farm6, hills, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 55 assyrian 45"
@@ -11654,7 +11654,7 @@
     "city": "Seleukeia-Soloke",
     "faction": "seleucid_rebels",
     "culture": "Elamites",
-    "tags": "aor_macedonian, aor_greek, aor_babylonian, elamite, rel_mesopotamian_4, rel_macedonian_3, rel_iranian_1, Farm6, steppe, hot_semi_arid, base_port_level_1, rivertrade, irrigation_aquifer",
+    "tags": "aor_greek, aor_babylonian, elamite, rel_mesopotamian_4, rel_macedonian_3, rel_iranian_1, Farm6, steppe, hot_semi_arid, base_port_level_1, rivertrade, irrigation_aquifer",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 40 mesopotamian 50 iranian 10"
@@ -11724,7 +11724,7 @@
     "city": "Anthemousias-Batnai",
     "faction": "osrhoene",
     "culture": "Osrhoenians",
-    "tags": "aor_macedonian, aor_greek, aor_syrian, homeland_osrhoenian, rel_macedonian_4, rel_assyrian_3, Farm6, steppe, mediterranean, irrigation_river",
+    "tags": "aor_greek, aor_syrian, homeland_osrhoenian, rel_macedonian_4, rel_assyrian_3, Farm6, steppe, mediterranean, irrigation_river",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "macedonian 55 assyrian 45"
@@ -11804,7 +11804,7 @@
     "city": "Seleukeia-Erythtreia",
     "faction": "characene",
     "culture": "Erythraean_Seleucians",
-    "tags": "aor_macedonian, aor_greek, aor_babylonian, rel_macedonian_4, rel_mesopotamian_2, Farm4, desert, arid, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "aor_greek, aor_babylonian, rel_macedonian_4, rel_mesopotamian_2, Farm4, desert, arid, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "macedonian 70 mesopotamian 30"
@@ -11814,7 +11814,7 @@
     "city": "Teredon",
     "faction": "characene",
     "culture": "Mesopotamians",
-    "tags": "homeland_characenian, aor_macedonian, aor_greek, aor_babylonian, rel_mesopotamian_4, rel_macedonian_3, Farm4, wetlands, arid, base_port_level_2, rivertrade, irrigation_river",
+    "tags": "homeland_characenian, aor_greek, aor_babylonian, rel_mesopotamian_4, rel_macedonian_3, Farm4, wetlands, arid, base_port_level_2, rivertrade, irrigation_river",
     "farm_level": "5",
     "pop_level": "4",
     "ethnicities": "mesopotamian 60 macedonian 40"
@@ -12634,7 +12634,7 @@
     "city": "Nisa",
     "faction": "parni",
     "culture": "Nisaeans",
-    "tags": "aor_dahae, aor_scythian, aor_macedonian, rel_iranian_4, rel_macedonian_2, Farm6, steppe, hot_semi_arid, irrigation_aquifer",
+    "tags": "aor_dahae, aor_scythian, rel_iranian_4, rel_macedonian_2, Farm6, steppe, hot_semi_arid, irrigation_aquifer",
     "farm_level": "5",
     "pop_level": "6",
     "ethnicities": "iranian 70 macedonian 30"

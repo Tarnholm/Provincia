@@ -8,9 +8,12 @@
 //                                     have a coastline on which sea body)
 //   3. Per-settlement road + port flags (from the save's built-building list,
 //                                     cross-referenced to EDB chain names)
-//   4. Trade-partner gating          (own faction internal + cross-faction only
-//                                     where a trade bond exists in the cracked
-//                                     diplomacy matrix)
+//   4. Trade-partner gating          (own faction internal + cross-faction where
+//                                     TRADE RIGHTS exist: a military bond (matrix
+//                                     bond>=54) OR allied state (matrix att==0 ==
+//                                     descr_strat rel199, which folds in pure
+//                                     trade-rights/non-aggression pacts), with the
+//                                     descr_strat 199-ally pairs as a floor)
 //   5. First-cut trade connectivity  (per settlement: the set of OTHER
 //                                     settlements it can reach for trade via a
 //                                     road-connected land path through
@@ -20,9 +23,12 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // THIS IS AN ENGINE-APPROXIMATION. It models trade CONNECTIVITY and PARTNERS
-// only. The actual trade GOLD value the engine computes depends on distance,
-// traded resources, route capacity, sea-lane length, blockades and tariff
-// settings — all OUT OF SCOPE here. "Can A trade with B?" is what this answers.
+// (CONFIRMED structure). The actual trade GOLD value the engine computes depends
+// on distance, traded resources, route capacity, sea-lane length, blockades and
+// tariff settings. As a FIRST CUT we additionally attach a per-link relative
+// distance-DECAYED `value` (HYPOTHESIS, clearly labelled `valuesHypothesis` /
+// UNVERIFIED) — a shorter-route-scores-higher proxy, NOT the engine's gold. "Can
+// A trade with B, and roughly how near are they?" is what this answers.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Reuses Provincia's authoritative parsers (no duplication of cracked logic):
@@ -143,6 +149,18 @@ function buildGeometry(modDataDir, opts = {}) {
     }
   }
 
+  // Region centroids (pixel-space, for the HYPOTHESIS trade-value decay only).
+  const sumX = new Map(), sumY = new Map(), cnt = new Map();
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const c = cell[y * W + x];
+      if (c < 0) continue;
+      sumX.set(c, (sumX.get(c) || 0) + x);
+      sumY.set(c, (sumY.get(c) || 0) + y);
+      cnt.set(c, (cnt.get(c) || 0) + 1);
+    }
+  }
+
   // Adjacency pass: for each land pixel, inspect right + down neighbour (covers
   // every 4-connected pair exactly once).
   const landAdj = new Map();   // idx -> Set(idx)
@@ -230,12 +248,19 @@ function buildGeometry(modDataDir, opts = {}) {
   for (const set of landAdj.values()) edgeCount += set.size;
   edgeCount = edgeCount / 2;
 
+  const centroids = {};      // regionName -> [x, y] pixel centroid
+  for (const [idx, n] of cnt) {
+    if (!n) continue;
+    centroids[regionNames[idx]] = [sumX.get(idx) / n, sumY.get(idx) / n];
+  }
+
   return {
     W, H,
     regionNames,
     adjacency,             // land-adjacency graph
     regionSeas,            // region -> sea bodies (coastline)
     seaToRegions,          // sea body -> coastal regions
+    centroids,             // region -> [x,y] (HYPOTHESIS trade-value decay only)
     stats: {
       regions: regionNames.length,
       landEdges: edgeCount,
@@ -263,23 +288,53 @@ function settlementFlags(settlements) {
 }
 
 // ── Trade-rights gating ───────────────────────────────────────────────────────
-// Cross-faction trade requires a trade bond. We use the cracked diplomacy
-// matrix's per-faction `trade` list (bond>=54 = ally OR protectorate/suzerain).
+// Cross-faction trade requires trade RIGHTS. In RTW:R a faction pair has trade
+// rights when EITHER of these holds (refined 2026-05-31, was bond>=54 only):
 //
-// LIMITATION (documented, not fabricated): true RTW "trade rights" can also be
-// granted with NO military bond (rel199 + bond6 = trade-rights / non-aggression
-// pact — see saveCrackerExtras diplo-deep notes). The cracked matrix's `trade`
-// array only captures bond>=54, so pure trade-rights-without-alliance pacts are
-// NOT represented here and will be under-counted. Own-faction trade is always
-// allowed. This is the gating the spec asked for (bond>=54); flagged so the
-// approximation is clear.
-function buildTradeRights(diplomacy) {
+//   (a) a MILITARY BOND  — cracked matrix cell +20 bond>=54 (54=ally, 55=suzerain
+//       /protectorate). Captured by the per-faction `trade` list. An alliance or
+//       protectorate always carries trade rights.
+//   (b) ALLIED STATE w/o bond — cracked matrix STATE field (+12) == allied (att 0),
+//       which maps 1:1 to descr_strat `faction_relationships` value 199. RTW folds
+//       ally + trade-rights into rel199, so a PURE trade-rights / non-aggression
+//       pact (rel199 + bond 6, NO military bond) shows up as state=allied with
+//       bond<54. Captured by the per-faction `allied` list. THIS is the case the
+//       old bond>=54-only gating missed (a documented lower bound) — now folded in.
+//
+// Additionally, the descr_strat `faction_relationships` 199-ally pairs are taken
+// as a live-INDEPENDENT floor (so the gating still works without a parsed matrix,
+// and matches the campaign's STARTING trade rights). Own-faction trade always
+// allowed.
+//
+// VERIFIED on the live RIS T1 saves (save_julii1 / save_Carthage1, 2026-05-31):
+// the matrix `allied` set ≡ `trade` set at game start (264 directed pairs each;
+// every starting alliance carries a bond), and matches descr_strat's 266 ally
+// entries — so at T1 (a)/(b)/floor coincide. The widening is what catches
+// mid-campaign trade-rights-only pacts (rel199+bond6), which DO arise once the
+// player/AI signs non-aggression/trade pacts without a full alliance.
+function buildTradeRights(diplomacy, stratRelationships) {
   // returns (factionA, factionB) -> bool  (A permits trade with B)
   const partners = {}; // factionLower -> Set(partnerLower)
+  const add = (a, b) => {
+    a = String(a).toLowerCase(); b = String(b).toLowerCase();
+    (partners[a] ||= new Set()).add(b);
+  };
+  // (a) military bond + (b) allied state, from the cracked matrix.
   if (diplomacy) {
     for (const [name, rec] of Object.entries(diplomacy)) {
-      if (name === "_meta" || !rec || !Array.isArray(rec.trade)) continue;
-      partners[name.toLowerCase()] = new Set(rec.trade.map((n) => String(n).toLowerCase()));
+      if (name === "_meta" || !rec) continue;
+      const a = name.toLowerCase();
+      partners[a] ||= new Set();
+      if (Array.isArray(rec.trade))  for (const p of rec.trade)  add(a, p); // bond>=54
+      if (Array.isArray(rec.allied)) for (const p of rec.allied) add(a, p); // state==allied (rel199)
+    }
+  }
+  // live-independent floor: descr_strat faction_relationships 199-ally pairs.
+  // shape: { fromFactionLower: [{ to, kind }] }, kind in {"ally","war"}.
+  if (stratRelationships) {
+    for (const [from, arr] of Object.entries(stratRelationships)) {
+      if (!Array.isArray(arr)) continue;
+      for (const e of arr) if (e && e.kind === "ally") add(from, e.to);
     }
   }
   return (a, b) => {
@@ -287,7 +342,7 @@ function buildTradeRights(diplomacy) {
     a = a.toLowerCase(); b = b.toLowerCase();
     if (a === b) return true;                       // own faction always trades
     const sa = partners[a];
-    return !!(sa && sa.has(b));                     // trade bond A->B
+    return !!(sa && sa.has(b));                     // trade rights A->B
   };
 }
 
@@ -306,12 +361,36 @@ function buildTradeRights(diplomacy) {
 //   SEA : settlement S reaches T by sea if both have a SEA PORT and both regions
 //     have a coastline on the SAME connected sea body.
 //   Then trade-RIGHTS must hold between the two settlements' owners (own faction
-//     always; cross-faction requires a trade bond).
+//     always; cross-faction requires trade rights — bond or allied state).
+//
+// ── TRADE-VALUE estimate (HYPOTHESIS — UNVERIFIED, NOT engine gold) ────────────
+// As a FIRST CUT, each link also carries a relative `value` in (0,1]: a distance-
+// DECAYED score where SHORTER routes score higher. This is an APPROXIMATION of the
+// real-world intuition that the engine values nearer trade partners more (shorter
+// caravan/sea legs, lower attrition). It is NOT the engine's trade-gold formula —
+// that also depends on traded resources, route capacity, settlement size, tariffs
+// and blockades, none of which are modelled here. Distances:
+//   • LAND: BFS hop-distance (number of region borders crossed) from the origin
+//     region to the partner region within the road-connected component. value =
+//     1/(1+hops)  →  adjacent regions ~0.5, far ones decay toward 0.
+//   • SEA : Euclidean distance between region pixel-centroids, normalised by the
+//     map diagonal. value = exp(-k * normDist) with k = SEA_DECAY_K. (A straight-
+//     line proxy for sea-lane length; it ignores coastline detour, hence approx.)
+// A settlement reachable by BOTH land and sea takes the MAX of the two link
+// values (the better channel). All values are clearly labelled HYPOTHESIS.
 //
 // Output: name -> { faction, region, road, seaPort, partners:[names],
-//   landPartners:[names], seaPartners:[names] }.
+//   landPartners:[names], seaPartners:[names],
+//   valuesHypothesis:{partnerName: score}  // UNVERIFIED relative decay }.
+const SEA_DECAY_K = 6; // tuning constant for the sea distance decay (HYPOTHESIS)
 function computeTradeConnectivity(geometry, settlements, ownerByCity, region2settlement, settlement2region, flags, tradeRights) {
-  const { adjacency, regionSeas, seaToRegions } = geometry;
+  const { adjacency, regionSeas, seaToRegions, centroids } = geometry;
+  const mapDiag = Math.hypot(geometry.W || 1, geometry.H || 1) || 1;
+  const seaDist = (rA, rB) => {
+    const a = centroids && centroids[rA], b = centroids && centroids[rB];
+    if (!a || !b) return null;
+    return Math.hypot(a[0] - b[0], a[1] - b[1]) / mapDiag; // 0..~1
+  };
 
   // settlement -> faction
   const factionOf = (name) => ownerByCity[name] || null;
@@ -358,7 +437,7 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
       }
       components.push(members);
     }
-    const res = { comp, components };
+    const res = { comp, components, nodeSet };
     landReachCache.set(faction, res);
     return res;
   }
@@ -373,18 +452,33 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
     const f = flags[name] || {};
     const landPartners = new Set();
     const seaPartners = new Set();
+    const valuesHypothesis = {}; // partnerName -> relative decayed score (UNVERIFIED)
+    const bump = (t, v) => { if (!(t in valuesHypothesis) || v > valuesHypothesis[t]) valuesHypothesis[t] = +v.toFixed(4); };
 
     // LAND: only if this settlement has a road and its region permits its own
     // faction (it always does) — find its land component for its own faction.
+    // BFS from the origin region within the component to get hop-distance.
     if (f.road && region && faction) {
-      const { comp, components } = landComponentsFor(faction);
+      const { comp, nodeSet } = landComponentsFor(faction);
       const cid = comp.get(region);
-      if (cid !== undefined) {
-        for (const r of components[cid]) {
+      if (cid !== undefined && nodeSet.has(region)) {
+        const dist = new Map([[region, 0]]);
+        const q = [region];
+        while (q.length) {
+          const r = q.shift();
+          const d = dist.get(r);
+          for (const nb of (adjacency[r] || [])) {
+            if (nodeSet.has(nb) && !dist.has(nb)) { dist.set(nb, d + 1); q.push(nb); }
+          }
+        }
+        for (const [r, hops] of dist) {
           const t = region2settlement[r];
           if (!t || t === name) continue;
           const owner = factionOf(t);
-          if (owner && tradeRights(faction, owner)) landPartners.add(t);
+          if (owner && tradeRights(faction, owner)) {
+            landPartners.add(t);
+            bump(t, 1 / (1 + hops)); // HYPOTHESIS: shorter land path = higher value
+          }
         }
       }
     }
@@ -400,7 +494,11 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
         const tf = flags[t];
         if (!tf || !tf.seaPort) continue;
         const owner = factionOf(t);
-        if (owner && faction && tradeRights(faction, owner)) seaPartners.add(t);
+        if (owner && faction && tradeRights(faction, owner)) {
+          seaPartners.add(t);
+          const nd = seaDist(region, r); // 0..~1 normalised straight-line proxy
+          if (nd != null) bump(t, Math.exp(-SEA_DECAY_K * nd)); // HYPOTHESIS decay
+        }
       }
     }
 
@@ -414,6 +512,7 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
       landPartners: [...landPartners].sort(),
       seaPartners: [...seaPartners].sort(),
       partners: [...partners].sort(),
+      valuesHypothesis, // UNVERIFIED relative distance-decay, NOT engine gold
     };
   }
   return { settlements: result, settlementCount: names.length };
@@ -442,7 +541,22 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
   for (const [r, s] of Object.entries(region2settlement)) settlement2region[s] = r;
 
   const flags = settlementFlags(settlements);
-  const tradeRights = buildTradeRights(cr.diplomacy);
+
+  // descr_strat faction_relationships 199-ally pairs = live-independent trade-
+  // rights floor (so gating works even if the matrix didn't lock, and matches the
+  // campaign's STARTING trade rights). Best-effort: parse only if available.
+  let stratRelationships = null;
+  try {
+    const { parseDescrStratFactionRelationships } = require("./parsers.js");
+    const stratPath = path.join(
+      modDataDir, "world", "maps", "campaign", opts.campaign || "imperial_campaign", "descr_strat.txt"
+    );
+    if (fs.existsSync(stratPath)) {
+      stratRelationships = parseDescrStratFactionRelationships(fs.readFileSync(stratPath, "utf8"));
+    }
+  } catch { /* optional floor — ignore if parser/file unavailable */ }
+
+  const tradeRights = buildTradeRights(cr.diplomacy, stratRelationships);
 
   const trade = computeTradeConnectivity(
     geometry, settlements, cr.ownerByCity || {}, region2settlement, settlement2region, flags, tradeRights

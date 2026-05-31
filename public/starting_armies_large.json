@@ -6602,12 +6602,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -9254,12 +9262,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -9297,12 +9313,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -10218,12 +10242,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -10730,12 +10762,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -11207,12 +11247,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -13162,12 +13210,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 5
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -13839,12 +13895,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 5
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -15430,12 +15494,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -15526,16 +15598,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 1
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -16117,16 +16189,16 @@
             "level": 2
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [
@@ -16764,12 +16836,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -17731,12 +17811,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -17957,12 +18045,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -18098,12 +18194,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 5
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -18630,12 +18734,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -19012,12 +19124,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -19302,16 +19422,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [
@@ -19898,16 +20018,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -19945,12 +20065,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 1
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -20258,12 +20386,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -20301,12 +20437,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -20941,12 +21085,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -22334,12 +22486,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 6
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -22377,12 +22537,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 5
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -22478,16 +22646,16 @@
             "level": 2
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -24637,16 +24805,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -25106,15 +25274,15 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
+            "level": 4
+          },
+          {
+            "name": "Supplies",
             "level": 4
           }
         ],
@@ -26283,12 +26451,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -26884,16 +27060,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [
@@ -26933,12 +27109,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -27500,16 +27684,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -27887,12 +28071,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -29398,96 +29590,6 @@
             "exp": 1,
             "armour": 0,
             "weapon": 0
-          },
-          {
-            "name": "thureophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thureophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thureophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor karian heavy infantry",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor cilician pirates",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor cilician spearmen",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "seleucid xystophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
           }
         ],
         "age": 16,
@@ -29532,16 +29634,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 1
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -29913,16 +30015,16 @@
             "level": 3
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [
@@ -29962,12 +30064,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -32185,12 +32295,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 6
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           },
           {
             "name": "HamilcarBarcaBiography",
@@ -32727,15 +32845,7 @@
             "level": 1
           },
           {
-            "name": "PoliticalSupport",
-            "level": 2
-          },
-          {
             "name": "EstatesC",
-            "level": 1
-          },
-          {
-            "name": "Neutral",
             "level": 1
           },
           {
@@ -32745,6 +32855,10 @@
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [
@@ -37975,16 +38089,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 5
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -38931,12 +39045,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -39370,15 +39492,15 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
+            "level": 4
+          },
+          {
+            "name": "Supplies",
             "level": 4
           }
         ],
@@ -40779,16 +40901,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -43377,12 +43499,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 5
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -44686,12 +44816,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -52996,12 +53134,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -60022,7 +60168,7 @@
           },
           {
             "name": "TurnsAlive",
-            "level": 5
+            "level": 6
           }
         ],
         "ancillaries": [
@@ -60073,7 +60219,7 @@
           },
           {
             "name": "TurnsAlive",
-            "level": 2
+            "level": 3
           }
         ],
         "ancillaries": [],
@@ -60119,7 +60265,7 @@
           },
           {
             "name": "TurnsAlive",
-            "level": 2
+            "level": 3
           }
         ],
         "ancillaries": [],
@@ -61929,12 +62075,20 @@
             "level": 1
           },
           {
+            "name": "BeingPhoenician",
+            "level": 1
+          },
+          {
             "name": "GoodCommander",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 5
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -65754,7 +65908,7 @@
   "Velzna": {
     "garrison": [
       {
-        "character": "Larth",
+        "character": "Larth Hescana",
         "faction": "volsinii",
         "x": 280,
         "y": 415,
@@ -65815,7 +65969,7 @@
     ],
     "field": [
       {
-        "character": "Velthur",
+        "character": "Arnth Hescana",
         "faction": "volsinii",
         "x": 278,
         "y": 413,
@@ -69782,7 +69936,7 @@
           },
           {
             "name": "TurnsAlive",
-            "level": 4
+            "level": 5
           }
         ],
         "ancillaries": [],
@@ -84884,14 +85038,14 @@
   "Notia_Margiane": {
     "garrison": [
       {
-        "character": "BakisA",
+        "character": "Deimachos",
         "faction": "seleucid",
         "x": 845,
         "y": 460,
         "units": [
           {
             "name": "seleucid general",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
@@ -84908,22 +85062,110 @@
             "weapon": 0
           }
         ],
-        "age": 28,
+        "age": 40,
         "tags": [
           "named"
         ],
         "traits": [
           {
+            "name": "BeingMacedonian",
+            "level": 1
+          },
+          {
             "name": "ReligionAssigned",
             "level": 1
           },
           {
-            "name": "GoodCommander",
+            "name": "LoyaltyLevel",
+            "level": 4
+          },
+          {
+            "name": "NaturalEnergy",
+            "level": 3
+          },
+          {
+            "name": "NaturalIntelligence",
+            "level": 3
+          },
+          {
+            "name": "NaturalCharisma",
+            "level": 3
+          },
+          {
+            "name": "Temperament",
+            "level": 3
+          },
+          {
+            "name": "Selflessness",
+            "level": 3
+          },
+          {
+            "name": "GeneralExperience",
+            "level": 1
+          },
+          {
+            "name": "Stoic",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          },
+          {
+            "name": "GoodBuilder",
+            "level": 1
+          },
+          {
+            "name": "GoodTrader",
+            "level": 1
+          },
+          {
+            "name": "BoringSpeaker",
+            "level": 1
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 2
+          },
+          {
+            "name": "Scholarly",
+            "level": 2
+          },
+          {
+            "name": "Infertile",
+            "level": 2
+          },
+          {
+            "name": "Girls",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 2
+          },
+          {
+            "name": "GoodTaxman",
+            "level": 1
+          },
+          {
+            "name": "Upright",
+            "level": 1
+          },
+          {
+            "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
-            "level": 1
+            "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -88693,244 +88935,7 @@
         "charType": "general"
       }
     ],
-    "field": [
-      {
-        "character": "Deimachos",
-        "faction": "seleucid",
-        "x": 843,
-        "y": 475,
-        "units": [
-          {
-            "name": "seleucid general",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "seleucid hypaspists",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "seleucid chalkaspides",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "seleucid chalkaspides",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor karian light infantry",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor karian heavy infantry",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor cilician spearmen",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thureophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thureophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thureophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "thureophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "psiloi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek peltasts",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek archers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "seleucid xystophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "seleucid xystophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 40,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingMacedonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 4
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 3
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 3
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "Temperament",
-            "level": 3
-          },
-          {
-            "name": "Selflessness",
-            "level": 3
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 1
-          },
-          {
-            "name": "Stoic",
-            "level": 2
-          },
-          {
-            "name": "Austere",
-            "level": 2
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 1
-          },
-          {
-            "name": "GoodBuilder",
-            "level": 1
-          },
-          {
-            "name": "GoodTrader",
-            "level": 1
-          },
-          {
-            "name": "BoringSpeaker",
-            "level": 1
-          },
-          {
-            "name": "MathematicsSkill",
-            "level": 2
-          },
-          {
-            "name": "Scholarly",
-            "level": 2
-          },
-          {
-            "name": "infertile",
-            "level": 2
-          },
-          {
-            "name": "Girls",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 2
-          },
-          {
-            "name": "GoodTaxman",
-            "level": 1
-          },
-          {
-            "name": "Upright",
-            "level": 1
-          },
-          {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "field": [],
     "settlement": {
       "x": 828,
       "y": 478
@@ -102554,6 +102559,10 @@
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],
@@ -102591,6 +102600,10 @@
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
           }
         ],
         "ancillaries": [],

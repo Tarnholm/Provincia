@@ -51,6 +51,18 @@
     {
       "to": "italics",
       "kind": "war"
+    },
+    {
+      "to": "roman_rebels_1",
+      "kind": "war"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "war"
+    },
+    {
+      "to": "roman_senate",
+      "kind": "ally"
     }
   ],
   "volsinii": [
@@ -313,6 +325,14 @@
       "kind": "ally"
     },
     {
+      "to": "palmyra",
+      "kind": "ally"
+    },
+    {
+      "to": "persis",
+      "kind": "ally"
+    },
+    {
       "to": "sophene",
       "kind": "ally"
     }
@@ -363,6 +383,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "seleucid",
+      "kind": "ally"
     }
   ],
   "ptolemaic": [
@@ -433,6 +457,14 @@
     {
       "to": "arados",
       "kind": "ally"
+    },
+    {
+      "to": "sidon",
+      "kind": "ally"
+    },
+    {
+      "to": "tyre",
+      "kind": "ally"
     }
   ],
   "tyre": [
@@ -443,6 +475,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
     }
   ],
   "sidon": [
@@ -453,6 +489,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "ptolemaic",
+      "kind": "ally"
     }
   ],
   "qataban": [
@@ -471,6 +511,14 @@
     {
       "to": "himyar",
       "kind": "ally"
+    },
+    {
+      "to": "minaeans",
+      "kind": "ally"
+    },
+    {
+      "to": "saba",
+      "kind": "war"
     }
   ],
   "himyar": [
@@ -517,6 +565,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "seleucid_rebels",
+      "kind": "war"
     }
   ],
   "seleucid_rebels": [
@@ -534,6 +586,10 @@
     },
     {
       "to": "galatians",
+      "kind": "war"
+    },
+    {
+      "to": "seleucid_rebels2",
       "kind": "war"
     }
   ],
@@ -1823,10 +1879,6 @@
       "kind": "ally"
     },
     {
-      "to": "tylis",
-      "kind": "ally"
-    },
-    {
       "to": "sinope",
       "kind": "ally"
     },
@@ -2247,6 +2299,10 @@
     {
       "to": "himyar",
       "kind": "war"
+    },
+    {
+      "to": "qataban",
+      "kind": "war"
     }
   ],
   "siraces": [
@@ -2325,11 +2381,27 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "romans_julii",
+      "kind": "war"
+    },
+    {
+      "to": "roman_rebels_2",
+      "kind": "war"
     }
   ],
   "roman_rebels_2": [
     {
       "to": "slave",
+      "kind": "war"
+    },
+    {
+      "to": "roman_rebels_1",
+      "kind": "war"
+    },
+    {
+      "to": "romans_julii",
       "kind": "war"
     }
   ],
@@ -2337,6 +2409,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "romans_julii",
+      "kind": "ally"
     }
   ],
   "acarnania": [
@@ -2400,6 +2476,14 @@
     },
     {
       "to": "armenia",
+      "kind": "ally"
+    },
+    {
+      "to": "cappadocia",
+      "kind": "ally"
+    },
+    {
+      "to": "sophene",
       "kind": "ally"
     }
   ],
@@ -2599,6 +2683,14 @@
     {
       "to": "armenia",
       "kind": "ally"
+    },
+    {
+      "to": "armenia_minor",
+      "kind": "ally"
+    },
+    {
+      "to": "sophene",
+      "kind": "ally"
     }
   ],
   "carmo": [
@@ -2776,10 +2868,6 @@
     },
     {
       "to": "pergamon",
-      "kind": "ally"
-    },
-    {
-      "to": "sophene",
       "kind": "ally"
     }
   ],
@@ -3103,6 +3191,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "thamud",
+      "kind": "ally"
     }
   ],
   "lugii": [
@@ -3219,6 +3311,10 @@
     {
       "to": "himyar",
       "kind": "ally"
+    },
+    {
+      "to": "qataban",
+      "kind": "ally"
     }
   ],
   "mossynoeci": [
@@ -3317,6 +3413,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "seleucid",
+      "kind": "ally"
     }
   ],
   "paphlagonia": [
@@ -3343,6 +3443,14 @@
     {
       "to": "iazyges",
       "kind": "ally"
+    },
+    {
+      "to": "royal_sarmatians",
+      "kind": "ally"
+    },
+    {
+      "to": "royal_scythians",
+      "kind": "war"
     }
   ],
   "royal_sarmatians": [
@@ -3353,6 +3461,14 @@
     {
       "to": "iazyges",
       "kind": "ally"
+    },
+    {
+      "to": "rhoxolani",
+      "kind": "ally"
+    },
+    {
+      "to": "royal_scythians",
+      "kind": "war"
     }
   ],
   "royal_scythians": [
@@ -3362,6 +3478,14 @@
     },
     {
       "to": "iazyges",
+      "kind": "war"
+    },
+    {
+      "to": "rhoxolani",
+      "kind": "war"
+    },
+    {
+      "to": "royal_sarmatians",
       "kind": "war"
     }
   ],
@@ -3497,11 +3621,15 @@
       "kind": "ally"
     },
     {
-      "to": "seleucid",
+      "to": "armenia_minor",
       "kind": "ally"
     },
     {
-      "to": "cyzicus",
+      "to": "cappadocia",
+      "kind": "ally"
+    },
+    {
+      "to": "seleucid",
       "kind": "ally"
     }
   ],
@@ -3551,6 +3679,10 @@
     {
       "to": "slave",
       "kind": "war"
+    },
+    {
+      "to": "lihyan",
+      "kind": "ally"
     }
   ],
   "thessaly": [
@@ -3607,10 +3739,6 @@
     {
       "to": "asti",
       "kind": "war"
-    },
-    {
-      "to": "byzantium",
-      "kind": "ally"
     },
     {
       "to": "cabyle",
