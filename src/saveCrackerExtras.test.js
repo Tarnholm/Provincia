@@ -206,6 +206,52 @@ describeIfSaveAndOrder("saveCrackerExtras — factionId + all-faction diplomacy"
   });
 });
 
+// ── locateDiplomacyMatrix — key-agnostic, gap-tolerant locator (2026-05-31) ──
+// Regression for the fix that lets Republic-of-Rome saves locate their
+// diplomacy matrix. ROOT CAUSE (findings-diplo-locator-2026-05-31): the old
+// stride detector required (a) every cell share one `key` (+4) and (b) a
+// PERFECT N-long signature run. On clean imperial saves both hold (julii1:
+// uniform key 10, 239/239 sig). On RR saves neither holds — the matrix carries
+// a MIXED key column and ~8 per-row signature gaps (Raymond T5: 231/239) — so
+// the locator never recognised the real matrix and returned null. Fix: detect
+// stride from the cell SIGNATURE only (key-agnostic) and accept a near-complete
+// run (>=90% of N). julii1 must be unchanged; Raymond T5 must now locate.
+const julii1Dip = loadSaveIfPresent(`${SAVE_DIR}\\save_julii1.sav`);
+const RAYMOND_T5 = "C:\\dev\\crash-saves-v7.2\\2026-05-30__Raymond__save_Autosave_Republic_of_Rome_Turn_5_Start\\save_Autosave   Republic of Rome   Turn 5 Start.sav";
+const raymondT5 = loadSaveIfPresent(RAYMOND_T5);
+
+const describeIfJulii1Dip = (julii1Dip && factionOrder) ? describe : describe.skip;
+describeIfJulii1Dip("locateDiplomacyMatrix — julii1 regression (clean imperial)", () => {
+  test("locks at base 1092027 / stride 267 / symmetry 1.0 / 22 war pairs", () => {
+    const m = parseDiplomacyMatrix(julii1Dip, factionOrder);
+    expect(m).toBeTruthy();
+    expect(m._meta.base).toBe(1092027);
+    expect(m._meta.stride).toBe(267);
+    expect(m._meta.symmetry).toBe(1);
+    expect(m._meta.warPairs).toBe(22);
+  });
+});
+
+const describeIfRaymond = (raymondT5 && factionOrder) ? describe : describe.skip;
+describeIfRaymond("locateDiplomacyMatrix — Raymond T5 Republic of Rome (mixed key, gapped sig)", () => {
+  test("now LOCATES with high symmetry and plausible turn-5 diplomacy", () => {
+    const m = parseDiplomacyMatrix(raymondT5, factionOrder);
+    expect(m).toBeTruthy();              // used to be null (locator missed it)
+    expect(m._meta.symmetry).toBeGreaterThanOrEqual(0.95);
+    expect(m._meta.stride).toBe(267);
+    // Julii is NOT at war with everyone — a handful of real wars at turn 5.
+    const julii = m.romans_julii;
+    expect(julii).toBeTruthy();
+    expect(julii.war.length).toBeGreaterThan(0);
+    expect(julii.war.length).toBeLessThan(15);
+    // Allied with the Roman senate and its early Italian client states.
+    expect(julii.allied).toContain("roman_senate");
+    expect(julii.allied).toContain("samnites");
+    // No placeholder faction leaks into a real faction's war list.
+    for (const ph of ["slave", "italics", "dummies"]) expect(julii.war).not.toContain(ph);
+  });
+});
+
 // ── parseFactionTreasuryHistory keying (fixed 2026-05-31) ──────────────────
 // The off-by-one bug: the function keyed each history series by the record's
 // `factionId` BYTE, which is shifted one slot on imperial sub=6 records, so
