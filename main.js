@@ -2769,17 +2769,41 @@ function loadPortraitMapping(modDataDir) {
   return out;
 }
 
-// Cache the listing of NNN.tga.dds files in each `portraits/portraits/<age>/generals/`
-// pool, keyed by directory path. Directories are scanned once per process.
-const _portraitPoolCache = new Map(); // dirPath -> string[] (sorted .tga.dds files)
-function listPoolFiles(dir) {
-  if (_portraitPoolCache.has(dir)) return _portraitPoolCache.get(dir);
-  let files = [];
+// Resolve the per-character general portrait POOL for a given culture + age
+// bucket. Two on-disk layouts exist and we must support both, else mods that
+// ship the alternate layout silently fall through to the bodyguard unit icon:
+//   (A) vanilla RTW Remastered:  <culture>/portraits/portraits/<bucket>/generals/NNN.tga.dds
+//   (B) RIS-style mods:          <culture>/portraits/portraits/<bucket>/NNN.tga        (no generals/ subdir, plain .tga)
+// Returns { dir, files, ext } where ext is the actual extension of the pool's
+// files (".tga.dds" → LZ4/DXT1 DDS decode in the renderer; ".tga" → plain TGA),
+// or null when neither layout has files. Cached per (bucketDir) — the directory
+// scan runs once per process. NOTE: the cache key is the BUCKET dir, not the
+// generals/ subdir, because the resolver now inspects both.
+const _portraitPoolCache = new Map(); // bucketDir -> { dir, files, ext } | null
+function resolvePortraitPool(bucketDir) {
+  if (_portraitPoolCache.has(bucketDir)) return _portraitPoolCache.get(bucketDir);
+  let result = null;
+  // (A) vanilla layout: <bucket>/generals/*.tga.dds
   try {
-    files = fs.readdirSync(dir).filter((n) => n.toLowerCase().endsWith(".tga.dds")).sort();
+    const generalsDir = path.join(bucketDir, "generals");
+    const dds = fs.readdirSync(generalsDir).filter((n) => n.toLowerCase().endsWith(".tga.dds")).sort();
+    if (dds.length > 0) result = { dir: generalsDir, files: dds, ext: ".tga.dds" };
   } catch {}
-  _portraitPoolCache.set(dir, files);
-  return files;
+  // (B) mod layout: files directly in <bucket>, .tga (preferred) or .tga.dds.
+  if (!result) {
+    try {
+      const all = fs.readdirSync(bucketDir);
+      const dds = all.filter((n) => n.toLowerCase().endsWith(".tga.dds")).sort();
+      if (dds.length > 0) {
+        result = { dir: bucketDir, files: dds, ext: ".tga.dds" };
+      } else {
+        const tga = all.filter((n) => n.toLowerCase().endsWith(".tga")).sort();
+        if (tga.length > 0) result = { dir: bucketDir, files: tga, ext: ".tga" };
+      }
+    } catch {}
+  }
+  _portraitPoolCache.set(bucketDir, result);
+  return result;
 }
 
 // Deterministic per-character portrait index: DJB2 hash of the character's
@@ -4113,27 +4137,44 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
     const nameHash = hashName(hashInput);
     for (const tc of tryCultures) {
       for (const d of dirs) {
-        const poolDir = path.join(d, tc, "portraits", "portraits", ageBucket, "generals");
-        const files = listPoolFiles(poolDir);
-        if (files.length === 0) continue;
+        const bucketDir = path.join(d, tc, "portraits", "portraits", ageBucket);
+        // 0.9.770: resolve the pool across BOTH on-disk layouts (vanilla
+        // <bucket>/generals/*.tga.dds AND mod <bucket>/*.tga). Before this,
+        // listPoolFiles only matched the vanilla generals/*.tga.dds layout —
+        // a mod whose portraits live directly in <bucket> as plain .tga (RIS)
+        // returned an empty pool, so every general/leader fell through to the
+        // static general_portrait.tga or, failing that, the bodyguard unit
+        // icon. Now mod portraits are actually used, and a culture missing the
+        // vanilla layout no longer silently depends on a vanilla install.
+        const pool = resolvePortraitPool(bucketDir);
+        if (!pool || pool.files.length === 0) continue;
+        const files = pool.files;
         // Explicit portrait_index (descr_strat / future save) bypasses the
         // hash. Clamp into the pool's bounds in case the index was written
         // for a different culture's larger pool.
         const idx = (explicit != null) ? (explicit % files.length) : (nameHash % files.length);
         const file = files[idx];
-        // 0.9.453: log EVERY hash-pool pick (no throttle) so we can see
-        // when many chars are landing on the same file. Lifting the
-        // throttle from 0.9.449 because user reported "all garrison cards
-        // show the same picture" even after hash fallback — need every
-        // pick visible to find the collision.
-        console.log(`[resolve-portrait] hash pool pick name="${charContext.name}" lastName="${charContext.lastName || ""}" faction="${charContext.faction || ""}" culture=${tc} bucket=${ageBucket} ageRaw=${charContext.age} → idx=${idx}/${files.length} file=${file}`);
+        // [portrait] log the resolution data path + chosen source so the
+        // bodyguard-vs-leader fallthrough is diagnosable from provincia.log.
+        // (0.9.453 logged the pick; 0.9.770 adds the pool DIR + layout so we
+        // can see WHICH layout/source won and whether mod or vanilla supplied
+        // the face.) No throttle — needed to spot pool collisions.
+        const isVanilla = d.includes("Total War ROME REMASTERED");
+        console.log(`[portrait] hash-pool pick name="${charContext.name}" lastName="${charContext.lastName || ""}" faction="${charContext.faction || ""}" culture=${tc} (requested=${c}) bucket=${ageBucket} ageRaw=${charContext.age} source=${isVanilla ? "VANILLA" : "MOD"} layout=${pool.ext === ".tga.dds" && pool.dir.endsWith("generals") ? "A/generals-dds" : pool.ext === ".tga.dds" ? "B/bucket-dds" : "B/bucket-tga"} → idx=${idx}/${files.length} file=${file} dir="${pool.dir}"`);
         try {
-          const buf = fs.readFileSync(path.join(poolDir, file));
+          const buf = fs.readFileSync(path.join(pool.dir, file));
           return {
             ok: true,
             buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
-            path: path.join(poolDir, file),
-            encoded: "rtw-tga-dds", // signals LZ4+DDS+DXT1 to renderer
+            path: path.join(pool.dir, file),
+            // Encoding follows the ACTUAL file extension: .tga.dds is the
+            // LZ4-frame DDS/DXT1 the renderer decodes via portraitDecoder;
+            // .tga is a plain Targa decoded via tga.js. Mismatching this was
+            // impossible before (pool was dds-only) but matters now that the
+            // mod's plain-.tga pool is eligible — sending "rtw-tga-dds" for a
+            // plain .tga would make the renderer's DDS decode throw → null →
+            // bodyguard-icon fallback.
+            encoded: pool.ext === ".tga.dds" ? "rtw-tga-dds" : null,
           };
         } catch {}
       }
