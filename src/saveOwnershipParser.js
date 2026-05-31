@@ -20,10 +20,29 @@
 
 const { findAllSettlementMarkers } = require("./buildingParser.js");
 
+// Some settlement markers are stored by their REGION name rather than their
+// SETTLEMENT name (cracked 2026-05-31 — e.g. on the RoR Turn-8 save the player
+// capital's marker reads "Roma" not "Rome", and "Etruria"/"Rhegion" instead of
+// "Arretium"/"Rhegium"). Those names aren't in initialOwnerByCity (which is
+// keyed by settlement name), so the marker contributed nothing to the UUID→
+// faction vote AND never resolved — orphaning the settlement + every unit whose
+// region maps to it. `normalizeName` maps a region-name marker to its
+// settlement name via descr_regions so it behaves like a normal settlement.
+// (regionToSettlement may be null — then this is a no-op and behaviour is
+// identical to the pre-2026-05-31 code.)
+function makeNormalizer(initialOwnerByCity, regionToSettlement) {
+  if (!regionToSettlement) return (name) => name;
+  return (name) => {
+    if (name in initialOwnerByCity) return name;          // already a settlement name
+    const s = regionToSettlement[name];                    // region name → settlement
+    return (s && s in initialOwnerByCity) ? s : name;
+  };
+}
+
 // Scan candidate offsets and pick the one where settlements with same
 // descr_strat faction share the same uint32 value.
 // Returns { bestOffset, score } where score = # of settlements cleanly mapped.
-function detectOwnerOffset(buf, setts, initialOwnerByCity) {
+function detectOwnerOffset(buf, setts, initialOwnerByCity, normalize = (n) => n) {
   // Try known-good offsets first (from reverse engineering):
   //   d=-454 → vanilla 32-bit owner UUID
   //   d=-1944/-1946 → RIS mod 32-bit owner UUID
@@ -48,7 +67,7 @@ function detectOwnerOffset(buf, setts, initialOwnerByCity) {
       const v = buf.readUInt32LE(o);
       if (v === 0 || v === 0xffffffff) continue;
       uuidCount.set(v, (uuidCount.get(v) || 0) + 1);
-      const fac = initialOwnerByCity[s.name];
+      const fac = initialOwnerByCity[normalize(s.name)];
       if (!fac) continue;
       if (!uuidToFac.has(v)) uuidToFac.set(v, new Map());
       const fm = uuidToFac.get(v);
@@ -63,7 +82,7 @@ function detectOwnerOffset(buf, setts, initialOwnerByCity) {
     }
     let score = 0;
     for (const s of setts) {
-      const fac = initialOwnerByCity[s.name];
+      const fac = initialOwnerByCity[normalize(s.name)];
       if (!fac) continue;
       const o = s.offset + d;
       if (o < 0 || o + 4 > buf.length) continue;
@@ -116,10 +135,10 @@ function detectOwnerOffset(buf, setts, initialOwnerByCity) {
 // at least one descr_strat-anchored settlement under this UUID. Ties go
 // to whichever faction has a clearer starting-cluster signature (broken by
 // the alphabet as a last resort).
-function buildUuidToFaction(buf, setts, offset, initialOwnerByCity) {
+function buildUuidToFaction(buf, setts, offset, initialOwnerByCity, normalize = (n) => n) {
   const uuidToFac = new Map();
   for (const s of setts) {
-    const fac = initialOwnerByCity[s.name];
+    const fac = initialOwnerByCity[normalize(s.name)];
     if (!fac) continue;
     const o = s.offset + offset;
     if (o < 0 || o + 4 > buf.length) continue;
@@ -144,16 +163,17 @@ function buildUuidToFaction(buf, setts, offset, initialOwnerByCity) {
 
 // For each settlement, read its current owner UUID and resolve to faction.
 // Returns { ownerByCity: {city: factionId}, detectedOffset, dictSize }.
-function resolveCurrentOwners(buf, initialOwnerByCity) {
+function resolveCurrentOwners(buf, initialOwnerByCity, regionToSettlement = null) {
   if (!initialOwnerByCity || Object.keys(initialOwnerByCity).length === 0) {
     return { ownerByCity: {}, error: "no initial ownership provided" };
   }
+  const normalize = makeNormalizer(initialOwnerByCity, regionToSettlement);
   const setts = findAllSettlementMarkers(buf);
-  const det = detectOwnerOffset(buf, setts, initialOwnerByCity);
+  const det = detectOwnerOffset(buf, setts, initialOwnerByCity, normalize);
   if (det.d === null) {
     return { ownerByCity: {}, error: "could not detect owner offset" };
   }
-  const dict = buildUuidToFaction(buf, setts, det.d, initialOwnerByCity);
+  const dict = buildUuidToFaction(buf, setts, det.d, initialOwnerByCity, normalize);
   // Identify the "slave/rebel" faction id from descr_strat — every RTW
   // campaign carries one. Settlements with uuid=0 (the rebel sentinel)
   // resolve to this faction. Without this, ~10 rebel-occupied settlements
@@ -170,18 +190,28 @@ function resolveCurrentOwners(buf, initialOwnerByCity) {
   })();
   const ownerByCity = {};
   const unknown = {};
+  // Track which keys were resolved to a real (dict-backed) faction so a later
+  // duplicate marker for the SAME settlement (e.g. a region-name marker whose
+  // UUID isn't in the dict) can't clobber a good resolution with a worse one.
+  const resolvedReal = new Set();
   for (const s of setts) {
     const o = s.offset + det.d;
     if (o < 0 || o + 4 > buf.length) continue;
     const uuid = buf.readUInt32LE(o);
     if (uuid === 0xffffffff) continue;
+    // Map region-name markers (e.g. "Roma") to their settlement name ("Rome")
+    // so they resolve and key correctly; settlement-name markers pass through.
+    const key = normalize(s.name);
     if (uuid === 0) {
-      if (slaveFaction) ownerByCity[s.name] = slaveFaction;
+      // Slave/rebel sentinel — only fill if nothing real already claimed it.
+      if (slaveFaction && !resolvedReal.has(key)) ownerByCity[key] = slaveFaction;
       continue;
     }
     const fac = dict.get(uuid);
-    if (fac) ownerByCity[s.name] = fac;
-    else unknown[s.name] = uuid.toString(16).padStart(8, "0");
+    if (fac) { ownerByCity[key] = fac; resolvedReal.add(key); delete unknown[key]; }
+    else if (!resolvedReal.has(key) && !(key in ownerByCity)) {
+      unknown[key] = uuid.toString(16).padStart(8, "0");
+    }
   }
   return {
     ownerByCity,

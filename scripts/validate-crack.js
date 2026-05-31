@@ -113,13 +113,16 @@ try { ({ EVENT_CLASS } = require("../src/eventLogParser.js")); } catch (e) { /* 
 
 // ── Structural invariants asserted for EVERY save in the corpus ───────────
 // No per-save ground truth: each assertion must hold for any valid save.
-// Attribution FLOOR (the realistic minimum) — see note below. Unit faction
-// attribution rides on mapping a unit's region → settlement → ownerByCity;
-// the save's settlement-marker name vocabulary doesn't cover every region
-// (chiefly non-Italian regions + open-sea fleets), so 100% is unreachable on
-// mid/late saves. What matters for correctness is that NO unit is given a
-// WRONG faction — that is asserted separately (badUnitFactions === 0).
-const UNIT_ATTR_FLOOR = 0.70;
+// Attribution FLOOR (the realistic minimum) — see note below. LAND unit faction
+// attribution rides on mapping a unit's region → settlement → ownerByCity.
+// As of 2026-05-31 the settlement-marker scanner reads BOTH terminator variants
+// (recovering ~140 dropped settlements) and region-name markers are normalized
+// to settlement names, so land attribution is ≥90% on the mid/late crash saves.
+// NAVAL units ("the sea") have no land owner and are EXCLUDED from this rate
+// (reported separately as r._stats.unitAttribution.naval). What matters for
+// correctness is that NO unit is given a WRONG faction — asserted separately
+// (badUnitFactions === 0).
+const UNIT_ATTR_FLOOR = 0.90;
 
 // CONFIRMED RIS campaign cadence (turnParser.js): 4 turns per year, epoch 270 BC.
 const EPOCH_YEAR = -270, TURNS_PER_YEAR = 4;
@@ -209,20 +212,27 @@ function invariants(file, r, known) {
 
   // --- units / armies ---
   const units = r.units || [];
-  let unitNull = 0, unitSoldiersBad = 0;
+  let unitSoldiersBad = 0, navalAttributed = 0;
   const unitFacs = new Set();
   for (const u of units) {
-    if (!u.faction) { unitNull++; }
-    else unitFacs.add(u.faction);
+    if (u.faction) unitFacs.add(u.faction);
+    // A naval unit must never carry a (fabricated) land faction.
+    if (u.naval && u.faction) navalAttributed++;
     if (u.soldiers != null && !(Number.isFinite(u.soldiers) && u.soldiers >= 0)) unitSoldiersBad++;
   }
   const badUnitFactions = [...unitFacs].filter((f) => !known.has(f));
   check(tag("every attributed unit.faction is real"), badUnitFactions.length === 0, `bad=${badUnitFactions.join(",")}`);
   check(tag("every unit soldiers >= 0"), unitSoldiersBad === 0, `${unitSoldiersBad} bad`);
-  const attrFrac = units.length ? (units.length - unitNull) / units.length : 1;
-  check(tag(`>= ${Math.round(UNIT_ATTR_FLOOR * 100)}% units attributed`),
-    units.length === 0 ? null : attrFrac >= UNIT_ATTR_FLOOR,
-    `${(attrFrac * 100).toFixed(1)}% (${units.length - unitNull}/${units.length})`);
+  check(tag("no naval unit carries a (guessed) faction"), navalAttributed === 0, `${navalAttributed} naval with faction`);
+  // LAND attribution rate (naval excluded from the denominator). Prefer the
+  // crack's own summary; fall back to recomputing from units if absent.
+  const ua = (r._stats && r._stats.unitAttribution) || null;
+  const landUnits = ua ? ua.land : units.filter((u) => !u.naval).length;
+  const landAttr = ua ? ua.landAttributed : units.filter((u) => !u.naval && u.faction).length;
+  const attrFrac = landUnits ? landAttr / landUnits : 1;
+  check(tag(`>= ${Math.round(UNIT_ATTR_FLOOR * 100)}% LAND units attributed`),
+    landUnits === 0 ? null : attrFrac >= UNIT_ATTR_FLOOR,
+    `${(attrFrac * 100).toFixed(1)}% (${landAttr}/${landUnits} land; ${ua ? ua.naval : "?"} naval)`);
   // Armies: each army's unitCount must equal its actual member count, and its
   // soldiers the sum of members'.
   const byCmd = new Map();

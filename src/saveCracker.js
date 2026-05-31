@@ -164,6 +164,11 @@ function crackSave(saveBuf, modDataDir) {
   const nameLookup    = loadNameLookup(modDataDir);
   const traitNames    = loadTraitNames(modDataDir);
   const ownership     = buildInitialOwnership(modDataDir);
+  // region name → settlement name (descr_regions). Used both to map a unit's
+  // region to its settlement for ownership lookup AND to normalize the save's
+  // region-name settlement markers (e.g. "Roma" → "Rome") in resolveCurrentOwners.
+  let regionToSettlement = {};
+  try { if (ownership.regionsPath) regionToSettlement = parseDescrRegions(ownership.regionsPath); } catch (e) { /* */ }
   const engineOrder   = x.deriveEngineFactionOrder(stratOrder);
   // The diplomacy matrix is indexed by descr_sm_factions order, NOT descr_strat
   // (cracked 2026-05-29 from Bactria 3-turn diff). Falls back to engineOrder.
@@ -177,7 +182,7 @@ function crackSave(saveBuf, modDataDir) {
   // ── save-side parses, each from its CANONICAL source ──────────────────
   const header        = x.parseHeader(saveBuf);
   const treasuriesRaw = x.parseFactionTreasuries(saveBuf);
-  const ownersOut     = resolveCurrentOwners(saveBuf, ownership.ownerByCity);
+  const ownersOut     = resolveCurrentOwners(saveBuf, ownership.ownerByCity, regionToSettlement);
   const settlements   = parseSettlements(saveBuf, null, null); // returns { settlements: [...], ... }
   const diplomacy     = x.parseDiplomacyMatrix(saveBuf, diploOrder);
   const v2Chars       = x.parseCharacterExtras(saveBuf);
@@ -239,7 +244,25 @@ function crackSave(saveBuf, modDataDir) {
   // governor) — cracked 2026-05-31, src/settlementFieldsParser.js. Keyed by name.
   let settlementFields = {};
   try {
-    settlementFields = parseSettlementFields(saveBuf, findAllSettlementMarkers(saveBuf));
+    const raw = parseSettlementFields(saveBuf, findAllSettlementMarkers(saveBuf));
+    // Normalize region-name marker keys (e.g. "Roma"/"Etruria") to their
+    // settlement name ("Rome"/"Arretium") so the keys line up with ownerByCity
+    // — the marker scanner now also surfaces region-name markers for a handful
+    // of settlements, and those phantom keys would otherwise orphan against
+    // ownerByCity. Never clobber a real settlement-name entry already present.
+    settlementFields = {};
+    // Pass 1: settlement-name (real) keys win.
+    for (const [k, v] of Object.entries(raw)) {
+      if (k in ownership.ownerByCity) settlementFields[k] = v;
+    }
+    // Pass 2: region-name marker keys map to their settlement name, only if a
+    // real entry isn't already present (so we never clobber real fields).
+    for (const [k, v] of Object.entries(raw)) {
+      if (k in ownership.ownerByCity) continue;
+      const s = regionToSettlement[k];
+      const key = (s && s in ownership.ownerByCity) ? s : k;
+      if (!(key in settlementFields)) settlementFields[key] = v;
+    }
   } catch (e) { /* leave empty on failure */ }
 
   // Scripted-event / disaster schedule (descr_events table) — cracked
@@ -288,10 +311,20 @@ function crackSave(saveBuf, modDataDir) {
     const own = ownersOut.ownerByCity || {};
     // unit.region is a REGION name; ownerByCity is keyed by SETTLEMENT name —
     // map region→settlement via descr_regions, then look up the owner.
-    let r2s = {};
-    try { if (ownership.regionsPath) r2s = parseDescrRegions(ownership.regionsPath); } catch (e) { /* */ }
+    const r2s = regionToSettlement;
     units = findUnitRecords(saveBuf);
     for (const u of units) {
+      // Naval units sit in a non-land pseudo-region ("the sea") that has no
+      // settlement and therefore no land owner — attributing them by region
+      // ownership is impossible. Mark them naval:true / faction:null so they
+      // are reported separately and EXCLUDED from the land-attribution rate
+      // (counting them as "unattributed land units" was suppressing the rate
+      // by ~1-2pp and is semantically wrong — we never fabricate a faction).
+      // RTW stores the sea as the lowercase string "the sea"; also treat any
+      // region with no descr_regions settlement AND not a known land region as
+      // non-attributable rather than guessing.
+      u.naval = /\bsea\b|\bocean\b/i.test(u.region || "");
+      if (u.naval) { u.faction = null; continue; }
       const city = (u.region && r2s[u.region]) || u.region;
       u.faction = (city && own[city]) || null;
     }
@@ -304,6 +337,20 @@ function crackSave(saveBuf, modDataDir) {
     }
     armies = [...byCmd.values()];
   } catch (e) { /* leave empty */ }
+
+  // Unit-attribution summary: naval units are reported separately and are NOT
+  // part of the land-attribution denominator (they have no land owner). The
+  // landAttributedFrac is the metric the corpus floor asserts against.
+  const navalUnits = units.filter((u) => u.naval).length;
+  const landUnits = units.length - navalUnits;
+  const landAttributed = units.filter((u) => !u.naval && u.faction).length;
+  const unitAttribution = {
+    total: units.length,
+    naval: navalUnits,
+    land: landUnits,
+    landAttributed,
+    landAttributedFrac: landUnits ? landAttributed / landUnits : 1,
+  };
 
   // ── derive per-faction rollups from the CORRECT source ────────────────
   // Region count comes from ownerByCity tally (NOT from treasuriesRaw.regionCount
@@ -494,6 +541,7 @@ function crackSave(saveBuf, modDataDir) {
       factionsWithKnowledge: factionKnowledge ? factionKnowledge.factionsWithTail : 0,
       units: units.length,
       armies: armies.length,
+      unitAttribution,
       wars: diplomacy ? diplomacy._meta?.warPairs : null,
       saveSizeBytes: saveBuf.length,
     },

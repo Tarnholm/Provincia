@@ -20,11 +20,28 @@
 "use strict";
 
 function findAllSettlementMarkers(buf) {
-  // Settlement markers: [flag_byte, nchars, 0x00, UTF-16 name, 0x00 0x00].
+  // Settlement markers: [flag_byte, nchars, 0x00, UTF-16 name, TERMINATOR].
   // Empirically the flag byte is either 0x01 (most common — "has built
   // chains / active settlement") or 0x00 (seen in Alex saves for Sparta
   // at turn start before the player constructs anything there). Accept
   // both so partially-populated settlements aren't missed.
+  //
+  // The post-name TERMINATOR is a little-endian uint32 holding a small count N
+  // (cracked 2026-05-31 on the RIS v7.2 crash saves; see
+  // findings-unit-attribution-2026-05-31.md). The OLD code required N == 0 (it
+  // only checked the first two bytes were `00 00`), so it silently dropped every
+  // settlement whose marker carried a non-zero N — ~140 of 1310 settlements on
+  // the mid/late Turn-5/8/34 RoR saves (e.g. Rome N=2, Vienna N=2, Athens N=3,
+  // Syracuse N=4). Each dropped settlement orphaned its garrison + field units,
+  // pinning unit attribution at 55-65%. Accepting N in 0..4 brings settlement
+  // coverage to 1309/1310 on every crash save with ZERO noise names (each
+  // recovered marker resolves to a real descr_regions name) and NO regression on
+  // the variant-free Quicksave/T1 corpus. N>4 only adds coincidental false hits
+  // (linear-growing dup matches) without improving coverage, so 4 is the cap.
+  // blockEnd stays the 2-byte step past the name (the N-u32 + payload that
+  // follows is settlement state, consumed like the old `00 00`, so the chain
+  // scanner that walks BETWEEN markers is unaffected).
+  const TERM_MAX = 4;
   const out = [];
   for (let i = 0; i < buf.length - 30; i++) {
     const flag = buf[i];
@@ -32,7 +49,8 @@ function findAllSettlementMarkers(buf) {
     const nc = buf[i + 1];
     if (nc < 3 || nc > 32 || buf[i + 2] !== 0) continue;
     const se = i + 3 + nc * 2;
-    if (se + 2 > buf.length || buf[se] !== 0 || buf[se + 1] !== 0) continue;
+    if (se + 4 > buf.length) continue;
+    if (buf.readUInt32LE(se) > TERM_MAX) continue;
     let ok = true, name = "";
     for (let j = i + 3; j < se; j += 2) {
       const lo = buf[j], hi = buf[j + 1];
