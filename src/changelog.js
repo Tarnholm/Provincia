@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.774",
+    date: "2026-05-31",
+    items: [
+      { type: "fix", text: "**Live commander portraits (leader & generals).** In live mode, generals and the faction leader showed the bodyguard unit icon instead of their portrait, because the commander records weren't being tagged with a faction (so no culture, so no portrait). Notably the player's own leader/heirs sit before the first faction marker in the save and went untagged. Faction tagging now runs before the region data is built, copies through to every commander, and falls back to the following marker for the player's own block — so commanders resolve their faction and culture and show real face cards." },
+    ],
+  },
+  {
     version: "0.9.773",
     date: "2026-05-31",
     items: [
