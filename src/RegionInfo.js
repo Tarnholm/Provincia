@@ -550,8 +550,32 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const PLACEHOLDER_RE = /(_rebels|^slave$|^slaves$|^rebels$|^dummies$|^italics$)/;
     const isRealFaction = (n) => n && !PLACEHOLDER_RE.test(n);
     const isFreePeoples = (n) => /^(slave|slaves|rebels)$/.test(n);
+    // "Generic" rebel/independent slots the GAME folds into one "Free Peoples"
+    // entry in its diplomacy view: slave, italics, and the per-faction respawn
+    // markers (e.g. seleucid_rebels2). The NAMED emergent houses
+    // (roman_rebels_1 → "The House of Aemilii", roman_rebels_2 → "The House of
+    // Cornelii") are EXCLUDED here — they have real expanded_bi.txt labels and
+    // the game shows them as distinct factions, so they stay un-folded.
+    // (2026-05-31: matrix now surfaces these as real wars — see saveCrackerExtras.)
+    const NAMED_EMERGENT_RE = /^roman_rebels_[12]$/;
+    const foldsToFreePeoples = (n) => n && PLACEHOLDER_RE.test(n) && !NAMED_EMERGENT_RE.test(n);
     const nameOf = (n) => (factionDisplayNames && factionDisplayNames[n]) || String(n).replace(/_/g, " ");
     const entryOf = (id) => ({ id, name: nameOf(id) });
+    // Fold a WAR target list to the game's labels: collapse all generic
+    // independent slots (slave/italics/*_rebels) into ONE "Free Peoples" entry
+    // (id "slave" so the existing pill/highlight logic treats it as Free
+    // Peoples), keep named emergent houses + real factions as-is. NEVER hides a
+    // real war — an unresolved name shows its internal id rather than vanishing.
+    const foldWarTargets = (list) => {
+      const out = [];
+      let hadFree = false;
+      for (const id of list) {
+        if (foldsToFreePeoples(id)) { hadFree = true; continue; }
+        out.push(entryOf(id));
+      }
+      if (hadFree) out.unshift({ id: "slave", name: nameOf("slave") });
+      return out;
+    };
     // Only trust the runtime matrix when a live save is ACTIVELY loaded.
     // Otherwise `diplomacyMatrix` is the STALE matrix from the last live save
     // (it's persisted to localStorage), which would render last-session's wars
@@ -561,7 +585,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const mtxRow = (liveActive && diplomacyMatrix && diplomacyMatrix[fidLower]) || null;
     let liveWar = [], liveAllied = [], liveHostile = [], liveTrade = [];
     if (mtxRow) {
-      liveWar = (mtxRow.war || []).filter(isRealFaction).map(entryOf);
+      // WAR: the game's ground truth — show EVERY war target, folding generic
+      // independents (slave/italics/*_rebels) into "Free Peoples" and keeping
+      // named emergent houses (roman_rebels_1/2) + real factions by their label.
+      // (Was `.filter(isRealFaction)` which hid ALL of the player's real wars on
+      // a Republic-of-Rome save — see 2026-05-31 findings.)
+      liveWar = foldWarTargets(mtxRow.war || []);
       liveAllied = (mtxRow.allied || []).filter(isRealFaction).map(entryOf);
       liveHostile = (mtxRow.hostile || []).filter(isRealFaction).map(entryOf);
       // Trade = the alliance bond (descr_strat's 199 = "Ally/Trade" + scripted
@@ -577,9 +606,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     // re-show the stale matrix's wars as if current.
     if (mtxRow && !PLACEHOLDER_RE.test(fidLower)) {
       // A real faction: it's also permanently at war with the independent
-      // "Free Peoples" (slave). The save's matrix only encodes DECLARED faction
-      // wars, not this implicit default (verified: NPC rows omit slave), so
-      // surface it explicitly (user request 2026-05-24).
+      // "Free Peoples". foldWarTargets already adds a "Free Peoples" entry when
+      // the matrix row included slave/italics/generic rebels (it does for the
+      // player). Some NPC rows omit slave entirely (verified) — keep the
+      // explicit fallback so every real faction shows the implicit war
+      // (user request 2026-05-24).
       if (!liveWar.some((e) => e.id === "slave")) liveWar.push(entryOf("slave"));
     } else if (mtxRow && isFreePeoples(fidLower)) {
       // The independent "Free Peoples" itself — permanently AT WAR with every

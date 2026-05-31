@@ -906,13 +906,24 @@ function parseDiplomacyMatrix(buf, factionOrder) {
     for (let B = 0; B < N; B++) {
       if (B === A) continue;
       const bName = factionOrder[B];
-      if (!isDiplomaticFaction(bName)) continue; // skip placeholder columns
       const c = cellAt(A, B);
       if (c == null) continue;
       const v = c.att;
       const s = stanceOf(v);
-      if (s === "war") { rec.war.push(bName); warPairs++; }
-      else if (s === "allied") rec.allied.push(bName);
+      // WAR is GROUND TRUTH regardless of partner: the game shows the player at
+      // war with rebel/emergent/slave factions (roman_rebels_1→"House of Aemilii",
+      // roman_rebels_2→"House of Cornelii", slave/italics→"Free Peoples"), so a
+      // war cell against a placeholder column is a REAL war and must NOT be
+      // dropped (2026-05-31 — was hidden by `isDiplomaticFaction` column-skip,
+      // which made the player's live war list empty while the game showed 3 wars).
+      // The display side (RegionInfo) folds slave/*_rebels → game labels.
+      if (s === "war") { rec.war.push(bName); warPairs++; continue; }
+      // ALLIED / HOSTILE / TRADE / PROTECTORATE against a placeholder column are
+      // meaningless engine-default cells (e.g. the old Free-Peoples "92 allies"
+      // bug — slave's raw row decodes as Allied toward everyone). Keep skipping
+      // placeholders for the NON-war relations only.
+      if (!isDiplomaticFaction(bName)) continue;
+      if (s === "allied") rec.allied.push(bName);
       else if (s === "hostile") rec.hostile.push(bName);
       // Military bond at cell +20 (reader bond): 6=none, 54=ally-or-client side,
       // 55=SUZERAIN side. DEEP-DECODE 2026-05-31 (probes/diplo-deep): a 54/55
@@ -936,6 +947,16 @@ function parseDiplomacyMatrix(buf, factionOrder) {
     out[name.toLowerCase()] = rec;
   }
   out._meta = { base: m.base, stride: m.stride, key: m.key, C: m.C, N, symmetry: cal.symmetry, warPairs: warPairs / 2 };
+  // Diagnostic: how many wars decoded incl. rebel/slave placeholders (the wars
+  // the game DOES show). Logged once per parse so "empty war list" reports are
+  // debuggable from provincia.log. [diplo] tag matches the [live-init] style.
+  try {
+    const realRows = Object.keys(out).filter((k) => k !== "_meta");
+    const withWars = realRows.filter((k) => out[k].war && out[k].war.length).length;
+    const sample = realRows.find((k) => out[k].war && out[k].war.length);
+    // eslint-disable-next-line no-console
+    console.log(`[diplo] matrix decoded: N=${N} stride=${m.stride} symmetry=${cal.symmetry?.toFixed?.(3)} warPairs=${(warPairs / 2)} factionsWithWars=${withWars}${sample ? ` e.g. ${sample}→[${out[sample].war.join(", ")}]` : ""}`);
+  } catch { /* logging must never break the parse */ }
   return out;
 }
 

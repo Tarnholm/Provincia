@@ -250,8 +250,47 @@ describeIfRaymond("locateDiplomacyMatrix — Raymond T5 Republic of Rome (mixed 
     // Allied with the Roman senate and its early Italian client states.
     expect(julii.allied).toContain("roman_senate");
     expect(julii.allied).toContain("samnites");
-    // No placeholder faction leaks into a real faction's war list.
-    for (const ph of ["slave", "italics", "dummies"]) expect(julii.war).not.toContain(ph);
+    // 2026-05-31: placeholders are now KEPT in the WAR list (a war with a
+    // rebel/slave faction is a REAL war the game displays). They must NOT,
+    // however, leak into the ALLIED list (the old Free-Peoples "92 allies" bug).
+    for (const ph of ["slave", "italics", "dummies"]) expect(julii.allied).not.toContain(ph);
+  });
+});
+
+// ── PLAYER WAR LIST on a LIVE "Republic of Rome Turn 1" save (2026-05-31) ──
+// BUG: parseDiplomacyMatrix dropped roman_rebels_1/2/italics/slave from the
+// player's war list via the placeholder column-skip, so Provincia showed an
+// EMPTY war list while the game showed the player at war with the House of
+// Aemilii (roman_rebels_1), House of Cornelii (roman_rebels_2), and Free
+// Peoples (slave+italics). FIX: keep war cells against placeholders — a war is
+// ground truth regardless of partner. RegionInfo folds slave/italics → "Free
+// Peoples" and labels roman_rebels_1/2 via expanded_bi.txt for display.
+const ROME_T1 = `${SAVE_DIR}\\save_Autosave   Republic of Rome   Turn 1.sav`;
+const romeT1 = loadSaveIfPresent(ROME_T1);
+const describeIfRomeT1 = (romeT1 && factionOrder) ? describe : describe.skip;
+describeIfRomeT1("parseDiplomacyMatrix — live Republic of Rome Turn 1 player war list", () => {
+  test("romans_julii war list includes both rebel houses + slave + italics (matches game)", () => {
+    const m = parseDiplomacyMatrix(romeT1, factionOrder);
+    expect(m).toBeTruthy();
+    const julii = m.romans_julii;
+    expect(julii).toBeTruthy();
+    // The four raw war targets the save encodes for the player at Turn 1.
+    expect(julii.war).toContain("roman_rebels_1"); // → "The House of Aemilii"
+    expect(julii.war).toContain("roman_rebels_2"); // → "The House of Cornelii"
+    expect(julii.war).toContain("italics");        // → folds to "Free Peoples"
+    expect(julii.war).toContain("slave");          // → folds to "Free Peoples"
+    // Allied with the senate + early Italian clients (unchanged by the fix).
+    expect(julii.allied).toContain("roman_senate");
+    // After display-folding (slave+italics → ONE "Free Peoples", houses kept),
+    // the player's war list has exactly 3 entries — matching the in-game view.
+    const NAMED_EMERGENT_RE = /^roman_rebels_[12]$/;
+    const foldsToFree = (n) => /(_rebels|^slave$|^slaves$|^rebels$|^dummies$|^italics$)/.test(n) && !NAMED_EMERGENT_RE.test(n);
+    const folded = [];
+    let hadFree = false;
+    for (const id of julii.war) { if (foldsToFree(id)) hadFree = true; else folded.push(id); }
+    if (hadFree) folded.unshift("slave");
+    expect(folded.sort()).toEqual(["roman_rebels_1", "roman_rebels_2", "slave"].sort());
+    expect(folded.length).toBe(3);
   });
 });
 
