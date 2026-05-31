@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.764",
+    date: "2026-05-31",
+    items: [
+      { type: "improvement", text: "**Sieges: besieged-side counter.** Each active siege now also reports how many turns the settlement has been under siege (counts up each turn) alongside the besieger's assault/starve clock (counts down). The two are a complementary pair — useful for spotting sieges about to break." },
+      { type: "improvement", text: "**Public-order breakdown: more sources named.** The per-settlement order breakdown now identifies the distance-to-capital penalty (the dominant order-killer in frontier cities) and the religious/cultural-unrest penalty, in addition to the tax and foreign-culture lines already mapped. Exposed as a named `order` object on each settlement (the raw 18-slot array is still available)." },
+    ],
+  },
+  {
     version: "0.9.763",
     date: "2026-05-31",
     items: [

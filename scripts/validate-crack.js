@@ -22,11 +22,16 @@
 const fs = require("fs");
 const path = require("path");
 const { crackSave } = require("../src/saveCracker.js");
+const { parseFactionTreasuries, parseFactionTreasuryHistory } = require("../src/saveCrackerExtras.js");
 
 const argv = process.argv.slice(2);
 const getArg = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
 const MOD = getArg("--mod", "C:\\RIS\\RIS\\data");
 const SAVES = getArg("--saves", "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves");
+// Crash-telemetry saves (real RIS v7.2 saves at turns 5/8/34 — great late-save
+// coverage). Each *.sav lives one level down under a per-report dir. Swept with
+// the SAME structural invariants as the primary corpus.
+const CRASH_SAVES = getArg("--crash-saves", "C:\\dev\\crash-saves-v7.2");
 
 let pass = 0, fail = 0, skip = 0;
 const failures = [];
@@ -36,14 +41,33 @@ function check(name, cond, detail) {
   else { fail++; failures.push(name); console.log(`  FAIL ${name}${detail ? "  — " + detail : ""}`); }
 }
 
-// Cache cracked saves by filename.
+// Cache cracked saves by ABSOLUTE path. `crack(file)` takes a bare filename in
+// the primary SAVES dir (back-compat with the ground-truth section); crackPath
+// takes any absolute .sav path (used for the crash-telemetry saves).
 const cache = {};
-function crack(file) {
-  if (file in cache) return cache[file];
-  const p = path.join(SAVES, file);
-  if (!fs.existsSync(p)) return (cache[file] = null);
-  try { return (cache[file] = crackSave(fs.readFileSync(p), MOD)); }
-  catch (e) { console.log(`  (crack threw on ${file}: ${e.message})`); return (cache[file] = false); }
+function crackPath(p) {
+  if (p in cache) return cache[p];
+  if (!fs.existsSync(p)) return (cache[p] = null);
+  try { return (cache[p] = crackSave(fs.readFileSync(p), MOD)); }
+  catch (e) { console.log(`  (crack threw on ${p}: ${e.message})`); return (cache[p] = false); }
+}
+function crack(file) { return crackPath(path.join(SAVES, file)); }
+
+// Crash-telemetry saves: recursively collect every *.sav under CRASH_SAVES.
+// Returns [{ file (display label), full (absolute path) }].
+function collectCrashSaves(root) {
+  if (!root || !fs.existsSync(root)) return [];
+  const out = [];
+  for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
+    const p = path.join(root, ent.name);
+    if (ent.isDirectory()) {
+      for (const f of fs.readdirSync(p))
+        if (f.toLowerCase().endsWith(".sav")) out.push({ file: `${ent.name}/${f}`, full: path.join(p, f) });
+    } else if (ent.isFile() && ent.name.toLowerCase().endsWith(".sav")) {
+      out.push({ file: ent.name, full: p });
+    }
+  }
+  return out.sort((a, b) => a.file.localeCompare(b.file));
 }
 
 // The authoritative universe of real faction names — descr_strat declaration
@@ -66,6 +90,22 @@ function readKnownFactions() {
   return known;
 }
 
+// descr_sm_factions declaration order — the index space the treasury-history
+// keying fix requires (mirrors readSmFactionsOrder in saveCracker / main.js's
+// modFactionOrder). The history record's faction = its RECORD POSITION indexed
+// into THIS order (NOT the factionId byte, NOT engineOrder). See
+// findings-treasury-history-keying-2026-05-31.md.
+function readSmFactionsOrder() {
+  const src = path.join(MOD, "descr_sm_factions.txt");
+  if (!fs.existsSync(src)) return [];
+  const out = [];
+  for (const line of fs.readFileSync(src, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^\t"([a-z_0-9]+)":/);
+    if (m) out.push(m[1]);
+  }
+  return out;
+}
+
 // Known EVENT_CLASS enum values (mirror eventLogParser.EVENT_CLASS). An event
 // whose type falls back to `class_<N>` is an UNKNOWN class.
 let EVENT_CLASS = null;
@@ -81,6 +121,20 @@ try { ({ EVENT_CLASS } = require("../src/eventLogParser.js")); } catch (e) { /* 
 // WRONG faction — that is asserted separately (badUnitFactions === 0).
 const UNIT_ATTR_FLOOR = 0.70;
 
+// CONFIRMED RIS campaign cadence (turnParser.js): 4 turns per year, epoch 270 BC.
+const EPOCH_YEAR = -270, TURNS_PER_YEAR = 4;
+const yearForTurn = (turn) => EPOCH_YEAR + Math.floor((turn - 1) / TURNS_PER_YEAR);
+
+// Extract the turn number a save FILENAME encodes, e.g.
+//   "...Republic of Rome   Turn 34 Start"  → { turn: 34, phase: "start" }
+//   "...Turn 8 End"                         → { turn: 8,  phase: "end" }
+// Returns null when the filename carries no turn (e.g. save_julii1, Quicksave).
+function turnFromFilename(file) {
+  const m = file.match(/Turn[ _]+(\d+)[ _]+(Start|End)/i);
+  if (!m) return null;
+  return { turn: parseInt(m[1], 10), phase: m[2].toLowerCase() };
+}
+
 function invariants(file, r, known) {
   const tag = (s) => `[${file}] ${s}`;
 
@@ -92,6 +146,29 @@ function invariants(file, r, known) {
   check(tag("playerFaction non-empty + real"),
     typeof r.playerFaction === "string" && r.playerFaction.length > 0 && known.has(r.playerFaction),
     `got ${r.playerFaction}`);
+
+  // --- TURN NUMBER + CAMPAIGN DATE (pins the literal-counter fix, v0.9.763) ---
+  // The old turn heuristic counted econ-history blocks and SATURATED (~10) on
+  // long campaigns; turnParser.js now reads the literal counter. Assert it.
+  // See findings-turn-number-2026-05-31.md.
+  // (a) crackSave exposes currentYear + seasonIndex (the new fields).
+  check(tag("exposes currentYear (int)"), Number.isInteger(r.currentYear), `got ${r.currentYear}`);
+  check(tag("exposes seasonIndex 0..3"),
+    Number.isInteger(r.seasonIndex) && r.seasonIndex >= 0 && r.seasonIndex < TURNS_PER_YEAR, `got ${r.seasonIndex}`);
+  // (b) year ↔ turn obeys the CONFIRMED 4-turns/year cadence.
+  if (Number.isInteger(r.turn) && r.turn >= 1 && Number.isInteger(r.currentYear)) {
+    check(tag("currentYear == -270 + floor((turn-1)/4)"),
+      r.currentYear === yearForTurn(r.turn), `turn ${r.turn} → expect ${yearForTurn(r.turn)} got ${r.currentYear}`);
+    check(tag("seasonIndex == (turn-1) % 4"),
+      r.seasonIndex === ((r.turn - 1) % TURNS_PER_YEAR), `turn ${r.turn} → expect ${(r.turn - 1) % TURNS_PER_YEAR} got ${r.seasonIndex}`);
+  }
+  // (c) when the FILENAME encodes a turn ("...Turn N Start/End"), crackSave().turn
+  //     MUST equal N exactly (the old heuristic returned 10 for "Turn 34 Start").
+  const tnf = turnFromFilename(file);
+  if (tnf) {
+    check(tag(`turn matches filename "Turn ${tnf.turn} ${tnf.phase}" (== ${tnf.turn})`),
+      r.turn === tnf.turn, `got ${r.turn}`);
+  }
 
   // --- factions / treasuries ---
   const facNames = Object.keys(r.factions);
@@ -172,6 +249,42 @@ function invariants(file, r, known) {
     if (!(Number.isFinite(m.age) && m.age >= 0 && m.age <= 120)) ageBad++;
   }
   check(tag("every family age in 0..120 or null"), ageBad === 0, `${ageBad} absurd`);
+
+  // --- FAMILY-ROSTER FLOOR (pins the portrait-record fix, v0.9.763) ----------
+  // The old anchor required `0xffffffff @ p-7` (a non-invariant "sentinel" that
+  // only holds for portrait-LESS members), so it silently dropped every member
+  // with an assigned portrait — collapsing a turn-34 roster to ~304. After the
+  // fix the same save yields ~2185. Lock that in, scaled to the campaign turn.
+  // See findings-family-latesave-2026-05-31.md.
+  // (1) every member carries a real (non-empty) first name.
+  const famNoName = fam.filter((m) => !(typeof m.firstName === "string" && m.firstName.trim().length > 0)).length;
+  check(tag("every family member has a non-empty real name"), famNoName === 0, `${famNoName} nameless`);
+  // (2) UUIDs are unique — a duplicate would mean a false-positive anchor hit
+  //     inflating the count (the fix must NOT reintroduce phantom records).
+  const uniqUuids = new Set(fam.map((m) => m.uuid >>> 0));
+  check(tag("family UUIDs are unique"), uniqUuids.size === fam.length, `${fam.length - uniqUuids.size} dup of ${fam.length}`);
+  // (3) LIVING members mostly carry an age (dead relatives may be age-less);
+  //     a mass age-less population would signal a decode regression.
+  const living = fam.filter((m) => m.alive !== false);
+  const livingWithAge = living.filter((m) => m.age != null).length;
+  const livingAgeFrac = living.length ? livingWithAge / living.length : 1;
+  check(tag("living family members mostly have ages (>= 90%)"),
+    living.length === 0 ? null : livingAgeFrac >= 0.90,
+    `${(livingAgeFrac * 100).toFixed(1)}% (${livingWithAge}/${living.length})`);
+  // (4) Realistic FLOOR scaled to turn. A real campaign has hundreds of family
+  //     members per surviving great house; a late save (turn >= 20) must be far
+  //     above the old broken ~304. Floor stays a FLOOR (not an exact count) so
+  //     it never goes red on a legitimately bigger/smaller roster.
+  const tn = turnFromFilename(file);
+  const fnTurn = tn ? tn.turn : (Number.isInteger(r.turn) ? r.turn : null);
+  if (fnTurn != null) {
+    const famFloor = fnTurn >= 20 ? 800 : 300;  // turn-1 RIS already yields ~1580
+    check(tag(`family count >= floor for turn ${fnTurn} (>= ${famFloor})`),
+      fam.length >= famFloor, `got ${fam.length}`);
+  } else {
+    // No turn signal at all (shouldn't happen): just assert a non-degenerate roster.
+    check(tag("family count is non-degenerate (>= 50)"), fam.length >= 50, `got ${fam.length}`);
+  }
   // father/spouse refs: a non-zero UUID link must either resolve to a name
   // (in-table or v1) OR be unresolvable but never crash; we assert resolution
   // RATE among links that point at a record present in the family table.
@@ -262,6 +375,17 @@ function run() {
     invariants(f, crack(f), known);
   }
 
+  // ── CRASH-TELEMETRY SAVES — same structural invariants ────────────────
+  // Real RIS v7.2 saves at turns 5/8/34 (great late-save coverage). The turn-N
+  // filename + family-floor + 4-turns/year checks inside invariants() fire here
+  // too, so this corpus actively exercises the v0.9.763 correctness fixes.
+  const crashSaves = collectCrashSaves(CRASH_SAVES);
+  console.log(`\n### CRASH-TELEMETRY SAVES — ${crashSaves.length} saves under ${CRASH_SAVES}`);
+  for (const { file, full } of crashSaves) {
+    console.log(`\n[${file}]`);
+    invariants(file, crackPath(full), known);
+  }
+
   // ── GROUND TRUTH (hand-verified, only for saves that have it) ──────────
   console.log("\n\n### GROUND TRUTH");
 
@@ -320,6 +444,51 @@ function run() {
   if (j3) {
     check("julii3 events > 100", (j3.events || []).length > 100, `got ${(j3.events || []).length}`);
     check("julii3 events all faction-tagged", (j3.events || []).every((e) => typeof e.subject === "string"));
+  }
+
+  // ── TREASURY-HISTORY FACTION KEYING (pins the smOrder fix, v0.9.763) ───────
+  // parseFactionTreasuryHistory used to key each per-turn treasury series by the
+  // record's factionId BYTE (off-by-one on imperial sub=6 records), cross-wiring
+  // every faction's timeline to the NEXT faction's name (carthage's series →
+  // "antigonid", etc). FIX: key by RECORD POSITION → descr_sm order (smOrder).
+  // Crib: a faction's history checkpoint at the captured turn ≈ its treasury one
+  // turn earlier; the identity is pinned via the julii1 STARTING treasuries. The
+  // load-bearing assertion is that carthage's series is NOT antigonid's. See
+  // findings-treasury-history-keying-2026-05-31.md.
+  console.log("\n[treasury history keying]");
+  const smOrder = readSmFactionsOrder();
+  const j3path = path.join(SAVES, "save_julii3.sav");
+  if (smOrder.length && fs.existsSync(j3path) && fs.existsSync(path.join(SAVES, "save_julii1.sav"))) {
+    const buf1 = fs.readFileSync(path.join(SAVES, "save_julii1.sav"));
+    const buf3 = fs.readFileSync(j3path);
+    const recs1 = parseFactionTreasuries(buf1);
+    const recs3 = parseFactionTreasuries(buf3);
+    const hist = parseFactionTreasuryHistory(buf3, recs3, smOrder);
+    check("treasury-history table located", !!hist && Object.keys(hist).length > 0,
+      hist ? `${Object.keys(hist).length} factions` : "null");
+    if (hist) {
+      // Identity crib: julii1 STARTING treasuries uniquely name each record slot.
+      const START = { carthage: 25500, antigonid: 22000, ptolemaic: 47000, seleucid: 62500, bactria: 11000 };
+      const idxByName = {}; smOrder.forEach((n, i) => (idxByName[n] = i));
+      for (const [fac, startTr] of Object.entries(START)) {
+        const i = idxByName[fac];
+        check(`smOrder slot for ${fac} crib (julii1 treasury == ${startTr})`,
+          i != null && recs1[i] && recs1[i].treasury === startTr,
+          `slot ${i} got ${i != null && recs1[i] ? recs1[i].treasury : "?"}`);
+        // The series under this faction's NAME must track ITS OWN treasury — its
+        // first checkpoint sits within turn-rollover range of the starting value.
+        check(`${fac} history series is keyed to ${fac} (≈ its own treasury)`,
+          Array.isArray(hist[fac]) && hist[fac].length >= 1 && Math.abs(hist[fac][0] - startTr) <= 2000,
+          `series=${hist[fac] ? hist[fac].slice(0, 2).join(",") : "missing"} vs start ${startTr}`);
+      }
+      // The exact off-by-one that was wired wrong: carthage's series must NOT be
+      // antigonid's (pre-fix they were swapped).
+      check("carthage's history series is NOT antigonid's (off-by-one guard)",
+        Array.isArray(hist.carthage) && Array.isArray(hist.antigonid) && hist.carthage[0] !== hist.antigonid[0],
+        `carthage[0]=${hist.carthage && hist.carthage[0]} antigonid[0]=${hist.antigonid && hist.antigonid[0]}`);
+    }
+  } else {
+    check("treasury history keying (julii1/3 + descr_sm present)", null, "saves or descr_sm absent");
   }
 
   console.log(`\n========================================\nTOTAL: ${pass} PASS / ${fail} FAIL / ${skip} SKIP`);
