@@ -124,6 +124,20 @@ try { ({ EVENT_CLASS } = require("../src/eventLogParser.js")); } catch (e) { /* 
 // (badUnitFactions === 0).
 const UNIT_ATTR_FLOOR = 0.90;
 
+// Saves CONFIRMED to contain no locatable diplomacy matrix. The locator only
+// accepts a region at >=0.8 cell-state symmetry (a real matrix locks at ~1.0);
+// it returns null rather than locking onto noise. This RIS crash-telemetry save
+// is genuinely atypical — a full-file brute force finds NO N×N/stride-267 region
+// (best symmetry ~0.20), so there is nothing to parse. For these the "matrix
+// located" invariant is an allowed-null SKIP, NOT a FAIL — while it stays a hard
+// FAIL on every other save (so a real locator regression still trips). Matched on
+// the save's display label (per-report dir + filename). See
+// findings-validate-crack-recal-2026-05-31.md.
+const NO_DIPLOMACY_MATRIX_SAVES = [
+  "Thibaud_Borny__save_Autosave_Republic_of_Rome_Turn_34_Start",
+];
+const hasNoMatrix = (file) => NO_DIPLOMACY_MATRIX_SAVES.some((s) => file.includes(s));
+
 // CONFIRMED RIS campaign cadence (turnParser.js): 4 turns per year, epoch 270 BC.
 const EPOCH_YEAR = -270, TURNS_PER_YEAR = 4;
 const yearForTurn = (turn) => EPOCH_YEAR + Math.floor((turn - 1) / TURNS_PER_YEAR);
@@ -332,7 +346,10 @@ function invariants(file, r, known) {
     const placeholders = dk.filter((f) => /^(italics|dummies|free_peoples|slave)$/.test(f) && f !== "slave");
     check(tag("no placeholder factions leak as real diplomacy keys"), placeholders.length === 0, `leak=${placeholders.join(",")}`);
   } else {
-    check(tag("diplomacy matrix located"), false, "no _meta");
+    // No matrix located. On a save KNOWN to lack one this is expected (SKIP via
+    // null); on any other save it's a real locator failure (FAIL).
+    check(tag("diplomacy matrix located"), hasNoMatrix(file) ? null : false,
+      hasNoMatrix(file) ? "known-atypical save: no parseable matrix" : "no _meta");
   }
 
   // --- sieges ---
@@ -486,10 +503,25 @@ function run() {
           i != null && recs1[i] && recs1[i].treasury === startTr,
           `slot ${i} got ${i != null && recs1[i] ? recs1[i].treasury : "?"}`);
         // The series under this faction's NAME must track ITS OWN treasury — its
-        // first checkpoint sits within turn-rollover range of the starting value.
+        // first history checkpoint sits within turn-rollover range of the
+        // campaign-START treasury. The crib is the descr_strat starting value,
+        // but the checkpoint is a LATER turn, so the treasury has drifted by one
+        // or more turns of income/upkeep. That per-turn swing scales with empire
+        // size: small factions drift a few hundred denarii, but a large empire
+        // (seleucid: 62.5k start) can swing ~7.4k (≈11.8%) by the captured turn.
+        // A flat 2000 absolute bound was right for the small factions but too
+        // tight for the big ones. Use max(2000, 15% of start): 15% comfortably
+        // covers the largest observed own-slot drift (seleucid 11.8%) yet stays
+        // well below the gap to the WRONG neighbour slot — the off-by-one this
+        // check guards against lands ≥16% off (carthage's neighbour) and usually
+        // far worse (antigonid's 113%). So the assertion still fails hard on a
+        // cross-wired (mis-keyed) series. Neighbour values confirm seleucid's
+        // slot is its OWN, not ptolemaic's (46938) or bactria's (10890). See
+        // findings-validate-crack-recal-2026-05-31.md.
+        const tol = Math.max(2000, Math.round(startTr * 0.15));
         check(`${fac} history series is keyed to ${fac} (≈ its own treasury)`,
-          Array.isArray(hist[fac]) && hist[fac].length >= 1 && Math.abs(hist[fac][0] - startTr) <= 2000,
-          `series=${hist[fac] ? hist[fac].slice(0, 2).join(",") : "missing"} vs start ${startTr}`);
+          Array.isArray(hist[fac]) && hist[fac].length >= 1 && Math.abs(hist[fac][0] - startTr) <= tol,
+          `series=${hist[fac] ? hist[fac].slice(0, 2).join(",") : "missing"} vs start ${startTr} (tol ${tol})`);
       }
       // The exact off-by-one that was wired wrong: carthage's series must NOT be
       // antigonid's (pre-fix they were swapped).

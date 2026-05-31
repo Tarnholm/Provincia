@@ -34,6 +34,21 @@ const x = require("./saveCrackerExtras.js");
 // preceded by a `captain_card_<faction>.tga` ASCII marker. Same trick
 // save-to-descr-strat.js uses. Without this, every character is unattributed
 // and per-faction counts are useless.
+//
+// NOT every captain_card_*.tga string is a real per-faction block delimiter.
+// RIS ships a paired `captain_card_<faction>_rebel.tga` UI banner for the
+// engine's emergent-rebel armies (one per base faction). These `_rebel`
+// (singular) strings cluster in a trailing region of the save (alongside the
+// dead-character obituary block) but they are UI asset references, NOT real
+// character-block markers — no declared faction ends in `_rebel` (the genuine
+// rebel faction slots are `seleucid_rebels`, `seleucid_rebels2`, `slave`,
+// which DON'T match this filter). Letting a `_rebel` marker become the
+// "last faction" bleeds it onto the unattributed dead-character records that
+// trail it, which then poison the family link-graph (e.g. the SAME dead
+// dynasty got tagged `commagene_rebel` at T5 and `vaccaei_rebel` at T8 — the
+// nearest trailing UI marker, not any real faction). Drop them so those
+// records stay faction:null (their true faction is simply unresolved).
+// See findings-validate-crack-recal-2026-05-31.md.
 function findFactionMarkers(saveBuf) {
   const markers = [];
   const pattern = Buffer.from("captain_card_", "ascii");
@@ -48,7 +63,9 @@ function findFactionMarkers(saveBuf) {
       faction += String.fromCharCode(b);
       end++;
     }
-    if (faction.length > 0 && faction.length < 30) markers.push({ pos: p, faction });
+    if (faction.length > 0 && faction.length < 30 && !/_rebel$/.test(faction)) {
+      markers.push({ pos: p, faction });
+    }
     p += pattern.length;
   }
   return markers;
