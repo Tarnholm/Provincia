@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.819",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Moved the \"Wealth\" button into the Diplomacy & Treasury panel header** (it opens the Faction Wealth list — treasuries + region counts — so it belongs with the treasury UI), and removed it from the map-control button row." },
+    ],
+  },
+  {
     version: "0.9.818",
     date: "2026-06-02",
     items: [

@@ -11551,9 +11551,9 @@ function App() {
               ? "Pin Faction is ON — non-selected regions are heavily greyed when a faction is selected"
               : "Pin Faction: heavily grey out everything except the selected faction's territory (sticky preference)"}
             style={{ ...btnStyle(pinFaction), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.pin" />Pin</button>
-          <button className="map-mode-btn" onClick={() => setShowWealthPanel(prev => !prev)}
-            title="Open the Faction Wealth panel — sortable list with treasury and region count, click a row to jump to that faction's territory"
-            style={{ ...btnStyle(showWealthPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.wealth" />Wealth</button>
+          {/* 0.9.819: "Wealth" button moved into the Diplomacy & Treasury
+              panel header (it's treasury data). MAP_BTN_ORDER keeps view.wealth's
+              slot so the other letters don't shift. */}
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.settlements" />Settlements</button>
           {/* 0.9.818: Terrain + Inspect merged into one multi-state button
@@ -16390,6 +16390,8 @@ function App() {
                       onAddUnitToSelectedArmy={onAddUnitToSelectedArmy}
                       onRemoveUnitFromSelectedArmy={onRemoveUnitFromSelectedArmy}
                       armyKeyOf={armyKey}
+                      onToggleWealthPanel={() => setShowWealthPanel(prev => !prev)}
+                      wealthPanelOpen={showWealthPanel}
                       regions={regions}
                       regionCentroids={regionCentroids}
                       victoryConditions={victoryConditions}

@@ -516,7 +516,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -2138,10 +2138,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
             <span>Diplomacy &amp; Treasury{liveOwner ? <span style={{ fontSize: "0.65rem", color: "#a98", fontWeight: 400, marginLeft: 6 }}>{factionLabel(ownerFactionId) || liveOwner}</span> : null}</span>
+            {/* 0.9.819: Faction Wealth panel toggle lives here now (it's
+                treasury data), moved out of the map-control button row. */}
+            {onToggleWealthPanel && (
+              <button onClick={(e) => { e.stopPropagation(); onToggleWealthPanel(); }}
+                title="Open the Faction Wealth panel — sortable list with treasury and region count; click a row to jump to that faction's territory"
+                style={{ marginLeft: "auto", padding: "1px 6px", fontSize: "0.62rem", background: wealthPanelOpen ? "rgba(220,166,74,0.32)" : "rgba(220,166,74,0.15)", color: "#f0d9a8", border: "1px solid rgba(220,166,74,0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                💰 Wealth
+              </button>
+            )}
             {devMode && ownerFactionId && (
               <button onClick={(e) => { e.stopPropagation(); setDiploEditOpen(true); }}
                 title="View / edit every faction's starting attitude toward this faction (writes to descr_strat on Save)"
-                style={{ marginLeft: "auto", padding: "1px 5px", fontSize: "0.62rem", background: "rgba(92,140,200,0.18)", color: "#bcd6f0", border: "1px solid rgba(92,140,200,0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                style={{ marginLeft: onToggleWealthPanel ? 0 : "auto", padding: "1px 5px", fontSize: "0.62rem", background: "rgba(92,140,200,0.18)", color: "#bcd6f0", border: "1px solid rgba(92,140,200,0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
                 ✎ All numbers
               </button>
             )}
