@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.795",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Factions panel fits 5 icons per row** (smaller icons, fixed 5-column grid)." },
+      { type: "improvement", text: "**Buildings cards are less tall** — trimmed the empty space above each building icon." },
+      { type: "improvement", text: "**Garrison: the general's name now sits on the \"Garrison:\" header row**, freeing a line so two rows of 10 units fit without scrolling." },
+      { type: "fix", text: "**Bottom-strip alignment re-applied** — re-seeds the layout defaults so Search/Factions sit flush with the map's left edge and Selected Provinces with its right edge, all starting on the map's bottom line. (Re-applies default panel positions; if you'd hand-moved panels, use the ↺ reset.)" },
+    ],
+  },
+  {
     version: "0.9.794",
     date: "2026-06-01",
     items: [

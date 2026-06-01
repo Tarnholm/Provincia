@@ -2412,7 +2412,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(5, 1fr)",
-              gridAutoRows: "80px",
+              gridAutoRows: "58px",
               gap: 4,
               flex: 1,
               minHeight: 0,
@@ -2968,21 +2968,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf",
             display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-            <span>Garrison:</span>
+            <span>Garrison:{garrisonCommander ? <span style={{ fontWeight: 400, fontSize: "0.72rem", color: "#ddd", marginLeft: 6 }}>{garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}{garrisonCommander.bodyguardRegion ? <span style={{ color: "#aaa", marginLeft: 4 }}>(bodyguard at {garrisonCommander.bodyguardRegion})</span> : null}</span> : null}</span>
             {hoveredUnit && <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a" }}>{hoverReadout(hoveredUnit)}</span>}
           </div>
         </div>
         <div style={widgetBody}>
-        {garrisonCommander && (
-          <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 2 }}>
-            {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}
-            {garrisonCommander.bodyguardRegion && (
-              <span style={{ color: "#aaa", marginLeft: 6 }}>
-                (bodyguard currently at {garrisonCommander.bodyguardRegion})
-              </span>
-            )}
-          </div>
-        )}
         {garrison && garrison.length > 0 ? (
           (() => {
             // 0.9.648: army-unit-edit selection. Dev-mode click on a garrison

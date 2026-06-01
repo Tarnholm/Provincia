@@ -9866,7 +9866,7 @@ function App() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(auto-fill, ${ICON_SIZE}px)`,
+            gridTemplateColumns: "repeat(5, 1fr)",
             columnGap: Math.max(ICON_GAP, 6),
             rowGap: Math.max(ICON_GAP, 6),
             justifyContent: "center",
@@ -9958,7 +9958,7 @@ function App() {
                   }}
                 >
                   <div style={{ width: "100%", height: "100%", display: "block", filter: ICON_DROP_SHADOW }}>
-                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={ICON_SIZE} tightCrop modIconsDir={modIconsDir} />
+                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={56} tightCrop modIconsDir={modIconsDir} />
                   </div>
                 </div>
               </Tooltip>
