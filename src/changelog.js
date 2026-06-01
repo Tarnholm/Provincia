@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.817",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Moved the Paint tool into the Geography map-mode section** (dev) instead of sitting as a standalone dev button." },
+      { type: "change", text: "**Calibrate is now dev-only** — it no longer shows in the always-on button row." },
+    ],
+  },
+  {
     version: "0.9.816",
     date: "2026-06-02",
     items: [

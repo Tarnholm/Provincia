@@ -10740,11 +10740,23 @@ function App() {
         { key: "climate", label: "Climate", badge: "devmode.climate", dev: true },
         { key: "irrigation", label: "Irrigation", badge: "devmode.irrigation", dev: true },
         { key: "earthquakes", label: "Earthquakes", badge: "devmode.earthquakes", dev: true },
+        { key: "paint", label: "Paint", badge: "devmode.paint", dev: true, toggle: true },
       ]},
     ];
     // Render a single map-mode member button (handles the tri-state
-    // Hidden Res. → AOR → off cycle specially).
+    // Hidden Res. → AOR → off cycle and the Paint toggle specially).
     const renderModeMember = (m) => {
+      if (m.key === "paint") {
+        // Paint is a toggle (setPaintMode), not a setColorMode mode.
+        return (
+          <button key={m.key} onClick={() => setPaintMode(prev => !prev)}
+            className={"map-mode-btn" + (paintMode ? " map-mode-btn--active" : "")}
+            title={paintMode
+              ? "Paint mode ON: click paints a pixel with the current brush region. Alt-click eyedrops a region into the brush."
+              : "Toggle map-paint mode (dev only). Lets you repaint pixels of map_regions.tga to reassign them to other regions."}
+            style={{ ...btnStyle(paintMode), minWidth: 0, position: "relative" }}><MapBtnBadge k="devmode.paint" />{paintMode ? "Paint ON" : "Paint"}</button>
+        );
+      }
       if (m.key === "hidden_resource") {
         const isHR = colorMode === "hidden_resource";
         const isAOR = colorMode === "aor";
@@ -10767,8 +10779,9 @@ function App() {
           <MapBtnBadge k={m.badge} />{m.label}</button>
       );
     };
-    // Whether a member counts as the active mode (Hidden Res. also owns AOR).
-    const isMemberActive = (m) => colorMode === m.key || (m.key === "hidden_resource" && colorMode === "aor");
+    // Whether a member counts as the active mode (Hidden Res. also owns AOR;
+    // Paint is a toggle, active when paintMode is on).
+    const isMemberActive = (m) => m.key === "paint" ? paintMode : (colorMode === m.key || (m.key === "hidden_resource" && colorMode === "aor"));
 
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
@@ -10832,17 +10845,7 @@ function App() {
               </div>
             );
           })}
-          {devMode && (<>
-            <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
-            <button className="map-mode-btn"
-              onClick={() => setPaintMode(prev => !prev)}
-              title={paintMode
-                ? "Paint mode ON: click paints a pixel with the current brush region. Alt-click eyedrops a region into the brush."
-                : "Toggle map-paint mode (dev only). Lets you repaint pixels of map_regions.tga to reassign them to other regions."}
-              style={{ ...btnStyle(paintMode), minWidth: 0, position: "relative" }}>
-              <MapBtnBadge k="devmode.paint" />{paintMode ? "Paint ON" : "Paint"}
-            </button>
-          </>)}
+          {/* 0.9.817: Paint moved into the Geography section (dev member). */}
         </div>
         {/* Bottom-right stack: mute at top, optional dev-controls in middle,
             Dev button always anchored at the bottom. Portalled to document.body
@@ -11722,7 +11725,9 @@ function App() {
               a new game + save at turn 0 so the auto-cache pass picks up
               real save-read stats and uses them in non-live mode. The
               cache populates automatically on any save load; this button
-              is the human-readable explainer. */}
+              is the human-readable explainer.
+              0.9.817: dev-only now (moved out of the always-on row). */}
+          {devMode && (
           <button
             className="map-mode-btn"
             onClick={async () => {
@@ -11847,6 +11852,7 @@ function App() {
             style={{ ...btnStyle(false), minWidth: 0, position: "relative", fontSize: "0.65rem", padding: "1px 6px" }}>
             <MapBtnBadge k="view.calibrate" />🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
           </button>
+          )}
           {liveLogActive && (
             <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
               title={saveLuaCounters && saveLuaCounters.count
