@@ -8,6 +8,103 @@ import { loadBuildingIcon, invalidateBuildingIcon } from "./buildingIcons";
 import AddGeneralModal from "./AddGeneralModal";
 import DiplomacyEditor from "./DiplomacyEditor";
 
+// 0.9.778: non-live / starting-view commander-info resolver.
+//
+// In the NON-LIVE / starting "Region owners armies" view a bodyguard unit has
+// no live `commanderUuid` to bridge into the commanderInfo map, so the field-
+// and garrison-army cards fall back to name-based resolution. The 0.9.429
+// fallback looked statsCache up by ONLY the stripped keys `fn||fac` / `fn||`
+// and HARDCODED `lastName: null`. Two failures stacked from that:
+//   1. The surname was dropped (Servius Ogulnius Gallus arrived as just
+//      "Servius", lastName=""), so the portrait pick logged lastName="".
+//   2. The stripped statsCache keys are collision-prone and frequently carry
+//      NO portrait (writeBest can overwrite them with a same-firstName stub),
+//      so savePath came back null → the renderer's DJB2 hash pool fired and
+//      painted an arbitrary (steppe-looking) face.
+//
+// The FAMILY TREE — correct in non-live too — resolves the identical char via
+// `coordToPortrait.get("name:<fn>|<ln>|<fac>")` (FamilyTree.js folds the
+// persisted statsCache into that map under the FULL `fn|ln|fac` key, then the
+// stripped fallbacks). The portrait lives under the FULL-name key.
+//
+// This helper recovers the full surname from the descr_strat `characters`
+// list (which splits the starting full name into firstName + lastName), then
+// looks statsCache up by the SAME key order the family tree uses — full
+// `fn|ln|fac` FIRST — so the commander card resolves the SAME engine-exact
+// portrait. The hash pool stays a pure last-resort (genuinely no portrait).
+function resolveNonLiveCommanderInfo(commanderName, commanderLastName, commanderFaction, statsCache, characters) {
+  if (!commanderName) return null;
+  const fn = commanderName.toLowerCase();
+  const fac = (commanderFaction || "").toLowerCase();
+  // 1. Determine the full surname (+ faction/age).
+  //    The caller's commanderLastName (tagged from the army's full
+  //    `a.character` name) is the PRECISE surname — it disambiguates two
+  //    same-firstName generals in one faction (Servius Ogulnius Gallus vs
+  //    Servius Fulvius Flaccus), which a firstName-only descr_strat match
+  //    cannot. Prefer it; fall back to a descr_strat firstName match only
+  //    when the surname wasn't tagged (older/edited army entries).
+  let lastName = commanderLastName ? commanderLastName.replace(/\s+/g, "_") : null;
+  let faction = commanderFaction || null, age = null;
+  if (Array.isArray(characters)) {
+    // Match on full name when we have the surname, else firstName only.
+    const lnNorm = (lastName || "").replace(/_/g, " ").toLowerCase();
+    const ds = characters.find((c) =>
+      c && typeof c.firstName === "string" &&
+      c.firstName.toLowerCase() === fn &&
+      (lnNorm
+        ? (c.lastName || "").replace(/_/g, " ").toLowerCase() === lnNorm
+        : true) &&
+      (!fac || !c.faction || c.faction.toLowerCase() === fac)
+    );
+    if (ds) {
+      if (!lastName) lastName = ds.lastName || null;
+      // The caller's commanderFaction (the unit's own faction) is
+      // authoritative when present — guards cross-faction same-name
+      // collisions (a seleucid Demophanes shown as ptolemaic). Fall back
+      // to descr_strat's faction only when the caller didn't supply one.
+      faction = commanderFaction || ds.faction || null;
+      age = typeof ds.age === "number" ? ds.age : null;
+    }
+  }
+  // 2. Resolve the portrait from statsCache by the SAME key order as the
+  //    family tree: FULL `fn|ln|fac` first (the key the portrait is stored
+  //    under), then the surname-only stripped key, then the bare fallbacks.
+  //    statsCache normalizes lastName as underscores→spaces, lowercased.
+  let savePath = null, cached = null;
+  if (statsCache) {
+    const ln = (lastName || "").replace(/_/g, " ").toLowerCase();
+    const facKey = (faction || "").toLowerCase();
+    const keys = [
+      ln ? `${fn}|${ln}|${facKey}` : null,
+      ln ? `${fn}|${ln}|` : null,
+      `${fn}||${facKey}`,
+      `${fn}||`,
+    ].filter(Boolean);
+    for (const k of keys) {
+      if (statsCache[k]) { cached = statsCache[k]; break; }
+    }
+    if (cached) {
+      savePath = cached.portrait || null;
+      // statsCache carries an epithet/cognomen lastName + age — prefer them
+      // when descr_strat didn't supply one, so the card label matches too.
+      if (!lastName && cached.lastName) lastName = cached.lastName;
+      if (age == null && typeof cached.age === "number") age = cached.age;
+      if (!faction && cached.faction) faction = cached.faction;
+    }
+  }
+  // Only return an info object when we have SOMETHING to render with: either a
+  // resolved portrait or at least a name (the descr_strat match). Null lets the
+  // caller leave the bodyguard unit icon (no swap) as before.
+  if (!savePath && lastName == null && !cached) return null;
+  return {
+    firstName: commanderName,
+    lastName,
+    faction,
+    age,
+    savePath,
+  };
+}
+
 // Map a raw core_attitudes value to its descr_strat tier name (see the
 // descr_strat diplomacy legend: -10 Locked Allied … 1000+ Crazy War).
 function dsAttitudeLabel(v) {
@@ -3099,81 +3196,21 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     // 0.9.410+ swap: same general-face-card swap as field-army
                     // path, applied to garrison bodyguard units.
                     let info = u.commanderUuid && commanderInfo ? commanderInfo.get(u.commanderUuid) : null;
-                    // 0.9.429: non-live fallback via commanderName + statsCache.
-                    if (!info && u.commanderName && statsCache) {
-                      const fn = u.commanderName.toLowerCase();
-                      const fac = (u.commanderFaction || "").toLowerCase();
-                      const cached = statsCache[`${fn}||${fac}`] || statsCache[`${fn}||`] || null;
-                      if (cached) {
-                        info = {
-                          firstName: u.commanderName,
-                          // 0.9.505: surface cached lastName so epithet
-                          // suffixes like "the Elder" / "the Wallbreaker"
-                          // appear under the bodyguard portrait.
-                          lastName: cached.lastName || null,
-                          // 0.9.537: the LIVE garrison unit's faction wins over
-                          // the cache entry's faction. The statsCache lookup can
-                          // fall back to the faction-agnostic `name||` key, whose
-                          // stored faction may belong to a same-named character
-                          // in a DIFFERENT faction (e.g. a seleucid Demophanes
-                          // was being shown as "ptolemaic"). For cross-culture
-                          // name collisions that also pulled the wrong portrait
-                          // pool. u.commanderFaction is authoritative for who's
-                          // actually garrisoned here.
-                          faction: u.commanderFaction || cached.faction || null,
-                          age: typeof cached.age === "number" ? cached.age : null,
-                          // 0.9.505: use cached.portrait. The 0.9.460
-                          // workaround forced this to null because v1's
-                          // c.portraits[0] occasionally cross-contaminated
-                          // (Demetrios III case). With main.js's 0.9.504
-                          // re-enable of v1 portraits + the existing
-                          // captain-banner filter, this path is the only
-                          // way for save-cracked characters like Achaios
-                          // (who v2 misses, see characterParserV2 missing
-                          // type=3 signature for some records) to get their
-                          // engine-assigned portrait through to the
-                          // garrison/army cards.
-                          savePath: cached.portrait || null,
-                        };
-                      }
-                    }
-                    // 0.9.490: last-ditch fallback via descr_strat characters.
-                    // Some named generals (e.g. Achaios in Sardis) aren't in
-                    // the save-derived statsCache — the save's stats table
-                    // tracks generals who've earned stats, but a turn-0 NPC
-                    // general with all-zero stats can be missing. The
-                    // descr_strat parse (in `characters`) has every starting
-                    // character regardless, so match by firstName + faction
-                    // and synthesize a minimal info object so the portrait
-                    // swap still runs.
-                    if (!info && u.commanderName && Array.isArray(characters)) {
-                      const fn = u.commanderName.toLowerCase();
-                      const fac = (u.commanderFaction || "").toLowerCase();
-                      const ds = characters.find((c) =>
-                        c && typeof c.firstName === "string" &&
-                        c.firstName.toLowerCase() === fn &&
-                        (!fac || !c.faction || c.faction.toLowerCase() === fac)
-                      );
-                      if (ds) {
-                        info = {
-                          firstName: ds.firstName,
-                          lastName: ds.lastName || null,
-                          faction: ds.faction || u.commanderFaction || null,
-                          age: typeof ds.age === "number" ? ds.age : null,
-                          savePath: null,
-                        };
-                        // 0.9.526: dedup this log. It was unguarded and fired
-                        // once per render per garrison unit — a multi-unit
-                        // stack led by one descr_strat-fallback commander
-                        // (e.g. Zamir's 30-unit Minaean garrison) spammed the
-                        // same line 30+ times every frame. Throttle per
-                        // commander name like the sibling logs below.
-                        if (typeof window !== "undefined") {
-                          window.__bgFallbackLogged ||= new Set();
-                          if (!window.__bgFallbackLogged.has(u.commanderName)) {
-                            window.__bgFallbackLogged.add(u.commanderName);
-                            console.log(`[bodyguard-swap garr] descr_strat fallback hit for "${u.commanderName}" — using starting character data (faction="${info.faction}", age=${info.age})`);
-                          }
+                    // 0.9.778: non-live / starting-view fallback — recover the
+                    // FULL surname from descr_strat AND the engine-exact portrait
+                    // from statsCache by the SAME `fn|ln|fac` key the family tree
+                    // uses, so the garrison face card matches the family tree
+                    // (was: stripped-key lookup that dropped the surname and
+                    // hash-fallback-painted a wrong face). u.commanderFaction stays
+                    // authoritative inside the helper for cross-faction name
+                    // collisions. Replaces the 0.9.429 + 0.9.490 fallbacks.
+                    if (!info && u.commanderName) {
+                      info = resolveNonLiveCommanderInfo(u.commanderName, u.commanderLastName, u.commanderFaction, statsCache, characters);
+                      if (info && typeof window !== "undefined") {
+                        window.__bgFallbackLogged ||= new Set();
+                        if (!window.__bgFallbackLogged.has(u.commanderName)) {
+                          window.__bgFallbackLogged.add(u.commanderName);
+                          console.log(`[bodyguard-swap garr] non-live resolve for "${u.commanderName}" → lastName="${info.lastName || ""}" faction="${info.faction || ""}" savePath="${info.savePath || "(none)"}"`);
                         }
                       }
                     }
@@ -3417,49 +3454,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         {(() => {
                           // 0.9.410+ swap: bodyguard unit card → general's face card.
                           let info = u.commanderUuid && commanderInfo ? commanderInfo.get(u.commanderUuid) : null;
-                          // 0.9.429: non-live fallback via commanderName +
-                          // statsCache portrait. Lets the swap fire in
-                          // (starting) mode using the calibrated portrait.
-                          if (!info && u.commanderName && statsCache) {
-                            const fn = u.commanderName.toLowerCase();
-                            const fac = (u.commanderFaction || "").toLowerCase();
-                            const cached = statsCache[`${fn}||${fac}`] || statsCache[`${fn}||`] || null;
-                            if (cached) {
-                              info = {
-                                firstName: u.commanderName,
-                                lastName: null,
-                                faction: u.commanderFaction || null,
-                                age: null,
-                                savePath: cached.portrait || null,
-                              };
-                            }
-                          }
-                          // 0.9.490: descr_strat fallback for generals
-                          // missing from statsCache (e.g. all-zero-stat
-                          // turn-0 NPC generals like Achaios in Sardis).
-                          if (!info && u.commanderName && Array.isArray(characters)) {
-                            const fn = u.commanderName.toLowerCase();
-                            const fac = (u.commanderFaction || "").toLowerCase();
-                            const ds = characters.find((c) =>
-                              c && typeof c.firstName === "string" &&
-                              c.firstName.toLowerCase() === fn &&
-                              (!fac || !c.faction || c.faction.toLowerCase() === fac)
-                            );
-                            if (ds) {
-                              info = {
-                                firstName: ds.firstName,
-                                lastName: ds.lastName || null,
-                                faction: ds.faction || u.commanderFaction || null,
-                                age: typeof ds.age === "number" ? ds.age : null,
-                                savePath: null,
-                              };
-                              // 0.9.526: dedup (see garrison path above).
-                              if (typeof window !== "undefined") {
-                                window.__bgFallbackLogged ||= new Set();
-                                if (!window.__bgFallbackLogged.has(u.commanderName)) {
-                                  window.__bgFallbackLogged.add(u.commanderName);
-                                  console.log(`[bodyguard-swap field] descr_strat fallback hit for "${u.commanderName}" — using starting character data (faction="${info.faction}", age=${info.age})`);
-                                }
+                          // 0.9.778: non-live / starting-view fallback. Resolves
+                          // the FULL surname from descr_strat AND the engine-exact
+                          // portrait from statsCache by the SAME `fn|ln|fac` key the
+                          // family tree uses — so the field-army card matches the
+                          // family tree instead of dropping the surname (lastName="")
+                          // and hash-fallback-painting a wrong face (Servius Ogulnius
+                          // Gallus was the reported case). Replaces the 0.9.429
+                          // stripped-key + lastName:null lookup and the 0.9.490
+                          // descr_strat-only fallback (both folded into the helper).
+                          if (!info && u.commanderName) {
+                            info = resolveNonLiveCommanderInfo(u.commanderName, u.commanderLastName, u.commanderFaction, statsCache, characters);
+                            if (info && typeof window !== "undefined") {
+                              window.__bgFallbackLogged ||= new Set();
+                              if (!window.__bgFallbackLogged.has(u.commanderName)) {
+                                window.__bgFallbackLogged.add(u.commanderName);
+                                console.log(`[bodyguard-swap field] non-live resolve for "${u.commanderName}" → lastName="${info.lastName || ""}" faction="${info.faction || ""}" savePath="${info.savePath || "(none)"}"`);
                               }
                             }
                           }

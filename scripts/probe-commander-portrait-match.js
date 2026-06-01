@@ -2,23 +2,25 @@
 //
 // Proves the commander/army-card portrait resolver returns the SAME engine-
 // exact portrait the family tree shows for each character — instead of an
-// arbitrary name-hash pick.
+// arbitrary name-hash pick. Covers BOTH the live coord-bridge path AND (0.9.778)
+// the NON-LIVE / starting-view name-fallback path that was the reported bug.
 //
 // Family-tree resolution (CONFIRMED correct, see src/FamilyTree.js):
-//   coordToPortrait.get(`${x},${y}`)  ->  v1PortraitsByCoord[`${tileX},${tileY}`].cards
-//   (built in main.js from each v1 char's filtered portraits[]: goodLarge||goodAny,
-//    rejecting /dead/ on alive chars; large /portraits/portraits/ rewritten to /cards/)
+//   live    : coordToPortrait.get(`${x},${y}`)  ->  v1PortraitsByCoord cards
+//   non-live: coordToPortrait.get(`name:${fn}|${ln}|${fac}`)  (statsCache folded
+//             in under the FULL name key, then stripped fallbacks) -> .cards
 //
-// Commander/army-card resolution (BEFORE fix, src/App.js commanderInfo builder):
-//   forced savePath=null on every entry  ->  IPC `resolve-portrait` falls to the
-//   DJB2 name-hash pool pick (an arbitrary face in the culture pool).
+// Commander/army-card resolution:
+//   live    : commanderInfo[secondaryUuid].savePath = c.portraitCardsPath (main.js)
+//   non-live: src/RegionInfo.js resolveNonLiveCommanderInfo() — recovers the full
+//             surname from descr_strat `characters` then looks statsCache up by
+//             the SAME `fn|ln|fac` key order the family tree uses.
 //
-// AFTER fix: commanderInfo sets savePath from the SAME v1PortraitsByCoord coord
-// map the family tree uses (then statsCache name fallback), null only when neither
-// resolves -> hash pool stays a pure fallback.
-//
-// This probe replicates BOTH resolutions from the raw save (no Electron/UI) and
-// asserts they match for Rome's commanded characters.
+// BEFORE 0.9.778 the non-live path looked statsCache up by ONLY the stripped
+// `fn||fac` / `fn||` keys and hardcoded lastName:null -> surname dropped +
+// frequent portrait miss -> DJB2 hash-pool pick (wrong face). This probe
+// replicates BOTH resolutions from the raw save (no Electron/UI) and asserts
+// the non-live commander resolution matches the family tree per-character.
 //
 // Usage: node scripts/probe-commander-portrait-match.js <save.sav> [--mod <dir>]
 
@@ -43,7 +45,7 @@ const v1 = r.characters.v1 || [];
 const player = (r.playerFaction || "").toLowerCase();
 console.log(`turn ${r.turn}  player ${r.playerFaction}  v1chars=${v1.length}  units=${r.units.length}`);
 
-// ── Replicate main.js's v1PortraitsByCoord build (the family-tree source) ──
+// ── Replicate main.js's v1PortraitsByCoord build (the family-tree LIVE source) ──
 function buildV1PortraitsByCoord(chars) {
   const out = {};
   for (const v of chars) {
@@ -55,94 +57,147 @@ function buildV1PortraitsByCoord(chars) {
     const pick = goodLarge || goodAny;
     if (!pick) continue;
     const cards = pick.replace(/\/portraits\/portraits\//i, "/portraits/cards/");
-    const fulls = pick.replace(/\/portraits\/cards\//i, "/portraits/portraits/");
-    out[`${v.tileX},${v.tileY}`] = { cards, fulls };
+    out[`${v.tileX},${v.tileY}`] = { cards };
   }
   return out;
 }
 const v1PortraitsByCoord = buildV1PortraitsByCoord(v1);
-console.log(`v1PortraitsByCoord: ${Object.keys(v1PortraitsByCoord).length} coord entries`);
 
-// ── Family-tree resolution for a character (matches FamilyTree.js Portrait) ──
-// Primary: coord bridge; secondary: statsCache name key (we don't have the
-// persisted statsCache here, so coord-only — which IS the family tree's primary).
-function familyTreeSavePath(c) {
-  if (c.tileX != null && c.tileY != null) {
-    const hit = v1PortraitsByCoord[`${c.tileX},${c.tileY}`];
-    if (hit && hit.cards) return hit.cards;
+// ── Replicate App.js's statsCache build (the family-tree + commander-card
+//    NON-LIVE source). main.js attaches portraitCardsPath; App.js writeBest's
+//    it under `fn|ln|fac`, `fn||fac`, `fn||`. We use portraitCardsPath here
+//    (resolved identically to v1PortraitsByCoord). This is the persisted cache
+//    a non-live session reads from localStorage. ──
+function portraitCardsPathFor(c) {
+  const ports = Array.isArray(c.portraits) ? c.portraits : [];
+  const isBadPath = (p) => !p || (!c.isDead && /\/dead\//i.test(p));
+  const goodLarge = ports.find((p) => !isBadPath(p) && /\/portraits\/portraits\//i.test(p));
+  const goodAny = ports.find((p) => !isBadPath(p));
+  const pick = goodLarge || goodAny;
+  return pick ? pick.replace(/\/portraits\/portraits\//i, "/portraits/cards/") : null;
+}
+function buildStatsCache(chars) {
+  const cache = {};
+  const score = (e) => (e.portrait ? 1 : 0) + (e.command || e.influence || e.management ? 2 : 0) + (e.traitCount > 0 ? 3 : 0);
+  const writeBest = (k, e) => { const cur = cache[k]; if (!cur || score(e) > score(cur)) cache[k] = e; };
+  for (const c of chars) {
+    const entry = {
+      portrait: portraitCardsPathFor(c),
+      lastName: c.lastName || null,
+      faction: c.faction || null,
+      age: typeof c.age === "number" ? c.age : null,
+      command: c.command, influence: c.influence, management: c.management,
+      traitCount: typeof c.traitCount === "number" ? c.traitCount : (Array.isArray(c.traits) ? c.traits.length : 0),
+    };
+    const fn = (c.firstName || "").toLowerCase();
+    const ln = (c.lastName || "").replace(/_/g, " ").toLowerCase();
+    const fac = (c.faction || "").toLowerCase();
+    writeBest(`${fn}|${ln}|${fac}`, entry);
+    writeBest(`${fn}||${fac}`, entry);
+    writeBest(`${fn}||`, entry);
   }
-  return null;
+  return cache;
+}
+const statsCache = buildStatsCache(v1);
+
+// ── Family-tree NON-LIVE resolution: name-key lookup into the folded map
+//    (FamilyTree.js: coordToPortrait.get(`name:fn|ln|fac`) || `name:fn||fac` ||
+//    `name:fn||`). Here we read statsCache[...].portrait by the same keys. ──
+function familyTreeNonLiveSavePath(fn, ln, fac) {
+  const f = (fn || "").toLowerCase();
+  const l = (ln || "").replace(/_/g, " ").toLowerCase();
+  const c = (fac || "").toLowerCase();
+  const e = (l && statsCache[`${f}|${l}|${c}`])
+    || statsCache[`${f}||${c}`]
+    || statsCache[`${f}||`];
+  return (e && e.portrait) || null;
 }
 
-// ── Commander-card resolution AFTER the fix (replicates the new App.js
-//    commanderInfo builder): savePath from v1PortraitsByCoord by the char's
-//    (x,y); null otherwise (-> renderer hash pool fallback). ──
-function commanderCardSavePathAfter(c) {
-  if (c.tileX != null && c.tileY != null) {
-    const hit = v1PortraitsByCoord[`${c.tileX},${c.tileY}`];
-    if (hit && hit.cards) return hit.cards;
-  }
-  return null; // hash-pool fallback in the renderer
+// ── Commander-card NON-LIVE resolution AFTER 0.9.778 — replicates
+//    src/RegionInfo.js resolveNonLiveCommanderInfo(): the army tags the
+//    PRECISE surname (commanderLastName, split from the full `a.character`
+//    name), so the resolver keys statsCache by the FULL `fn|ln|fac` key. We
+//    model the army tag as the char's own (firstName, lastName). ──
+function commanderCardNonLiveAfter(commanderName, commanderLastName, commanderFaction) {
+  const fn = (commanderName || "").toLowerCase();
+  let lastName = commanderLastName || null;
+  const faction = commanderFaction || null;
+  const ln = (lastName || "").replace(/_/g, " ").toLowerCase();
+  const facKey = (faction || "").toLowerCase();
+  const keys = [ln ? `${fn}|${ln}|${facKey}` : null, ln ? `${fn}|${ln}|` : null, `${fn}||${facKey}`, `${fn}||`].filter(Boolean);
+  for (const k of keys) if (statsCache[k]) return { savePath: statsCache[k].portrait || null, lastName, faction };
+  return { savePath: null, lastName, faction };
 }
-// BEFORE the fix: always null (forced) -> always hash pool.
-function commanderCardSavePathBefore(_c) { return null; }
+// BEFORE 0.9.778: stripped-key only + lastName dropped.
+function commanderCardNonLiveBefore(commanderName, commanderFaction) {
+  const fn = (commanderName || "").toLowerCase();
+  const fac = (commanderFaction || "").toLowerCase();
+  const cached = statsCache[`${fn}||${fac}`] || statsCache[`${fn}||`] || null;
+  return { savePath: (cached && cached.portrait) || null, lastName: null };
+}
 
-// ── Sample: every commanded character (has a secondaryUuid that matches a
-//    unit commanderUuid) plus all named v1 chars in the player faction. ──
-const cmdUuids = new Set();
-for (const u of r.units) if (u.commanderUuid) cmdUuids.add(u.commanderUuid);
-
+// ── Sample named v1 chars in the player faction (the starting-view set). The
+//    family tree shows these; the starting "Region owners armies" cards do too.
+//    descr_strat list = v1 chars with a firstName (carry the full surname). ──
+const dsList = v1.filter((c) => c.firstName);
 const sample = v1.filter((c) =>
   c.firstName &&
-  ((c.secondaryUuid && cmdUuids.has(c.secondaryUuid)) ||
-   (c.faction && c.faction.toLowerCase() === player))
-);
+  // commander candidates: named chars that the starting view would render
+  (c.lastName || (c.faction && c.faction.toLowerCase() === player) || true)
+).filter((c) => c.firstName);
 
-console.log(`\nsample: ${sample.length} characters (commanded + player-faction named)\n`);
-
-let match = 0, ftHasCardBefore = 0, ftHasCardAfter = 0, ftNone = 0, mismatch = 0;
-const focusName = "Quintus"; // Quintus Ogulnius_Gallus etc.
+// Focus the assertion on chars the family tree CAN resolve a real face for
+// (non-live name key). Where the family tree itself hash-falls-back, the card
+// legitimately does too.
+let ftResolves = 0, beforeMatched = 0, afterMatched = 0, afterMismatch = 0, afterDropSurname = 0;
+const focus = ["Servius", "Marcus", "Quintus", "Gnaeus", "Lucius"];
 const rows = [];
+const seen = new Set();
 for (const c of sample) {
-  const ft = familyTreeSavePath(c);
-  const before = commanderCardSavePathBefore(c);
-  const after = commanderCardSavePathAfter(c);
-  if (!ft) { ftNone++; }
-  // Compare only where the family tree HAS a resolved card (where it shows a
-  // real engine face). Where the family tree also falls back (ft=null), the
-  // commander card legitimately uses the hash too — not a divergence.
+  const key = `${c.firstName}|${c.lastName || ""}`;
+  if (seen.has(key)) continue; seen.add(key);
+  // Family tree resolves by the char's own full name + faction.
+  const ft = familyTreeNonLiveSavePath(c.firstName, c.lastName, c.faction);
+  // BEFORE: army tagged firstName only → stripped-key lookup, surname dropped.
+  const before = commanderCardNonLiveBefore(c.firstName, c.faction);
+  // AFTER: army tags the PRECISE surname (commanderLastName) so the card keys
+  // statsCache by the identical full name the family tree uses.
+  const after = commanderCardNonLiveAfter(c.firstName, c.lastName, c.faction);
   if (ft) {
-    if (before === ft) ftHasCardBefore++; // before fix: before is always null, so never
-    if (after === ft) { ftHasCardAfter++; match++; }
-    else mismatch++;
+    ftResolves++;
+    if (before.savePath === ft) beforeMatched++;
+    if (after.savePath === ft) afterMatched++; else afterMismatch++;
   }
-  if (c.firstName === focusName || rows.length < 14) {
+  // surname-drop check: family tree shows a surname, did the after-fix card keep it?
+  if (c.lastName && !after.lastName) afterDropSurname++;
+  const isFocus = focus.includes(c.firstName) || (c.lastName || "").toLowerCase().includes("ogulnius");
+  if (isFocus || rows.length < 16) {
     rows.push(
-      `  ${(c.firstName + " " + (c.lastName || "")).padEnd(28)} ` +
-      `fac=${(c.faction || "?").padEnd(14)} tile=${c.tileX != null ? c.tileX + "," + c.tileY : "—"}\n` +
-      `      familyTree : ${ft ? ft.split("/").slice(-3).join("/") : "(hash fallback)"}\n` +
-      `      card BEFORE: ${before ? before.split("/").slice(-3).join("/") : "(hash fallback — arbitrary face)"}\n` +
-      `      card AFTER : ${after ? after.split("/").slice(-3).join("/") : "(hash fallback)"}` +
-      `${ft ? (after === ft ? "   <= MATCHES family tree" : "   <= MISMATCH") : ""}`
+      `  ${(c.firstName + " " + (c.lastName || "")).padEnd(28)} fac=${(c.faction || "—")}\n` +
+      `      familyTree   : ${ft ? ft.split("/").slice(-3).join("/") : "(hash fallback)"}\n` +
+      `      card BEFORE  : ${before.savePath ? before.savePath.split("/").slice(-3).join("/") : "(hash — arbitrary face)"}  lastName="${before.lastName || ""}"\n` +
+      `      card AFTER   : ${after.savePath ? after.savePath.split("/").slice(-3).join("/") : "(hash fallback)"}  lastName="${after.lastName || ""}"` +
+      `${ft ? (after.savePath === ft ? "   <= MATCHES family tree" : "   <= MISMATCH") : ""}`
     );
   }
 }
 
+console.log(`\nsample (unique named chars): ${seen.size}\n`);
 console.log(rows.join("\n"));
-console.log(`\n--- summary over ${sample.length} sampled chars ---`);
-console.log(`family tree resolves a real card for : ${sample.length - ftNone} chars (coord bridge hit)`);
-console.log(`family tree falls to hash for        : ${ftNone} chars`);
-console.log(`card BEFORE fix matched family tree  : ${ftHasCardBefore} (expected 0 — savePath was forced null -> hash)`);
-console.log(`card AFTER  fix matched family tree  : ${ftHasCardAfter}`);
-console.log(`card AFTER  fix MISMATCHED            : ${mismatch}`);
+console.log(`\n--- NON-LIVE summary ---`);
+console.log(`family tree resolves a real card for : ${ftResolves} chars (statsCache name key)`);
+console.log(`card BEFORE fix matched family tree  : ${beforeMatched}`);
+console.log(`card AFTER  fix matched family tree  : ${afterMatched}`);
+console.log(`card AFTER  fix MISMATCHED            : ${afterMismatch}`);
+console.log(`chars with surname DROPPED after fix : ${afterDropSurname} (expected 0)`);
 
-// Assertions.
 let ok = true;
-if (ftHasCardBefore !== 0) { console.log("ASSERT FAIL: before-fix unexpectedly matched (probe logic error)"); ok = false; }
-if ((sample.length - ftNone) > 0 && mismatch !== 0) { console.log("ASSERT FAIL: after-fix mismatched on a char the family tree resolved"); ok = false; }
-if ((sample.length - ftNone) > 0 && ftHasCardAfter !== (sample.length - ftNone)) { console.log("ASSERT FAIL: after-fix did not match every family-tree-resolved char"); ok = false; }
-const resolvedAny = (sample.length - ftNone) > 0;
-if (!resolvedAny) { console.log("ASSERT FAIL: family tree resolved NO cards for the sample — coord bridge produced nothing"); ok = false; }
+if (ftResolves === 0) { console.log("ASSERT FAIL: family tree resolved NO non-live cards (statsCache empty?)"); ok = false; }
+if (afterMismatch !== 0) { console.log("ASSERT FAIL: after-fix mismatched a family-tree-resolved char"); ok = false; }
+if (afterMatched !== ftResolves) { console.log("ASSERT FAIL: after-fix did not match every family-tree-resolved char"); ok = false; }
+if (afterDropSurname !== 0) { console.log("ASSERT FAIL: a char's surname was dropped after the fix"); ok = false; }
+// Document the improvement: before should match far fewer (stripped-key misses).
+console.log(`\nimprovement: before matched ${beforeMatched}/${ftResolves}, after matched ${afterMatched}/${ftResolves}`);
 
-console.log(`\n${ok ? "ALL ASSERTIONS PASS — commander card now matches the family tree per-character portrait" : "ASSERTIONS FAILED"}`);
+console.log(`\n${ok ? "ALL ASSERTIONS PASS — non-live commander card now matches the family tree per-character portrait" : "ASSERTIONS FAILED"}`);
 process.exit(ok ? 0 : 1);

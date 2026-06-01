@@ -16678,7 +16678,16 @@ function App() {
                               // 0.9.429: tag first unit per army with the
                               // commander's firstName so non-live bodyguard
                               // swap can resolve a face card via statsCache.
-                              const cmdFirstName = a.character ? String(a.character).split(/\s+/)[0] : null;
+                              // 0.9.778: ALSO tag the surname. The non-live
+                              // resolver keys statsCache by the FULL `fn|ln|fac`
+                              // name (matching the family tree) — firstName alone
+                              // can't disambiguate two same-firstName generals in
+                              // a faction (Servius Ogulnius Gallus vs Servius
+                              // Fulvius Flaccus), which dropped the surname and
+                              // painted a wrong/hash face.
+                              const cmdParts = a.character ? String(a.character).split(/\s+/) : [];
+                              const cmdFirstName = cmdParts[0] || null;
+                              const cmdLastName = cmdParts.slice(1).join(" ") || null;
                               const cmdFac = (a.faction || "").toLowerCase();
                               (a.units || []).forEach((u, ui) => {
                                 normalised.push({
@@ -16687,6 +16696,7 @@ function App() {
                                   armour: u.armour || 0,
                                   weapon: u.weapon || 0,
                                   commanderName: ui === 0 && cmdFirstName ? cmdFirstName : null,
+                                  commanderLastName: ui === 0 && cmdFirstName ? cmdLastName : null,
                                   commanderFaction: ui === 0 && cmdFirstName ? cmdFac : null,
                                 });
                               });
@@ -17650,6 +17660,10 @@ function App() {
                               faction: fac || null,
                               icon: fac ? getCachedUnitIcon(fac, u.name) : null,
                               commanderName: ui === 0 && cmdFirstName ? cmdFirstName : null,
+                              // 0.9.778: tag surname too so the non-live resolver
+                              // keys statsCache by the FULL name (matches the
+                              // family tree; disambiguates same-firstName generals).
+                              commanderLastName: ui === 0 && cmdFirstName ? cmdLastName : null,
                               commanderFaction: ui === 0 && cmdFirstName ? fac : null,
                             })),
                           };
