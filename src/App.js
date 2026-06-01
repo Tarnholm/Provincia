@@ -4156,15 +4156,27 @@ function App() {
         family = [];
         for (const [fac, data] of Object.entries(modFamiliesByFaction)) {
           for (const m of (data && data.members) || []) {
-            family.push({ name: `${m.firstName || ""} ${m.lastName || ""}`.trim(), age: m.age, gender: m.gender, faction: fac });
+            // Carry the descr_strat `tags` (incl. "leader"/"heir") + isLeader so
+            // the diagnostic identifies the leader the SAME way the Family Tree
+            // does (FamilyTree.js crowns `tags.includes("leader")`).
+            family.push({
+              name: `${m.firstName || ""} ${m.lastName || ""}`.trim(),
+              firstName: m.firstName, lastName: m.lastName,
+              age: m.age, gender: m.gender, faction: fac,
+              alive: m.alive !== false,
+              tags: Array.isArray(m.tags) ? m.tags : [],
+              isLeader: Array.isArray(m.tags) && m.tags.includes("leader"),
+            });
           }
         }
       }
-      // Faction leader (player) from starting chars.
+      // Faction leader (player) — the descr_strat "leader"-tagged starting char
+      // (the family-tree method). Passed as a fallback hint; the tag-bearing
+      // roster above lets checkFamily find it directly too.
       let factionLeader = null;
       if (playerFaction) {
         const lead = chars.find((c) => c && c.faction === playerFaction && c.tags && c.tags.includes("leader"));
-        if (lead) factionLeader = { name: `${lead.firstName || "?"}${lead.lastName ? " " + String(lead.lastName).replace(/_/g, " ") : ""}`, age: typeof lead.age === "number" ? lead.age : null };
+        if (lead) factionLeader = { name: `${lead.firstName || "?"}${lead.lastName ? " " + String(lead.lastName).replace(/_/g, " ") : ""}`, age: typeof lead.age === "number" ? lead.age : null, alive: lead.alive !== false };
       }
 
       const report = runAppDiagnostics({
@@ -4179,6 +4191,9 @@ function App() {
         expectWars: null,
         family,
         factionLeader,
+        // We resolved the leader from descr_strat ⇒ assert present + adult (the
+        // age-4 regression). INFO-skips if no player faction / no leader found.
+        expectLeader: !!factionLeader,
         minFamilyMembers: 3,
         // Non-live has no turn/year (starting state); turnYear INFO-skips on null.
         turn: null,

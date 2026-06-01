@@ -185,6 +185,110 @@ describe("diagnostics — family", () => {
     expect(r.ok).toBe(false);
     expect(r.severity).toBe(SEV.WARN);
   });
+
+  // ── REAL-LEADER identification (the family-tree `"leader"`-tag method) ──
+
+  test("identifies the REAL leader by the \"leader\" tag (not an arbitrary member)", () => {
+    // The roster has many members; only Quintus carries the leader tag. The old
+    // code reported whichever member it grabbed first ("Biggus_Dickus age 16");
+    // the check must name the tagged leader instead.
+    const fam = [
+      { name: "Biggus Dickus", age: 16, faction: "romans_julii" },
+      { name: "Atia", age: 44, faction: "romans_julii", gender: "female" },
+      { name: "Quintus Ogulnius Gallus", age: 60, faction: "romans_julii", tags: ["leader"] },
+      { name: "Marcus Ogulnius Gallus", age: 30, faction: "romans_julii", tags: ["heir"] },
+    ];
+    const r = checkFamily(fam, "romans_julii", null, 3, { expectLeader: true });
+    expect(r.ok).toBe(true);
+    expect(r.detail).toContain("Quintus Ogulnius Gallus");
+    expect(r.detail).toContain("age 60");
+    expect(r.detail).not.toContain("Biggus");
+  });
+
+  test("isLeader flag is equivalent to the \"leader\" tag", () => {
+    const fam = [
+      { name: "Some Captain", age: 22, faction: "romans_julii" },
+      { name: "Quintus", age: 55, faction: "romans_julii", isLeader: true },
+    ];
+    const r = checkFamily(fam, "romans_julii", null, 1, { expectLeader: true });
+    expect(r.ok).toBe(true);
+    expect(r.detail).toContain("Quintus");
+  });
+
+  test("CHILD tagged leader → ERROR (the age-4 / overwritten-leader regression)", () => {
+    // Quintus (the real, age-60 leader) was overwritten by a child sharing the
+    // praenomen → the leader-tagged member now reads age 4. Must ERROR.
+    const fam = [
+      { name: "Atia", age: 44, faction: "romans_julii" },
+      { name: "Quintus", age: 4, faction: "romans_julii", tags: ["leader"] },
+    ];
+    const r = checkFamily(fam, "romans_julii", null, 1, { expectLeader: true });
+    expect(r.ok).toBe(false);
+    expect(r.severity).toBe(SEV.ERROR);
+    expect(r.detail).toContain("child");
+  });
+
+  test("MISSING leader when one is expected → ERROR", () => {
+    // No member carries the leader tag and the caller knows one is expected.
+    const fam = [
+      { name: "Atia", age: 44, faction: "romans_julii" },
+      { name: "Marcus", age: 30, faction: "romans_julii", tags: ["heir"] },
+    ];
+    const r = checkFamily(fam, "romans_julii", null, 1, { expectLeader: true });
+    expect(r.ok).toBe(false);
+    expect(r.severity).toBe(SEV.ERROR);
+    expect(r.detail).toContain("no faction leader identified");
+  });
+
+  test("DEAD leader when one is expected → ERROR", () => {
+    const fam = [
+      { name: "Quintus", age: 60, faction: "romans_julii", tags: ["leader"], alive: false },
+    ];
+    const r = checkFamily(fam, "romans_julii", null, 1, { expectLeader: true });
+    expect(r.ok).toBe(false);
+    expect(r.severity).toBe(SEV.ERROR);
+    expect(r.detail).toContain("dead");
+  });
+
+  test("no leader identifiable and NOT expected → INFO-skip (not a pass-on-arbitrary)", () => {
+    const fam = [
+      { name: "Someone", age: 30, faction: "romans_julii" },
+      { name: "Another", age: 25, faction: "romans_julii" },
+      { name: "Third", age: 40, faction: "romans_julii" },
+    ];
+    const r = checkFamily(fam, "romans_julii", null, 3); // no expectLeader
+    expect(r.ok).toBe(true);
+    expect(r.severity).toBe(SEV.INFO);
+    expect(r.detail).toContain("leader check skipped");
+  });
+
+  test("tagged leader of ANOTHER faction is not crowned for the player", () => {
+    // A shared roster: only Carthage's leader is tagged. The player is Julii, so
+    // the Carthaginian leader must NOT be mistaken for ours.
+    const fam = [
+      { name: "Julii Member", age: 30, faction: "romans_julii" },
+      { name: "Hannibal", age: 45, faction: "carthage", tags: ["leader"] },
+    ];
+    const r = checkFamily(fam, "romans_julii", null, 1, { expectLeader: true });
+    // No Julii leader found → ERROR (expected), and detail must not name Hannibal.
+    expect(r.ok).toBe(false);
+    expect(r.severity).toBe(SEV.ERROR);
+    expect(r.detail).not.toContain("Hannibal");
+  });
+
+  test("caller-supplied leader is used when the roster carries no tags (LIVE mode)", () => {
+    // The live save roster has no leader tag; the caller passes the descr_strat
+    // leader. The check must validate THAT leader (adult) and name it.
+    const fam = [
+      { name: "Atia", age: 44, faction: "romans_julii" },
+      { name: "Fabia", age: 46, faction: "romans_julii" },
+      { name: "Marcus", age: 1, faction: "romans_julii" },
+    ];
+    const r = checkFamily(fam, "romans_julii", { name: "Quintus Ogulnius Gallus", age: 60 }, 3, { expectLeader: true });
+    expect(r.ok).toBe(true);
+    expect(r.detail).toContain("Quintus Ogulnius Gallus");
+    expect(r.detail).toContain("via caller");
+  });
 });
 
 describe("diagnostics — turn / year", () => {

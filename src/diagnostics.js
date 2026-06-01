@@ -298,19 +298,72 @@ function checkGarrison(settlements, isGarrisonFn) {
 }
 
 // ── FAMILY ────────────────────────────────────────────────────────────────────
-// Member count realistic for the turn (not under-read), faction leader present
-// with a plausible adult age (not a child's), and no members attributed to a
-// placeholder/`_rebel` faction.
+// Member count realistic for the turn (not under-read), the REAL faction leader
+// present with a plausible adult age (not a child's), and no members attributed
+// to a placeholder/`_rebel` faction.
+//
+// IDENTIFYING THE LEADER (matters — the prior version picked an arbitrary member)
+// -----------------------------------------------------------------------------
+// The leader is identified the SAME way the Family Tree the user sees does it:
+// the member crowned in FamilyTree.js is the one whose `tags` includes "leader"
+// (see FamilyTree.js `char.tags.includes("leader")`). So this check resolves the
+// leader, in priority order:
+//   1. the `"leader"`-tagged member of the family roster (player faction when
+//      known) — the family-tree method, equivalent to `isLeader === true`;
+//   2. the caller-supplied `leader` object (a separately-resolved leader, e.g.
+//      the descr_strat `"leader"`-tagged character matched into a live roster
+//      that itself carries no tags). The save's family roster (crackSave) has no
+//      leader tag, so LIVE callers pass the descr_strat leader here — the same
+//      character the live family tree crowns.
+// If NEITHER yields a leader we INFO-skip (log it) rather than pass on an
+// arbitrary member; if the caller KNOWS a leader is expected (`opts.expectLeader`)
+// an unresolved/absent leader is an ERROR (the missing-leader regression).
+//
+// Why this catches the age-4 regression: a child "Quintus" that overwrote the
+// real 60-year-old leader makes the `"leader"`-tagged member (or the resolved
+// leader) read age 4 — `age < ADULT_MIN` → ERROR.
 //
 // Input:
-//   family: [{ name?, age?, gender?, faction?, isLeader?/role? }]  (crackSave .characters.family)
+//   family: [{ name?, firstName?, lastName?, age?, gender?, faction?, alive?,
+//              isLeader?, tags?:string[] }]  (crackSave .characters.family, or a
+//              descr_strat-derived roster that carries leader tags)
 //   playerFaction: string|null
-//   leader: { name?, age? } | null   (the faction leader, if separately resolved)
-//   minMembers: number|null          (a soft floor; null = derive a tiny default)
-function checkFamily(family, playerFaction, leader, minMembers) {
+//   leader: { name?, age?, alive? } | null   (caller-resolved leader, if any)
+//   minMembers: number|null                  (a soft floor; null = tiny default)
+//   opts: { expectLeader?:bool } | undefined  (expectLeader=true ⇒ absent leader
+//                                               is an ERROR, not an INFO-skip)
+const LEADER_ADULT_MIN = 16;   // RTW men come of age at 16; a leader younger is a regression.
+const LEADER_AGE_MAX = 120;    // an age above this is a corrupt/overflowed read.
+const LEADER_AGE_OLD = 90;     // plausible-but-suspect ceiling → WARN, not ERROR.
+
+function memberDisplayName(m) {
+  if (!m) return "?";
+  if (m.name) return String(m.name);
+  const fn = m.firstName || "?";
+  const ln = m.lastName ? " " + String(m.lastName).replace(/_/g, " ") : "";
+  return `${fn}${ln}`;
+}
+
+// The family-tree leader signal: a member whose tags include "leader" (or the
+// equivalent `isLeader` flag). Restricted to the player faction when known so a
+// foreign faction's leader in a shared roster isn't mistaken for ours.
+function findTaggedLeader(family, playerFaction) {
+  const pf = playerFaction ? String(playerFaction).toLowerCase() : null;
+  const isLeaderMember = (m) =>
+    !!m && (m.isLeader === true || (Array.isArray(m.tags) && m.tags.includes("leader")));
+  const inFaction = (m) => !pf || (m && m.faction && String(m.faction).toLowerCase() === pf);
+  // Prefer a player-faction tagged leader; fall back to any tagged leader only
+  // when the faction isn't known (so we never crown another faction's leader).
+  return family.find((m) => isLeaderMember(m) && inFaction(m))
+    || (pf ? null : family.find(isLeaderMember))
+    || null;
+}
+
+function checkFamily(family, playerFaction, leader, minMembers, opts) {
   if (!Array.isArray(family)) {
     return check("family", true, "no family roster provided", SEV.INFO);
   }
+  const expectLeader = !!(opts && opts.expectLeader);
   let sev = SEV.INFO, ok = true;
   const reasons = [];
   const total = family.length;
@@ -333,25 +386,66 @@ function checkFamily(family, playerFaction, leader, minMembers) {
     reasons.push(`${rebelTagged} members attributed to a _rebel placeholder faction`);
   }
 
-  // Faction leader plausibility: a leader should be an adult (not a child's age).
-  // RTW men come of age at 16; a leader younger than that is implausible.
-  if (leader && typeof leader.age === "number") {
-    if (leader.age < 16) {
+  // ── Identify the REAL faction leader ──
+  // 1. the "leader"-tagged roster member (the family-tree method); else
+  // 2. the caller-supplied leader object.
+  const taggedLeader = findTaggedLeader(family, playerFaction);
+  let resolvedLeader = null;
+  let leaderSource = null;
+  if (taggedLeader) {
+    resolvedLeader = {
+      name: memberDisplayName(taggedLeader),
+      age: typeof taggedLeader.age === "number" ? taggedLeader.age : null,
+      alive: taggedLeader.alive,
+    };
+    leaderSource = "tag";
+  } else if (leader && (leader.name || typeof leader.age === "number")) {
+    resolvedLeader = { name: leader.name || "?", age: typeof leader.age === "number" ? leader.age : null, alive: leader.alive };
+    leaderSource = "caller";
+  }
+
+  if (resolvedLeader) {
+    // Present but DEAD where a (living) leader is expected is the same class as
+    // a wrong/overwritten leader — the faction has no valid head.
+    if (resolvedLeader.alive === false) {
       sev = SEV.ERROR; ok = false;
-      reasons.push(`faction leader ${leader.name || "?"} age ${leader.age} is a child (<16)`);
-    } else if (leader.age > 90) {
+      reasons.push(`faction leader ${resolvedLeader.name} is dead`);
+    }
+    if (typeof resolvedLeader.age === "number") {
+      if (resolvedLeader.age < LEADER_ADULT_MIN) {
+        sev = SEV.ERROR; ok = false;
+        reasons.push(`faction leader ${resolvedLeader.name} age ${resolvedLeader.age} is a child (<${LEADER_ADULT_MIN})`);
+      } else if (resolvedLeader.age > LEADER_AGE_MAX) {
+        sev = SEV.ERROR; ok = false;
+        reasons.push(`faction leader ${resolvedLeader.name} age ${resolvedLeader.age} is impossible (>${LEADER_AGE_MAX})`);
+      } else if (resolvedLeader.age > LEADER_AGE_OLD) {
+        if (sev !== SEV.ERROR) sev = SEV.WARN;
+        ok = false;
+        reasons.push(`faction leader ${resolvedLeader.name} age ${resolvedLeader.age} implausibly old (>${LEADER_AGE_OLD})`);
+      }
+    } else if (expectLeader) {
+      // We have a leader but no age to validate — can't confirm the adult-age
+      // assertion. WARN (it's the value we'd want for the regression check).
       if (sev !== SEV.ERROR) sev = SEV.WARN;
       ok = false;
-      reasons.push(`faction leader ${leader.name || "?"} age ${leader.age} implausibly old (>90)`);
+      reasons.push(`faction leader ${resolvedLeader.name} has no age to validate`);
     }
-  } else if (playerFaction && leader === null) {
-    // leader explicitly not resolved — INFO only (we don't fabricate a leader).
-    reasons.push("no faction leader resolved");
+  } else if (expectLeader) {
+    // A leader was expected (the caller knows the faction should have one) but
+    // none could be identified — the missing-leader regression.
+    sev = SEV.ERROR; ok = false;
+    reasons.push(`no faction leader identified for ${playerFaction || "player"} but one was expected`);
+  } else if (playerFaction) {
+    // Leader not resolvable and not asserted as expected — INFO only (log the
+    // skip, per the standing rule; we never fabricate/crown an arbitrary member).
+    reasons.push("no faction leader identified (leader check skipped)");
   }
 
   const attributed = family.filter((r) => r && r.faction).length;
-  const detail = `${total} family members, ${attributed} attributed` +
-    (leader ? `, leader ${leader.name || "?"}${typeof leader.age === "number" ? ` age ${leader.age}` : ""}` : "") +
+  const leaderStr = resolvedLeader
+    ? `, leader ${resolvedLeader.name}${typeof resolvedLeader.age === "number" ? ` age ${resolvedLeader.age}` : ""} (via ${leaderSource})`
+    : "";
+  const detail = `${total} family members, ${attributed} attributed` + leaderStr +
     (reasons.length ? ` — ${reasons.join("; ")}` : "");
   return check("family", ok, detail, sev);
 }
@@ -423,7 +517,7 @@ function checkUnitAttribution(unitAttribution) {
 //   cardHappinessByCity,        // { city: number } (optional legacy-prop values)
 //   diplomacy, playerFaction, expectWars,
 //   garrisonSettlements, isGarrisonUnit,
-//   family, factionLeader, minFamilyMembers,
+//   family, factionLeader, minFamilyMembers, expectLeader,
 //   turn, currentYear, seasonIndex,
 //   unitAttribution,
 // }
@@ -440,7 +534,7 @@ function runDiagnostics(data) {
   checks.push(checkPublicOrder(d.settlementFields, d.cardHappinessByCity));
   checks.push(checkDiplomacy(d.diplomacy, d.playerFaction, d.expectWars));
   checks.push(checkGarrison(d.garrisonSettlements, d.isGarrisonUnit));
-  checks.push(checkFamily(d.family, d.playerFaction, d.factionLeader, d.minFamilyMembers));
+  checks.push(checkFamily(d.family, d.playerFaction, d.factionLeader, d.minFamilyMembers, { expectLeader: d.expectLeader === true }));
   checks.push(checkTurnYear(d.turn, d.currentYear, d.seasonIndex));
   checks.push(checkUnitAttribution(d.unitAttribution));
 

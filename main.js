@@ -7865,14 +7865,23 @@ function buildLiveDiagInput(newData, file) {
     }
   } catch (e) { void e; }
 
-  // Faction leader (player) from the live region characters.
+  // Faction leader (player). Identify the REAL leader the SAME way the live
+  // Family Tree does — the descr_strat member crowned by the `"leader"` tag
+  // (modDescrStratFamilies, the data behind the family-tree panel). NOT from the
+  // live region characters' `isLeader` flag: the save's name-pool records also
+  // carry that flag with no map tile, so a `.find(isLeader)` returns an arbitrary
+  // dummy (e.g. "Biggus_Dickus age 16") rather than the leader the user sees.
   let factionLeader = null;
   const pf = newData.savePlayerFaction || newData.playerFaction || null;
   try {
-    if (pf) {
-      for (const list of Object.values(newData.charactersByRegion || {})) {
-        const lead = (list || []).find((c) => c && c.isLeader && !c.isDead && c.faction === pf);
-        if (lead) { factionLeader = { name: `${lead.firstName || "?"}${lead.lastName ? " " + String(lead.lastName).replace(/_/g, " ") : ""}`, age: typeof lead.age === "number" ? lead.age : null }; break; }
+    if (pf && modDescrStratFamilies && modDescrStratFamilies.byFaction) {
+      const bucket = modDescrStratFamilies.byFaction[pf]
+        || modDescrStratFamilies.byFaction[String(pf).toLowerCase()];
+      const members = bucket && Array.isArray(bucket.members) ? bucket.members : [];
+      const lead = members.find((m) => m && Array.isArray(m.tags) && m.tags.includes("leader"));
+      if (lead) {
+        const ln = lead.lastName ? " " + String(lead.lastName).replace(/_/g, " ") : "";
+        factionLeader = { name: `${lead.firstName || "?"}${ln}`, age: typeof lead.age === "number" ? lead.age : null, alive: lead.alive !== false };
       }
     }
   } catch (e) { void e; }
@@ -7893,6 +7902,10 @@ function buildLiveDiagInput(newData, file) {
     expectWars: newData.diplomacyMatrix ? true : null,
     family: Array.isArray(newData.family) ? newData.family : (newData.characters && newData.characters.family) || null,
     factionLeader,
+    // A leader resolved from descr_strat ⇒ assert it's present + adult (the
+    // overwritten-leader / age-4 regression). If none resolved, the check
+    // INFO-skips rather than flagging — we never crown an arbitrary member.
+    expectLeader: !!factionLeader,
     minFamilyMembers: 3,
     turn: newData.currentTurn != null ? newData.currentTurn : newData.turn,
     currentYear: newData.currentYear != null ? newData.currentYear : null,

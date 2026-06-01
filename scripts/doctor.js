@@ -22,6 +22,9 @@
 //   --inject-hash-portraits   DEBUG: force every commander's portrait to null
 //                          (hash pool) to PROVE the doctor flags the regression.
 //                          Reverts nothing in the repo — purely an in-memory test.
+//   --inject-child-leader  DEBUG: force the resolved faction leader's age to 4
+//                          (the overwritten-leader regression) to PROVE the
+//                          family check flags it ERROR. In-memory only.
 //   --json                emit the structured report as JSON instead of text.
 //
 // EXIT CODES: 0 = no ERROR anomalies (WARN allowed); 1 = at least one ERROR; 2 = load failure.
@@ -32,15 +35,81 @@ const path = require("path");
 const { crackSave } = require("../src/saveCracker.js");
 const { runDiagnostics } = require("../src/diagnostics.js");
 const { isGarrisonUnit } = require("../src/garrisonClassify.js");
+const { parseDescrStrat } = require("../src/descrStratGeneral.js");
+
+// ── Authoritative faction-leader source (the family-tree method) ──────────────
+// The Family Tree the user sees crowns the member whose descr_strat `character`
+// line carries the `leader` tag (parseDescrStrat sets `c.leader`). The save's v1
+// records flag `isLeader` via the Factionleader trait, but the name-POOL entries
+// (no map tile) also carry it — `.find(isLeader)` over v1 grabs an arbitrary
+// pool dummy (e.g. "Biggus_Dickus age 16"), NOT the real leader. So we resolve
+// the leader from descr_strat by the `leader` tag, exactly as the family tree
+// does. Cached per mod dir (parsed once).
+let _descrStratLeaderCache = null;
+function descrStratLeaderFor(modDir, faction) {
+  if (!faction) return null;
+  if (!_descrStratLeaderCache || _descrStratLeaderCache.modDir !== modDir) {
+    _descrStratLeaderCache = { modDir, byFaction: null };
+    const candidates = [
+      path.join(modDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+      path.join(modDir, "descr_strat.txt"),
+    ];
+    for (const p of candidates) {
+      if (!fs.existsSync(p)) continue;
+      try {
+        const parsed = parseDescrStrat(fs.readFileSync(p, "utf8"));
+        const byFaction = {};
+        for (const f of parsed.factions) byFaction[String(f.name).toLowerCase()] = f;
+        _descrStratLeaderCache.byFaction = byFaction;
+      } catch (e) { void e; }
+      break;
+    }
+  }
+  const bf = _descrStratLeaderCache.byFaction;
+  if (!bf) return null;
+  const f = bf[String(faction).toLowerCase()];
+  if (!f || !Array.isArray(f.characters)) return null;
+  const lead = f.characters.find((c) => c.leader);
+  if (!lead) return null;
+  const ln = lead.famTok ? " " + String(lead.famTok).replace(/_/g, " ") : "";
+  return { name: `${lead.firstTok}${ln}`, age: typeof lead.age === "number" ? lead.age : null, alive: true };
+}
+
+// A tag-bearing family roster for a faction, built from descr_strat the way the
+// non-live Family Tree (modFamiliesByFaction) does — each `character` line's
+// leader/heir tag rides along. `injectChild` forces the leader's age to 4 to
+// prove the regression is caught even via the tag path.
+function descrStratFamilyRoster(modDir, faction, injectChild) {
+  descrStratLeaderFor(modDir, faction); // ensure cache populated
+  const bf = _descrStratLeaderCache && _descrStratLeaderCache.byFaction;
+  if (!bf) return null;
+  const f = bf[String(faction).toLowerCase()];
+  if (!f || !Array.isArray(f.characters)) return null;
+  return f.characters.map((c) => {
+    const ln = c.famTok ? " " + String(c.famTok).replace(/_/g, " ") : "";
+    const tags = c.leader ? ["leader"] : c.heir ? ["heir"] : [];
+    let age = typeof c.age === "number" ? c.age : null;
+    if (injectChild && c.leader) age = 4;
+    return {
+      name: `${c.firstTok}${ln}`,
+      age,
+      faction,
+      alive: true,
+      isLeader: !!c.leader,
+      tags,
+    };
+  });
+}
 
 // ── arg parsing ───────────────────────────────────────────────────────────────
 const argv = process.argv.slice(2);
-const opts = { mod: null, nonlive: false, injectHash: false, json: false, allCrash: false, saves: [] };
+const opts = { mod: null, nonlive: false, injectHash: false, injectChildLeader: false, json: false, allCrash: false, saves: [] };
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === "--mod") opts.mod = argv[++i];
   else if (a === "--nonlive") opts.nonlive = true;
   else if (a === "--inject-hash-portraits") opts.injectHash = true;
+  else if (a === "--inject-child-leader") opts.injectChildLeader = true;
   else if (a === "--json") opts.json = true;
   else if (a === "--all-crash") opts.allCrash = true;
   else if (a.startsWith("--")) { console.error(`unknown flag ${a}`); process.exit(2); }
@@ -90,7 +159,7 @@ function pickPortrait(c) {
 // `isNonLive` flips the portrait label and (in the simulated non-live path) marks
 // the family-portrait cross-check source — but the resolver is identical, which
 // is exactly the property the family-tree-match check asserts.
-function buildDiagInput(r, label, isNonLive, injectHash) {
+function buildDiagInput(r, label, isNonLive, injectHash, modDir, injectChildLeader) {
   // Commanders = living, on-map v1 generals/captains with a coord (the chars the
   // cards render). role 1/2 = general/captain; keep any with a tile + name.
   // First pass: count chars per coord so we can flag coord COLLISIONS. The
@@ -127,13 +196,15 @@ function buildDiagInput(r, label, isNonLive, injectHash) {
     });
   }
 
-  // Faction leader: the v1 record flagged isLeader for the player faction.
-  let factionLeader = null;
-  if (r.playerFaction) {
-    const lead = r.characters.v1.find((c) => c.faction === r.playerFaction && c.isLeader && !c.isDead);
-    if (lead) factionLeader = { name: `${lead.firstName || "?"}${lead.lastName ? " " + lead.lastName.replace(/_/g, " ") : ""}`, age: typeof lead.age === "number" ? lead.age : null };
-    else factionLeader = null;
-  }
+  // Faction leader: resolved from descr_strat by the `leader` tag (the SAME
+  // member the Family Tree crowns). NOT from v1 `isLeader` — those records
+  // include name-pool dummies with no map tile ("Biggus_Dickus age 16"), so a
+  // `.find(isLeader)` over v1 returns an arbitrary pool entry, not the real
+  // leader. Identical in live and non-live (same descr_strat source).
+  let factionLeader = r.playerFaction ? descrStratLeaderFor(modDir, r.playerFaction) : null;
+  // --inject-child-leader DEBUG: overwrite the resolved leader's age with a
+  // child's (4) to PROVE the check flags the age-4 / overwritten-leader bug.
+  if (injectChildLeader && factionLeader) factionLeader = { ...factionLeader, age: 4 };
 
   // Garrison ground-truth: build per-settlement region-unit sets from crackSave.
   // A settlement's units = land units in its region; field commanders = army
@@ -162,6 +233,10 @@ function buildDiagInput(r, label, isNonLive, injectHash) {
     isGarrisonUnit,
     family: r.characters.family,
     factionLeader,
+    // We resolved the leader from descr_strat by the `leader` tag, so a real
+    // campaign with a known player faction SHOULD have one — assert its
+    // presence + adult age (the missing-leader / age-4 regression).
+    expectLeader: !!(r.playerFaction && factionLeader),
     // Soft floor: a real campaign has at least a handful of named relatives.
     minFamilyMembers: 3,
     turn: r.turn,
@@ -220,7 +295,7 @@ function runOne(savePath, modDir) {
   const reports = [];
 
   // LIVE path.
-  const liveInput = buildDiagInput(r, `${base} [live]`, false, opts.injectHash);
+  const liveInput = buildDiagInput(r, `${base} [live]`, false, opts.injectHash, modDir, opts.injectChildLeader);
   reports.push(runDiagnostics(liveInput));
 
   // NON-LIVE / starting-state path. Simulated from the SAME crack — the starting
@@ -229,7 +304,20 @@ function runOne(savePath, modDir) {
   // state; for later saves this exercises the same code with live data, which is
   // still a valid regression guard for the non-live resolvers.)
   if (opts.nonlive) {
-    const nonLiveInput = buildDiagInput(r, `${base} [non-live]`, true, opts.injectHash);
+    const nonLiveInput = buildDiagInput(r, `${base} [non-live]`, true, opts.injectHash, modDir, opts.injectChildLeader);
+    // Non-live mode mirrors App.js: the family roster comes from descr_strat and
+    // CARRIES the `"leader"` tag (modFamiliesByFaction members). Swap in a
+    // tag-bearing player-faction roster so checkFamily exercises the SAME
+    // family-tree leader-tag method the non-live UI uses — not the caller fallback.
+    if (r.playerFaction) {
+      const tagged = descrStratFamilyRoster(modDir, r.playerFaction, opts.injectChildLeader);
+      if (tagged && tagged.length) {
+        nonLiveInput.family = tagged;
+        // The roster itself carries the leader tag, so the diagnostic finds the
+        // leader without the caller hint — null it to prove the tag path works.
+        nonLiveInput.factionLeader = null;
+      }
+    }
     reports.push(runDiagnostics(nonLiveInput));
   }
   return reports;
