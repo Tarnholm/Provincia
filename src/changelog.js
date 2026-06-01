@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.807",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Garrison and Field armies merged into one panel** — same headers, the garrison's two-row unit space, and the faction-grouped armies are all unchanged; they just share one panel now so there's no wasted padding/gap between them." },
+      { type: "fix", text: "**Starting-state characters no longer show blank cards.** In the pre-game (non-live) view, characters without a surname (e.g. Statiis, Eumedes) fell through the portrait resolver and rendered an empty card; every starting character now resolves a portrait — the same one the family tree shows — across the whole map." },
+    ],
+  },
+  {
     version: "0.9.806",
     date: "2026-06-01",
     items: [

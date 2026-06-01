@@ -4174,7 +4174,26 @@ function App() {
           savePath: info ? info.savePath : null,
           nameKey: `name:${fn}|${ln}|${fac}`,
           resolvable,
+          // 0.9.806: does the card render ANY portrait (precise OR hash) vs go
+          // BLANK? A non-null info with a firstName always hash-pools a face;
+          // a null info = the bodyguard-icon/blank-box fallback (the reported bug).
+          rendersPortrait: !!(info && (info.savePath || info.firstName)),
+          singleName: !c.lastName,
         });
+      }
+
+      // 0.9.806: [nonlive-portrait] resolved-vs-blank counts so provincia.log
+      // shows the floor is met (no commander card goes blank). `precise` = an
+      // engine-exact savePath (coord/name map); `hash` = firstName-only floor
+      // (deterministic culture face, same as the family tree); `blank` = the bug
+      // (null info → bodyguard icon / empty box). `blank` MUST be 0 after the fix.
+      {
+        const precise = commandersNonLive.filter((c) => c.savePath).length;
+        const blank = commandersNonLive.filter((c) => !c.rendersPortrait).length;
+        const hash = commandersNonLive.length - precise - blank;
+        const singleNames = commandersNonLive.filter((c) => c.singleName).length;
+        const blankSamples = commandersNonLive.filter((c) => !c.rendersPortrait).slice(0, 8).map((c) => c.name);
+        console.log(`[nonlive-portrait] commander cards: ${commandersNonLive.length} total → ${precise} precise (engine-exact), ${hash} hash-pool floor, ${blank} BLANK${blank ? " [" + blankSamples.join(", ") + "]" : ""}; ${singleNames} single-name chars`);
       }
 
       // Family roster (non-live) = descr_strat family members for all factions.

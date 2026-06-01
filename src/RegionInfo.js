@@ -2974,9 +2974,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </div>
       </Movable>
 
-      {/* Garrison — Movable widget */}
+      {/* Garrison + Field armies — MERGED into one Movable (0.9.x).
+          Both sections stack vertically inside this single panel's body so
+          there's no inter-panel gap; each keeps its own header + content. */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1650 }}>
+        defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.4854 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           {/* 0.9.769: title + INLINE hover readout on one FIXED single line.
@@ -2988,7 +2990,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             {hoveredUnit ? <span style={{ fontWeight: 400, fontSize: "0.68rem", color: "#dca64a", marginLeft: 6 }}>{hoverReadout(hoveredUnit)}</span> : null}
           </div>
         </div>
-        <div style={widgetBody}>
+        <div style={{ ...widgetBody, flex: "0 0 auto", overflow: "visible" }}>
         {garrison && garrison.length > 0 ? (
           (() => {
             // 0.9.648: army-unit-edit selection. Dev-mode click on a garrison
@@ -3303,13 +3305,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           )
         )}
         </div>
-      </div>
-      </Movable>
-
-      {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
-      <Movable id="region.fieldArmies" title="Field armies" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.7857, y: 0.6800, w: 0.2090, h: 0.3150 }}>
-      <div className={panelInnerClass} style={panelInner}>
+        {/* Divider between the merged Garrison and Field armies sections —
+            a thin rule replaces the old gap between the two separate panels. */}
+        <div style={{ flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.10)", margin: "2px 14px 0 14px" }} />
+        {/* Field armies — section (merged from former region.fieldArmies
+            Movable, split from Garrison in 0.9.348). */}
         <div style={widgetHeader}>
           {/* 0.9.769: title + INLINE hover readout on one FIXED single line.
               nowrap/ellipsis + a stable minHeight keep the header height

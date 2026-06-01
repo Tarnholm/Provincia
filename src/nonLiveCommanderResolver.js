@@ -175,10 +175,34 @@ function resolveNonLiveCommanderInfo(commanderName, commanderLastName, commander
       if (!faction && cached.faction) faction = cached.faction;
     }
   }
-  // Return an info object only when we have SOMETHING to render with: a resolved
-  // portrait or at least a name. Null lets the caller leave the bodyguard unit
-  // icon (no swap).
-  if (!savePath && lastName == null && !cached) return null;
+  // 0.9.806: ALWAYS return an info object when we have a firstName — even with
+  // no surname, no statsCache hit, and no engine-exact savePath. The family tree
+  // renders EVERY general's portrait by handing the char (name/lastName/faction/
+  // age, savePath null) to loadPortrait, whose IPC hash-pools a deterministic
+  // culture face when there's no precise path (FamilyTree.js Portrait → resolve-
+  // PortraitPool). The commander card must match that floor: by returning a
+  // firstName-bearing info with savePath null, CommanderPortraitImg hash-pools
+  // the SAME face instead of falling back to the bodyguard unit icon / blank box.
+  //
+  // The OLD gate (`!savePath && lastName == null && !cached → null`) stranded
+  // single-name characters (Greek/Italic generals like Statiis, Eumedes) in pure
+  // non-live (no save ⇒ empty portrait map, no persisted statsCache): they have
+  // no surname and no cache row, so the resolver bailed to null and the card went
+  // BLANK — while the family tree showed them a hash portrait. Returning info for
+  // any firstName closes that divergence for the whole map. Respects
+  // [[provincia-no-fallbacks]]: savePath stays null (no fabricated path); the
+  // renderer's deterministic hash is a real culture portrait, not a placeholder.
+  if (!commanderName) return null;
+  if (typeof window !== "undefined") {
+    try {
+      window.__nonLiveCmdResolveLogged ||= new Set();
+      const k = `${lc(commanderName)}|${lnNorm(lastName)}|${lc(faction)}`;
+      if (!window.__nonLiveCmdResolveLogged.has(k)) {
+        window.__nonLiveCmdResolveLogged.add(k);
+        console.log(`[nonlive-portrait] resolve "${commanderName}${lastName ? " " + String(lastName).replace(/_/g, " ") : ""}" faction="${faction || ""}" → savePath="${savePath || "(hash)"}"${!lastName && !savePath ? " [single-name floor]" : ""}`);
+      }
+    } catch (e) { void e; }
+  }
   return { firstName: commanderName, lastName, faction, age, savePath };
 }
 

@@ -19,6 +19,7 @@ import {
   resolveNonLiveCommanderInfo,
 } from "./nonLiveCommanderResolver.js";
 import { crackSave } from "./saveCracker.js";
+import { parseDescrStrat } from "./descrStratGeneral.js";
 
 const SAVE = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_julii1.sav";
 const MOD = "C:\\RIS\\RIS\\data";
@@ -91,9 +92,84 @@ describeIf("nonLiveCommanderResolver — starting royal family (julii1 fixture)"
     }
   });
 
-  it("a genuinely-unknown commander stays null (no fabricated face)", () => {
+  it("a genuinely-unknown commander stays null savePath (no fabricated face)", () => {
     const info = resolveNonLiveCommanderInfo("Nonexistus", "Madeupname", FAC, null, startingChars, map);
     // No coord, no name-key, no statsCache → null savePath (respects no-fallback).
+    // (info itself is now non-null — it has a firstName — so the card hash-pools a
+    // real culture face instead of going BLANK; only the precise PATH is absent.)
     expect(info ? info.savePath : null).toBeFalsy();
+  });
+});
+
+// ── PURE NON-LIVE (no save) regression guard ─────────────────────────────────
+//
+// THE BUG (v0.9.806): in PURE non-live (no save loaded ⇒ empty portrait map, no
+// persisted statsCache), single-name characters (Greek/Italic Julii generals
+// like Statiis, Eumedes — no surname) resolved to `null` from
+// resolveNonLiveCommanderInfo because the old gate bailed when there was no
+// savePath, no lastName, and no statsCache hit. A null info made the commander
+// card fall back to the bodyguard unit icon / a blank gray box — a BLANK card —
+// while the FAMILY TREE rendered the same character a deterministic hash-pool
+// portrait. The fix returns an info object for ANY firstName (savePath stays
+// null), so the card hash-pools the SAME face the family tree shows.
+//
+// This block needs ONLY descr_strat (no save fixture), so it runs in CI even
+// when the .sav is absent — it's the true model of the pure-non-live path.
+const MOD_DS = "C:\\RIS\\RIS\\data\\world\\maps\\campaign\\imperial_campaign\\descr_strat.txt";
+const haveDescrStrat = fs.existsSync(MOD_DS);
+const describeIfDS = haveDescrStrat ? describe : describe.skip;
+
+describeIfDS("nonLiveCommanderResolver — PURE non-live, no save (descr_strat only)", () => {
+  let startingChars, emptyMap;
+  beforeAll(() => {
+    const ds = parseDescrStrat(fs.readFileSync(MOD_DS, "utf8"));
+    startingChars = [];
+    for (const f of ds.factions) {
+      for (const c of f.characters || []) {
+        startingChars.push({ firstName: c.firstTok, lastName: c.famTok || null, faction: f.name, x: c.x, y: c.y });
+      }
+    }
+    // Pure non-live: no v1 coords, no statsCache → empty engine-exact map.
+    emptyMap = buildNonLivePortraitMap({}, [], {});
+  });
+
+  // The exact single-name Julii generals from the bug report. commanderLastName
+  // is null (single-name); commanderName is the firstName the card tags.
+  const SINGLE_NAME = ["Statiis", "Eumedes"];
+
+  it("single-name commanders resolve a NON-NULL info (card never goes blank)", () => {
+    for (const fn of SINGLE_NAME) {
+      const info = resolveNonLiveCommanderInfo(fn, null, FAC, {}, startingChars, emptyMap);
+      expect(info, `${fn} must resolve a NON-NULL info so the card renders a (hash) portrait, not a blank`).toBeTruthy();
+      expect(info.firstName, `${fn} info must carry the firstName the card feeds to the hash pool`).toBe(fn);
+      expect(info.faction, `${fn} info must carry the faction so the culture/portrait pool resolves`).toBe(FAC);
+    }
+  });
+
+  it("the surnamed Julii field generals ALSO resolve a non-null info in pure non-live", () => {
+    const surnamed = [
+      ["Servius", "Fulvius Flaccus"],
+      ["Decimus", "Iunius Brutus"],
+      ["Publius", "Sempronius Sophus"],
+      ["Appius", "Claudius Pulcher"],
+    ];
+    for (const [fn, ln] of surnamed) {
+      const info = resolveNonLiveCommanderInfo(fn, ln, FAC, {}, startingChars, emptyMap);
+      expect(info, `${fn} ${ln} must resolve a non-null info`).toBeTruthy();
+      expect(info.firstName).toBe(fn);
+    }
+  });
+
+  it("EVERY romans_julii starting character resolves a non-null info (whole-map floor)", () => {
+    const julii = startingChars.filter((c) => c.faction === FAC && c.firstName);
+    expect(julii.length, "fixture should have romans_julii starting characters").toBeGreaterThan(0);
+    const blanks = [];
+    for (const c of julii) {
+      // Mirror the renderer: commanderLastName is the surname with spaces.
+      const lnSpaces = c.lastName ? String(c.lastName).replace(/_/g, " ") : null;
+      const info = resolveNonLiveCommanderInfo(c.firstName, lnSpaces, FAC, {}, startingChars, emptyMap);
+      if (!(info && (info.savePath || info.firstName))) blanks.push(`${c.firstName} ${c.lastName || ""}`.trim());
+    }
+    expect(blanks, `these romans_julii would render a BLANK card in pure non-live: ${blanks.join(", ")}`).toHaveLength(0);
   });
 });

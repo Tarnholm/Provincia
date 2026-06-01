@@ -133,7 +133,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 24;
+const LAYOUT_VERSION = 25;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -155,8 +155,10 @@ const CANONICAL_V4 = {
   "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
   "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
   "region.buildings":   { x: 0.5720, y: 0.7350, w: 0.2090, h: 0.2540 },
-  "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1650 },
-  "region.fieldArmies": { x: 0.7857, y: 0.6800, w: 0.2090, h: 0.3150 },
+  // 0.9.x: region.garrison + region.fieldArmies MERGED into one Movable.
+  // garrison now spans the combined vertical area both panels used to occupy
+  // (old garrison y0.5086+h0.1650, field armies bottom y0.6800+h0.3150=0.9950).
+  "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.4854 },
   // Bottom-strip widgets — 9 px below the map's bottom edge (map
   // y=0.0083 + h=0.6843 = 0.6926; strip y = 0.6926 + 9/1080 = 0.7009).
   // 0.9.791: flush to the map edges. search/factions x=0 → left edge meets the
@@ -200,6 +202,10 @@ try {
     // makes the snap/collision registry see a phantom rect at the old
     // recent position.
     try { localStorage.removeItem("widget.bottom.recent"); } catch {}
+    // 0.9.x: region.fieldArmies was merged into region.garrison — drop its
+    // stored position so the snap/collision registry doesn't keep a phantom
+    // rect at the old field-armies slot.
+    try { localStorage.removeItem("widget.region.fieldArmies"); } catch {}
     for (const [id, pos] of Object.entries(CANONICAL_V4)) {
       localStorage.setItem(`widget.${id}`, JSON.stringify(pos));
     }
@@ -452,7 +458,6 @@ export const UI_LABELS = {
   "region.unitQueue":   { n: 9,  name: "Unit queue" },
   "region.queue":       { n: 10, name: "Build queue" },
   "region.garrison":    { n: 11, name: "Garrison" },
-  "region.fieldArmies": { n: 12, name: "Field armies" },
   "region.buildings":   { n: 13, name: "Buildings" },
 };
 
