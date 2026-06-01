@@ -2141,7 +2141,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             {devMode && ownerFactionId && (
               <button onClick={(e) => { e.stopPropagation(); setDiploEditOpen(true); }}
                 title="View / edit every faction's starting attitude toward this faction (writes to descr_strat on Save)"
-                style={{ marginLeft: "auto", padding: "1px 6px", fontSize: "0.62rem", background: "rgba(92,140,200,0.18)", color: "#bcd6f0", border: "1px solid rgba(92,140,200,0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}>
+                style={{ marginLeft: "auto", padding: "1px 5px", fontSize: "0.62rem", background: "rgba(92,140,200,0.18)", color: "#bcd6f0", border: "1px solid rgba(92,140,200,0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
                 ✎ All numbers
               </button>
             )}

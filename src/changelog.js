@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.812",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**The \"✎ All numbers\" button in the Diplomacy & Treasury header no longer wraps to two lines** when the panel is narrow — it now stays on one row (no-wrap, no shrink) with slightly tighter padding, so the header height stays constant." },
+    ],
+  },
+  {
     version: "0.9.811",
     date: "2026-06-01",
     items: [
