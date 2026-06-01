@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.814",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Renamed the Culture + Religion map-mode section to \"Society\"** (it groups both, so \"Culture\" alone was misleading)." },
+    ],
+  },
+  {
     version: "0.9.813",
     date: "2026-06-01",
     items: [

@@ -10708,7 +10708,7 @@ function App() {
         { key: "victory", label: "Victory", badge: "mode.victory" },
         { key: "explored", label: "Explored", badge: "mode.explored" },
       ]},
-      { id: "culture", title: "Culture", members: [
+      { id: "society", title: "Society", members: [
         { key: "culture", label: "Culture", badge: "mode.culture" },
         { key: "religion", label: "Religion", badge: "mode.religion" },
       ]},
