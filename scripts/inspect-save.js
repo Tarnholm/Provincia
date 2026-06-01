@@ -77,6 +77,40 @@ function main() {
     console.log(`  ${pad(m.fullName, 26)} ${pad(m.gender, 6)} age ${padl(m.age == null ? "?" : m.age, 3)} ${m.alive ? "alive" : "DEAD "}  ${rel}`);
   }
 
+  // Typed agents (spy/diplomat/assassin/merchant/admiral/princess) + role mix.
+  // The character CLASS is encoded by the strat_card path the save embeds (see
+  // saveCrackerExtras.parseTypedAgents). Generals/captains are identified by the
+  // <culture> <role> bodyguard-description anchor; bodyguard-less agents by their
+  // data/ui/<culture>/agents/card_<type>.tga path.
+  const rb = r.characters.roleBreakdown || {};
+  const allAgents = r.characters.agents || [];
+  console.log(`\n-- character classes (role-anchor) --`);
+  console.log("  " + (Object.keys(rb).length
+    ? Object.entries(rb).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${t}:${n}`).join("  ")
+    : "(none — no <culture> <role> anchors found)"));
+  // Per-faction typed-agent counts, then the chosen faction's agents listed.
+  const agByFacType = {};
+  for (const a of allAgents) {
+    const f = a.faction || "(unattributed)";
+    ((agByFacType[f] ||= {})[a.type] ||= 0); agByFacType[f][a.type]++;
+  }
+  console.log(`\n-- typed agents (${allAgents.length} total) --`);
+  if (!allAgents.length) {
+    console.log("  (none — no spy/diplomat/assassin/merchant/admiral/princess in this save)");
+  } else {
+    for (const [f, types] of Object.entries(agByFacType).sort()) {
+      console.log(`  ${pad(f, 18)} ${Object.entries(types).map(([t, n]) => `${t}:${n}`).join("  ")}`);
+    }
+    const mine = allAgents.filter((a) => a.faction === fac);
+    if (mine.length) {
+      console.log(`  -- ${fac} agents --`);
+      for (const a of mine.slice(0, 30)) {
+        const pos = (a.x != null && a.y != null) ? `(${a.x},${a.y})` : "";
+        console.log(`    ${pad(a.type, 10)} ${pad(a.name || a.cardBasename || "?", 26)} ${pad(a.region || "", 16)} ${pos}`);
+      }
+    }
+  }
+
   // Military: the chosen faction's units & armies
   if (Array.isArray(r.units)) {
     const fUnits = r.units.filter((u) => u.faction === fac);

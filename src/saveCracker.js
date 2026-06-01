@@ -203,17 +203,100 @@ function crackSave(saveBuf, modDataDir) {
   const settlements   = parseSettlements(saveBuf, null, null); // returns { settlements: [...], ... }
   const diplomacy     = x.parseDiplomacyMatrix(saveBuf, diploOrder);
   const v2Chars       = x.parseCharacterExtras(saveBuf);
+  // Attach extX/extY to v2 records so role-string agents (if any) can be named
+  // by tile-coord join against v1. Cheap; no-op on saves smaller than the
+  // portrait-pool offset. (Same coord bridge bridgeV1Traits relies on.)
+  try { x.attachMapCoords(saveBuf, v2Chars); } catch (e) { /* coords optional */ }
 
   // findCharacterRecords returns FULLY-PARSED records (firstName, age, role,
   // stats, traits, etc) — no separate parseCharacter call needed. The records
   // arrive without faction attribution; we tag each via the captain_card
   // marker trick used by save-to-descr-strat.
   let v1Chars = [];
+  let factionMarkers = [];
   if (nameLookup.length && traitNames.length) {
     v1Chars = findCharacterRecords(saveBuf, nameLookup, traitNames, null);
-    const markers = findFactionMarkers(saveBuf);
-    assignFactions(v1Chars, markers);
+    factionMarkers = findFactionMarkers(saveBuf);
+    assignFactions(v1Chars, factionMarkers);
+  } else {
+    factionMarkers = findFactionMarkers(saveBuf);
   }
+
+  // ── Typed agents (spy/diplomat/assassin/merchant/admiral/princess) ─────────
+  // The character CLASS is encoded by the strat_card path the save embeds, not
+  // by a single type byte (see saveCrackerExtras.parseTypedAgents header). Two
+  // independent type signals are combined:
+  //   (1) The `<culture> <role>\0` bodyguard-unit description string read by
+  //       parseCharacterExtras — covers general/captain (only bodyguard-bearing
+  //       classes get this string). Its `role` is the authoritative type for
+  //       those. v2 records carry extX/extY so we can name them via v1.
+  //   (2) The `data/ui/<culture>/agents/card_<type>.tga` strat_card path —
+  //       the ONLY in-save signature of bodyguard-less agents. Faction is
+  //       attributed by the same nearest-captain_card rule as v1 generals.
+  // We expose the union as `characters.agents`, and also stamp `.type` onto the
+  // matching v1 character record so downstream UI can colour/filter by class.
+  const cardAgents = x.parseTypedAgents(saveBuf, factionMarkers);
+  // Tally the role-anchored class breakdown (confirmed for general/captain;
+  // other roles surface here too if a save ever contains them).
+  const roleBreakdown = {};
+  for (const c of v2Chars) roleBreakdown[c.role] = (roleBreakdown[c.role] || 0) + 1;
+  // Agents the role-anchor itself flagged as a non-general/captain class. On the
+  // current corpus this is always empty (agents have no bodyguard string), but
+  // it is the authoritative source when present, so prefer it.
+  const roleAgents = v2Chars.filter(
+    (c) => c.role && c.role !== "general" && c.role !== "captain"
+  );
+  // Bridge role-anchored agents to v1 names by tile coords (same join
+  // bridgeV1Traits uses). Build a coord→v1 index once.
+  const v1ByCoord = new Map();
+  for (const v of v1Chars) {
+    if (v.tileX != null && v.tileY != null) v1ByCoord.set(`${v.tileX},${v.tileY}`, v);
+  }
+  const agents = [];
+  for (const a of roleAgents) {
+    const v = (a.extX != null && a.extY != null) ? v1ByCoord.get(`${a.extX},${a.extY}`) : null;
+    const name = v ? `${v.firstName}${v.lastName ? " " + v.lastName : ""}` : null;
+    if (v) v.type = a.role;
+    agents.push({
+      name,
+      type: a.role,
+      faction: v ? v.faction : null,
+      culture: a.culture,
+      region: a.region,
+      x: a.extX != null ? a.extX : (v ? v.tileX : null),
+      y: a.extY != null ? a.extY : (v ? v.tileY : null),
+      source: "role-string",
+    });
+  }
+  // Add card-path agents (the bodyguard-less classes). De-dup against the
+  // role-anchored set by (type,faction,offset-proximity) is unnecessary here
+  // because the two signals are disjoint (a char is EITHER a general with a
+  // role string OR an agent with a card path — never both).
+  for (const a of cardAgents) {
+    agents.push({
+      name: null,                 // no reliable name anchor without a sample save
+      type: a.type,
+      faction: a.faction,
+      culture: null,
+      region: null,
+      x: null,
+      y: null,
+      cardBasename: a.cardBasename,
+      source: "card-path",
+    });
+  }
+  // [agents] logging — surfaces the discriminator outcome for both live and
+  // non-live (T1/descr-strat-start) saves so the live+non-live rule is honoured.
+  try {
+    const byType = {};
+    for (const a of agents) byType[a.type] = (byType[a.type] || 0) + 1;
+    // eslint-disable-next-line no-console
+    console.log(
+      `[agents] roleBreakdown=${JSON.stringify(roleBreakdown)} ` +
+      `typedAgents=${agents.length} byType=${JSON.stringify(byType)} ` +
+      `(role-string:${roleAgents.length} card-path:${cardAgents.length})`
+    );
+  } catch (e) { /* logging must never throw */ }
 
   // Full family roster — wives, daughters, young sons, dead relatives. These
   // are NOT in v1 (no trait list to anchor on); they live in a separate
@@ -528,11 +611,14 @@ function crackSave(saveBuf, modDataDir) {
     factions,
     settlements: settlements && settlements.settlements ? settlements.settlements : [],
     characters: {
-      v1: v1Chars,              // trait-anchored: generals/agents (name, traits, age, pos)
+      v1: v1Chars,              // trait-anchored: generals/agents (name, traits, age, pos, .type when known)
       v2Count: v2Chars.length,  // role/uuid records (no names)
       family,                   // FULL family roster incl. women: name, age, gender,
                                 // alive, faction, fatherUuid/spouseUuid/childUuids (+resolved names)
       familyByFaction,          // family records grouped by attributed faction
+      agents,                   // typed non-general characters: [{name, type, faction, culture, region, x, y, source}]
+                                // type ∈ spy|diplomat|assassin|merchant|admiral|princess|… (see saveCrackerExtras.parseTypedAgents)
+      roleBreakdown,            // {role: count} from the <culture> <role> bodyguard-description anchor (general/captain confirmed)
     },
     diplomacy,                  // { factionName: {war, allied, hostile, trade}, _meta }
     sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, turnsUnderSiege, siegeWindow, targetSettlement }]
@@ -551,6 +637,7 @@ function crackSave(saveBuf, modDataDir) {
       v1Characters: v1Chars.length,
       v2Characters: v2Chars.length,
       familyMembers: family.length,
+      typedAgents: agents.length,
       familyFemales: family.filter((r) => r.gender === "female").length,
       familyAttributed: family.filter((r) => r.faction).length,
       sieges: sieges.length,

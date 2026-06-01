@@ -308,6 +308,110 @@ function parseCharacterExtras(buf) {
   return out;
 }
 
+// ── Typed agents (spy / diplomat / assassin / merchant / admiral / princess) ──
+//
+// THE TYPE DISCRIMINATOR (cracked 2026-06-01):
+// RTW:R has no single "character_type" byte that cleanly separates generals
+// from agents — the v1 record's +42 `role` byte is a faction-rank tier (0..4),
+// NOT a class. Instead the engine identifies a character's CLASS by the
+// strat_card / strat_model path it embeds inline in the save, exactly the way
+// faction is tagged by the `captain_card_<faction>.tga` marker:
+//   • Generals/captains embed `…/captain_banners/…captain_card_<faction>.tga`
+//     AND carry a `<culture> <role>\0` bodyguard-unit description string
+//     (this is what parseCharacterExtras keys on — but ONLY generals/captains
+//     command a bodyguard unit, so only they get that string).
+//   • Agents have NO bodyguard unit; their class is their own strat_model, and
+//     the save embeds the agent strat_card path
+//     `data/ui/<culture>/agents/card_<type>.tga`
+//     (e.g. card_spy.tga, card_assassin.tga, card_diplo_rome.tga) or the
+//     placeholder `…/agents/temp_admiral.tga` for admirals. Verified against
+//     RIS descr_character.txt (types: named, general, spy, assassin, diplomat,
+//     merchant, admiral; 28 distinct strat_card paths, the agent ones all under
+//     a `/agents/` dir). The `captain_card_<faction>.tga` mechanism is CONFIRMED
+//     present in every save (46 paths in julii T1, 573 at T34); the `/agents/`
+//     path is the SAME embed mechanism, so an agent on the map writes its
+//     card path identically.
+//
+// CONFIRMED vs HYPOTHESIS:
+//   • CONFIRMED: the strat_card embed mechanism (captain_card present & faction-
+//     attributing in all saves) and the agent card-path vocabulary (from the mod
+//     files). Type is derived from the card filename.
+//   • HYPOTHESIS (could not be exercised): NONE of the 21 saves in the local
+//     corpus (julii/Carthage/Athens T1-3, RoR T1/2/3/5/8/34, Macedon) contains a
+//     SINGLE agent — `/agents/card_*.tga`, and the raw strings spy/diplomat/
+//     assassin/merchant/admiral/princess, are 0× in every file (RoR scenario AI
+//     simply never trained one through T34). So the per-agent field offsets
+//     (uuid/coords adjacent to the card path) are inferred from the general
+//     layout, not validated on a real agent record. When a save with agents is
+//     available, validate offsets via this same detector.
+//
+// Derives {type, faction, cardPath, offset}. Faction is attributed by the same
+// nearest-preceding-captain_card_<faction> rule used for v1 generals (passed in
+// as factionMarkers: [{pos, faction}] sorted by pos). type maps from filename.
+function agentTypeFromCard(file) {
+  // file is the basename of the card path, e.g. "card_spy", "card_diplo_rome",
+  // "temp_admiral".
+  const f = file.toLowerCase();
+  if (/diplo/.test(f)) return "diplomat";
+  if (/spy/.test(f)) return "spy";
+  if (/assassin/.test(f)) return "assassin";
+  if (/merchant/.test(f)) return "merchant";
+  if (/admiral/.test(f)) return "admiral";
+  if (/princess/.test(f)) return "princess";
+  if (/witch/.test(f)) return "witch";
+  if (/heretic/.test(f)) return "heretic";
+  if (/inquisitor/.test(f)) return "inquisitor";
+  return null;
+}
+
+function parseTypedAgents(buf, factionMarkers) {
+  const out = [];
+  if (!buf || buf.length < 16) return out;
+  // The agent strat_card always lives under a `/agents/` directory. Scan for
+  // that ASCII marker, then read backward to the start of the path (`data/`)
+  // and forward to `.tga` to recover the full card path + basename.
+  const needle = Buffer.from("/agents/", "ascii");
+  const markers = Array.isArray(factionMarkers)
+    ? [...factionMarkers].sort((a, b) => a.pos - b.pos) : [];
+  let p = 0;
+  while ((p = buf.indexOf(needle, p)) !== -1) {
+    const slashAgents = p;
+    p += needle.length;
+    // Walk forward to the filename end (".tga") collecting the basename.
+    let e = slashAgents + needle.length;
+    let base = "";
+    let ok = false;
+    while (e < buf.length && e < slashAgents + needle.length + 64) {
+      const b = buf[e];
+      if (b === 0x2e /* . */) {
+        // expect ".tga"
+        if (buf.toString("ascii", e, e + 4).toLowerCase() === ".tga") ok = true;
+        break;
+      }
+      if (b < 0x20 || b > 0x7e) break;
+      base += String.fromCharCode(b);
+      e++;
+    }
+    if (!ok || base.length === 0) continue;
+    const type = agentTypeFromCard(base);
+    if (!type) continue;
+    // Faction = nearest captain_card_<faction> marker BEFORE this card path,
+    // mirroring assignFactions() for v1 generals.
+    let faction = null;
+    for (let mi = 0; mi < markers.length; mi++) {
+      if (markers[mi].pos <= slashAgents) faction = markers[mi].faction;
+      else break;
+    }
+    out.push({
+      offset: slashAgents,
+      type,
+      faction,
+      cardBasename: base,
+    });
+  }
+  return out;
+}
+
 // Parse all "major faction" records — one per playable faction. Each record
 // holds the faction's current treasury, start-of-turn treasury (so net
 // = income earned this turn so far), regionCount, region IDs, faction_id
@@ -1439,6 +1543,8 @@ module.exports = {
   parseFactionConfigRecords,
   parseModInfo,
   parseCharacterExtras,
+  parseTypedAgents,
+  agentTypeFromCard,
   attachMapCoords,
   bridgeV1Traits,
   resolvePortraitsByCharacter,

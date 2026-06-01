@@ -20,6 +20,8 @@ import {
   parseAllFactionDiplomacy,
   parseDiplomacyMatrix,
   parseFactionTreasuryHistory,
+  parseTypedAgents,
+  agentTypeFromCard,
 } from "./saveCrackerExtras.js";
 const require = createRequire(import.meta.url);
 const { crackSave } = require("./saveCracker.js");
@@ -207,6 +209,85 @@ describeIfSaveAndOrder("saveCrackerExtras — factionId + all-faction diplomacy"
     expect(m.slave).toBeUndefined();
     expect(m.dummies).toBeUndefined();
   });
+});
+
+// ── Typed agents (spy/diplomat/assassin/merchant/admiral/princess) ─────────
+// The character CLASS is encoded by the strat_card path the save embeds (see
+// parseTypedAgents header). These tests lock in (a) the type-from-card mapping,
+// (b) a synthetic detection of an agent card-path record with faction
+// attribution, and (c) a structural contract on real saves — the corpus
+// contains zero agents (RoR AI never trains one through T34), so the count is
+// 0, which is the correct, non-fabricated result.
+describe("parseTypedAgents — type discriminator (card-path mechanism)", () => {
+  test("agentTypeFromCard maps RIS card filenames to classes", () => {
+    expect(agentTypeFromCard("card_spy")).toBe("spy");
+    expect(agentTypeFromCard("card_assassin")).toBe("assassin");
+    expect(agentTypeFromCard("card_diplo_rome")).toBe("diplomat");
+    expect(agentTypeFromCard("card_diplo_barb")).toBe("diplomat");
+    expect(agentTypeFromCard("temp_admiral")).toBe("admiral");
+    expect(agentTypeFromCard("card_merchant")).toBe("merchant");
+    expect(agentTypeFromCard("card_princess")).toBe("princess");
+    // A general/captain banner is NOT an agent card.
+    expect(agentTypeFromCard("RIS_captain_card_romans_julii")).toBe(null);
+  });
+
+  test("detects a synthetic agent card-path record and attributes faction", () => {
+    // Build a tiny buffer with a captain_card faction marker (the same anchor
+    // assignFactions uses) followed by an agent card path. parseTypedAgents must
+    // recover {type:'spy', faction:'romans_julii'}.
+    const marker = "captain_card_romans_julii.tga";
+    const cardPath = "data/ui/roman/agents/card_spy.tga";
+    const buf = Buffer.concat([
+      Buffer.alloc(64),
+      Buffer.from(marker, "ascii"),
+      Buffer.alloc(128),
+      Buffer.from(cardPath, "ascii"),
+      Buffer.alloc(64),
+    ]);
+    // factionMarkers as findFactionMarkers would produce them: the marker sits at
+    // offset 64, the bare faction token follows "captain_card_".
+    const factionMarkers = [{ pos: 64, faction: "romans_julii" }];
+    const agents = parseTypedAgents(buf, factionMarkers);
+    expect(agents.length).toBe(1);
+    expect(agents[0].type).toBe("spy");
+    expect(agents[0].faction).toBe("romans_julii");
+    expect(agents[0].cardBasename).toBe("card_spy");
+  });
+
+  test("detects admiral + diplomat card paths with no faction marker (faction null)", () => {
+    const buf = Buffer.concat([
+      Buffer.from("data/ui/greek/agents/temp_admiral.tga", "ascii"),
+      Buffer.alloc(32),
+      Buffer.from("data/ui/barbarian/agents/card_diplo_barb.tga", "ascii"),
+    ]);
+    const agents = parseTypedAgents(buf, []);
+    const types = agents.map((a) => a.type).sort();
+    expect(types).toEqual(["admiral", "diplomat"]);
+    for (const a of agents) expect(a.faction).toBe(null);
+  });
+
+  test("returns [] on a buffer with no agent card paths", () => {
+    const buf = Buffer.from("data/ui/captain_banners/captain_card_romans_julii.tga", "ascii");
+    expect(parseTypedAgents(buf, [])).toEqual([]);
+  });
+});
+
+const TYPED_MOD = "C:\\RIS\\RIS\\data";
+const describeIfJulii1AndMod = (loadSaveIfPresent(`${SAVE_DIR}\\save_julii1.sav`) && fs.existsSync(TYPED_MOD)) ? describe : describe.skip;
+describeIfJulii1AndMod("crackSave — typed-agents structural contract (julii1)", () => {
+  test("exposes characters.agents + roleBreakdown; corpus has 0 agents (correct negative)", () => {
+    const buf = loadSaveIfPresent(`${SAVE_DIR}\\save_julii1.sav`);
+    const r = crackSave(buf, TYPED_MOD);
+    expect(Array.isArray(r.characters.agents)).toBe(true);
+    expect(r.characters.roleBreakdown).toBeTruthy();
+    // The role-anchor confirms hundreds of generals on a fresh imperial save.
+    expect(r.characters.roleBreakdown.general).toBeGreaterThan(100);
+    // No save in the local corpus contains a single agent — the detector must
+    // return an empty list, NOT fabricate any. (If a save with agents is added,
+    // this becomes a positive assertion.)
+    expect(r.characters.agents.length).toBe(0);
+    expect(r._stats.typedAgents).toBe(0);
+  }, 30000);
 });
 
 // ── locateDiplomacyMatrix — key-agnostic, gap-tolerant locator (2026-05-31) ──
