@@ -791,7 +791,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 key={e.id || i}
                 onClick={pillClickable ? (ev) => { ev.stopPropagation(); onHighlightFactions([e.id]); } : undefined}
                 title={pillClickable ? `${e.name} — click to highlight on the map` : e.name}
-                style={{ display: "inline-flex", alignItems: "center", margin: "0 2px", verticalAlign: "middle", cursor: pillClickable ? "pointer" : "default" }}
+                style={{ display: "inline-flex", alignItems: "center", margin: "0 1px", verticalAlign: "middle", cursor: pillClickable ? "pointer" : "default" }}
               >
                 <FactionIcon iconPath={`faction_icons/${e.id}.tga`} alt={e.name} size={16} tightCrop modIconsDir={modIconsDir} />
               </span>

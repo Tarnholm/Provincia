@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.793",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Diplomacy faction icons sit closer together** (spacing between them halved)." },
+    ],
+  },
+  {
     version: "0.9.792",
     date: "2026-06-01",
     items: [
