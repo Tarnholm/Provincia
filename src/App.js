@@ -8582,15 +8582,15 @@ function App() {
         }
       }
 
+      // 0.9.792: keep the map at its full allocated WIDTH (half the window by
+      // default) — cap the HEIGHT to the available area but NEVER reshrink the
+      // width to preserve the image aspect. The map is drawn COVER (Math.max
+      // scale in computeTransform), so a too-short slot crops/pans rather than
+      // letterboxing. Previously the aspect-reshrink dropped a tall-map below
+      // half width ("map got smaller again").
       const imgAspect = imgSize.width / imgSize.height;
-      let mapW = availableWidthForMap;
-      let mapH = Math.round(mapW / imgAspect);
-      if (mapH > availableHeightForMap) {
-        mapH = availableHeightForMap;
-        mapW = Math.round(mapH * imgAspect);
-      }
-      mapW = Math.max(100, mapW);
-      mapH = Math.max(100, mapH);
+      let mapW = Math.max(100, availableWidthForMap);
+      let mapH = Math.max(100, Math.min(availableHeightForMap, Math.round(mapW / imgAspect)));
 
       const rightLeft = MAP_PADDING + mapW + PANELS_GAP;
       const rightWidth = Math.max(200, Math.floor(window.innerWidth - rightLeft - MAP_PADDING));

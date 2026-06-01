@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.792",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Map now reliably uses half the window width.** The previous version's aspect-ratio lock could reshrink the map below half-width when the map image was tall, making it look smaller. The map now holds its full half-width allocation and just caps/crops the height (drawn cover, so no distortion)." },
+    ],
+  },
+  {
     version: "0.9.791",
     date: "2026-06-01",
     items: [
