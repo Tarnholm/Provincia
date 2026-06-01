@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.804",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Buildings panel sized to exactly 4 rows** — removed the extra empty space below the building cards; the reclaimed height went back to the Characters panel above it." },
+    ],
+  },
+  {
     version: "0.9.803",
     date: "2026-06-01",
     items: [

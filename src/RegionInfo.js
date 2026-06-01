@@ -1914,7 +1914,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.characters" title="Characters" designMode={designMode} colBox={colBox}
         posOverride={addGenOpen ? { y: 0.4400, h: 0.3130 } : null}
         zIndex={addGenOpen ? 6 : 2}
-        defaultPct={{ x: 0.5720, y: 0.4760, w: 0.2090, h: 0.1900 }}>
+        defaultPct={{ x: 0.5720, y: 0.4760, w: 0.2090, h: 0.2500 }}>
       <div className={panelInnerClass} style={addGenOpen ? { ...panelInner, background: "#181b21" } : panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
@@ -2384,7 +2384,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.5720, y: 0.6750, w: 0.2090, h: 0.3140 }}>
+        defaultPct={{ x: 0.5720, y: 0.7350, w: 0.2090, h: 0.2540 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
