@@ -27,7 +27,7 @@ export default defineConfig({
     // module.exports object in the production bundle. (vitest/esbuild already
     // handled it; this is the Rollup-side equivalent.)
     commonjsOptions: {
-      include: [/diagnostics\.js$/, /node_modules/],
+      include: [/diagnostics\.js$/, /nonLiveCommanderResolver\.js$/, /node_modules/],
     },
   },
   // Tell esbuild to treat all .js files as JSX — our source uses plain .js

@@ -123,6 +123,50 @@ function checkPortraits(commanders, familyPortraitByKey, label) {
   return check(`portraits${label ? ":" + label : ""}`, ok, detail, sev);
 }
 
+// ── NON-LIVE COMMANDER CARDS ──────────────────────────────────────────────────
+// THE GAP THIS CLOSES: checkPortraits above cross-checks the commander card
+// against the FAMILY-TREE resolution, but in the non-live path BOTH sides were
+// historically fed from the SAME statsCache-only source, so it falsely PASSED
+// ("867/869, 0 mismatch") while the actual commander cards — resolved by
+// resolveNonLiveCommanderInfo — fell to the DJB2 hash pool for the starting
+// royal family (Quintus/Marcus/Servius Ogulnius_Gallus → 110/020/058.tga). The
+// family tree got the real face via the COORD bridge (v1PortraitsByCoord); the
+// commander resolver never consulted it.
+//
+// This check exercises the REAL resolver path. Each commander entry carries:
+//   savePath   = what resolveNonLiveCommanderInfo actually returned (null = hash)
+//   resolvable = whether the engine-exact portrait map (the SAME source the
+//      family tree uses) CAN place this commander to a real file.
+// A commander that is `resolvable` but whose `savePath` is null is the bug: the
+// portrait IS known via the family-tree source, yet the card hash-pooled it.
+// That is an ERROR. (A commander that is genuinely NOT resolvable falling to the
+// hash pool is acceptable — no fabricated face, per the no-fallbacks rule.)
+//
+// Input: commanders = [{ name, faction, savePath, resolvable }]
+function checkNonLiveCommanders(commanders, label) {
+  const tag = label ? `[${label}] ` : "";
+  if (!Array.isArray(commanders) || commanders.length === 0) {
+    return check("commanders:non-live", true, `${tag}no non-live commanders to check (0)`, SEV.INFO);
+  }
+  let resolved = 0, hashed = 0, resolvableButHashed = 0;
+  const bugSamples = [];
+  for (const c of commanders) {
+    const sp = c && c.savePath ? String(c.savePath) : null;
+    if (sp) resolved++; else hashed++;
+    if (!sp && c && c.resolvable) {
+      resolvableButHashed++;
+      if (bugSamples.length < 8) bugSamples.push(c.name || "?");
+    }
+  }
+  const ok = resolvableButHashed === 0;
+  const sev = ok ? SEV.INFO : SEV.ERROR;
+  const detail = `${tag}${resolved}/${commanders.length} commander cards resolved a real portrait, ${hashed} on hash pool` +
+    (resolvableButHashed
+      ? ` — ${resolvableButHashed} resolvable via family-tree source but FELL TO HASH POOL [${bugSamples.join(", ")}]`
+      : " (no resolvable commander hash-pooled)");
+  return check("commanders:non-live", ok, detail, sev);
+}
+
 // ── PUBLIC ORDER ──────────────────────────────────────────────────────────────
 // settlementFields.<city>.publicOrder is the CONFIRMED in-game order value
 // (offset-30 float, ~0..400). The card prefers it; the legacy `happiness` prop
@@ -530,6 +574,16 @@ function runDiagnostics(data) {
   if (d.commandersNonLive !== undefined) checks.push(checkPortraits(d.commandersNonLive, d.familyPortraitByKey, "non-live"));
   // Generic single-path portrait input (doctor uses this).
   if (d.commanders !== undefined) checks.push(checkPortraits(d.commanders, d.familyPortraitByKey, d.portraitLabel || null));
+  // Non-live commander-CARD check: runs the REAL resolveNonLiveCommanderInfo
+  // output (savePath + resolvable flag) and flags a resolvable card that fell to
+  // the hash pool. This is the check that catches the royal-family bug the
+  // family-tree cross-check missed. Accepts either the non-live array directly
+  // (commandersNonLive, carrying `resolvable`) or a generic `commandersResolved`.
+  if (d.commandersNonLive !== undefined && d.commandersNonLive.some && d.commandersNonLive.some((c) => c && "resolvable" in c)) {
+    checks.push(checkNonLiveCommanders(d.commandersNonLive, "non-live"));
+  } else if (d.commandersResolved !== undefined) {
+    checks.push(checkNonLiveCommanders(d.commandersResolved, d.portraitLabel || "non-live"));
+  }
 
   checks.push(checkPublicOrder(d.settlementFields, d.cardHappinessByCity));
   checks.push(checkDiplomacy(d.diplomacy, d.playerFaction, d.expectWars));
@@ -569,6 +623,7 @@ module.exports = {
   logDiagnostics,
   // individual checks (unit-testable + reusable):
   checkPortraits,
+  checkNonLiveCommanders,
   checkPublicOrder,
   checkDiplomacy,
   checkGarrison,

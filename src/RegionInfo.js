@@ -7,103 +7,18 @@ import { displayFirstName, displayFullName } from "./displayName";
 import { loadBuildingIcon, invalidateBuildingIcon } from "./buildingIcons";
 import AddGeneralModal from "./AddGeneralModal";
 import DiplomacyEditor from "./DiplomacyEditor";
+// nonLiveCommanderResolver.js is CommonJS (the headless doctor + diagnostics
+// require() it). Rollup can't statically extract NAMED exports from
+// `module.exports = {...}`, so import the default object and pull the fn off it.
+import nonLiveCommanderResolver from "./nonLiveCommanderResolver";
+const resolveNonLiveCommanderInfo = nonLiveCommanderResolver.resolveNonLiveCommanderInfo;
 
-// 0.9.778: non-live / starting-view commander-info resolver.
-//
-// In the NON-LIVE / starting "Region owners armies" view a bodyguard unit has
-// no live `commanderUuid` to bridge into the commanderInfo map, so the field-
-// and garrison-army cards fall back to name-based resolution. The 0.9.429
-// fallback looked statsCache up by ONLY the stripped keys `fn||fac` / `fn||`
-// and HARDCODED `lastName: null`. Two failures stacked from that:
-//   1. The surname was dropped (Servius Ogulnius Gallus arrived as just
-//      "Servius", lastName=""), so the portrait pick logged lastName="".
-//   2. The stripped statsCache keys are collision-prone and frequently carry
-//      NO portrait (writeBest can overwrite them with a same-firstName stub),
-//      so savePath came back null → the renderer's DJB2 hash pool fired and
-//      painted an arbitrary (steppe-looking) face.
-//
-// The FAMILY TREE — correct in non-live too — resolves the identical char via
-// `coordToPortrait.get("name:<fn>|<ln>|<fac>")` (FamilyTree.js folds the
-// persisted statsCache into that map under the FULL `fn|ln|fac` key, then the
-// stripped fallbacks). The portrait lives under the FULL-name key.
-//
-// This helper recovers the full surname from the descr_strat `characters`
-// list (which splits the starting full name into firstName + lastName), then
-// looks statsCache up by the SAME key order the family tree uses — full
-// `fn|ln|fac` FIRST — so the commander card resolves the SAME engine-exact
-// portrait. The hash pool stays a pure last-resort (genuinely no portrait).
-function resolveNonLiveCommanderInfo(commanderName, commanderLastName, commanderFaction, statsCache, characters) {
-  if (!commanderName) return null;
-  const fn = commanderName.toLowerCase();
-  const fac = (commanderFaction || "").toLowerCase();
-  // 1. Determine the full surname (+ faction/age).
-  //    The caller's commanderLastName (tagged from the army's full
-  //    `a.character` name) is the PRECISE surname — it disambiguates two
-  //    same-firstName generals in one faction (Servius Ogulnius Gallus vs
-  //    Servius Fulvius Flaccus), which a firstName-only descr_strat match
-  //    cannot. Prefer it; fall back to a descr_strat firstName match only
-  //    when the surname wasn't tagged (older/edited army entries).
-  let lastName = commanderLastName ? commanderLastName.replace(/\s+/g, "_") : null;
-  let faction = commanderFaction || null, age = null;
-  if (Array.isArray(characters)) {
-    // Match on full name when we have the surname, else firstName only.
-    const lnNorm = (lastName || "").replace(/_/g, " ").toLowerCase();
-    const ds = characters.find((c) =>
-      c && typeof c.firstName === "string" &&
-      c.firstName.toLowerCase() === fn &&
-      (lnNorm
-        ? (c.lastName || "").replace(/_/g, " ").toLowerCase() === lnNorm
-        : true) &&
-      (!fac || !c.faction || c.faction.toLowerCase() === fac)
-    );
-    if (ds) {
-      if (!lastName) lastName = ds.lastName || null;
-      // The caller's commanderFaction (the unit's own faction) is
-      // authoritative when present — guards cross-faction same-name
-      // collisions (a seleucid Demophanes shown as ptolemaic). Fall back
-      // to descr_strat's faction only when the caller didn't supply one.
-      faction = commanderFaction || ds.faction || null;
-      age = typeof ds.age === "number" ? ds.age : null;
-    }
-  }
-  // 2. Resolve the portrait from statsCache by the SAME key order as the
-  //    family tree: FULL `fn|ln|fac` first (the key the portrait is stored
-  //    under), then the surname-only stripped key, then the bare fallbacks.
-  //    statsCache normalizes lastName as underscores→spaces, lowercased.
-  let savePath = null, cached = null;
-  if (statsCache) {
-    const ln = (lastName || "").replace(/_/g, " ").toLowerCase();
-    const facKey = (faction || "").toLowerCase();
-    const keys = [
-      ln ? `${fn}|${ln}|${facKey}` : null,
-      ln ? `${fn}|${ln}|` : null,
-      `${fn}||${facKey}`,
-      `${fn}||`,
-    ].filter(Boolean);
-    for (const k of keys) {
-      if (statsCache[k]) { cached = statsCache[k]; break; }
-    }
-    if (cached) {
-      savePath = cached.portrait || null;
-      // statsCache carries an epithet/cognomen lastName + age — prefer them
-      // when descr_strat didn't supply one, so the card label matches too.
-      if (!lastName && cached.lastName) lastName = cached.lastName;
-      if (age == null && typeof cached.age === "number") age = cached.age;
-      if (!faction && cached.faction) faction = cached.faction;
-    }
-  }
-  // Only return an info object when we have SOMETHING to render with: either a
-  // resolved portrait or at least a name (the descr_strat match). Null lets the
-  // caller leave the bodyguard unit icon (no swap) as before.
-  if (!savePath && lastName == null && !cached) return null;
-  return {
-    firstName: commanderName,
-    lastName,
-    faction,
-    age,
-    savePath,
-  };
-}
+// 0.9.784: non-live / starting-view commander-info resolver moved to the
+// shared pure module src/nonLiveCommanderResolver.js (imported above) so the
+// headless doctor + diagnostics exercise the IDENTICAL resolution. It now
+// resolves the portrait from the engine-exact coord map (v1PortraitsByCoord,
+// the SAME source the family tree uses) FIRST, then statsCache, then the hash
+// pool as a pure last resort.
 
 // Map a raw core_attitudes value to its descr_strat tier name (see the
 // descr_strat diplomacy legend: -10 Locked Allied … 1000+ Crazy War).
@@ -601,7 +516,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -3228,7 +3143,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     // authoritative inside the helper for cross-faction name
                     // collisions. Replaces the 0.9.429 + 0.9.490 fallbacks.
                     if (!info && u.commanderName) {
-                      info = resolveNonLiveCommanderInfo(u.commanderName, u.commanderLastName, u.commanderFaction, statsCache, characters);
+                      info = resolveNonLiveCommanderInfo(u.commanderName, u.commanderLastName, u.commanderFaction, statsCache, characters, nonLivePortraitMap);
                       if (info && typeof window !== "undefined") {
                         window.__bgFallbackLogged ||= new Set();
                         if (!window.__bgFallbackLogged.has(u.commanderName)) {
@@ -3507,7 +3422,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                           // stripped-key + lastName:null lookup and the 0.9.490
                           // descr_strat-only fallback (both folded into the helper).
                           if (!info && u.commanderName) {
-                            info = resolveNonLiveCommanderInfo(u.commanderName, u.commanderLastName, u.commanderFaction, statsCache, characters);
+                            info = resolveNonLiveCommanderInfo(u.commanderName, u.commanderLastName, u.commanderFaction, statsCache, characters, nonLivePortraitMap);
                             if (info && typeof window !== "undefined") {
                               window.__bgFallbackLogged ||= new Set();
                               if (!window.__bgFallbackLogged.has(u.commanderName)) {

@@ -23,6 +23,12 @@ import { isGarrisonUnit } from "./garrisonClassify";
 import diagnostics from "./diagnostics";
 const runAppDiagnostics = diagnostics.runDiagnostics;
 const logAppDiagnostics = diagnostics.logDiagnostics;
+// Shared non-live commander portrait resolver (CommonJS — see note above for
+// why we import the default object and pull the fns off it).
+import nonLiveCommanderResolver from "./nonLiveCommanderResolver";
+const buildNonLivePortraitMap = nonLiveCommanderResolver.buildNonLivePortraitMap;
+const resolveNonLiveCommanderInfoApp = nonLiveCommanderResolver.resolveNonLiveCommanderInfo;
+const lookupNonLivePortraitApp = nonLiveCommanderResolver.lookupNonLivePortrait;
 import UpdateBanner from "./UpdateBanner";
 import FamilyTree from "./FamilyTree";
 import Toasts from "./Toasts";
@@ -3244,6 +3250,20 @@ function App() {
   // vanilla — not just the dev's bundled mod. Flat array keyed by
   // firstName+faction; the renderer groups by region via tileToRegion.
   const [startingCharactersFromMod, setStartingCharactersFromMod] = useState(null);
+  // 0.9.784: engine-exact NON-LIVE commander-card portrait map. The non-live
+  // commander cards (field + garrison) resolve a starting royal's face the SAME
+  // way the family tree does — via the COORD bridge into v1PortraitsByCoord —
+  // NOT just statsCache (which often has the stat row but no portrait for the
+  // royal family, so the DJB2 hash pool fired and painted an arbitrary face,
+  // e.g. Quintus Ogulnius_Gallus showing a steppe portrait). buildNonLive-
+  // PortraitMap folds v1PortraitsByCoord (coord → portrait) + descr_strat char
+  // coords (joined to give name→portrait) + persisted statsCache into one map
+  // keyed exactly like FamilyTree.js coordToSave. Passed to RegionInfo and into
+  // resolveNonLiveCommanderInfo, which consults it BEFORE statsCache.
+  const nonLivePortraitMap = useMemo(
+    () => buildNonLivePortraitMap(v1PortraitsByCoord, startingCharactersFromMod, statsCache),
+    [v1PortraitsByCoord, startingCharactersFromMod, statsCache]
+  );
   const [saveLiveArmies, setSaveLiveArmies] = useState(null); // [{faction, character, x, y, armyClass, units}] from save parser
   // Live-log character positions — authoritative for turn-by-turn moves.
   const liveCharPositions = useRef(new Map());
@@ -4120,33 +4140,40 @@ function App() {
       if (nonLiveDiagKeyRef.current === key) return;
       nonLiveDiagKeyRef.current = key;
 
-      // Build the family-tree resolution map from statsCache (the FamilyTree
-      // folds it under `name:fn|ln|fac`), so the cross-check compares the card's
-      // pick against the tree's pick for the same character.
-      const familyPortraitByKey = {};
-      for (const [k, v] of Object.entries(sc)) {
-        if (v && v.portrait) familyPortraitByKey[`name:${k}`] = v.portrait;
-      }
+      // 0.9.784: the family-tree resolution map is the ENGINE-EXACT portrait map
+      // (v1PortraitsByCoord coords + descr_strat-coord-joined name keys + the
+      // persisted statsCache) — the SAME map the commander cards now resolve from
+      // (see buildNonLivePortraitMap / resolveNonLiveCommanderInfo). Cross-check
+      // the card's pick against THIS (not a statsCache-only map, which is what
+      // let the gate falsely PASS while the cards still hash-pooled the royal
+      // family). The new commander sub-check below exercises the REAL resolver.
+      const familyPortraitByKey = nonLivePortraitMap || {};
       // Commanders = starting named characters / generals. Resolve each card's
-      // savePath the SAME way resolveNonLiveCommanderInfo does: statsCache by
-      // full `fn|ln|fac` then stripped fallbacks.
+      // savePath the SAME way resolveNonLiveCommanderInfo does: engine-exact map
+      // (coord first, then name keys), then statsCache, then hash.
       const commandersNonLive = [];
       const facLc = (s) => (s || "").toLowerCase();
       for (const c of chars) {
         if (!c || !c.firstName) continue;
         const isCommander = !c.tags || c.tags.includes("leader") || c.tags.includes("heir") || c.tags.includes("named") || c.charSubType === "general";
         if (!isCommander) continue;
+        // Resolve via the SHARED resolver (coord/name engine-exact map first),
+        // passing the descr_strat char as the single-element `characters` list so
+        // it can recover the surname/coord. `resolvable` records whether the
+        // engine-exact map (NOT the hash) CAN place this commander — the new
+        // checkNonLiveCommanders sub-check flags a resolvable-but-hashed card.
+        const info = resolveNonLiveCommanderInfoApp(c.firstName, c.lastName, c.faction, sc, chars, nonLivePortraitMap);
+        const coord = c.x != null && c.y != null ? `${c.x},${c.y}` : null;
+        const resolvable = !!lookupNonLivePortraitApp(nonLivePortraitMap, c.firstName, c.lastName, c.faction, coord);
         const fn = facLc(c.firstName);
         const ln = (c.lastName || "").replace(/_/g, " ").toLowerCase();
         const fac = facLc(c.faction);
-        const keys = [ln ? `${fn}|${ln}|${fac}` : null, ln ? `${fn}|${ln}|` : null, `${fn}||${fac}`, `${fn}||`].filter(Boolean);
-        let savePath = null, hitKey = null;
-        for (const kk of keys) { if (sc[kk] && sc[kk].portrait) { savePath = sc[kk].portrait; hitKey = `name:${kk}`; break; } }
         commandersNonLive.push({
           name: `${c.firstName}${c.lastName ? " " + String(c.lastName).replace(/_/g, " ") : ""}`,
           faction: c.faction || null,
-          savePath,
-          nameKey: hitKey,
+          savePath: info ? info.savePath : null,
+          nameKey: `name:${fn}|${ln}|${fac}`,
+          resolvable,
         });
       }
 
@@ -16184,6 +16211,7 @@ function App() {
                       modDataDir={modDataDir}
                       factionCultures={factionCultures}
                       statsCache={statsCache}
+                      nonLivePortraitMap={nonLivePortraitMap}
                       commanderInfo={(() => {
                         // Map unit.commanderUuid → commander metadata used to
                         // render a face card in place of bodyguard unit cards

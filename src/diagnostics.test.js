@@ -3,6 +3,7 @@ import {
   SEV,
   runDiagnostics,
   checkPortraits,
+  checkNonLiveCommanders,
   checkPublicOrder,
   checkDiplomacy,
   checkGarrison,
@@ -51,6 +52,46 @@ describe("diagnostics — portraits", () => {
 
   test("empty commander list is INFO, not an anomaly", () => {
     const r = checkPortraits([], {}, "non-live");
+    expect(r.ok).toBe(true);
+    expect(r.severity).toBe(SEV.INFO);
+  });
+});
+
+describe("diagnostics — non-live commander cards", () => {
+  test("resolvable commander on hash pool → ERROR (the royal-family bug)", () => {
+    const cmds = [
+      { name: "Quintus Ogulnius Gallus", savePath: null, resolvable: true },
+      { name: "Vibius", savePath: "data/ui/roman/portraits/cards/old/generals/012.tga", resolvable: true },
+    ];
+    const r = checkNonLiveCommanders(cmds, "non-live");
+    expect(r.ok).toBe(false);
+    expect(r.severity).toBe(SEV.ERROR);
+    expect(r.detail).toMatch(/FELL TO HASH POOL/);
+    expect(r.detail).toMatch(/Quintus Ogulnius Gallus/);
+  });
+
+  test("all resolvable commanders resolved → PASS", () => {
+    const cmds = [
+      { name: "Quintus", savePath: "data/ui/roman/portraits/cards/old/generals/000.tga", resolvable: true },
+      { name: "Marcus", savePath: "data/ui/roman/portraits/cards/young/generals/000.tga", resolvable: true },
+    ];
+    const r = checkNonLiveCommanders(cmds, "non-live");
+    expect(r.ok).toBe(true);
+    expect(r.severity).toBe(SEV.INFO);
+  });
+
+  test("a NON-resolvable commander on the hash pool is acceptable (no fabricated face)", () => {
+    const cmds = [
+      { name: "UnknownGuy", savePath: null, resolvable: false },
+      { name: "Quintus", savePath: "data/ui/roman/portraits/cards/old/generals/000.tga", resolvable: true },
+    ];
+    const r = checkNonLiveCommanders(cmds, "non-live");
+    expect(r.ok).toBe(true);
+    expect(r.detail).toMatch(/no resolvable commander hash-pooled/);
+  });
+
+  test("empty list is INFO, not an anomaly", () => {
+    const r = checkNonLiveCommanders([], "non-live");
     expect(r.ok).toBe(true);
     expect(r.severity).toBe(SEV.INFO);
   });

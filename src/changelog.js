@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.784",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Non-live commander portraits fixed.** In the starting/pre-game view, field-army and garrison commander cards for the starting royal family (e.g. the Julii leader Quintus Ogulnius Gallus and his sons) showed wrong, randomly-picked faces. The commander card used a name-only lookup that had no portrait for those characters and fell back to an arbitrary face — while the family tree resolved them correctly via the character's map tile. Both now use the same engine-exact portrait source, so commander cards match the family tree. (Live games were already correct.)" },
+      { type: "fix", text: "**Self-check now catches this class of bug.** The health-check previously validated the family-tree portrait path but not the actual commander-card resolver, so the above slipped through. It now runs the real commander resolver and flags an error whenever a commander whose portrait is known still falls back to a hash-picked face — proven to fail on the old code and pass on the fix. Also fixed a stray 'factions' crash when reading starting-state data without a save loaded." },
+    ],
+  },
+  {
     version: "0.9.783",
     date: "2026-06-01",
     items: [

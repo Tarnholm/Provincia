@@ -153,6 +153,10 @@ function parseDescrStrat(text) {
 function buildSettlementCoordIndex(parsed) {
   const idx = new Map();
   const norm = (s) => s.toLowerCase().replace(/^(outside|port of)\s+/i, "").trim();
+  // Guard: a malformed / empty parse (or a caller that passed undefined) must
+  // not throw "Cannot read properties of undefined (reading 'factions')" —
+  // return an empty index so the caller cleanly falls back instead of crashing.
+  if (!parsed || !Array.isArray(parsed.factions)) return idx;
   for (const fac of parsed.factions) {
     for (const c of fac.characters) {
       if (!c.settlementHint) continue;
@@ -167,6 +171,7 @@ function buildSettlementCoordIndex(parsed) {
 // Resolve a settlement name (city) to placement coords + creator faction. Falls
 // back to the faction's capital (leader) if the name isn't a known governor spot.
 function resolveSettlement(parsed, settlementName, factionHint) {
+  if (!parsed || !Array.isArray(parsed.factions)) return null;
   const idx = buildSettlementCoordIndex(parsed);
   const hit = idx.get(String(settlementName || "").toLowerCase().trim());
   if (hit) return { faction: hit.faction, x: hit.x, y: hit.y, via: "settlement" };

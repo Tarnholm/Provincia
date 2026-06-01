@@ -34,6 +34,9 @@ export default function AddGeneralModal({ settlementName, ownerFactionId, factio
     window.electronAPI.addgenGetData().then((r) => {
       if (!alive) return;
       if (!r || !r.ok) { console.warn("[addgen-ui] get-data failed:", r && r.error); setErr((r && r.error) || "failed to load descr_strat data"); return; }
+      // Guard a malformed-but-ok response (no factions/settlements) so a missing
+      // field can't throw "reading 'factions'" from this async handler.
+      if (!r.factions || !r.settlements) { console.warn("[addgen-ui] get-data ok but missing factions/settlements"); setErr("descr_strat data incomplete (no factions)"); return; }
       setData(r);
       const key = String(settlementName || "").toLowerCase().trim();
       const hit = r.settlements[key];

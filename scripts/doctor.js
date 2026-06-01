@@ -36,6 +36,7 @@ const { crackSave } = require("../src/saveCracker.js");
 const { runDiagnostics } = require("../src/diagnostics.js");
 const { isGarrisonUnit } = require("../src/garrisonClassify.js");
 const { parseDescrStrat } = require("../src/descrStratGeneral.js");
+const { buildNonLivePortraitMap, resolveNonLiveCommanderInfo, lookupNonLivePortrait } = require("../src/nonLiveCommanderResolver.js");
 
 // ── Authoritative faction-leader source (the family-tree method) ──────────────
 // The Family Tree the user sees crowns the member whose descr_strat `character`
@@ -153,6 +154,66 @@ function pickPortrait(c) {
   const goodAny = ports.find((p) => !isBadPath(p));
   const pick = goodLarge || goodAny;
   return pick || null;
+}
+
+// Build the engine-exact v1 coord→portrait map from a crack (the SAME pick the
+// family tree's v1PortraitsByCoord uses), then the descr_strat starting-char
+// list (firstTok/famTok/x/y/faction), then run the SHARED non-live resolver over
+// every on-map FIELD/GARRISON commander. Returns [{name,faction,savePath,
+// resolvable}] — exactly what checkNonLiveCommanders consumes. This exercises
+// the REAL commander-card path (resolveNonLiveCommanderInfo), NOT a re-derived
+// family-tree resolution — so it FAILS when a commander resolvable via the
+// engine-exact map (the family-tree source) falls to the hash pool.
+function buildNonLiveCommanderResolution(r, modDir) {
+  // v1 coord → engine-exact portrait (same pick + /cards/ rewrite as main.js).
+  const v1PortraitsByCoord = {};
+  for (const c of r.characters.v1) {
+    if (c.isDead) continue;
+    if (c.tileX == null || c.tileY == null) continue;
+    const pick = pickPortrait(c);
+    if (pick) v1PortraitsByCoord[`${c.tileX},${c.tileY}`] = pick.replace(/\/portraits\/portraits\//i, "/portraits/cards/");
+  }
+  // descr_strat starting characters with coords (the non-live `characters`
+  // list — App.js passes startingCharactersFromMod, which carries x,y).
+  descrStratLeaderFor(modDir, r.playerFaction); // ensure cache populated
+  const bf = _descrStratLeaderCache && _descrStratLeaderCache.byFaction;
+  const startingCharacters = [];
+  if (bf) {
+    for (const fac of Object.keys(bf)) {
+      const f = bf[fac];
+      if (!f || !Array.isArray(f.characters)) continue;
+      for (const c of f.characters) {
+        startingCharacters.push({
+          firstName: c.firstTok,
+          lastName: c.famTok || null,
+          faction: f.name,
+          x: c.x, y: c.y,
+        });
+      }
+    }
+  }
+  // statsCache analogue: the crack's persisted name→portrait. Headlessly we
+  // don't have the renderer's statsCache, so pass null — the engine-exact map
+  // (v1 coords + descr_strat join) is the path under test anyway.
+  const portraitMap = buildNonLivePortraitMap(v1PortraitsByCoord, startingCharacters, null);
+
+  // Commanders = the on-map starting royal family / named characters whose card
+  // the non-live view renders. Use the descr_strat characters (the SAME source
+  // the UI feeds the resolver) so we test resolveNonLiveCommanderInfo directly.
+  const commandersResolved = [];
+  for (const c of startingCharacters) {
+    if (!c.firstName) continue;
+    const coord = c.x != null && c.y != null ? `${c.x},${c.y}` : null;
+    const resolvable = !!lookupNonLivePortrait(portraitMap, c.firstName, c.lastName, c.faction, coord);
+    const info = resolveNonLiveCommanderInfo(c.firstName, c.lastName, c.faction, null, startingCharacters, portraitMap);
+    commandersResolved.push({
+      name: `${c.firstName}${c.lastName ? " " + String(c.lastName).replace(/_/g, " ") : ""}`,
+      faction: c.faction || null,
+      savePath: info ? info.savePath : null,
+      resolvable,
+    });
+  }
+  return commandersResolved;
 }
 
 // Build the diagnostics input from a crackSave result.
@@ -317,6 +378,16 @@ function runOne(savePath, modDir) {
         // leader without the caller hint — null it to prove the tag path works.
         nonLiveInput.factionLeader = null;
       }
+    }
+    // 0.9.784: exercise the REAL non-live commander-card resolver. This is the
+    // path the family-tree cross-check missed (it falsely passed while the cards
+    // hash-pooled the royal family). checkNonLiveCommanders FAILS when a card
+    // resolvable via the engine-exact map (the family-tree source) hash-pools.
+    nonLiveInput.commandersResolved = buildNonLiveCommanderResolution(r, modDir);
+    // --inject-hash-portraits forces every card to the hash pool to PROVE the
+    // gate flags the regression (resolvable commanders → hash = ERROR).
+    if (opts.injectHash) {
+      nonLiveInput.commandersResolved = nonLiveInput.commandersResolved.map((c) => ({ ...c, savePath: null }));
     }
     reports.push(runDiagnostics(nonLiveInput));
   }

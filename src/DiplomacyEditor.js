@@ -71,6 +71,9 @@ export default function DiplomacyEditor({ ownerFactionId, factionLabel, factionD
     window.electronAPI.getCoreAttitudes().then((r) => {
       if (!alive) return;
       if (!r || !r.ok) { setErr((r && r.error) || "failed to read diplomacy"); return; }
+      // Guard a malformed-but-ok response so `r.factions.length` can't throw
+      // "reading 'factions'" / "reading 'length'" from this async handler.
+      if (!Array.isArray(r.factions)) { console.warn("[diplo-edit-ui] ok but no factions array"); setErr("diplomacy data incomplete (no factions)"); return; }
       console.log(`[diplo-edit-ui] loaded ${r.factions.length} factions; file=${r.file}`);
       setData(r);
     }).catch((e) => alive && setErr(String(e)));
@@ -127,7 +130,7 @@ export default function DiplomacyEditor({ ownerFactionId, factionLabel, factionD
   };
 
   const rows = useMemo(() => {
-    if (!data) return [];
+    if (!data || !Array.isArray(data.factions)) return [];
     return data.factions
       .filter((f) => f !== fid && !isSubRebel(f) && f !== "dummies")
       .map(makeRow)
