@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.818",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Merged the Terrain and Inspect map buttons into one multi-state button** (like Labels). Clicking cycles: off → Terrain → Inspect → Both → off, so you can still have both the terrain tint and the hover-inspect tooltip on at the same time." },
+    ],
+  },
+  {
     version: "0.9.817",
     date: "2026-06-02",
     items: [

@@ -11556,9 +11556,18 @@ function App() {
             style={{ ...btnStyle(showWealthPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.wealth" />Wealth</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.settlements" />Settlements</button>
-          <button className="map-mode-btn" onClick={() => setShowGeographyOverlay(prev => !prev)}
-            title="Tint every land tile by its ground type (forest, mountain, swamp, etc.) on top of whatever map mode is active. Forest tiles enable passive ambushes."
-            style={{ ...btnStyle(showGeographyOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.terrain" />Terrain</button>
+          {/* 0.9.818: Terrain + Inspect merged into one multi-state button
+              (like Labels). Cycle: off → Terrain → Inspect → Both → off, so
+              you can still have both on at once. */}
+          <button className="map-mode-btn" onClick={() => {
+              const g = showGeographyOverlay, i = showTileInspect;
+              if (!g && !i) { setShowGeographyOverlay(true); setShowTileInspect(false); }      // → Terrain
+              else if (g && !i) { setShowGeographyOverlay(false); setShowTileInspect(true); }  // → Inspect
+              else if (!g && i) { setShowGeographyOverlay(true); setShowTileInspect(true); }   // → Both
+              else { setShowGeographyOverlay(false); setShowTileInspect(false); }              // → off
+            }}
+            title="Cycle: Terrain tint → Inspect tooltip → Both → off. Terrain tints land tiles by ground type; Inspect shows a hover tooltip with the tile's region, owner, and terrain type."
+            style={{ ...btnStyle(showGeographyOverlay || showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.terrain" />{showGeographyOverlay && showTileInspect ? "Terr+Insp" : showTileInspect ? "Inspect" : "Terrain"}</button>
           <button className="map-mode-btn" onClick={() => setShowHeightsOverlay(prev => !prev)}
             title="Hillshaded relief — fake NW light source over the mod's map_heights.tga. Mountains gain shadows, plains stay flat. Soft-light blend so it shades whatever map mode is active without replacing the colours."
             style={{ ...btnStyle(showHeightsOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.heights" />Heights</button>
@@ -11575,9 +11584,7 @@ function App() {
           <button className="map-mode-btn" onClick={() => setShowInsightsPanel(prev => !prev)}
             title="Open Save Insights — last-turn summary, disaster/event schedule, campaign timeline, and per-faction AI scouting."
             style={{ ...btnStyle(showInsightsPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.insights" />Insights</button>
-          <button className="map-mode-btn" onClick={() => setShowTileInspect(prev => !prev)}
-            title="Hover-to-inspect: show a small tooltip with the hovered tile's region, owner, and terrain type. Terrain shows once the geography data is loaded (open Geography mode once)."
-            style={{ ...btnStyle(showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.inspect" />Inspect</button>
+          {/* 0.9.818: Inspect merged into the Terrain button above (cycle). */}
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
             style={{ ...btnStyle(showLabels !== "off"), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.labels" />{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
           {/* 0.9.810: "Reload mod data" button removed per user request — it
