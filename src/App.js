@@ -17,6 +17,12 @@ import TGA from "./tga";
 import WelcomeScreen from "./WelcomeScreen";
 import { displayFirstName, displayFullName } from "./displayName";
 import { isGarrisonUnit } from "./garrisonClassify";
+// diagnostics.js is CommonJS (main.js require()s it at runtime). Rollup can't
+// statically extract NAMED exports from `module.exports = {...}`, so import the
+// default (the whole exports object) and pull the fns off it.
+import diagnostics from "./diagnostics";
+const runAppDiagnostics = diagnostics.runDiagnostics;
+const logAppDiagnostics = diagnostics.logDiagnostics;
 import UpdateBanner from "./UpdateBanner";
 import FamilyTree from "./FamilyTree";
 import Toasts from "./Toasts";
@@ -4091,6 +4097,98 @@ function App() {
   // current playerFaction without re-subscribing on every change.
   const playerFactionRef = useRef(playerFaction);
   useEffect(() => { playerFactionRef.current = playerFaction; }, [playerFaction]);
+  // [diag] NON-LIVE / STARTING-STATE self-check. Runs once when the starting
+  // region/commander data is assembled (descr_strat characters loaded AND no
+  // live save overriding). Mirrors the live `[diag]` in main.js but for the
+  // non-live resolvers: a commander-card portrait resolves from statsCache by
+  // the SAME `fn|ln|fac` key the family tree uses (see resolveNonLiveCommanderInfo
+  // + FamilyTree.js coordToSave `name:` keys), so a null there means the renderer
+  // hash pool fires (the nomad-faces class). One concise [diag] line per assembled
+  // starting state into provincia.log (which captures console). Read-only; never
+  // throws into render. Declared AFTER playerFaction to avoid a render-time TDZ.
+  const nonLiveDiagKeyRef = useRef(null);
+  useEffect(() => {
+    try {
+      // Only when in non-live mode (no live save armies) and we have starting
+      // characters. saveLiveArmies present ⇒ the live [diag] already covers it.
+      if (saveLiveArmies && saveLiveArmies.length) return;
+      const chars = Array.isArray(startingCharactersFromMod) ? startingCharactersFromMod : null;
+      if (!chars || chars.length === 0) return;
+      // Debounce: only re-run when the inputs that affect resolution change.
+      const sc = statsCache || {};
+      const key = `${chars.length}|${Object.keys(sc).length}|${playerFaction || ""}`;
+      if (nonLiveDiagKeyRef.current === key) return;
+      nonLiveDiagKeyRef.current = key;
+
+      // Build the family-tree resolution map from statsCache (the FamilyTree
+      // folds it under `name:fn|ln|fac`), so the cross-check compares the card's
+      // pick against the tree's pick for the same character.
+      const familyPortraitByKey = {};
+      for (const [k, v] of Object.entries(sc)) {
+        if (v && v.portrait) familyPortraitByKey[`name:${k}`] = v.portrait;
+      }
+      // Commanders = starting named characters / generals. Resolve each card's
+      // savePath the SAME way resolveNonLiveCommanderInfo does: statsCache by
+      // full `fn|ln|fac` then stripped fallbacks.
+      const commandersNonLive = [];
+      const facLc = (s) => (s || "").toLowerCase();
+      for (const c of chars) {
+        if (!c || !c.firstName) continue;
+        const isCommander = !c.tags || c.tags.includes("leader") || c.tags.includes("heir") || c.tags.includes("named") || c.charSubType === "general";
+        if (!isCommander) continue;
+        const fn = facLc(c.firstName);
+        const ln = (c.lastName || "").replace(/_/g, " ").toLowerCase();
+        const fac = facLc(c.faction);
+        const keys = [ln ? `${fn}|${ln}|${fac}` : null, ln ? `${fn}|${ln}|` : null, `${fn}||${fac}`, `${fn}||`].filter(Boolean);
+        let savePath = null, hitKey = null;
+        for (const kk of keys) { if (sc[kk] && sc[kk].portrait) { savePath = sc[kk].portrait; hitKey = `name:${kk}`; break; } }
+        commandersNonLive.push({
+          name: `${c.firstName}${c.lastName ? " " + String(c.lastName).replace(/_/g, " ") : ""}`,
+          faction: c.faction || null,
+          savePath,
+          nameKey: hitKey,
+        });
+      }
+
+      // Family roster (non-live) = descr_strat family members for all factions.
+      let family = null;
+      if (modFamiliesByFaction) {
+        family = [];
+        for (const [fac, data] of Object.entries(modFamiliesByFaction)) {
+          for (const m of (data && data.members) || []) {
+            family.push({ name: `${m.firstName || ""} ${m.lastName || ""}`.trim(), age: m.age, gender: m.gender, faction: fac });
+          }
+        }
+      }
+      // Faction leader (player) from starting chars.
+      let factionLeader = null;
+      if (playerFaction) {
+        const lead = chars.find((c) => c && c.faction === playerFaction && c.tags && c.tags.includes("leader"));
+        if (lead) factionLeader = { name: `${lead.firstName || "?"}${lead.lastName ? " " + String(lead.lastName).replace(/_/g, " ") : ""}`, age: typeof lead.age === "number" ? lead.age : null };
+      }
+
+      const report = runAppDiagnostics({
+        label: "non-live / starting state",
+        commandersNonLive,
+        familyPortraitByKey,
+        // No save ⇒ no live settlementFields / diplomacy; those checks INFO-skip
+        // (the empty/fallback case is logged, per the standing rule).
+        settlementFields: saveSettlementFields || null,
+        diplomacy: null,
+        playerFaction: playerFaction || null,
+        expectWars: null,
+        family,
+        factionLeader,
+        minFamilyMembers: 3,
+        // Non-live has no turn/year (starting state); turnYear INFO-skips on null.
+        turn: null,
+      });
+      logAppDiagnostics(report);
+    } catch (e) {
+      // Diagnostics must never break the render.
+      try { console.warn("[diag] non-live self-check failed:", e && e.message); } catch (e2) { void e2; }
+    }
+  }, [startingCharactersFromMod, statsCache, modFamiliesByFaction, playerFaction, saveLiveArmies, saveSettlementFields]);
   const [showFactionPicker, setShowFactionPicker] = useState(false);
   const [liveLogDir, setLiveLogDir] = useState(() => {
     try { return localStorage.getItem("liveLogDir") || null; } catch { return null; }

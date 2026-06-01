@@ -182,6 +182,12 @@ const {
   countEngineCharacters,
 } = require("./src/saveCrackerExtras.js");
 const descrGen = require("./src/descrStratGeneral.js");
+// App-wide self-check (src/diagnostics.js, pure/read-only). Run once per live
+// save-watch load to emit a `[diag]` summary into provincia.log — so the bug
+// classes that previously only surfaced in-game (nomad portraits, public-order
+// divergence, empty war lists, garrison dup, family under-read, turn/year drift,
+// unit mis-attribution) show up in the log on every load. CommonJS module.
+const { runDiagnostics: runAppDiagnostics, logDiagnostics: logAppDiagnostics } = require("./src/diagnostics.js");
 
 // Cache for mod data (names_lookup, traits, surnames). Populated lazily when
 // the renderer calls "characters-init" with the mod data directory.
@@ -7820,6 +7826,81 @@ function buildLastTurnSummary(prevEventLog, currEventLog) {
   }));
 }
 
+// Map the live `newData` snapshot into the src/diagnostics.js input shape. Pure
+// + read-only — uses the SAME resolved fields the renderer consumes (no
+// re-derive). Garrison classification happens in the renderer (App.js applies
+// isGarrisonUnit), so it isn't re-run here; the live diag focuses on the classes
+// observable from newData alone (portraits, public order, diplomacy, family,
+// turn/year, unit attribution). The non-live App.js diag adds the garrison check.
+function buildLiveDiagInput(newData, file) {
+  // Portraits — the LIVE commander cards resolve from charactersByRegion's
+  // portraitCardsPath (the engine-exact /cards/ path; null ⇒ renderer hash pool).
+  // We cross-check against the family tree's coord map (v1PortraitsByCoord),
+  // skipping colliding coords (the family map collapses those to one char).
+  const commandersLive = [];
+  let fam = newData.v1PortraitsByCoord || null;
+  try {
+    const cbr = newData.charactersByRegion || {};
+    const coordCount = new Map();
+    const onMap = [];
+    for (const list of Object.values(cbr)) {
+      for (const c of (list || [])) {
+        if (!c || c.isDead) continue;
+        if (c.x == null || c.y == null) continue;
+        if (!c.firstName) continue;
+        onMap.push(c);
+        const k = `${c.x},${c.y}`;
+        coordCount.set(k, (coordCount.get(k) || 0) + 1);
+      }
+    }
+    for (const c of onMap) {
+      const coordKey = `${c.x},${c.y}`;
+      commandersLive.push({
+        name: `${c.firstName}${c.lastName ? " " + String(c.lastName).replace(/_/g, " ") : ""}`,
+        faction: c.faction || null,
+        savePath: c.portraitCardsPath || null,
+        coordKey,
+        ambiguousKey: (coordCount.get(coordKey) || 0) > 1,
+      });
+    }
+  } catch (e) { void e; }
+
+  // Faction leader (player) from the live region characters.
+  let factionLeader = null;
+  const pf = newData.savePlayerFaction || newData.playerFaction || null;
+  try {
+    if (pf) {
+      for (const list of Object.values(newData.charactersByRegion || {})) {
+        const lead = (list || []).find((c) => c && c.isLeader && !c.isDead && c.faction === pf);
+        if (lead) { factionLeader = { name: `${lead.firstName || "?"}${lead.lastName ? " " + String(lead.lastName).replace(/_/g, " ") : ""}`, age: typeof lead.age === "number" ? lead.age : null }; break; }
+      }
+    }
+  } catch (e) { void e; }
+
+  // Public order — the card prefers settlementFields.publicOrder; the legacy
+  // `happinessByCity` is the stale-offset value the card would FALL BACK to.
+  // Passing it lets the divergence sub-check catch the 40-vs-295 class live.
+  const cardHappinessByCity = newData.happinessByCity || null;
+
+  return {
+    label: file ? `live: ${path.basename(file)}` : "live",
+    commandersLive,
+    familyPortraitByKey: fam,
+    settlementFields: newData.settlementFields,
+    cardHappinessByCity,
+    diplomacy: newData.diplomacyMatrix || null,
+    playerFaction: pf,
+    expectWars: newData.diplomacyMatrix ? true : null,
+    family: Array.isArray(newData.family) ? newData.family : (newData.characters && newData.characters.family) || null,
+    factionLeader,
+    minFamilyMembers: 3,
+    turn: newData.currentTurn != null ? newData.currentTurn : newData.turn,
+    currentYear: newData.currentYear != null ? newData.currentYear : null,
+    seasonIndex: newData.seasonIndex != null ? newData.seasonIndex : null,
+    unitAttribution: newData.unitAttribution || (newData._stats && newData._stats.unitAttribution) || null,
+  };
+}
+
 // Compute the three additive fields on `newData`. Pure (no IPC). Called from
 // BOTH the initial save-watch-start parse and every incremental reparse. The
 // `prevEventLog` is the PREVIOUS snapshot's eventLog (held in lastSaveData) so
@@ -8139,6 +8220,10 @@ async function reparseLatestSave() {
     // reassigned to newData until after the send below), so its `.eventLog`
     // is the right "before" set for the turn-elapsed diff.
     attachLiveSaveExtras(newData, saveBuf, activeModDataDir, lastSaveData ? lastSaveData.eventLog : null);
+    // [diag] APP SELF-CHECK — one summary per live load/turn into provincia.log.
+    // Reads only the already-built newData (no re-derive). Never throws.
+    try { logAppDiagnostics(runAppDiagnostics(buildLiveDiagInput(newData, latestFile))); }
+    catch (e) { console.warn("[diag] live self-check failed:", e && e.message); }
     emitSaveProgress("Done", 100);
     win.webContents.send("save-snapshot", { file: latestFile, data: newData });
     // Re-anchor live-log tracking to the moment of this save. Save state
@@ -8377,6 +8462,10 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
       try {
         attachLiveSaveExtras(lastSaveData, saveBuf, activeModDataDir, null);
       } catch (e) { console.warn("[save-watch] initial live-extras failed:", e.message); }
+      // [diag] APP SELF-CHECK on the INITIAL live load too (mirrors the
+      // incremental-reparse call). One summary into provincia.log per load.
+      try { logAppDiagnostics(runAppDiagnostics(buildLiveDiagInput(lastSaveData, lastSaveFile))); }
+      catch (e) { console.warn("[diag] initial live self-check failed:", e && e.message); }
       emitSaveProgress("Done", 100);
       const bCount = Object.keys(lastSaveData.buildings || {}).length;
       const aCount = Object.keys(lastSaveData.armies || {}).length;

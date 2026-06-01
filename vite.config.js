@@ -20,6 +20,15 @@ export default defineConfig({
     emptyOutDir: true,
     assetsDir: "static",
     sourcemap: false,
+    // src/diagnostics.js is a CommonJS module (main.js require()s it at runtime;
+    // it's listed in package.json build.files). The renderer (App.js) also imports
+    // it. Rollup's CJS interop only runs on node_modules by default, so opt this
+    // src file in so `import diagnostics from "./diagnostics"` resolves the
+    // module.exports object in the production bundle. (vitest/esbuild already
+    // handled it; this is the Rollup-side equivalent.)
+    commonjsOptions: {
+      include: [/diagnostics\.js$/, /node_modules/],
+    },
   },
   // Tell esbuild to treat all .js files as JSX — our source uses plain .js
   // extensions with JSX inside (CRA convention). Keeps imports working without

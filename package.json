@@ -76,7 +76,8 @@
       "src/visionParser.js",
       "src/factionKnowledgeParser.js",
       "src/descrStratGeneral.js",
-      "src/turnParser.js"
+      "src/turnParser.js",
+      "src/diagnostics.js"
     ],
     "extraMetadata": {
       "main": "main.js"
