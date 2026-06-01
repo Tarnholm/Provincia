@@ -2511,7 +2511,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   ? "rgba(74,180,220,0.28)"
                   : (mismatch ? "rgba(220,60,60,0.16)" : (linkedFromRecruit ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.25)")),
                 borderRadius: 4,
-                padding: "4px 3px",
+                padding: "2px 3px",
                 minWidth: 0,
                 minHeight: 0,
                 width: "100%", height: "100%",
@@ -2538,7 +2538,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       // the icon never overflows when the column gets narrow
                       // — buildings grid now uses fr columns to fit any
                       // panel width.
-                      style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "top", display: "block" }}
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                   )}

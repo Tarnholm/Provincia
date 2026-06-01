@@ -133,7 +133,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 17;
+const LAYOUT_VERSION = 18;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -163,8 +163,8 @@ const CANONICAL_V4 = {
   // map's left edge; selected x+w=0.572 (the colBox design span) → right edge
   // meets the map's right edge. (colBox maps design-x [0,0.572] onto the map's
   // actual pixel width, so these line up with the map on both sides.)
-  "bottom.search":      { x: 0, y: 0.7009, w: 0.2076, h: 0.0300 },
-  "bottom.factions":    { x: 0, y: 0.7492, w: 0.2076, h: 0.2458 },
+  "bottom.search":      { x: 0, y: 0.7009, w: 0.2076, h: 0.0240 },
+  "bottom.factions":    { x: 0, y: 0.7392, w: 0.2076, h: 0.2458 },
   "bottom.selected":    { x: 0.2170, y: 0.7009, w: 0.3550, h: 0.2941 },
 };
 // Splitter overrides that put the map at the width the canonical widget
@@ -512,10 +512,17 @@ export function Movable({
   // sitting at a fixed fraction — this closes the dead band under a ½-width map.
   let top, height;
   if (colBox && colBox.top != null && colBox.vSpan != null) {
+    // Anchor the strip's top to colBox.top (the map's actual bottom) but use the
+    // NATURAL viewport scale for vertical offsets + heights — so inter-widget
+    // gaps match the rest of the app instead of being proportionally compressed
+    // when the map is tall (the old scaling shrank the search↔factions gap).
+    // Clamp height so a widget never runs past the viewport bottom; the big
+    // panels (factions/selected) scroll internally to absorb the difference.
     const boxY0 = colBox.y0 != null ? colBox.y0 : 0;
-    const relY = (ePos.y - boxY0) / colBox.vSpan;
-    top = Math.round(colBox.top + relY * colBox.vHeight);
-    height = Math.max(40, Math.round((ePos.h / colBox.vSpan) * colBox.vHeight));
+    top = Math.round(colBox.top + (ePos.y - boxY0) * vp.h);
+    height = Math.max(40, Math.round(ePos.h * vp.h));
+    const maxBottom = vp.h - 6;
+    if (top + height > maxBottom) height = Math.max(40, maxBottom - top);
   } else {
     top = Math.round(ePos.y * vp.h);
     height = Math.max(40, Math.round(ePos.h * vp.h));
@@ -532,7 +539,7 @@ export function Movable({
     const startPos = { ...pos };
     function onMove(ev) {
       const dx = colBox ? ((ev.clientX - startX) / colBox.width) * boxSpan : (ev.clientX - startX) / vp.w;
-      const dy = (colBox && colBox.vSpan != null) ? ((ev.clientY - startY) / colBox.vHeight) * colBox.vSpan : (ev.clientY - startY) / vp.h;
+      const dy = (ev.clientY - startY) / vp.h;
       let np = {
         x: Math.max(0, Math.min(1 - startPos.w, startPos.x + dx)),
         y: Math.max(0, Math.min(1 - startPos.h, startPos.y + dy)),
@@ -564,7 +571,7 @@ export function Movable({
     const startPos = { ...pos };
     function onMove(ev) {
       const dx = colBox ? ((ev.clientX - startX) / colBox.width) * boxSpan : (ev.clientX - startX) / vp.w;
-      const dy = (colBox && colBox.vSpan != null) ? ((ev.clientY - startY) / colBox.vHeight) * colBox.vSpan : (ev.clientY - startY) / vp.h;
+      const dy = (ev.clientY - startY) / vp.h;
       const np = { ...startPos };
       const lock = {};
       if (corner.includes("e")) {

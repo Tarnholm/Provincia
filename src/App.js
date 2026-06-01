@@ -9529,8 +9529,8 @@ function App() {
   }, [zoom, offset, canvasSize, imgSize, computeTransform, clampOffset, showSplash]);
 
   const tileBaseStyle = {
-    width: 58,
-    height: 58,
+    width: 46,
+    height: 46,
     cursor: "pointer",
     boxSizing: "border-box",
     borderRadius: 6,
@@ -9866,7 +9866,8 @@ function App() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, 58px)",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            justifyItems: "center",
             columnGap: Math.max(ICON_GAP, 6),
             rowGap: Math.max(ICON_GAP, 6),
             justifyContent: "center",
@@ -9958,7 +9959,7 @@ function App() {
                   }}
                 >
                   <div style={{ width: "100%", height: "100%", display: "block", filter: ICON_DROP_SHADOW }}>
-                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={56} tightCrop modIconsDir={modIconsDir} />
+                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={44} tightCrop modIconsDir={modIconsDir} />
                   </div>
                 </div>
               </Tooltip>
@@ -15963,7 +15964,7 @@ function App() {
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
               colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
-              defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0300 }}
+              defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0240 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
                   chrome (no cream background, no extra padding). Input
@@ -15976,7 +15977,7 @@ function App() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    width: "100%", height: "100%", boxSizing: "border-box", padding: "6px 10px",
+                    width: "100%", height: "100%", boxSizing: "border-box", padding: "4px 10px",
                     borderRadius: 8, border: "1px solid rgba(255,255,255,0.18)",
                     background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.82rem",
                     outline: "none",
@@ -15988,7 +15989,7 @@ function App() {
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
               colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
-              defaultPct={{ x: 0.0047, y: 0.7492, w: 0.2076, h: 0.2458 }}
+              defaultPct={{ x: 0.0047, y: 0.7392, w: 0.2076, h: 0.2458 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>

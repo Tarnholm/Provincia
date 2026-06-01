@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.797",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Consistent spacing for the bottom panels.** The bottom strip (Search/Factions/Selected) now keeps natural, app-standard gaps between elements (anchored to the map's bottom) instead of being proportionally squashed when the map is tall — so the gap between Search and Factions matches everywhere else." },
+      { type: "improvement", text: "**Search bar is shorter.**" },
+      { type: "fix", text: "**Factions panel fits 5 icons per row** at the 1/4-of-4K size (smaller 46px tiles, fixed 5-column grid, centered)." },
+      { type: "improvement", text: "**Building cards: less gray above the image** — the image is pushed to the top of the card (and top padding trimmed) without shrinking it." },
+    ],
+  },
+  {
     version: "0.9.796",
     date: "2026-06-01",
     items: [
