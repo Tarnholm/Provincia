@@ -133,7 +133,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 18;
+const LAYOUT_VERSION = 19;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -163,8 +163,8 @@ const CANONICAL_V4 = {
   // map's left edge; selected x+w=0.572 (the colBox design span) → right edge
   // meets the map's right edge. (colBox maps design-x [0,0.572] onto the map's
   // actual pixel width, so these line up with the map on both sides.)
-  "bottom.search":      { x: 0, y: 0.7009, w: 0.2076, h: 0.0240 },
-  "bottom.factions":    { x: 0, y: 0.7392, w: 0.2076, h: 0.2458 },
+  "bottom.search":      { x: 0, y: 0.7009, w: 0.2076, h: 0.0200 },
+  "bottom.factions":    { x: 0, y: 0.7400, w: 0.2076, h: 0.1150 },
   "bottom.selected":    { x: 0.2170, y: 0.7009, w: 0.3550, h: 0.2941 },
 };
 // Splitter overrides that put the map at the width the canonical widget

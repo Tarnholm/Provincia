@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.798",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Factions panel: tighter, uniform icon spacing + clear gap from search.** Fixed 5×44px columns (centered) so faction icons sit with equal horizontal/vertical spacing instead of being spread apart, and the panel is now ~2 rows tall. Search bar is smaller, with a clear gap below it (no more overlap with the Factions panel)." },
+      { type: "improvement", text: "**Building cards shorter** so two rows fit, with the label moved up closer to the building image." },
+      { type: "fix", text: "**Garrison: hovering a unit no longer shifts the cards.** The unit hover readout now has a reserved line, so the unit grid stays put whether or not you're hovering." },
+    ],
+  },
+  {
     version: "0.9.797",
     date: "2026-06-01",
     items: [

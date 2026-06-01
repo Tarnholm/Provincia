@@ -2412,7 +2412,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(5, 1fr)",
-              gridAutoRows: "80px",
+              gridAutoRows: "62px",
               gap: 4,
               flex: 1,
               minHeight: 0,
@@ -2506,7 +2506,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   return base;
                 })()} style={{
                 position: "relative",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
                 background: isDragOver
                   ? "rgba(74,180,220,0.28)"
                   : (mismatch ? "rgba(220,60,60,0.16)" : (linkedFromRecruit ? "rgba(220,166,74,0.22)" : "rgba(0,0,0,0.25)")),
@@ -2966,10 +2966,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1340 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf",
-            display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             <span>Garrison:{garrisonCommander ? <span style={{ fontWeight: 400, fontSize: "0.72rem", color: "#ddd", marginLeft: 6 }}>{garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}{garrisonCommander.bodyguardRegion ? <span style={{ color: "#aaa", marginLeft: 4 }}>(bodyguard at {garrisonCommander.bodyguardRegion})</span> : null}</span> : null}</span>
-            {hoveredUnit && <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a" }}>{hoverReadout(hoveredUnit)}</span>}
+          </div>
+          {/* Reserved fixed-height line for the unit hover readout so hovering a
+              unit never reflows the grid below — the cards stay put. Shows a
+              non-breaking space when nothing is hovered. */}
+          <div style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a", minHeight: "0.95rem", lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {hoveredUnit ? hoverReadout(hoveredUnit) : " "}
           </div>
         </div>
         <div style={widgetBody}>
