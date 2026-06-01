@@ -442,25 +442,6 @@ function snapAlign(myId, np, lock = {}, nosnap = false) {
 const RIGHT_COL_X0 = 0.572;
 const RIGHT_COL_SPAN = 0.428;
 
-// 0.9.789: temporary numbered overlay so the user can reference each panel by
-// number ("make UI5 wider") while we iterate on the layout. Each Movable shows
-// a small red "UIn" badge in its top-left corner. Map of id → { n, name } is the
-// shared legend. (The map canvas is UI14, labelled separately in App.js.)
-export const UI_LABELS = {
-  "bottom.search":      { n: 1,  name: "Search" },
-  "bottom.factions":    { n: 2,  name: "Factions" },
-  "bottom.pinned":      { n: 3,  name: "Pinned regions" },
-  "bottom.selected":    { n: 4,  name: "Selected provinces" },
-  "region.info":        { n: 5,  name: "Settlement info" },
-  "region.diplomacy":   { n: 6,  name: "Diplomacy & treasury" },
-  "region.characters":  { n: 7,  name: "Characters" },
-  "region.recruit":     { n: 8,  name: "Recruitable" },
-  "region.unitQueue":   { n: 9,  name: "Unit queue" },
-  "region.queue":       { n: 10, name: "Build queue" },
-  "region.garrison":    { n: 11, name: "Garrison" },
-  "region.buildings":   { n: 13, name: "Buildings" },
-};
-
 export function Movable({
   id,
   defaultPct,
@@ -637,18 +618,6 @@ export function Movable({
       data-widget={id}
     >
       {children}
-      {UI_LABELS[id] && (
-        <div
-          title={UI_LABELS[id].name}
-          style={{
-            position: "absolute", top: 2, left: 2, zIndex: 9999,
-            background: "rgba(214,40,40,0.92)", color: "#fff",
-            font: "700 11px system-ui, sans-serif", lineHeight: 1,
-            padding: "2px 5px", borderRadius: 5, pointerEvents: "none",
-            boxShadow: "0 0 0 1px rgba(0,0,0,0.6)", whiteSpace: "nowrap",
-          }}
-        >UI{UI_LABELS[id].n}</div>
-      )}
       {designMode && (
         <>
           {/* Invisible interaction overlay — covers the whole widget. No

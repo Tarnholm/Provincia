@@ -92,6 +92,69 @@ const SCROLL_SKIN = {
   thumb: { x: 341, y: 108, w: 19, h: 84 },
 };
 
+// ── Scaffolding aid: letter badges on the map control buttons ────────────
+// Temporary layout-iteration helper. Every map control button (the colour-mode
+// tabs, the View row, the overlay toggles, the action buttons, the campaign
+// toggle, and the in-map zoom controls) gets a tiny always-visible letter
+// badge in reading order (top→bottom, left→right): A, B, C, … then AA, AB, …
+// once past Z. The user references buttons by letter ("make button F bigger").
+//
+// MAP_BTN_ORDER is the single source of truth for the order. letterFor(key)
+// maps a stable key → letter. MapBtnBadge stamps the pill wherever a button
+// renders. Keep this list in sync with the buttons in renderMapModeToggle()
+// and the zoom-controls JSX; conditional buttons (Reload, Live, Calibrate)
+// reserve their letter whether or not they're currently mounted, so the
+// legend stays stable. See the LEGEND in the change report.
+const MAP_BTN_ORDER = [
+  // Colour-mode tabs (renderMapModeToggle colorModes[])
+  "mode.faction", "mode.victory", "mode.region", "mode.culture", "mode.religion",
+  "mode.loyalist", "mode.explored", "mode.population", "mode.farm", "mode.resource",
+  "mode.homeland", "mode.government", "mode.geography",
+  // View row + overlay toggles + action buttons
+  "view.flat", "view.grid", "view.borders", "view.pin", "view.wealth",
+  "view.settlements", "view.terrain", "view.heights", "view.resources",
+  "view.armies", "view.events", "view.insights", "view.inspect", "view.labels",
+  "view.reload", "view.live", "view.calibrate",
+  // Campaign toggle (Ris Classic / Imperial Campaign)
+  "campaign.toggle",
+  // In-map zoom controls (bottom-right)
+  "zoom.lock", "zoom.camera", "zoom.out", "zoom.reset", "zoom.in",
+];
+
+// Index → letter: 0→A … 25→Z, 26→AA, 27→AB, … (bijective base-26).
+function indexToLetters(i) {
+  let n = i, s = "";
+  do {
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return s;
+}
+const _MAP_BTN_LETTERS = (() => {
+  const m = {};
+  MAP_BTN_ORDER.forEach((k, i) => { m[k] = indexToLetters(i); });
+  return m;
+})();
+function letterFor(key) { return _MAP_BTN_LETTERS[key] || "?"; }
+
+// Tiny high-contrast letter pill stamped in the top-left corner of a button.
+// pointerEvents:none so it never intercepts clicks; absolutely positioned so it
+// doesn't affect button layout. The host button must be position:relative (the
+// map control buttons get that inline below).
+function MapBtnBadge({ k }) {
+  return (
+    <span
+      style={{
+        position: "absolute", top: -5, left: -5, zIndex: 50,
+        background: "rgba(214,40,40,0.95)", color: "#fff",
+        font: "700 9px system-ui, sans-serif", lineHeight: 1,
+        padding: "1px 3px", borderRadius: 4, pointerEvents: "none",
+        boxShadow: "0 0 0 1px rgba(0,0,0,0.6)", whiteSpace: "nowrap",
+      }}
+    >{letterFor(k)}</span>
+  );
+}
+
 // Map variants (kept for localStorage compat but victory is now a colorMode)
 const MAP_VARIANTS = {
   starting: { key: "starting", label: "Start" },
@@ -10634,7 +10697,8 @@ function App() {
           {colorModes.map((m) => (
             <button key={m.key} onClick={() => setColorMode(m.key)}
               className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
-              disabled={colorMode === m.key} style={btnStyle(colorMode === m.key)}>{m.label}</button>
+              disabled={colorMode === m.key} style={{ ...btnStyle(colorMode === m.key), position: "relative" }}>
+              <MapBtnBadge k={`mode.${m.key}`} />{m.label}</button>
           ))}
           {devMode && (<>
             <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
@@ -11344,9 +11408,9 @@ function App() {
         <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, maxWidth: Math.max(200, canvasSize.width - 280) }}>
           <span style={{ opacity: 0.7, fontSize: "0.78rem" }}>View:</span>
           <button className="map-mode-btn" onClick={() => setDevFlatColors(prev => !prev)}
-            style={{ ...btnStyle(devFlatColors), minWidth: 0 }}>Flat</button>
+            style={{ ...btnStyle(devFlatColors), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.flat" />Flat</button>
           <button className="map-mode-btn" onClick={() => setDevGrid(prev => !prev)}
-            style={{ ...btnStyle(devGrid), minWidth: 0 }}>Grid</button>
+            style={{ ...btnStyle(devGrid), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.grid" />Grid</button>
           <button className="map-mode-btn"
             onClick={() => setBorderMode(prev => prev === "off" ? "faction" : prev === "faction" ? "region" : "off")}
             title={borderMode === "off"
@@ -11354,43 +11418,43 @@ function App() {
               : borderMode === "faction"
                 ? "Borders: faction-group outline + province lines — click for region-only"
                 : "Borders: per-region province lines only — click to turn off"}
-            style={{ ...btnStyle(borderMode !== "off"), minWidth: 0 }}>
-            {borderMode === "off" ? "Borders" : borderMode === "faction" ? "Faction Bdrs" : "Region Bdrs"}
+            style={{ ...btnStyle(borderMode !== "off"), minWidth: 0, position: "relative" }}>
+            <MapBtnBadge k="view.borders" />{borderMode === "off" ? "Borders" : borderMode === "faction" ? "Faction Bdrs" : "Region Bdrs"}
           </button>
           <button className="map-mode-btn" onClick={() => setPinFaction(prev => !prev)}
             title={pinFaction
               ? "Pin Faction is ON — non-selected regions are heavily greyed when a faction is selected"
               : "Pin Faction: heavily grey out everything except the selected faction's territory (sticky preference)"}
-            style={{ ...btnStyle(pinFaction), minWidth: 0 }}>Pin</button>
+            style={{ ...btnStyle(pinFaction), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.pin" />Pin</button>
           <button className="map-mode-btn" onClick={() => setShowWealthPanel(prev => !prev)}
             title="Open the Faction Wealth panel — sortable list with treasury and region count, click a row to jump to that faction's territory"
-            style={{ ...btnStyle(showWealthPanel), minWidth: 0 }}>Wealth</button>
+            style={{ ...btnStyle(showWealthPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.wealth" />Wealth</button>
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
-            style={{ ...btnStyle(showSettlementTier), minWidth: 0 }}>Settlements</button>
+            style={{ ...btnStyle(showSettlementTier), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.settlements" />Settlements</button>
           <button className="map-mode-btn" onClick={() => setShowGeographyOverlay(prev => !prev)}
             title="Tint every land tile by its ground type (forest, mountain, swamp, etc.) on top of whatever map mode is active. Forest tiles enable passive ambushes."
-            style={{ ...btnStyle(showGeographyOverlay), minWidth: 0 }}>Terrain</button>
+            style={{ ...btnStyle(showGeographyOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.terrain" />Terrain</button>
           <button className="map-mode-btn" onClick={() => setShowHeightsOverlay(prev => !prev)}
             title="Hillshaded relief — fake NW light source over the mod's map_heights.tga. Mountains gain shadows, plains stay flat. Soft-light blend so it shades whatever map mode is active without replacing the colours."
-            style={{ ...btnStyle(showHeightsOverlay), minWidth: 0 }}>Heights</button>
+            style={{ ...btnStyle(showHeightsOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.heights" />Heights</button>
           <button className="map-mode-btn" onClick={() => setShowResourcesOverlay(prev => !prev)}
             title="Show resource icons on the map without switching out of the current color mode."
-            style={{ ...btnStyle(showResourcesOverlay), minWidth: 0 }}>Resources</button>
+            style={{ ...btnStyle(showResourcesOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.resources" />Resources</button>
           <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
-            style={{ ...btnStyle(showArmies), minWidth: 0 }}>Armies</button>
+            style={{ ...btnStyle(showArmies), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.armies" />Armies</button>
           {/* UI batch 2: disaster/scripted-event map markers (positioned events). */}
           <button className="map-mode-btn" onClick={() => setShowScheduleMarkers(prev => !prev)}
             title="Mark scripted-event & natural-disaster sites (volcanoes, earthquakes, floods, …) on the map from the save's event schedule."
-            style={{ ...btnStyle(showScheduleMarkers), minWidth: 0 }}>Events</button>
+            style={{ ...btnStyle(showScheduleMarkers), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.events" />Events</button>
           {/* UI batch 2: Save-insights panel (last turn, event schedule, timeline, scouting). */}
           <button className="map-mode-btn" onClick={() => setShowInsightsPanel(prev => !prev)}
             title="Open Save Insights — last-turn summary, disaster/event schedule, campaign timeline, and per-faction AI scouting."
-            style={{ ...btnStyle(showInsightsPanel), minWidth: 0 }}>Insights</button>
+            style={{ ...btnStyle(showInsightsPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.insights" />Insights</button>
           <button className="map-mode-btn" onClick={() => setShowTileInspect(prev => !prev)}
             title="Hover-to-inspect: show a small tooltip with the hovered tile's region, owner, and terrain type. Terrain shows once the geography data is loaded (open Geography mode once)."
-            style={{ ...btnStyle(showTileInspect), minWidth: 0 }}>Inspect</button>
+            style={{ ...btnStyle(showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.inspect" />Inspect</button>
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
-            style={{ ...btnStyle(showLabels !== "off"), minWidth: 0 }}>{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
+            style={{ ...btnStyle(showLabels !== "off"), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.labels" />{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
           {modDataDir && (
             <button className="map-mode-btn" onClick={async () => {
               const api = window.electronAPI;
@@ -11403,8 +11467,9 @@ function App() {
               style={{
                 ...btnStyle(modDataStale),
                 minWidth: 0,
+                position: "relative",
                 animation: modDataStale ? "mac-active-pulse 1.6s ease-in-out infinite" : "none",
-              }}>{modDataStale ? "Reload!" : "Reload"}</button>
+              }}><MapBtnBadge k="view.reload" />{modDataStale ? "Reload!" : "Reload"}</button>
           )}
           {devMode && modDataDir && buildingRecruits && unitOwnership && (
             <button className="map-mode-btn" onClick={() => {
@@ -11579,7 +11644,7 @@ function App() {
               // the save-watch effect — no manual prompt needed.
             }
           }}
-            style={{ ...btnStyle(liveLogActive), minWidth: 0, color: liveLogActive ? "#4f8" : undefined }}>Live</button>
+            style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : undefined }}><MapBtnBadge k="view.live" />Live</button>
           {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
               a new game + save at turn 0 so the auto-cache pass picks up
               real save-read stats and uses them in non-live mode. The
@@ -11706,8 +11771,8 @@ function App() {
                 ? "Pick a save to calibrate stats for non-live mode. For accurate 'starting' stats, pick a turn-0 save."
                 : `${n} characters cached. Click to recalibrate from a different save.`;
             })()}
-            style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px" }}>
-            🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
+            style={{ ...btnStyle(false), minWidth: 0, position: "relative", fontSize: "0.65rem", padding: "1px 6px" }}>
+            <MapBtnBadge k="view.calibrate" />🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
           </button>
           {liveLogActive && (
             <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
@@ -11885,6 +11950,7 @@ function App() {
             border: "1px solid rgba(255,255,255,0.15)",
             flexShrink: 0,
           }}>
+            <MapBtnBadge k="campaign.toggle" />
             <span style={{
               position: "absolute",
               left: isImperial ? 2 : "auto",
@@ -15906,13 +15972,13 @@ function App() {
                     onClick={() => lockedRegionInfo && setLockedRegionInfo(null)}
                     disabled={!lockedRegionInfo}
                     style={{ fontSize: "0.9rem", color: lockedRegionInfo ? "#dca64a" : "inherit", zIndex: welcomeHighlight === "region-info" ? 10001 : undefined, position: "relative" }}>
-                    {lockedRegionInfo ? "🔒" : "🔓"}
+                    <MapBtnBadge k="zoom.lock" />{lockedRegionInfo ? "🔒" : "🔓"}
                   </button>
-                  <button className="zoom-btn" title="Export map as PNG" onClick={handleScreenshot} style={{ fontSize: "1rem" }}>
-                    📷
+                  <button className="zoom-btn" title="Export map as PNG" onClick={handleScreenshot} style={{ fontSize: "1rem", position: "relative" }}>
+                    <MapBtnBadge k="zoom.camera" />📷
                   </button>
-                  <button className="zoom-btn" title="Zoom out" onClick={zoomOut} disabled={zoom <= minZoom}>
-                    −
+                  <button className="zoom-btn" title="Zoom out" onClick={zoomOut} disabled={zoom <= minZoom} style={{ position: "relative" }}>
+                    <MapBtnBadge k="zoom.out" />−
                   </button>
                   <button
                     className="zoom-btn"
@@ -15920,7 +15986,9 @@ function App() {
                     onClick={resetZoom}
                     disabled={zoom === 1 && offset.x === 0 && offset.y === 0}
                     aria-label="Reset view"
+                    style={{ position: "relative" }}
                   >
+                    <MapBtnBadge k="zoom.reset" />
                     <img
                       src={(import.meta.env.BASE_URL || "./") + "/reset-alt.svg"}
                       alt="Reset"
@@ -15930,8 +15998,8 @@ function App() {
                       draggable={false}
                     />
                   </button>
-                  <button className="zoom-btn" title="Zoom in" onClick={zoomIn} disabled={zoom >= maxZoom}>
-                    +
+                  <button className="zoom-btn" title="Zoom in" onClick={zoomIn} disabled={zoom >= maxZoom} style={{ position: "relative" }}>
+                    <MapBtnBadge k="zoom.in" />+
                   </button>
                 </div>
                 {/* Minimap */}

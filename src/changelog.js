@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.809",
+    date: "2026-06-01",
+    items: [
+      { type: "change", text: "**Scaffolding labels moved to the map buttons.** Removed the panel UI1–UI13 number badges; the map control buttons now carry small letter badges (A, B, C…) so they can be referenced by letter while tuning the toolbar. (Temporary aid.)" },
+    ],
+  },
+  {
     version: "0.9.808",
     date: "2026-06-01",
     items: [
