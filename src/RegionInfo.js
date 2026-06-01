@@ -738,6 +738,31 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     };
   }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
 
+  // 0.9.769: colour a faction-group header (Field armies UI12) by how that
+  // faction relates to the REGION OWNER. Same palette as the Diplomacy section:
+  //   white   (#eee)     → the faction IS the region owner
+  //   green   (#9ed09e)  → allied with the owner
+  //   bluish  (#9cc0e0)  → protectorate (either direction)
+  //   red     (#e8a0a0)  → at war / enemy
+  //   neutral (#cfa)     → everything else (trade treated as neutral)
+  // Prefer the LIVE matrix lists when present (mirrors how the Diplomacy
+  // section picks live vs start via hasLiveNamed), else the descr_strat
+  // starting-state lists. All factionState lists are arrays of { id, name }.
+  const factionRelColor = (fac) => {
+    if (!fac) return "#cfa";
+    const f = String(fac).toLowerCase();
+    if (ownerFactionId && f === String(ownerFactionId).toLowerCase()) return "#eee";
+    if (!factionState || factionState.noData) return "#cfa";
+    const has = (list) => Array.isArray(list) && list.some((e) => e && String(e.id).toLowerCase() === f);
+    // Prefer the LIVE matrix lists when present, else the descr_strat starting
+    // state — but check both so a relationship known from either source colours
+    // the header (matches the spec: "(liveAllied or startAllies)" etc.).
+    if (has(factionState.liveAllied) || has(factionState.startAllies)) return "#9ed09e";
+    if (has(factionState.startProtects) || has(factionState.startProtectedBy)) return "#9cc0e0";
+    if (has(factionState.liveWar) || has(factionState.startWars)) return "#e8a0a0";
+    return "#cfa";
+  };
+
   // ── Diplomacy list rendering helpers. Each faction name renders as a
   // coloured "pill" (chip) for legibility: a translucent tint of the faction's
   // colour with a matching border and a brightened-for-contrast label.
@@ -2954,14 +2979,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1650 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            <span>Garrison:{garrisonCommander ? <span style={{ fontWeight: 400, fontSize: "0.72rem", color: "#ddd", marginLeft: 6 }}>{garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}{garrisonCommander.bodyguardRegion ? <span style={{ color: "#aaa", marginLeft: 4 }}>(bodyguard at {garrisonCommander.bodyguardRegion})</span> : null}</span> : null}</span>
-          </div>
-          {/* Reserved fixed-height line for the unit hover readout so hovering a
-              unit never reflows the grid below — the cards stay put. Shows a
-              non-breaking space when nothing is hovered. */}
-          <div style={{ fontWeight: 400, fontSize: "0.64rem", color: "#dca64a", minHeight: "0.8rem", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {hoveredUnit ? hoverReadout(hoveredUnit) : " "}
+          {/* 0.9.769: title + INLINE hover readout on one FIXED single line.
+              nowrap/ellipsis + a stable minHeight keep the header height
+              constant so toggling the readout never reflows the grid below.
+              The commander name moved DOWN to a line directly above the grid. */}
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: "1.15rem", lineHeight: 1.15 }}>
+            <span>Garrison:</span>
+            {hoveredUnit ? <span style={{ fontWeight: 400, fontSize: "0.68rem", color: "#dca64a", marginLeft: 6 }}>{hoverReadout(hoveredUnit)}</span> : null}
           </div>
         </div>
         <div style={widgetBody}>
@@ -3014,6 +3038,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             const garrisonKey = armyKeyOf ? armyKeyOf(garrisonArmyDesc.faction, garrisonArmyDesc.locator) : null;
             const isGarrisonSelected = devMode && garrisonKey && garrisonKey === selectedArmyKey;
             return (
+          <>
+          {/* 0.9.769: commander name moved here — a line directly ABOVE the
+              garrison unit grid, matching the field-army general line style
+              (fontSize 0.68rem, color #ddd). Was previously in the header. */}
+          {garrisonCommander && garrisonCommander.character ? (
+            <div style={{ fontSize: "0.68rem", color: "#ddd", marginBottom: 4 }}>
+              {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}{garrisonCommander.bodyguardRegion ? <span style={{ color: "#aaa", marginLeft: 4 }}>(bodyguard at {garrisonCommander.bodyguardRegion})</span> : null}
+            </div>
+          ) : null}
           <div style={{
             display: "grid",
             // Cards capped at 32 px wide so they stay compact (10×2 = 20
@@ -3244,6 +3277,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               }} />
             ))}
           </div>
+          </>
             );
           })()
         ) : (
@@ -3277,11 +3311,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.7857, y: 0.6800, w: 0.2090, h: 0.3150 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Field armies:</div>
-          {/* Reserved fixed-height line for THIS panel's unit hover readout
-              (separate from the Garrison panel's) so the list doesn't reflow. */}
-          <div style={{ fontWeight: 400, fontSize: "0.64rem", color: "#dca64a", minHeight: "0.8rem", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {hoveredFieldUnit ? hoverReadout(hoveredFieldUnit) : " "}
+          {/* 0.9.769: title + INLINE hover readout on one FIXED single line.
+              nowrap/ellipsis + a stable minHeight keep the header height
+              constant so toggling the readout never reflows the list below. */}
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: "1.15rem", lineHeight: 1.15 }}>
+            <span>Field armies:</span>
+            {hoveredFieldUnit ? <span style={{ fontWeight: 400, fontSize: "0.68rem", color: "#dca64a", marginLeft: 6 }}>{hoverReadout(hoveredFieldUnit)}</span> : null}
           </div>
         </div>
         <div style={widgetBody}>
@@ -3304,7 +3339,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               {groupByFaction(list).map(([fac, armies], gi) => (
                 <div key={gi}>
                   {fac && (
-                    <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#cfa", marginBottom: 4 }}>
+                    // 0.9.769: header colour reflects this faction's relationship
+                    // to the REGION OWNER (white=owner, green=ally, bluish=
+                    // protectorate, red=war, neutral otherwise). Same palette as
+                    // the Diplomacy section.
+                    <div style={{ fontSize: "0.72rem", fontWeight: 600, color: factionRelColor(fac), marginBottom: 4 }}>
                       {factionLabel(fac)}
                     </div>
                   )}
@@ -3510,23 +3549,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               ))}
             </div>
           );
+          // 0.9.769: drop the "Region owners armies" vs "Other faction armies"
+          // split — merge ALL field armies present in the region into ONE list
+          // and let groupByFaction render a single header per faction (so two
+          // Roman stacks in Rome collapse under one "Rome" header). Each header
+          // is coloured by factionRelColor (relationship to the region owner).
           const own = fieldArmies?.own || [];
           const others = fieldArmies?.others || [];
+          const allArmies = [...own, ...others];
           return (
             <>
-              {own.length > 0 && (
-                <>
-                  <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: 8, marginBottom: 3, color: "#fc6" }}>Region owners armies:</div>
-                  {renderArmyList(own)}
-                </>
-              )}
-              {others.length > 0 && (
-                <>
-                  <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: 8, marginBottom: 3, color: "#d88" }}>Other faction armies:</div>
-                  {renderArmyList(others)}
-                </>
-              )}
-              {own.length === 0 && others.length === 0 && (
+              {allArmies.length > 0 ? (
+                renderArmyList(allArmies)
+              ) : (
                 <span style={{ color: "#bbb", fontStyle: "italic", fontSize: "0.75rem" }}>None</span>
               )}
             </>

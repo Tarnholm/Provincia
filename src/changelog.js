@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.806",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Field armies grouped by faction with diplomacy colours.** The old \"Region owners armies\" vs \"Field armies\" split is gone — every army in the region is now listed under its faction's header (so two Roman armies in Rome both sit under one \"Rome\" header). Faction headers are coloured by their relationship to the region's owner: white = owner, green = ally, bluish-grey = protectorate, red = enemy (trade = no special colour)." },
+      { type: "improvement", text: "**Garrison / Field armies: general's name sits above its units, and the unit hover readout shows inline after the \"Garrison:\" / \"Field armies:\" title** (with a fixed header line so hovering never shifts the cards)." },
+      { type: "improvement", text: "**Factions panel header:** the Summary button moved up here next to Deselect (Deselect nudged to the right), and the faction icons sit closer to the header." },
+    ],
+  },
+  {
     version: "0.9.805",
     date: "2026-06-01",
     items: [

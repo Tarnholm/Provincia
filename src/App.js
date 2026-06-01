@@ -9837,28 +9837,53 @@ function App() {
               </span>
             )}
           </span>
-          <button
-            style={{
-              fontSize: "0.75rem",
-              padding: "3px 10px",
-              borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(0,0,0,0.2)",
-              color: "inherit",
-              cursor: selectedFactions.size > 0 ? "pointer" : "not-allowed",
-              opacity: selectedFactions.size > 0 ? 1 : 0.5,
-              fontWeight: 600,
-              transition: "opacity 0.15s",
-            }}
-            onClick={() => {
-              setSelectedFaction(null);
-              setSelectedFactions(new Set());
-              setSelectedProvinces([]);
-            }}
-            disabled={selectedFactions.size === 0}
-          >
-            Deselect
-          </button>
+          {/* Right-aligned button group: Summary (gated on a province
+              selection) sits just left of Deselect, pushed to the far
+              right via marginLeft:auto. Summary was moved here from the
+              UI4 "Recent regions" row; its content still renders in UI4. */}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            {selectedProvinces.length > 0 && (
+              <button
+                onClick={() => setShowFactionSummary((s) => !s)}
+                style={{
+                  fontSize: "0.75rem",
+                  padding: "3px 10px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  background: showFactionSummary ? "#dca64a" : "rgba(0,0,0,0.2)",
+                  color: showFactionSummary ? "#221" : "inherit",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  transition: "opacity 0.15s, background 0.12s",
+                }}
+                title="Toggle faction summary"
+              >
+                {showFactionSummary ? "Summary ON" : "Summary"}
+              </button>
+            )}
+            <button
+              style={{
+                fontSize: "0.75rem",
+                padding: "3px 10px",
+                borderRadius: 6,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(0,0,0,0.2)",
+                color: "inherit",
+                cursor: selectedFactions.size > 0 ? "pointer" : "not-allowed",
+                opacity: selectedFactions.size > 0 ? 1 : 0.5,
+                fontWeight: 600,
+                transition: "opacity 0.15s",
+              }}
+              onClick={() => {
+                setSelectedFaction(null);
+                setSelectedFactions(new Set());
+                setSelectedProvinces([]);
+              }}
+              disabled={selectedFactions.size === 0}
+            >
+              Deselect
+            </button>
+          </div>
         </div>
         {/* Search input lives in its own Movable widget (bottom.search)
             above the factions panel — not inside this scroll area — so
@@ -9870,7 +9895,9 @@ function App() {
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
-            padding: "4px 4px",
+            // Trimmed top padding (4 → 1) so the icon grid sits closer to
+            // the Factions header above it.
+            padding: "1px 4px",
             // Fixed header (above) + scrolling icon grid (here) so the
             // Factions title + Deselect button stay put while the grid
             // scrolls inside the widget.
@@ -16082,18 +16109,9 @@ function App() {
                         >clear</span>
                       </>
                     )}
-                    {selectedProvinces.length > 0 && (
-                      <button
-                        onClick={() => setShowFactionSummary((s) => !s)}
-                        style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 5,
-                          border: "1px solid #888", cursor: "pointer", flexShrink: 0,
-                          background: showFactionSummary ? "#dca64a" : "transparent",
-                          color: showFactionSummary ? "#221" : "inherit" }}
-                        title="Toggle faction summary"
-                      >
-                        {showFactionSummary ? "Summary ON" : "Summary"}
-                      </button>
-                    )}
+                    {/* Summary toggle moved to the UI2 Factions header
+                        (next to Deselect). The summary CONTENT still
+                        renders below in this UI4 widget. */}
                   </div>
                 )}
                 <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexShrink: 0 }}>
