@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.783",
+    date: "2026-06-01",
+    items: [
+      { type: "feature", text: "**Unit weapon/armor upgrade level.** Units now show their smithy upgrade level — a small anvil badge with the number (⚒2) on garrison and field-army unit cards, tier-coloured like experience chevrons, shown only on upgraded units. This is the combined weapon/armor upgrade the smithy applies; the save stores a single value, so it's labelled as one 'upgrade level' rather than split into separate weapon and armour numbers (that split isn't distinguishable yet). Live games only — the pre-game (non-live) view has no per-unit upgrade data." },
+    ],
+  },
+  {
     version: "0.9.782",
     date: "2026-06-01",
     items: [

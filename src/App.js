@@ -16728,6 +16728,10 @@ function App() {
                                 xp: u.xp || 0,
                                 weapon: u.weapon || 0,
                                 armour: u.armour || 0,
+                                // Combined smithy weapon/armor upgrade level
+                                // (unitParser H+17, CONFIRMED on RIS). null
+                                // when unreadable — never a fake 0.
+                                upgradeLevel: typeof u.upgradeLevel === "number" ? u.upgradeLevel : null,
                                 // Preserved so RegionInfo can swap the unit
                                 // card for the commander's portrait card
                                 // (0.9.410). Only set on bodyguard units.
@@ -17681,6 +17685,11 @@ function App() {
                                   xp: u.xp || seed?.exp || 0,
                                   armour: u.armour || seed?.armour || 0,
                                   weapon: u.weapon || seed?.weapon || 0,
+                                  // Combined smithy weapon/armor upgrade level
+                                  // (unitParser H+17). Live save value only —
+                                  // descr_strat seeds have no per-instance
+                                  // upgrade, so null when the save lacks it.
+                                  upgradeLevel: typeof u.upgradeLevel === "number" ? u.upgradeLevel : null,
                                   soldiers: typeof u.soldiers === "number" ? u.soldiers : null,
                                   max: typeof u.maxSoldiers === "number" ? u.maxSoldiers : null,
                                   faction: e.faction,

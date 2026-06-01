@@ -173,6 +173,35 @@ function findUnitRecords(buf) {
     //     separate "starting-roster" flag. CONFIRMED across Macedon T13→
     //     T14 turn-end where 3 units gained chevrons in the AI rotation.
     let xp = 0, weaponUpgrade = 0, armourUpgrade = 0;
+    // Smithy weapon/armor UPGRADE LEVEL — CRACKED & RIS-CONFIRMED 2026-06-01
+    // (docs/findings-weapon-armor-2026-06-01.md + findings-ris-verify-h17-tax).
+    // The upgrade level is a per-unit u8 in the IDENTITY block at H+17, where
+    //   H = unit-hash = name-start (i) + 2 + nameLen   (nameLen incl trailing NUL).
+    // Here `len` IS the nameLen (buf.readUInt16LE(i)) and `i` is the record
+    // offset, so the hash sits at `i + 2 + len` and the upgrade byte at
+    //   buf[i + 2 + len + 17].
+    // It is a COMBINED weapon-or-armor upgrade level (the weapon-vs-armor SPLIT
+    // is NOT yet distinguished — H+18/19/20 are 0 in every sampled unit, so the
+    // two stats are not adjacent bytes). Range 0..4 observed, rare 9. We expose
+    // it as a single generic `upgradeLevel`, NOT as the old +16/+17 regionEnd
+    // bytes (those are static class attrs) and NOT as a weapon/armor split.
+    // Validation ([[provincia-no-fallbacks]]): treat as unknown (null) — emit
+    // NOTHING, not a fake 0 — if the value is implausible (>9) or any of the
+    // confirmed-zero neighbours H+18/19/20 are non-zero (means we misaligned).
+    let upgradeLevel = null;
+    {
+      const hashOff = i + 2 + len; // identity-block start H (the unit hash)
+      const upOff = hashOff + 17;
+      if (upOff + 3 < buf.length) {
+        const v = buf[upOff];
+        const n18 = buf[hashOff + 18];
+        const n19 = buf[hashOff + 19];
+        const n20 = buf[hashOff + 20];
+        if (v <= 9 && n18 === 0 && n19 === 0 && n20 === 0) {
+          upgradeLevel = v;
+        }
+      }
+    }
     if (regionEnd + 20 < buf.length) {
       const at0 = buf.readUInt32LE(regionEnd + 0);
       const isVariantB = at0 > 0 && at0 < 256;
@@ -242,11 +271,22 @@ function findUnitRecords(buf) {
       xp,
       weaponUpgrade,
       armourUpgrade,
+      upgradeLevel, // combined smithy weapon/armor upgrade level (H+17), 0..9 or null
       passengerUuids,
       _regionEnd: regionEnd, // internal anchor for offset probes (post-region terminator)
     });
     i = regionEnd;
   }
+  // [unit-upgrade] diagnostic — provincia.log is the auto-update app's main
+  // diagnosis window ([[provincia-feature-logging]]). Report how many parsed
+  // units carry a non-zero smithy upgrade level, so a "no anvils visible"
+  // report can be triaged as data-vs-render at a glance.
+  try {
+    const withUpgrade = records.filter(r => typeof r.upgradeLevel === "number" && r.upgradeLevel > 0).length;
+    const unknown = records.filter(r => r.upgradeLevel == null).length;
+    // eslint-disable-next-line no-console
+    console.log(`[unit-upgrade] ${records.length} units parsed → ${withUpgrade} with upgradeLevel>0, ${unknown} unknown(null)`);
+  } catch (e) { /* logging must never break parsing */ }
   return records;
 }
 

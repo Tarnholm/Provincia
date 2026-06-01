@@ -263,6 +263,20 @@ const SwordIcon = ({ color, size = 14 }) => (
     <path d="M11 13 L13 11 L14 12 L12 14 Z" fill={color} />
   </svg>
 );
+// Anvil glyph for the COMBINED smithy weapon/armor upgrade level (unit
+// identity byte H+17, CONFIRMED on RIS 2026-06-01). Distinct from the
+// Sword/Shield icons above — those render the (still-zero) weaponUpgrade /
+// armourUpgrade split; this single anvil represents the one confirmed
+// combined upgrade level so the two are never confused in the UI.
+const AnvilIcon = ({ size = 11, color = "#f0d9a0" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block" }}>
+    {/* anvil body — flat top, horn to the left, waisted base */}
+    <path d="M2 4 L13 4 L13 6.5 L9 6.5 Q9 9 11 9.5 L5 9.5 Q7 9 7 6.5 L2 6.5 Z" fill={color} />
+    {/* base block */}
+    <rect x="4" y="11" width="8" height="2.5" rx="0.5" fill={color} />
+    <rect x="6.5" y="9.5" width="3" height="2" fill={color} />
+  </svg>
+);
 // SVG chevron — RTW-style angular V, point facing DOWN (matches the in-game
 // experience chevrons). Stack vertically with `count` copies in `color` (the
 // tier colour). Text-glyph chevrons (ˇ, ^) were illegible at the 7-8px sizes
@@ -1320,6 +1334,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     }
     if (armour > 0) parts.push(`armour +${armour}`);
     if (weapon > 0) parts.push(`weapon +${weapon}`);
+    if (typeof u.upgradeLevel === "number" && u.upgradeLevel > 0) parts.push(`⚒ upgrade ${u.upgradeLevel}`);
     return parts.join(" · ");
   };
 
@@ -3126,6 +3141,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const chevrons = u.xp ?? u.exp ?? 0;
               const armour = u.armour || 0;
               const weapon = u.weapon || 0;
+              // Combined smithy weapon/armor upgrade level (unitParser H+17,
+              // CONFIRMED on RIS 2026-06-01). Single generic level — the
+              // weapon-vs-armor SPLIT is not yet distinguished. null/0 → no
+              // badge ([[provincia-no-fallbacks]]: show nothing, not a fake 0).
+              const upgradeLevel = (typeof u.upgradeLevel === "number" && u.upgradeLevel > 0) ? u.upgradeLevel : 0;
               // 0.9.493: one-shot log per unit so we can verify in the
               // log file that the upgrade values are flowing to the
               // renderer. If this fires "weapon=1" but the user sees no
@@ -3151,6 +3171,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               if (weapon > 0) {
                 const tier = weapon >= 3 ? "gold" : weapon >= 2 ? "silver" : "bronze";
                 tooltipParts.push(`weapon +${weapon} (${tier})`);
+              }
+              if (upgradeLevel > 0) {
+                tooltipParts.push(`upgrade level ${upgradeLevel} (smithy weapon/armor — combined; split not yet distinguished)`);
               }
               const tooltip = tooltipParts.join(" — ");
               return (
@@ -3288,6 +3311,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
                     </div>
                   )}
+                  {upgradeLevel > 0 && (
+                    <div
+                      title="Weapon/armor upgrade level (smithy) — combined; split not yet distinguished"
+                      style={{
+                        position: "absolute", bottom: 1, right: 1,
+                        display: "flex", flexDirection: "row", alignItems: "center", gap: 0,
+                        pointerEvents: "none",
+                        filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
+                      }}>
+                      <AnvilIcon color={upgradeTier(upgradeLevel)} />
+                      <span style={{
+                        color: upgradeTier(upgradeLevel), fontSize: "0.55rem", fontWeight: 700,
+                        lineHeight: 1, fontVariantNumeric: "tabular-nums",
+                      }}>{upgradeLevel}</span>
+                    </div>
+                  )}
                 </div>
               );
               });
@@ -3416,11 +3455,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const chevrons = u.xp ?? u.exp ?? 0;
                       const armour = u.armour || 0;
                       const weapon = u.weapon || 0;
+                      // Combined smithy weapon/armor upgrade level (unitParser
+                      // H+17). null/0 → no badge ([[provincia-no-fallbacks]]).
+                      const upgradeLevel = (typeof u.upgradeLevel === "number" && u.upgradeLevel > 0) ? u.upgradeLevel : 0;
                       const tooltipParts = [u.unit.replace(/_/g, " ")];
                       if (u.soldiers != null) tooltipParts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
                       if (chevrons > 0) tooltipParts.push(`${chevrons} chevron${chevrons === 1 ? "" : "s"}`);
                       if (armour > 0) tooltipParts.push(`armour +${armour}`);
                       if (weapon > 0) tooltipParts.push(`weapon +${weapon}`);
+                      if (upgradeLevel > 0) tooltipParts.push(`upgrade level ${upgradeLevel} (smithy weapon/armor — combined; split not yet distinguished)`);
                       const tooltip = tooltipParts.join(" — ");
                       return (
                       <div key={ui}
@@ -3542,6 +3585,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                           }}>
                             {armour > 0 && <ShieldIcon color={upgradeTier(armour)} />}
                             {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
+                          </div>
+                        )}
+                        {upgradeLevel > 0 && (
+                          <div
+                            title="Weapon/armor upgrade level (smithy) — combined; split not yet distinguished"
+                            style={{
+                              position: "absolute", bottom: 1, right: 1,
+                              display: "flex", flexDirection: "row", alignItems: "center", gap: 0,
+                              pointerEvents: "none",
+                              filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
+                            }}>
+                            <AnvilIcon color={upgradeTier(upgradeLevel)} />
+                            <span style={{
+                              color: upgradeTier(upgradeLevel), fontSize: "0.55rem", fontWeight: 700,
+                              lineHeight: 1, fontVariantNumeric: "tabular-nums",
+                            }}>{upgradeLevel}</span>
                           </div>
                         )}
                       </div>
