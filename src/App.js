@@ -15963,7 +15963,7 @@ function App() {
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
               colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
-              defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0200 }}
+              defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
                   chrome (no cream background, no extra padding). Input
@@ -15976,7 +15976,7 @@ function App() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    width: "100%", height: "100%", boxSizing: "border-box", padding: "3px 10px",
+                    width: "100%", height: "100%", boxSizing: "border-box", padding: "6px 10px",
                     borderRadius: 8, border: "1px solid rgba(255,255,255,0.18)",
                     background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.82rem",
                     outline: "none",

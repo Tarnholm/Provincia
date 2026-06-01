@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.803",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Search bar is now taller (thicker), not wider** — fixed the previous version that widened it instead; it's back to its normal width but twice as tall, taking the space from the Factions panel below." },
+      { type: "fix", text: "**Building images no longer cut off** — reverted to fitting the whole image inside the card (instead of cropping it to fill); all 20 slots (4 rows) still show without scrolling." },
+    ],
+  },
+  {
     version: "0.9.802",
     date: "2026-06-01",
     items: [

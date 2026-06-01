@@ -2415,7 +2415,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(5, 1fr)",
-              gridAutoRows: "52px",
+              gridAutoRows: "54px",
               gap: 3,
               flex: 1,
               minHeight: 0,
@@ -2541,7 +2541,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       // the icon never overflows when the column gets narrow
                       // — buildings grid now uses fr columns to fit any
                       // panel width.
-                      style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "top", display: "block" }}
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                   )}
