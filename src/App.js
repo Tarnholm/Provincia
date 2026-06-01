@@ -2290,11 +2290,12 @@ function App() {
     () => localStorage.getItem("colorMode") || "faction"
   );
   // 0.9.813: Paradox-style fan-out for the single-select map-mode buttons.
-  // Map modes are grouped into sections (Politics / Culture / Economy /
-  // Terrain); a section shows ONE collapsed button (labelled with the active
-  // mode in that group, or the section name) and fans its members out
-  // sideways when clicked. Only one section is open at a time. Transient UI
-  // state — not persisted. null = all collapsed.
+  // Map modes are grouped into EU5-style sections (Geopolitics / Government /
+  // Demography / Population / Economy / Military / Geography); a section shows
+  // ONE collapsed button (labelled with the active mode in that group, or the
+  // section name) and fans its members out sideways when clicked. Only one
+  // section is open at a time. Transient UI state — not persisted. null = all
+  // collapsed.
   const [openFanSection, setOpenFanSection] = useState(null);
   // Collapse the open fan-out section when the user clicks anywhere outside
   // the map-modes pill. Only armed while a section is open.
@@ -10699,40 +10700,46 @@ function App() {
     // `badge` preserves the original MapBtnBadge letter key so the A–AJ /
     // AK+ letter scheme is unaffected by the regrouping.
     const modeSections = [
-      { id: "politics", title: "Politics", members: [
+      { id: "geopolitics", title: "Geopolitics", members: [
         { key: "faction", label: "Faction", badge: "mode.faction" },
         { key: "region", label: "Region", badge: "mode.region" },
-        { key: "government", label: "Government", badge: "mode.government" },
-        { key: "loyalist", label: "Loyalist", badge: "mode.loyalist" },
         { key: "homeland", label: "Homeland", badge: "mode.homeland" },
         { key: "victory", label: "Victory", badge: "mode.victory" },
         { key: "explored", label: "Explored", badge: "mode.explored" },
       ]},
-      { id: "society", title: "Society", members: [
+      { id: "government", title: "Government", members: [
+        { key: "government", label: "Government", badge: "mode.government" },
+        { key: "loyalist", label: "Loyalist", badge: "mode.loyalist" },
+        { key: "public_order", label: "Public Order", badge: "devmode.public_order", dev: true },
+        { key: "happiness", label: "Happiness", badge: "devmode.happiness", dev: true },
+      ]},
+      { id: "demography", title: "Demography", members: [
         { key: "culture", label: "Culture", badge: "mode.culture" },
         { key: "religion", label: "Religion", badge: "mode.religion" },
       ]},
-      { id: "economy", title: "Economy", members: [
+      { id: "population", title: "Population", members: [
         { key: "population", label: "Population", badge: "mode.population" },
-        { key: "farm", label: "Fertility", badge: "mode.farm" },
+        { key: "pop_growth", label: "Pop Headroom", badge: "devmode.pop_growth", dev: true },
+      ]},
+      { id: "economy", title: "Economy", members: [
         { key: "resource", label: "Resources", badge: "mode.resource" },
+        { key: "farm", label: "Fertility", badge: "mode.farm" },
         { key: "wealth", label: "Wealth", badge: "devmode.wealth", dev: true },
         { key: "income", label: "Income", badge: "devmode.income", dev: true },
+        { key: "port_level", label: "Port Level", badge: "devmode.port_level", dev: true },
+        { key: "rivertrade", label: "River Trade", badge: "devmode.rivertrade", dev: true },
+      ]},
+      { id: "military", title: "Military", members: [
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
         { key: "garrison", label: "Garrison", badge: "devmode.garrison", dev: true },
-        { key: "happiness", label: "Happiness", badge: "devmode.happiness", dev: true },
-        { key: "public_order", label: "Public Order", badge: "devmode.public_order", dev: true },
-        { key: "pop_growth", label: "Pop Headroom", badge: "devmode.pop_growth", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
       ]},
-      { id: "terrain", title: "Terrain", members: [
+      { id: "geography", title: "Geography", members: [
         { key: "geography", label: "Geography", badge: "mode.geography" },
         { key: "terrain", label: "Terrain", badge: "devmode.terrain", dev: true },
         { key: "climate", label: "Climate", badge: "devmode.climate", dev: true },
-        { key: "port_level", label: "Port Level", badge: "devmode.port_level", dev: true },
         { key: "irrigation", label: "Irrigation", badge: "devmode.irrigation", dev: true },
         { key: "earthquakes", label: "Earthquakes", badge: "devmode.earthquakes", dev: true },
-        { key: "rivertrade", label: "River Trade", badge: "devmode.rivertrade", dev: true },
       ]},
     ];
     // Render a single map-mode member button (handles the tri-state

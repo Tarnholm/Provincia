@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.815",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Reorganized the map-mode fan-out sections to EU5-style groups**, with the dev-only modes sorted in too: **Geopolitics** (Faction, Region, Homeland, Victory, Explored), **Government** (Government, Loyalist + dev Public Order, Happiness), **Demography** (Culture, Religion), **Population** (Population + dev Pop Headroom), **Economy** (Resources, Fertility + dev Wealth, Income, Port Level, River Trade), **Military** (dev Recruitment, Garrison, Hidden Res./AOR), and **Geography** (Geography + dev Terrain, Climate, Irrigation, Earthquakes). Military is dev-only, so it's hidden outside dev mode." },
+    ],
+  },
+  {
     version: "0.9.814",
     date: "2026-06-02",
     items: [
