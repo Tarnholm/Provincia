@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.820",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Diagnostic logging is now durable — it survives an app hang or a hard reboot.** Provincia previously wrote `provincia.log` through a buffered stream, so if the app froze (e.g. the game crashed mid-AI-run and the live watchers wedged) the most recent lines — or the whole file — could be lost. The log is now written synchronously (each line hits the OS immediately) with a periodic disk flush and a flush on exit, so whatever happened right up to the freeze is preserved. The file is also created the instant the app launches." },
+      { type: "improvement", text: "**Always keeps the last two logs:** the current run's `provincia.log` plus the previous run's `provincia.log.prev`, both in the app's data folder and untouched by reboots — so a crash report is always available." },
+    ],
+  },
+  {
     version: "0.9.819",
     date: "2026-06-02",
     items: [

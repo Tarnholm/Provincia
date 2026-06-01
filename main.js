@@ -78,15 +78,41 @@ if (process.platform === "win32") {
 // Writes all console output + errors to a log file the user can send.
 // Location: <userData>/provincia.log. Reset each app launch (keep last one
 // in .prev for crash forensics).
-let _logStream = null;
+// 0.9.820: logging is DURABLE. We use a synchronous file descriptor
+// (fs.writeSync) instead of a buffered createWriteStream, so every line is
+// handed to the OS the moment it's logged. That means if the app hangs (e.g.
+// the game CTDs mid-AI-run and Provincia's watchers wedge), the log up to the
+// hang is already on disk — a buffered stream would lose whatever was still
+// sitting in its in-memory buffer. A periodic fsync flushes the OS cache to
+// physical disk so the log also survives a hard reboot, and we flush on exit.
+let _logFd = null;            // append-mode file descriptor (synchronous)
 let _logPath = null;
+let _logDirty = false;        // unsynced writes pending an fsync?
+let _fsyncTimer = null;
+function _writeLog(str) {
+  if (_logFd == null) return;
+  try { fs.writeSync(_logFd, str); _logDirty = true; } catch {}
+}
+function _flushLog() {
+  if (_logFd != null && _logDirty) {
+    try { fs.fsyncSync(_logFd); _logDirty = false; } catch {}
+  }
+}
 function initLogging() {
   try {
     _logPath = path.join(app.getPath("userData"), "provincia.log");
+    // Keep the last TWO generations: this launch's `provincia.log` plus the
+    // previous run's `provincia.log.prev`. These files live in userData and
+    // are NOT touched by reboots — only this rotation clears them, and it
+    // only ever discards the run-before-last. So after a crash you always
+    // have the crashed session (current) + the run before it (.prev).
     const prev = _logPath + ".prev";
     try { if (fs.existsSync(_logPath)) fs.renameSync(_logPath, prev); } catch {}
-    _logStream = fs.createWriteStream(_logPath, { flags: "a" });
-    _logStream.write(`\n=== Provincia v${app.getVersion()} launched ${new Date().toISOString()} ===\n`);
+    // Open synchronously in append mode; writeSync lands each line in the OS
+    // immediately (survives an app-level hang without needing a flush).
+    _logFd = fs.openSync(_logPath, "a");
+    _writeLog(`\n=== Provincia v${app.getVersion()} launched ${new Date().toISOString()} ===\n`);
+    _flushLog();
     const fmt = (level, args) => {
       const stamp = new Date().toISOString().slice(11, 23);
       const text = args.map((a) => {
@@ -99,29 +125,38 @@ function initLogging() {
     for (const lvl of ["log", "info", "warn", "error"]) {
       const orig = console[lvl].bind(console);
       console[lvl] = (...args) => {
-        try { if (_logStream) _logStream.write(fmt(lvl.toUpperCase(), args)); } catch {}
+        _writeLog(fmt(lvl.toUpperCase(), args));
         orig(...args);
       };
     }
+    // Periodically flush the OS cache to physical disk so the log survives a
+    // hard reboot (the user had to power-cycle after a game crash). Cheap: an
+    // fsync only fires when there's something dirty. Unref'd so it never keeps
+    // the app alive / blocks quit.
+    _fsyncTimer = setInterval(_flushLog, 2000);
+    if (_fsyncTimer.unref) _fsyncTimer.unref();
+    // Final flush on the way out, however we exit.
+    process.on("exit", _flushLog);
     process.on("uncaughtException", (err) => {
       console.error("UNCAUGHT EXCEPTION:", err);
+      _flushLog();
     });
     process.on("unhandledRejection", (err) => {
       console.error("UNHANDLED REJECTION:", err);
+      _flushLog();
     });
   } catch (e) {
     // If logging fails, don't kill the app.
   }
 }
 initLogging();
+try { app.on("before-quit", _flushLog); } catch {}
 
 // IPC: receive log messages from the renderer and write to the same log.
 ipcMain.handle("log-message", async (_event, level, text) => {
   try {
-    if (_logStream) {
-      const stamp = new Date().toISOString().slice(11, 23);
-      _logStream.write(`[${stamp}] [RENDERER-${(level || "log").toUpperCase()}] ${text}\n`);
-    }
+    const stamp = new Date().toISOString().slice(11, 23);
+    _writeLog(`[${stamp}] [RENDERER-${(level || "log").toUpperCase()}] ${text}\n`);
   } catch {}
 });
 
