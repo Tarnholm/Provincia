@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.785",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Unit upgrade badge now reads \"upgrade N\".** The small anvil icon added in 0.9.783 was illegible at unit-card size — it read like the letter \"T\" (so \"⚒3\" looked like \"T3\"). Replaced with a plain \"upgrade 3\" text label, still tier-coloured (bronze/silver/gold), so it's unmistakable at a glance." },
+    ],
+  },
+  {
     version: "0.9.784",
     date: "2026-06-01",
     items: [

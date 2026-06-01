@@ -3235,11 +3235,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         pointerEvents: "none",
                         filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                       }}>
-                      <AnvilIcon color={upgradeTier(upgradeLevel)} />
                       <span style={{
-                        color: upgradeTier(upgradeLevel), fontSize: "0.55rem", fontWeight: 700,
-                        lineHeight: 1, fontVariantNumeric: "tabular-nums",
-                      }}>{upgradeLevel}</span>
+                        color: upgradeTier(upgradeLevel), fontSize: "0.5rem", fontWeight: 700,
+                        lineHeight: 1, letterSpacing: "0.2px",
+                      }}>{`upgrade ${upgradeLevel}`}</span>
                     </div>
                   )}
                 </div>
@@ -3511,11 +3510,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                               pointerEvents: "none",
                               filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                             }}>
-                            <AnvilIcon color={upgradeTier(upgradeLevel)} />
                             <span style={{
-                              color: upgradeTier(upgradeLevel), fontSize: "0.55rem", fontWeight: 700,
-                              lineHeight: 1, fontVariantNumeric: "tabular-nums",
-                            }}>{upgradeLevel}</span>
+                              color: upgradeTier(upgradeLevel), fontSize: "0.5rem", fontWeight: 700,
+                              lineHeight: 1, letterSpacing: "0.2px",
+                            }}>{`upgrade ${upgradeLevel}`}</span>
                           </div>
                         )}
                       </div>
