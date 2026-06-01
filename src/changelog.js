@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.779",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Built-in diagnostics / self-check.** The app now runs a health-check on every save load (live) and on the starting state (non-live) and logs a `[diag]` summary — portraits, public order, diplomacy, garrison vs field, family, turn, unit attribution — so problems show up in the log instead of needing to be spotted by eye. Backed by a headless `doctor` used as a pre-release gate to catch regressions before shipping." },
+    ],
+  },
+  {
     version: "0.9.778",
     date: "2026-06-01",
     items: [
