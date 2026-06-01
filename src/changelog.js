@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.789",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Temporary panel numbers (UI1–UI13).** Each panel now shows a small red \"UIn\" badge in its corner so layout tweaks can be referenced by number (\"make UI5 wider\"). This is a scaffolding aid while the layout is being dialed in and will be removed/hidden afterwards." },
+    ],
+  },
+  {
     version: "0.9.788",
     date: "2026-06-01",
     items: [
