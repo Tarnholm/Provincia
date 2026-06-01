@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.808",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Starting-state portraits now resolve for first-name-only generals.** Characters whose army card is tagged with just a first name (e.g. Statiis, Eumedes) were missing their portrait because the portrait was only keyed under their full name + epithet. The portrait map now also resolves on first-name + faction, so those generals show the same face as everywhere else." },
+    ],
+  },
+  {
     version: "0.9.807",
     date: "2026-06-01",
     items: [

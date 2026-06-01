@@ -87,11 +87,38 @@ function buildNonLivePortraitMap(v1PortraitsByCoord, startingCharacters, statsCa
   }
   // 2b. Fold persisted statsCache portraits under `name:<key>` (the family
   //     tree's secondary fallback). Only fills keys the coord join didn't.
+  //
+  //     v0.9.807 FIRST-NAME-ONLY FIX: the statsCache is written under BOTH a
+  //     full `fn|ln|fac` key AND a stripped `fn||fac` key, but writeBest scores
+  //     entries independently per key — so the stripped key can be WON by a
+  //     portrait-less stats-only row while the FULL key carries the portrait
+  //     (e.g. "statiis|of poseidonia the drunkard|romans_julii" → 249.tga, but
+  //     "statiis||romans_julii" → no portrait). A commander card whose army
+  //     entry tags only a FIRST NAME (no surname) then looks up the stripped
+  //     `name:fn||fac` key, finds no portrait, and renders BLANK — even though
+  //     the character's portrait is known under the full-name key. So when a
+  //     full-name statsCache entry carries a portrait, ALSO register the
+  //     stripped `name:fn||fac` / `name:fn||` keys pointing at the SAME
+  //     portrait, making a first-name-only lookup resolve it. Collision rule:
+  //     never overwrite a stripped key already filled (coord join or an earlier
+  //     full-name char wins), so existing correct resolutions are preserved and
+  //     a deterministic first match is used for any genuine firstName clash.
   if (statsCache && typeof statsCache === "object") {
     for (const [k, v] of Object.entries(statsCache)) {
       if (!v || !v.portrait) continue;
       const nk = `name:${k}`;
       if (map[nk] == null) map[nk] = v.portrait;
+      // Derive the stripped first-name keys from a FULL `fn|ln|fac` statsCache
+      // key so a portrait keyed only under the full name becomes reachable by
+      // firstName + faction (and firstName alone).
+      const m = /^([^|]*)\|([^|]+)\|(.*)$/.exec(k); // matches only when ln is non-empty
+      if (m) {
+        const fn = m[1], fac = m[3];
+        const sk = `name:${fn}||${fac}`;
+        const sk2 = `name:${fn}||`;
+        if (map[sk] == null) map[sk] = v.portrait;
+        if (map[sk2] == null) map[sk2] = v.portrait;
+      }
     }
   }
   return map;
@@ -101,8 +128,15 @@ function buildNonLivePortraitMap(v1PortraitsByCoord, startingCharacters, statsCa
 // tree uses: coord first (when available), then the name keys. `coord` is the
 // optional "<x>,<y>" string for the character (descr_strat tile).
 function lookupNonLivePortrait(portraitMap, fn, ln, fac, coord) {
-  if (!portraitMap) return null;
-  if (coord && portraitMap[coord]) return portraitMap[coord];
+  return lookupNonLivePortraitKeyed(portraitMap, fn, ln, fac, coord).portrait;
+}
+
+// Same lookup as lookupNonLivePortrait, but ALSO reports WHICH key matched (for
+// diagnostic logging). Returns { portrait, key }. `key` is "coord:<x,y>" or the
+// name key that hit, or null when nothing matched.
+function lookupNonLivePortraitKeyed(portraitMap, fn, ln, fac, coord) {
+  if (!portraitMap) return { portrait: null, key: null };
+  if (coord && portraitMap[coord]) return { portrait: portraitMap[coord], key: `coord:${coord}` };
   const f = lc(fn);
   const l = lnNorm(ln);
   const c = lc(fac);
@@ -113,9 +147,9 @@ function lookupNonLivePortrait(portraitMap, fn, ln, fac, coord) {
     `name:${f}||`,
   ];
   for (const k of keys) {
-    if (k && portraitMap[k]) return portraitMap[k];
+    if (k && portraitMap[k]) return { portrait: portraitMap[k], key: k };
   }
-  return null;
+  return { portrait: null, key: null };
 }
 
 // NON-LIVE commander-info resolver. Recovers the full surname / faction / age
@@ -153,8 +187,12 @@ function resolveNonLiveCommanderInfo(commanderName, commanderLastName, commander
   }
   // 2. Portrait — engine-exact map FIRST (coord, then name keys), matching the
   //    family tree's key order exactly; statsCache name keys next; hash last.
-  let savePath = null, cached = null;
-  savePath = lookupNonLivePortrait(portraitMap, commanderName, lastName, faction, coord);
+  let savePath = null, cached = null, portraitKey = null;
+  {
+    const hit = lookupNonLivePortraitKeyed(portraitMap, commanderName, lastName, faction, coord);
+    savePath = hit.portrait;
+    portraitKey = hit.key;
+  }
   if (statsCache) {
     const ln = lnNorm(lastName);
     const facKey = lc(faction);
@@ -199,7 +237,12 @@ function resolveNonLiveCommanderInfo(commanderName, commanderLastName, commander
       const k = `${lc(commanderName)}|${lnNorm(lastName)}|${lc(faction)}`;
       if (!window.__nonLiveCmdResolveLogged.has(k)) {
         window.__nonLiveCmdResolveLogged.add(k);
-        console.log(`[nonlive-portrait] resolve "${commanderName}${lastName ? " " + String(lastName).replace(/_/g, " ") : ""}" faction="${faction || ""}" → savePath="${savePath || "(hash)"}"${!lastName && !savePath ? " [single-name floor]" : ""}`);
+        // Flag a FIRST-NAME-ONLY resolve (caller had no surname) and report the
+        // map key the portrait landed on — so the v0.9.807 stripped-key fix is
+        // visible in provincia.log (e.g. resolve "Statiis" → name:statiis||romans_julii).
+        const firstNameOnly = !lastName;
+        const keyNote = portraitKey ? ` via ${portraitKey}` : "";
+        console.log(`[nonlive-portrait] resolve "${commanderName}${lastName ? " " + String(lastName).replace(/_/g, " ") : ""}" faction="${faction || ""}"${firstNameOnly ? " [firstName-only]" : ""} → savePath="${savePath || "(hash)"}"${keyNote}${firstNameOnly && !savePath ? " [single-name floor]" : ""}`);
       }
     } catch (e) { void e; }
   }
@@ -209,5 +252,6 @@ function resolveNonLiveCommanderInfo(commanderName, commanderLastName, commander
 module.exports = {
   buildNonLivePortraitMap,
   lookupNonLivePortrait,
+  lookupNonLivePortraitKeyed,
   resolveNonLiveCommanderInfo,
 };

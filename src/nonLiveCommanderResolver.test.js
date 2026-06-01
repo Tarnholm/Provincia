@@ -146,6 +146,28 @@ describeIfDS("nonLiveCommanderResolver — PURE non-live, no save (descr_strat o
     }
   });
 
+  // v0.9.807 FIRST-NAME-ONLY PORTRAIT FIX. The bug: statsCache writes a
+  // portrait under the FULL `fn|ln|fac` key, but the per-key writeBest can leave
+  // the stripped `fn||fac` key portrait-less. A commander whose army entry tags
+  // only a first name (no surname) then looks up the stripped key, finds no
+  // portrait, and renders BLANK — even though the portrait is known under the
+  // full name. buildNonLivePortraitMap now mirrors a full-name portrait onto the
+  // stripped first-name keys, so a firstName-only lookup resolves the SAME
+  // portrait the full-name lookup gives. This test is self-contained (no save).
+  it("firstName-only lookup resolves the SAME portrait the full-name lookup gives", () => {
+    const sc = {
+      "statiis|of poseidonia the drunkard|romans_julii": { portrait: "data/ui/roman/portraits/cards/young/generals/249.tga", lastName: "of_Poseidonia_the_Drunkard", faction: FAC },
+      // The portrait-less stripped key the original writeBest left behind.
+      "statiis||romans_julii": { portrait: null, faction: FAC },
+      "statiis||": { portrait: null },
+    };
+    const m = buildNonLivePortraitMap({}, [], sc);
+    const full = resolveNonLiveCommanderInfo("Statiis", "of Poseidonia the Drunkard", FAC, sc, [], m);
+    const firstOnly = resolveNonLiveCommanderInfo("Statiis", null, FAC, sc, [], m);
+    expect(full.savePath, "full-name lookup should resolve the known portrait").toBe("data/ui/roman/portraits/cards/young/generals/249.tga");
+    expect(firstOnly.savePath, "firstName-only lookup must resolve the SAME portrait (was null/blank before the fix)").toBe(full.savePath);
+  });
+
   it("the surnamed Julii field generals ALSO resolve a non-null info in pure non-live", () => {
     const surnamed = [
       ["Servius", "Fulvius Flaccus"],
