@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.813",
+    date: "2026-06-01",
+    items: [
+      { type: "feature", text: "**Map modes are now grouped into Paradox-style fan-out sections.** The single-select color modes collapse into four section buttons — **Politics** (Faction, Region, Government, Loyalist, Homeland, Victory, Explored), **Culture** (Culture, Religion), **Economy** (Population, Fertility, Resources + dev econ heatmaps), and **Terrain** (Geography + dev terrain layers). Click a section to fan its members out sideways and pick one; the section button then shows the active mode's name. Click elsewhere to collapse. Only one section opens at a time. Letter badges are unchanged — they show on the members when fanned out. (First pass; groupings will keep getting tuned.)" },
+    ],
+  },
+  {
     version: "0.9.812",
     date: "2026-06-01",
     items: [

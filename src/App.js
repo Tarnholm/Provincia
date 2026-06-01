@@ -2289,6 +2289,24 @@ function App() {
   const [colorMode, setColorMode] = useState(
     () => localStorage.getItem("colorMode") || "faction"
   );
+  // 0.9.813: Paradox-style fan-out for the single-select map-mode buttons.
+  // Map modes are grouped into sections (Politics / Culture / Economy /
+  // Terrain); a section shows ONE collapsed button (labelled with the active
+  // mode in that group, or the section name) and fans its members out
+  // sideways when clicked. Only one section is open at a time. Transient UI
+  // state — not persisted. null = all collapsed.
+  const [openFanSection, setOpenFanSection] = useState(null);
+  // Collapse the open fan-out section when the user clicks anywhere outside
+  // the map-modes pill. Only armed while a section is open.
+  useEffect(() => {
+    if (!openFanSection) return;
+    const onDown = (e) => {
+      const inPill = e.target?.closest?.('[data-ui-highlight="map-modes"]');
+      if (!inPill) setOpenFanSection(null);
+    };
+    document.addEventListener("mousedown", onDown, true);
+    return () => document.removeEventListener("mousedown", onDown, true);
+  }, [openFanSection]);
   // AOR map: which AOR per region drives the fill colour. "primary" = the
   // broadest (most-common globally — e.g. aor_greek across all greek regions);
   // "secondary" = the narrowest (least-common — e.g. aor_thessalian, the
@@ -10675,76 +10693,107 @@ function App() {
     const campaigns = Object.values(CAMPAIGNS);
     const isImperial = mapCampaign === "imperial";
 
-    const colorModes = [
-      { key: "faction", label: "Faction" },
-      { key: "victory", label: "Victory" },
-      { key: "region", label: "Region" },
-      { key: "culture", label: "Culture" },
-      { key: "religion", label: "Religion" },
-      { key: "loyalist", label: "Loyalist" },
-      { key: "explored", label: "Explored" },
-      { key: "population", label: "Population" },
-      { key: "farm", label: "Fertility" },
-      { key: "resource", label: "Resources" },
-      { key: "homeland", label: "Homeland" },
-      { key: "government", label: "Government" },
-      { key: "geography", label: "Geography" },
+    // 0.9.813: single-select map modes are grouped into Paradox-style
+    // sections. Each section collapses to one button; clicking it fans the
+    // members out sideways. `dev:true` members only appear in dev mode.
+    // `badge` preserves the original MapBtnBadge letter key so the A–AJ /
+    // AK+ letter scheme is unaffected by the regrouping.
+    const modeSections = [
+      { id: "politics", title: "Politics", members: [
+        { key: "faction", label: "Faction", badge: "mode.faction" },
+        { key: "region", label: "Region", badge: "mode.region" },
+        { key: "government", label: "Government", badge: "mode.government" },
+        { key: "loyalist", label: "Loyalist", badge: "mode.loyalist" },
+        { key: "homeland", label: "Homeland", badge: "mode.homeland" },
+        { key: "victory", label: "Victory", badge: "mode.victory" },
+        { key: "explored", label: "Explored", badge: "mode.explored" },
+      ]},
+      { id: "culture", title: "Culture", members: [
+        { key: "culture", label: "Culture", badge: "mode.culture" },
+        { key: "religion", label: "Religion", badge: "mode.religion" },
+      ]},
+      { id: "economy", title: "Economy", members: [
+        { key: "population", label: "Population", badge: "mode.population" },
+        { key: "farm", label: "Fertility", badge: "mode.farm" },
+        { key: "resource", label: "Resources", badge: "mode.resource" },
+        { key: "wealth", label: "Wealth", badge: "devmode.wealth", dev: true },
+        { key: "income", label: "Income", badge: "devmode.income", dev: true },
+        { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
+        { key: "garrison", label: "Garrison", badge: "devmode.garrison", dev: true },
+        { key: "happiness", label: "Happiness", badge: "devmode.happiness", dev: true },
+        { key: "public_order", label: "Public Order", badge: "devmode.public_order", dev: true },
+        { key: "pop_growth", label: "Pop Headroom", badge: "devmode.pop_growth", dev: true },
+        { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
+      ]},
+      { id: "terrain", title: "Terrain", members: [
+        { key: "geography", label: "Geography", badge: "mode.geography" },
+        { key: "terrain", label: "Terrain", badge: "devmode.terrain", dev: true },
+        { key: "climate", label: "Climate", badge: "devmode.climate", dev: true },
+        { key: "port_level", label: "Port Level", badge: "devmode.port_level", dev: true },
+        { key: "irrigation", label: "Irrigation", badge: "devmode.irrigation", dev: true },
+        { key: "earthquakes", label: "Earthquakes", badge: "devmode.earthquakes", dev: true },
+        { key: "rivertrade", label: "River Trade", badge: "devmode.rivertrade", dev: true },
+      ]},
     ];
-    const devColorModes = [
-      { key: "terrain", label: "Terrain" },
-      { key: "climate", label: "Climate" },
-      { key: "port_level", label: "Port Level" },
-      { key: "irrigation", label: "Irrigation" },
-      { key: "earthquakes", label: "Earthquakes" },
-      { key: "rivertrade", label: "River Trade" },
-      { key: "hidden_resource", label: "Hidden Res." },
-      { key: "pop_growth", label: "Pop Headroom" },
-      { key: "wealth", label: "Wealth" },
-      { key: "recruitment", label: "Recruitment" },
-      { key: "garrison", label: "Garrison" },
-      { key: "happiness", label: "Happiness" },
-      { key: "income", label: "Income" },
-      { key: "public_order", label: "Public Order" },
-    ];
+    // Render a single map-mode member button (handles the tri-state
+    // Hidden Res. → AOR → off cycle specially).
+    const renderModeMember = (m) => {
+      if (m.key === "hidden_resource") {
+        const isHR = colorMode === "hidden_resource";
+        const isAOR = colorMode === "aor";
+        const isActive = isHR || isAOR;
+        const label = isAOR ? "AOR" : "Hidden Res.";
+        const next = isHR ? "aor" : isAOR ? "faction" : "hidden_resource";
+        return (
+          <button key={m.key}
+            onClick={() => { console.log(`[aor-toggle] ${colorMode} → ${next}`); setColorMode(next); }}
+            className={"map-mode-btn" + (isActive ? " map-mode-btn--active" : "")}
+            title={isHR ? "Currently: Hidden Resources. Click for AOR." : isAOR ? "Currently: Areas of Recruitment. Click to exit." : "Click for Hidden Resources, again for AOR."}
+            style={{ ...btnStyle(isActive), minWidth: 0, position: "relative" }}><MapBtnBadge k="devmode.hidden_resource" />{label}</button>
+        );
+      }
+      const active = colorMode === m.key;
+      return (
+        <button key={m.key} onClick={() => setColorMode(m.key)}
+          className={"map-mode-btn" + (active ? " map-mode-btn--active" : "")}
+          disabled={active} style={{ ...btnStyle(active), minWidth: 0, position: "relative" }}>
+          <MapBtnBadge k={m.badge} />{m.label}</button>
+      );
+    };
+    // Whether a member counts as the active mode (Hidden Res. also owns AOR).
+    const isMemberActive = (m) => colorMode === m.key || (m.key === "hidden_resource" && colorMode === "aor");
 
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
         <div data-ui-highlight="map-modes" className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
-          {colorModes.map((m) => (
-            <button key={m.key} onClick={() => setColorMode(m.key)}
-              className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
-              disabled={colorMode === m.key} style={{ ...btnStyle(colorMode === m.key), position: "relative" }}>
-              <MapBtnBadge k={`mode.${m.key}`} />{m.label}</button>
-          ))}
+          {modeSections.map((sec) => {
+            const members = sec.members.filter((m) => !m.dev || devMode);
+            if (!members.length) return null;
+            const open = openFanSection === sec.id;
+            const activeMember = members.find(isMemberActive);
+            const sectionActive = !!activeMember;
+            // Collapsed label = the active mode in this group (so "Culture"
+            // reads "Religion" when Religion is on), else the section name.
+            const sectionLabel = !activeMember
+              ? sec.title
+              : activeMember.key === "hidden_resource"
+                ? (colorMode === "aor" ? "AOR" : "Hidden Res.")
+                : activeMember.label;
+            return (
+              <div key={sec.id} style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 3 }}>
+                <button className={"map-mode-btn" + (sectionActive ? " map-mode-btn--active" : "")}
+                  onClick={() => setOpenFanSection(open ? null : sec.id)}
+                  title={open ? `Collapse ${sec.title}` : `${sec.title} map modes — click to expand`}
+                  style={{ ...btnStyle(sectionActive), minWidth: 0, position: "relative", fontWeight: 700 }}>
+                  {open ? sec.title : sectionLabel}
+                  <span style={{ marginLeft: 3, opacity: 0.55, fontSize: "0.7em" }}>{open ? "▾" : "▸"}</span>
+                </button>
+                {open && members.map((m) => renderModeMember(m))}
+              </div>
+            );
+          })}
           {devMode && (<>
-            <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
-            {devColorModes.map((m) => {
-              // 0.9.486: Hidden Res. button is tri-state: click cycles
-              // HR → AOR → off (= back to faction). One button doubles
-              // as the AOR mode entry per the user's tab-replacement
-              // request. Label flips to "AOR" when in that state so
-              // it's obvious which mode is active.
-              if (m.key === "hidden_resource") {
-                const isHR = colorMode === "hidden_resource";
-                const isAOR = colorMode === "aor";
-                const isActive = isHR || isAOR;
-                const label = isAOR ? "AOR" : "Hidden Res.";
-                const next = isHR ? "aor" : isAOR ? "faction" : "hidden_resource";
-                return (
-                  <button key={m.key}
-                    onClick={() => { console.log(`[aor-toggle] ${colorMode} → ${next}`); setColorMode(next); }}
-                    className={"map-mode-btn" + (isActive ? " map-mode-btn--active" : "")}
-                    title={isHR ? "Currently: Hidden Resources. Click for AOR." : isAOR ? "Currently: Areas of Recruitment. Click to exit." : "Click for Hidden Resources, again for AOR."}
-                    style={{ ...btnStyle(isActive), position: "relative" }}><MapBtnBadge k={`devmode.${m.key}`} />{label}</button>
-                );
-              }
-              return (
-                <button key={m.key} onClick={() => setColorMode(m.key)}
-                  className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
-                  disabled={colorMode === m.key} style={{ ...btnStyle(colorMode === m.key), position: "relative" }}><MapBtnBadge k={`devmode.${m.key}`} />{m.label}</button>
-              );
-            })}
             <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
             <button className="map-mode-btn"
               onClick={() => setPaintMode(prev => !prev)}
