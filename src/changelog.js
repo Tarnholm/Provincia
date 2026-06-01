@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.778",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Non-live commander portraits now match the family tree.** In the starting/pre-game view, generals' face cards showed wrong or nomad-looking portraits (the card path tagged commanders with first-name only, so same-first-name generals collided and many fell back to an arbitrary pick). The cards now resolve each character's real portrait by full name — the same way the family tree does — so every commander's face matches their family-tree card (live mode was already correct)." },
+    ],
+  },
+  {
     version: "0.9.777",
     date: "2026-06-01",
     items: [
