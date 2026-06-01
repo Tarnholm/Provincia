@@ -3212,8 +3212,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       <ChevronStack color={chevronTier(chevrons)} count={chevronCount(chevrons)} />
                     </div>
                   )}
-                  {(armour > 0 || weapon > 0) && (
-                    <div style={{
+                  {(armour > 0 || weapon > 0 || upgradeLevel > 0) && (
+                    <div
+                      title={upgradeLevel > 0
+                        ? `Weapon & armour upgrade level ${upgradeLevel} (smithy — combined; split not yet distinguished)`
+                        : "weapon / armour upgrade"}
+                      style={{
                       position: "absolute", bottom: 1, left: 1,
                       display: "flex", flexDirection: "row", gap: 1,
                       pointerEvents: "none",
@@ -3222,23 +3226,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       // card background. Same approach as ChevronStack.
                       filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                     }}>
-                      {armour > 0 && <ShieldIcon color={upgradeTier(armour)} />}
-                      {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
-                    </div>
-                  )}
-                  {upgradeLevel > 0 && (
-                    <div
-                      title="Weapon/armor upgrade level (smithy) — combined; split not yet distinguished"
-                      style={{
-                        position: "absolute", bottom: 1, right: 1,
-                        display: "flex", flexDirection: "row", alignItems: "center", gap: 0,
-                        pointerEvents: "none",
-                        filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
-                      }}>
-                      <span style={{
-                        color: upgradeTier(upgradeLevel), fontSize: "0.5rem", fontWeight: 700,
-                        lineHeight: 1, letterSpacing: "0.2px",
-                      }}>{`upgrade ${upgradeLevel}`}</span>
+                      {(armour > 0 || upgradeLevel > 0) && <ShieldIcon color={upgradeTier(armour > 0 ? armour : upgradeLevel)} />}
+                      {(weapon > 0 || upgradeLevel > 0) && <SwordIcon color={upgradeTier(weapon > 0 ? weapon : upgradeLevel)} />}
                     </div>
                   )}
                 </div>
@@ -3490,30 +3479,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                             <ChevronStack color={chevronTier(chevrons)} count={chevronCount(chevrons)} />
                           </div>
                         )}
-                        {(armour > 0 || weapon > 0) && (
-                          <div style={{
+                        {(armour > 0 || weapon > 0 || upgradeLevel > 0) && (
+                          <div
+                            title={upgradeLevel > 0
+                              ? `Weapon & armour upgrade level ${upgradeLevel} (smithy — combined; split not yet distinguished)`
+                              : "weapon / armour upgrade"}
+                            style={{
                             position: "absolute", top: 1, left: 0, right: 0,
                             display: "flex", justifyContent: "center", gap: 2,
                             pointerEvents: "none",
                             filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
                           }}>
-                            {armour > 0 && <ShieldIcon color={upgradeTier(armour)} />}
-                            {weapon > 0 && <SwordIcon color={upgradeTier(weapon)} />}
-                          </div>
-                        )}
-                        {upgradeLevel > 0 && (
-                          <div
-                            title="Weapon/armor upgrade level (smithy) — combined; split not yet distinguished"
-                            style={{
-                              position: "absolute", bottom: 1, right: 1,
-                              display: "flex", flexDirection: "row", alignItems: "center", gap: 0,
-                              pointerEvents: "none",
-                              filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 1px rgba(0,0,0,0.95))",
-                            }}>
-                            <span style={{
-                              color: upgradeTier(upgradeLevel), fontSize: "0.5rem", fontWeight: 700,
-                              lineHeight: 1, letterSpacing: "0.2px",
-                            }}>{`upgrade ${upgradeLevel}`}</span>
+                            {(armour > 0 || upgradeLevel > 0) && <ShieldIcon color={upgradeTier(armour > 0 ? armour : upgradeLevel)} />}
+                            {(weapon > 0 || upgradeLevel > 0) && <SwordIcon color={upgradeTier(weapon > 0 ? weapon : upgradeLevel)} />}
                           </div>
                         )}
                       </div>

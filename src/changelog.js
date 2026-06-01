@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.786",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Unit upgrade now shown via the shield + sword icons** (not a separate badge). The smithy weapon/armor upgrade level drives the familiar shield (armour) and sword (weapon) icons on the unit card, tier-coloured bronze/silver/gold. Since the save stores a single combined upgrade value, both icons reflect that level (hover shows the exact level). The short-lived anvil/\"upgrade N\" badge is removed." },
+    ],
+  },
+  {
     version: "0.9.785",
     date: "2026-06-01",
     items: [
