@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.794",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**\"(at campaign start)\" label is readable now** — it used a dark gray that was hard to read; it now matches the \"Diplomacy\" label colour." },
+    ],
+  },
+  {
     version: "0.9.793",
     date: "2026-06-01",
     items: [

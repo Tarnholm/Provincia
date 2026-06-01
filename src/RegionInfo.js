@@ -2219,7 +2219,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   </>
                 ) : ((factionState.startWars && factionState.startWars.length) || (factionState.startAllies && factionState.startAllies.length) || (factionState.startProtects && factionState.startProtects.length) || (factionState.startProtectedBy && factionState.startProtectedBy.length)) ? (
                   <>
-                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#777" }}>(at campaign start)</span></div>
+                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#bbb" }}>(at campaign start)</span></div>
                     {diploLine("⚔", "war", "#e8a0a0", factionState.startWarsDisplay || factionState.startWars)}
                     {diploLine("🤝", "allied", "#9ed09e", factionState.startAllies)}
                     {diploLine("🔄", "trade", "#8fc9d6", factionState.startTrade)}
