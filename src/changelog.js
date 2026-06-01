@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.790",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Diplomacy & treasury: faction pills are now tiny faction icons.** The war / allied / trade / protectorate lists show each faction as a small icon instead of a text pill; hover shows the faction name, and clicking still highlights it on the map. Applies in both live and starting-state views." },
+    ],
+  },
+  {
     version: "0.9.789",
     date: "2026-06-01",
     items: [

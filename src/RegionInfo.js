@@ -784,13 +784,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             // Free Peoples pill isn't clickable — it owns regions everywhere.
             const isFP = /^(slave|slaves|rebels)$/.test(String(e.id || "").toLowerCase());
             const pillClickable = !!onHighlightFactions && !!e.id && !isFP;
+            // 0.9.790: show a tiny faction ICON instead of a text pill; the
+            // faction name appears on hover (title). Click-to-highlight kept.
             return (
               <span
                 key={e.id || i}
                 onClick={pillClickable ? (ev) => { ev.stopPropagation(); onHighlightFactions([e.id]); } : undefined}
-                title={pillClickable ? `Highlight ${e.name} on the map` : undefined}
-                style={{ display: "inline-block", padding: "0px 5px", margin: "0 3px 0 0", borderRadius: "8px", whiteSpace: "nowrap", fontWeight: 600, cursor: pillClickable ? "pointer" : "default", ...factionPillStyle(e.id) }}
-              >{e.name}</span>
+                title={pillClickable ? `${e.name} — click to highlight on the map` : e.name}
+                style={{ display: "inline-flex", alignItems: "center", margin: "0 2px", verticalAlign: "middle", cursor: pillClickable ? "pointer" : "default" }}
+              >
+                <FactionIcon iconPath={`faction_icons/${e.id}.tga`} alt={e.name} size={16} tightCrop modIconsDir={modIconsDir} />
+              </span>
             );
           })
         )}
