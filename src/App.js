@@ -10780,21 +10780,53 @@ function App() {
             const open = openFanSection === sec.id;
             const activeMember = members.find(isMemberActive);
             const sectionActive = !!activeMember;
-            // Collapsed label = the active mode in this group (so "Culture"
-            // reads "Religion" when Religion is on), else the section name.
-            const sectionLabel = !activeMember
-              ? sec.title
+            // Short label of the active mode in this group (for the chip).
+            const activeLabel = !activeMember
+              ? null
               : activeMember.key === "hidden_resource"
                 ? (colorMode === "aor" ? "AOR" : "Hidden Res.")
                 : activeMember.label;
+            // Category ("folder") button — deliberately styled UNLIKE a map-
+            // mode button: a slate, uppercase tab with a chevron. This is the
+            // visual cue that separates CATEGORIES (slate tabs) from the MODES
+            // inside them (the normal amber-when-active buttons). It always
+            // shows the category name; when one of its modes is active it also
+            // shows a small amber chip naming that mode.
+            const catStyle = {
+              padding: "3px 8px",
+              borderRadius: 7,
+              border: `1px solid ${open ? "rgba(150,180,220,0.85)" : sectionActive ? "rgba(150,180,220,0.6)" : "rgba(150,180,220,0.32)"}`,
+              background: open
+                ? "linear-gradient(180deg, rgba(120,152,198,0.5) 0%, rgba(86,116,162,0.5) 100%)"
+                : "linear-gradient(180deg, rgba(108,138,182,0.26) 0%, rgba(80,108,150,0.2) 100%)",
+              color: "#dce6f5",
+              fontWeight: 700,
+              fontSize: "0.68rem",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              position: "relative",
+              minWidth: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              boxShadow: open ? "0 2px 8px rgba(86,116,162,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
+            };
             return (
-              <div key={sec.id} style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 3 }}>
-                <button className={"map-mode-btn" + (sectionActive ? " map-mode-btn--active" : "")}
-                  onClick={() => setOpenFanSection(open ? null : sec.id)}
+              <div key={sec.id} style={{
+                display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 3,
+                // When open, wrap the category + its modes in a slate tray so
+                // the fanned-out modes clearly read as "inside" this category.
+                ...(open ? { padding: 3, borderRadius: 9, background: "rgba(108,138,182,0.14)", border: "1px solid rgba(150,180,220,0.3)" } : null),
+              }}>
+                <button onClick={() => setOpenFanSection(open ? null : sec.id)}
                   title={open ? `Collapse ${sec.title}` : `${sec.title} map modes — click to expand`}
-                  style={{ ...btnStyle(sectionActive), minWidth: 0, position: "relative", fontWeight: 700 }}>
-                  {open ? sec.title : sectionLabel}
-                  <span style={{ marginLeft: 3, opacity: 0.55, fontSize: "0.7em" }}>{open ? "▾" : "▸"}</span>
+                  style={catStyle}>
+                  {sec.title}
+                  {!open && activeLabel && (
+                    <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)", borderRadius: 4, padding: "0 5px" }}>{activeLabel}</span>
+                  )}
+                  <span style={{ opacity: 0.6, fontSize: "0.85em" }}>{open ? "▾" : "▸"}</span>
                 </button>
                 {open && members.map((m) => renderModeMember(m))}
               </div>

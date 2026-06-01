@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.816",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Map-mode categories now look clearly different from the modes inside them.** Category buttons are slate, uppercase \"folder\" tabs with a chevron; each shows its name plus a small amber chip naming the active mode in that group. When a category fans open, its modes sit in a slate-tinted tray so it's obvious they belong to that category." },
+    ],
+  },
+  {
     version: "0.9.815",
     date: "2026-06-02",
     items: [
