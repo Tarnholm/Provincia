@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.780",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Diagnostics: real faction-leader check.** The health-check's family leader detection now identifies the actual crowned faction leader (the way the family tree does) instead of an arbitrary record, so it correctly reports e.g. the Julii leader as Quintus Ogulnius Gallus (age 60) and flags a missing or child-aged 'leader' as an error — catching the kind of family-parsing regression we hit earlier." },
+    ],
+  },
+  {
     version: "0.9.779",
     date: "2026-06-01",
     items: [
