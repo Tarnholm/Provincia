@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.791",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Bottom panels line up with the map.** Search + Factions now sit flush with the map's left edge, and Selected Provinces sits flush with the map's right edge (the ~9px insets are gone). Note: this re-applies the default layout positions, so any panels you'd hand-moved reset to the new aligned defaults." },
+    ],
+  },
+  {
     version: "0.9.790",
     date: "2026-06-01",
     items: [
