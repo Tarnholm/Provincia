@@ -2,7 +2,7 @@
 """
 starting_treasury.py — sets each faction's starting denari in descr_strat:
 
-    denari = 5000 + 500 * (number of starting settlements)
+    denari = 5000 + 700 * (number of starting settlements)
 
 Certain factions are left exactly as-is (slave/dummies and the emergent/rebel
 markers in KEEP). Pipeline step: .run(run_strat=, run_out=) — reads the strat it's
@@ -20,7 +20,7 @@ STRAT_FILE = CONFIG_DIR / "descr_strat.txt"
 
 # Factions left untouched (no formula applied).
 KEEP = {"slave", "dummies"}
-BASE_DENARI, PER_REGION = 5000, 500
+BASE_DENARI, PER_REGION = 5000, 700
 
 _faction_re = re.compile(r"^faction\s+(\S+?),")
 _denari_re = re.compile(r"^(denari)(\s+)(-?\d+)\s*$")
