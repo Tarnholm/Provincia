@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.802",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**All 20 building slots now fit without a scrollbar** — the Buildings panel grew (taking the space from the Characters panel, which was shrunk) and the cards are a touch shorter." },
+      { type: "improvement", text: "**Search bar is twice as wide** — it now spans the top of the bottom strip, with Factions and Selected Provinces sitting just below it." },
+      { type: "improvement", text: "**Cleaner labels:** \"Diplomacy (at campaign start)\" → \"Diplomacy\", and \"Treasury (starting)\" → \"Treasury\"." },
+    ],
+  },
+  {
     version: "0.9.801",
     date: "2026-06-01",
     items: [

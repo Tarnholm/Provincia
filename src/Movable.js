@@ -133,7 +133,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 21;
+const LAYOUT_VERSION = 22;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -151,10 +151,10 @@ const CANONICAL_V4 = {
   "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.2600 },
   "region.recruit":     { x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 },
   "region.diplomacy":   { x: 0.5720, y: 0.2770, w: 0.2090, h: 0.1900 },
-  "region.characters":  { x: 0.5720, y: 0.4760, w: 0.2090, h: 0.1900 },
+  "region.characters":  { x: 0.5720, y: 0.4760, w: 0.2090, h: 0.1100 },
   "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
   "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
-  "region.buildings":   { x: 0.5720, y: 0.6750, w: 0.2090, h: 0.3140 },
+  "region.buildings":   { x: 0.5720, y: 0.5950, w: 0.2090, h: 0.3940 },
   "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1650 },
   "region.fieldArmies": { x: 0.7857, y: 0.6800, w: 0.2090, h: 0.3150 },
   // Bottom-strip widgets — 9 px below the map's bottom edge (map
@@ -163,9 +163,9 @@ const CANONICAL_V4 = {
   // map's left edge; selected x+w=0.572 (the colBox design span) → right edge
   // meets the map's right edge. (colBox maps design-x [0,0.572] onto the map's
   // actual pixel width, so these line up with the map on both sides.)
-  "bottom.search":      { x: 0, y: 0.7009, w: 0.2076, h: 0.0200 },
-  "bottom.factions":    { x: 0, y: 0.7300, w: 0.2076, h: 0.2650 },
-  "bottom.selected":    { x: 0.2170, y: 0.7009, w: 0.3550, h: 0.2941 },
+  "bottom.search":      { x: 0, y: 0.7009, w: 0.4150, h: 0.0200 },
+  "bottom.factions":    { x: 0, y: 0.7260, w: 0.2076, h: 0.2690 },
+  "bottom.selected":    { x: 0.2170, y: 0.7260, w: 0.3550, h: 0.2690 },
 };
 // Splitter overrides that put the map at the width the canonical widget
 // grid assumes. rightColPct=0.428 leaves x∈(0.566, 1) for widgets.

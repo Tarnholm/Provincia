@@ -2153,7 +2153,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           {(factionState && !factionState.noData) ? (
             <div style={{ fontSize: "0.75rem", display: "flex", flexDirection: "column", gap: 5 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ color: "#bbb" }}>Treasury{factionState.isStarting && <span style={{ color: "#a98", fontSize: "0.62rem", marginLeft: 4 }}>(starting)</span>}</span>
+                <span style={{ color: "#bbb" }}>Treasury</span>
                 <span style={{
                   fontVariantNumeric: "tabular-nums", fontWeight: 700,
                   color: factionState.treasury == null ? "#888"
@@ -2222,7 +2222,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   </>
                 ) : ((factionState.startWars && factionState.startWars.length) || (factionState.startAllies && factionState.startAllies.length) || (factionState.startProtects && factionState.startProtects.length) || (factionState.startProtectedBy && factionState.startProtectedBy.length)) ? (
                   <>
-                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy <span style={{ color: "#bbb" }}>(at campaign start)</span></div>
+                    <div style={{ color: "#bbb", fontSize: "0.66rem", marginBottom: 2 }}>Diplomacy</div>
                     {diploLine("⚔", "war", "#e8a0a0", factionState.startWarsDisplay || factionState.startWars)}
                     {diploLine("🤝", "allied", "#9ed09e", factionState.startAllies)}
                     {diploLine("🔄", "trade", "#8fc9d6", factionState.startTrade)}
@@ -2415,8 +2415,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(5, 1fr)",
-              gridAutoRows: "56px",
-              gap: 4,
+              gridAutoRows: "52px",
+              gap: 3,
               flex: 1,
               minHeight: 0,
               overflowY: "auto",
