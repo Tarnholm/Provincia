@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.782",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Trade network: trade-rights partners now counted.** Trade partners are no longer limited to formal allies (high diplomatic bond) — two factions that are simply not at war and hold trade rights / a non-aggression pact (e.g. a neutral pair with a moderate bond) now correctly show as trading partners, read from the diplomacy matrix in live games. War partners are still excluded, and the non-live (pre-game) view falls back to the alliance data from the campaign setup. Sea-route connectivity (port-to-port across a shared sea) was verified correct, and a distance-based trade-value estimate is included (marked as an estimate)." },
+    ],
+  },
+  {
     version: "0.9.781",
     date: "2026-06-01",
     items: [

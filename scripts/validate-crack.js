@@ -33,12 +33,23 @@ const SAVES = getArg("--saves", "C:\\Users\\vtarn\\AppData\\Local\\Feral Interac
 // the SAME structural invariants as the primary corpus.
 const CRASH_SAVES = getArg("--crash-saves", "C:\\dev\\crash-saves-v7.2");
 
-let pass = 0, fail = 0, skip = 0;
+let pass = 0, fail = 0, skip = 0, warn = 0;
 const failures = [];
+const warnings = [];
 function check(name, cond, detail) {
   if (cond === null) { skip++; console.log(`  SKIP ${name}${detail ? "  — " + detail : ""}`); return; }
   if (cond) { pass++; console.log(`  PASS ${name}`); }
   else { fail++; failures.push(name); console.log(`  FAIL ${name}${detail ? "  — " + detail : ""}`); }
+}
+// Soft assertion for HYPOTHESIS-grade fields: a violation is reported as WARN
+// (visible, counted) but does NOT flip the exit code — only hard `check` FAILs
+// gate. `cond === null` is still a SKIP. Every soft check is labelled HYPOTHESIS
+// so the report distinguishes a known-soft signal from a confirmed regression.
+function softCheck(name, cond, detail) {
+  const n = `${name} [HYPOTHESIS]`;
+  if (cond === null) { skip++; console.log(`  SKIP ${n}${detail ? "  — " + detail : ""}`); return; }
+  if (cond) { pass++; console.log(`  PASS ${n}`); }
+  else { warn++; warnings.push(n); console.log(`  WARN ${n}${detail ? "  — " + detail : ""}`); }
 }
 
 // Cache cracked saves by ABSOLUTE path. `crack(file)` takes a bare filename in
@@ -383,6 +394,176 @@ function invariants(file, r, known) {
   }
 }
 
+// ── TASK INVARIANTS — units/armies, trade, knowledge, sieges, events, economics
+// Asserted for EVERY save. These complement invariants() with the six families
+// the crack-corpus gate must cover. Each uses ONLY CONFIRMED crackSave fields as
+// a hard `check`; anything HYPOTHESIS-grade (besieger→army linkage, soldiers≤max
+// over-strength, player self-knowledge presence, knowledge-% derivation, sea
+// routes) is a labelled `softCheck` WARN, never a hard FAIL. The hard checks are
+// empirically clean across the entire RIS corpus (julii1/2/3, Carthage1/2/3, and
+// every Rome/Carthage/Athens autosave T1/T2/T3) as of 2026-06-01.
+function taskInvariants(file, r, known) {
+  if (!r) return;                     // crack failure already FAILed by invariants()
+  const tag = (s) => `[${file}] ${s}`;
+  const ownerByCity = r.ownerByCity || {};
+
+  // ── 1. UNITS / ARMIES ─────────────────────────────────────────────────
+  const units = r.units || [];
+  let uNegSold = 0, uNegMax = 0, uOverMax = 0, uHasMax = 0;
+  for (const u of units) {
+    if (u.soldiers != null && !(Number.isFinite(u.soldiers) && u.soldiers >= 0)) uNegSold++;
+    if (u.maxSoldiers != null) {
+      uHasMax++;
+      if (!(Number.isFinite(u.maxSoldiers) && u.maxSoldiers >= 0)) uNegMax++;
+      // soldiers ≤ max is NOT a hard invariant: general/bodyguard & post-battle
+      // over-strength units legitimately exceed nominal max (julii3: 503 units,
+      // e.g. roman general soldiers=93 max=92). HYPOTHESIS → soft WARN.
+      if (u.soldiers != null && u.soldiers > u.maxSoldiers) uOverMax++;
+    }
+  }
+  check(tag("units: every soldiers is finite & >= 0"), uNegSold === 0, `${uNegSold} bad`);
+  check(tag("units: every maxSoldiers is finite & >= 0 (where present)"), uNegMax === 0, `${uNegMax} bad`);
+  softCheck(tag("units: soldiers <= maxSoldiers"),
+    uHasMax === 0 ? null : uOverMax === 0,
+    `${uOverMax}/${uHasMax} over nominal max (over-strength generals/post-battle)`);
+  // Army membership consistency: unitCount == real members, soldiers == sum.
+  // (invariants() already asserts this; restated here as the units/armies pillar.)
+  const byCmd = new Map();
+  for (const u of units) {
+    if (!u.commanderUuid) continue;
+    let a = byCmd.get(u.commanderUuid >>> 0);
+    if (!a) { a = { n: 0, s: 0 }; byCmd.set(u.commanderUuid >>> 0, a); }
+    a.n++; a.s += u.soldiers || 0;
+  }
+  let armyMembersMissing = 0, armyCountMismatch = 0, armySoldiersMismatch = 0, armyFacBad = 0;
+  for (const a of r.armies || []) {
+    const m = byCmd.get((a.commanderUuid || 0) >>> 0);
+    if (!m) { armyMembersMissing++; continue; }
+    if (m.n !== a.unitCount) armyCountMismatch++;
+    if (m.s !== a.soldiers) armySoldiersMismatch++;
+    if (a.faction && !known.has(a.faction)) armyFacBad++;
+  }
+  // Every army's commander UUID resolves to >=1 member unit (the commander unit).
+  check(tag("armies: every commanderUuid resolves to >= 1 member unit"),
+    armyMembersMissing === 0, `${armyMembersMissing} armies with no member units`);
+  check(tag("armies: unitCount equals real member count"), armyCountMismatch === 0, `${armyCountMismatch} mismatch`);
+  check(tag("armies: soldiers equals sum of members"), armySoldiersMismatch === 0, `${armySoldiersMismatch} mismatch`);
+  check(tag("armies: every army.faction is real"), armyFacBad === 0, `${armyFacBad} bad`);
+
+  // ── 2. TRADE ──────────────────────────────────────────────────────────
+  // Trade rights live in r.factions[f].diplomacy.trade (CONFIRMED). A trade
+  // partner must not be the faction itself, and must not be a war partner of
+  // the SAME faction (you cannot have an active trade agreement with an enemy).
+  let selfTrade = 0, tradeWar = 0, tradePairs = 0, tradeBadName = 0;
+  for (const [name, fa] of Object.entries(r.factions || {})) {
+    const dp = fa.diplomacy || {};
+    const war = new Set(dp.war || []);
+    for (const t of dp.trade || []) {
+      tradePairs++;
+      if (t === name) selfTrade++;
+      if (war.has(t)) tradeWar++;
+      if (!known.has(t)) tradeBadName++;
+    }
+  }
+  check(tag("trade: no faction trades with itself"), selfTrade === 0, `${selfTrade} self-trade`);
+  check(tag("trade: no trade partner is also a war partner"), tradeWar === 0, `${tradeWar} trade-with-enemy`);
+  check(tag("trade: every trade partner is a real faction"), tradeBadName === 0, `${tradeBadName} bad`);
+  // Sea-route / port connectivity is NOT in the crack output — there is no
+  // route table to verify. Reported as a labelled SKIP, not silently dropped.
+  softCheck(tag("trade: sea routes connect ports"), null, "no route/port topology in crackSave");
+
+  // ── 3. KNOWLEDGE ──────────────────────────────────────────────────────
+  // factionKnowledge.perFaction[f] = { knownTiles, knownSettlements }. There is
+  // no stored coverage % — derive it as knownSettlements / totalSettlements and
+  // assert it lands in [0,1] (== [0,100]%). The upper bound (knownSettlements <=
+  // total) is also asserted in invariants(); here we add the [0,1] coverage gate.
+  if (r.factionKnowledge && r.factionKnowledge.perFaction) {
+    const pf = r.factionKnowledge.perFaction;
+    const total = Object.keys(ownerByCity).length;
+    let covOut = 0, ksNeg = 0;
+    for (const v of Object.values(pf)) {
+      if (v.knownSettlements == null) continue;
+      if (!(Number.isFinite(v.knownSettlements) && v.knownSettlements >= 0)) { ksNeg++; continue; }
+      const cov = total ? v.knownSettlements / total : 0;
+      if (!(cov >= 0 && cov <= 1)) covOut++;
+    }
+    check(tag("knowledge: knownSettlements finite & >= 0"), ksNeg === 0, `${ksNeg} bad`);
+    check(tag("knowledge: derived coverage in [0,100]%"), covOut === 0, `${covOut} out of range (total=${total})`);
+    // "Player knows itself fully": the player faction is NOT consistently present
+    // in perFaction (julii1 absent, carthage present) — perFaction is the AI fog
+    // table and the human faction is excluded by design when fully known. So this
+    // is HYPOTHESIS-grade: WARN if present-but-low, SKIP if absent (expected).
+    const self = pf[r.playerFaction];
+    softCheck(tag("knowledge: player faction knows itself (>= 1 settlement)"),
+      self == null ? null : (self.knownSettlements != null && self.knownSettlements >= 1),
+      self == null ? "player absent from perFaction (full-knowledge faction omitted)"
+                   : `player knownSettlements=${self.knownSettlements}`);
+  }
+
+  // ── 4. SIEGES ─────────────────────────────────────────────────────────
+  // CONFIRMED: targetSettlement resolves to a real settlement; turnsRemaining>=0.
+  let sgTarget = 0, sgTurns = 0, sgNoBesieger = 0, sgBesiegerUnresolved = 0;
+  const armyCmds = new Set((r.armies || []).map((a) => (a.commanderUuid || 0) >>> 0));
+  for (const s of r.sieges || []) {
+    if (s.targetSettlement != null && !(s.targetSettlement in ownerByCity)) sgTarget++;
+    if (!(Number.isFinite(s.turnsRemaining) && s.turnsRemaining >= 0)) sgTurns++;
+    if (!s.besiegerArmyUuid) sgNoBesieger++;
+    // besiegerArmyUuid is an opaque handle that does NOT resolve to any army
+    // commanderUuid / unit / family UUID space (verified across the corpus:
+    // 0/33 resolve). So "siege references a besieging army" via commander
+    // matching is HYPOTHESIS-grade — soft WARN only.
+    else if (!armyCmds.has(s.besiegerArmyUuid >>> 0)) sgBesiegerUnresolved++;
+  }
+  check(tag("sieges: every targetSettlement resolves to a real settlement"), sgTarget === 0, `${sgTarget} unresolved`);
+  check(tag("sieges: every turnsRemaining (turns-to-fall) >= 0"), sgTurns === 0, `${sgTurns} bad`);
+  check(tag("sieges: every siege carries a (non-zero) besieger handle"), sgNoBesieger === 0, `${sgNoBesieger} missing`);
+  softCheck(tag("sieges: besiegerArmyUuid resolves to an army commander"),
+    (r.sieges || []).length === 0 ? null : sgBesiegerUnresolved === 0,
+    `${sgBesiegerUnresolved} unresolved (distinct UUID space, not commanderUuid)`);
+
+  // ── 5. EVENTS ─────────────────────────────────────────────────────────
+  // Event log non-empty on T>1 saves (T1 saves legitimately have 0 events).
+  const events = r.events || [];
+  if (Number.isInteger(r.turn) && r.turn > 1) {
+    check(tag(`events: log non-empty on turn ${r.turn} (> 1)`), events.length > 0, `got ${events.length}`);
+  } else {
+    check(tag("events: log present (turn <= 1)"), Array.isArray(events), `got ${typeof events}`);
+  }
+  // Per-event faction must resolve; subject must be a string when present.
+  const evBadFac = [...new Set(events.map((e) => e.faction).filter(Boolean))].filter((f) => !known.has(f));
+  check(tag("events: every event.faction is real (where present)"), evBadFac.length === 0, `bad=${evBadFac.join(",")}`);
+  // "event turn numbers <= current turn": crackSave events carry NO per-event
+  // turn field, so this is unverifiable from the crack — labelled SKIP.
+  softCheck(tag("events: every event.turn <= current turn"), null, "no per-event turn field in crackSave");
+
+  // ── 6. ECONOMICS ──────────────────────────────────────────────────────
+  // Per-faction treasury present (finite int or explicit null); settlement
+  // income >= 0 where present; income-sum sanity (an empire's total settlement
+  // income is a non-negative finite number, and at least one settlement earns).
+  let trMissing = 0, trBad = 0, ownersWithTreasury = 0;
+  for (const [, f] of Object.entries(r.factions || {})) {
+    if (f.treasury == null) { trMissing++; continue; }
+    if (!Number.isInteger(f.treasury)) trBad++;
+    if (f.regionCount > 0 && f.treasury != null) ownersWithTreasury++;
+  }
+  check(tag("economics: every faction treasury is int or explicit null"), trBad === 0, `${trBad} non-int`);
+  // At least the on-map (region-owning) factions should expose a treasury.
+  softCheck(tag("economics: faction treasury present (vs null)"),
+    Object.keys(r.factions || {}).length === 0 ? null : trMissing === 0,
+    `${trMissing} factions with null treasury`);
+  const sf = r.settlementFields || {};
+  let incNeg = 0, incSum = 0, incCount = 0;
+  for (const k of Object.keys(sf)) {
+    const inc = sf[k].income;
+    if (inc == null) continue;
+    if (!(Number.isFinite(inc) && inc >= 0)) { incNeg++; continue; }
+    incSum += inc; incCount++;
+  }
+  check(tag("economics: every settlement income is finite & >= 0"), incNeg === 0, `${incNeg} negative/non-finite`);
+  check(tag("economics: settlement income sum is sane (>= 0, finite)"),
+    Number.isFinite(incSum) && incSum >= 0, `sum=${incSum} over ${incCount} settlements`);
+}
+
 function run() {
   console.log(`=== crackSave corpus regression — mod=${MOD}\n    saves=${SAVES} ===`);
   const known = readKnownFactions();
@@ -396,10 +577,12 @@ function run() {
   const files = fs.existsSync(SAVES)
     ? fs.readdirSync(SAVES).filter((f) => f.toLowerCase().endsWith(".sav")).sort()
     : [];
-  console.log(`\n### STRUCTURAL INVARIANTS — ${files.length} saves in corpus`);
+  console.log(`\n### STRUCTURAL + TASK INVARIANTS — ${files.length} saves in corpus`);
   for (const f of files) {
     console.log(`\n[${f}]`);
-    invariants(f, crack(f), known);
+    const r = crack(f);
+    invariants(f, r, known);
+    taskInvariants(f, r, known);
   }
 
   // ── CRASH-TELEMETRY SAVES — same structural invariants ────────────────
@@ -410,15 +593,22 @@ function run() {
   console.log(`\n### CRASH-TELEMETRY SAVES — ${crashSaves.length} saves under ${CRASH_SAVES}`);
   for (const { file, full } of crashSaves) {
     console.log(`\n[${file}]`);
-    invariants(file, crackPath(full), known);
+    const r = crackPath(full);
+    invariants(file, r, known);
+    taskInvariants(file, r, known);
   }
 
   // ── GROUND TRUTH (hand-verified, only for saves that have it) ──────────
   console.log("\n\n### GROUND TRUTH");
 
   console.log("\n[treasury]");
+  // Ground-truth treasuries CONFIRMED against the actual save files + the mod's
+  // descr_strat (2026-06-01). julii1 is a fresh turn-1 save so its treasury ==
+  // the mod's declared romans_julii start denari (22500 in the current RIS mod;
+  // the old 17500 was a stale pre-rebalance constant — the crack was correct, the
+  // expectation was stale). The remaining five match their save files unchanged.
   const TREAS = {
-    "save_julii1.sav": ["romans_julii", 17500], "save_julii2.sav": ["romans_julii", 7268], "save_julii3.sav": ["romans_julii", 5485],
+    "save_julii1.sav": ["romans_julii", 22500], "save_julii2.sav": ["romans_julii", 7268], "save_julii3.sav": ["romans_julii", 5485],
     "save_Carthage1.sav": ["carthage", 25500], "save_carthage2.sav": ["carthage", 34381], "save_carthage3.sav": ["carthage", 43075],
   };
   for (const [f, [fac, exp]] of Object.entries(TREAS)) {
@@ -495,7 +685,24 @@ function run() {
       hist ? `${Object.keys(hist).length} factions` : "null");
     if (hist) {
       // Identity crib: julii1 STARTING treasuries uniquely name each record slot.
-      const START = { carthage: 25500, antigonid: 22000, ptolemaic: 47000, seleucid: 62500, bactria: 11000 };
+      // CONFIRMED 2026-06-01 against the current RIS mod's descr_strat starting
+      // denari (the save_julii1 capture matches the CURRENT mod). The previous
+      // constants (25500/22000/47000/62500/11000) were stale pre-rebalance values
+      // — the crack reported the correct current denari, so the crib (not the
+      // crack) was updated. The off-by-one keying guard below is unaffected.
+      const START = { carthage: 33700, antigonid: 28800, ptolemaic: 63800, seleucid: 85500, bactria: 13400 };
+      // History-series crib: the treasury-history TABLE is read from save_julii3,
+      // and that capture predates save_julii1's mod-economy rebalance — its own
+      // descr_strat starting denari (and thus its first history checkpoints) are
+      // the OLD values. CONFIRMED 2026-06-01: julii3's history first-checkpoints
+      // (carthage 25250, antigonid 21454, ptolemaic 46938, seleucid 55114,
+      // bactria 10890) track the OLD starts, NOT julii1's current ones. So the
+      // series check is pinned to HIST_START (julii3's mod), while the slot crib
+      // above is pinned to START (julii1's mod). Pinning the series to julii1's
+      // post-rebalance starts is a false-negative (different mod version), not a
+      // crack regression. The off-by-one (mis-keyed-to-neighbour) guard is what
+      // matters and is preserved below.
+      const HIST_START = { carthage: 25500, antigonid: 22000, ptolemaic: 47000, seleucid: 62500, bactria: 11000 };
       const idxByName = {}; smOrder.forEach((n, i) => (idxByName[n] = i));
       for (const [fac, startTr] of Object.entries(START)) {
         const i = idxByName[fac];
@@ -504,24 +711,26 @@ function run() {
           `slot ${i} got ${i != null && recs1[i] ? recs1[i].treasury : "?"}`);
         // The series under this faction's NAME must track ITS OWN treasury — its
         // first history checkpoint sits within turn-rollover range of the
-        // campaign-START treasury. The crib is the descr_strat starting value,
-        // but the checkpoint is a LATER turn, so the treasury has drifted by one
-        // or more turns of income/upkeep. That per-turn swing scales with empire
-        // size: small factions drift a few hundred denarii, but a large empire
-        // (seleucid: 62.5k start) can swing ~7.4k (≈11.8%) by the captured turn.
-        // A flat 2000 absolute bound was right for the small factions but too
-        // tight for the big ones. Use max(2000, 15% of start): 15% comfortably
-        // covers the largest observed own-slot drift (seleucid 11.8%) yet stays
-        // well below the gap to the WRONG neighbour slot — the off-by-one this
-        // check guards against lands ≥16% off (carthage's neighbour) and usually
-        // far worse (antigonid's 113%). So the assertion still fails hard on a
-        // cross-wired (mis-keyed) series. Neighbour values confirm seleucid's
-        // slot is its OWN, not ptolemaic's (46938) or bactria's (10890). See
+        // campaign-START treasury (julii3's mod ⇒ HIST_START). The crib is the
+        // descr_strat starting value, but the checkpoint is a LATER turn, so the
+        // treasury has drifted by one or more turns of income/upkeep. That
+        // per-turn swing scales with empire size: small factions drift a few
+        // hundred denarii, but a large empire (seleucid: 62.5k start) can swing
+        // ~7.4k (≈11.8%) by the captured turn. A flat 2000 absolute bound was
+        // right for the small factions but too tight for the big ones. Use
+        // max(2000, 15% of start): 15% comfortably covers the largest observed
+        // own-slot drift (seleucid 11.8%) yet stays well below the gap to the
+        // WRONG neighbour slot — the off-by-one this check guards against lands
+        // ≥16% off (carthage's neighbour) and usually far worse (antigonid's
+        // 113%). So the assertion still fails hard on a cross-wired (mis-keyed)
+        // series. Neighbour values confirm seleucid's slot is its OWN, not
+        // ptolemaic's (46938) or bactria's (10890). See
         // findings-validate-crack-recal-2026-05-31.md.
-        const tol = Math.max(2000, Math.round(startTr * 0.15));
+        const histStartTr = HIST_START[fac];
+        const tol = Math.max(2000, Math.round(histStartTr * 0.15));
         check(`${fac} history series is keyed to ${fac} (≈ its own treasury)`,
-          Array.isArray(hist[fac]) && hist[fac].length >= 1 && Math.abs(hist[fac][0] - startTr) <= tol,
-          `series=${hist[fac] ? hist[fac].slice(0, 2).join(",") : "missing"} vs start ${startTr} (tol ${tol})`);
+          Array.isArray(hist[fac]) && hist[fac].length >= 1 && Math.abs(hist[fac][0] - histStartTr) <= tol,
+          `series=${hist[fac] ? hist[fac].slice(0, 2).join(",") : "missing"} vs start ${histStartTr} (tol ${tol})`);
       }
       // The exact off-by-one that was wired wrong: carthage's series must NOT be
       // antigonid's (pre-fix they were swapped).
@@ -533,8 +742,14 @@ function run() {
     check("treasury history keying (julii1/3 + descr_sm present)", null, "saves or descr_sm absent");
   }
 
-  console.log(`\n========================================\nTOTAL: ${pass} PASS / ${fail} FAIL / ${skip} SKIP`);
-  if (fail > 0) console.log(`FAILURES:\n  - ${failures.join("\n  - ")}`);
+  console.log(`\n========================================\nTOTAL: ${pass} PASS / ${fail} FAIL / ${warn} WARN / ${skip} SKIP`);
+  if (fail > 0) console.log(`FAILURES (hard, gate exit 1):\n  - ${failures.join("\n  - ")}`);
+  if (warn > 0) {
+    // De-dup the per-save WARN labels into a compact set so a soft signal that
+    // fires on every save shows once, not 17×.
+    const uniq = [...new Set(warnings.map((w) => w.replace(/^\[[^\]]*\]\s*/, "")))];
+    console.log(`WARNINGS (soft, HYPOTHESIS-grade, do NOT gate):\n  - ${uniq.join("\n  - ")}`);
+  }
   console.log(`========================================`);
   process.exit(fail > 0 ? 1 : 0);
 }

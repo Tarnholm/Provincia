@@ -12,8 +12,9 @@
 //   net        last completed turn's treasury delta, read structurally from the
 //              econ-history table that physically precedes the faction's OWN
 //              treasury record (f13 per-turn treasury checkpoints). "—" before
-//              turn 2 (needs >=2 checkpoints) and for the player faction (whose
-//              own f13 series is recorded as all-zeros — not surfaced as +0).
+//              turn 3 (needs >=2 completed checkpoints; turn N has N-1) and for
+//              the player faction (whose own f13 series reads as all-zeros —
+//              left "—", never surfaced as a fabricated +0).
 //   regions    settlement count (ownerByCity tally — the correct source).
 //   units/sol  military: unit count and total soldiers (crackSave.units).
 //   family     family roster size (familyByFaction; generals + women + dead).
@@ -25,8 +26,10 @@
 //   node scripts/campaign-report.js <save.sav> [--mod <modDataDir>] [--json]
 //   node scripts/campaign-report.js <save.sav> --all      (include 0-region factions)
 //   node scripts/campaign-report.js <save.sav> --sort income|treasury|regions|soldiers|power
+//   node scripts/campaign-report.js <save.sav> --faction <name>   (focus one faction)
 //
-// --mod defaults to C:\RIS\RIS\data.
+// --mod defaults to C:\RIS\RIS\data. --faction prints a single faction's full
+// detail (incl. its per-settlement income breakdown) instead of the table.
 
 "use strict";
 const fs = require("fs");
@@ -38,12 +41,13 @@ const {
 } = require("../src/saveCrackerExtras.js");
 
 function parseArgs(argv) {
-  const a = { save: null, mod: "C:\\RIS\\RIS\\data", json: false, all: false, sort: "power" };
+  const a = { save: null, mod: "C:\\RIS\\RIS\\data", json: false, all: false, sort: "power", faction: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--mod") a.mod = argv[++i];
     else if (argv[i] === "--json") a.json = true;
     else if (argv[i] === "--all") a.all = true;
     else if (argv[i] === "--sort") a.sort = argv[++i];
+    else if (argv[i] === "--faction") a.faction = argv[++i];
     else if (!a.save) a.save = argv[i];
   }
   return a;
@@ -121,17 +125,11 @@ function buildRecordOffsetByFaction(buf, factions) {
   return out;
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
-  if (!args.save) {
-    console.error("usage: node scripts/campaign-report.js <save.sav> [--mod <dir>] [--json] [--all] [--sort power|treasury|income|regions|soldiers]");
-    process.exit(1);
-  }
-  if (!fs.existsSync(args.save)) { console.error("save not found:", args.save); process.exit(1); }
-
-  const buf = fs.readFileSync(args.save);
-  const r = crackSave(buf, args.mod);
-
+// Assemble one row per faction from a cracked save `r` (+ raw `buf` for the
+// structural net read). Exported so the test can assert on real saves without
+// shelling out. Every field is either a real value or null → rendered "—";
+// nothing is fabricated (provincia-no-fallbacks).
+function buildRows(r, buf) {
   // Per-faction income = sum of owned settlements' per-settlement income.
   const own = r.ownerByCity || {};
   const sf = r.settlementFields || {};
@@ -152,7 +150,6 @@ function main() {
     m.units++; m.soldiers += u.soldiers || 0;
   }
 
-  // Assemble one row per faction.
   const rows = [];
   for (const [name, f] of Object.entries(r.factions)) {
     const fam = (r.characters.familyByFaction && r.characters.familyByFaction[name]) || [];
@@ -176,6 +173,63 @@ function main() {
       protectorates: dip.protectorates ? dip.protectorates.length : 0,
       suzerains: dip.suzerains ? dip.suzerains.length : 0,
     });
+  }
+  return rows;
+}
+
+// Full single-faction detail, incl. the per-settlement income breakdown that
+// the summed `income` column rolls up. Used by --faction.
+function printFactionDetail(r, row) {
+  console.log(`\n-- faction: ${row.faction}${row.faction === r.playerFaction ? "  (player)" : ""} --`);
+  console.log(`  territory   ${num(row.regions)} settlements`);
+  console.log(`  income      ${num(row.income)} / turn  (gross — sum of settlement income, CONFIRMED)`);
+  console.log(`  treasury    ${num(row.treasury)}`);
+  console.log(`  net         ${signed(row.net)}  (last-completed-turn treasury delta; — before turn 3 / for the player record)`);
+  console.log(`  military    ${num(row.units)} units / ${num(row.soldiers)} soldiers (${num(row.generals)} generals)`);
+  console.log(`  family      ${num(row.family)} members (generals + women + dead)`);
+  console.log(`  AI-knows    ${num(row.knows)} settlements${row.knows == null ? "  (no AI-tuple cache — expected for the player faction)" : ""}`);
+  const dip = [];
+  if (row.wars) dip.push(`${row.wars} war`);
+  if (row.allies) dip.push(`${row.allies} allied`);
+  if (row.protectorates) dip.push(`${row.protectorates} protectorate`);
+  if (row.suzerains) dip.push(`suzerain-of ${row.suzerains}`);
+  console.log(`  diplomacy   ${dip.length ? dip.join(", ") : "—"}`);
+
+  const own = r.ownerByCity || {};
+  const sf = r.settlementFields || {};
+  const cities = Object.keys(own).filter((c) => own[c] === row.faction).sort();
+  if (cities.length) {
+    console.log(`\n  settlements (${cities.length}):`);
+    for (const c of cities) {
+      const f = sf[c];
+      const v = f && typeof f.income === "number" ? f.income : null;
+      console.log(`    ${pad(c, 22)} income ${padl(num(v), 7)}`);
+    }
+  }
+  console.log("");
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (!args.save) {
+    console.error("usage: node scripts/campaign-report.js <save.sav> [--mod <dir>] [--json] [--all] [--faction <name>] [--sort power|treasury|income|regions|soldiers]");
+    process.exit(1);
+  }
+  if (!fs.existsSync(args.save)) { console.error("save not found:", args.save); process.exit(1); }
+
+  const buf = fs.readFileSync(args.save);
+  const r = crackSave(buf, args.mod);
+  const rows = buildRows(r, buf);
+
+  // --faction <name>: single-faction focus (full detail, no table).
+  if (args.faction) {
+    const row = rows.find((x) => x.faction === args.faction);
+    if (!row) { console.error(`faction not found in save: ${args.faction}`); process.exit(1); }
+    console.log(`\n=== Campaign report: ${path.basename(args.save)} ===`);
+    console.log(`turn ${r.turn ?? "?"}   player ${r.playerFaction || "?"}`);
+    if (args.json) { console.log(JSON.stringify(row, null, 2)); return; }
+    printFactionDetail(r, row);
+    return;
   }
 
   // Filter to real, active factions unless --all. Drop engine placeholders
@@ -223,8 +277,12 @@ function main() {
     const tag = x.faction === r.playerFaction ? " *" : "";
     console.log(`  ${pad(x.faction + tag, 16)} ${padl(num(x.treasury), 9)} ${padl(num(x.income), 7)} ${padl(signed(x.net), 7)} ${padl(x.regions, 4)} ${padl(x.units, 5)} ${padl(x.soldiers, 8)} ${padl(x.family, 4)} ${padl(x.generals, 4)} ${padl(num(x.knows), 5)}  ${dipStr}`);
   }
-  console.log("\n  legend: net = last-completed-turn treasury delta (— before turn 2);");
+  console.log("\n  legend: net = last-completed-turn treasury delta (— before turn 3, when");
+  console.log("          a faction has <2 completed checkpoints, and for the player record);");
   console.log("          diplomacy W=wars A=allies P=protectorates suz=suzerain-of; * = player\n");
 }
 
-main();
+// Run as a CLI; export the pure helpers for the test harness.
+if (require.main === module) main();
+
+module.exports = { buildRows, econSeriesBefore, buildNetByRecordOffset };

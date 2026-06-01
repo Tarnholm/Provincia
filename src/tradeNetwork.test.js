@@ -50,6 +50,70 @@ describe("tradeNetwork buildTradeRights (rel199+bond6 widening)", () => {
   });
 });
 
+describe("tradeNetwork buildTradeRights V2 — rel[]-based gate (state!=war AND (bond>=54 OR rel199 OR bond>6))", () => {
+  // The matrix rel[] entries are {to, att(=STATE), bond}. CONFIRMED field
+  // semantics (provincia-diplomacy-matrix-cracked): att 0=allied/200=neutral/
+  // 600=war; bond 6=none/54=ally/55=suzerain. The bond>6&&<54 partial pact
+  // (achaea↔elis 200/38) is CONFIRMED on save_julii3/save_carthage3 (T3).
+  test("bond>=54 admits (military alliance/protectorate)", () => {
+    const diplo = { a: { rel: [{ to: "b", att: 0, bond: 54 }, { to: "c", att: 0, bond: 55 }] } };
+    const tr = buildTradeRights(diplo, null);
+    expect(tr("a", "b")).toBe(true);
+    expect(tr("a", "c")).toBe(true);
+    expect(tr.stats.bond54).toBe(2);
+    expect(tr.stats.matrixUsed).toBe(true);
+  });
+
+  test("allied STATE (att==0) admits even with bond==6 (rel199 robustness branch)", () => {
+    const diplo = { a: { rel: [{ to: "b", att: 0, bond: 6 }] } };
+    const tr = buildTradeRights(diplo, null);
+    expect(tr("a", "b")).toBe(true);
+    expect(tr.stats.allied).toBe(1);
+    expect(tr.stats.bond54).toBe(0);
+  });
+
+  test("partial bond (6<bond<54) on a NEUTRAL state admits (trade-rights pact)", () => {
+    // CONFIRMED achaea↔elis case: att=200 (neutral), bond=38, turnsAllied=1.
+    const diplo = { achaea: { rel: [{ to: "elis", att: 200, bond: 38 }] } };
+    const tr = buildTradeRights(diplo, null);
+    expect(tr("achaea", "elis")).toBe(true);
+    expect(tr.stats.partialBond).toBe(1);
+    expect(tr.stats.bond54).toBe(0);
+    expect(tr.stats.allied).toBe(0);
+  });
+
+  test("bond==6 default on a NEUTRAL state does NOT admit (no rights)", () => {
+    const diplo = { a: { rel: [{ to: "b", att: 200, bond: 6 }] } };
+    const tr = buildTradeRights(diplo, null);
+    expect(tr("a", "b")).toBe(false);
+  });
+
+  test("WAR (att>=600) is excluded even if a stale bond lingers", () => {
+    const diplo = { a: { rel: [{ to: "b", att: 600, bond: 54 }] } };
+    const tr = buildTradeRights(diplo, null);
+    expect(tr("a", "b")).toBe(false);   // war beats bond
+    expect(tr.stats.warExcluded).toBe(1);
+    expect(tr.stats.bond54).toBe(0);
+  });
+
+  test("falls back to trade/allied lists when rel[] is absent (matrix didn't lock)", () => {
+    const diplo = { a: { trade: ["b"], allied: ["c"] } };  // no rel[]
+    const tr = buildTradeRights(diplo, null);
+    expect(tr("a", "b")).toBe(true);
+    expect(tr("a", "c")).toBe(true);
+    expect(tr.stats.matrixUsed).toBe(false);
+    expect(tr.stats.fallbackList).toBe(2);
+  });
+
+  test("NON-LIVE path: no matrix at all → descr_strat ally floor still gates", () => {
+    const strat = { romans_julii: [{ to: "samnites", kind: "ally" }] };
+    const tr = buildTradeRights(null, strat);
+    expect(tr("romans_julii", "samnites")).toBe(true);
+    expect(tr.stats.matrixUsed).toBe(false);
+    expect(tr.stats.stratFloor).toBe(1);
+  });
+});
+
 describe("tradeNetwork settlementFlags", () => {
   test("classifies road / sea port / river port from chains", () => {
     const seaChain = [...SEA_PORT_CHAINS][0];
@@ -124,6 +188,41 @@ describe.runIf(liveOk)("tradeNetwork integration (live RIS + julii1 save)", () =
     const atlantic = seasOf("Gades");
     const black = seasOf("Sinope");
     expect([...black].some((s) => atlantic.has(s))).toBe(false);
+  });
+
+  test("sea partners are symmetric and never cross sea-body boundaries", () => {
+    // Every sea link A→B must satisfy: both have a sea port, both regions share a
+    // connected sea body, and B→A also lists A (directed symmetry).
+    const cs = r.trade.settlements;
+    const seasOf = (city) => new Set(r.geometry.regionSeas[r.settlement2region[city]] || []);
+    let checked = 0, badShared = 0, badPort = 0, badSym = 0;
+    for (const [name, v] of Object.entries(cs)) {
+      const myseas = seasOf(name);
+      for (const p of v.seaPartners) {
+        checked++;
+        if (!v.seaPort || !(cs[p] && cs[p].seaPort)) badPort++;     // both must be ported
+        const pseas = seasOf(p);
+        if (![...myseas].some((s) => pseas.has(s))) badShared++;     // must share a sea body
+        if (!(cs[p] && cs[p].seaPartners.includes(name))) badSym++;  // symmetric
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+    expect(badPort).toBe(0);
+    expect(badShared).toBe(0);
+    expect(badSym).toBe(0);
+  });
+
+  test("V2 gating stats surfaced: matrix locked, partial-bond branch reachable", () => {
+    const g = r.stats.gating;
+    expect(g).toBeTruthy();
+    expect(g.basis).toBe("matrix");
+    expect(g.matrixUsed).toBe(true);
+    expect(g.relPairs).toBeGreaterThan(0);
+    // bond>=54 dominates the corpus; war-exclusion + partial-bond branches exist.
+    expect(g.admitBond54).toBeGreaterThan(0);
+    expect(g.admitBond54 + g.admitAlliedState + g.admitPartialBond).toBeGreaterThan(0);
+    expect(r.stats.landLinks).toBeGreaterThanOrEqual(0);
+    expect(r.stats.seaLinks).toBeGreaterThan(0);
   });
 
   test("HYPOTHESIS valuesHypothesis: all link scores finite, >0, bounded", () => {

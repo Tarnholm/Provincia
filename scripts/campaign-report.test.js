@@ -1,0 +1,69 @@
+// scripts/campaign-report.test.js — sanity checks for the campaign-report CLI.
+//
+// Runs the real crackSave() on save_julii1 (the canonical T1 Julii fixture used
+// across the suite) and asserts buildRows() produces sane per-faction totals:
+// the player faction is present with the CONFIRMED economy/territory/military
+// numbers, summed income equals the per-settlement breakdown, and unavailable
+// fields are null (rendered "—") rather than fabricated. Skips automatically if
+// the save or mod isn't present on this machine, so it never red-fails in CI.
+
+import fs from "fs";
+import path from "path";
+import { describe, it, expect } from "vitest";
+import { crackSave } from "../src/saveCracker.js";
+import { buildRows } from "./campaign-report.js";
+
+const SAVE = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_julii1.sav";
+const MOD = "C:\\RIS\\RIS\\data";
+const haveFixtures = fs.existsSync(SAVE) && fs.existsSync(path.join(MOD, "descr_sm_factions.txt"));
+
+describe.skipIf(!haveFixtures)("campaign-report buildRows (save_julii1)", () => {
+  const buf = fs.readFileSync(SAVE);
+  const r = crackSave(buf, MOD);
+  const rows = buildRows(r, buf);
+
+  it("produces one row per faction with no fabricated fields", () => {
+    expect(rows.length).toBe(Object.keys(r.factions).length);
+    expect(rows.length).toBeGreaterThan(100); // RTW has ~239 faction records
+    // Unavailable fields must be null (→ "—"), never a fabricated placeholder.
+    for (const x of rows) {
+      expect(x.income === null || typeof x.income === "number").toBe(true);
+      expect(x.net === null || typeof x.net === "number").toBe(true);
+      expect(x.knows === null || typeof x.knows === "number").toBe(true);
+    }
+  });
+
+  it("reports the player faction's CONFIRMED turn-1 totals", () => {
+    const julii = rows.find((x) => x.faction === "romans_julii");
+    expect(julii).toBeTruthy();
+    expect(r.playerFaction).toBe("romans_julii");
+    expect(julii.regions).toBe(25);          // CONFIRMED Julii T1 territory
+    expect(julii.treasury).toBe(22500);      // class-100 record +0
+    expect(julii.income).toBe(6347);         // summed settlement income (gross)
+    expect(julii.units).toBe(58);
+    expect(julii.soldiers).toBe(5572);
+    expect(julii.net).toBeNull();            // <2 completed checkpoints at T1
+    expect(julii.knows).toBeNull();          // player has no AI-tuple cache
+  });
+
+  it("summed income equals the per-settlement income breakdown", () => {
+    const own = r.ownerByCity || {};
+    const sf = r.settlementFields || {};
+    let sum = 0;
+    for (const c of Object.keys(own)) {
+      if (own[c] === "romans_julii" && sf[c] && typeof sf[c].income === "number") sum += sf[c].income;
+    }
+    const julii = rows.find((x) => x.faction === "romans_julii");
+    expect(julii.income).toBe(sum);
+    // Rome's per-settlement income is the in-game-verified anchor (924 at T1).
+    expect(sf["Rome"] && sf["Rome"].income).toBe(924);
+  });
+
+  it("the big AI factions outrank the player by territory & soldiers", () => {
+    const sel = rows.find((x) => x.faction === "seleucid");
+    const julii = rows.find((x) => x.faction === "romans_julii");
+    expect(sel.regions).toBeGreaterThan(julii.regions);
+    expect(sel.soldiers).toBeGreaterThan(julii.soldiers);
+    expect(sel.income).toBeGreaterThan(julii.income);
+  });
+});

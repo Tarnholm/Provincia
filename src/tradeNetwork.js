@@ -411,45 +411,82 @@ function settlementFlags(settlements) {
 }
 
 // ── Trade-rights gating ───────────────────────────────────────────────────────
-// Cross-faction trade requires trade RIGHTS. In RTW:R a faction pair has trade
-// rights when EITHER of these holds (refined 2026-05-31, was bond>=54 only):
+// Cross-faction trade requires trade RIGHTS. TRADE-NETWORK V2 GATE (2026-06-01):
+// a directed pair A→B has trade rights when
 //
-//   (a) a MILITARY BOND  — cracked matrix cell +20 bond>=54 (54=ally, 55=suzerain
-//       /protectorate). Captured by the per-faction `trade` list. An alliance or
-//       protectorate always carries trade rights.
-//   (b) ALLIED STATE w/o bond — cracked matrix STATE field (+12) == allied (att 0),
-//       which maps 1:1 to descr_strat `faction_relationships` value 199. RTW folds
-//       ally + trade-rights into rel199, so a PURE trade-rights / non-aggression
-//       pact (rel199 + bond 6, NO military bond) shows up as state=allied with
-//       bond<54. Captured by the per-faction `allied` list. THIS is the case the
-//       old bond>=54-only gating missed (a documented lower bound) — now folded in.
+//   STATE != WAR  AND  ( bond>=54  OR  state==allied(rel199)  OR  bond>6 )
+//
+// mapped to the cracked diplomacy matrix cell (see provincia-diplomacy-matrix-
+// cracked: +12 STATE, +20 BOND, +24 aggression) per directed entry in the
+// per-faction `rel[]` array {to, att(=STATE), bond, agg}:
+//
+//   • WAR EXCLUSION — att>=600 is AT WAR (CONFIRMED: 600↔faction_relationships
+//     201, 99.9% on clean saves). A pair at war NEVER trades, even if a stale
+//     bond byte lingers. (The old gating never explicitly excluded war; in
+//     practice trade/allied lists already exclude war columns, but V2 makes the
+//     exclusion explicit and data-driven off rel[].)
+//   • bond>=54  — MILITARY BOND. 54=ally/client, 55=suzerain. CONFIRMED: alliance
+//     /protectorate, always carries trade rights. (matrix +20)
+//   • state==allied (att==0) — the descr_strat `faction_relationships` 199 ally
+//     state. CONFIRMED present; in EVERY observed save (julii/Carthage/Athens/RoR
+//     T1-3) att==0 co-occurs with bond>=54, so this branch never fires alone on
+//     the corpus — kept for robustness (a future save could carry rel199+bond6).
+//   • bond>6 (and <54) — a PARTIAL alliance bond on a NON-allied (neutral) state:
+//     the trade-rights / non-aggression pact the bond>=54-only gating missed.
+//     CONFIRMED on save_julii3 / save_carthage3 (T3): achaea↔elis carry att=200
+//     (neutral) + bond=38 + turnsAllied=1 — a real partial bond the engine is
+//     counting as an allied-turn. THIS is the case V2 folds in. (bond==6 is the
+//     "none" floor and does NOT grant rights — the task's "alliance-bond>=6" is
+//     read as a NON-DEFAULT bond, i.e. bond>6, since 6 is the universal default.)
+//
+// rel[] excludes the neutral-default (att==200 && bond==6) cells, so iterating it
+// is exactly the cross-faction trade-candidate set. When the matrix did NOT lock
+// (rel[] absent), we fall back to the precomputed `trade` (bond>=54) + `allied`
+// (att==0) lists, which carry the same information minus the bond>6 partial case.
 //
 // Additionally, the descr_strat `faction_relationships` 199-ally pairs are taken
-// as a live-INDEPENDENT floor (so the gating still works without a parsed matrix,
-// and matches the campaign's STARTING trade rights). Own-faction trade always
-// allowed.
+// as a live-INDEPENDENT floor (so gating works with NO parsed matrix — the
+// non-live path — and matches the campaign's STARTING trade rights). Own-faction
+// trade always allowed.
 //
-// VERIFIED on the live RIS T1 saves (save_julii1 / save_Carthage1, 2026-05-31):
-// the matrix `allied` set ≡ `trade` set at game start (264 directed pairs each;
-// every starting alliance carries a bond), and matches descr_strat's 266 ally
-// entries — so at T1 (a)/(b)/floor coincide. The widening is what catches
-// mid-campaign trade-rights-only pacts (rel199+bond6), which DO arise once the
-// player/AI signs non-aggression/trade pacts without a full alliance.
+// Returns a gate function with a `.stats` property recording how many directed
+// pairs each branch admitted (for [trade]-tagged diagnostics).
+const TRADE_BOND_ALLY = 54;     // CONFIRMED: military alliance/client bond floor
+const TRADE_BOND_NONE = 6;      // CONFIRMED: "no bond" default; >6 == a real bond
+const TRADE_STATE_WAR = 600;    // CONFIRMED: att>=600 == at war (rel 201)
 function buildTradeRights(diplomacy, stratRelationships) {
   // returns (factionA, factionB) -> bool  (A permits trade with B)
   const partners = {}; // factionLower -> Set(partnerLower)
+  const stats = { rel: 0, bond54: 0, allied: 0, partialBond: 0, warExcluded: 0, fallbackList: 0, stratFloor: 0, matrixUsed: false };
   const add = (a, b) => {
     a = String(a).toLowerCase(); b = String(b).toLowerCase();
     (partners[a] ||= new Set()).add(b);
   };
-  // (a) military bond + (b) allied state, from the cracked matrix.
   if (diplomacy) {
     for (const [name, rec] of Object.entries(diplomacy)) {
       if (name === "_meta" || !rec) continue;
       const a = name.toLowerCase();
       partners[a] ||= new Set();
-      if (Array.isArray(rec.trade))  for (const p of rec.trade)  add(a, p); // bond>=54
-      if (Array.isArray(rec.allied)) for (const p of rec.allied) add(a, p); // state==allied (rel199)
+      if (Array.isArray(rec.rel) && rec.rel.length) {
+        // PRIMARY V2 path: gate per directed pair off the raw matrix fields.
+        stats.matrixUsed = true;
+        for (const e of rec.rel) {
+          if (!e || !e.to) continue;
+          stats.rel++;
+          const att = +e.att, bond = +e.bond;
+          if (Number.isFinite(att) && att >= TRADE_STATE_WAR) { stats.warExcluded++; continue; } // WAR: never
+          let admit = false;
+          if (Number.isFinite(bond) && bond >= TRADE_BOND_ALLY) { admit = true; stats.bond54++; }      // military bond
+          else if (att === 0) { admit = true; stats.allied++; }                                        // allied state (rel199)
+          else if (Number.isFinite(bond) && bond > TRADE_BOND_NONE) { admit = true; stats.partialBond++; } // partial bond pact
+          if (admit) add(a, e.to);
+        }
+      } else {
+        // FALLBACK (matrix didn't lock for this faction): precomputed lists.
+        // These already exclude war columns, but cannot surface the bond>6 case.
+        if (Array.isArray(rec.trade))  for (const p of rec.trade)  { add(a, p); stats.fallbackList++; } // bond>=54
+        if (Array.isArray(rec.allied)) for (const p of rec.allied) { add(a, p); stats.fallbackList++; } // att==0
+      }
     }
   }
   // live-independent floor: descr_strat faction_relationships 199-ally pairs.
@@ -457,16 +494,18 @@ function buildTradeRights(diplomacy, stratRelationships) {
   if (stratRelationships) {
     for (const [from, arr] of Object.entries(stratRelationships)) {
       if (!Array.isArray(arr)) continue;
-      for (const e of arr) if (e && e.kind === "ally") add(from, e.to);
+      for (const e of arr) if (e && e.kind === "ally") { add(from, e.to); stats.stratFloor++; }
     }
   }
-  return (a, b) => {
+  const gate = (a, b) => {
     if (!a || !b) return false;
     a = a.toLowerCase(); b = b.toLowerCase();
     if (a === b) return true;                       // own faction always trades
     const sa = partners[a];
     return !!(sa && sa.has(b));                     // trade rights A->B
   };
+  gate.stats = stats;
+  return gate;
 }
 
 // ── First-cut trade connectivity ──────────────────────────────────────────────
@@ -750,6 +789,23 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
 
   const tradeRights = buildTradeRights(cr.diplomacy, stratRelationships);
 
+  // [trade] partner-gating diagnostics (provincia.log is the main diagnosis
+  // window; see provincia-feature-logging). Works in BOTH live and non-live:
+  //   • LIVE  (matrix locked)  → matrixUsed=true; per-branch counts populated.
+  //   • NON-LIVE (no matrix)   → matrixUsed=false, rel=0; gating rides the
+  //     descr_strat 199-ally floor (stratFloor) — degrade+log, never silent.
+  const grs = tradeRights.stats || {};
+  const matrixLocked = !!(cr.diplomacy && cr.diplomacy._meta);
+  try {
+    if (!matrixLocked && !grs.stratFloor) {
+      // eslint-disable-next-line no-console
+      console.log("[trade] gating UNAVAILABLE — no diplomacy matrix AND no descr_strat ally floor; cross-faction trade will be EMPTY (own-faction only).");
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(`[trade] gating basis=${matrixLocked ? "matrix(rel[])" : "descr_strat-floor"} matrixUsed=${grs.matrixUsed} relPairs=${grs.rel || 0} → admit{bond>=54=${grs.bond54 || 0}, alliedState=${grs.allied || 0}, partialBond(6<bond<54)=${grs.partialBond || 0}} warExcluded=${grs.warExcluded || 0} fallbackList=${grs.fallbackList || 0} stratFloor=${grs.stratFloor || 0}`);
+    }
+  } catch { /* logging must never break the parse */ }
+
   // ── HYPOTHESIS value inputs: trade goods + farm level + population ──────────
   // Resource catalogue (tier/trade value) and per-region placements come from
   // the mod data; the engine LOADS the override descr_strat, so prefer it
@@ -779,14 +835,35 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
   // rollup stats
   let withRoad = 0, withSeaPort = 0, withRiverPort = 0;
   for (const v of Object.values(flags)) { if (v.road) withRoad++; if (v.seaPort) withSeaPort++; if (v.riverPort) withRiverPort++; }
-  let totalPartnerLinks = 0, isolated = 0;
+  let totalPartnerLinks = 0, isolated = 0, landLinks = 0, seaLinks = 0;
   for (const v of Object.values(trade.settlements)) {
     totalPartnerLinks += v.partners.length;
+    landLinks += v.landPartners.length;   // directed; both endpoints emit one
+    seaLinks += v.seaPartners.length;
     if (v.partners.length === 0) isolated++;
   }
   let regionsWithGoods = 0, settlementsWithPop = 0;
   for (const g of Object.values(regionGoods)) if (g && g.goodsValue > 0) regionsWithGoods++;
   settlementsWithPop = Object.keys(popByCity).length;
+
+  // value-estimate basis (item 3): which inputs actually fed the distance-decay
+  // refinement — so a degraded run (missing goods/pop) is visible in the log.
+  const valueBasis = [
+    "distance-decay(land=1/(1+hops), sea=exp(-k·centroidDist))",
+    regionsWithGoods ? "goods" : "goods=NONE",
+    settlementsWithPop ? "population" : "population=NONE",
+    "infra",
+  ].join("+");
+  try {
+    // eslint-disable-next-line no-console
+    console.log(`[trade] connectivity: settlements=${Object.keys(trade.settlements).length} withRoad=${withRoad} withSeaPort=${withSeaPort} landLinks=${landLinks} seaLinks=${seaLinks} isolated=${isolated} avgPartners=${(totalPartnerLinks / Math.max(1, Object.keys(trade.settlements).length)).toFixed(2)}`);
+    // eslint-disable-next-line no-console
+    console.log(`[trade] value-estimate basis=${valueBasis} (HYPOTHESIS, relative-only — NOT engine gold); regionsWithGoods=${regionsWithGoods} settlementsWithPop=${settlementsWithPop}`);
+    if (isolated === Object.keys(trade.settlements).length && Object.keys(trade.settlements).length > 0) {
+      // eslint-disable-next-line no-console
+      console.log("[trade] WARNING: ALL settlements isolated (0 partners) — check geometry/flags/gating; trade network is EMPTY.");
+    }
+  } catch { /* logging must never break the parse */ }
 
   return {
     playerFaction: cr.playerFaction,
@@ -808,9 +885,22 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
       withSeaPort,
       withRiverPort,
       isolatedSettlements: isolated,
+      landLinks,                 // directed land trade links (both endpoints emit)
+      seaLinks,                  // directed sea trade links
       avgPartnersPerSettlement: +(totalPartnerLinks / Math.max(1, Object.keys(trade.settlements).length)).toFixed(2),
       regionsWithGoods,          // HYPOTHESIS input coverage: regions with a goods value
       settlementsWithPopulation: settlementsWithPop, // HYP input coverage: pop-weighted markets
+      gating: {                  // V2 partner-gating branch counts (see buildTradeRights)
+        basis: matrixLocked ? "matrix" : "descr_strat-floor",
+        matrixUsed: !!grs.matrixUsed,
+        relPairs: grs.rel || 0,
+        admitBond54: grs.bond54 || 0,
+        admitAlliedState: grs.allied || 0,
+        admitPartialBond: grs.partialBond || 0,
+        warExcluded: grs.warExcluded || 0,
+        fallbackList: grs.fallbackList || 0,
+        stratFloor: grs.stratFloor || 0,
+      },
     },
   };
 }
