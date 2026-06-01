@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.800",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Search bar no longer overlaps the Factions panel.** The bottom-strip layout had a 40px minimum-height floor that forced the thin search bar to 40px (overlapping Factions); thin widgets can now be their true height, so the search is small with a clear gap below it." },
+      { type: "fix", text: "**Factions icons now span the full panel width** — five per row sized to fill the width (uniform gaps), and the panel uses the full vertical space again." },
+      { type: "improvement", text: "**Buildings panel now shows all 20 slots** — it took the extra space from the Characters panel above it (which didn't need it)." },
+      { type: "fix", text: "**Field-army unit hover text now shows in the Field armies panel** (its own reserved line) instead of in the Garrison panel." },
+    ],
+  },
+  {
     version: "0.9.799",
     date: "2026-06-01",
     items: [

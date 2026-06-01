@@ -131,8 +131,8 @@ export default function FactionIcon({ iconPath, alt = "", size = 84, tightCrop =
 
   // No source yet (loading) or failed — show placeholder
   if (!src) return (
-    <div style={{ width: size, height: size, borderRadius: 6, background: "rgba(80,80,80,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ fontSize: size * 0.3, color: "#888" }}>{alt?.[0]?.toUpperCase() || "?"}</span>
+    <div style={{ width: size, height: size, aspectRatio: typeof size === "number" ? undefined : "1 / 1", borderRadius: 6, background: "rgba(80,80,80,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ fontSize: typeof size === "number" ? size * 0.3 : "1rem", color: "#888" }}>{alt?.[0]?.toUpperCase() || "?"}</span>
     </div>
   );
 

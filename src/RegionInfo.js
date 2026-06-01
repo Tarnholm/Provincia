@@ -1145,6 +1145,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   // tooltip (name, soldiers, chevrons, upgrades) but inline next to the
   // panel header, so it's easier to read than the OS tooltip floater.
   const [hoveredUnit, setHoveredUnit] = useState(null);
+  // Field-armies units use their OWN hover state so their readout shows in the
+  // Field armies panel, not the Garrison panel's reserved line (0.9.800).
+  const [hoveredFieldUnit, setHoveredFieldUnit] = useState(null);
   // Cross-link hover: hovering a building card highlights units gated by
   // that chain (and vice-versa). hoveredChain = { type } when hovering a
   // building, hoveredRecruit = unit name when hovering a recruit card.
@@ -1911,7 +1914,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.characters" title="Characters" designMode={designMode} colBox={colBox}
         posOverride={addGenOpen ? { y: 0.4400, h: 0.3130 } : null}
         zIndex={addGenOpen ? 6 : 2}
-        defaultPct={{ x: 0.5720, y: 0.4360, w: 0.2090, h: 0.1480 }}>
+        defaultPct={{ x: 0.5720, y: 0.4760, w: 0.2090, h: 0.1900 }}>
       <div className={panelInnerClass} style={addGenOpen ? { ...panelInner, background: "#181b21" } : panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
@@ -2381,7 +2384,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.5720, y: 0.5940, w: 0.2090, h: 0.4000 }}>
+        defaultPct={{ x: 0.5720, y: 0.6750, w: 0.2090, h: 0.3140 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
@@ -3289,7 +3292,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.7857, y: 0.6800, w: 0.2090, h: 0.3150 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6" }}>Field armies:</div>
+          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Field armies:</div>
+          {/* Reserved fixed-height line for THIS panel's unit hover readout
+              (separate from the Garrison panel's) so the list doesn't reflow. */}
+          <div style={{ fontWeight: 400, fontSize: "0.64rem", color: "#dca64a", minHeight: "0.8rem", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {hoveredFieldUnit ? hoverReadout(hoveredFieldUnit) : " "}
+          </div>
         </div>
         <div style={widgetBody}>
         {(() => {
@@ -3380,8 +3388,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       const tooltip = tooltipParts.join(" — ");
                       return (
                       <div key={ui}
-                        onMouseEnter={() => setHoveredUnit(u)}
-                        onMouseLeave={() => setHoveredUnit((cur) => cur === u ? null : cur)}
+                        onMouseEnter={() => setHoveredFieldUnit(u)}
+                        onMouseLeave={() => setHoveredFieldUnit((cur) => cur === u ? null : cur)}
                         onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
                         title={tooltip} style={{
                         position: "relative", padding: 1,

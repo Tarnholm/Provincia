@@ -9529,8 +9529,8 @@ function App() {
   }, [zoom, offset, canvasSize, imgSize, computeTransform, clampOffset, showSplash]);
 
   const tileBaseStyle = {
-    width: 44,
-    height: 44,
+    width: "100%",
+    aspectRatio: "1 / 1",
     cursor: "pointer",
     boxSizing: "border-box",
     borderRadius: 6,
@@ -9866,7 +9866,7 @@ function App() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, 44px)",
+            gridTemplateColumns: "repeat(5, 1fr)",
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
@@ -9958,7 +9958,7 @@ function App() {
                   }}
                 >
                   <div style={{ width: "100%", height: "100%", display: "block", filter: ICON_DROP_SHADOW }}>
-                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={44} tightCrop modIconsDir={modIconsDir} />
+                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={"100%"} tightCrop modIconsDir={modIconsDir} />
                   </div>
                 </div>
               </Tooltip>
@@ -15976,7 +15976,7 @@ function App() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    width: "100%", height: "100%", boxSizing: "border-box", padding: "4px 10px",
+                    width: "100%", height: "100%", boxSizing: "border-box", padding: "3px 10px",
                     borderRadius: 8, border: "1px solid rgba(255,255,255,0.18)",
                     background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.82rem",
                     outline: "none",
@@ -15988,7 +15988,7 @@ function App() {
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
               colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
-              defaultPct={{ x: 0.0047, y: 0.7400, w: 0.2076, h: 0.1150 }}
+              defaultPct={{ x: 0.0047, y: 0.7300, w: 0.2076, h: 0.2650 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>
