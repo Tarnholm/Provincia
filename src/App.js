@@ -119,6 +119,23 @@ const MAP_BTN_ORDER = [
   "campaign.toggle",
   // In-map zoom controls (bottom-right)
   "zoom.lock", "zoom.camera", "zoom.out", "zoom.reset", "zoom.in",
+  // ── APPENDED (second pass) — buttons that only render in dev / layout /
+  // live mode. Appended so the existing A–AJ letters above never shift; new
+  // ones continue AK, AL, AM, … Each only shows a badge while its mode is on.
+  // Dev-only extra colour modes (devColorModes[]) + the Paint toggle.
+  "devmode.terrain", "devmode.climate", "devmode.port_level", "devmode.irrigation",
+  "devmode.earthquakes", "devmode.rivertrade", "devmode.hidden_resource",
+  "devmode.pop_growth", "devmode.wealth", "devmode.recruitment", "devmode.garrison",
+  "devmode.happiness", "devmode.income", "devmode.public_order", "devmode.paint",
+  // Dev pill (bottom-right dev tools row).
+  "devpill.import", "devpill.scripts", "devpill.edb", "devpill.compare",
+  "devpill.xref", "devpill.validate", "devpill.budget", "devpill.vcowners",
+  "devpill.mac", "devpill.save", "devpill.layout", "devpill.changes",
+  "devpill.shortcuts",
+  // Layout (design-mode) buttons.
+  "layout.undo", "layout.reset", "layout.copy",
+  // Live-only buttons (Live mode active).
+  "live.stats", "live.reset", "live.picksave", "live.unpin",
 ];
 
 // Index → letter: 0→A … 25→Z, 26→AA, 27→AB, … (bijective base-26).
@@ -10719,13 +10736,13 @@ function App() {
                     onClick={() => { console.log(`[aor-toggle] ${colorMode} → ${next}`); setColorMode(next); }}
                     className={"map-mode-btn" + (isActive ? " map-mode-btn--active" : "")}
                     title={isHR ? "Currently: Hidden Resources. Click for AOR." : isAOR ? "Currently: Areas of Recruitment. Click to exit." : "Click for Hidden Resources, again for AOR."}
-                    style={btnStyle(isActive)}>{label}</button>
+                    style={{ ...btnStyle(isActive), position: "relative" }}><MapBtnBadge k={`devmode.${m.key}`} />{label}</button>
                 );
               }
               return (
                 <button key={m.key} onClick={() => setColorMode(m.key)}
                   className={"map-mode-btn" + (colorMode === m.key ? " map-mode-btn--active" : "")}
-                  disabled={colorMode === m.key} style={btnStyle(colorMode === m.key)}>{m.label}</button>
+                  disabled={colorMode === m.key} style={{ ...btnStyle(colorMode === m.key), position: "relative" }}><MapBtnBadge k={`devmode.${m.key}`} />{m.label}</button>
               );
             })}
             <span style={{ color: "#e8a030", opacity: 0.5, fontSize: "0.7rem" }}>|</span>
@@ -10734,8 +10751,8 @@ function App() {
               title={paintMode
                 ? "Paint mode ON: click paints a pixel with the current brush region. Alt-click eyedrops a region into the brush."
                 : "Toggle map-paint mode (dev only). Lets you repaint pixels of map_regions.tga to reassign them to other regions."}
-              style={{ ...btnStyle(paintMode), minWidth: 0 }}>
-              {paintMode ? "Paint ON" : "Paint"}
+              style={{ ...btnStyle(paintMode), minWidth: 0, position: "relative" }}>
+              <MapBtnBadge k="devmode.paint" />{paintMode ? "Paint ON" : "Paint"}
             </button>
           </>)}
         </div>
@@ -10764,7 +10781,8 @@ function App() {
                 border: canUndo() ? "1px solid #58a" : "1px solid #555",
                 fontSize: "0.72rem",
                 cursor: canUndo() ? "pointer" : "default",
-              }}>↶ Undo</button>
+                position: "relative",
+              }}><MapBtnBadge k="layout.undo" />↶ Undo</button>
           )}
           {designMode && (
             <button
@@ -10785,7 +10803,8 @@ function App() {
                 color: "#fff",
                 border: "1px solid #855",
                 fontSize: "0.72rem",
-              }}>↺ Reset</button>
+                position: "relative",
+              }}><MapBtnBadge k="layout.reset" />↺ Reset</button>
           )}
           {designMode && (
             <button
@@ -10826,7 +10845,8 @@ function App() {
                 color: "#fff",
                 border: "1px solid #5a8",
                 fontSize: "0.72rem",
-              }}>📋 Copy layout</button>
+                position: "relative",
+              }}><MapBtnBadge k="layout.copy" />📋 Copy layout</button>
           )}
           {/* 0.9.470: dev pill + Dev toggle on the SAME row.
               0.9.479: row uses a fixed `height: 40` (not minHeight) so
@@ -10863,8 +10883,9 @@ function App() {
                   color: "#e8a030",
                   border: "1px solid #e8a030",
                   minWidth: 80,
+                  position: "relative",
                 }}
-              >Import</button>
+              ><MapBtnBadge k="devpill.import" />Import</button>
               {/* Embedded Settlement Processor (Scripts) — opens the bundled
                   Suite window (Pipeline / Editor / Master / Compare). Electron
                   only; the IPC bridge is absent in browser builds. */}
@@ -10879,8 +10900,9 @@ function App() {
                     color: "#7fd1b9",
                     border: "1px solid #2dd4bf",
                     minWidth: 72,
+                    position: "relative",
                   }}
-                >Scripts</button>
+                ><MapBtnBadge k="devpill.scripts" />Scripts</button>
               )}
               {/* 0.9.637: open EDB directly in the Scripts editor (Monaco). The
                   plumbing supports searchText too — passing a chain name as the
@@ -10897,8 +10919,9 @@ function App() {
                     color: "#9ca3af",
                     border: "1px solid #6b7280",
                     minWidth: 50,
+                    position: "relative",
                   }}
-                >EDB</button>
+                ><MapBtnBadge k="devpill.edb" />EDB</button>
               )}
               {/* 0.9.638: Compare up to 3 factions side-by-side (wealth,
                   regions, armies, AI, diplomatic state). */}
@@ -10912,8 +10935,9 @@ function App() {
                   color: "#d0a0ff",
                   border: "1px solid #a78bfa",
                   minWidth: 76,
+                  position: "relative",
                 }}
-              >Compare</button>
+              ><MapBtnBadge k="devpill.compare" />Compare</button>
               {/* 0.9.641: Cross-reference scan — "where is this used?"
                   Type a token name and see every file:line that mentions it
                   across the loaded mod (EDB / descr_strat / traits / ancillaries
@@ -10930,8 +10954,9 @@ function App() {
                     color: "#facc15",
                     border: "1px solid #facc15",
                     minWidth: 64,
+                    position: "relative",
                   }}
-                >X-Ref</button>
+                ><MapBtnBadge k="devpill.xref" />X-Ref</button>
               )}
               {/* 0.9.642: Mod-validation dashboard. */}
               {window.electronAPI?.validateMod && (
@@ -10945,8 +10970,9 @@ function App() {
                     color: "#4ade80",
                     border: "1px solid #4ade80",
                     minWidth: 76,
+                    position: "relative",
                   }}
-                >Validate</button>
+                ><MapBtnBadge k="devpill.validate" />Validate</button>
               )}
               {/* 2026-05-26: Save entity-budget health. The engine's ~65,536
                   (2^16) pointer registry is shared by live characters and
@@ -10970,8 +10996,9 @@ function App() {
                       color,
                       border: `1px solid ${color}`,
                       minWidth: 66,
+                      position: "relative",
                     }}
-                  >Budget</button>
+                  ><MapBtnBadge k="devpill.budget" />Budget</button>
                 );
               })()}
               {/* Victory-conditions helper: pick a region-list CSV → get a CSV of
@@ -10999,8 +11026,9 @@ function App() {
                     color: "#e8a030",
                     border: "1px solid #e8a030",
                     minWidth: 86,
+                    position: "relative",
                   }}
-                >VC Owners</button>
+                ><MapBtnBadge k="devpill.vcowners" />VC Owners</button>
               )}
               {/* "Mac" — load a bundled RIS subset + sample save so the app
                   works on a machine without the game installed. Visible on
@@ -11037,8 +11065,9 @@ function App() {
                     color: "#a0c4ff",
                     border: "1px solid #a0c4ff",
                     minWidth: 56,
+                    position: "relative",
                   }}
-                >Mac</button>
+                ><MapBtnBadge k="devpill.mac" />Mac</button>
               ))}
               {/* 0.9.469: in Electron, the Save button opens the unified
                   review modal — that's the single entry-point for ALL
@@ -11063,8 +11092,9 @@ function App() {
                     minWidth: 60,
                     cursor: pendingCount > 0 ? "pointer" : "default",
                     opacity: pendingCount > 0 ? 1 : 0.55,
+                    position: "relative",
                   }}
-                >Save{pendingCount > 0 ? ` (${pendingCount})` : ""}</button>
+                ><MapBtnBadge k="devpill.save" />Save{pendingCount > 0 ? ` (${pendingCount})` : ""}</button>
               ) : (
               <button
                 onClick={() => {
@@ -11230,8 +11260,9 @@ function App() {
                   color: devDirtyFiles.size > 0 ? "#fff" : "#aaa",
                   border: "1px solid " + (devDirtyFiles.size > 0 ? "#4a9" : "#555"),
                   minWidth: 60,
+                  position: "relative",
                 }}
-              >Export{devDirtyFiles.size > 0 ? ` (${devDirtyFiles.size} file${devDirtyFiles.size > 1 ? "s" : ""})` : ""}</button>
+              ><MapBtnBadge k="devpill.save" />Export{devDirtyFiles.size > 0 ? ` (${devDirtyFiles.size} file${devDirtyFiles.size > 1 ? "s" : ""})` : ""}</button>
               )}
               {/* 0.9.471: Layout toggle moved into the dev pill.
                   0.9.475: data-anim-bypass so the user can always click
@@ -11250,7 +11281,8 @@ function App() {
                   border: "1px solid #888",
                   fontSize: "0.72rem",
                   minWidth: 0, padding: "3px 8px",
-                }}>📐 {designMode ? "Layout ON" : "Layout"}</button>
+                  position: "relative",
+                }}><MapBtnBadge k="devpill.layout" />📐 {designMode ? "Layout ON" : "Layout"}</button>
               {exportConfirm && <span style={{ color: "#7c4", fontSize: "0.78rem", fontWeight: 600 }}>Exported!</span>}
               {/* 0.9.472: Undo/Redo counter replaced with a "Changes (N)"
                   button — clicking opens the same pending-review modal as
@@ -11267,8 +11299,9 @@ function App() {
                     border: "1px solid #4a9",
                     minWidth: 0, padding: "3px 8px", fontSize: "0.72rem", fontWeight: 600,
                     cursor: "pointer",
+                    position: "relative",
                   }}
-                >Changes ({pendingCount})</button>
+                ><MapBtnBadge k="devpill.changes" />Changes ({pendingCount})</button>
               )}
               <button
                 onClick={() => setShowShortcuts(p => !p)}
@@ -11279,8 +11312,9 @@ function App() {
                   color: "#aaa",
                   border: "1px solid #555",
                   minWidth: 0, padding: "3px 7px", fontSize: "0.72rem", fontWeight: 700,
+                  position: "relative",
                 }}
-              >?</button>
+              ><MapBtnBadge k="devpill.shortcuts" />?</button>
               {/* 0.9.472: removed the autosave-snapshot "Save" button, the
                   "Load" snapshot menu, and the timeline scrub slider per
                   user request — the unified pending Save in the dev pill
@@ -11460,50 +11494,12 @@ function App() {
               iteration convenience). Restart Provincia to pick up mod edits.
               MAP_BTN_ORDER keeps view.reload's slot so the other letters don't
               shift; the badge just no longer renders. */}
-          {devMode && modDataDir && buildingRecruits && unitOwnership && (
-            <button className="map-mode-btn" onClick={() => {
-              // Cross-file sanity sweep across the parsed mod data.
-              // 1) Every recruit `unit` referenced in EDB exists in EDU
-              // 2) Every chain key in buildingRecruits has at least one
-              //    real level (catches RIS-style empty redefinitions
-              //    that would silently drop recruits)
-              // 3) Every faction in factionCultures has at least one
-              //    region listed for it in factionRegionsMap
-              const issues = [];
-              const dictMap = unitOwnership.__dictionary || {};
-              const knownUnits = new Set(Object.keys(unitOwnership).filter((k) => k !== "__dictionary"));
-              for (const [chain, lvls] of Object.entries(buildingRecruits)) {
-                if (chain === "__aliases") continue;
-                if (!lvls || typeof lvls !== "object") continue;
-                let recruitsInChain = 0;
-                for (const [lvl, recs] of Object.entries(lvls)) {
-                  if (!Array.isArray(recs)) continue;
-                  for (const rec of recs) {
-                    recruitsInChain++;
-                    if (!knownUnits.has(rec.unit)) {
-                      issues.push({ severity: "error", chain, level: lvl, message: `recruit "${rec.unit}" is not in EDU` });
-                    }
-                  }
-                }
-                if (recruitsInChain === 0) {
-                  issues.push({ severity: "info", chain, level: "(any)", message: "chain has zero recruit lines (intentional?)" });
-                }
-              }
-              const errCount = issues.filter((i) => i.severity === "error").length;
-              const warnCount = issues.length - errCount;
-              console.group(`[validate-mod-data] ${errCount} errors, ${warnCount} info`);
-              for (const it of issues) console.log(`[${it.severity}] ${it.chain}/${it.level}: ${it.message}`);
-              console.groupEnd();
-              pushToast(
-                errCount > 0
-                  ? `Validation: ${errCount} errors${warnCount ? `, ${warnCount} info` : ""} — see DevTools console (F12)`
-                  : `Validation: clean${warnCount ? ` (${warnCount} info)` : ""}`,
-                errCount > 0 ? "error" : "info"
-              );
-            }}
-              title="Cross-check recruit units against EDU and report issues. Output goes to DevTools console (F12)."
-              style={{ ...btnStyle(false), minWidth: 0 }}>Validate</button>
-          )}
+          {/* 0.9.811: standalone "Validate" map-control button removed per user
+              request — it dumped an ad-hoc recruit-vs-EDU sweep to the DevTools
+              console + a toast. Redundant now that the dev-pill "Validate" (BE)
+              opens the full Validate dashboard, which covers EDB resources, unit
+              localization/images, and the rest. Not in MAP_BTN_ORDER, so no
+              letters shift. */}
           <button className="map-mode-btn" onClick={async () => {
             if (liveLogActive) {
               // Deactivate — restore to latest state
@@ -11768,7 +11764,7 @@ function App() {
               title={saveLuaCounters && saveLuaCounters.count
                 ? "Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
                 : "Campaign Stats — waiting on save data"}
-              style={{ ...btnStyle(showStatsPanel), minWidth: 0 }}>Stats</button>
+              style={{ ...btnStyle(showStatsPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="live.stats" />Stats</button>
           )}
           {liveLogActive && (
             <button
@@ -11786,9 +11782,9 @@ function App() {
                 }
               }}
               title="Re-anchor the live log watcher to the current end of message_log.txt and drop all live tracking state (passenger lists, unit-flow, char positions). Use after loading a save mid-session — Provincia will then only react to events from this moment forward."
-              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px" }}
+              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px", position: "relative" }}
             >
-              Reset
+              <MapBtnBadge k="live.reset" />Reset
             </button>
           )}
           {liveLogActive && (
@@ -11804,9 +11800,9 @@ function App() {
                 pushToast(`Tracking ${res.file}`, "info");
               }}
               title={pinnedSaveFile ? `Pinned: ${pinnedSaveFile}\nClick to pick a different save.` : "Pick a specific save to track instead of the newest one."}
-              style={{ ...btnStyle(!!pinnedSaveFile), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px" }}
+              style={{ ...btnStyle(!!pinnedSaveFile), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px", position: "relative" }}
             >
-              {pinnedSaveFile ? "Pinned" : "Pick save…"}
+              <MapBtnBadge k="live.picksave" />{pinnedSaveFile ? "Pinned" : "Pick save…"}
             </button>
           )}
           {liveLogActive && pinnedSaveFile && (
@@ -11818,8 +11814,8 @@ function App() {
                 pushToast("Following newest save again", "info");
               }}
               title="Stop pinning — resume newest-by-mtime tracking"
-              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 4px" }}
-            >×</button>
+              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 4px", position: "relative" }}
+            ><MapBtnBadge k="live.unpin" />×</button>
           )}
         </div>
         {/* Live log event feed + turn slider */}

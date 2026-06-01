@@ -1,0 +1,4055 @@
+--- Settlement: Roma ---
+Level: large_city
+Assigned: salt_production salt_2
+
+--- Settlement: Etruria ---
+Level: large_town
+
+--- Settlement: Ager_Gallicus ---
+Level: town
+
+--- Settlement: Etruria_Occidentalis ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Paelignia-Marsica ---
+Level: town
+
+--- Settlement: Faliscia ---
+Level: large_town
+
+--- Settlement: Umbria ---
+Level: large_town
+
+--- Settlement: Etruria_Meridionalis ---
+Level: large_town
+
+--- Settlement: Marrucinia-Vestinia ---
+Level: large_town
+
+--- Settlement: Etruria_Septentrionalis ---
+Level: town
+
+--- Settlement: Sabinia-Aequia ---
+Level: town
+
+--- Settlement: Etruria_Orientalis ---
+Level: town
+
+--- Settlement: Camertia-Nahartia ---
+Level: town
+
+--- Settlement: Samnium ---
+Level: large_town
+
+--- Settlement: Frentania ---
+Level: town
+
+--- Settlement: Daunia ---
+Level: large_town
+
+--- Settlement: Peucetia ---
+Level: large_town
+
+--- Settlement: Kroton ---
+Level: town
+
+--- Settlement: Kanysion ---
+Level: large_town
+
+--- Settlement: Thourioi ---
+Level: large_town
+
+--- Settlement: Parthenope ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Latium_Novum ---
+Level: town
+
+--- Settlement: Latium ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Poseidonia ---
+Level: large_town
+
+--- Settlement: Lokroi_Epizephyrioi ---
+Level: large_town
+
+--- Settlement: Roman_Rebels_1_Region ---
+Level: town
+
+--- Settlement: Roman_Rebels_2_Region ---
+Level: town
+
+--- Settlement: Han_Region ---
+Level: town
+
+--- Settlement: Qart-Khadasht ---
+Level: huge_city
+
+--- Settlement: Epikrateia ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Ziz ---
+Level: large_town
+
+--- Settlement: Arik ---
+Level: large_town
+
+--- Settlement: Maleth ---
+Level: town
+
+--- Settlement: Karaly ---
+Level: large_town
+
+--- Settlement: Olbiana-Sardinia ---
+Level: town
+
+--- Settlement: Qart-Khadasht_biShardana ---
+Level: town
+
+--- Settlement: Sulky ---
+Level: large_town
+
+--- Settlement: Kyrnos ---
+Level: town
+
+--- Settlement: Adrumet ---
+Level: city
+
+--- Settlement: Lepqi_Adir ---
+Level: large_town
+
+--- Settlement: Xupon ---
+Level: large_town
+
+--- Settlement: Ay-Khol ---
+Level: large_town
+
+--- Settlement: Ting ---
+Level: large_town
+
+--- Settlement: Xatiq ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Bebaxal ---
+Level: town
+
+--- Settlement: Aspis ---
+Level: large_town
+
+--- Settlement: Woyxat ---
+Level: town
+
+--- Settlement: Zabrutuxun ---
+Level: town
+
+--- Settlement: Rush_Adir ---
+Level: town
+
+--- Settlement: Salda ---
+Level: town
+
+--- Settlement: Ay-Bushim ---
+Level: city
+Assigned: purple_dye_production purple_dye_1
+
+--- Settlement: Malaka ---
+Level: large_town
+
+--- Settlement: Calpe ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Elymia ---
+Level: large_town
+
+--- Settlement: Notia_Sikania ---
+Level: town
+
+--- Settlement: Bracheion ---
+Level: large_town
+
+--- Settlement: Tunesia ---
+Level: town
+
+--- Settlement: Vagensia ---
+Level: town
+
+--- Settlement: Xupon_Zaxyir ---
+Level: large_town
+
+--- Settlement: Epichos ---
+Level: town
+
+--- Settlement: Syrtis ---
+Level: town
+
+--- Settlement: Qart-Khadasht_Zaxyir ---
+Level: town
+
+--- Settlement: Ikosim ---
+Level: town
+
+--- Settlement: Thapsos ---
+Level: town
+
+--- Settlement: Lepqi_Zaxyirt ---
+Level: town
+
+--- Settlement: Rushikade ---
+Level: town
+
+--- Settlement: Maqoma_Zaxyir ---
+Level: town
+
+--- Settlement: Zekzi ---
+Level: town
+
+--- Settlement: Bastetania_Maritima ---
+Level: town
+
+--- Settlement: Emathia ---
+Level: city
+
+--- Settlement: Edonis ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Euboia ---
+Level: large_town
+
+--- Settlement: Korinthia ---
+Level: city
+
+--- Settlement: Mygdonia ---
+Level: city
+Assigned: jewelry jewelry_1
+
+--- Settlement: Pieria ---
+Level: town
+
+--- Settlement: Chalkidike ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Magnesia ---
+Level: large_town
+
+--- Settlement: Sintike-Odomantike ---
+Level: large_town
+
+--- Settlement: Dirphysia ---
+Level: large_town
+
+--- Settlement: Ocheia ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Orestis-Elimeia ---
+Level: large_town
+
+--- Settlement: Lynkestis-Eordaia ---
+Level: large_town
+
+--- Settlement: Tymphaia ---
+Level: town
+
+--- Settlement: Thessaliotis ---
+Level: large_town
+
+--- Settlement: Datos ---
+Level: large_town
+
+--- Settlement: Notia_Bottiaia ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Bottiaia ---
+Level: large_town
+
+--- Settlement: Akte ---
+Level: town
+
+--- Settlement: Sithonia ---
+Level: town
+
+--- Settlement: Bisaltia-Krestonia ---
+Level: town
+
+--- Settlement: Deuriopos-Pelagonia ---
+Level: town
+
+--- Settlement: Pelasgiotis ---
+Level: large_town
+
+--- Settlement: Histiaiotis ---
+Level: large_town
+
+--- Settlement: Perrhaibia ---
+Level: town
+
+--- Settlement: Achaia_Phthiotis ---
+Level: town
+
+--- Settlement: Peiraieus ---
+Level: large_town
+
+--- Settlement: Troizen ---
+Level: town
+
+--- Settlement: Megaris ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Thessalia ---
+Level: city
+Assigned: marble_production marble_2
+
+--- Settlement: Dassaretia ---
+Level: large_town
+
+--- Settlement: Orestike_Dassaretia ---
+Level: town
+
+--- Settlement: Amphaxitis ---
+Level: town
+
+--- Settlement: Agriania ---
+Level: town
+
+--- Settlement: Gynaikopolites_Nomos ---
+Level: huge_city
+
+--- Settlement: Memphites-Letopolites_Nomoi ---
+Level: large_city
+
+--- Settlement: Thinites-Diospolites_Mikros_Nomoi ---
+Level: city
+
+--- Settlement: Paphia ---
+Level: city
+Assigned: artisans artisans
+
+--- Settlement: Ioudaia ---
+Level: city
+Assigned: stone_quarry stone_2
+
+--- Settlement: Gazaia ---
+Level: city
+
+--- Settlement: Pelousiake ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Lesbos ---
+Level: city
+Assigned: marble_production marble_2
+
+--- Settlement: Halikarnassia ---
+Level: city
+
+--- Settlement: Kos ---
+Level: large_town
+
+--- Settlement: Telmessis ---
+Level: large_town
+
+--- Settlement: Milyas ---
+Level: large_town
+
+--- Settlement: Karia ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Dorian_Chersonesos ---
+Level: large_town
+
+--- Settlement: Phaselia ---
+Level: large_town
+
+--- Settlement: Salamina ---
+Level: city
+
+--- Settlement: Amathousia ---
+Level: large_town
+
+--- Settlement: Aipeia ---
+Level: city
+Assigned: artisans artisans
+
+--- Settlement: Ake ---
+Level: large_town
+
+--- Settlement: Rabat_Xaman ---
+Level: large_town
+
+--- Settlement: Paralia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Gadaris ---
+Level: large_town
+
+--- Settlement: Peraia ---
+Level: town
+
+--- Settlement: Shamerayin ---
+Level: large_town
+
+--- Settlement: Arsinoites-Aphroditopolites_Nomoi ---
+Level: city
+
+--- Settlement: Apollonopolites-Latopolites_Nomoi ---
+Level: town
+
+--- Settlement: Boreia_Trogodytike ---
+Level: large_town
+
+--- Settlement: Heroon_Kolpos ---
+Level: town
+
+--- Settlement: Oxyrhynchites-Herakleopolites_Nomoi ---
+Level: city
+
+--- Settlement: Menelaites-Prosopites_Nomoi ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Hermopolites-Kynopolites_Nomoi ---
+Level: city
+
+--- Settlement: Ombites_Nomos ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Tanites-Sethroites_Nomoi ---
+Level: large_town
+
+--- Settlement: Lykopolites-Hypselites_Nomoi ---
+Level: large_town
+
+--- Settlement: Prote_Oasis ---
+Level: large_town
+
+--- Settlement: Deutera_Oasis ---
+Level: town
+
+--- Settlement: Arabike_Aigyptos ---
+Level: town
+
+--- Settlement: Pharanitaia ---
+Level: town
+
+--- Settlement: Dodekaschoinos ---
+Level: town
+
+--- Settlement: Triakontaschoinos ---
+Level: town
+
+--- Settlement: Aidaia ---
+Level: town
+
+--- Settlement: Epi_Theron ---
+Level: town
+
+--- Settlement: Samos ---
+Level: large_town
+
+--- Settlement: Deire ---
+Level: town
+
+--- Settlement: Anatolike_Kyklades ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Dytike_Kyklades ---
+Level: town
+
+--- Settlement: Samothrake ---
+Level: town
+
+--- Settlement: Kalliste ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Latmikos_Kolpos ---
+Level: large_town
+
+--- Settlement: Mimas ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Arinna ---
+Level: large_town
+
+--- Settlement: Myros ---
+Level: large_town
+
+--- Settlement: Tsenmure ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Lykia ---
+Level: large_town
+
+--- Settlement: Estwediys ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Etennia-Kotennia ---
+Level: town
+
+--- Settlement: Methymnia ---
+Level: large_town
+
+--- Settlement: Beruta ---
+Level: town
+
+--- Settlement: Kitiy ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Arka ---
+Level: town
+
+--- Settlement: Ashqalon ---
+Level: large_town
+
+--- Settlement: Idoumaia ---
+Level: town
+
+--- Settlement: Gaulanitis ---
+Level: town
+
+--- Settlement: Ashdud ---
+Level: large_town
+
+--- Settlement: Massyas ---
+Level: town
+
+--- Settlement: Boreia_Palaistine ---
+Level: town
+
+--- Settlement: Chrysorrhoas ---
+Level: large_town
+
+--- Settlement: Abilene ---
+Level: town
+
+--- Settlement: Saites-Xoites_Nomoi ---
+Level: large_town
+
+--- Settlement: Heroopolites-Heliopolites_Nomoi ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Boubastites-Arabia_Nomoi ---
+Level: city
+
+--- Settlement: Koptites-Tentyrites_Nomoi ---
+Level: town
+
+--- Settlement: Panopolites-Antaiopolites_Nomoi ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Erythra_Thalassa ---
+Level: town
+
+--- Settlement: Athribites-Leontopolites_Nomoi ---
+Level: city
+
+--- Settlement: Sebennytes-Bousirites_Nomoi ---
+Level: large_town
+
+--- Settlement: Mendesios-Diospolites_Kato_Nomoi ---
+Level: city
+
+--- Settlement: Notios_Dodekaschoinos ---
+Level: large_town
+
+--- Settlement: Itania ---
+Level: large_town
+
+--- Settlement: Hesperos_Tracheiotis ---
+Level: town
+
+--- Settlement: Notia_Tracheiotis ---
+Level: large_town
+
+--- Settlement: Peri_Thebas-Pathyrites_Nomos ---
+Level: city
+Assigned: stone_quarry stone_2
+
+--- Settlement: Tlawa ---
+Level: town
+
+--- Settlement: Kalbia ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Mesopotamia ---
+Level: huge_city
+
+--- Settlement: Syria ---
+Level: huge_city
+
+--- Settlement: Damashq ---
+Level: city
+
+--- Settlement: Osrhoene ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Mygdonia-Syria ---
+Level: city
+
+--- Settlement: Arbelitis ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Tingene ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Orchoe ---
+Level: large_city
+
+--- Settlement: Sousiane ---
+Level: large_city
+Assigned: pitch_gathering pitch_2
+
+--- Settlement: Ionia ---
+Level: large_city
+Assigned: marble_production marble_2
+
+--- Settlement: Lydia ---
+Level: large_city
+
+--- Settlement: Paroreia_Phrygia ---
+Level: large_town
+
+--- Settlement: Pisidia ---
+Level: large_town
+
+--- Settlement: Pamphylia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Lykaonia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Kappadokike_Kilikia ---
+Level: town
+
+--- Settlement: Kilikia ---
+Level: city
+
+--- Settlement: Media ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Rhagiane ---
+Level: large_town
+
+--- Settlement: Parthia ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Boreia_Hyrkania ---
+Level: large_town
+
+--- Settlement: Ano_Persia ---
+Level: town
+
+--- Settlement: Karmania ---
+Level: large_town
+
+--- Settlement: Anaouon ---
+Level: city
+
+--- Settlement: Ariane ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Margiane ---
+Level: large_city
+
+--- Settlement: Propontis ---
+Level: large_town
+
+--- Settlement: Troias ---
+Level: city
+Assigned: stone_quarry stone_2
+
+--- Settlement: Adramyttenos_Kolpos ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Pelopeia ---
+Level: large_town
+
+--- Settlement: Nea_Ionia ---
+Level: city
+
+--- Settlement: Klazomenia ---
+Level: large_town
+
+--- Settlement: Katakekaumene_Lykaonia ---
+Level: town
+
+--- Settlement: Pessinountis ---
+Level: town
+
+--- Settlement: Anatolike_Tracheiotis ---
+Level: large_town
+
+--- Settlement: Mysia ---
+Level: large_town
+
+--- Settlement: Orgasia ---
+Level: town
+
+--- Settlement: Megale_Phrygia ---
+Level: large_town
+
+--- Settlement: Maiandros ---
+Level: large_town
+
+--- Settlement: Euantheia ---
+Level: large_town
+
+--- Settlement: Kyrrhestike ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Massyas_Pedion ---
+Level: town
+
+--- Settlement: Apamene ---
+Level: large_city
+
+--- Settlement: Pieria-Syria ---
+Level: city
+Assigned: pitch_gathering pitch_2
+
+--- Settlement: Leuke_Akte ---
+Level: city
+
+--- Settlement: Gebal ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Khalab ---
+Level: large_town
+
+--- Settlement: Dolicheia ---
+Level: town
+
+--- Settlement: Gordyene ---
+Level: large_town
+
+--- Settlement: Chalonitis ---
+Level: town
+
+--- Settlement: Babylonia ---
+Level: large_city
+Assigned: stone_quarry stone_2
+
+--- Settlement: Nikephoreia ---
+Level: town
+
+--- Settlement: Bambyke ---
+Level: town
+
+--- Settlement: Sittakene ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Apolloniatis-Mesopotamia ---
+Level: large_town
+
+--- Settlement: Zeugma-Euphrates ---
+Level: large_town
+
+--- Settlement: Arrhapachitis ---
+Level: large_town
+
+--- Settlement: Elymais ---
+Level: large_town
+
+--- Settlement: Assyria ---
+Level: large_town
+
+--- Settlement: Nippour ---
+Level: large_town
+
+--- Settlement: Ankobaritis ---
+Level: town
+
+--- Settlement: Hesperos_Ariane ---
+Level: town
+
+--- Settlement: Taokene ---
+Level: city
+
+--- Settlement: Kadousia ---
+Level: town
+
+--- Settlement: Notia_Parthia ---
+Level: large_town
+
+--- Settlement: Syromedia ---
+Level: town
+
+--- Settlement: Komisene ---
+Level: large_town
+
+--- Settlement: Amardokaia-Anariakaia ---
+Level: town
+
+--- Settlement: Hyrkania ---
+Level: city
+
+--- Settlement: Pityoussa ---
+Level: city
+
+--- Settlement: Ano_Troias ---
+Level: large_town
+
+--- Settlement: Kaystros ---
+Level: town
+
+--- Settlement: Sipylos ---
+Level: large_town
+
+--- Settlement: Anatolike_Phrygia ---
+Level: town
+
+--- Settlement: Charonia ---
+Level: town
+
+--- Settlement: Mlaundos ---
+Level: town
+
+--- Settlement: Aizanitis ---
+Level: town
+
+--- Settlement: Lelegia ---
+Level: town
+
+--- Settlement: Marsyas ---
+Level: town
+
+--- Settlement: Idrias ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Paroreia_Pisidia ---
+Level: town
+
+--- Settlement: Korbeous ---
+Level: town
+
+--- Settlement: Issikos_Kolpos ---
+Level: large_town
+
+--- Settlement: Pyramos ---
+Level: town
+
+--- Settlement: Melitene ---
+Level: town
+
+--- Settlement: Kataonia ---
+Level: large_town
+
+--- Settlement: Mallotis ---
+Level: large_town
+
+--- Settlement: Mese_Kilikia ---
+Level: large_town
+
+--- Settlement: Emesene ---
+Level: town
+
+--- Settlement: Belos ---
+Level: town
+
+--- Settlement: Khamat ---
+Level: town
+
+--- Settlement: Kardia ---
+Level: city
+
+--- Settlement: Elaiousa ---
+Level: large_town
+
+--- Settlement: Notia_Gordyene ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Dorylaia ---
+Level: town
+
+--- Settlement: Ninawa ---
+Level: large_town
+
+--- Settlement: Kharranu ---
+Level: large_town
+
+--- Settlement: Anatolike_Chalybonitis ---
+Level: large_town
+
+--- Settlement: Anthemousia ---
+Level: town
+
+--- Settlement: Dytike_Apolloniatis ---
+Level: large_town
+
+--- Settlement: Boreia_Sittakene ---
+Level: city
+
+--- Settlement: Chaldaia ---
+Level: town
+
+--- Settlement: Artakene ---
+Level: town
+
+--- Settlement: Paralia_Chaldaia ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Nisaia ---
+Level: town
+
+--- Settlement: Apauarktikene ---
+Level: town
+
+--- Settlement: Drangiane ---
+Level: large_town
+
+--- Settlement: Sagartia ---
+Level: large_town
+
+--- Settlement: Derbikia ---
+Level: town
+
+--- Settlement: Notia_Karmania ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Mese_Ariane ---
+Level: town
+
+--- Settlement: Tapyria-Kyrtia ---
+Level: town
+
+--- Settlement: Ouxia-Paraitakene ---
+Level: town
+
+--- Settlement: Kossaia-Mardia ---
+Level: town
+
+--- Settlement: Notia_Margiane ---
+Level: town
+
+--- Settlement: Baktriane ---
+Level: city
+
+--- Settlement: Anatolike_Baktriane ---
+Level: city
+Assigned: jewelry jewelry_1
+
+--- Settlement: Sogdiane ---
+Level: large_city
+Assigned: sulphur_industry sulphur_2
+
+--- Settlement: Iaxartes ---
+Level: large_town
+
+--- Settlement: Darapsia ---
+Level: city
+Assigned: jewelry jewelry_1
+
+--- Settlement: Mardyenia ---
+Level: large_town
+
+--- Settlement: Kyreschata ---
+Level: large_town
+
+--- Settlement: Oxos ---
+Level: large_town
+
+--- Settlement: Anatolike_Sogdiane ---
+Level: large_town
+
+--- Settlement: Boreia_Baktriane ---
+Level: town
+
+--- Settlement: Oxeiane ---
+Level: town
+
+--- Settlement: Ano_Baktriane ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Parnia ---
+Level: large_town
+
+--- Settlement: Sakaia ---
+Level: large_town
+
+--- Settlement: Sakaraulia ---
+Level: town
+
+--- Settlement: Megale_Armenia ---
+Level: large_town
+
+--- Settlement: Basoropeda ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Lychnitis ---
+Level: town
+
+--- Settlement: Ano_Araxes ---
+Level: town
+
+--- Settlement: Taronitis ---
+Level: town
+
+--- Settlement: Pontos ---
+Level: large_town
+
+--- Settlement: Hieratikos_Pontos ---
+Level: large_town
+
+--- Settlement: Pimolisene ---
+Level: town
+
+--- Settlement: Phanaroia ---
+Level: town
+
+--- Settlement: Zelitis ---
+Level: town
+
+--- Settlement: Kimiatene ---
+Level: town
+
+--- Settlement: Lusitania ---
+Level: large_town
+
+--- Settlement: Lusitania_Orientalis ---
+Level: town
+
+--- Settlement: Getaia ---
+Level: large_town
+
+--- Settlement: Hesperos_Getaia ---
+Level: large_town
+
+--- Settlement: Akarnania ---
+Level: large_town
+
+--- Settlement: Acheloos ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Leukas ---
+Level: large_town
+
+--- Settlement: Achaia ---
+Level: large_town
+
+--- Settlement: Hesperos_Achaia ---
+Level: town
+
+--- Settlement: Anatolike_Achaia ---
+Level: town
+
+--- Settlement: Akragas ---
+Level: city
+Assigned: sulphur_industry sulphur_1
+
+--- Settlement: Aeduia ---
+Level: large_town
+
+--- Settlement: Mandubia-Blannovia ---
+Level: town
+
+--- Settlement: Aeduia_Occidentalis ---
+Level: town
+
+--- Settlement: Aitolia ---
+Level: large_town
+
+--- Settlement: Pytho ---
+Level: town
+
+--- Settlement: Ozolia_Lokris ---
+Level: large_town
+
+--- Settlement: Zakynthos ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Albania ---
+Level: large_town
+
+--- Settlement: Anatolike_Albania ---
+Level: town
+
+--- Settlement: Allobrogia ---
+Level: large_town
+
+--- Settlement: Lemannus_Inferior ---
+Level: town
+
+--- Settlement: Ambarria ---
+Level: town
+
+--- Settlement: Ambronia ---
+Level: large_town
+
+--- Settlement: Anartia ---
+Level: large_town
+
+--- Settlement: Anartia_Orientalis ---
+Level: town
+
+--- Settlement: Anartia_Septentrionalis ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Aorsia ---
+Level: large_town
+
+--- Settlement: Ano_Aorsia ---
+Level: large_town
+
+--- Settlement: Apuania ---
+Level: large_town
+
+--- Settlement: Arwad-Marat ---
+Level: city
+
+--- Settlement: Ardiaia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Narensia ---
+Level: town
+
+--- Settlement: Arevacia ---
+Level: large_town
+
+--- Settlement: Arevacia_Septentrionalis ---
+Level: town
+
+--- Settlement: Arevacia_Centralis ---
+Level: town
+
+--- Settlement: Argolis ---
+Level: city
+
+--- Settlement: Brasiai ---
+Level: town
+
+--- Settlement: Mikra_Armenia ---
+Level: large_town
+
+--- Settlement: Karanitis ---
+Level: town
+
+--- Settlement: Akilisene ---
+Level: town
+
+--- Settlement: Saguntia ---
+Level: large_town
+
+--- Settlement: Agni ---
+Level: large_town
+
+--- Settlement: Arvernia ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Vellavia-Eleutetia ---
+Level: town
+
+--- Settlement: Arvernia_Septentrionalis ---
+Level: town
+
+--- Settlement: Hasta ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Astia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Asturia ---
+Level: large_town
+
+--- Settlement: Asturia_Septentrionalis ---
+Level: town
+
+--- Settlement: Attike ---
+Level: large_city
+Assigned: mines mines+1
+
+--- Settlement: Lemnos ---
+Level: large_town
+
+--- Settlement: Skyros ---
+Level: town
+
+--- Settlement: Pedias_Atropatene ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Tracheia_Atropatene ---
+Level: town
+
+--- Settlement: Matiane ---
+Level: town
+
+--- Settlement: Diablintia ---
+Level: large_town
+
+--- Settlement: Cenomania-Eburovicia ---
+Level: town
+
+--- Settlement: Brannovicia ---
+Level: town
+
+--- Settlement: Axoumitis ---
+Level: large_town
+
+--- Settlement: Bastarnia_Vetus ---
+Level: large_town
+
+--- Settlement: Bastetania ---
+Level: large_town
+
+--- Settlement: Viromandua ---
+Level: large_town
+
+--- Settlement: Ambiana ---
+Level: town
+
+--- Settlement: Suessionia ---
+Level: town
+
+--- Settlement: Bellovacia ---
+Level: town
+
+--- Settlement: Atrebatia ---
+Level: town
+
+--- Settlement: Bellia ---
+Level: large_town
+
+--- Settlement: Bellia_Orientalis ---
+Level: large_town
+
+--- Settlement: Bessike ---
+Level: large_town
+
+--- Settlement: Notia_Bithynia ---
+Level: large_town
+
+--- Settlement: Bithynia ---
+Level: town
+
+--- Settlement: Biturigia ---
+Level: large_town
+
+--- Settlement: Biturigia_Meridionalis ---
+Level: town
+
+--- Settlement: Biturigia_Occidentalis ---
+Level: town
+
+--- Settlement: Boiotia ---
+Level: large_town
+
+--- Settlement: Poimandris ---
+Level: large_town
+
+--- Settlement: Thebai ---
+Level: town
+
+--- Settlement: Boihaemum ---
+Level: large_town
+
+--- Settlement: Boihaemum_Orientale ---
+Level: large_town
+
+--- Settlement: Boihaemum_Meridionale ---
+Level: town
+
+--- Settlement: Boihaemum_Occidentale ---
+Level: large_town
+
+--- Settlement: Kimmerikos_Bosporos ---
+Level: city
+
+--- Settlement: Phanagoreion ---
+Level: large_town
+
+--- Settlement: Sindike ---
+Level: large_town
+
+--- Settlement: Kriou_Metopon ---
+Level: large_town
+
+--- Settlement: Stenopos ---
+Level: town
+
+--- Settlement: Korokondamitis ---
+Level: town
+
+--- Settlement: Aspourgiania ---
+Level: town
+
+--- Settlement: Maiotis ---
+Level: town
+
+--- Settlement: Breunia ---
+Level: large_town
+
+--- Settlement: Brigantia ---
+Level: large_town
+
+--- Settlement: Ituna_Aestuarium ---
+Level: town
+
+--- Settlement: Brigantia_Centralis ---
+Level: town
+
+--- Settlement: Brigantia_Orientalis ---
+Level: town
+
+--- Settlement: Bruttium ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Chonia ---
+Level: large_town
+
+--- Settlement: Buridavensia ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Buridavensia_Meridionalis ---
+Level: town
+
+--- Settlement: Bosporos ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Chalkedonia ---
+Level: large_town
+
+--- Settlement: Thraikie_Propontis ---
+Level: large_town
+
+--- Settlement: Kabylia ---
+Level: large_town
+
+--- Settlement: Cadurcia ---
+Level: large_town
+
+--- Settlement: Caledonia ---
+Level: large_town
+
+--- Settlement: Cantabria ---
+Level: large_town
+
+--- Settlement: Cantabria_Meridionalis ---
+Level: town
+
+--- Settlement: Cantiacia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Cantiacia_Orientalis ---
+Level: town
+
+--- Settlement: Kappadokia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Tyanitis ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Garsaouritis ---
+Level: town
+
+--- Settlement: Morimene-Chammanene ---
+Level: town
+
+--- Settlement: Saraouene-Laouiniasene ---
+Level: town
+
+--- Settlement: Campania ---
+Level: city
+
+--- Settlement: Turdetania_Centralis ---
+Level: city
+
+--- Settlement: Carpetania ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Carpetania_Meridionalis ---
+Level: town
+
+--- Settlement: Catuvellaunia ---
+Level: large_town
+
+--- Settlement: Catuvellaunia_Occidentalis ---
+Level: town
+
+--- Settlement: Catuvellaunia_Orientalis ---
+Level: town
+
+--- Settlement: Celticia ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Celticia_Orientalis ---
+Level: town
+
+--- Settlement: Cenomania ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Cenomania_Meridionalis ---
+Level: town
+
+--- Settlement: Athesia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Charakene ---
+Level: large_town
+
+--- Settlement: Notia_Charakene ---
+Level: large_town
+
+--- Settlement: Ikaros ---
+Level: large_town
+
+--- Settlement: Tylos ---
+Level: large_town
+
+--- Settlement: Chattia ---
+Level: large_town
+
+--- Settlement: Canninefatia_Vetus ---
+Level: town
+
+--- Settlement: Chaucia_Maior ---
+Level: large_town
+
+--- Settlement: Chaucia_Minor ---
+Level: town
+
+--- Settlement: Mikra_Chersonesos ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Hesperos_Chersonesos ---
+Level: town
+
+--- Settlement: Cheruscia ---
+Level: large_town
+
+--- Settlement: Chios ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Chorasmene ---
+Level: large_town
+
+--- Settlement: Boreia_Chorasmene ---
+Level: town
+
+--- Settlement: Anatolike_Chorasmene ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Hesperos_Chorasmene ---
+Level: town
+
+--- Settlement: Cimbria ---
+Level: large_town
+
+--- Settlement: Boia ---
+Level: city
+Assigned: smith blacksmith
+
+--- Settlement: Boia_Occidentalis ---
+Level: large_town
+
+--- Settlement: Kianos_Kolpos ---
+Level: large_town
+
+--- Settlement: Kolchis ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Notia_Kolchis ---
+Level: town
+
+--- Settlement: Corsica ---
+Level: large_town
+
+--- Settlement: Coisstobocia ---
+Level: large_town
+
+--- Settlement: Coisstobocia_Meridionalis ---
+Level: town
+
+--- Settlement: Coisstobocia_Transmontana ---
+Level: town
+
+--- Settlement: Krobyzia ---
+Level: large_town
+
+--- Settlement: Kyrenaike ---
+Level: large_city
+
+--- Settlement: Hesperos_Aigyptos ---
+Level: town
+
+--- Settlement: Euesperidai ---
+Level: town
+
+--- Settlement: Barke ---
+Level: city
+
+--- Settlement: Hesperos_Kyrenaike ---
+Level: town
+
+--- Settlement: Katabathmos ---
+Level: town
+
+--- Settlement: Taucheira ---
+Level: large_town
+
+--- Settlement: Arktonnesos ---
+Level: city
+Assigned: marble_production marble_2
+
+--- Settlement: Daesitiatia ---
+Level: large_town
+
+--- Settlement: Dardania ---
+Level: large_town
+
+--- Settlement: Anatolike_Dardania ---
+Level: town
+
+--- Settlement: Galabria ---
+Level: town
+
+--- Settlement: Delmatia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Ditionia ---
+Level: town
+
+--- Settlement: Denthelentike ---
+Level: large_town
+
+--- Settlement: Dumnonia ---
+Level: large_town
+
+--- Settlement: Dumnonia_Occidentalis ---
+Level: large_town
+
+--- Settlement: Dumnonia_Meridionalis ---
+Level: town
+
+--- Settlement: Durotrigia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Durotrigia_Orientalis ---
+Level: town
+
+--- Settlement: Durotrigia_Occidentalis ---
+Level: town
+
+--- Settlement: Durotrigia_Centralis ---
+Level: town
+
+--- Settlement: Eburonia ---
+Level: large_town
+
+--- Settlement: Eburonia_Orientalis ---
+Level: town
+
+--- Settlement: Edetania ---
+Level: large_town
+
+--- Settlement: Elis ---
+Level: large_town
+
+--- Settlement: Pisatis ---
+Level: town
+
+--- Settlement: Emporitia ---
+Level: large_town
+
+--- Settlement: Rhodetia ---
+Level: town
+
+--- Settlement: Indicetia ---
+Level: town
+
+--- Settlement: Ambrakikos_Kolpos ---
+Level: large_town
+
+--- Settlement: Chaonia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Molossia ---
+Level: large_town
+
+--- Settlement: Kerkyra ---
+Level: large_town
+
+--- Settlement: Ano_Chaonia ---
+Level: town
+
+--- Settlement: Thesprotia ---
+Level: town
+
+--- Settlement: Hellas ---
+Level: town
+
+--- Settlement: Akrokeraunia ---
+Level: town
+
+--- Settlement: Atintania ---
+Level: town
+
+--- Settlement: Eraviscia ---
+Level: large_town
+
+--- Settlement: Eraviscia_Occidentalis ---
+Level: town
+
+--- Settlement: Eraviscia_Orientalis ---
+Level: town
+
+--- Settlement: Eraviscia_Septentrionalis ---
+Level: town
+
+--- Settlement: Frisia ---
+Level: large_town
+
+--- Settlement: Agadir ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Tektosagia ---
+Level: large_town
+
+--- Settlement: Nea_Tektosagia ---
+Level: town
+
+--- Settlement: Salone ---
+Level: town
+
+--- Settlement: Anatolike_Tolistobogia ---
+Level: large_town
+
+--- Settlement: Tolistobogia ---
+Level: town
+
+--- Settlement: Trokmia ---
+Level: town
+
+--- Settlement: Bracarensia ---
+Level: large_town
+
+--- Settlement: Bracarensia_Septentrionalis ---
+Level: town
+
+--- Settlement: Garamantia ---
+Level: large_town
+
+--- Settlement: Garamantia_Occidentalis ---
+Level: town
+
+--- Settlement: Garamantia_Orientalis ---
+Level: town
+
+--- Settlement: Gutia ---
+Level: large_town
+
+--- Settlement: Gutia_Orientalis ---
+Level: town
+
+--- Settlement: Insula_Gutarum ---
+Level: town
+
+--- Settlement: Gerrhaia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Chattenia ---
+Level: town
+
+--- Settlement: Hesperos_Chattenia ---
+Level: town
+
+--- Settlement: Gortynia ---
+Level: large_town
+
+--- Settlement: Ida ---
+Level: town
+
+--- Settlement: Ssabwat ---
+Level: large_town
+
+--- Settlement: Raybun ---
+Level: town
+
+--- Settlement: Adramitia ---
+Level: town
+
+--- Settlement: Anatolike_Chatramonitaia ---
+Level: town
+
+--- Settlement: Helvetia_Vetus ---
+Level: large_town
+
+--- Settlement: Rauracia-Latobrigia ---
+Level: town
+
+--- Settlement: Tulingia-Verbigenia ---
+Level: town
+
+--- Settlement: Heniochia ---
+Level: large_town
+
+--- Settlement: Hellenike_Mariandynia ---
+Level: city
+
+--- Settlement: Hypios ---
+Level: town
+
+--- Settlement: Kaukonia ---
+Level: large_town
+
+--- Settlement: Hermunduria ---
+Level: large_town
+
+--- Settlement: Homeritis ---
+Level: large_town
+
+--- Settlement: Anatolike_Homeritis ---
+Level: town
+
+--- Settlement: Eudaimon_Arabia ---
+Level: town
+
+--- Settlement: Histria ---
+Level: large_town
+
+--- Settlement: Histria_Septentrionalis ---
+Level: town
+
+--- Settlement: Halmyris ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Iapodia ---
+Level: large_town
+
+--- Settlement: Sinus_Liburnicus ---
+Level: town
+
+--- Settlement: Iazygia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Iberia ---
+Level: large_town
+
+--- Settlement: Hesperos_Iberia ---
+Level: town
+
+--- Settlement: Ilergetia_Orientalis ---
+Level: large_town
+
+--- Settlement: Ilergetia ---
+Level: town
+
+--- Settlement: Contestania_Meridionalis ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Illyria ---
+Level: large_town
+
+--- Settlement: Taulantia ---
+Level: town
+
+--- Settlement: Epidamnia ---
+Level: large_town
+
+--- Settlement: Parthinia ---
+Level: large_town
+
+--- Settlement: Basilike_Dassaretia ---
+Level: town
+
+--- Settlement: Gandaritis ---
+Level: large_town
+
+--- Settlement: Kapisene ---
+Level: city
+Assigned: jewelry jewelry_1
+
+--- Settlement: Paropamisadai ---
+Level: town
+
+--- Settlement: Hesperos_Assakenia ---
+Level: town
+
+--- Settlement: Gouraia ---
+Level: city
+Assigned: jewelry jewelry_1
+
+--- Settlement: Anatolike_Assakenia ---
+Level: town
+
+--- Settlement: Assakenia ---
+Level: town
+
+--- Settlement: Aspasia ---
+Level: large_town
+
+--- Settlement: Sydrakaia ---
+Level: town
+
+--- Settlement: Agalassia ---
+Level: town
+
+--- Settlement: Sibia ---
+Level: town
+
+--- Settlement: Pandoouia ---
+Level: town
+
+--- Settlement: Hydaspes ---
+Level: town
+
+--- Settlement: Sopeitheia ---
+Level: town
+
+--- Settlement: Glausaia ---
+Level: large_town
+
+--- Settlement: Ingaunia ---
+Level: large_town
+
+--- Settlement: Insubria ---
+Level: city
+
+--- Settlement: Insubria_Meridionalis ---
+Level: large_town
+
+--- Settlement: Issa ---
+Level: large_town
+
+--- Settlement: Epetia-Salonitis ---
+Level: town
+
+--- Settlement: Melaina_Korkyra ---
+Level: town
+
+--- Settlement: Tragouria ---
+Level: town
+
+--- Settlement: Ivernia_Meridionalis ---
+Level: large_town
+
+--- Settlement: Minoa ---
+Level: large_town
+
+--- Settlement: Apteraia ---
+Level: large_town
+
+--- Settlement: Gusan ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Medwi ---
+Level: large_town
+
+--- Settlement: Napa ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Sirtibis ---
+Level: town
+
+--- Settlement: Pedeme ---
+Level: large_town
+
+--- Settlement: Euonymitaia ---
+Level: town
+
+--- Settlement: Notia_Euonymitaia ---
+Level: large_town
+
+--- Settlement: Aborepi ---
+Level: town
+
+--- Settlement: Notia_Meroitis ---
+Level: large_town
+
+--- Settlement: Kydoniatis ---
+Level: large_town
+
+--- Settlement: Polyrhen ---
+Level: large_town
+
+--- Settlement: Labeataia ---
+Level: large_town
+
+--- Settlement: Boreios_Labeataia ---
+Level: town
+
+--- Settlement: Lacetania ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Langobardia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Liburnia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Seniensia ---
+Level: town
+
+--- Settlement: Liburnia_Septentrionalis ---
+Level: town
+
+--- Settlement: Liburnia_Orientalis ---
+Level: large_town
+
+--- Settlement: Lechienia ---
+Level: large_town
+
+--- Settlement: Notia_Lechienia ---
+Level: town
+
+--- Settlement: Lucania ---
+Level: large_town
+
+--- Settlement: Lucania_Vetus ---
+Level: town
+
+--- Settlement: Naharvalia ---
+Level: large_town
+
+--- Settlement: Helveconia ---
+Level: town
+
+--- Settlement: Haria ---
+Level: town
+
+--- Settlement: Manimia ---
+Level: town
+
+--- Settlement: Helisia ---
+Level: town
+
+--- Settlement: Synnadia ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Lyttos ---
+Level: large_town
+
+--- Settlement: Latia ---
+Level: town
+
+--- Settlement: Maidia ---
+Level: large_town
+
+--- Settlement: Mamertina ---
+Level: large_town
+
+--- Settlement: Marcomannia_Vetus ---
+Level: large_town
+
+--- Settlement: Shigan ---
+Level: large_town
+
+--- Settlement: Masaesylia_Septentrionalis ---
+Level: town
+
+--- Settlement: Segobrigia ---
+Level: city
+
+--- Settlement: Hellenike_Dekiataia ---
+Level: town
+
+--- Settlement: Hellenike_Arekomikia ---
+Level: town
+
+--- Settlement: Tobgaxag ---
+Level: large_town
+
+--- Settlement: Zama_Meizon ---
+Level: town
+
+--- Settlement: Mauretania ---
+Level: large_town
+
+--- Settlement: The_Road_to_Palibothra ---
+Level: city
+
+--- Settlement: The_Road_to_Methora ---
+Level: city
+
+--- Settlement: Audoumbaria ---
+Level: town
+
+--- Settlement: Adraistaia ---
+Level: city
+
+--- Settlement: Kathaia ---
+Level: town
+
+--- Settlement: Kounindia ---
+Level: town
+
+--- Settlement: Arkadia ---
+Level: city
+
+--- Settlement: Calabria ---
+Level: large_town
+
+--- Settlement: Salentinia ---
+Level: town
+
+--- Settlement: Messenia ---
+Level: large_town
+
+--- Settlement: Qarnawu ---
+Level: large_town
+
+--- Settlement: Nassan ---
+Level: town
+
+--- Settlement: Nashaq ---
+Level: large_town
+
+--- Settlement: Nagran ---
+Level: town
+
+--- Settlement: Boreia_Minaia ---
+Level: large_town
+
+--- Settlement: Mossynoikia ---
+Level: large_town
+
+--- Settlement: Gaetulia ---
+Level: large_town
+
+--- Settlement: Gaetulia_Septentrionalis ---
+Level: town
+
+--- Settlement: Raqemo ---
+Level: large_town
+
+--- Settlement: Hesperos_Arabia ---
+Level: town
+
+--- Settlement: Ailanitos_Kolpos ---
+Level: town
+
+--- Settlement: Nasamonia ---
+Level: large_town
+
+--- Settlement: Psyllia ---
+Level: town
+
+--- Settlement: Nervia ---
+Level: large_town
+
+--- Settlement: Noricum ---
+Level: large_town
+
+--- Settlement: Noricum_Septentrionale ---
+Level: large_town
+
+--- Settlement: Noricum_Occidentale ---
+Level: town
+
+--- Settlement: Odrysia ---
+Level: large_town
+
+--- Settlement: Pyrogeria ---
+Level: town
+
+--- Settlement: Olbiana ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Ordovicia ---
+Level: large_town
+
+--- Settlement: Ordovicia_Meridionalis ---
+Level: town
+
+--- Settlement: Oretania_Meridionalis ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Oretania ---
+Level: town
+
+--- Settlement: Osismia ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Paionia ---
+Level: large_town
+
+--- Settlement: Erigonia ---
+Level: town
+
+--- Settlement: Palmyrene ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Paphlagonia ---
+Level: large_town
+
+--- Settlement: Kallatia ---
+Level: city
+
+--- Settlement: Antheia ---
+Level: large_town
+
+--- Settlement: Mesambria ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Odessia ---
+Level: large_town
+
+--- Settlement: Tomea ---
+Level: town
+
+--- Settlement: Kaikia ---
+Level: city
+Assigned: smith blacksmith
+
+--- Settlement: Phrykonis ---
+Level: large_town
+
+--- Settlement: Persia ---
+Level: city
+Assigned: jewelry jewelry_1
+
+--- Settlement: Pasargadaia-Kyrtia ---
+Level: large_town
+
+--- Settlement: Picenum ---
+Level: large_town
+
+--- Settlement: Mykale ---
+Level: large_town
+
+--- Settlement: Kattabaneia ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Haribut ---
+Level: town
+
+--- Settlement: Marda ---
+Level: town
+
+--- Settlement: Quadia_Vetus ---
+Level: large_town
+
+--- Settlement: Rhodos ---
+Level: large_city
+
+--- Settlement: Notios_Rhodos ---
+Level: town
+
+--- Settlement: Rhoxolania ---
+Level: large_town
+
+--- Settlement: Basilike_Sauromataia ---
+Level: large_town
+
+--- Settlement: Sauromataia ---
+Level: large_town
+
+--- Settlement: Basilike_Skythia ---
+Level: large_town
+
+--- Settlement: Nomadike_Skythia ---
+Level: town
+
+--- Settlement: Notia_Basilike_Skythia ---
+Level: town
+
+--- Settlement: Megale_Chersonesos ---
+Level: town
+
+--- Settlement: Sabaia ---
+Level: city
+Assigned: mines mines
+
+--- Settlement: Ssirwakh ---
+Level: town
+
+--- Settlement: Yathil ---
+Level: town
+
+--- Settlement: Manahiytim ---
+Level: town
+
+--- Settlement: Elisaria ---
+Level: town
+
+--- Settlement: Sabaike_Aithiopia ---
+Level: town
+
+--- Settlement: Salassia ---
+Level: large_town
+
+--- Settlement: Salassia_Meridionalis ---
+Level: town
+
+--- Settlement: Salluvia ---
+Level: large_town
+
+--- Settlement: Avaticia ---
+Level: town
+
+--- Settlement: Pentria-Carricinia ---
+Level: large_town
+
+--- Settlement: Hirpinia ---
+Level: town
+
+--- Settlement: Balaria ---
+Level: large_town
+
+--- Settlement: Iliensia ---
+Level: town
+
+--- Settlement: Sassinia ---
+Level: large_town
+
+--- Settlement: Skordiskia ---
+Level: large_town
+
+--- Settlement: Boreia_Skordiskia ---
+Level: town
+
+--- Settlement: Hesperos_Skordiskia ---
+Level: town
+
+--- Settlement: Amantinia ---
+Level: town
+
+--- Settlement: Eurymedoneia ---
+Level: large_town
+
+--- Settlement: Senonia ---
+Level: city
+
+--- Settlement: Senonia_Septentrionalis ---
+Level: town
+
+--- Settlement: Senonia_Orientalis ---
+Level: town
+
+--- Settlement: Sequania ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Sequania_Meridionalis ---
+Level: large_town
+
+--- Settlement: Sequania_Orientalis ---
+Level: town
+
+--- Settlement: Zidun ---
+Level: city
+Assigned: purple_dye_production purple_dye_1
+
+--- Settlement: Siluria ---
+Level: large_town
+
+--- Settlement: Siluria_Orientalis ---
+Level: town
+
+--- Settlement: Sinopeia ---
+Level: city
+
+--- Settlement: Sirakene ---
+Level: large_town
+
+--- Settlement: Pandaia ---
+Level: town
+
+--- Settlement: Sophene ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Hesperos_Sophene ---
+Level: town
+
+--- Settlement: Kommagene ---
+Level: town
+
+--- Settlement: Kato_Kommagene ---
+Level: town
+
+--- Settlement: Sotiatia ---
+Level: large_town
+
+--- Settlement: Lakonia ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Lakonikos_Kolpos ---
+Level: town
+
+--- Settlement: Kythera ---
+Level: town
+
+--- Settlement: Semnonia ---
+Level: large_town
+
+--- Settlement: Sugambria ---
+Level: large_town
+
+--- Settlement: Trinakria ---
+Level: large_city
+Assigned: stone_quarry stone_2
+
+--- Settlement: Hipparia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Tyndaritis ---
+Level: large_town
+
+--- Settlement: Xouthia ---
+Level: large_town
+
+--- Settlement: Anatolike_Sikelia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Katania ---
+Level: large_town
+
+--- Settlement: Taras ---
+Level: city
+Assigned: purple_dye_production purple_dye_1
+
+--- Settlement: Metapontion ---
+Level: large_town
+
+--- Settlement: Tauriscia ---
+Level: large_town
+
+--- Settlement: Tauriscia_Occidentalis ---
+Level: town
+
+--- Settlement: Tauriscia_Meridionalis ---
+Level: town
+
+--- Settlement: Tauriscia_Orientalis ---
+Level: town
+
+--- Settlement: Tauriscia_Centralis ---
+Level: town
+
+--- Settlement: Tencteria_Vetus ---
+Level: large_town
+
+--- Settlement: Teuriscia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Teuriscia_Occidentalis ---
+Level: town
+
+--- Settlement: Thamoudaia ---
+Level: large_town
+
+--- Settlement: Nigiria_Septentrionalis ---
+Level: large_town
+
+--- Settlement: Hellenike_Makronia ---
+Level: large_town
+
+--- Settlement: Treveria ---
+Level: large_town
+
+--- Settlement: Treveria_Orientalis ---
+Level: large_town
+
+--- Settlement: Triballia ---
+Level: large_town
+
+--- Settlement: Hesperos_Triballia ---
+Level: town
+
+--- Settlement: Trinobantia ---
+Level: large_town
+
+--- Settlement: Trinobantia_Orientalis ---
+Level: town
+
+--- Settlement: Tyle ---
+Level: large_town
+
+--- Settlement: Kyrmianaia-Nipsaia ---
+Level: large_town
+
+--- Settlement: Tyragetia ---
+Level: large_town
+
+--- Settlement: Zur ---
+Level: city
+Assigned: purple_dye_production purple_dye_1
+
+--- Settlement: Ubia_Vetus ---
+Level: large_town
+
+--- Settlement: Usipetia_Vetus ---
+Level: large_town
+
+--- Settlement: Vaccaea ---
+Level: large_town
+
+--- Settlement: Vaccaea_Occidentalis ---
+Level: large_town
+
+--- Settlement: Vasconia ---
+Level: large_town
+
+--- Settlement: Vasconia_Meridionalis ---
+Level: town
+
+--- Settlement: Venedia ---
+Level: large_town
+
+--- Settlement: Venetia ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Venetia_Occidentalis ---
+Level: town
+
+--- Settlement: Venetia_Orientalis ---
+Level: town
+
+--- Settlement: Venetia-Aremorica ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Vettonia_Montana ---
+Level: large_town
+
+--- Settlement: Vettonia ---
+Level: town
+
+--- Settlement: Rucinatia ---
+Level: large_town
+
+--- Settlement: Cosuanetia ---
+Level: large_town
+
+--- Settlement: Catenatia ---
+Level: town
+
+--- Settlement: Licatia-Focunatia ---
+Level: large_town
+
+--- Settlement: Volcaea ---
+Level: large_town
+
+--- Settlement: Volcaea_Orientalis ---
+Level: large_town
+
+--- Settlement: Volcaea_Septentrionalis ---
+Level: town
+
+--- Settlement: Hercynia ---
+Level: town
+
+--- Settlement: Arecomicia ---
+Level: city
+Assigned: smith blacksmith
+
+--- Settlement: Tectosagia ---
+Level: large_town
+
+--- Settlement: Velzna ---
+Level: large_town
+
+--- Settlement: Hebros ---
+Level: large_town
+
+--- Settlement: Briantike-Korpilike ---
+Level: large_town
+
+--- Settlement: Kainia ---
+Level: town
+
+--- Settlement: Brenaia ---
+Level: large_town
+
+--- Settlement: Armenian_Rebels_Region ---
+Level: town
+
+--- Settlement: Desertum ---
+Level: town
+
+--- Settlement: Rhegion ---
+Level: large_town
+
+--- Settlement: Sikelia ---
+Level: large_town
+
+--- Settlement: Sikania ---
+Level: town
+
+--- Settlement: Dytike_Sikania ---
+Level: town
+
+--- Settlement: Corsicosardinia ---
+Level: town
+
+--- Settlement: Suburporia ---
+Level: town
+
+--- Settlement: Giria ---
+Level: town
+
+--- Settlement: Phazania ---
+Level: town
+
+--- Settlement: Musulamia ---
+Level: town
+
+--- Settlement: Maxya-Ausea ---
+Level: large_town
+
+--- Settlement: Machlya ---
+Level: town
+
+--- Settlement: Melanogaetulia ---
+Level: town
+
+--- Settlement: Mauretania_Orientalis ---
+Level: town
+
+--- Settlement: Liksho ---
+Level: large_town
+
+--- Settlement: Shaxalat ---
+Level: town
+
+--- Settlement: Mauretania_Meridionalis ---
+Level: town
+
+--- Settlement: Autololia ---
+Level: town
+
+--- Settlement: Pharusia ---
+Level: town
+
+--- Settlement: Perorsia-Dararitaea ---
+Level: town
+
+--- Settlement: Daraea ---
+Level: town
+
+--- Settlement: Baniuraea ---
+Level: town
+
+--- Settlement: Kirthan ---
+Level: large_town
+
+--- Settlement: Nicivia-Suburburia ---
+Level: town
+
+--- Settlement: Massylia_Septentrionalis ---
+Level: town
+
+--- Settlement: Massylia_Occidentalis ---
+Level: large_town
+
+--- Settlement: Maktarxim ---
+Level: town
+
+--- Settlement: Altiburosh ---
+Level: town
+
+--- Settlement: Thipaxatan ---
+Level: town
+
+--- Settlement: Ubusia ---
+Level: town
+
+--- Settlement: Macaea ---
+Level: town
+
+--- Settlement: Mauretania_Septentrionalis ---
+Level: town
+
+--- Settlement: Massylia_Meridionalis ---
+Level: town
+
+--- Settlement: Atarantia-Gindania ---
+Level: town
+
+--- Settlement: Zygantia-Zauecia ---
+Level: town
+
+--- Settlement: Nigiria_Occidentalis ---
+Level: city
+
+--- Settlement: Nigiria_Meridionalis ---
+Level: town
+
+--- Settlement: Nigiria_Orientalis ---
+Level: town
+
+--- Settlement: Mastienia ---
+Level: town
+
+--- Settlement: Suessetania ---
+Level: town
+
+--- Settlement: Tagia ---
+Level: large_town
+
+--- Settlement: Lusitania_Occidentalis ---
+Level: town
+
+--- Settlement: Turdetania_Occidentalis ---
+Level: large_town
+
+--- Settlement: Conia ---
+Level: large_town
+
+--- Settlement: Helmantike ---
+Level: large_town
+
+--- Settlement: Turmodigia ---
+Level: large_town
+
+--- Settlement: Turdulia ---
+Level: town
+
+--- Settlement: Edetania_Occidentalis ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Edetania_Meridionalis ---
+Level: town
+
+--- Settlement: Ergavicia ---
+Level: large_town
+
+--- Settlement: Turdulorum_Oppida ---
+Level: town
+
+--- Settlement: Ilercavonia ---
+Level: large_town
+
+--- Settlement: Turboletia ---
+Level: town
+
+--- Settlement: Oretania_Orientalis ---
+Level: large_town
+
+--- Settlement: Contestania ---
+Level: town
+
+--- Settlement: Baliares_Maiores ---
+Level: town
+
+--- Settlement: Turdetania_Septentrionalis ---
+Level: large_town
+
+--- Settlement: Celticia_Meridionalis ---
+Level: town
+
+--- Settlement: Vaccaea_Meridionalis ---
+Level: large_town
+
+--- Settlement: Sedetania ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Vettonia_Meridionalis ---
+Level: town
+
+--- Settlement: Laietania ---
+Level: town
+
+--- Settlement: Bergistania ---
+Level: town
+
+--- Settlement: Turdetania_Meridionalis ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Turdetania_Orientalis ---
+Level: town
+
+--- Settlement: Bastetania_Septentrionalis ---
+Level: large_town
+
+--- Settlement: Contestania_Orientalis ---
+Level: town
+
+--- Settlement: Carpetania_Septentrionalis ---
+Level: town
+
+--- Settlement: Turdulia_Veterum ---
+Level: town
+
+--- Settlement: Autrigonia ---
+Level: town
+
+--- Settlement: Bellia_Septentrionalis ---
+Level: town
+
+--- Settlement: Bardyetia ---
+Level: town
+
+--- Settlement: Lusonia ---
+Level: town
+
+--- Settlement: Arevacia_Occidentalis ---
+Level: town
+
+--- Settlement: Arevacia_Meridionalis ---
+Level: town
+
+--- Settlement: Pelendonia ---
+Level: town
+
+--- Settlement: Lusonia_Septentrionalis ---
+Level: town
+
+--- Settlement: Sordonia ---
+Level: town
+
+--- Settlement: Caristia ---
+Level: town
+
+--- Settlement: Beronia ---
+Level: town
+
+--- Settlement: Bastetania_Occidentalis ---
+Level: large_town
+Assigned: pitch_gathering pitch_1
+
+--- Settlement: Contestania_Occidentalis ---
+Level: town
+
+--- Settlement: Celticia_Occidentalis ---
+Level: town
+
+--- Settlement: Vaccaea_Durica ---
+Level: large_town
+
+--- Settlement: Turdulia_Orientalis ---
+Level: large_town
+
+--- Settlement: Olcadia ---
+Level: town
+
+--- Settlement: Cerretania ---
+Level: town
+
+--- Settlement: Cessetania ---
+Level: large_town
+
+--- Settlement: Iacetania ---
+Level: town
+
+--- Settlement: Onuba ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Aestuarium_Baeticum ---
+Level: town
+
+--- Settlement: Vasconia_Maritima ---
+Level: town
+
+--- Settlement: Tittia ---
+Level: town
+
+--- Settlement: Conia_Maritima ---
+Level: town
+
+--- Settlement: Celticia_Maritima ---
+Level: large_town
+
+--- Settlement: Ausetania ---
+Level: town
+
+--- Settlement: Zoelaea ---
+Level: town
+
+--- Settlement: Vettonia_Septentrionalis ---
+Level: town
+
+--- Settlement: Artabria ---
+Level: town
+
+--- Settlement: Lucensia ---
+Level: town
+
+--- Settlement: Lucensia_Meridionalis ---
+Level: town
+
+--- Settlement: Ilercavonia_Septentrionalis ---
+Level: town
+
+--- Settlement: Elusatia ---
+Level: large_town
+
+--- Settlement: Pictonia ---
+Level: town
+
+--- Settlement: Leucia ---
+Level: town
+
+--- Settlement: Elisycia ---
+Level: city
+Assigned: salt_production salt_2
+
+--- Settlement: Lemovicia ---
+Level: large_town
+
+--- Settlement: Carnutia ---
+Level: town
+
+--- Settlement: Remia ---
+Level: city
+
+--- Settlement: Segusiavia-Ambivaretia ---
+Level: town
+
+--- Settlement: Anagnutia ---
+Level: town
+
+--- Settlement: Caletia ---
+Level: town
+
+--- Settlement: Morinia ---
+Level: town
+
+--- Settlement: Santonia ---
+Level: town
+
+--- Settlement: Ceutronia ---
+Level: town
+
+--- Settlement: Nantuatia ---
+Level: town
+
+--- Settlement: Veragria ---
+Level: town
+
+--- Settlement: Tigurinia-Tougenia ---
+Level: town
+
+--- Settlement: Cavaria ---
+Level: town
+
+--- Settlement: Auscia-Gatia ---
+Level: town
+
+--- Settlement: Andosinia-Aerenosia ---
+Level: town
+
+--- Settlement: Cocosatia-Vocatia ---
+Level: town
+
+--- Settlement: Tarusatia-Sibusatia ---
+Level: town
+
+--- Settlement: Bigerrionia-Bargusia ---
+Level: town
+
+--- Settlement: Caeracatia-Triboccia ---
+Level: town
+
+--- Settlement: Teuriohaemum ---
+Level: town
+
+--- Settlement: Ceutronia-Levacia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Geidumnia ---
+Level: large_town
+
+--- Settlement: Pleumoxia-Grudia ---
+Level: large_town
+
+--- Settlement: Menapia_Orientalis ---
+Level: large_town
+
+--- Settlement: Vocontia ---
+Level: town
+
+--- Settlement: Deciatia ---
+Level: large_town
+
+--- Settlement: Oxybia ---
+Level: town
+
+--- Settlement: Venellia ---
+Level: city
+
+--- Settlement: Lingonia ---
+Level: town
+
+--- Settlement: Menapia ---
+Level: town
+
+--- Settlement: Mediomatricia ---
+Level: town
+
+--- Settlement: Caturigia-Bodionticia ---
+Level: town
+
+--- Settlement: Nitiobrogia ---
+Level: town
+
+--- Settlement: Tarbellia-Ptiania ---
+Level: town
+
+--- Settlement: Tricastinia-Helvia ---
+Level: town
+
+--- Settlement: Namnetia ---
+Level: town
+
+--- Settlement: Veliocassia ---
+Level: town
+
+--- Settlement: Redonia ---
+Level: town
+
+--- Settlement: Gabalia-Rutenia ---
+Level: town
+
+--- Settlement: Coriosolitia ---
+Level: town
+
+--- Settlement: Esuvia ---
+Level: town
+
+--- Settlement: Lexovia ---
+Level: large_town
+
+--- Settlement: Turonia ---
+Level: town
+
+--- Settlement: Meldia ---
+Level: town
+
+--- Settlement: Parisia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Sedunia-Uberia ---
+Level: town
+
+--- Settlement: Petrocoria ---
+Level: town
+
+--- Settlement: Ambilatria-Andecavia ---
+Level: town
+
+--- Settlement: Genuatia-Tigullia ---
+Level: large_town
+
+--- Settlement: Taurinia ---
+Level: town
+
+--- Settlement: Statiellia-Vagiennia ---
+Level: town
+
+--- Settlement: Intimilia-Epanteria ---
+Level: town
+
+--- Settlement: Ilvatia ---
+Level: town
+
+--- Settlement: Friniatia ---
+Level: town
+
+--- Settlement: Segusinia ---
+Level: town
+
+--- Settlement: Lepontia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Orobia ---
+Level: large_town
+
+--- Settlement: Maricia-Laevia ---
+Level: town
+
+--- Settlement: Lingonia_Cisalpina ---
+Level: town
+
+--- Settlement: Septem_Maria ---
+Level: large_town
+
+--- Settlement: Vennonia-Caluconia ---
+Level: town
+
+--- Settlement: Isarcia-Brixenetia ---
+Level: large_town
+
+--- Settlement: Brigantia-Alpes ---
+Level: town
+
+--- Settlement: Estionia ---
+Level: large_town
+
+--- Settlement: Ambidravia-Ambilicia ---
+Level: large_town
+Assigned: marble_production marble_1
+
+--- Settlement: Camunnia-Venostia ---
+Level: town
+
+--- Settlement: Saevatia-Laiancia ---
+Level: town
+
+--- Settlement: Catalia ---
+Level: town
+
+--- Settlement: Ambisontia ---
+Level: town
+
+--- Settlement: Carnia ---
+Level: town
+
+--- Settlement: Alaunia-Genaunia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Marsignia ---
+Level: large_town
+
+--- Settlement: Osia ---
+Level: town
+
+--- Settlement: Racataea-Racatriaea ---
+Level: town
+
+--- Settlement: Cotinia ---
+Level: town
+
+--- Settlement: Hercuniatia ---
+Level: town
+
+--- Settlement: Latobicia ---
+Level: town
+
+--- Settlement: Anartophractia ---
+Level: town
+
+--- Settlement: Britolagia ---
+Level: large_town
+
+--- Settlement: Ecenia ---
+Level: town
+
+--- Settlement: Demetaea ---
+Level: town
+
+--- Settlement: Reginia_Septentrionalis ---
+Level: town
+
+--- Settlement: Otadinia ---
+Level: town
+
+--- Settlement: Cornovia ---
+Level: town
+
+--- Settlement: Dobunnia ---
+Level: town
+
+--- Settlement: Corieltauvia ---
+Level: town
+
+--- Settlement: Deceanglia ---
+Level: town
+
+--- Settlement: Reginia ---
+Level: town
+
+--- Settlement: Ivernia_Orientalis ---
+Level: town
+
+--- Settlement: Ivernia_Occidentalis ---
+Level: town
+
+--- Settlement: Otadinia_Septentrionalis ---
+Level: town
+
+--- Settlement: Orcades ---
+Level: town
+
+--- Settlement: Haemodae ---
+Level: town
+
+--- Settlement: Ivernia_Septentrionalis ---
+Level: town
+
+--- Settlement: Novantaea-Selgovaea ---
+Level: town
+
+--- Settlement: Epidia ---
+Level: town
+
+--- Settlement: Damnonia ---
+Level: town
+
+--- Settlement: Taexalia ---
+Level: town
+
+--- Settlement: Cornavia ---
+Level: town
+
+--- Settlement: Lugia-Decantaea ---
+Level: town
+
+--- Settlement: Carnonacaea-Ceronia ---
+Level: town
+
+--- Settlement: Corieltauvia_Orientalis ---
+Level: town
+
+--- Settlement: Cornovia_Meridionalis ---
+Level: town
+
+--- Settlement: Hebudes ---
+Level: town
+
+--- Settlement: Dobunnia_Meridionalis ---
+Level: town
+
+--- Settlement: Ivernia_Centralis ---
+Level: town
+
+--- Settlement: Smertaea-Caerenia ---
+Level: town
+
+--- Settlement: Mona ---
+Level: town
+
+--- Settlement: Monaodea ---
+Level: town
+
+--- Settlement: Vacomagia ---
+Level: town
+
+--- Settlement: Fosia ---
+Level: town
+
+--- Settlement: Variscia ---
+Level: town
+
+--- Settlement: Marvingia_Vetus ---
+Level: town
+
+--- Settlement: Vangionia_Vetus ---
+Level: town
+
+--- Settlement: Nemetia_Vetus ---
+Level: town
+
+--- Settlement: Avionia ---
+Level: town
+
+--- Settlement: Anglia ---
+Level: town
+
+--- Settlement: Eudosia ---
+Level: town
+
+--- Settlement: Suardonia ---
+Level: town
+
+--- Settlement: Nuithonia ---
+Level: town
+
+--- Settlement: Varinia ---
+Level: town
+
+--- Settlement: Sidonia_Vetus ---
+Level: town
+
+--- Settlement: Sciria ---
+Level: town
+
+--- Settlement: Hirria ---
+Level: town
+
+--- Settlement: Buria ---
+Level: town
+
+--- Settlement: Burgundia ---
+Level: town
+
+--- Settlement: Favonaea-Firaesia ---
+Level: town
+
+--- Settlement: Suionia-Sitonia ---
+Level: town
+
+--- Settlement: Chaedinia ---
+Level: town
+
+--- Settlement: Aestia ---
+Level: town
+
+--- Settlement: Galindia ---
+Level: town
+
+--- Settlement: Sudenia ---
+Level: town
+
+--- Settlement: Veltaea ---
+Level: town
+
+--- Settlement: Betasia ---
+Level: town
+
+--- Settlement: Caerosia-Paemania ---
+Level: town
+
+--- Settlement: Sturia-Marsacia ---
+Level: town
+
+--- Settlement: Condrusia-Segnia ---
+Level: town
+
+--- Settlement: Sunicia-Texandria ---
+Level: town
+
+--- Settlement: Tubantia ---
+Level: town
+
+--- Settlement: Bructeria_Maior ---
+Level: town
+
+--- Settlement: Chamavia ---
+Level: town
+
+--- Settlement: Hillevionia ---
+Level: town
+
+--- Settlement: Rugia ---
+Level: town
+
+--- Settlement: Ampsivaria ---
+Level: town
+
+--- Settlement: Angrivaria ---
+Level: town
+
+--- Settlement: Atmonia_Vetus ---
+Level: town
+
+--- Settlement: Bructeria_Minor ---
+Level: town
+
+--- Settlement: Caulcia-Campsiania ---
+Level: town
+
+--- Settlement: Chasuaria-Dulgubnia ---
+Level: town
+
+--- Settlement: Chattuaria ---
+Level: town
+
+--- Settlement: Marsia_Vetus ---
+Level: town
+
+--- Settlement: Zumia ---
+Level: town
+
+--- Settlement: Teutonia ---
+Level: town
+
+--- Settlement: Finnia ---
+Level: town
+
+--- Settlement: Insula_Osiorum ---
+Level: town
+
+--- Settlement: Carbonia-Salia ---
+Level: town
+
+--- Settlement: Igyllionia ---
+Level: town
+
+--- Settlement: Careotaea-Stavania ---
+Level: town
+
+--- Settlement: Cugernia_Vetus ---
+Level: town
+
+--- Settlement: Mugilonia-Sibinia ---
+Level: town
+
+--- Settlement: Reudignia ---
+Level: town
+
+--- Settlement: Harudia ---
+Level: town
+
+--- Settlement: Daucionia ---
+Level: town
+
+--- Settlement: Mattiaca ---
+Level: town
+
+--- Settlement: Didunia ---
+Level: town
+
+--- Settlement: Borouskia-Pagyritaia ---
+Level: town
+
+--- Settlement: Akibia-Sauaria ---
+Level: town
+
+--- Settlement: Naskia ---
+Level: town
+
+--- Settlement: Asaia ---
+Level: town
+
+--- Settlement: Androphagia ---
+Level: town
+
+--- Settlement: Andizetia-Azalia ---
+Level: town
+
+--- Settlement: Maezaeia ---
+Level: town
+
+--- Settlement: Mania ---
+Level: town
+
+--- Settlement: Olkinia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Byllionia-Amantia ---
+Level: large_town
+
+--- Settlement: Daorsia ---
+Level: large_town
+
+--- Settlement: Savia ---
+Level: large_town
+
+--- Settlement: Naissitania ---
+Level: town
+
+--- Settlement: Penestia ---
+Level: town
+
+--- Settlement: Breucia ---
+Level: town
+
+--- Settlement: Kaouia ---
+Level: town
+
+--- Settlement: Autariataia ---
+Level: large_town
+
+--- Settlement: Korelia ---
+Level: town
+
+--- Settlement: Axios ---
+Level: town
+
+--- Settlement: Treria-Tilataia ---
+Level: town
+
+--- Settlement: Biessia ---
+Level: town
+
+--- Settlement: Albocensia_Orientalis ---
+Level: town
+
+--- Settlement: Dacia ---
+Level: large_town
+
+--- Settlement: Albocensia ---
+Level: large_town
+
+--- Settlement: Predavensia ---
+Level: town
+
+--- Settlement: Apula ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Saldensia ---
+Level: large_town
+
+--- Settlement: Napocaea ---
+Level: large_town
+
+--- Settlement: Cotensia ---
+Level: town
+
+--- Settlement: Rhatacensia ---
+Level: town
+
+--- Settlement: Biephia ---
+Level: town
+
+--- Settlement: Ansamenia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Potulatensia ---
+Level: town
+
+--- Settlement: Piephigia ---
+Level: town
+
+--- Settlement: Ceiagisia ---
+Level: large_town
+
+--- Settlement: Sensia ---
+Level: town
+
+--- Settlement: Trogodytaia ---
+Level: large_town
+
+--- Settlement: Arpia ---
+Level: town
+
+--- Settlement: Carpiania ---
+Level: town
+
+--- Settlement: Caucoensia ---
+Level: large_town
+
+--- Settlement: Aigyssia ---
+Level: large_town
+
+--- Settlement: Thynia ---
+Level: town
+
+--- Settlement: Eumolpia ---
+Level: large_town
+
+--- Settlement: Diotike ---
+Level: town
+
+--- Settlement: Sapaia-Bistonia ---
+Level: town
+
+--- Settlement: Ratiariai ---
+Level: town
+
+--- Settlement: Massalike_Kontestania ---
+Level: town
+
+--- Settlement: Ankon_Petra ---
+Level: large_town
+
+--- Settlement: Liburnonesoi ---
+Level: large_town
+
+--- Settlement: Gylakeia ---
+Level: city
+Assigned: pitch_gathering pitch_2
+
+--- Settlement: Athamania ---
+Level: town
+
+--- Settlement: Phokis-Doris ---
+Level: large_town
+
+--- Settlement: Olygirtos ---
+Level: town
+
+--- Settlement: Mantineia ---
+Level: large_town
+
+--- Settlement: Tegeatis ---
+Level: city
+
+--- Settlement: Hierapytnia ---
+Level: large_town
+
+--- Settlement: Thasos ---
+Level: large_town
+
+--- Settlement: Tyrasia ---
+Level: large_town
+
+--- Settlement: Hellenike_Tyragetia ---
+Level: town
+
+--- Settlement: Koraxia ---
+Level: large_town
+Assigned: salt_production salt_1
+
+--- Settlement: Hellenike_Mossynoikia ---
+Level: town
+
+--- Settlement: Hellenike_Tibarenia ---
+Level: town
+
+--- Settlement: Saramene ---
+Level: large_town
+
+--- Settlement: Amastris ---
+Level: large_town
+
+--- Settlement: Sikyonia ---
+Level: large_town
+
+--- Settlement: Malis-Ainis ---
+Level: large_town
+
+--- Settlement: Dolopia-Oitaia ---
+Level: town
+
+--- Settlement: Amphilochia ---
+Level: town
+
+--- Settlement: Histiaia ---
+Level: town
+
+--- Settlement: Opountia_Lokris ---
+Level: town
+
+--- Settlement: Triphylia ---
+Level: town
+
+--- Settlement: Kephallenia ---
+Level: town
+
+--- Settlement: Rithymna ---
+Level: town
+
+--- Settlement: Hellenike_Bistonia ---
+Level: large_town
+
+--- Settlement: Poltymbria ---
+Level: large_town
+
+--- Settlement: Tranipsia-Melanditaia ---
+Level: town
+
+--- Settlement: Skaia ---
+Level: town
+
+--- Settlement: Artakia ---
+Level: town
+
+--- Settlement: Koilaletia ---
+Level: town
+
+--- Settlement: Borysthenes ---
+Level: large_town
+
+--- Settlement: Iaxamataia ---
+Level: town
+
+--- Settlement: Oudia-Orgasia ---
+Level: town
+
+--- Settlement: Isondaia-Olondaia ---
+Level: town
+
+--- Settlement: Taurike ---
+Level: town
+
+--- Settlement: Hesperos_Georgike_Skythia ---
+Level: large_town
+
+--- Settlement: Kallippidia-Alazonia ---
+Level: town
+
+--- Settlement: Hylaia ---
+Level: town
+
+--- Settlement: Karkinitis ---
+Level: town
+
+--- Settlement: Tanaitis ---
+Level: town
+
+--- Settlement: Gerrhoia ---
+Level: town
+
+--- Settlement: Melanchlainia ---
+Level: town
+
+--- Settlement: Neuria ---
+Level: town
+
+--- Settlement: Boudinia-Gelonia ---
+Level: town
+
+--- Settlement: Agathyrsia ---
+Level: town
+
+--- Settlement: Perierbidia ---
+Level: town
+
+--- Settlement: Kappadoxia ---
+Level: town
+
+--- Settlement: Kamisene ---
+Level: town
+
+--- Settlement: Boreia_Paphlagonia ---
+Level: town
+
+--- Settlement: Hesperos_Pisidia ---
+Level: town
+
+--- Settlement: Kibyratis ---
+Level: large_town
+
+--- Settlement: Isauria ---
+Level: town
+
+--- Settlement: Homonadia-Oroandia ---
+Level: town
+
+--- Settlement: Anatolike_Isauria ---
+Level: town
+
+--- Settlement: Petnelissos ---
+Level: town
+
+--- Settlement: Hesperos_Pamphylia ---
+Level: large_town
+
+--- Settlement: Tracheiotis ---
+Level: large_town
+
+--- Settlement: Themiskyra_Pedion ---
+Level: town
+
+--- Settlement: Gadilonitis ---
+Level: town
+
+--- Settlement: Syspiritis ---
+Level: town
+
+--- Settlement: Madabitis ---
+Level: town
+
+--- Settlement: Trachonitis ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Zabadaia ---
+Level: town
+
+--- Settlement: Ammonia ---
+Level: town
+
+--- Settlement: Marmarike ---
+Level: town
+
+--- Settlement: Notia_Libya ---
+Level: town
+
+--- Settlement: Boreia_Libya ---
+Level: town
+
+--- Settlement: Noubaia ---
+Level: town
+
+--- Settlement: Adouli ---
+Level: town
+
+--- Settlement: Malaotis ---
+Level: town
+
+--- Settlement: Mosyllia ---
+Level: town
+
+--- Settlement: Oponis ---
+Level: town
+
+--- Settlement: Megabaria ---
+Level: town
+
+--- Settlement: Azania ---
+Level: town
+
+--- Settlement: Trogodytike ---
+Level: town
+
+--- Settlement: Notia_Trogodytike ---
+Level: town
+
+--- Settlement: Aualitaia ---
+Level: town
+
+--- Settlement: Yikha ---
+Level: large_town
+
+--- Settlement: Ano_Aithiopia ---
+Level: town
+
+--- Settlement: Blemmyia ---
+Level: town
+
+--- Settlement: Adaboulia ---
+Level: town
+
+--- Settlement: Aromaton_Akroterion ---
+Level: town
+
+--- Settlement: Aithiopia ---
+Level: town
+
+--- Settlement: Tenessis ---
+Level: town
+
+--- Settlement: Auranitis ---
+Level: town
+
+--- Settlement: Rhaabenia-Masania ---
+Level: town
+
+--- Settlement: Omanitis ---
+Level: large_town
+
+--- Settlement: Banizomeneia ---
+Level: town
+
+--- Settlement: Entos_Smyrnophoros ---
+Level: town
+
+--- Settlement: Yathrib ---
+Level: town
+
+--- Settlement: Sarakenia ---
+Level: town
+
+--- Settlement: Mapharitis ---
+Level: town
+
+--- Settlement: Skenitaia ---
+Level: town
+
+--- Settlement: Kassanitis ---
+Level: town
+
+--- Settlement: Libanophoria ---
+Level: town
+
+--- Settlement: Katharrheia ---
+Level: town
+
+--- Settlement: Notia_Sarakenia ---
+Level: town
+
+--- Settlement: Iobaritaia ---
+Level: town
+
+--- Settlement: Sachalites_Kolpos ---
+Level: town
+
+--- Settlement: Omana_Kolpos ---
+Level: town
+
+--- Settlement: Notia_Elisaria ---
+Level: town
+
+--- Settlement: Dioskoridou_Nesos ---
+Level: town
+
+--- Settlement: Notia_Omanitis ---
+Level: town
+
+--- Settlement: Anatolike_Omanitis ---
+Level: town
+
+--- Settlement: Martenia-Orchenia ---
+Level: town
+
+--- Settlement: Agraia-Agoubenia ---
+Level: town
+
+--- Settlement: Aboukaia-Leanitaia ---
+Level: town
+
+--- Settlement: Kauchabenia ---
+Level: town
+
+--- Settlement: Aisitaia ---
+Level: town
+
+--- Settlement: Rhambaia ---
+Level: town
+
+--- Settlement: Egritike ---
+Level: town
+
+--- Settlement: Kaspiane-Ouitia ---
+Level: town
+
+--- Settlement: Skythenia ---
+Level: large_town
+Assigned: stone_quarry stone_1
+
+--- Settlement: Phasis ---
+Level: large_town
+
+--- Settlement: Legaia-Gelaia ---
+Level: town
+
+--- Settlement: Sanaraia ---
+Level: town
+
+--- Settlement: Didouria-Touskia ---
+Level: town
+
+--- Settlement: Megas_Pityous ---
+Level: large_town
+
+--- Settlement: Chorzene ---
+Level: town
+
+--- Settlement: Boreia_Lychnitis ---
+Level: town
+
+--- Settlement: Sakasene ---
+Level: town
+
+--- Settlement: Kambysene-Gogarene ---
+Level: town
+
+--- Settlement: Lazia ---
+Level: town
+
+--- Settlement: Ano_Euphrates ---
+Level: town
+
+--- Settlement: Zygia-Achaia ---
+Level: town
+
+--- Settlement: Moschia ---
+Level: town
+
+--- Settlement: Soanaia ---
+Level: town
+
+--- Settlement: Kerketaia ---
+Level: town
+
+--- Settlement: Makronia ---
+Level: town
+
+--- Settlement: Drilaia ---
+Level: town
+
+--- Settlement: Tibarenia ---
+Level: town
+
+--- Settlement: Taochia ---
+Level: town
+
+--- Settlement: Chalybia ---
+Level: town
+
+--- Settlement: Chaldaia-Pontos ---
+Level: town
+
+--- Settlement: Arsa ---
+Level: large_city
+Assigned: jewelry jewelry_2
+
+--- Settlement: Kaspeiraia ---
+Level: town
+
+--- Settlement: Sogdia-Indos ---
+Level: town
+
+--- Settlement: Chatriaia ---
+Level: town
+
+--- Settlement: Mousikania ---
+Level: city
+
+--- Settlement: Portikania ---
+Level: large_town
+
+--- Settlement: Syrastrene ---
+Level: town
+
+--- Settlement: Arbia ---
+Level: town
+
+--- Settlement: Oreitaia ---
+Level: town
+
+--- Settlement: Samboia ---
+Level: large_town
+
+--- Settlement: Patalene ---
+Level: city
+
+--- Settlement: Mallia ---
+Level: town
+
+--- Settlement: Abastania ---
+Level: town
+
+--- Settlement: Indos ---
+Level: large_town
+
+--- Settlement: Gedrosia ---
+Level: large_town
+
+--- Settlement: Arachosia ---
+Level: city
+Assigned: jewelry jewelry_1
+
+--- Settlement: Eoritia ---
+Level: town
+
+--- Settlement: Xandia-Paria ---
+Level: town
+
+--- Settlement: Attasia ---
+Level: town
+
+--- Settlement: Apasiakaia ---
+Level: town
+
+--- Settlement: Anatolike_Amyrgia ---
+Level: town
+
+--- Settlement: Tsatsene ---
+Level: town
+
+--- Settlement: Amyrgia ---
+Level: town
+
+--- Settlement: Thyssagetaia-Iyrkaia ---
+Level: large_town
+
+--- Settlement: Massagetaia ---
+Level: large_town
+
+--- Settlement: Issedonia ---
+Level: large_town
+
+--- Settlement: Anatolike_Skythia ---
+Level: town
+
+--- Settlement: Argippaia ---
+Level: town
+
+--- Settlement: Auxakitis ---
+Level: town
+
+--- Settlement: Kasiane ---
+Level: town
+
+--- Settlement: Achasa ---
+Level: town
+
+--- Settlement: Chaurania ---
+Level: town
+
+--- Settlement: Ottorochora ---
+Level: town
+
+--- Settlement: Tsendzot ---
+Level: town
+
+--- Settlement: Toornaia ---
+Level: town
+
+--- Settlement: Qudsrilqak ---
+Level: town
+
+--- Settlement: Snergaks ---
+Level: town
+
+--- Settlement: Kamuk ---
+Level: town
+
+--- Settlement: Mpraysnrarqak ---
+Level: town
+
+--- Settlement: Nroysoqak ---
+Level: town
+
+--- Settlement: Qudsdo ---
+Level: town
+
+--- Settlement: Bariy ---
+Level: town
+
+--- Settlement: Cilicians_Region ---
+Level: town
+
+--- Settlement: Xiongnu_Region ---
+Level: town

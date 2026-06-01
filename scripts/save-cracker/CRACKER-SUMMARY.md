@@ -174,29 +174,37 @@ Provincia can display:
 
 ## Still genuinely open puzzles
 
-These require further work or new save data:
+UPDATE 2026-05-30: most of the list below was RESOLVED in the parallel-cracker
+session — see C:\dev\rtw-sav-parser\docs\findings-*-2026-05-30.md (INDEX file).
 
-1. **Treasury per faction** — 34 FACTION records exist but their exact file
-   location remains elusive. Treasury isn't at any stable u32 offset in
-   the first 1.3 MB; likely buried in a per-faction packed record.
+1. ~~Treasury per faction~~ **RESOLVED** — class-100 record `+0 treasury`, `+4 net-income
+   scalar`; per-faction. Player = records[0]. (parseFactionTreasuries / readSave.js)
+2. ~~Construction queue turns-remaining~~ **RESOLVED** — not stored directly: queue holds
+   COST (+1), `turns-elapsed (+53)`, `accumulated points (+57)`; turns-remaining is derived.
+3. ~~Religion percentages per settlement~~ **NOT STORED as an array** — the old
+   scanReligionForSettlement reader is a FALSE POSITIVE; only the temple building name
+   signals religion (recomputed at load). Treat the % reader as non-functional.
+4. ~~Per-unit weapon/armor upgrade levels~~ **NOT in the unit-record header** (proven via
+   ground-truth diff). XP confirmed at regionEnd+20 (chevrons = low nibble). Smithy
+   upgrades likely per-soldier — needs a build-smithy-then-retrain save pair.
+5. ~~Diplomatic table block mapping~~ **RESOLVED** — full 239×239 attitude matrix cracked
+   (stride 267; +12 state, +20 bond, +24 aggression). See provincia-diplomacy-matrix-cracked.
+6. ~~Trade routes~~ **NOT persisted** — only faction-level trade-rights (diplomacy bond≥54
+   == allies). Settlement-level routes are engine-derived; re-derive from ownership+roads+ports+diplomacy.
+7. **Settlement growth rate** — population growth modifiers. STILL OPEN.
 
-2. **Construction queue exact turns-remaining counter** — we know queue
-   completes (port_buildings did between T1 and T7) but the specific
-   "turns until done" counter location isn't pinpointed. A save mid-queue
-   showing varying turn counts would reveal it.
+### Cracked this session (new structures, were not on the old list)
+- **Family table (women/children/dead)** — full: name, age, gender, alive, father/spouse/child
+  links. Now in production: Provincia/src/familyRecordParser.js → crackSave().characters.family.
+- **Siege state** — siege-ID links army↔settlement; besieger+22 turn counter (resets 5).
+- **Per-faction tile vision / fog-of-war** — RLE grid in each faction record; explored(x,y) reader.
+- **core_attitudes** — CONFIRMED NOT STORED in saves (load-time design input). Stop hunting it.
 
-3. **Religion percentages per settlement** — known to exist but offset
-   not pinpointed.
-
-4. **Per-unit weapon/armor upgrade levels** — separate from experience,
-   stored somewhere in the ~1000 bytes of unit state.
-
-5. **Full block-index → faction mapping in diplomatic table** — 7 of 20
-   blocks anchored (Romans×4, Spain, Carthage, Rebels); 13 still open.
-
-6. **Trade routes** — which settlements trade with which.
-
-7. **Settlement growth rate** — population growth modifiers.
+### Still genuinely open (need new controlled captures)
+- Multi-tile **movement path / destination** (only stored mid-pending-order; lead ~0x3604).
+- **AI Zone-2 micro-record semantics** in faction records (needs declare-war vs no-op pair).
+- **Smithy weapon/armor** persistence (per-soldier; needs build-smithy + retrain pair).
+- **Settlement growth rate / public-order breakdown** components.
 
 ## Cracker methodology recap
 

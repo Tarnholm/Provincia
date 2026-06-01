@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.811",
+    date: "2026-06-01",
+    items: [
+      { type: "change", text: "**Removed the standalone \"Validate\" map button** (dev mode) — it dumped an ad-hoc recruit-vs-EDU check to the DevTools console. Redundant now that the dev-pill **Validate** opens the full Validate dashboard, which covers EDB resources, unit localization/images, and the rest." },
+      { type: "improvement", text: "**Letter badges now cover the dev-mode, layout, and live-only buttons too** (continuing from AK), so every on-screen control is referenceable while map-button grouping is in progress." },
+    ],
+  },
+  {
     version: "0.9.810",
     date: "2026-06-01",
     items: [
