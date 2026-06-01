@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.787",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Wars with the other Roman family factions now show.** In the starting/pre-game faction view, the player's wars with the other two Roman houses (roman_rebels_1/2 — full factions on the map from turn 0, not late emergents) were being collapsed into a single \"Free Peoples\" entry, so e.g. the Julii didn't appear to be at war with them. They're now listed as the separate factions they are, matching the live diplomacy view and the in-game diplomacy screen. Only genuine independents (slave / italics / per-faction respawn slots) still fold into \"Free Peoples\"." },
+      { type: "improvement", text: "**Unit tooltip wording.** The hover readout no longer abbreviates \"chevrons\" to \"chev\" and drops the anvil glyph from the upgrade text." },
+    ],
+  },
+  {
     version: "0.9.786",
     date: "2026-06-01",
     items: [

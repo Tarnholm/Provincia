@@ -680,10 +680,23 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     // "Free Peoples" entry, matching the in-game diplomacy view — so e.g. Roman
     // Julii's start wars (slave + roman_rebels) read as "Free Peoples" rather
     // than listing each engine placeholder. Real declared foes are kept as-is.
+    // Mirror the live foldWarTargets rule: only GENERIC independents
+    // (slave/italics/per-faction *_rebels respawn slots) collapse into one
+    // "Free Peoples" entry. roman_rebels_1/2 are the OTHER Roman family
+    // factions (Brutii/Scipii) — in RIS they are full factions on the map from
+    // turn 0, not late emergents — and Julii starts at war with them, so they
+    // MUST stay listed separately like any real foe (same as the live view).
+    // The old `isRealFaction` filter here had no NAMED_EMERGENT exclusion, so
+    // it folded Julii's war with the two Roman houses into "Free Peoples" (bug).
     const startWarsDisplay = (() => {
-      const real = startWars.filter((w) => isRealFaction(w.id));
-      const hadFreePeoples = startWars.some((w) => !isRealFaction(w.id));
-      return hadFreePeoples ? [{ id: "slave", name: nameOf("slave") }, ...real] : real;
+      const out = [];
+      let hadFree = false;
+      for (const w of startWars) {
+        if (foldsToFreePeoples(w.id)) { hadFree = true; continue; }
+        out.push({ id: w.id, name: w.name || nameOf(w.id) });
+      }
+      if (hadFree) out.unshift({ id: "slave", name: nameOf("slave") });
+      return out;
     })();
     // Starting-treasury fallback (descr_strat) so EVERY region shows
     // something — the live treasury records only exist for the ~23 major
@@ -1245,11 +1258,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     if (u.soldiers != null) parts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
     if (chevrons > 0) {
       const tier = chevrons >= 7 ? "gold" : chevrons >= 4 ? "silver" : "bronze";
-      parts.push(`${chevronCount(chevrons)} ${tier} chev`);
+      parts.push(`${chevronCount(chevrons)} ${tier} chevron${chevronCount(chevrons) === 1 ? "" : "s"}`);
     }
     if (armour > 0) parts.push(`armour +${armour}`);
     if (weapon > 0) parts.push(`weapon +${weapon}`);
-    if (typeof u.upgradeLevel === "number" && u.upgradeLevel > 0) parts.push(`⚒ upgrade ${u.upgradeLevel}`);
+    if (typeof u.upgradeLevel === "number" && u.upgradeLevel > 0) parts.push(`upgrade ${u.upgradeLevel}`);
     return parts.join(" · ");
   };
 
