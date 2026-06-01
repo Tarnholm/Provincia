@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.781",
+    date: "2026-06-01",
+    items: [
+      { type: "feature", text: "**Agent characters (spies, diplomats, assassins, etc.).** The reader now recognises the agent character classes — spy, assassin, diplomat, merchant, admiral — in addition to generals, and exposes them (with type and faction) plus a per-faction character-class breakdown. (No agents exist in a fresh campaign, so they appear once the AI or you train them.)" },
+    ],
+  },
+  {
     version: "0.9.780",
     date: "2026-06-01",
     items: [
