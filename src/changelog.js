@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.801",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Building cards: no more gray space above the image, and all 20 slots fit.** The building image now fills its card (cover) instead of being letterboxed with empty space on top, the cards are shorter (and tighter padding), so the full 5×4 = 20-slot grid is visible." },
+    ],
+  },
+  {
     version: "0.9.800",
     date: "2026-06-01",
     items: [
