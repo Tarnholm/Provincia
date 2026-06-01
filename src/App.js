@@ -11455,22 +11455,11 @@ function App() {
             style={{ ...btnStyle(showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.inspect" />Inspect</button>
           <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
             style={{ ...btnStyle(showLabels !== "off"), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.labels" />{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
-          {modDataDir && (
-            <button className="map-mode-btn" onClick={async () => {
-              const api = window.electronAPI;
-              try { await api?.clearModCaches?.(); } catch {}
-              setModReloadTick((t) => t + 1);
-            }}
-              title={modDataStale
-                ? "EDB / EDU / text files were edited on disk since Provincia loaded them — click to re-parse and refresh recruits, descriptions, etc."
-                : "Re-parse the mod's EDB / EDU / text files. Useful while iterating on a mod without restarting Provincia."}
-              style={{
-                ...btnStyle(modDataStale),
-                minWidth: 0,
-                position: "relative",
-                animation: modDataStale ? "mac-active-pulse 1.6s ease-in-out infinite" : "none",
-              }}><MapBtnBadge k="view.reload" />{modDataStale ? "Reload!" : "Reload"}</button>
-          )}
+          {/* 0.9.810: "Reload mod data" button removed per user request — it
+              re-parsed the mod's EDB/EDU/text files without a restart (mod-
+              iteration convenience). Restart Provincia to pick up mod edits.
+              MAP_BTN_ORDER keeps view.reload's slot so the other letters don't
+              shift; the badge just no longer renders. */}
           {devMode && modDataDir && buildingRecruits && unitOwnership && (
             <button className="map-mode-btn" onClick={() => {
               // Cross-file sanity sweep across the parsed mod data.

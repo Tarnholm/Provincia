@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.810",
+    date: "2026-06-01",
+    items: [
+      { type: "change", text: "**Removed the \"Reload\" map button** (it re-parsed the mod's data files without a restart — a mod-iteration convenience). Restart Provincia to pick up on-disk mod edits." },
+    ],
+  },
+  {
     version: "0.9.809",
     date: "2026-06-01",
     items: [
