@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.805",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Characters list is now two per line** — just the name, with age and the Command/Influence/Management/Loyalty stats shown on hover (right-click still opens traits). Removed the \"(starting)\" label." },
+    ],
+  },
+  {
     version: "0.9.804",
     date: "2026-06-01",
     items: [

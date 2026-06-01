@@ -1919,15 +1919,6 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
             <span>Characters:</span>
-            {characters && characters.length > 0 && (
-              <span
-                title={characters[0]?._source === "starting"
-                  ? "Starting roster from descr_strat — turn-1 traits, ancillaries, age. Load a save to switch to live values."
-                  : (saveFile ? `As of: ${saveFile}` : "From save file")}
-                style={{ fontSize: "0.65rem", color: "#a98", fontWeight: 400, cursor: "help" }}>
-                {characters[0]?._source === "starting" ? "(starting)" : "(live)"}
-              </span>
-            )}
             {onShowFamilyTree && hasFamilyTreeData && (
               <button
                 onClick={(e) => { e.stopPropagation(); onShowFamilyTree(); }}
@@ -1978,11 +1969,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               </div>
             )}
             {characters && characters.length > 0 ? (
-            <div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 10, rowGap: 0 }}>
               {characters.map((c, i) => {
                 const sym = c.isLeader ? "👑" : c.isHeir ? "★" : c.gender === "female" ? "♀" : "";
                 const status = c.isDead ? " (dead)" : "";
                 const fullName = displayFullName(c.firstName, c.lastName);
+                // 0.9.805: 2 per line, name only. Age + stats (command/influence/
+                // management/loyalty; ~ = estimated from trait+ancillary effects
+                // in non-live) move to the hover tooltip so two fit per row.
+                const hasStats = c.command != null || c.influence != null || c.management != null || c.loyalty != null;
+                const statsStr = hasStats
+                  ? ` · ${c._statsEstimated ? "~" : ""}Command ${c.command ?? "?"} / Influence ${c.influence ?? "?"} / Management ${c.management ?? "?"} / Loyalty ${c.loyalty ?? "?"}${c._statsEstimated ? " (estimated)" : ""}`
+                  : "";
                 return (
                   <div key={i}
                     onContextMenu={(e) => {
@@ -1991,23 +1989,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         onShowInfo({ type: "character", character: c, label: fullName });
                       }
                     }}
-                    title="Right-click to view traits"
-                    style={{ padding: "1px 0", color: "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: onShowInfo ? "context-menu" : "default" }}
+                    title={`${fullName} · age ${c.age != null ? c.age : "?"}${statsStr}${status}\nRight-click to view traits`}
+                    style={{ padding: "1px 0", color: c.isDead ? "#c88" : "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: onShowInfo ? "context-menu" : "default" }}
                   >
                     {sym ? sym + " " : ""}{fullName}
-                    <span style={{ color: "#999", fontVariantNumeric: "tabular-nums", marginLeft: 6 }}>· age {c.age != null ? c.age : "?"}</span>
-                    {/* 0.9.422: stats chip renders if any of the four are
-                        known. Non-live mode: estimated from trait/ancillary
-                        effects in main.js (descr_strat doesn't store stats
-                        inline — the engine derives them). Estimates carry
-                        a leading `~` to flag they're approximate. */}
-                    {(c.command != null || c.influence != null || c.management != null || c.loyalty != null) && (
-                      <span style={{ color: "#9bb1c8", fontVariantNumeric: "tabular-nums", marginLeft: 6, fontSize: "0.66rem" }}
-                        title={`Command ${c.command ?? "?"} · Influence ${c.influence ?? "?"} · Management ${c.management ?? "?"} · Loyalty ${c.loyalty ?? "?"}${c._statsEstimated ? " (estimated from trait+ancillary effects)" : ""}`}>
-                        {c._statsEstimated ? "~" : ""}⚔ {c.command ?? "?"}/{c.influence ?? "?"}/{c.management ?? "?"}/{c.loyalty ?? "?"}
-                      </span>
-                    )}
-                    {status && <span style={{ color: "#c66", marginLeft: 4 }}>{status}</span>}
                   </div>
                 );
               })}
