@@ -133,7 +133,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 19;
+const LAYOUT_VERSION = 20;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -155,8 +155,8 @@ const CANONICAL_V4 = {
   "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
   "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
   "region.buildings":   { x: 0.5720, y: 0.7530, w: 0.2090, h: 0.2360 },
-  "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1340 },
-  "region.fieldArmies": { x: 0.7857, y: 0.6509, w: 0.2090, h: 0.3441 },
+  "region.garrison":    { x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1650 },
+  "region.fieldArmies": { x: 0.7857, y: 0.6800, w: 0.2090, h: 0.3150 },
   // Bottom-strip widgets — 9 px below the map's bottom edge (map
   // y=0.0083 + h=0.6843 = 0.6926; strip y = 0.6926 + 9/1080 = 0.7009).
   // 0.9.791: flush to the map edges. search/factions x=0 → left edge meets the

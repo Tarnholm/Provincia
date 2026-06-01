@@ -2963,7 +2963,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Garrison — Movable widget */}
       <Movable id="region.garrison" title="Garrison" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1340 }}>
+        defaultPct={{ x: 0.7857, y: 0.5086, w: 0.2090, h: 0.1650 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -2972,7 +2972,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           {/* Reserved fixed-height line for the unit hover readout so hovering a
               unit never reflows the grid below — the cards stay put. Shows a
               non-breaking space when nothing is hovered. */}
-          <div style={{ fontWeight: 400, fontSize: "0.7rem", color: "#dca64a", minHeight: "0.95rem", lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div style={{ fontWeight: 400, fontSize: "0.64rem", color: "#dca64a", minHeight: "0.8rem", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {hoveredUnit ? hoverReadout(hoveredUnit) : " "}
           </div>
         </div>
@@ -3286,7 +3286,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Field armies — Movable widget (split from Garrison in 0.9.348) */}
       <Movable id="region.fieldArmies" title="Field armies" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.7857, y: 0.6509, w: 0.2090, h: 0.3441 }}>
+        defaultPct={{ x: 0.7857, y: 0.6800, w: 0.2090, h: 0.3150 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6" }}>Field armies:</div>

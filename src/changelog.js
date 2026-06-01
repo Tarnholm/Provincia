@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.799",
+    date: "2026-06-01",
+    items: [
+      { type: "fix", text: "**Garrison fits two full unit rows.** The garrison panel is taller (taking space from Field armies below it) and its header/hover text is more compact, so both rows of 10 units show without scrolling." },
+    ],
+  },
+  {
     version: "0.9.798",
     date: "2026-06-01",
     items: [
