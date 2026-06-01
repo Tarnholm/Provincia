@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.788",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Map now uses half the window width** by default, and the bottom-left panels (Search / Factions / Selected Provinces) extend UP to meet the map's bottom edge — closing the dead band that used to sit between them. The strip's top now tracks the map's actual bottom (with the standard 6px gap) and stretches to fill the space, instead of being pinned to a fixed height. Design-mode calibration still overrides it." },
+      { type: "fix", text: "**Window reopens at the same size.** Bounds persistence was saving the outer window size but restoring it as the content size, so the window grew by the title-bar height on every relaunch; it now persists the content size for a stable size/position across launches (and auto-updates)." },
+      { type: "improvement", text: "**Chevron tooltip** now reads simply \"N chevrons\" (the 1–9 experience value) instead of \"3 bronze chev\"." },
+    ],
+  },
+  {
     version: "0.9.787",
     date: "2026-06-01",
     items: [

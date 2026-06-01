@@ -1257,8 +1257,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const parts = [u.unit.replace(/_/g, " ")];
     if (u.soldiers != null) parts.push(`${u.soldiers}${u.max != null ? `/${u.max}` : ""}`);
     if (chevrons > 0) {
-      const tier = chevrons >= 7 ? "gold" : chevrons >= 4 ? "silver" : "bronze";
-      parts.push(`${chevronCount(chevrons)} ${tier} chevron${chevronCount(chevrons) === 1 ? "" : "s"}`);
+      parts.push(`${chevrons} chevron${chevrons === 1 ? "" : "s"}`);
     }
     if (armour > 0) parts.push(`armour +${armour}`);
     if (weapon > 0) parts.push(`weapon +${weapon}`);

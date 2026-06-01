@@ -8530,8 +8530,12 @@ function App() {
         ? Math.round(window.innerWidth * rightColPct)
         : 0;
       const effectiveSidebar = overrideRightW || baselineSidebar;
-      let availableWidthForMap =
-        window.innerWidth - MAP_PADDING * 2 - effectiveSidebar - PANELS_GAP - (overrideRightW ? 0 : MAP_WIDTH_ADJUST);
+      // 0.9.788: by DEFAULT the map takes half the window width (user pref).
+      // A rightColPct override (design-mode calibration) still wins. The
+      // colBox-driven right column + bottom strip re-flow around this width.
+      let availableWidthForMap = overrideRightW
+        ? (window.innerWidth - MAP_PADDING * 2 - effectiveSidebar - PANELS_GAP)
+        : (Math.round(window.innerWidth * 0.5) - MAP_PADDING);
 
       // Bottom strip height: user override (bottomStripPct > 0) wins, else REGIONINFO_HEIGHT.
       const overrideBottomH = bottomStripPct > 0
@@ -15958,7 +15962,7 @@ function App() {
                 in design mode. Headers/buttons stay put; only inner
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
               defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
@@ -15983,7 +15987,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
               defaultPct={{ x: 0.0047, y: 0.7492, w: 0.2076, h: 0.2458 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
@@ -15998,7 +16002,7 @@ function App() {
 
             {pinnedRegions.length > 0 && (
               <Movable id="bottom.pinned" title="Pinned" designMode={designMode}
-                colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
+                colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
                 defaultPct={{ x: 0.190, y: 0.755, w: 0.375, h: 0.040 }}>
                 <div className="panel" style={{ width: "100%", height: "100%", padding: "8px 10px", boxSizing: "border-box", overflow: "auto" }}>
                   <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 5, color: "#dca64a" }}>📌 Pinned Regions</div>
@@ -16028,7 +16032,7 @@ function App() {
             )}
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572 }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
               defaultPct={{ x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 }}>
               {/* Three sections in this widget:
                     1) Recent regions chips + Summary toggle (fixed row)

@@ -2350,8 +2350,17 @@ function saveWindowState(win) {
     // When maximized, capture the pre-maximize bounds via getNormalBounds so
     // un-maximizing on next launch lands the user back at the same place.
     const bounds = maximized ? win.getNormalBounds() : win.getBounds();
+    // 0.9.788: the window is RESTORED with useContentSize:true (width/height =
+    // the CONTENT area), but we were saving the OUTER bounds — so each relaunch
+    // the window grew by the frame/title-bar height. Persist the CONTENT size
+    // instead so size is stable; keep x/y as the outer window position to match
+    // winOptions.x/y.
+    let width = bounds.width, height = bounds.height;
+    if (!maximized) {
+      try { const cb = win.getContentBounds(); width = cb.width; height = cb.height; } catch {}
+    }
     const state = {
-      x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+      x: bounds.x, y: bounds.y, width, height,
       maximized,
       savedAt: Date.now(),
     };

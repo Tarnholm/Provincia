@@ -480,8 +480,22 @@ export function Movable({
     left = Math.round(ePos.x * vp.w);
     width = Math.max(40, Math.round(ePos.w * vp.w));
   }
-  const top = Math.round(ePos.y * vp.h);
-  const height = Math.max(40, Math.round(ePos.h * vp.h));
+  // Vertical analog of the horizontal colBox remap. When colBox carries
+  // {top, vHeight, y0, vSpan}, the widget's design-y range [y0, y0+vSpan] is
+  // remapped into the actual pixel column [top, top+vHeight]. The bottom strip
+  // (search/factions/selected) passes top = map's ACTUAL bottom edge, so the
+  // panels follow the map down/up as its width/aspect changes instead of
+  // sitting at a fixed fraction — this closes the dead band under a ½-width map.
+  let top, height;
+  if (colBox && colBox.top != null && colBox.vSpan != null) {
+    const boxY0 = colBox.y0 != null ? colBox.y0 : 0;
+    const relY = (ePos.y - boxY0) / colBox.vSpan;
+    top = Math.round(colBox.top + relY * colBox.vHeight);
+    height = Math.max(40, Math.round((ePos.h / colBox.vSpan) * colBox.vHeight));
+  } else {
+    top = Math.round(ePos.y * vp.h);
+    height = Math.max(40, Math.round(ePos.h * vp.h));
+  }
 
   const startDrag = (e) => {
     if (!designMode) return;
@@ -494,7 +508,7 @@ export function Movable({
     const startPos = { ...pos };
     function onMove(ev) {
       const dx = colBox ? ((ev.clientX - startX) / colBox.width) * boxSpan : (ev.clientX - startX) / vp.w;
-      const dy = (ev.clientY - startY) / vp.h;
+      const dy = (colBox && colBox.vSpan != null) ? ((ev.clientY - startY) / colBox.vHeight) * colBox.vSpan : (ev.clientY - startY) / vp.h;
       let np = {
         x: Math.max(0, Math.min(1 - startPos.w, startPos.x + dx)),
         y: Math.max(0, Math.min(1 - startPos.h, startPos.y + dy)),
@@ -526,7 +540,7 @@ export function Movable({
     const startPos = { ...pos };
     function onMove(ev) {
       const dx = colBox ? ((ev.clientX - startX) / colBox.width) * boxSpan : (ev.clientX - startX) / vp.w;
-      const dy = (ev.clientY - startY) / vp.h;
+      const dy = (colBox && colBox.vSpan != null) ? ((ev.clientY - startY) / colBox.vHeight) * colBox.vSpan : (ev.clientY - startY) / vp.h;
       const np = { ...startPos };
       const lock = {};
       if (corner.includes("e")) {
