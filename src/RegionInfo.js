@@ -2412,7 +2412,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(5, 1fr)",
-              gridAutoRows: "58px",
+              gridAutoRows: "80px",
               gap: 4,
               flex: 1,
               minHeight: 0,

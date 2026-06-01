@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.796",
+    date: "2026-06-01",
+    items: [
+      { type: "improvement", text: "**Map gets more vertical space** — the bottom strip allocation shrank, so the map fills more of the window height (and the bottom panels are pushed down accordingly)." },
+      { type: "improvement", text: "**Search bar trimmed** — shorter, with a touch more text padding so it doesn't feel cramped." },
+      { type: "fix", text: "**Factions panel: icons centered + 5 fit.** Reverted to the auto-fill grid (which centers correctly) with smaller 58px tiles, so five faction icons fit per row and sit centered on their squares again." },
+      { type: "fix", text: "**Building cards back to their original size** (the previous trim made them too small)." },
+    ],
+  },
+  {
     version: "0.9.795",
     date: "2026-06-01",
     items: [
