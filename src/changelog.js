@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.854",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**The window no longer creeps wider on each auto-update.** Replaced the fragile resize-detection flag with a tolerance snap: if the restored window is within a few pixels of its saved size (measurement drift) it re-persists the exact saved size, so frequent updates can't accumulate growth — while a genuine resize is still saved." },
+    ],
+  },
+  {
     version: "0.9.853",
     date: "2026-06-02",
     items: [
