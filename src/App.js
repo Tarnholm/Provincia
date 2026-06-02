@@ -16392,7 +16392,7 @@ function App() {
                 in design mode. Headers/buttons stay put; only inner
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941, topPx: 0, heightPx: 30 }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941, topPx: 0, heightPx: 25 }}
               defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
@@ -16409,7 +16409,7 @@ function App() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    width: "100%", height: 30, flexShrink: 0, boxSizing: "border-box", padding: "6px 10px",
+                    width: "100%", height: 25, flexShrink: 0, boxSizing: "border-box", padding: "4px 10px",
                     borderRadius: 8, border: "1px solid rgba(255,255,255,0.18)",
                     background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.82rem",
                     outline: "none",
@@ -16420,7 +16420,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941, topPx: 36, fillToBottom: true }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941, topPx: 31, fillToBottom: true }}
               defaultPct={{ x: 0.0047, y: 0.7300, w: 0.2076, h: 0.2650 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}

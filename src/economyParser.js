@@ -41,6 +41,27 @@
 //   - income.trade / income.mining / income.farming / income.tax  → null
 //     (category split not stored; recomputed at runtime — never fabricate).
 //   - income.other → null (no residual category exists to attribute).
+//
+// =============================================================================
+// DERIVED (NOT stored) — population-based TAX estimate  (findings-financial-
+// breakdown-2026-06-02.md)
+// =============================================================================
+// The 2026-06-02 second pass established (whole-file scan + per-settlement fit)
+// that NO category split is stored — not adjacent to the per-settlement income
+// field, not in the faction record, and the gross 6347 appears nowhere in the
+// 34 MB file. So income.trade/mining/farming/tax stay null (stored = absent).
+//
+// BUT a useful structural fact emerged: on the Julii test save the per-settlement
+// income (marker-1586) is, to within ±0.8 denarius, EXACTLY committedPopulation
+// (marker-1494) × 0.10264 across all 25 cities (Rome 924 = 9000×0.10264). On
+// early turns the engine income is dominated by the population-derived TAX term;
+// trade/farming/mining add < ~1 den/city before the empire develops. So the TAX
+// category is reproducible to ~1 den as `population × taxCoefficient` at the
+// default ("normal") bracket. This is a DERIVATION (an estimate), not a save
+// field, so we expose it SEPARATELY in `incomeEstimate` with `estimated:true`
+// and NEVER as the (null) stored `income.tax`. The UI must label it an estimate.
+// (Later in a campaign the trade/farming share grows and this pure-pop tax model
+// under-counts total income — by design it only estimates the TAX line.)
 //   - expenditure.upkeep / .construction / .recruitment / .other → null
 //     (NO per-unit upkeep, NO construction/recruitment cost ledger is stored;
 //     SAVE-FORMAT-SPEC §2/§6. Could in theory be APPROXIMATED by summing EDU
@@ -79,6 +100,14 @@
 
 "use strict";
 
+// Observed effective tax yield per unit of population at the default ("normal")
+// tax bracket, fit on the Julii test save (income = pop × this, ≤0.8 den residual
+// on all 25 cities). NOT a save field — an engine/mod-bracket constant bundling
+// RTW's tax % table. Used ONLY to produce the clearly-flagged `incomeEstimate.tax`
+// derivation; never written into the (null) stored `income.tax`.
+// See findings-financial-breakdown-2026-06-02.md §B/§C1.
+const DEFAULT_TAX_COEFFICIENT = 0.10264;
+
 // Build the canonical empty/unknown shape for one faction. Everything that is
 // not reliably cracked is null (never a fabricated 0 — [[provincia-no-fallbacks]]).
 function emptyFactionEconomy() {
@@ -97,6 +126,20 @@ function emptyFactionEconomy() {
       recruitment: null,  // no recruitment cost ledger in the save
       other: null,
       total: null,
+    },
+    // DERIVED (NOT stored) estimates, each flagged so the UI never presents them
+    // as the engine's exact figure. Null until derivable. Per
+    // findings-financial-breakdown-2026-06-02.md these are recomputations, not
+    // save fields — distinct from the (null) stored `income.*` category split.
+    incomeEstimate: {
+      tax: null,          // ≈ Σ committedPopulation × taxCoefficient (early turns)
+      estimated: true,    // ALWAYS an estimate — never present as exact
+      taxCoefficient: null,    // the coefficient actually used (null if not derived)
+      citiesWithPopulation: 0, // how many of the faction's cities fed the estimate
+      method: "population×taxCoefficient(default normal bracket)",
+      caveat: "Estimates the in-game TAX line only; dominant on early turns. NOT " +
+              "the stored income (the category split is not serialised). Excludes " +
+              "trade/farming/mining, which grow later and need engine tables.",
     },
     net: null,            // CONFIRMED only from f13 history delta (turn >= 3, non-player)
     treasury: null,       // CONFIRMED record +0 (start-of-turn balance)
@@ -135,6 +178,35 @@ function sumSettlementIncome(factionName, ownerByCity, settlementFields) {
     total: citiesWithIncome > 0 ? total : null,
     citiesWithIncome,
     citiesTotal,
+  };
+}
+
+// DERIVED population-based TAX estimate for one faction. Sums committedPopulation
+// over the faction's cities and multiplies by `coefficient`. Returns { tax,
+// citiesWithPopulation, coefficient } with tax=null when NO city had a usable
+// population (never a fabricated 0 — [[provincia-no-fallbacks]]). This is an
+// ESTIMATE of the in-game Tax line (dominant on early turns), NOT a stored field.
+// See findings-financial-breakdown-2026-06-02.md §B/§C1.
+function estimateTaxIncome(factionName, ownerByCity, settlementFields, coefficient) {
+  const k = (typeof coefficient === "number" && Number.isFinite(coefficient))
+    ? coefficient : DEFAULT_TAX_COEFFICIENT;
+  let popSum = 0;
+  let citiesWithPopulation = 0;
+  if (ownerByCity && settlementFields) {
+    for (const [city, owner] of Object.entries(ownerByCity)) {
+      if (owner !== factionName) continue;
+      const f = settlementFields[city];
+      const pop = f ? f.committedPopulation : null;
+      if (typeof pop === "number" && Number.isFinite(pop) && pop > 0) {
+        popSum += pop;
+        citiesWithPopulation++;
+      }
+    }
+  }
+  return {
+    tax: citiesWithPopulation > 0 ? Math.round(popSum * k) : null,
+    citiesWithPopulation,
+    coefficient: k,
   };
 }
 
@@ -187,6 +259,11 @@ function parseFactionEconomy(buffer, context) {
   const settlementFields = ctx.settlementFields || {};
   const factions = ctx.factions || {};
   const treasuryHistory = ctx.treasuryHistory || null;
+  // Optional override of the tax-yield-per-population coefficient (e.g. once a
+  // controlled tax-bracket capture pins the real per-bracket value). Defaults to
+  // the observed "normal"-bracket constant.
+  const taxCoefficient = (typeof ctx.taxCoefficient === "number" && Number.isFinite(ctx.taxCoefficient))
+    ? ctx.taxCoefficient : DEFAULT_TAX_COEFFICIENT;
 
   // Which factions to compute for.
   let names;
@@ -223,6 +300,14 @@ function parseFactionEconomy(buffer, context) {
     }
     // trade/mining/farming/tax stay null: not stored in the save.
 
+    // ── DERIVED tax estimate (NOT stored) — pop × tax coefficient ───────────
+    // Flagged estimated; populates incomeEstimate.tax, NEVER the stored
+    // income.tax (which stays null because no category split is serialised).
+    const taxEst = estimateTaxIncome(name, ownerByCity, settlementFields, taxCoefficient);
+    eco.incomeEstimate.tax = taxEst.tax;                 // null when no population
+    eco.incomeEstimate.taxCoefficient = taxEst.tax != null ? taxEst.coefficient : null;
+    eco.incomeEstimate.citiesWithPopulation = taxEst.citiesWithPopulation;
+
     // ── Net income — CONFIRMED only from a history delta (turn >= 3) ─────────
     const series = treasuryHistory ? treasuryHistory[name] : null;
     const net = netFromHistory(series);
@@ -253,7 +338,10 @@ function parseFactionEconomy(buffer, context) {
       ],
       note: "Per-category income/expenditure breakdown is recomputed at runtime " +
             "and is NOT stored in the save; only gross income total (Σ settlement " +
-            "income), treasury, and (turn>=3, non-player) net are recoverable.",
+            "income), treasury, and (turn>=3, non-player) net are recoverable. " +
+            "incomeEstimate.tax is a flagged DERIVATION (pop × taxCoefficient), an " +
+            "estimate of the in-game Tax line — not a stored field.",
+      taxCoefficient,
     },
   };
 }
@@ -262,6 +350,8 @@ module.exports = {
   parseFactionEconomy,
   // Exported helpers for unit testing / reuse.
   sumSettlementIncome,
+  estimateTaxIncome,
   netFromHistory,
   emptyFactionEconomy,
+  DEFAULT_TAX_COEFFICIENT,
 };

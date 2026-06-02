@@ -7,8 +7,10 @@ const { crackSave } = require("./saveCracker.js");
 const {
   parseFactionEconomy,
   sumSettlementIncome,
+  estimateTaxIncome,
   netFromHistory,
   emptyFactionEconomy,
+  DEFAULT_TAX_COEFFICIENT,
 } = require("./economyParser.js");
 
 // ── Pure-function tests (no save file required) ──────────────────────────────
@@ -24,6 +26,32 @@ describe("economyParser — pure functions", () => {
     expect(e.net).toBeNull();
     expect(e.treasury).toBeNull();
     expect(e.estimatedNextTurn).toBeNull();
+    // The DERIVED tax estimate starts null and is always flagged estimated.
+    expect(e.incomeEstimate.tax).toBeNull();
+    expect(e.incomeEstimate.estimated).toBe(true);
+    expect(e.incomeEstimate.taxCoefficient).toBeNull();
+  });
+
+  test("estimateTaxIncome = Σ population × coefficient; null when no population", () => {
+    const owner = { Rome: "romans_julii", Arretium: "romans_julii", Carthage: "carthage" };
+    const fields = {
+      Rome: { committedPopulation: 9000 },
+      Arretium: { committedPopulation: 4500 },
+      Carthage: { committedPopulation: 12000 },
+    };
+    // Rome 924 = 9000 × 0.10264; Arretium 462 = 4500 × 0.10264 → 1386 rounded.
+    const j = estimateTaxIncome("romans_julii", owner, fields, DEFAULT_TAX_COEFFICIENT);
+    expect(j.citiesWithPopulation).toBe(2);
+    expect(j.tax).toBe(Math.round((9000 + 4500) * DEFAULT_TAX_COEFFICIENT)); // 1386
+    expect(j.coefficient).toBe(DEFAULT_TAX_COEFFICIENT);
+    // A faction with no resolvable population → tax null, NOT 0.
+    const none = estimateTaxIncome("gauls", owner, fields, DEFAULT_TAX_COEFFICIENT);
+    expect(none.tax).toBeNull();
+    expect(none.citiesWithPopulation).toBe(0);
+    // The single-Rome estimate reproduces the in-game Rome income to the denarius.
+    const rome = estimateTaxIncome("romans_julii", { Rome: "romans_julii" },
+      { Rome: { committedPopulation: 9000 } }, DEFAULT_TAX_COEFFICIENT);
+    expect(rome.tax).toBe(924);
   });
 
   test("sumSettlementIncome sums only the faction's cities; null when none", () => {
@@ -164,6 +192,23 @@ describe("economyParser — Julii Financial Overview save", () => {
       .filter((v) => typeof v === "number");
     expect(parts.length).toBe(0);
 
+    // ── DERIVED tax estimate (flagged; NOT the stored split) ─────────────────
+    // On this turn-1 save the per-settlement income is ≈ pop × 0.10264, so the
+    // pop-based tax estimate should land within ~1% of the gross total (trade/
+    // farming are still tiny). It is ALWAYS flagged estimated and lives in
+    // incomeEstimate, never in the (null) stored income.tax.
+    expect(j.incomeEstimate).toBeTruthy();
+    expect(j.incomeEstimate.estimated).toBe(true);
+    expect(typeof j.incomeEstimate.tax).toBe("number");
+    expect(j.incomeEstimate.tax).toBeGreaterThan(0);
+    expect(j.incomeEstimate.citiesWithPopulation).toBeGreaterThan(10);
+    expect(j.incomeEstimate.taxCoefficient).toBe(DEFAULT_TAX_COEFFICIENT);
+    // Within 1% of the confirmed gross on this early-turn save.
+    const rel = Math.abs(j.incomeEstimate.tax - j.income.total) / j.income.total;
+    expect(rel).toBeLessThan(0.01);
+    // The stored category tax stays null — the estimate must NOT have leaked in.
+    expect(j.income.tax).toBeNull();
+
     // Confidence flags are honest about what was cracked.
     expect(j._confidence.incomeTotal).toBe("confirmed");
     expect(j._confidence.incomeBreakdown).toBe("not-stored");
@@ -172,7 +217,8 @@ describe("economyParser — Julii Financial Overview save", () => {
 
     console.log(
       `[economyParser] Julii: incomeTotal=${j.income.total} treasury=${j.treasury} ` +
-      `net=${j.net} estNext=${j.estimatedNextTurn} cities=${n}`
+      `net=${j.net} estNext=${j.estimatedNextTurn} cities=${n} ` +
+      `taxEstimate=${j.incomeEstimate.tax} (rel=${(rel * 100).toFixed(2)}%)`
     );
   }, 30000); // crackSave on a 34 MB save
 });

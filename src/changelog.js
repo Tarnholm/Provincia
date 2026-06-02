@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.859",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Search bar is 5px shorter** (slimmer); the Factions panel below it shifts up to keep the same gap." },
+    ],
+  },
+  {
     version: "0.9.858",
     date: "2026-06-02",
     items: [
