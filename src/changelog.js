@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.844",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Keyboard shortcuts rebuilt around the map-mode groups.** `Ctrl+1–8` now open the category tabs in on-screen order (1 Geopolitics … 7 Geography, 8 Overlays) — then click a member to pick the mode; `Ctrl+\\`` switches campaign slot; `Esc` closes an open group first. The dev \"?\" panel is updated to list these (previously `Ctrl+1–9` set a flat colour mode from the old, pre-grouping list)." },
+    ],
+  },
+  {
     version: "0.9.843",
     date: "2026-06-02",
     items: [

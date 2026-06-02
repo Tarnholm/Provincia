@@ -6352,13 +6352,11 @@ function App() {
 
   // Keyboard shortcuts
   useEffect(() => {
-    // Order must mirror the colorModes array in renderMapModeToggle so
-    // Ctrl+1..9 → Faction/Victory/Culture/Religion/Population/Fertility/
-    // Resources/Homeland/Government.
-    const numericModes = [
-      "faction", "victory", "culture", "religion", "loyalist", "explored",
-      "population", "farm", "resource", "homeland", "government",
-    ];
+    // 0.9.844: shortcuts rebuilt around the EU5-style fan-out groups. Ctrl+1..8
+    // OPEN/toggle the title-bar map-mode category tabs in their on-screen order
+    // (Overlays = 8); then click a member to pick a mode. Ctrl+` switches the
+    // campaign slot. (Was: Ctrl+1..9 set a flat color mode from the old list.)
+    const fanSections = ["geopolitics", "government", "demography", "population", "economy", "military", "geography", "overlays"];
     const handler = (e) => {
       const inField = e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA";
       // Ctrl+F → focus the search input regardless of where focus currently is.
@@ -6370,11 +6368,18 @@ function App() {
         }
         return;
       }
-      // Ctrl+1..9 → switch map mode (only when not typing in a field).
-      if (!inField && e.ctrlKey && !e.shiftKey && !e.altKey && e.key >= "1" && e.key <= "9") {
-        const idx = parseInt(e.key, 10) - 1;
-        const mode = numericModes[idx];
-        if (mode) { e.preventDefault(); setColorMode(mode); }
+      // Ctrl+1..8 → open/toggle a map-mode category group (title-bar tab order:
+      // Geopolitics, Government, Demography, Population, Economy, Military,
+      // Geography, Overlays). Click a member in the row beneath to pick a mode.
+      if (!inField && e.ctrlKey && !e.shiftKey && !e.altKey && e.key >= "1" && e.key <= "8") {
+        const id = fanSections[parseInt(e.key, 10) - 1];
+        if (id) { e.preventDefault(); setOpenFanSection((cur) => (cur === id ? null : id)); }
+        return;
+      }
+      // Ctrl+` → toggle between the two campaign slots.
+      if (!inField && e.ctrlKey && !e.shiftKey && !e.altKey && e.key === "`") {
+        e.preventDefault();
+        setMapCampaign((prev) => (prev === "imperial" ? "classic" : "imperial"));
         return;
       }
       if (inField) {
@@ -6386,6 +6391,7 @@ function App() {
       }
       if (e.key === "Escape") {
         // Esc cascade — close whatever overlay is open, then clear selection.
+        setOpenFanSection((cur) => (cur ? null : cur));
         setShowInsightsPanel((cur) => (cur ? false : cur));
         setInfoPopup((cur) => { if (cur) return null; return cur; });
         setDevContextMenu((cur) => { if (cur) return null; return cur; });
@@ -11564,15 +11570,21 @@ function App() {
           }}>
             <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 8, color: "#e8a030" }}>Keyboard Shortcuts</div>
             {[
+              ["Ctrl+1 – 8", "Open map-mode group (1 Geopolitics … 7 Geography, 8 Overlays)"],
+              ["Ctrl+`", "Switch campaign slot"],
+              ["Ctrl+F", "Focus province search"],
+              ["Ctrl+K", "Search everywhere"],
+              [", / .", "Step through recent regions"],
               ["Ctrl+Shift+D", "Toggle dev mode"],
               ["Ctrl+Z", "Undo"],
               ["Ctrl+Shift+Z / Ctrl+Y", "Redo"],
-              ["Escape", "Deselect all"],
+              ["Escape", "Close open group, then deselect"],
               ["Arrow keys", "Pan map"],
               ["Scroll wheel", "Zoom in/out"],
               ["Double-click map", "Zoom in"],
               ["Shift+click faction", "Multi-select factions"],
               ["Double-click faction", "Zoom to territory"],
+              ["Right-click campaign tab", "Import files into that slot"],
               ["Right-click save", "Rename save"],
             ].map(([key, desc]) => (
               <div key={key} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 3 }}>
