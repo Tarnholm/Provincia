@@ -1652,19 +1652,34 @@ function App() {
   // derive the column count (clamped 5..10). A ResizeObserver keeps it in
   // sync as the bottom.factions Movable is resized or the window changes.
   const factionGridRef = useRef(null);
-  const [factionGridCols, setFactionGridCols] = useState(5);
+  const [factionGrid, setFactionGrid] = useState({ cols: 5, size: ICON_SIZE });
   useEffect(() => {
     const el = factionGridRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    // SLOT = icon tile (ICON_SIZE 72) + columnGap (6). At the canonical
-    // ~narrow width (~388px inner) floor(388/78)=4 → clamped to the 5
-    // minimum; each extra ~78px of panel width adds one column, up to 10.
-    const SLOT = 78;
+    // Pick the MOST icon columns that fit without shrinking an icon below
+    // MIN_ICON, then size the icons up to fill the row (capped at ICON_SIZE
+    // = 72). So a narrow quarter-4K panel keeps ~5 columns by shrinking the
+    // icons a little instead of dropping to 4 — and icons are NEVER clipped
+    // (we only ever fit whole columns) and NEVER balloon past 72px. The count
+    // grows with panel width up to 10 columns. (0.9.851)
+    const GAP = 6;        // must match the grid's columnGap
+    const MIN_ICON = 56;  // smallest we let an icon shrink to before dropping a column
+    const MAX_COLS = 10;
     const recompute = () => {
-      const w = el.clientWidth;
-      if (!w) return;
-      const cols = Math.max(5, Math.min(10, Math.floor(w / SLOT)));
-      setFactionGridCols((cur) => (cur === cols ? cur : cols));
+      // clientWidth includes the grid's 5px L/R padding; subtract it plus a
+      // 2px safety margin so rounding never pushes a column past the edge.
+      const avail = el.clientWidth - 10 - 2;
+      if (avail <= 0) return;
+      let cols = 1, size = Math.min(ICON_SIZE, avail);
+      for (let c = MAX_COLS; c >= 1; c--) {
+        const s = Math.floor((avail - GAP * (c - 1)) / c);
+        if (s >= MIN_ICON || c === 1) {
+          cols = c;
+          size = Math.max(1, Math.min(ICON_SIZE, s));
+          break;
+        }
+      }
+      setFactionGrid((cur) => (cur.cols === cols && cur.size === size ? cur : { cols, size }));
     };
     recompute();
     const ro = new ResizeObserver(recompute);
@@ -10031,17 +10046,16 @@ function App() {
           ref={factionGridRef}
           style={{
             display: "grid",
-            // 0.9.849: FIXED-SIZE icons that ADD columns as the panel widens —
-            // 5 minimum, 10 maximum. auto-fill packs as many ICON_SIZE(72px)
-            // columns as fit (icons never stretch); minWidth floors it at 5
-            // columns, maxWidth caps it at 10. (The old repeat(N,1fr) just made
-            // the 5 icons bigger instead of showing more.)
-            gridTemplateColumns: `repeat(auto-fill, ${ICON_SIZE}px)`,
+            // 0.9.851: column count + icon size are computed from the live panel
+            // width (factionGrid, via the ResizeObserver above). We fit the MOST
+            // whole columns that keep the icon ≥ MIN_ICON, then size icons up to
+            // fill (capped at 72). So a narrow quarter-4K panel shows ~5 columns
+            // at ~67px and a full-4K panel shows ~10 columns at the SAME ~66px —
+            // icons are never clipped (whole columns only) and never balloon.
+            gridTemplateColumns: `repeat(${factionGrid.cols}, ${factionGrid.size}px)`,
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
-            minWidth: ICON_SIZE * 5 + 6 * 4,
-            maxWidth: ICON_SIZE * 10 + 6 * 9,
             // 0.9.827: vertical padding bumped 1 → 6 so the selected tile's
             // highlight ring + glow (box-shadow spread 2px + 8px glow, plus the
             // 1.04 scale) isn't clipped by this scroll container's overflow on
@@ -10052,7 +10066,10 @@ function App() {
             // scrolls inside the widget.
             flex: 1,
             minHeight: 0,
-            overflow: "auto",
+            // Vertical scroll only — never a horizontal scrollbar / clipped
+            // column (the grid is sized to whole columns that fit).
+            overflowX: "hidden",
+            overflowY: "auto",
           }}
         >
           {list.filter(f => {

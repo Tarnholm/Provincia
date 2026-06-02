@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.851",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Faction icons are never cut off again.** The grid now fits only whole columns and shrinks the icons slightly when needed so they fill the panel cleanly — a narrow (quarter-4K) panel keeps ~5 columns instead of clipping a 6th, and a full-width panel shows up to 10 columns at the same icon size. Icons no longer balloon, and the count scales smoothly with panel width." },
+    ],
+  },
+  {
     version: "0.9.850",
     date: "2026-06-02",
     items: [
