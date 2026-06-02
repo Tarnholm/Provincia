@@ -145,7 +145,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 27;
+const LAYOUT_VERSION = 28;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -170,6 +170,11 @@ const CANONICAL_V4 = {
   // 0.3400 → 0.3490). diplomacy + characters shift down by the same delta;
   // buildings shrinks (h 0.2540 → 0.2450) keeping its bottom at 0.9890. All
   // four stay contiguous with their original ~0.008 inter-widget gaps.
+  // 0.9.850 (LAYOUT_VERSION 28): bottom-left column (search → factions) is now
+  // a fixed-pixel stack via colBox.topPx/heightPx/fillToBottom — search is a
+  // slim 30px bar, factions starts a constant ~6px below it and fills to the
+  // viewport floor. The defaultPct fractions below are kept only as the
+  // design-mode fallback; the live geometry comes from the colBox in App.js.
   "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3490 },
   "region.recruit":     { x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 },
   "region.diplomacy":   { x: 0.5720, y: 0.3650, w: 0.2090, h: 0.1900 },
@@ -189,7 +194,7 @@ const CANONICAL_V4 = {
   // actual pixel width, so these line up with the map on both sides.)
   "bottom.search":      { x: 0, y: 0.7009, w: 0.2076, h: 0.0400 },
   "bottom.factions":    { x: 0, y: 0.7470, w: 0.2076, h: 0.2480 },
-  "bottom.selected":    { x: 0.2170, y: 0.7009, w: 0.3550, h: 0.2941 },
+  "bottom.selected":    { x: 0.2108, y: 0.7009, w: 0.3612, h: 0.2941 },
 };
 // Splitter overrides that put the map at the width the canonical widget
 // grid assumes. rightColPct=0.428 leaves x∈(0.566, 1) for widgets.
@@ -527,12 +532,30 @@ export function Movable({
     // Clamp height so a widget never runs past the viewport bottom; the big
     // panels (factions/selected) scroll internally to absorb the difference.
     const boxY0 = colBox.y0 != null ? colBox.y0 : 0;
-    top = Math.round(colBox.top + (ePos.y - boxY0) * vp.h);
-    // Floor of 14px (not 40) so the thin search bar keeps its real small height
-    // — the 40px minimum was forcing the search to 40px and overlapping Factions.
-    height = Math.max(14, Math.round(ePos.h * vp.h));
     const maxBottom = vp.h - 6;
-    if (top + height > maxBottom) height = Math.max(14, maxBottom - top);
+    // FIXED-PIXEL vertical anchoring (0.9.850). When colBox carries `topPx`, the
+    // widget's top is a CONSTANT pixel offset below colBox.top (the map's bottom)
+    // instead of a fraction of vp.h — so the search↔factions gap is the same
+    // ~6px on every window height instead of growing on a tall window. `heightPx`
+    // pins a fixed height (the slim search bar); `fillToBottom` stretches the
+    // widget to the viewport floor (Factions / Selected fill the space and scroll
+    // internally). These make the bottom-left column a deterministic stack —
+    // "expand factions, not search" — rather than three free-scaling fractions.
+    if (colBox.topPx != null) {
+      top = Math.round(colBox.top + colBox.topPx);
+    } else {
+      top = Math.round(colBox.top + (ePos.y - boxY0) * vp.h);
+    }
+    if (colBox.fillToBottom) {
+      height = Math.max(14, maxBottom - top);
+    } else if (colBox.heightPx != null) {
+      height = Math.max(14, Math.round(colBox.heightPx));
+    } else {
+      // Floor of 14px (not 40) so the thin search bar keeps its real small height
+      // — the 40px minimum was forcing the search to 40px and overlapping Factions.
+      height = Math.max(14, Math.round(ePos.h * vp.h));
+      if (top + height > maxBottom) height = Math.max(14, maxBottom - top);
+    }
   } else {
     // Raw viewport-fraction placement — inset by the title-bar strip so a
     // widget at y≈0 lands just below the strip, not under it.

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.850",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Tightened the bottom-left layout to consistent spacing.** The Search bar is a slim fixed-height control, the Factions panel now sits a constant ~6px below it and **expands downward to fill the column** (Search no longer grows — Factions does), and the gap between Factions and the Selected Provinces panel matches the rest of the UI. Spacing stays even on any window height instead of stretching when the window is tall." },
+    ],
+  },
+  {
     version: "0.9.849",
     date: "2026-06-02",
     items: [
