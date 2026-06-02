@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.845",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Toasts and the top status banners no longer hide under the title bar.** They now sit just below the custom title-bar strip (and above it in stacking order)." },
+      { type: "change", text: "**Moved the keyboard-shortcuts \"?\" button into the title bar**, next to the native minimise button (it was in the dev pill; still dev-only)." },
+    ],
+  },
+  {
     version: "0.9.844",
     date: "2026-06-02",
     items: [

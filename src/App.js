@@ -11507,18 +11507,8 @@ function App() {
                   }}
                 ><MapBtnBadge k="devpill.changes" />Changes ({pendingCount})</button>
               )}
-              <button
-                onClick={() => setShowShortcuts(p => !p)}
-                title="Keyboard shortcuts"
-                style={{
-                  ...btnStyle(false),
-                  background: "rgba(60,60,60,0.7)",
-                  color: "#aaa",
-                  border: "1px solid #555",
-                  minWidth: 0, padding: "3px 7px", fontSize: "0.72rem", fontWeight: 700,
-                  position: "relative",
-                }}
-              ><MapBtnBadge k="devpill.shortcuts" />?</button>
+              {/* 0.9.845: the "?" keyboard-shortcuts button moved to the title
+                  bar (next to the native minimise). Removed from the dev pill. */}
               {/* 0.9.472: removed the autosave-snapshot "Save" button, the
                   "Load" snapshot menu, and the timeline scrub slider per
                   user request — the unified pending Save in the dev pill
@@ -14067,6 +14057,25 @@ function App() {
               );
             })}
           </div>
+          {/* 0.9.845: keyboard-shortcuts "?" moved here from the dev pill — sits
+              at the right of the strip, just left of the native minimise button
+              (the reserved TITLEBAR_CONTROLS_W gap). Dev-only, as before. */}
+          {devMode && (
+            <button
+              onClick={() => setShowShortcuts((p) => !p)}
+              title="Keyboard shortcuts"
+              style={{
+                WebkitAppRegion: "no-drag",
+                marginLeft: "auto",
+                width: 22, height: 22, padding: 0, borderRadius: 6,
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: showShortcuts ? "rgba(220,166,74,0.25)" : "rgba(255,255,255,0.06)",
+                color: "#cfd6e0", fontSize: "0.8rem", fontWeight: 700,
+                cursor: "pointer", lineHeight: 1,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >?</button>
+          )}
         </div>
       )}
       <canvas
@@ -15138,8 +15147,8 @@ function App() {
       })()}
       {saveStaleInfo && !saveStaleDismissed && (
         <div style={{
-          position: "fixed", top: updateReady ? 56 : 12, left: "50%", transform: "translateX(-50%)",
-          zIndex: 10000, background: "rgba(180, 130, 30, 0.96)", color: "#fff",
+          position: "fixed", top: (updateReady ? 56 : 12) + TITLEBAR_H, left: "50%", transform: "translateX(-50%)",
+          zIndex: 100001, background: "rgba(180, 130, 30, 0.96)", color: "#fff",
           padding: "10px 16px", borderRadius: 8, fontSize: "0.82rem", maxWidth: 640,
           boxShadow: "0 6px 24px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.18)",
           display: "flex", alignItems: "center", gap: 12,
@@ -15161,6 +15170,7 @@ function App() {
       )}
       <Toasts
         toasts={toasts}
+        topOffset={TITLEBAR_H}
         onDismiss={(id) => setToasts(prev => prev.filter(x => x.id !== id))}
       />
       {/* Family Tree modal — opened from the Characters widget header in RegionInfo */}
@@ -15197,7 +15207,7 @@ function App() {
       {liveLoading && (
         <div
           style={{
-            position: "fixed", top: 8, right: 12, zIndex: 10010,
+            position: "fixed", top: 8 + TITLEBAR_H, right: 12, zIndex: 100001,
             background: "linear-gradient(90deg, #1a1a1a 0%, #2a1f10 100%)",
             color: "#dca64a",
             border: "1px solid rgba(220,166,74,0.4)",

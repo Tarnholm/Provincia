@@ -4,11 +4,13 @@ import React from "react";
  * Non-blocking error / info toasts stacked in the top-right corner. Each has
  * its own dismiss timer handled in App.js; clicking dismisses immediately.
  */
-export default function Toasts({ toasts, onDismiss }) {
+export default function Toasts({ toasts, onDismiss, topOffset = 0 }) {
   if (!toasts || toasts.length === 0) return null;
   return (
     <div style={{
-      position: "fixed", top: 12, right: 12, zIndex: 9999,
+      // topOffset clears the custom title-bar strip so toasts aren't hidden
+      // under the window chrome (0.9.845).
+      position: "fixed", top: 12 + topOffset, right: 12, zIndex: 100001,
       display: "flex", flexDirection: "column", gap: 6, maxWidth: 380,
     }}>
       {toasts.map(t => (
