@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.855",
+    date: "2026-06-02",
+    items: [
+      { type: "feature", text: "**Army unit editing: duplicate & reorder.** With an army selected for editing (dev mode), **shift-click a unit card to duplicate it** (keeping its upgrades) and **drag-and-drop cards to reorder** the units within the army. The × button still removes a unit." },
+    ],
+  },
+  {
     version: "0.9.854",
     date: "2026-06-02",
     items: [

@@ -2777,6 +2777,36 @@ function App() {
     stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
   }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
 
+  // 0.9.855: shift-click a card in the selected army → insert a COPY of that
+  // unit right after it (keeping its xp/armour/weapon upgrades). The clone is a
+  // plain unit — strip any commander/general tags so we don't fabricate a
+  // second general from a bodyguard card.
+  const onDuplicateUnitInSelectedArmy = useCallback((idx) => {
+    if (!selectedArmyKey || !selectedArmyDesc) return;
+    const pending = pendingArmyUnits.get(selectedArmyKey) || appliedArmyUnits.get(selectedArmyKey);
+    const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
+    if (!cur || idx < 0 || idx >= cur.length) return;
+    const copy = { ...cur[idx] };
+    delete copy.commanderName; delete copy.commanderLastName;
+    delete copy.commanderFaction; delete copy.commanderUuid;
+    const next = [...cur.slice(0, idx + 1), copy, ...cur.slice(idx + 1)];
+    stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
+
+  // 0.9.855: drag-and-drop reorder within the selected army. Moves the unit at
+  // fromIdx so it lands at toIdx in the staged list.
+  const onReorderUnitInSelectedArmy = useCallback((fromIdx, toIdx) => {
+    if (!selectedArmyKey || !selectedArmyDesc) return;
+    if (fromIdx === toIdx || fromIdx == null || toIdx == null) return;
+    const pending = pendingArmyUnits.get(selectedArmyKey) || appliedArmyUnits.get(selectedArmyKey);
+    const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
+    if (!cur || fromIdx < 0 || fromIdx >= cur.length || toIdx < 0 || toIdx >= cur.length) return;
+    const next = cur.slice();
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
+
   // Stage a diplomacy edit from the editor. valueKind ∈ core|rel|agg.
   const stageDiplomacy = useCallback((valueKind, from, to, value, label) => {
     const key = `${valueKind}|${from}|${to}`;
@@ -16553,6 +16583,8 @@ function App() {
                       onSelectArmy={onSelectArmy}
                       onAddUnitToSelectedArmy={onAddUnitToSelectedArmy}
                       onRemoveUnitFromSelectedArmy={onRemoveUnitFromSelectedArmy}
+                      onDuplicateUnitInSelectedArmy={onDuplicateUnitInSelectedArmy}
+                      onReorderUnitInSelectedArmy={onReorderUnitInSelectedArmy}
                       armyKeyOf={armyKey}
                       onToggleWealthPanel={() => setShowWealthPanel(prev => !prev)}
                       wealthPanelOpen={showWealthPanel}

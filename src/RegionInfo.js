@@ -528,7 +528,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -891,6 +891,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   const [savingMsg, setSavingMsg] = useState(null);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const [addQuery, setAddQuery] = useState("");
+  // 0.9.855: index (in the underlying army-unit list) of the card currently
+  // being dragged, for drag-and-drop reorder within the selected army.
+  const unitDragIdxRef = useRef(null);
+  const [unitDragOverIdx, setUnitDragOverIdx] = useState(null);
   // 0.9.467: edits stage to the pending-changes registry in App.js (via
   // onEditBuildings); the descr_strat IPC fires only when the user clicks
   // Apply in the review modal. logMsg becomes the human-readable line in
@@ -3168,23 +3172,49 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const tooltip = tooltipParts.join(" — ");
               return (
                 <div key={i}
+                  draggable={isGarrisonSelected && !!onReorderUnitInSelectedArmy}
+                  onDragStart={(e) => {
+                    if (!isGarrisonSelected) return;
+                    unitDragIdxRef.current = garrison.indexOf(u);
+                    e.dataTransfer.effectAllowed = "move";
+                    try { e.dataTransfer.setData("text/plain", String(unitDragIdxRef.current)); } catch {}
+                  }}
+                  onDragOver={(e) => { if (isGarrisonSelected && unitDragIdxRef.current != null) { e.preventDefault(); const di = garrison.indexOf(u); setUnitDragOverIdx((c) => c === di ? c : di); } }}
+                  onDragLeave={() => setUnitDragOverIdx((c) => c === garrison.indexOf(u) ? null : c)}
+                  onDrop={(e) => {
+                    if (!isGarrisonSelected || !onReorderUnitInSelectedArmy) return;
+                    e.preventDefault();
+                    const from = unitDragIdxRef.current;
+                    const to = garrison.indexOf(u);
+                    unitDragIdxRef.current = null;
+                    setUnitDragOverIdx(null);
+                    if (from != null && to >= 0) onReorderUnitInSelectedArmy(from, to);
+                  }}
+                  onDragEnd={() => { unitDragIdxRef.current = null; setUnitDragOverIdx(null); }}
                   onMouseEnter={() => setHoveredUnit(u)}
                   onMouseLeave={() => setHoveredUnit((cur) => cur === u ? null : cur)}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
                   onClick={(e) => {
-                    // 0.9.649: select this garrison as the edit target on click.
-                    // Removal is now a × button (rendered below) so plain click
-                    // is unambiguous.
+                    // 0.9.649: plain click selects this garrison as the edit
+                    // target (× removes). 0.9.855: shift-click a card in the
+                    // already-selected army DUPLICATES that unit.
                     if (!devMode || !onSelectArmy) return;
                     e.preventDefault();
+                    if (e.shiftKey && isGarrisonSelected && onDuplicateUnitInSelectedArmy) {
+                      const origIdx = garrison.indexOf(u);
+                      if (origIdx >= 0) onDuplicateUnitInSelectedArmy(origIdx);
+                      return;
+                    }
                     onSelectArmy(garrisonArmyDesc);
                   }}
-                  title={devMode ? `${tooltip}\n[dev] click → select army for editing (× to remove)` : tooltip} style={{
+                  title={devMode ? `${tooltip}\n[dev] click → select army · shift-click → duplicate · drag → reorder · × → remove` : tooltip} style={{
                   position: "relative", padding: 1,
                   background: "rgba(0,0,0,0.35)", borderRadius: 2,
                   minWidth: 0,
-                  cursor: devMode ? "pointer" : "default",
-                  outline: isGarrisonSelected ? "1px solid rgba(250,204,21,0.55)" : "none",
+                  cursor: isGarrisonSelected ? "grab" : (devMode ? "pointer" : "default"),
+                  outline: unitDragOverIdx === garrison.indexOf(u) && isGarrisonSelected
+                    ? "2px solid #38bdf8"
+                    : (isGarrisonSelected ? "1px solid rgba(250,204,21,0.55)" : "none"),
                 }}>
                   {isGarrisonSelected && onRemoveUnitFromSelectedArmy && (
                     <button
@@ -3454,12 +3484,38 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       const tooltip = tooltipParts.join(" — ");
                       return (
                       <div key={ui}
+                        draggable={isFieldSelected && !!onReorderUnitInSelectedArmy}
+                        onDragStart={(e) => {
+                          if (!isFieldSelected) return;
+                          unitDragIdxRef.current = a.units.indexOf(u);
+                          e.dataTransfer.effectAllowed = "move";
+                          try { e.dataTransfer.setData("text/plain", String(unitDragIdxRef.current)); } catch {}
+                        }}
+                        onDragOver={(e) => { if (isFieldSelected && unitDragIdxRef.current != null) { e.preventDefault(); } }}
+                        onDrop={(e) => {
+                          if (!isFieldSelected || !onReorderUnitInSelectedArmy) return;
+                          e.preventDefault();
+                          const from = unitDragIdxRef.current;
+                          const to = a.units.indexOf(u);
+                          unitDragIdxRef.current = null;
+                          if (from != null && to >= 0) onReorderUnitInSelectedArmy(from, to);
+                        }}
+                        onDragEnd={() => { unitDragIdxRef.current = null; }}
                         onMouseEnter={() => setHoveredFieldUnit(u)}
                         onMouseLeave={() => setHoveredFieldUnit((cur) => cur === u ? null : cur)}
                         onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
-                        title={tooltip} style={{
+                        onClick={(e) => {
+                          // 0.9.855: shift-click a card in the selected field army
+                          // duplicates that unit.
+                          if (!isFieldSelected || !e.shiftKey || !onDuplicateUnitInSelectedArmy) return;
+                          e.preventDefault(); e.stopPropagation();
+                          const origIdx = a.units.indexOf(u);
+                          if (origIdx >= 0) onDuplicateUnitInSelectedArmy(origIdx);
+                        }}
+                        title={isFieldSelected ? `${tooltip}\n[dev] shift-click → duplicate · drag → reorder · × → remove` : tooltip} style={{
                         position: "relative", padding: 1,
                         background: "rgba(0,0,0,0.35)", borderRadius: 2,
+                        cursor: isFieldSelected ? "grab" : "default",
                         outline: isFieldSelected ? "1px solid rgba(250,204,21,0.55)" : "none",
                       }}>
                         {isFieldSelected && onRemoveUnitFromSelectedArmy && (
