@@ -150,7 +150,11 @@ function initLogging() {
   }
 }
 initLogging();
-try { app.on("before-quit", _flushLog); } catch {}
+// 0.9.865: set true once the app is genuinely quitting (or installing an update)
+// so the renderer-crash auto-reload handler doesn't fight a real shutdown.
+let _appQuitting = false;
+try { app.on("before-quit", () => { _appQuitting = true; _flushLog(); }); } catch {}
+try { app.on("will-quit", () => { _appQuitting = true; }); } catch {}
 
 // IPC: receive log messages from the renderer and write to the same log.
 ipcMain.handle("log-message", async (_event, level, text) => {
@@ -2469,6 +2473,33 @@ function createWindow() {
   const win = new BrowserWindow(winOptions);
   win.setMenuBarVisibility(false);
   if (saved?.maximized) win.maximize();
+
+  // 0.9.865: AUTO-RECOVER from a dead renderer. When a teammate's game CTDs
+  // during a live run, the save-watch thrash (workers timing out → sync
+  // fallback → queued reparses) could starve/crash the renderer; its frame got
+  // disposed and the window stayed WHITE forever, forcing a PC restart. Electron
+  // never reloads a crashed renderer on its own, so do it here: on
+  // render-process-gone, reload the window (unless the user is quitting). Guard
+  // against a reload loop (a deterministic render crash) — after 3 reloads in a
+  // short span, stop and leave it so we don't spin. `unresponsive` is logged but
+  // NOT auto-killed (a long sync parse can look unresponsive briefly).
+  let _rendererReloads = 0;
+  let _reloadWindowStart = 0;
+  win.webContents.on("render-process-gone", (_e, details) => {
+    try { _writeLog(`[renderer-gone] reason=${details && details.reason} exitCode=${details && details.exitCode} — attempting reload`); } catch {}
+    if (_appQuitting || win.isDestroyed()) return;
+    const now = Date.now();
+    if (now - _reloadWindowStart > 60000) { _reloadWindowStart = now; _rendererReloads = 0; }
+    _rendererReloads++;
+    if (_rendererReloads > 3) {
+      try { _writeLog(`[renderer-gone] ${_rendererReloads} reloads in <60s — giving up auto-reload (likely a deterministic crash)`); } catch {}
+      return;
+    }
+    // Small delay lets the crashed process fully tear down before reloading.
+    setTimeout(() => { try { if (!win.isDestroyed()) win.reload(); } catch {} }, 400);
+  });
+  win.webContents.on("unresponsive", () => { try { _writeLog("[renderer-unresponsive] webContents reported unresponsive (likely a long sync parse) — not killing"); } catch {} });
+  win.webContents.on("responsive", () => { try { _writeLog("[renderer-responsive] recovered"); } catch {} });
 
   // Debounced save on move/resize so we capture position changes that
   // happen while the user is dragging without thrashing the disk. close
@@ -9291,7 +9322,14 @@ function sendUpdateEvent(channel, payload) {
   // the main renderer's watch loop never saw "downloaded" — it polled forever
   // and never auto-installed. Extra windows that don't listen just ignore it.
   for (const win of BrowserWindow.getAllWindows()) {
-    if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
+    if (!win || win.isDestroyed()) continue;
+    const wc = win.webContents;
+    // 0.9.865: a window can be alive while its RENDER FRAME is disposed (the
+    // renderer crashed — e.g. after a game CTD thrashed it). .send() then throws
+    // "Render frame was disposed", which spammed the log during an auto-update
+    // download. Skip dead/crashed webContents and swallow the race.
+    if (!wc || wc.isDestroyed() || wc.isCrashed()) continue;
+    try { wc.send(channel, payload); } catch { /* render frame disposed mid-send — ignore */ }
   }
 }
 
@@ -9327,6 +9365,7 @@ ipcMain.handle("updater-quit-and-install", () => {
   // (electron-updater passes /S to the installer); force-run-after
   // relaunches Provincia automatically once the install finishes. The
   // first-time installer is unaffected — only the update flow goes silent.
+  _appQuitting = true;
   autoUpdater.quitAndInstall(true, true);
   return true;
 });

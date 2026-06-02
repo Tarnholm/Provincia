@@ -3,6 +3,66 @@
     "faction": "romans_julii",
     "settlements": [
       {
+        "region": "Metapontion",
+        "level": "large_town",
+        "population": 2500,
+        "faction_creator": "taras",
+        "buildings": [
+          {
+            "type": "core_building",
+            "level": "governors_villa"
+          },
+          {
+            "type": "defenses",
+            "level": "wooden_pallisade"
+          },
+          {
+            "type": "food_storage",
+            "level": "granary"
+          },
+          {
+            "type": "governmentA",
+            "level": "gov1"
+          },
+          {
+            "type": "health",
+            "level": "cisterns"
+          },
+          {
+            "type": "hinterland_region",
+            "level": "region_base"
+          },
+          {
+            "type": "hinterland_roads",
+            "level": "roads"
+          },
+          {
+            "type": "irrigated_farming",
+            "level": "basin_irrigation"
+          },
+          {
+            "type": "market",
+            "level": "trader"
+          },
+          {
+            "type": "military_industrial_complex",
+            "level": "mic_1"
+          },
+          {
+            "type": "olive_cultivation",
+            "level": "olive_1"
+          },
+          {
+            "type": "port_buildings",
+            "level": "port"
+          },
+          {
+            "type": "temple_complex_dorian",
+            "level": "temple_dorian_1"
+          }
+        ]
+      },
+      {
         "region": "Roma",
         "level": "large_city",
         "population": 9000,
@@ -33840,66 +33900,6 @@
           {
             "type": "purple_dye_production",
             "level": "purple_dye_1"
-          }
-        ]
-      },
-      {
-        "region": "Metapontion",
-        "level": "large_town",
-        "population": 2500,
-        "faction_creator": "taras",
-        "buildings": [
-          {
-            "type": "core_building",
-            "level": "governors_villa"
-          },
-          {
-            "type": "defenses",
-            "level": "wooden_pallisade"
-          },
-          {
-            "type": "food_storage",
-            "level": "granary"
-          },
-          {
-            "type": "governmentA",
-            "level": "gov1"
-          },
-          {
-            "type": "health",
-            "level": "cisterns"
-          },
-          {
-            "type": "hinterland_region",
-            "level": "region_base"
-          },
-          {
-            "type": "hinterland_roads",
-            "level": "roads"
-          },
-          {
-            "type": "irrigated_farming",
-            "level": "basin_irrigation"
-          },
-          {
-            "type": "market",
-            "level": "trader"
-          },
-          {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          },
-          {
-            "type": "olive_cultivation",
-            "level": "olive_1"
-          },
-          {
-            "type": "port_buildings",
-            "level": "port"
-          },
-          {
-            "type": "temple_complex_dorian",
-            "level": "temple_dorian_1"
           }
         ]
       }

@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.865",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Provincia now auto-recovers from a white screen** if its renderer dies (e.g. after the game crashes during a live run). Previously the window stayed blank and needed a full PC restart; now the renderer is automatically reloaded (with a loop guard so a deterministic crash doesn't spin). Diagnostic lines ([renderer-gone] / [renderer-unresponsive]) are written to provincia.log." },
+      { type: "fix", text: "Stopped the **\"Render frame was disposed\" error spam** during an auto-update download when the renderer had already crashed — update events now skip dead/crashed windows safely." },
+    ],
+  },
+  {
     version: "0.9.864",
     date: "2026-06-02",
     items: [

@@ -47951,83 +47951,7 @@
     }
   },
   "Metapontion": {
-    "garrison": [
-      {
-        "character": "Leophron",
-        "faction": "taras",
-        "x": 331,
-        "y": 382,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 23,
-        "tags": [
-          "heir",
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDorian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Metapontum",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "Corrupt",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "GoodFarmer",
-            "level": 1
-          },
-          {
-            "name": "NightBattleCapable",
-            "level": 1
-          },
-          {
-            "name": "Stoic",
-            "level": 1
-          },
-          {
-            "name": "Xenophobia",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "garrison": [],
     "field": [
       {
         "character": "Marcus Livius Drusus",
@@ -49094,6 +49018,81 @@
           {
             "name": "TurnsAlive",
             "level": 5
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      },
+      {
+        "character": "Leophron",
+        "faction": "taras",
+        "x": 336,
+        "y": 384,
+        "units": [
+          {
+            "name": "greek general",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 23,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingDorian",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Metapontum",
+            "level": 1
+          },
+          {
+            "name": "GreekCityAssigned",
+            "level": 1
+          },
+          {
+            "name": "Corrupt",
+            "level": 1
+          },
+          {
+            "name": "Brave",
+            "level": 1
+          },
+          {
+            "name": "LoyaltyLevel",
+            "level": 7
+          },
+          {
+            "name": "GoodFarmer",
+            "level": 1
+          },
+          {
+            "name": "NightBattleCapable",
+            "level": 1
+          },
+          {
+            "name": "Stoic",
+            "level": 1
+          },
+          {
+            "name": "Xenophobia",
+            "level": 1
+          },
+          {
+            "name": "FasterCharacters",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 2
           }
         ],
         "ancillaries": [],
