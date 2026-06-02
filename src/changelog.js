@@ -12,6 +12,7 @@ const CHANGELOG = [
     date: "2026-06-02",
     items: [
       { type: "fix", text: "**Reverted the opaque panel backgrounds from 0.9.867.** That change made every panel a solid block app-wide (not just when overlaying the game), which looked wrong. Panels are translucent again, back to the original look." },
+      { type: "fix", text: "**Live save-watch now backs off after repeated parse-worker timeouts.** If a pathological/partial save (e.g. right after a game crash) makes the background parse workers time out on 2 reparses in a row, Provincia pauses auto-reparsing for 60s instead of endlessly falling back to slow synchronous parsing and re-queuing — which previously thrashed the CPU and could crash the renderer. The streak resets the moment a save parses cleanly. Completes the crash-hardening started in 0.9.865." },
     ],
   },
   {

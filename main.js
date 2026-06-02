@@ -8249,6 +8249,17 @@ function attachLiveSaveExtras(newData, saveBuf, modDataDir, prevEventLog) {
 // and run one more pass when the current one finishes.
 let _reparsing = false;
 let _reparsePending = false;
+// 0.9.866: save-watch BACKOFF. After 2+ consecutive reparses where a parse
+// WORKER times out (the post-game-crash thrash that sync-falls-back, queues, and
+// can starve/crash the renderer — see [[provincia-renderer-crash-recovery]]),
+// cool down auto-reparsing for a window so a pathological/partial save can't pin
+// the CPU or re-crash the renderer in a loop. The counter resets the moment a
+// clean reparse (no worker timeout) succeeds; a fresh save (new mtime) after the
+// cooldown reparses normally.
+let _consecutiveTimeoutReparses = 0;
+let _saveWatchCooldownUntil = 0;
+let _saveWatchCooldownLogged = false;
+const SAVE_WATCH_COOLDOWN_MS = 60000;
 
 // Renderer-liveness guard. After the renderer process crashes (e.g. the game
 // CTDs mid-live-run and the OS thrashes — observed 2026-06-02: a 9h live run hit
@@ -8278,12 +8289,25 @@ async function reparseLatestSave() {
   // Don't burn a reparse (heavy parse + worker threads) when the renderer is
   // gone — that's the post-game-crash thrash that pinned the machine.
   if (!getLiveWindow()) { _reparsePending = false; return; }
+  // 0.9.866: backoff cooldown — skip auto-reparse while cooling down after
+  // repeated worker timeouts. A genuinely new save (new mtime) written after the
+  // window will reparse on the next event once the cooldown lapses.
+  if (_saveWatchCooldownUntil && Date.now() < _saveWatchCooldownUntil) {
+    if (!_saveWatchCooldownLogged) {
+      _saveWatchCooldownLogged = true;
+      try { _writeLog(`[save-watch] in backoff cooldown (~${Math.round((_saveWatchCooldownUntil - Date.now()) / 1000)}s left) — skipping reparse`); } catch {}
+    }
+    _reparsePending = false;
+    return;
+  }
   if (_reparsing) {
     _reparsePending = true;
     console.log("[save-watch] queued (reparse already in progress)");
     return;
   }
   _reparsing = true;
+  // 0.9.866: set if any parse worker times out this reparse (drives the backoff).
+  let hadWorkerTimeout = false;
   // Watchdog: force-clear `_reparsing` after 120s even if the reparse
   // hasn't naturally completed (e.g. a worker hang we haven't accounted
   // for, an unhandled rejection that escaped the try/finally, etc).
@@ -8333,6 +8357,7 @@ async function reparseLatestSave() {
     const withTimeout = (p, ms, name) => Promise.race([
       p,
       new Promise((resolve) => setTimeout(() => {
+        hadWorkerTimeout = true;
         console.warn(`[save-watch] ${name} worker timed out after ${ms}ms — falling back to sync`);
         resolve(null);
       }, ms)),
@@ -8582,6 +8607,21 @@ async function reparseLatestSave() {
   } finally {
     clearTimeout(watchdog);
     _reparsing = false;
+    // 0.9.866: backoff bookkeeping. A reparse whose worker(s) timed out is a
+    // thrash signal; 2+ in a row → cool down so we stop sync-falling-back and
+    // re-queuing on a pathological save (which can starve/crash the renderer).
+    // Any clean reparse clears the streak.
+    if (hadWorkerTimeout) {
+      _consecutiveTimeoutReparses++;
+      if (_consecutiveTimeoutReparses >= 2) {
+        _saveWatchCooldownUntil = Date.now() + SAVE_WATCH_COOLDOWN_MS;
+        _saveWatchCooldownLogged = false;
+        _consecutiveTimeoutReparses = 0;
+        try { _writeLog(`[save-watch] ${2}+ consecutive reparses hit a worker timeout — backing off auto-reparse for ${Math.round(SAVE_WATCH_COOLDOWN_MS / 1000)}s to avoid thrashing the CPU/renderer`); } catch {}
+      }
+    } else {
+      _consecutiveTimeoutReparses = 0;
+    }
     if (_reparsePending) {
       _reparsePending = false;
       // Defer with setImmediate so the current call frame fully unwinds
