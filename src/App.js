@@ -10826,12 +10826,10 @@ function App() {
               boxShadow: open ? "0 2px 8px rgba(86,116,162,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
             };
             return (
-              <div key={sec.id} style={{
-                display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 3,
-                // When open, wrap the category + its modes in a slate tray so
-                // the fanned-out modes clearly read as "inside" this category.
-                ...(open ? { padding: 3, borderRadius: 9, background: "rgba(108,138,182,0.14)", border: "1px solid rgba(150,180,220,0.3)" } : null),
-              }}>
+              // position:relative so the open member list can be absolutely
+              // positioned directly BENEATH this category button (a dropdown),
+              // rather than expanding inline in the row.
+              <div key={sec.id} style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
                 <button onClick={() => setOpenFanSection(open ? null : sec.id)}
                   title={open ? `Collapse ${sec.title}` : `${sec.title} map modes — click to expand`}
                   style={catStyle}>
@@ -10841,7 +10839,17 @@ function App() {
                   )}
                   <span style={{ opacity: 0.6, fontSize: "0.85em" }}>{open ? "▾" : "▸"}</span>
                 </button>
-                {open && members.map((m) => renderModeMember(m))}
+                {open && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 60,
+                    display: "flex", flexWrap: "wrap", gap: 3, maxWidth: 360,
+                    padding: 5, borderRadius: 9,
+                    background: "rgba(18,26,38,0.97)", border: "1px solid rgba(150,180,220,0.45)",
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.5)", pointerEvents: "auto",
+                  }}>
+                    {members.map((m) => renderModeMember(m))}
+                  </div>
+                )}
               </div>
             );
           })}

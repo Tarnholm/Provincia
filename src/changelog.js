@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.823",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Map-mode category groups now open as a dropdown directly *beneath* the group button**, instead of expanding inline in the button row (which could push neighbouring buttons around / wrap awkwardly). Click a category → its modes drop down right under it in a compact panel; click elsewhere to close." },
+    ],
+  },
+  {
     version: "0.9.822",
     date: "2026-06-02",
     items: [
