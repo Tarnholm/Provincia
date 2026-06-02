@@ -4342,6 +4342,24 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
       }
     } catch {}
   }
+  // 0.9.821: nothing resolved — no save fast-path, no per-character pool, no
+  // static general_portrait.tga. We used to return {ok:false} SILENTLY, so a
+  // "generals have no portraits" report showed only the renderer's
+  // [bodyguard-swap] FAIL with no way to see WHY. Log the search roots + which
+  // actually exist on disk, the cultures tried, and a sample pool path we
+  // looked for — so the cause (wrong/partial mod dir, missing vanilla install,
+  // unexpected portrait layout) is one grep away. Throttled per culture|slot.
+  try {
+    if (!global._portraitMissLogged) global._portraitMissLogged = new Set();
+    const mk = `${c}|${s}`;
+    if (!global._portraitMissLogged.has(mk)) {
+      global._portraitMissLogged.add(mk);
+      const rootState = dirs.map((d) => `${d}=${fs.existsSync(d) ? "exists" : "MISSING"}`).join("  |  ");
+      const samplePool = path.join(dirs[0] || "(no dir)", tryCultures[0] || c, "portraits", "portraits", "young");
+      const samplePoolState = `${samplePool}=${fs.existsSync(samplePool) ? "exists" : "MISSING"}`;
+      console.log(`[resolve-portrait] NO PORTRAIT for culture="${c}" slot="${s}" — every source empty. tried cultures=[${tryCultures.join(",")}]. roots: ${rootState}. sample pool dir: ${samplePoolState}. modDataDir="${modDataDir || "(none)"}"`);
+    }
+  } catch {}
   return { ok: false };
 });
 

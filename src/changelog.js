@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.821",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Portrait resolution now logs WHY it found nothing.** When a general's portrait can't be resolved from any source (the renderer's `[bodyguard-swap] FAIL`), the log now records which search roots were tried, whether each exists on disk, the cultures attempted, and a sample pool path — so a \"generals have no portraits\" report points straight at the cause (wrong/partial mod data dir, missing vanilla install, or an unexpected portrait layout) instead of failing silently." },
+    ],
+  },
+  {
     version: "0.9.820",
     date: "2026-06-02",
     items: [
