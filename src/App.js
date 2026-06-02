@@ -10645,7 +10645,9 @@ function App() {
       // that 5px was forcing ~10px between every map/view button regardless of
       // the flex container's gap.
       margin: 0,
-      padding: "2px 7px",
+      // 0.9.831: match the category-tab dimensions (font 0.58rem, pad 2x5) so
+      // the View pill and the map-mode pill render at the same height.
+      padding: "2px 5px",
       borderRadius: 6,
       border: active ? "1px solid rgba(220,166,74,0.6)" : "1px solid rgba(255,255,255,0.15)",
       background: active
@@ -10653,7 +10655,7 @@ function App() {
         : "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)",
       color: active ? "#1a1400" : "#e8e8e8",
       fontWeight: 600,
-      fontSize: "0.65rem",
+      fontSize: "0.58rem",
       cursor: active ? "default" : "pointer",
       textShadow: active ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
       boxShadow: active ? "0 2px 0 #b8842a, 0 1px 6px rgba(220,166,74,0.3)" : "0 1px 3px rgba(0,0,0,0.2)",
@@ -10742,7 +10744,7 @@ function App() {
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
-        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
+        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 5, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {modeSections.map((sec) => {
             // `dev` members show only in dev mode; `live` members (e.g.
             // Explored, whose fog grid only exists in a loaded save) show only
@@ -11500,7 +11502,7 @@ function App() {
         )}
         {/* View options — always visible */}
         <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
-          <span style={{ opacity: 0.7, fontSize: "0.78rem" }}>View:</span>
+          <span style={{ opacity: 0.7, fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 700 }}>View</span>
           <button className="map-mode-btn" onClick={() => setDevFlatColors(prev => !prev)}
             style={{ ...btnStyle(devFlatColors), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.flat" />Flat</button>
           <button className="map-mode-btn" onClick={() => setDevGrid(prev => !prev)}

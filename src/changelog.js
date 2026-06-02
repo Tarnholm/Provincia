@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.831",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**The View toggles pill now matches the map-mode pill's size** — shrank the map/view buttons and the \"View\" label to the same metrics as the category tabs, so the two rows line up at the same height. Also nudged the gap between category tabs to 5px." },
+    ],
+  },
+  {
     version: "0.9.830",
     date: "2026-06-02",
     items: [
