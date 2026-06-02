@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.825",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**The \"Explored\" map mode is now hidden unless Live mode is active.** Its fog-of-war data comes from the loaded save's exploration grid, which only exists in live mode — outside live there was nothing to show, so the button is no longer offered there (it lives in the Geopolitics group)." },
+    ],
+  },
+  {
     version: "0.9.824",
     date: "2026-06-02",
     items: [

@@ -10705,7 +10705,7 @@ function App() {
         { key: "region", label: "Region", badge: "mode.region" },
         { key: "homeland", label: "Homeland", badge: "mode.homeland" },
         { key: "victory", label: "Victory", badge: "mode.victory" },
-        { key: "explored", label: "Explored", badge: "mode.explored" },
+        { key: "explored", label: "Explored", badge: "mode.explored", live: true },
       ]},
       { id: "government", title: "Government", members: [
         { key: "government", label: "Government", badge: "mode.government" },
@@ -10788,7 +10788,10 @@ function App() {
         {/* Map mode buttons — dev modes added when dev is active */}
         <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {modeSections.map((sec) => {
-            const members = sec.members.filter((m) => !m.dev || devMode);
+            // `dev` members show only in dev mode; `live` members (e.g.
+            // Explored, whose fog grid only exists in a loaded save) show only
+            // while live mode is active.
+            const members = sec.members.filter((m) => (!m.dev || devMode) && (!m.live || liveLogActive));
             if (!members.length) return null;
             const open = openFanSection === sec.id;
             const activeMember = members.find(isMemberActive);
@@ -10849,7 +10852,7 @@ function App() {
         {(() => {
           const openSec = modeSections.find((s) => s.id === openFanSection);
           if (!openSec) return null;
-          const openMembers = openSec.members.filter((m) => !m.dev || devMode);
+          const openMembers = openSec.members.filter((m) => (!m.dev || devMode) && (!m.live || liveLogActive));
           if (!openMembers.length) return null;
           return (
             <div data-mapmodes-zone style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280), border: "1px solid rgba(150,180,220,0.45)" }}>
