@@ -17017,6 +17017,22 @@ function App() {
                               });
                             }
                           }
+                          // 0.9.836 DIAG (throttled per region): pin why some
+                          // governors' garrison cards render without a portrait.
+                          // Logs the region key, whether startingArmiesByRegion
+                          // had it, the garrison army count + their characters,
+                          // and the tagged commanderNames actually produced.
+                          try {
+                            if (typeof window !== "undefined") {
+                              window.__garrNonliveLogged = window.__garrNonliveLogged || new Set();
+                              if (!window.__garrNonliveLogged.has(r.region)) {
+                                window.__garrNonliveLogged.add(r.region);
+                                const chars = garrisonArmies.map((a) => a.character || "?").join(" | ");
+                                const cmds = (normalised || []).filter((u) => u.commanderName).map((u) => `${u.commanderName} ${u.commanderLastName || ""}`.trim()).join(" | ");
+                                console.log(`[garr-nonlive] region="${r.region}" city="${r.city}" hasKey=${!!regData} garrisonArmies=${garrisonArmies.length} chars=[${chars}] taggedCmds=[${cmds}]`);
+                              }
+                            }
+                          } catch {}
                         }
                         const ownerId =
                           (currentOwnerByCity && currentOwnerByCity[r.city])

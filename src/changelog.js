@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.836",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Added a diagnostic for the non-live garrison commander cards** (`[garr-nonlive]`) so a \"this general has no portrait\" report pinpoints the cause: it logs the selected region's key, whether the starting-armies data has that key, how many garrison armies it found, and the commander names actually tagged onto the unit cards." },
+    ],
+  },
+  {
     version: "0.9.835",
     date: "2026-06-02",
     items: [
