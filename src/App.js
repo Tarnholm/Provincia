@@ -10031,13 +10031,17 @@ function App() {
           ref={factionGridRef}
           style={{
             display: "grid",
-            // Responsive: 5 columns minimum, up to 10 as the panel widens.
-            // factionGridCols is recomputed from the container width by a
-            // ResizeObserver (see the effect near searchInputRef).
-            gridTemplateColumns: `repeat(${factionGridCols}, 1fr)`,
+            // 0.9.849: FIXED-SIZE icons that ADD columns as the panel widens —
+            // 5 minimum, 10 maximum. auto-fill packs as many ICON_SIZE(72px)
+            // columns as fit (icons never stretch); minWidth floors it at 5
+            // columns, maxWidth caps it at 10. (The old repeat(N,1fr) just made
+            // the 5 icons bigger instead of showing more.)
+            gridTemplateColumns: `repeat(auto-fill, ${ICON_SIZE}px)`,
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
+            minWidth: ICON_SIZE * 5 + 6 * 4,
+            maxWidth: ICON_SIZE * 10 + 6 * 9,
             // 0.9.827: vertical padding bumped 1 → 6 so the selected tile's
             // highlight ring + glow (box-shadow spread 2px + 8px glow, plus the
             // 1.04 scale) isn't clipped by this scroll container's overflow on
@@ -14041,7 +14045,7 @@ function App() {
           >
             Provincia
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, WebkitAppRegion: "no-drag" }}>
+          <div className={welcomeHighlight === "campaigns" ? "ws-ui-glow" : undefined} style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 6, WebkitAppRegion: "no-drag" }}>
             {Object.values(CAMPAIGNS).map((camp) => {
               const active = mapCampaign === camp.key;
               return (

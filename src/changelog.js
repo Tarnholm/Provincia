@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.849",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Faction icons stay a fixed size and ADD columns as the panel widens** (5 → up to 10), instead of the five icons just growing larger. Widen the window/panel to see more per row." },
+      { type: "improvement", text: "**Refreshed the intro/welcome cards** to match the current UI — title-bar campaign slots (right-click to import), grouped map-mode categories, the Overlays tab, Live next to the tabs, the region panels, the \"?\" shortcuts, and dev mode." },
+    ],
+  },
+  {
     version: "0.9.848",
     date: "2026-06-02",
     items: [
