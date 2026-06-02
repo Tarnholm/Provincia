@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.838",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Regression gate for the governor-portrait bug.** Extracted the garrison overlay-merge into a unit-tested helper (`garrisonUnits.js`) that asserts the commander tag survives an army-units overlay — so the Appius/Decimus class of \"no portrait\" can't silently come back. Runs in the pre-ship test suite." },
+    ],
+  },
+  {
     version: "0.9.837",
     date: "2026-06-02",
     items: [

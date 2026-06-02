@@ -17,6 +17,7 @@ import TGA from "./tga";
 import WelcomeScreen from "./WelcomeScreen";
 import { displayFirstName, displayFullName } from "./displayName";
 import { isGarrisonUnit, isOnSettlementTile } from "./garrisonClassify";
+import { tagOverlayGarrisonUnits } from "./garrisonUnits";
 // diagnostics.js is CommonJS (main.js require()s it at runtime). Rollup can't
 // statically extract NAMED exports from `module.exports = {...}`, so import the
 // default (the whole exports object) and pull the fns off it.
@@ -17066,30 +17067,17 @@ function App() {
                         if (pendingEntry) {
                           // 0.9.837: an army-units overlay (pending edit OR an
                           // already-applied one) REPLACES the garrison units —
-                          // but it must KEEP the commander tag on the first
-                          // unit, or the general's portrait swap is lost and the
-                          // card shows the plain bodyguard icon. THIS is why
-                          // Appius (Pisae) / Decimus (Iguvium) had no portrait
-                          // while Volaterrae/Cosa (no overlay) were fine. Re-tag
-                          // unit 0 from the region's starting-garrison commander,
-                          // exactly like the non-overlay branch does.
-                          const gar = (startingArmiesByRegion?.[r.region]?.garrison || []).find((g) => {
-                            const nm = (g.character || "").toLowerCase();
-                            return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
-                          });
-                          const gp = gar && gar.character ? String(gar.character).split(/\s+/) : [];
-                          const gFirst = gp[0] || null;
-                          const gLast = gp.slice(1).join(" ") || null;
-                          const gFac = ((gar && gar.faction) || ownerId || "").toString().toLowerCase() || null;
-                          normalised = (pendingEntry.units || []).map((u, ui) => ({
-                            unit: u.unit,
-                            xp: u.exp || 0,
-                            armour: u.armour || 0,
-                            weapon: u.weapon || 0,
-                            commanderName: ui === 0 && gFirst ? gFirst : null,
-                            commanderLastName: ui === 0 && gFirst ? gLast : null,
-                            commanderFaction: ui === 0 && gFirst ? gFac : null,
-                          }));
+                          // but it must KEEP the commander tag on the first unit,
+                          // or the general's portrait swap is lost and the card
+                          // shows the plain bodyguard icon (Appius@Pisae,
+                          // Decimus@Iguvium). 0.9.838: extracted to the
+                          // unit-tested tagOverlayGarrisonUnits so this can't
+                          // silently regress again (src/garrisonUnits.test.js).
+                          normalised = tagOverlayGarrisonUnits(
+                            pendingEntry.units,
+                            startingArmiesByRegion?.[r.region]?.garrison,
+                            ownerId
+                          );
                         }
                         // 0.9.664: diagnostic — surfaces in provincia.log when
                         // the panel count doesn't match the file count. Logs
