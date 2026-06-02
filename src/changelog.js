@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.840",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**The view toggles are now grouped under one \"Overlays\" tab**, matching the map-mode category tabs. Flat, Grid, Borders, Pin, Settlements, Terrain, Heights, Resources, Armies, Events, Insights, and Labels fan out in a row beneath the tabs when you click Overlays; the tab shows a small count of how many are currently on. Live / Calibrate / Stats and the other controls stay where they are." },
+    ],
+  },
+  {
     version: "0.9.839",
     date: "2026-06-02",
     items: [

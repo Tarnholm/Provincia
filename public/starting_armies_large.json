@@ -38,7 +38,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -137,7 +137,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -193,7 +193,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -265,7 +265,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -373,7 +373,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -627,6 +627,12 @@
             "exp": 1,
             "armour": 0,
             "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
           }
         ],
         "age": 25,
@@ -716,7 +722,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -1573,7 +1579,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -1878,7 +1884,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -2118,7 +2124,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -2170,7 +2176,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -2276,7 +2282,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -2355,7 +2361,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -2694,7 +2700,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -3100,7 +3106,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -3335,7 +3341,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -3686,7 +3692,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -3939,7 +3945,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -3972,6 +3978,12 @@
         "units": [
           {
             "name": "ptolemaic cavalry of the court",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -4064,7 +4076,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -4347,7 +4359,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -4603,7 +4615,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -4771,7 +4783,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -4928,7 +4940,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -5170,7 +5182,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -5672,7 +5684,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -5849,7 +5861,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -6088,7 +6100,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -6219,7 +6231,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -6556,7 +6568,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -6615,7 +6627,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -6844,7 +6856,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -6895,7 +6907,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -7375,7 +7387,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -7534,7 +7546,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -7697,7 +7709,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -7884,7 +7896,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -8009,7 +8021,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -8164,7 +8176,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -8233,7 +8245,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -8539,7 +8551,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -8642,7 +8654,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -8741,7 +8753,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -8943,7 +8955,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -9002,7 +9014,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -9085,7 +9097,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -9138,7 +9150,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -9275,7 +9287,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -9326,7 +9338,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -9405,7 +9417,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -9571,7 +9583,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -9662,7 +9674,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -9988,7 +10000,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -10153,7 +10165,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -10255,7 +10267,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -10429,7 +10441,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -10682,7 +10694,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -10775,7 +10787,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -10885,6 +10897,12 @@
           {
             "name": "ptolemaic cavalry of the court",
             "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
@@ -11047,7 +11065,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -11260,7 +11278,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -11476,7 +11494,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -11611,7 +11629,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -11746,7 +11764,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -12609,7 +12627,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -12726,7 +12744,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -12849,7 +12867,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -12960,7 +12978,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -13129,7 +13147,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -13222,7 +13240,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -13380,7 +13398,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -13510,7 +13528,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -13601,7 +13619,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -13906,7 +13924,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -13999,7 +14017,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -14139,7 +14157,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -14289,7 +14307,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -14399,7 +14417,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -14538,7 +14556,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -14681,7 +14699,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -14811,7 +14829,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -14938,7 +14956,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -15092,7 +15110,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -15213,7 +15231,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -15334,7 +15352,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -15504,7 +15522,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -15604,7 +15622,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -15980,7 +15998,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -16104,7 +16122,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -16195,7 +16213,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [
@@ -16347,7 +16365,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -16524,7 +16542,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -16647,7 +16665,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -16705,7 +16723,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -16754,7 +16772,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -16846,7 +16864,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -16933,7 +16951,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -17064,7 +17082,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -17147,7 +17165,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -17360,7 +17378,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -17474,7 +17492,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -17558,7 +17576,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -17762,7 +17780,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -17821,7 +17839,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -17922,7 +17940,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -18055,7 +18073,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -18204,7 +18222,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -18359,7 +18377,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -18678,7 +18696,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -18743,7 +18761,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -18827,7 +18845,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -18858,6 +18876,24 @@
         "units": [
           {
             "name": "ptolemaic cavalry of the court",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -18914,7 +18950,7 @@
           },
           {
             "name": "DramasFanGreekVice",
-            "level": 1
+            "level": 3
           },
           {
             "name": "GeneralExperience",
@@ -18966,7 +19002,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -18977,7 +19013,10 @@
             "level": 3
           }
         ],
-        "ancillaries": [],
+        "ancillaries": [
+          "harpist",
+          "librarian"
+        ],
         "charType": "general"
       }
     ],
@@ -19074,7 +19113,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -19133,7 +19172,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -19427,7 +19466,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [
@@ -19547,7 +19586,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -19578,6 +19617,12 @@
         "units": [
           {
             "name": "seleucid general",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -19888,7 +19933,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -20023,7 +20068,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -20074,7 +20119,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -20121,7 +20166,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -20259,7 +20304,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -20395,7 +20440,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -20446,7 +20491,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -20610,7 +20655,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -20724,7 +20769,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -20811,7 +20856,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Aetolian",
@@ -20964,7 +21009,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -21094,7 +21139,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -21212,7 +21257,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -21297,7 +21342,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -21403,7 +21448,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -21486,7 +21531,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -21587,7 +21632,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -21751,7 +21796,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -21876,7 +21921,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -22020,7 +22065,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -22168,7 +22213,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -22315,7 +22360,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -22398,7 +22443,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -22494,7 +22539,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -22545,7 +22590,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -22650,7 +22695,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -22729,7 +22774,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -23181,7 +23226,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -23349,7 +23394,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -23436,7 +23481,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -23557,7 +23602,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -23827,7 +23872,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -23945,7 +23990,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -24034,7 +24079,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -24181,7 +24226,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -24298,7 +24343,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -24542,7 +24587,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -24677,7 +24722,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -24809,7 +24854,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -25086,7 +25131,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -25278,7 +25323,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [
@@ -25377,7 +25422,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -25479,7 +25524,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -25593,7 +25638,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -25688,7 +25733,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -25789,7 +25834,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -25936,7 +25981,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -26006,7 +26051,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -26089,7 +26134,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -26268,7 +26313,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -26399,7 +26444,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -26458,7 +26503,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -26545,7 +26590,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -26668,7 +26713,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -26823,7 +26868,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -26912,7 +26957,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -27063,7 +27108,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [
@@ -27116,7 +27161,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -27215,7 +27260,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -27247,121 +27292,121 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 8,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman equites early",
+            "exp": 6,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman equites early",
+            "exp": 5,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman triarii early",
+            "exp": 7,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman triarii early",
+            "exp": 5,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman principes early",
+            "exp": 5,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman principes early",
+            "exp": 4,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman principes early",
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman hastati early",
-            "exp": 0,
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman hastati early",
-            "exp": 0,
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman hastati early",
-            "exp": 0,
+            "exp": 3,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman rorarii",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "aor italiote epibatai",
-            "exp": 0,
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "aor italiote epibatai",
-            "exp": 0,
+            "exp": 3,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "aor italiote epibatai",
-            "exp": 0,
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "aor italiote epibatai",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman triarii early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman triarii early",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman equites early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman equites early",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           }
@@ -27421,6 +27466,10 @@
           },
           {
             "name": "TurnsAlive",
+            "level": 3
+          },
+          {
+            "name": "GeneralExperience",
             "level": 3
           }
         ],
@@ -27576,7 +27625,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -27687,7 +27736,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -27786,7 +27835,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -27893,7 +27942,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -28019,7 +28068,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -28078,7 +28127,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -28177,7 +28226,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -28320,7 +28369,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -28426,7 +28475,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -28535,7 +28584,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -28642,7 +28691,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -28743,7 +28792,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -28877,7 +28926,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -29154,7 +29203,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -29281,7 +29330,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -29422,7 +29471,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -29519,7 +29568,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -29636,7 +29685,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -29716,6 +29765,10 @@
           {
             "name": "TurnsAlive",
             "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -29776,7 +29829,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -29834,7 +29887,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -29941,7 +29994,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -30016,7 +30069,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [
@@ -30069,7 +30122,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -30173,7 +30226,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -30278,7 +30331,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -30453,7 +30506,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -30618,7 +30671,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -30810,7 +30863,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -30930,7 +30983,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -31067,7 +31120,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -31187,7 +31240,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -31278,7 +31331,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -31477,7 +31530,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -31610,7 +31663,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -31802,7 +31855,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -31956,7 +32009,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -32099,7 +32152,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -32239,7 +32292,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -32300,7 +32353,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "HamilcarBarcaBiography",
@@ -32409,7 +32462,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -32583,7 +32636,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -32678,7 +32731,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -32850,7 +32903,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [
@@ -32963,7 +33016,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33088,7 +33141,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33210,7 +33263,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33323,7 +33376,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33447,7 +33500,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33545,7 +33598,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33632,7 +33685,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33733,7 +33786,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -33832,7 +33885,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -33993,7 +34046,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -34118,7 +34171,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -34228,7 +34281,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -34262,6 +34315,12 @@
           {
             "name": "seleucid general",
             "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 0,
             "armour": 0,
             "weapon": 0
           }
@@ -34361,7 +34420,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -34524,7 +34583,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -34721,7 +34780,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -35091,7 +35150,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -35187,7 +35246,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -35399,7 +35458,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -35546,7 +35605,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -35578,6 +35637,12 @@
           {
             "name": "seleucid general",
             "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 0,
             "armour": 0,
             "weapon": 0
           }
@@ -35717,7 +35782,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -35904,7 +35969,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -36001,7 +36066,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -36198,7 +36263,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -36375,7 +36440,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -36559,7 +36624,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -36880,7 +36945,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -36981,7 +37046,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -37131,7 +37196,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -37262,7 +37327,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -37425,7 +37490,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -37518,7 +37583,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -37693,7 +37758,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -37724,6 +37789,12 @@
         "units": [
           {
             "name": "seleucid general",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -37772,7 +37843,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -37976,7 +38047,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -38020,6 +38091,12 @@
           {
             "name": "greek slingers",
             "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek archers",
+            "exp": 0,
             "armour": 0,
             "weapon": 0
           }
@@ -38087,7 +38164,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -38193,16 +38270,16 @@
             "level": 1
           },
           {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
             "name": "FasterCharacters",
             "level": 1
           },
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -38231,6 +38308,18 @@
           },
           {
             "name": "greek hoplites",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -38275,7 +38364,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Generous",
@@ -38462,7 +38551,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -38637,7 +38726,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -38671,6 +38760,12 @@
             "exp": 1,
             "armour": 0,
             "weapon": 1
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
           }
         ],
         "age": 45,
@@ -38720,7 +38815,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -38918,7 +39013,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -39047,7 +39142,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -39136,7 +39231,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -39253,7 +39348,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -39490,7 +39585,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -39618,7 +39713,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -39772,7 +39867,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -40284,7 +40379,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -40363,7 +40458,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -40637,7 +40732,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -40899,7 +40994,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -40950,7 +41045,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -41120,7 +41215,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -41356,7 +41451,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -41477,7 +41572,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -41673,7 +41768,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -41742,7 +41837,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -41897,7 +41992,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -42100,7 +42195,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -42211,7 +42306,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -42430,7 +42525,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -42591,7 +42686,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -42752,7 +42847,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -42849,7 +42944,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -42905,7 +43000,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -42997,7 +43092,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -43087,7 +43182,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -43177,7 +43272,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -43311,7 +43406,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -43442,7 +43537,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -43501,7 +43596,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -43661,6 +43756,10 @@
           {
             "name": "TurnsAlive",
             "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -43746,7 +43845,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -43883,7 +43982,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -44028,7 +44127,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Aetolian",
@@ -44218,7 +44317,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -44387,7 +44486,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -44484,7 +44583,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -44725,7 +44824,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -44818,7 +44917,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -44945,7 +45044,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -45144,7 +45243,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -45290,7 +45389,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -45445,7 +45544,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -45536,7 +45635,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -45647,7 +45746,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -45740,7 +45839,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -45934,7 +46033,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -46031,7 +46130,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -46258,7 +46357,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -46351,7 +46450,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -46486,7 +46585,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -46545,7 +46644,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -46808,7 +46907,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -47181,7 +47280,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -47288,7 +47387,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -47393,7 +47492,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -47480,7 +47579,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -47580,7 +47679,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -47792,6 +47891,10 @@
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -47940,6 +48043,10 @@
           {
             "name": "TurnsAlive",
             "level": 3
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -48005,7 +48112,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48128,7 +48235,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48287,7 +48394,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48418,7 +48525,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48509,7 +48616,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48593,7 +48700,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48729,7 +48836,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48817,7 +48924,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -48850,85 +48957,85 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 7,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman equites early",
-            "exp": 0,
+            "exp": 5,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman equites early",
-            "exp": 0,
+            "exp": 5,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman triarii early",
-            "exp": 0,
+            "exp": 8,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman principes early",
-            "exp": 0,
+            "exp": 5,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman principes early",
-            "exp": 0,
+            "exp": 5,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman hastati early",
-            "exp": 0,
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman hastati early",
-            "exp": 0,
+            "exp": 3,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman rorarii",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman rorarii",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman leves",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           }
@@ -49383,7 +49490,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -49518,7 +49625,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -49612,7 +49719,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -49665,7 +49772,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -49769,7 +49876,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50146,7 +50253,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50177,6 +50284,12 @@
         "units": [
           {
             "name": "seleucid general",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -50249,7 +50362,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50348,7 +50461,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50457,7 +50570,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50590,7 +50703,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50621,6 +50734,18 @@
         "units": [
           {
             "name": "antigonid general",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -50693,7 +50818,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50822,7 +50947,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -50919,7 +51044,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -51118,7 +51243,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -51363,7 +51488,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -51426,7 +51551,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -51529,7 +51654,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -51718,7 +51843,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -51953,6 +52078,10 @@
           {
             "name": "TurnsAlive",
             "level": 4
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [
@@ -52107,7 +52236,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -52273,7 +52402,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -52641,7 +52770,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -52758,7 +52887,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -52954,7 +53083,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -53073,7 +53202,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -53134,7 +53263,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -53287,7 +53416,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -53486,7 +53615,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -53669,7 +53798,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -53815,7 +53944,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -53946,7 +54075,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -54176,7 +54305,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -54267,7 +54396,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -54386,7 +54515,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -54495,7 +54624,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -54566,7 +54695,7 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           }
@@ -54707,7 +54836,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -54917,7 +55046,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -55096,7 +55225,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -55184,7 +55313,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -55292,7 +55421,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -55371,7 +55500,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -55567,7 +55696,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -55758,7 +55887,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -55873,7 +56002,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -56041,7 +56170,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -56155,7 +56284,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -56242,7 +56371,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -56355,7 +56484,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -56394,6 +56523,12 @@
         "units": [
           {
             "name": "antigonid general",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -56466,7 +56601,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -56565,7 +56700,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "TurnsAlive",
@@ -56666,7 +56801,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -56787,7 +56922,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -56920,7 +57055,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -56951,6 +57086,12 @@
         "units": [
           {
             "name": "seleucid general",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
             "exp": 1,
             "armour": 0,
             "weapon": 0
@@ -57043,7 +57184,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -57099,7 +57240,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -57225,7 +57366,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -57349,7 +57490,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -57413,7 +57554,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -57523,6 +57664,10 @@
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -57545,7 +57690,7 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           }
@@ -57670,7 +57815,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -57790,7 +57935,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -57842,7 +57987,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -57940,7 +58085,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -58103,7 +58248,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -58273,7 +58418,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -58374,7 +58519,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -58434,7 +58579,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -58486,7 +58631,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -58665,7 +58810,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -58773,7 +58918,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -58930,7 +59075,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -59161,7 +59306,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -59351,7 +59496,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -59438,7 +59583,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -59536,7 +59681,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -59661,7 +59806,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -59829,7 +59974,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -59916,7 +60061,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -60015,7 +60160,7 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
@@ -60170,7 +60315,7 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           }
@@ -60217,7 +60362,7 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           }
@@ -60341,7 +60486,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -60404,7 +60549,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -60472,7 +60617,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -60668,7 +60813,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -60873,7 +61018,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -61030,7 +61175,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -61291,7 +61436,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -61386,7 +61531,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -61567,7 +61712,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -61710,7 +61855,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -61871,7 +62016,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -62072,7 +62217,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -62145,7 +62290,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -62287,7 +62432,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -62381,7 +62526,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -62482,7 +62627,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -62692,6 +62837,10 @@
           {
             "name": "TurnsAlive",
             "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -62742,7 +62891,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -62869,7 +63018,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -63067,7 +63216,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -63120,7 +63269,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -63335,7 +63484,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -63581,7 +63730,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -63769,7 +63918,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -64266,7 +64415,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -64367,7 +64516,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -64456,7 +64605,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -64546,7 +64695,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -64833,7 +64982,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -64936,7 +65085,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -65057,7 +65206,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -65206,7 +65355,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -65399,7 +65548,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -65660,7 +65809,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -65864,7 +66013,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -66150,7 +66299,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -66280,7 +66429,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -66443,7 +66592,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -66742,7 +66891,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -66941,7 +67090,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67032,7 +67181,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67125,7 +67274,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67234,7 +67383,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -67405,7 +67554,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67518,7 +67667,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67627,7 +67776,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67739,7 +67888,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67846,7 +67995,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -67997,7 +68146,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -68078,7 +68227,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "TurnsAlive",
@@ -68172,7 +68321,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -68304,7 +68453,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -68379,7 +68528,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -68543,7 +68692,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -68657,7 +68806,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -68764,7 +68913,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -68919,7 +69068,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -69020,7 +69169,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -69143,7 +69292,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -69419,7 +69568,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -69488,7 +69637,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -69661,7 +69810,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -69868,7 +70017,7 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 3,
             "armour": 0,
             "weapon": 0
           }
@@ -70001,7 +70150,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -70134,7 +70283,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -70237,7 +70386,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -70348,7 +70497,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -70481,7 +70630,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -70722,7 +70871,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -70900,7 +71049,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -71042,7 +71191,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -71141,7 +71290,7 @@
         "units": [
           {
             "name": "roman general",
-            "exp": 0,
+            "exp": 5,
             "armour": 0,
             "weapon": 0
           }
@@ -71296,7 +71445,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -71458,7 +71607,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -71488,49 +71637,49 @@
         "units": [
           {
             "name": "roman general",
+            "exp": 4,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman equites early",
             "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman equites early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman equites early",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman triarii early",
-            "exp": 0,
+            "exp": 4,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman principes early",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman principes early",
-            "exp": 0,
+            "exp": 2,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman hastati early",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman hastati early",
-            "exp": 0,
+            "exp": 1,
             "armour": 0,
             "weapon": 0
           },
@@ -71762,7 +71911,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -71818,7 +71967,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -71940,7 +72089,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -72054,7 +72203,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -72189,7 +72338,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -72275,7 +72424,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -72457,7 +72606,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -72608,7 +72757,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -72641,6 +72790,12 @@
           {
             "name": "seleucid general",
             "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 0,
             "armour": 0,
             "weapon": 0
           }
@@ -72700,7 +72855,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -72941,7 +73096,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -73041,7 +73196,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -73217,7 +73372,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -73326,7 +73481,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -73386,7 +73541,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -73528,7 +73683,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -73641,7 +73796,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -73843,7 +73998,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -73944,7 +74099,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -74015,7 +74170,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -74096,7 +74251,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -74278,7 +74433,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -74434,7 +74589,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -74811,7 +74966,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -74963,7 +75118,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -75264,7 +75419,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -75379,7 +75534,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -75438,7 +75593,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -75639,7 +75794,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -75775,7 +75930,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -76109,7 +76264,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -76215,7 +76370,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -76382,7 +76537,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -76513,7 +76668,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -76604,7 +76759,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -76695,7 +76850,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -76773,7 +76928,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -76919,7 +77074,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -77226,7 +77381,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -77632,7 +77787,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -77827,7 +77982,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -78161,7 +78316,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -78215,7 +78370,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -78368,7 +78523,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -78511,7 +78666,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -78655,7 +78810,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -78777,7 +78932,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -79385,7 +79540,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -79615,7 +79770,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -80250,7 +80405,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -80389,7 +80544,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -80549,7 +80704,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -80696,7 +80851,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -80852,7 +81007,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -81204,7 +81359,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -81327,7 +81482,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -81693,7 +81848,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -82114,7 +82269,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -82246,7 +82401,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -82503,7 +82658,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -82642,7 +82797,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -82728,7 +82883,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -82893,7 +83048,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -82935,7 +83090,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -83022,7 +83177,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -83361,7 +83516,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -83994,7 +84149,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "GeneralExperience",
@@ -84101,7 +84256,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -84209,7 +84364,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -84587,7 +84742,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -84800,7 +84955,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -84913,7 +85068,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -85142,7 +85297,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -85356,7 +85511,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -85403,7 +85558,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -85451,7 +85606,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -85854,7 +86009,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -85999,7 +86154,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -86158,7 +86313,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -86492,7 +86647,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -86549,7 +86704,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -86781,7 +86936,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -86920,7 +87075,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -87339,7 +87494,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -87474,7 +87629,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -87634,7 +87789,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -87693,7 +87848,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -87849,7 +88004,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -88284,7 +88439,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -88373,7 +88528,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -88550,7 +88705,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -88735,7 +88890,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -88896,7 +89051,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -89084,7 +89239,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -89232,7 +89387,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -89351,7 +89506,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -89489,7 +89644,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -89673,7 +89828,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -89725,7 +89880,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -90011,7 +90166,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -90056,7 +90211,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -90600,7 +90755,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -90670,7 +90825,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -91498,7 +91653,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -91567,7 +91722,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -91673,7 +91828,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -92123,7 +92278,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -92407,7 +92562,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -92533,7 +92688,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -92956,7 +93111,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -93765,7 +93920,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -94286,7 +94441,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -94399,7 +94554,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -94945,7 +95100,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -95080,7 +95235,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -95373,7 +95528,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "Untouchable",
@@ -95575,7 +95730,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -95749,7 +95904,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -95811,7 +95966,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -95933,7 +96088,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -96554,7 +96709,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -96606,7 +96761,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -96737,7 +96892,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -96855,7 +97010,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -97096,7 +97251,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -97598,7 +97753,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -97857,7 +98012,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -98038,7 +98193,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -98157,7 +98312,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -99054,7 +99209,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -99097,7 +99252,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -99328,7 +99483,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -99583,7 +99738,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -100021,7 +100176,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -100178,7 +100333,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -100687,7 +100842,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -100849,7 +101004,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -100919,7 +101074,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -101021,7 +101176,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -101207,7 +101362,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -101296,7 +101451,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -101994,7 +102149,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -102536,7 +102691,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -102577,7 +102732,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           }
         ],
         "ancillaries": [],
@@ -103581,7 +103736,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -104554,7 +104709,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -104632,7 +104787,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -105323,7 +105478,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -105606,7 +105761,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -105651,7 +105806,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -106124,7 +106279,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",
@@ -106593,7 +106748,7 @@
           },
           {
             "name": "Supplies",
-            "level": 4
+            "level": 7
           },
           {
             "name": "FasterCharacters",

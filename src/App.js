@@ -10742,6 +10742,102 @@ function App() {
     // when paintMode is on; everything else is the active colorMode).
     const isMemberActive = (m) => m.key === "paint" ? paintMode : colorMode === m.key;
 
+    // 0.9.840: the 12 display-toggle buttons (Flat … Labels) — MULTI-SELECT
+    // overlays, each independently on/off (some cycle). They fold into the
+    // "OVERLAYS" category tab below and render in the row-under tray when that
+    // tab is open. Returns a fragment; every button's onClick / active style /
+    // title / badge / className is unchanged from the old standalone pill.
+    const renderOverlayToggles = () => (
+      <>
+        {/* 0.9.832: "View" label removed per user request. */}
+        <button className="map-mode-btn" onClick={() => setDevFlatColors(prev => !prev)}
+          style={{ ...btnStyle(devFlatColors), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.flat" />Flat</button>
+        <button className="map-mode-btn" onClick={() => setDevGrid(prev => !prev)}
+          style={{ ...btnStyle(devGrid), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.grid" />Grid</button>
+        <button className="map-mode-btn"
+          onClick={() => setBorderMode(prev => prev === "off" ? "faction" : prev === "faction" ? "region" : "off")}
+          title={borderMode === "off"
+            ? "Borders: off — click for faction-group borders"
+            : borderMode === "faction"
+              ? "Borders: faction-group outline + province lines — click for region-only"
+              : "Borders: per-region province lines only — click to turn off"}
+          style={{ ...btnStyle(borderMode !== "off"), minWidth: 0, position: "relative" }}>
+          <MapBtnBadge k="view.borders" />{borderMode === "off" ? "Borders" : borderMode === "faction" ? "Faction Bdrs" : "Region Bdrs"}
+        </button>
+        <button className="map-mode-btn" onClick={() => setPinFaction(prev => !prev)}
+          title={pinFaction
+            ? "Pin Faction is ON — non-selected regions are heavily greyed when a faction is selected"
+            : "Pin Faction: heavily grey out everything except the selected faction's territory (sticky preference)"}
+          style={{ ...btnStyle(pinFaction), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.pin" />Pin</button>
+        {/* 0.9.819: "Wealth" button moved into the Diplomacy & Treasury
+            panel header (it's treasury data). MAP_BTN_ORDER keeps view.wealth's
+            slot so the other letters don't shift. */}
+        <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
+          style={{ ...btnStyle(showSettlementTier), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.settlements" />Settlements</button>
+        {/* 0.9.839: Terrain is a simple toggle again — it turns the terrain
+            tint AND the hover-inspect tooltip on together (inspect is now the
+            default behaviour for Terrain). The old off→Terrain→Inspect→Both
+            cycle and the separate "Both" state are gone. */}
+        <button className="map-mode-btn" onClick={() => {
+            const on = showGeographyOverlay || showTileInspect;
+            setShowGeographyOverlay(!on);
+            setShowTileInspect(!on);
+          }}
+          title="Terrain: tint land tiles by ground type AND show a hover tooltip with the tile's region, owner, and terrain type. Click to toggle both."
+          style={{ ...btnStyle(showGeographyOverlay || showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.terrain" />Terrain</button>
+        <button className="map-mode-btn" onClick={() => setShowHeightsOverlay(prev => !prev)}
+          title="Hillshaded relief — fake NW light source over the mod's map_heights.tga. Mountains gain shadows, plains stay flat. Soft-light blend so it shades whatever map mode is active without replacing the colours."
+          style={{ ...btnStyle(showHeightsOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.heights" />Heights</button>
+        <button className="map-mode-btn" onClick={() => setShowResourcesOverlay(prev => !prev)}
+          title="Show resource icons on the map without switching out of the current color mode."
+          style={{ ...btnStyle(showResourcesOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.resources" />Resources</button>
+        <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
+          style={{ ...btnStyle(showArmies), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.armies" />Armies</button>
+        {/* UI batch 2: disaster/scripted-event map markers (positioned events). */}
+        <button className="map-mode-btn" onClick={() => setShowScheduleMarkers(prev => !prev)}
+          title="Mark scripted-event & natural-disaster sites (volcanoes, earthquakes, floods, …) on the map from the save's event schedule."
+          style={{ ...btnStyle(showScheduleMarkers), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.events" />Events</button>
+        {/* UI batch 2: Save-insights panel (last turn, event schedule, timeline, scouting). */}
+        <button className="map-mode-btn" onClick={() => setShowInsightsPanel(prev => !prev)}
+          title="Open Save Insights — last-turn summary, disaster/event schedule, campaign timeline, and per-faction AI scouting."
+          style={{ ...btnStyle(showInsightsPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.insights" />Insights</button>
+        {/* 0.9.818: Inspect merged into the Terrain button above (cycle). */}
+        <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
+          style={{ ...btnStyle(showLabels !== "off"), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.labels" />{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
+      </>
+    );
+    // 0.9.840: true when ANY overlay toggle is on — drives the OVERLAYS tab's
+    // active highlight (multi-select, so no single active-mode chip).
+    const overlaysActive = devFlatColors || devGrid || borderMode !== "off" || pinFaction || showSettlementTier || showGeographyOverlay || showTileInspect || showHeightsOverlay || showResourcesOverlay || showArmies || showScheduleMarkers || showInsightsPanel || showLabels !== "off";
+    const overlaysActiveCount = (devFlatColors ? 1 : 0) + (devGrid ? 1 : 0) + (borderMode !== "off" ? 1 : 0) + (pinFaction ? 1 : 0) + (showSettlementTier ? 1 : 0) + ((showGeographyOverlay || showTileInspect) ? 1 : 0) + (showHeightsOverlay ? 1 : 0) + (showResourcesOverlay ? 1 : 0) + (showArmies ? 1 : 0) + (showScheduleMarkers ? 1 : 0) + (showInsightsPanel ? 1 : 0) + (showLabels !== "off" ? 1 : 0);
+    // The slate uppercase "category tab" look, shared by the color-mode
+    // section tabs and the OVERLAYS tab. `open` = this tab's fan is expanded;
+    // `sectionActive` = this tab has an active mode/overlay (brighter border).
+    const makeCatStyle = (open, sectionActive) => ({
+      // 0.9.826: smaller + tighter so more category tabs fit per row.
+      // 0.9.830: margin:0 cancels the global button{margin:5px} that was
+      // forcing the tabs ~10px apart regardless of the pill's gap.
+      margin: 0,
+      padding: "2px 5px",
+      borderRadius: 6,
+      border: `1px solid ${open ? "rgba(150,180,220,0.85)" : sectionActive ? "rgba(150,180,220,0.6)" : "rgba(150,180,220,0.32)"}`,
+      background: open
+        ? "linear-gradient(180deg, rgba(120,152,198,0.5) 0%, rgba(86,116,162,0.5) 100%)"
+        : "linear-gradient(180deg, rgba(108,138,182,0.26) 0%, rgba(80,108,150,0.2) 100%)",
+      color: "#dce6f5",
+      fontWeight: 700,
+      fontSize: "0.58rem",
+      letterSpacing: "0.02em",
+      textTransform: "uppercase",
+      cursor: "pointer",
+      position: "relative",
+      minWidth: 0,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 3,
+      boxShadow: open ? "0 2px 8px rgba(86,116,162,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
+    });
+
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
@@ -10764,30 +10860,7 @@ function App() {
             // name; when one of its modes is active it also shows a small amber
             // chip naming that mode. The active group is highlighted (brighter
             // slate) so you can tell which group the member row below belongs to.
-            const catStyle = {
-              // 0.9.826: smaller + tighter so more category tabs fit per row.
-              // 0.9.830: margin:0 cancels the global button{margin:5px} that was
-              // forcing the tabs ~10px apart regardless of the pill's gap.
-              margin: 0,
-              padding: "2px 5px",
-              borderRadius: 6,
-              border: `1px solid ${open ? "rgba(150,180,220,0.85)" : sectionActive ? "rgba(150,180,220,0.6)" : "rgba(150,180,220,0.32)"}`,
-              background: open
-                ? "linear-gradient(180deg, rgba(120,152,198,0.5) 0%, rgba(86,116,162,0.5) 100%)"
-                : "linear-gradient(180deg, rgba(108,138,182,0.26) 0%, rgba(80,108,150,0.2) 100%)",
-              color: "#dce6f5",
-              fontWeight: 700,
-              fontSize: "0.58rem",
-              letterSpacing: "0.02em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              position: "relative",
-              minWidth: 0,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 3,
-              boxShadow: open ? "0 2px 8px rgba(86,116,162,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
-            };
+            const catStyle = makeCatStyle(open, sectionActive);
             // The open section's members render in a SEPARATE row directly
             // beneath this pill (see below), not inline here — so a category
             // button is just the tab. No chevron, to save horizontal space.
@@ -10803,12 +10876,39 @@ function App() {
             );
           })}
           {/* 0.9.817: Paint moved into the Geography section (dev member). */}
+          {/* 0.9.840: OVERLAYS category tab — folds the 12 multi-select display
+              toggles (Flat … Labels) into the same fan-out as the color-mode
+              categories. Same slate uppercase look (makeCatStyle). Active
+              (brighter) when ANY overlay is on; no amber active-mode chip
+              because it's multi-select, just a small count of active overlays. */}
+          {(() => {
+            const open = openFanSection === "overlays";
+            return (
+              <button key="overlays" onClick={() => setOpenFanSection(open ? null : "overlays")}
+                title={open ? "Collapse Overlays" : "Overlays — display toggles (Flat, Grid, Borders, …). Click to expand."}
+                style={makeCatStyle(open, overlaysActive)}>
+                OVERLAYS
+                {!open && overlaysActiveCount > 0 && (
+                  <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)", borderRadius: 4, padding: "0 5px" }}>{overlaysActiveCount}</span>
+                )}
+              </button>
+            );
+          })()}
         </div>
         {/* 0.9.824: the open category's modes render in their OWN row directly
             under the category tabs (a "row under"), not inline or as a popover.
             Shares data-mapmodes-zone so the click-outside handler treats a
             member click as inside (else mousedown would close it first). */}
         {(() => {
+          // 0.9.840: the OVERLAYS tab renders the display toggles in this same
+          // slate tray; the color-mode sections render their members as before.
+          if (openFanSection === "overlays") {
+            return (
+              <div data-mapmodes-zone style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280), border: "1px solid rgba(150,180,220,0.45)" }}>
+                {renderOverlayToggles()}
+              </div>
+            );
+          }
           const openSec = modeSections.find((s) => s.id === openFanSection);
           if (!openSec) return null;
           const openMembers = openSec.members.filter((m) => (!m.dev || devMode) && (!m.live || liveLogActive));
@@ -11502,62 +11602,11 @@ function App() {
           </div>
         )}
         {/* View options — always visible */}
+        {/* 0.9.840: the 12 display toggles (Flat … Labels) moved into the
+            OVERLAYS category fan-out above (renderOverlayToggles). This pill now
+            holds only the Live / Calibrate / Stats / Reset / Pick-save controls,
+            which are NOT display overlays. */}
         <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
-          {/* 0.9.832: "View" label removed per user request. */}
-          <button className="map-mode-btn" onClick={() => setDevFlatColors(prev => !prev)}
-            style={{ ...btnStyle(devFlatColors), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.flat" />Flat</button>
-          <button className="map-mode-btn" onClick={() => setDevGrid(prev => !prev)}
-            style={{ ...btnStyle(devGrid), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.grid" />Grid</button>
-          <button className="map-mode-btn"
-            onClick={() => setBorderMode(prev => prev === "off" ? "faction" : prev === "faction" ? "region" : "off")}
-            title={borderMode === "off"
-              ? "Borders: off — click for faction-group borders"
-              : borderMode === "faction"
-                ? "Borders: faction-group outline + province lines — click for region-only"
-                : "Borders: per-region province lines only — click to turn off"}
-            style={{ ...btnStyle(borderMode !== "off"), minWidth: 0, position: "relative" }}>
-            <MapBtnBadge k="view.borders" />{borderMode === "off" ? "Borders" : borderMode === "faction" ? "Faction Bdrs" : "Region Bdrs"}
-          </button>
-          <button className="map-mode-btn" onClick={() => setPinFaction(prev => !prev)}
-            title={pinFaction
-              ? "Pin Faction is ON — non-selected regions are heavily greyed when a faction is selected"
-              : "Pin Faction: heavily grey out everything except the selected faction's territory (sticky preference)"}
-            style={{ ...btnStyle(pinFaction), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.pin" />Pin</button>
-          {/* 0.9.819: "Wealth" button moved into the Diplomacy & Treasury
-              panel header (it's treasury data). MAP_BTN_ORDER keeps view.wealth's
-              slot so the other letters don't shift. */}
-          <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
-            style={{ ...btnStyle(showSettlementTier), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.settlements" />Settlements</button>
-          {/* 0.9.839: Terrain is a simple toggle again — it turns the terrain
-              tint AND the hover-inspect tooltip on together (inspect is now the
-              default behaviour for Terrain). The old off→Terrain→Inspect→Both
-              cycle and the separate "Both" state are gone. */}
-          <button className="map-mode-btn" onClick={() => {
-              const on = showGeographyOverlay || showTileInspect;
-              setShowGeographyOverlay(!on);
-              setShowTileInspect(!on);
-            }}
-            title="Terrain: tint land tiles by ground type AND show a hover tooltip with the tile's region, owner, and terrain type. Click to toggle both."
-            style={{ ...btnStyle(showGeographyOverlay || showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.terrain" />Terrain</button>
-          <button className="map-mode-btn" onClick={() => setShowHeightsOverlay(prev => !prev)}
-            title="Hillshaded relief — fake NW light source over the mod's map_heights.tga. Mountains gain shadows, plains stay flat. Soft-light blend so it shades whatever map mode is active without replacing the colours."
-            style={{ ...btnStyle(showHeightsOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.heights" />Heights</button>
-          <button className="map-mode-btn" onClick={() => setShowResourcesOverlay(prev => !prev)}
-            title="Show resource icons on the map without switching out of the current color mode."
-            style={{ ...btnStyle(showResourcesOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.resources" />Resources</button>
-          <button className="map-mode-btn" onClick={() => setShowArmies(prev => !prev)}
-            style={{ ...btnStyle(showArmies), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.armies" />Armies</button>
-          {/* UI batch 2: disaster/scripted-event map markers (positioned events). */}
-          <button className="map-mode-btn" onClick={() => setShowScheduleMarkers(prev => !prev)}
-            title="Mark scripted-event & natural-disaster sites (volcanoes, earthquakes, floods, …) on the map from the save's event schedule."
-            style={{ ...btnStyle(showScheduleMarkers), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.events" />Events</button>
-          {/* UI batch 2: Save-insights panel (last turn, event schedule, timeline, scouting). */}
-          <button className="map-mode-btn" onClick={() => setShowInsightsPanel(prev => !prev)}
-            title="Open Save Insights — last-turn summary, disaster/event schedule, campaign timeline, and per-faction AI scouting."
-            style={{ ...btnStyle(showInsightsPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.insights" />Insights</button>
-          {/* 0.9.818: Inspect merged into the Terrain button above (cycle). */}
-          <button className="map-mode-btn" onClick={() => setShowLabels(prev => prev === "off" ? "city" : prev === "city" ? "region" : "off")}
-            style={{ ...btnStyle(showLabels !== "off"), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.labels" />{showLabels === "off" ? "Labels" : showLabels === "city" ? "Cities" : "Regions"}</button>
           {/* 0.9.810: "Reload mod data" button removed per user request — it
               re-parsed the mod's EDB/EDU/text files without a restart (mod-
               iteration convenience). Restart Provincia to pick up mod edits.
