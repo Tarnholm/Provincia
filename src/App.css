@@ -24,7 +24,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
    first inline white text to near-black, so contrast still works against
    the marble showing through). Dark mode override below. */
 .panel {
-  background: rgba(232, 222, 198, 0.45);
+  background: rgba(232, 222, 198, 0.98);
   color: #221f1a;
   border-radius: 12px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25);
@@ -130,7 +130,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
    already provides contrast, so the panel can dissolve into it. */
 body.dark-mode { background: #181a1b !important; color: #e6e6e6 !important; }
 body.dark-mode .panel {
-  background: rgba(24,26,27,0.18) !important;
+  background: rgba(24,26,27,0.98) !important;
   color: #e6e6e6 !important;
   box-shadow: 0 2px 16px rgba(0,0,0,0.25);
 }

@@ -77346,6 +77346,42 @@
     ]
   },
   {
+    "name": "PhilocharisA",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "Outside Tarentum",
+    "faction": "taras",
+    "x": 338,
+    "y": 384,
+    "age": 32,
+    "tags": [
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodCommander",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 1
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "greek general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      }
+    ]
+  },
+  {
     "name": "Garrison of Tauriscia_Meridionalis",
     "charType": "garrison",
     "armyClass": "garrison",

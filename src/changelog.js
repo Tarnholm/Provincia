@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.867",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Widget panels are now opaque, readable cards.** When Provincia sits on top of the game, the translucent panel backgrounds let the game UI bleed through and the widgets (Region info, Diplomacy & Treasury, Characters, Garrison, etc.) were hard to read. Both light- and dark-mode panel backgrounds are now near-opaque (0.98), so each widget reads as a solid card over whatever's behind it." },
+    ],
+  },
+  {
     version: "0.9.866",
     date: "2026-06-02",
     items: [

@@ -49099,7 +49099,42 @@
         "charType": "general"
       }
     ],
-    "field": [],
+    "field": [
+      {
+        "character": "PhilocharisA",
+        "faction": "taras",
+        "x": 338,
+        "y": 384,
+        "units": [
+          {
+            "name": "greek general",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 32,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 1
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
     "settlement": {
       "x": 336,
       "y": 384
