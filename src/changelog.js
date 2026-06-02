@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.868",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Reverted the opaque panel backgrounds from 0.9.867.** That change made every panel a solid block app-wide (not just when overlaying the game), which looked wrong. Panels are translucent again, back to the original look." },
+    ],
+  },
+  {
     version: "0.9.867",
     date: "2026-06-02",
     items: [
