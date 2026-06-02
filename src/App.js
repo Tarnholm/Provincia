@@ -11093,7 +11093,7 @@ function App() {
     // `badge` preserves the original MapBtnBadge letter key so the A–AJ /
     // AK+ letter scheme is unaffected by the regrouping.
     const modeSections = [
-      { id: "geopolitics", title: "Geopolitics", members: [
+      { id: "geopolitics", title: "Political", members: [
         { key: "faction", label: "Faction", badge: "mode.faction" },
         { key: "region", label: "Region", badge: "mode.region" },
         { key: "homeland", label: "Homeland", badge: "mode.homeland" },
@@ -12033,7 +12033,7 @@ function App() {
             {/* 3rd element = dev-only: hidden outside dev mode. The dev-mode
                 TOGGLE itself is always shown so non-dev users can find it. */}
             {[
-              ["Ctrl+1 – 8", "Open map-mode group (1 Geopolitics … 7 Geography, 8 Overlays)"],
+              ["Ctrl+1 – 8", "Open map-mode group (1 Political … 7 Geography, 8 Overlays)"],
               ["Ctrl+`", "Switch campaign slot"],
               ["Ctrl+F", "Focus province search"],
               ["Ctrl+K", "Search everywhere"],

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.864",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "Renamed the **Geopolitics** map-mode category to **Political**." },
+    ],
+  },
+  {
     version: "0.9.863",
     date: "2026-06-02",
     items: [
