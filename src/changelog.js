@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.822",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Auto-detect the RTW:R install across machines (Windows + Mac).** Portrait and icon resolution previously hard-coded a single Steam path (`C:/Program Files (x86)/Steam/…`), so on any PC where Rome Remastered lives elsewhere — a different drive, a secondary Steam library, Epic, or a Mac — the vanilla fallback silently failed and general portraits fell back to the unit icon. Detection now checks common Steam drives, the Steam path from the Windows registry, every library in `libraryfolders.vdf`, Epic Games, and the macOS Feral `.app` locations. The resolved data dir is logged once at startup (`[rtw-detect]`) so you can confirm it from the log." },
+    ],
+  },
+  {
     version: "0.9.821",
     date: "2026-06-02",
     items: [

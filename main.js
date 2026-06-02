@@ -2665,36 +2665,75 @@ ipcMain.handle("read-faction-icon", async (_event, filePath) => {
 // Locate the RTW:R install root. Tries common Steam install paths first,
 // then falls back to the Steam library config to resolve non-default
 // library locations (users with Steam on a secondary drive).
+// Locate the RTW:R install ROOT (the folder — or Mac .app bundle — that
+// contains `Contents/Resources/Data/data`). Auto-detects across:
+//   • Windows Steam: common drive letters, the Steam path from the registry,
+//     and every library in libraryfolders.vdf (Steam on a secondary drive).
+//   • Windows Epic Games.
+//   • macOS (Feral): /Applications and ~/Applications.
+// Returns a path consumed as `${root}/Contents/Resources/Data/...`, so the
+// Mac entry is the .app bundle itself (NOT .../Contents/Resources/Data).
 function findRtwInstallRoot() {
-  const candidates = [
-    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED",
-    "C:/Program Files/Steam/steamapps/common/Total War ROME REMASTERED",
-    "D:/Steam/steamapps/common/Total War ROME REMASTERED",
-    "D:/SteamLibrary/steamapps/common/Total War ROME REMASTERED",
-    "E:/SteamLibrary/steamapps/common/Total War ROME REMASTERED",
-    "/Applications/Total War ROME REMASTERED.app/Contents/Resources/Data", // Mac
-  ];
-  // Parse Steam's libraryfolders.vdf for additional library roots.
-  const vdfCandidates = [
-    "C:/Program Files (x86)/Steam/steamapps/libraryfolders.vdf",
-    "C:/Program Files/Steam/steamapps/libraryfolders.vdf",
-  ];
-  for (const vdfPath of vdfCandidates) {
-    if (!fs.existsSync(vdfPath)) continue;
+  const REL = "Total War ROME REMASTERED";
+  // Steam install/library dirs to probe for /steamapps/common/<REL>.
+  const steamDirs = [];
+  for (const drive of ["C:", "D:", "E:", "F:", "G:", "H:"]) {
+    steamDirs.push(`${drive}/Program Files (x86)/Steam`, `${drive}/Program Files/Steam`, `${drive}/Steam`, `${drive}/SteamLibrary`);
+  }
+  // Steam install dir straight from the Windows registry (catches custom dirs).
+  try {
+    if (process.platform === "win32") {
+      const { execSync } = require("child_process");
+      const out = execSync('reg query "HKCU\\Software\\Valve\\Steam" /v SteamPath', { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+      const m = out.match(/SteamPath\s+REG_SZ\s+(.+)/i);
+      if (m) steamDirs.unshift(m[1].trim().replace(/\\/g, "/"));
+    }
+  } catch {}
+  // Expand each Steam dir's libraryfolders.vdf into extra library roots.
+  for (const sdir of [...steamDirs]) {
+    const vdfPath = `${sdir}/steamapps/libraryfolders.vdf`;
     try {
+      if (!fs.existsSync(vdfPath)) continue;
       const text = fs.readFileSync(vdfPath, "utf8");
       const re = /"path"\s+"([^"]+)"/g;
       let m;
-      while ((m = re.exec(text)) !== null) {
-        const lib = m[1].replace(/\\\\/g, "/").replace(/\\/g, "/");
-        candidates.push(`${lib}/steamapps/common/Total War ROME REMASTERED`);
-      }
+      while ((m = re.exec(text)) !== null) steamDirs.push(m[1].replace(/\\\\/g, "/").replace(/\\/g, "/"));
     } catch {}
   }
+  const candidates = [];
+  for (const s of steamDirs) candidates.push(`${s}/steamapps/common/${REL}`);
+  // Epic Games (Windows).
+  for (const drive of ["C:", "D:", "E:"]) {
+    candidates.push(`${drive}/Program Files/Epic Games/TotalWarRomeRemastered`);
+    candidates.push(`${drive}/Program Files/Epic Games/${REL}`);
+  }
+  // macOS (Feral) — the .app bundle is the root.
+  candidates.push(`/Applications/${REL}.app`);
+  if (process.env.HOME) candidates.push(`${process.env.HOME}/Applications/${REL}.app`);
   for (const c of candidates) {
-    try { if (fs.existsSync(c)) return c; } catch {}
+    try { if (c && fs.existsSync(c)) return c; } catch {}
   }
   return null;
+}
+
+// Cached vanilla RTW:R `…/data` dir (the one containing `ui/`), derived from
+// the detected install root. null when no install is found. Logged once so
+// provincia.log shows whether the auto-detect succeeded — when portraits/icons
+// fail to resolve, this line tells you if it's the vanilla fallback that's
+// missing. See [resolve-portrait] NO PORTRAIT diagnostics.
+let _vanillaDataDir; // undefined = not computed yet
+function getVanillaDataDir() {
+  if (_vanillaDataDir !== undefined) return _vanillaDataDir;
+  _vanillaDataDir = null;
+  try {
+    const root = findRtwInstallRoot();
+    if (root) {
+      const dd = path.join(root, "Contents", "Resources", "Data", "data");
+      if (fs.existsSync(dd)) _vanillaDataDir = dd;
+    }
+  } catch {}
+  try { console.log(`[rtw-detect] vanilla RTW:R data dir: ${_vanillaDataDir || "(not found — auto-detect failed; portrait/icon vanilla fallback unavailable)"}`); } catch {}
+  return _vanillaDataDir;
 }
 
 const ICON_SEARCH_ROOTS = [];
@@ -4116,7 +4155,7 @@ ipcMain.handle("get-building-catalogue", async () => {
 // it's expected to return `{ ok: false }` for stock RTW Remastered.
 ipcMain.handle("resolve-trait-icon", async (_event, modDataDir, culture, levelName) => {
   if (!levelName) return { ok: false };
-  const VANILLA_DATA = "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data";
+  const VANILLA_DATA = getVanillaDataDir();
   const dataDirs = [modDataDir || null, VANILLA_DATA].filter(Boolean);
   const cultures = [
     String(culture || "").toLowerCase(),
@@ -4145,7 +4184,7 @@ ipcMain.handle("resolve-trait-icon", async (_event, modDataDir, culture, levelNa
 // per-culture). Search mod dir first, then vanilla.
 ipcMain.handle("resolve-ancillary-icon", async (_event, modDataDir, ancillaryName) => {
   if (!ancillaryName) return { ok: false };
-  const VANILLA_DATA = "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data";
+  const VANILLA_DATA = getVanillaDataDir();
   const dirs = [modDataDir || null, VANILLA_DATA].filter(Boolean);
   for (const dir of dirs) {
     for (const sub of ["ancillaries", "ancillaries_cards"]) {
@@ -4187,7 +4226,7 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
     // Also try adding .dds — RTW stores the actual files as .tga.dds, save
     // references them as .tga.
     const candidates = [];
-    const VANILLA_DATA = "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data";
+    const VANILLA_DATA = getVanillaDataDir();
     const dataDirs = [
       modDataDir ? modDataDir : null,
       VANILLA_DATA,
@@ -4223,9 +4262,8 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
   if (!culture || !slot) return { ok: false };
   const c = String(culture).toLowerCase();
   const s = String(slot).toLowerCase();
-  const VANILLA_UI = path.join(
-    "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data/ui"
-  );
+  const _vd = getVanillaDataDir();
+  const VANILLA_UI = _vd ? path.join(_vd, "ui") : null;
   const dirs = [
     modDataDir ? path.join(modDataDir, "ui") : null,
     VANILLA_UI,
