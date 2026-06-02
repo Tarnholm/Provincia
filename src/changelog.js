@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.827",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**The selected faction's highlight ring is no longer clipped** at the top/bottom of the Factions panel — gave the icon grid enough padding for the ring + glow to render inside its scroll area." },
+      { type: "change", text: "**Split Hidden Resources and AOR into two separate map-mode buttons** (in the Military group) now that the grouped layout has room — previously one tri-state button cycled between them." },
+    ],
+  },
+  {
     version: "0.9.826",
     date: "2026-06-02",
     items: [

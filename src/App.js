@@ -10007,9 +10007,11 @@ function App() {
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
-            // Trimmed top padding (4 → 1) so the icon grid sits closer to
-            // the Factions header above it.
-            padding: "1px 4px",
+            // 0.9.827: vertical padding bumped 1 → 6 so the selected tile's
+            // highlight ring + glow (box-shadow spread 2px + 8px glow, plus the
+            // 1.04 scale) isn't clipped by this scroll container's overflow on
+            // the top/bottom rows. Horizontal stays tight to keep 5-per-row.
+            padding: "6px 5px",
             // Fixed header (above) + scrolling icon grid (here) so the
             // Factions title + Deselect button stay put while the grid
             // scrolls inside the widget.
@@ -10729,6 +10731,7 @@ function App() {
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
         { key: "garrison", label: "Garrison", badge: "devmode.garrison", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
+        { key: "aor", label: "AOR", badge: "devmode.aor", dev: true },
       ]},
       { id: "geography", title: "Geography", members: [
         { key: "geography", label: "Geography", badge: "mode.geography" },
@@ -10753,20 +10756,8 @@ function App() {
             style={{ ...btnStyle(paintMode), minWidth: 0, position: "relative" }}><MapBtnBadge k="devmode.paint" />{paintMode ? "Paint ON" : "Paint"}</button>
         );
       }
-      if (m.key === "hidden_resource") {
-        const isHR = colorMode === "hidden_resource";
-        const isAOR = colorMode === "aor";
-        const isActive = isHR || isAOR;
-        const label = isAOR ? "AOR" : "Hidden Res.";
-        const next = isHR ? "aor" : isAOR ? "faction" : "hidden_resource";
-        return (
-          <button key={m.key}
-            onClick={() => { console.log(`[aor-toggle] ${colorMode} → ${next}`); setColorMode(next); }}
-            className={"map-mode-btn" + (isActive ? " map-mode-btn--active" : "")}
-            title={isHR ? "Currently: Hidden Resources. Click for AOR." : isAOR ? "Currently: Areas of Recruitment. Click to exit." : "Click for Hidden Resources, again for AOR."}
-            style={{ ...btnStyle(isActive), minWidth: 0, position: "relative" }}><MapBtnBadge k="devmode.hidden_resource" />{label}</button>
-        );
-      }
+      // 0.9.827: Hidden Res. and AOR are now SEPARATE single-select modes
+      // (previously one tri-state button). They go through the generic path.
       const active = colorMode === m.key;
       return (
         <button key={m.key} onClick={() => setColorMode(m.key)}
@@ -10775,9 +10766,9 @@ function App() {
           <MapBtnBadge k={m.badge} />{m.label}</button>
       );
     };
-    // Whether a member counts as the active mode (Hidden Res. also owns AOR;
-    // Paint is a toggle, active when paintMode is on).
-    const isMemberActive = (m) => m.key === "paint" ? paintMode : (colorMode === m.key || (m.key === "hidden_resource" && colorMode === "aor"));
+    // Whether a member counts as the active mode (Paint is a toggle, active
+    // when paintMode is on; everything else is the active colorMode).
+    const isMemberActive = (m) => m.key === "paint" ? paintMode : colorMode === m.key;
 
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
@@ -10793,11 +10784,7 @@ function App() {
             const activeMember = members.find(isMemberActive);
             const sectionActive = !!activeMember;
             // Short label of the active mode in this group (for the chip).
-            const activeLabel = !activeMember
-              ? null
-              : activeMember.key === "hidden_resource"
-                ? (colorMode === "aor" ? "AOR" : "Hidden Res.")
-                : activeMember.label;
+            const activeLabel = activeMember ? activeMember.label : null;
             // Category ("folder") button — deliberately styled UNLIKE a map-
             // mode button: a slate, uppercase tab. This is the visual cue that
             // separates CATEGORIES (slate tabs) from the MODES inside them (the
