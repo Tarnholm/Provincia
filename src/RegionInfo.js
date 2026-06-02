@@ -1425,7 +1425,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           w=0.1991. Row anchors are y=0.0056 / 0.3148 / 0.4573 with a
           common GAP_FRAC≈0.0035 between rows. */}
       <Movable id="region.info" title="Region info" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3400 }}>
+        defaultPct={{ x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3490 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {region && (
@@ -1951,7 +1951,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.characters" title="Characters" designMode={designMode} colBox={colBox}
         posOverride={addGenOpen ? { y: 0.4400, h: 0.3130 } : null}
         zIndex={addGenOpen ? 6 : 2}
-        defaultPct={{ x: 0.5720, y: 0.5550, w: 0.2090, h: 0.1720 }}>
+        defaultPct={{ x: 0.5720, y: 0.5640, w: 0.2090, h: 0.1720 }}>
       <div className={panelInnerClass} style={addGenOpen ? { ...panelInner, background: "#181b21" } : panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
@@ -2052,7 +2052,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           and a diplomacy summary (war/ally counts). Data decoded from the
           save via the cracked faction_id + treasury + diplomacy records. */}
       <Movable id="region.diplomacy" title="Diplomacy & Treasury" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.5720, y: 0.3560, w: 0.2090, h: 0.1900 }}>
+        defaultPct={{ x: 0.5720, y: 0.3650, w: 0.2090, h: 0.1900 }}>
       <div className={panelInnerClass} style={panelInner}
         title={(devMode && ownerFactionId) ? "Right-click to inspect raw diplomacy data" : undefined}
         onContextMenu={(devMode && ownerFactionId && (diplomacyMatrix || (factionState && !factionState.noData))) ? (e) => { e.preventDefault(); e.stopPropagation(); setDiploRawOpen((v) => !v); } : undefined}>
@@ -2419,7 +2419,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
 
       {/* Buildings grid — Movable widget */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.5720, y: 0.7350, w: 0.2090, h: 0.2540 }}>
+        defaultPct={{ x: 0.5720, y: 0.7440, w: 0.2090, h: 0.2450 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
@@ -2452,7 +2452,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               gridTemplateColumns: "repeat(5, 1fr)",
               gridAutoRows: "54px",
               gap: 3,
-              flex: 1,
+              // Cap at exactly 20 slots = 5 cols × 4 rows. A settlement holds
+              // at most 20 buildings, so the grid must NOT keep growing on a
+              // tall window — instead the slack goes to region.info (see
+              // CANONICAL_V4). Height = 4×54 + 3×3 (gaps) = 225px; scrolls if
+              // somehow more cards appear.
+              flexGrow: 0,
+              flexShrink: 0,
+              maxHeight: 4 * 54 + 3 * 3,
               minHeight: 0,
               overflowY: "auto",
               alignContent: "start",

@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.847",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Layout scaling pass.** The search bar stays a fixed height (no longer stretches tall on a tall window); the Factions grid now shows 5–10 icon columns depending on panel width and fills/scrolls vertically; the Selected Provinces list fills its panel height; the Buildings panel is capped at 20 card slots with the freed space given to the Region info panel." },
+      { type: "fix", text: "**The \"update ready\" banner no longer hides under the title bar** (offset below the strip, like the toasts)." },
+    ],
+  },
+  {
     version: "0.9.846",
     date: "2026-06-02",
     items: [

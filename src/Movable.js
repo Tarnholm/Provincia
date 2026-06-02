@@ -145,7 +145,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 26;
+const LAYOUT_VERSION = 27;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -164,13 +164,19 @@ const CANONICAL_V4 = {
   // freed by shrinking region.characters to ~10 rows; diplomacy shifts down to
   // keep the ~8px gaps even. Stack stays: info → diplomacy → characters →
   // buildings, all x=0.5720 w=0.2090.
-  "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3400 },
+  // 0.9.835 (LAYOUT_VERSION 27): region.buildings now hard-caps its grid at
+  // the 20-slot (5×4) settlement max so it can't grow taller on a tall
+  // window. The ~0.009 it no longer needs is handed to region.info (h
+  // 0.3400 → 0.3490). diplomacy + characters shift down by the same delta;
+  // buildings shrinks (h 0.2540 → 0.2450) keeping its bottom at 0.9890. All
+  // four stay contiguous with their original ~0.008 inter-widget gaps.
+  "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3490 },
   "region.recruit":     { x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 },
-  "region.diplomacy":   { x: 0.5720, y: 0.3560, w: 0.2090, h: 0.1900 },
-  "region.characters":  { x: 0.5720, y: 0.5550, w: 0.2090, h: 0.1720 },
+  "region.diplomacy":   { x: 0.5720, y: 0.3650, w: 0.2090, h: 0.1900 },
+  "region.characters":  { x: 0.5720, y: 0.5640, w: 0.2090, h: 0.1720 },
   "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
   "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
-  "region.buildings":   { x: 0.5720, y: 0.7350, w: 0.2090, h: 0.2540 },
+  "region.buildings":   { x: 0.5720, y: 0.7440, w: 0.2090, h: 0.2450 },
   // 0.9.x: region.garrison + region.fieldArmies MERGED into one Movable.
   // garrison now spans the combined vertical area both panels used to occupy
   // (old garrison y0.5086+h0.1650, field armies bottom y0.6800+h0.3150=0.9950).

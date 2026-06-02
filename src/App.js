@@ -1648,6 +1648,29 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const searchInputRef = useRef(null);
+  // Responsive faction grid: measure the icon-grid container's width and
+  // derive the column count (clamped 5..10). A ResizeObserver keeps it in
+  // sync as the bottom.factions Movable is resized or the window changes.
+  const factionGridRef = useRef(null);
+  const [factionGridCols, setFactionGridCols] = useState(5);
+  useEffect(() => {
+    const el = factionGridRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    // SLOT = icon tile (ICON_SIZE 72) + columnGap (6). At the canonical
+    // ~narrow width (~388px inner) floor(388/78)=4 → clamped to the 5
+    // minimum; each extra ~78px of panel width adds one column, up to 10.
+    const SLOT = 78;
+    const recompute = () => {
+      const w = el.clientWidth;
+      if (!w) return;
+      const cols = Math.max(5, Math.min(10, Math.floor(w / SLOT)));
+      setFactionGridCols((cur) => (cur === cols ? cur : cols));
+    };
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [showFactionSummary, setShowFactionSummary] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [devRecoveryPrompt, setDevRecoveryPrompt] = useState(false); // show recovery banner on dev mode enter
@@ -10005,9 +10028,13 @@ function App() {
             above the factions panel — not inside this scroll area — so
             it stays visible whether you scroll the faction grid or not. */}
         <div
+          ref={factionGridRef}
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
+            // Responsive: 5 columns minimum, up to 10 as the panel widens.
+            // factionGridCols is recomputed from the container width by a
+            // ResizeObserver (see the effect near searchInputRef).
+            gridTemplateColumns: `repeat(${factionGridCols}, 1fr)`,
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
@@ -10147,9 +10174,13 @@ function App() {
     const victoryMeta = selectedFaction && isVictoryMode ? victoryConditions[selectedFaction] : null;
 
     return (
-      <div>
+      // Fill the wrapper's height (the bottom.selected list slot is
+      // flex:1/minHeight:0/overflow:auto) so the province list uses the full
+      // panel height on a tall window and scrolls instead of leaving a big
+      // empty gap below.
+      <div style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
         {victoryMeta && (
-          <div style={{ marginBottom: 8, fontSize: "0.95rem" }}>
+          <div style={{ marginBottom: 8, fontSize: "0.95rem", flexShrink: 0 }}>
             Goal: hold {victoryMeta.hold_regions?.length || 0} regions, conquer at least{" "}
             {victoryMeta.take_regions ?? "?"} total.
             {devMode && (victoryMeta.hold_regions?.length || 0) > 0 && (
@@ -10190,7 +10221,7 @@ function App() {
             margin: 0, padding: 0, fontSize: "0.82rem", listStyle: "none",
             display: "flex", flexWrap: "wrap", alignContent: "flex-start",
             gap: 4,
-            maxHeight: "100%",
+            flex: 1, minHeight: 0,
             overflowY: "auto",
             overflowX: "hidden",
           }}>
@@ -14099,6 +14130,7 @@ function App() {
       {updateReady && (
         <UpdateBanner
           version={updateReady.version}
+          topOffset={TITLEBAR_H}
           onRestart={() => window.electronAPI?.updaterQuitAndInstall?.()}
           onDismiss={() => setUpdateReady(null)}
         />
@@ -16302,9 +16334,12 @@ function App() {
               defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
-                  chrome (no cream background, no extra padding). Input
-                  fills the widget edge-to-edge. */}
-              <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                  chrome (no cream background, no extra padding). The input is
+                  a FIXED 30px-tall control top-aligned in the widget, so when
+                  bottom.search's allocated box is tall the input stays slim
+                  (the extra space below stays empty instead of stretching the
+                  input into a giant bar). */}
+              <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
                 <input
                   type="text"
                   ref={searchInputRef}
@@ -16312,7 +16347,7 @@ function App() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    width: "100%", height: "100%", boxSizing: "border-box", padding: "6px 10px",
+                    width: "100%", height: 30, flexShrink: 0, boxSizing: "border-box", padding: "6px 10px",
                     borderRadius: 8, border: "1px solid rgba(255,255,255,0.18)",
                     background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.82rem",
                     outline: "none",

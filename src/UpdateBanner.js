@@ -5,11 +5,12 @@ import React from "react";
  * downloading a new version. Two actions: apply now (quit & install),
  * or defer.
  */
-export default function UpdateBanner({ version, onRestart, onDismiss }) {
+export default function UpdateBanner({ version, onRestart, onDismiss, topOffset = 0 }) {
   return (
     <div style={{
-      position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)",
-      zIndex: 10000, padding: "10px 16px", borderRadius: 8,
+      // topOffset clears the custom title-bar strip (0.9.847).
+      position: "fixed", top: 12 + topOffset, left: "50%", transform: "translateX(-50%)",
+      zIndex: 100001, padding: "10px 16px", borderRadius: 8,
       background: "rgba(20,40,30,0.95)", border: "1px solid #4a8a5a",
       color: "#d6f2e0", fontSize: "0.85rem",
       boxShadow: "0 2px 14px rgba(0,0,0,0.6)",
