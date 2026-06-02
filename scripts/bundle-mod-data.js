@@ -206,6 +206,15 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
       region = rgb && rgbToRegion[rgb];
     }
     if (!region) continue;
+    // 1-tile tolerance — keep in sync with src/garrisonClassify.js isOnSettlementTile
+    // and the runtime importer in App.js. The settlement-tile scan can land 1 px
+    // off from where descr_strat places the settlement's own commander, which
+    // would otherwise drop a faction leader / governor (e.g. Appius @ Pisae) into
+    // FIELD and strip his commander-card portrait.
+    if (!isGarrison) {
+      const st = settlementByRegion[region];
+      if (st && Math.abs(a.x - st.x) <= 1 && Math.abs(a.y - st.y) <= 1) isGarrison = true;
+    }
     if (!byRegion[region]) byRegion[region] = { garrison: [], field: [], settlement: settlementByRegion[region] || null };
     byRegion[region][isGarrison ? "garrison" : "field"].push({
       character: a.name, faction: a.faction,

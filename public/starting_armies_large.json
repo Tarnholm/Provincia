@@ -12419,9 +12419,7 @@
           "drillmaster"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Boodes",
         "faction": "sidon",
@@ -12458,6 +12456,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 556,
       "y": 310
@@ -13397,9 +13396,7 @@
           "heroic_saviour"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Lykourgos",
         "faction": "lyttos",
@@ -13528,6 +13525,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 434,
       "y": 314
@@ -14307,9 +14305,7 @@
           "mercenary_captain"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Zenostratos",
         "faction": "knossos",
@@ -14418,6 +14414,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 431,
       "y": 315
@@ -18516,9 +18513,7 @@
           "drillmaster"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Boodes",
         "faction": "arados",
@@ -18555,6 +18550,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 558,
       "y": 330
@@ -21770,9 +21766,7 @@
           "poet"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Saitidas",
         "faction": "messene",
@@ -21897,6 +21891,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 391,
       "y": 338
@@ -22854,6 +22849,86 @@
           "doctor"
         ],
         "charType": "general"
+      },
+      {
+        "character": "Mnuhe",
+        "faction": "ptolemaic",
+        "x": 477,
+        "y": 340,
+        "units": [
+          {
+            "name": "ptolemaic cavalry of the court",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 17,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingLycian",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Tlos",
+            "level": 1
+          },
+          {
+            "name": "GreekCityAssigned",
+            "level": 1
+          },
+          {
+            "name": "Brave",
+            "level": 1
+          },
+          {
+            "name": "GoodInfantryGeneral",
+            "level": 2
+          },
+          {
+            "name": "GoodAttacker",
+            "level": 1
+          },
+          {
+            "name": "Handsome",
+            "level": 1
+          },
+          {
+            "name": "Just",
+            "level": 1
+          },
+          {
+            "name": "LoyaltyLevel",
+            "level": 7
+          },
+          {
+            "name": "HaleAndHearty",
+            "level": 1
+          },
+          {
+            "name": "Lewd",
+            "level": 1
+          },
+          {
+            "name": "FasterCharacters",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "tutor"
+        ],
+        "charType": "general"
       }
     ],
     "field": [
@@ -22937,86 +23012,6 @@
           }
         ],
         "ancillaries": [],
-        "charType": "general"
-      },
-      {
-        "character": "Mnuhe",
-        "faction": "ptolemaic",
-        "x": 477,
-        "y": 340,
-        "units": [
-          {
-            "name": "ptolemaic cavalry of the court",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 17,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingLycian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Tlos",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "Brave",
-            "level": 1
-          },
-          {
-            "name": "GoodInfantryGeneral",
-            "level": 2
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 1
-          },
-          {
-            "name": "Handsome",
-            "level": 1
-          },
-          {
-            "name": "Just",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 1
-          },
-          {
-            "name": "Lewd",
-            "level": 1
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 1
-          }
-        ],
-        "ancillaries": [
-          "tutor"
-        ],
         "charType": "general"
       }
     ],
@@ -25954,9 +25949,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Aristomachos",
         "faction": "argos",
@@ -26028,6 +26021,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 399,
       "y": 346
@@ -28339,9 +28333,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Alexandros",
         "faction": "antigonid",
@@ -28449,6 +28441,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 402,
       "y": 349
@@ -29804,9 +29797,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Abantidas",
         "faction": "slave",
@@ -29866,6 +29857,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 399,
       "y": 351
@@ -30833,6 +30825,124 @@
           "merchant"
         ],
         "charType": "general"
+      },
+      {
+        "character": "Pammenes",
+        "faction": "priene",
+        "x": 453,
+        "y": 353,
+        "units": [
+          {
+            "name": "prienian general",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 45,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingIonian",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Priene",
+            "level": 1
+          },
+          {
+            "name": "GreekCityAssigned",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "GeneralExperience",
+            "level": 3
+          },
+          {
+            "name": "NaturalEnergy",
+            "level": 5
+          },
+          {
+            "name": "NaturalIntelligence",
+            "level": 2
+          },
+          {
+            "name": "NaturalCharisma",
+            "level": 3
+          },
+          {
+            "name": "LoyaltyLevel",
+            "level": 3
+          },
+          {
+            "name": "Selflessness",
+            "level": 2
+          },
+          {
+            "name": "Temperament",
+            "level": 3
+          },
+          {
+            "name": "Wealthy",
+            "level": 1
+          },
+          {
+            "name": "DramasFanGreekVice",
+            "level": 2
+          },
+          {
+            "name": "Liar",
+            "level": 1
+          },
+          {
+            "name": "Rabblerouser",
+            "level": 2
+          },
+          {
+            "name": "RhetoricSkill",
+            "level": 2
+          },
+          {
+            "name": "VictorOthersVirtue",
+            "level": 1
+          },
+          {
+            "name": "Handsome",
+            "level": 1
+          },
+          {
+            "name": "Supplies",
+            "level": 4
+          },
+          {
+            "name": "FasterCharacters",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 4
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
       }
     ],
     "field": [
@@ -30966,124 +31076,6 @@
           {
             "name": "TurnsAlive",
             "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      },
-      {
-        "character": "Pammenes",
-        "faction": "priene",
-        "x": 453,
-        "y": 353,
-        "units": [
-          {
-            "name": "prienian general",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 45,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingIonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Priene",
-            "level": 1
-          },
-          {
-            "name": "GreekCityAssigned",
-            "level": 1
-          },
-          {
-            "name": "GoodAdministrator",
-            "level": 2
-          },
-          {
-            "name": "PoliticsSkill",
-            "level": 2
-          },
-          {
-            "name": "NaturalMilitarySkill",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 5
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 2
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 3
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 3
-          },
-          {
-            "name": "Selflessness",
-            "level": 2
-          },
-          {
-            "name": "Temperament",
-            "level": 3
-          },
-          {
-            "name": "Wealthy",
-            "level": 1
-          },
-          {
-            "name": "DramasFanGreekVice",
-            "level": 2
-          },
-          {
-            "name": "Liar",
-            "level": 1
-          },
-          {
-            "name": "Rabblerouser",
-            "level": 2
-          },
-          {
-            "name": "RhetoricSkill",
-            "level": 2
-          },
-          {
-            "name": "VictorOthersVirtue",
-            "level": 1
-          },
-          {
-            "name": "Handsome",
-            "level": 1
-          },
-          {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 4
           }
         ],
         "ancillaries": [],
@@ -33468,9 +33460,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Aischriondas",
         "faction": "boeotia",
@@ -33570,6 +33560,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 409,
       "y": 356
@@ -35115,9 +35106,7 @@
           "merchant"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Charixenos",
         "faction": "aetolia",
@@ -35213,6 +35202,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 386,
       "y": 358
@@ -37154,9 +37144,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Ariston",
         "faction": "chios",
@@ -37292,6 +37280,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 437,
       "y": 360
@@ -42875,9 +42864,7 @@
           "priest_of_Hermes"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Lysias",
         "faction": "lysiad",
@@ -42931,7 +42918,9 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "Nikostratos",
         "faction": "lysiad",
@@ -48535,9 +48524,7 @@
           "priest_of_Demeter"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Aioiorix",
         "faction": "seleucid",
@@ -48621,6 +48608,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 496,
       "y": 383
@@ -48855,115 +48843,6 @@
   "Taras": {
     "garrison": [
       {
-        "character": "Milon",
-        "faction": "taras",
-        "x": 336,
-        "y": 384,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "italiote hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "italiote hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "italiote epibatai",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek slingers",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "xystophoroi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 53,
-        "tags": [
-          "leader",
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingEpirote",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Corrupt",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 2
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 1
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 3
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
-    "field": [
-      {
         "character": "Aulus Gabinius",
         "faction": "romans_julii",
         "x": 337,
@@ -49102,8 +48981,116 @@
         ],
         "ancillaries": [],
         "charType": "general"
+      },
+      {
+        "character": "Milon",
+        "faction": "taras",
+        "x": 336,
+        "y": 384,
+        "units": [
+          {
+            "name": "greek general",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "italiote hoplites",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "italiote hoplites",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "italiote epibatai",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "xystophoroi",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "prodromoi",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 53,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingEpirote",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Corrupt",
+            "level": 1
+          },
+          {
+            "name": "NaturalEnergy",
+            "level": 2
+          },
+          {
+            "name": "NaturalIntelligence",
+            "level": 1
+          },
+          {
+            "name": "NaturalCharisma",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          },
+          {
+            "name": "GoodAttacker",
+            "level": 1
+          },
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "LoyaltyLevel",
+            "level": 3
+          },
+          {
+            "name": "FasterCharacters",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 5
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 336,
       "y": 384
@@ -53219,9 +53206,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Auls",
         "faction": "capua",
@@ -53258,6 +53243,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 303,
       "y": 392
@@ -53699,9 +53685,7 @@
           "philosopher"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Timaios",
         "faction": "cyzicus",
@@ -53849,6 +53833,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 453,
       "y": 392
@@ -59388,9 +59373,7 @@
           "greek_architect"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Rhabokentos",
         "faction": "bessi",
@@ -59572,6 +59555,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 408,
       "y": 403
@@ -64305,9 +64289,7 @@
           "Greek_Greave"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Sitas",
         "faction": "dentheletae",
@@ -64408,6 +64390,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 393,
       "y": 412
@@ -66980,9 +66963,7 @@
           "Lukovit_Treasure"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "KotysC",
         "faction": "odrysians",
@@ -67167,6 +67148,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 425,
       "y": 418
@@ -67826,9 +67808,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Kinna",
         "faction": "dardania",
@@ -67951,6 +67931,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 377,
       "y": 419
@@ -68698,9 +68679,7 @@
           "Greek_Greave"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Ebryzelmis",
         "faction": "odrysians",
@@ -68809,6 +68788,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 421,
       "y": 420
@@ -71925,108 +71905,6 @@
   "Naissitania": {
     "garrison": [
       {
-        "character": "Morkon",
-        "faction": "slave",
-        "x": 384,
-        "y": 427,
-        "units": [
-          {
-            "name": "illyrian warlords bodyguard",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "illyrian warband",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 29,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDelmato_Pannonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Dardanoi",
-            "level": 1
-          },
-          {
-            "name": "TribalAssigned",
-            "level": 1
-          },
-          {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 2
-          },
-          {
-            "name": "Handsome",
-            "level": 3
-          },
-          {
-            "name": "Girls",
-            "level": 1
-          },
-          {
-            "name": "Energetic",
-            "level": 2
-          },
-          {
-            "name": "GoodSiegeAttacker",
-            "level": 2
-          },
-          {
-            "name": "GoodAmbusher",
-            "level": 1
-          },
-          {
-            "name": "GoodRiskyAttacker",
-            "level": 2
-          },
-          {
-            "name": "Lewd",
-            "level": 1
-          },
-          {
-            "name": "HatesArdiaei",
-            "level": 1
-          },
-          {
-            "name": "Untouchable",
-            "level": 1
-          },
-          {
-            "name": "Immovable",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
-    "field": [
-      {
         "character": "Times",
         "faction": "dardania",
         "x": 385,
@@ -72133,8 +72011,109 @@
           "master_smith"
         ],
         "charType": "general"
+      },
+      {
+        "character": "Morkon",
+        "faction": "slave",
+        "x": 384,
+        "y": 427,
+        "units": [
+          {
+            "name": "illyrian warlords bodyguard",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "illyrian warband",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 29,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingDelmato_Pannonian",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Dardanoi",
+            "level": 1
+          },
+          {
+            "name": "TribalAssigned",
+            "level": 1
+          },
+          {
+            "name": "Supplies",
+            "level": 4
+          },
+          {
+            "name": "GeneralExperience",
+            "level": 3
+          },
+          {
+            "name": "HaleAndHearty",
+            "level": 2
+          },
+          {
+            "name": "Handsome",
+            "level": 3
+          },
+          {
+            "name": "Girls",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 2
+          },
+          {
+            "name": "GoodSiegeAttacker",
+            "level": 2
+          },
+          {
+            "name": "GoodAmbusher",
+            "level": 1
+          },
+          {
+            "name": "GoodRiskyAttacker",
+            "level": 2
+          },
+          {
+            "name": "Lewd",
+            "level": 1
+          },
+          {
+            "name": "HatesArdiaei",
+            "level": 1
+          },
+          {
+            "name": "Untouchable",
+            "level": 1
+          },
+          {
+            "name": "Immovable",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 2
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 384,
       "y": 427
@@ -73880,9 +73859,7 @@
           "Wine_Horn1"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Kerethrios",
         "faction": "tylis",
@@ -73985,6 +73962,76 @@
         "charType": "general"
       },
       {
+        "character": "Kersibaulos",
+        "faction": "tylis",
+        "x": 441,
+        "y": 429,
+        "units": [
+          {
+            "name": "arvernian champions",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "galatian warbands",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 23,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingCeltic",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Tylians",
+            "level": 1
+          },
+          {
+            "name": "TribalAssigned",
+            "level": 1
+          },
+          {
+            "name": "GeneralExperience",
+            "level": 1
+          },
+          {
+            "name": "Followers",
+            "level": 3
+          },
+          {
+            "name": "GoodRaider",
+            "level": 2
+          },
+          {
+            "name": "Supplies",
+            "level": 4
+          },
+          {
+            "name": "FasterCharacters",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 2
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
         "character": "Komontorios",
         "faction": "tylis",
         "x": 439,
@@ -74064,74 +74111,6 @@
           "heroic_saviour",
           "Greek_Greave"
         ],
-        "charType": "general"
-      },
-      {
-        "character": "Kersibaulos",
-        "faction": "tylis",
-        "x": 441,
-        "y": 429,
-        "units": [
-          {
-            "name": "arvernian champions",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "galatian warbands",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 23,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingCeltic",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Tylians",
-            "level": 1
-          },
-          {
-            "name": "TribalAssigned",
-            "level": 1
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 1
-          },
-          {
-            "name": "Followers",
-            "level": 3
-          },
-          {
-            "name": "GoodRaider",
-            "level": 2
-          },
-          {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
         "charType": "general"
       }
     ],
@@ -76094,6 +76073,113 @@
   "Ditionia": {
     "garrison": [
       {
+        "character": "Panes",
+        "faction": "delmatae",
+        "x": 323,
+        "y": 434,
+        "units": [
+          {
+            "name": "northern illyrian general",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingDelmato_Pannonian",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Delmatae",
+            "level": 1
+          },
+          {
+            "name": "TribalAssigned",
+            "level": 1
+          },
+          {
+            "name": "Supplies",
+            "level": 4
+          },
+          {
+            "name": "GeneralExperience",
+            "level": 3
+          },
+          {
+            "name": "HatesDardania",
+            "level": 1
+          },
+          {
+            "name": "LoyaltyLevel",
+            "level": 7
+          },
+          {
+            "name": "KindRuler",
+            "level": 1
+          },
+          {
+            "name": "IndecisiveAttacker",
+            "level": 2
+          },
+          {
+            "name": "Infertile",
+            "level": 1
+          },
+          {
+            "name": "Sane",
+            "level": 1
+          },
+          {
+            "name": "Prim",
+            "level": 1
+          },
+          {
+            "name": "BadFarmer",
+            "level": 2
+          },
+          {
+            "name": "GoodRaider",
+            "level": 2
+          },
+          {
+            "name": "StrategicSkill",
+            "level": 1
+          },
+          {
+            "name": "Disciplinarian",
+            "level": 2
+          },
+          {
+            "name": "GoodMiner",
+            "level": 1
+          },
+          {
+            "name": "Talkative",
+            "level": 1
+          },
+          {
+            "name": "LivestockHerds",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 3
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      },
+      {
         "character": "AetorB",
         "faction": "delmatae",
         "x": 324,
@@ -76202,115 +76288,7 @@
         "charType": "general"
       }
     ],
-    "field": [
-      {
-        "character": "Panes",
-        "faction": "delmatae",
-        "x": 323,
-        "y": 434,
-        "units": [
-          {
-            "name": "northern illyrian general",
-            "exp": 1,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 30,
-        "tags": [
-          "heir",
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDelmato_Pannonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Delmatae",
-            "level": 1
-          },
-          {
-            "name": "TribalAssigned",
-            "level": 1
-          },
-          {
-            "name": "Supplies",
-            "level": 4
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "HatesDardania",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 7
-          },
-          {
-            "name": "KindRuler",
-            "level": 1
-          },
-          {
-            "name": "IndecisiveAttacker",
-            "level": 2
-          },
-          {
-            "name": "Infertile",
-            "level": 1
-          },
-          {
-            "name": "Sane",
-            "level": 1
-          },
-          {
-            "name": "Prim",
-            "level": 1
-          },
-          {
-            "name": "BadFarmer",
-            "level": 2
-          },
-          {
-            "name": "GoodRaider",
-            "level": 2
-          },
-          {
-            "name": "StrategicSkill",
-            "level": 1
-          },
-          {
-            "name": "Disciplinarian",
-            "level": 2
-          },
-          {
-            "name": "GoodMiner",
-            "level": 1
-          },
-          {
-            "name": "Talkative",
-            "level": 1
-          },
-          {
-            "name": "LivestockHerds",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 3
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
-      }
-    ],
+    "field": [],
     "settlement": {
       "x": 324,
       "y": 434
@@ -76553,9 +76531,7 @@
           "Thracian_Tattoo_Artist"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Rhaskos",
         "faction": "triballi",
@@ -76739,6 +76715,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 411,
       "y": 434
@@ -85892,9 +85869,7 @@
           "philosopher"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Apollonios",
         "faction": "chersonesus",
@@ -86041,6 +86016,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 502,
       "y": 462
@@ -89906,9 +89882,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Catuuolcus",
         "faction": "breuni",
@@ -89945,6 +89919,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 276,
       "y": 482
@@ -99092,9 +99067,7 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Adgandestrius",
         "faction": "chatti",
@@ -99139,6 +99112,7 @@
         "charType": "general"
       }
     ],
+    "field": [],
     "settlement": {
       "x": 269,
       "y": 540

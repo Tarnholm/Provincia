@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.835",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Faction leaders/governors whose stack sits on the settlement now always show their portrait** (non-live). The garrison/field classifier required an *exact* match against the settlement tile, but that tile is found by scanning the map and can land 1 pixel off from where a settlement's own commander is placed — dropping him into the \"field\" bucket, where his bodyguard card never got tagged with a name and rendered with no portrait. Examples: Appius Claudius Pulcher (Pisae), Decimus Iunius Brutus (Iguvium). Now a stack within one tile of the settlement counts as garrison — the same tolerance live mode already uses — in both the runtime importer and the bundled data." },
+    ],
+  },
+  {
     version: "0.9.834",
     date: "2026-06-02",
     items: [

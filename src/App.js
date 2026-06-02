@@ -16,7 +16,7 @@ import "./CustomScrollArea.css";
 import TGA from "./tga";
 import WelcomeScreen from "./WelcomeScreen";
 import { displayFirstName, displayFullName } from "./displayName";
-import { isGarrisonUnit } from "./garrisonClassify";
+import { isGarrisonUnit, isOnSettlementTile } from "./garrisonClassify";
 // diagnostics.js is CommonJS (main.js require()s it at runtime). Rollup can't
 // statically extract NAMED exports from `module.exports = {...}`, so import the
 // default (the whole exports object) and pull the fns off it.
@@ -19235,6 +19235,17 @@ function App() {
                     region = rgb && rgbToRegion[rgb];
                   }
                   if (!region) continue; // in sea or unowned
+                  // 1-tile tolerance: the settlement-tile scan can land 1 px off
+                  // from where descr_strat places the settlement's own commander
+                  // (it picks the first adjacent black pixel). An exact match then
+                  // drops a faction leader / governor (Appius @ Pisae) into FIELD,
+                  // so his commander card loses its portrait. Treat a stack within
+                  // one tile of the settlement as garrison — same tolerance the
+                  // live overlay uses.
+                  if (!isGarrison) {
+                    const st = settlementByRegion[region];
+                    if (st && isOnSettlementTile(a.x, a.y, st.x, st.y)) isGarrison = true;
+                  }
                   if (!byRegion[region]) byRegion[region] = { garrison: [], field: [], settlement: settlementByRegion[region] || null };
                   byRegion[region][isGarrison ? "garrison" : "field"].push(a);
                 }
