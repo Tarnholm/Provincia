@@ -10659,6 +10659,140 @@ function App() {
     document.body.removeChild(a);
   }
 
+  // 0.9.x: Live map-control toggle. Extracted from its inline onClick so the
+  // Live button can render up in the map-mode category pill (next to the
+  // Geopolitics/…/Overlays tabs) instead of down in the controls pill. Logic
+  // is unchanged: deactivate if already live, else auto-detect dirs + activate.
+  const handleLiveToggle = async () => {
+    if (liveLogActive) {
+      // Deactivate — restore to latest state
+      setLiveLogActive(false);
+      setLiveSliderTurn(null);
+    } else {
+      const api = window.electronAPI;
+      let dir = liveLogDir;
+      const importedCampaign = (() => { try { return localStorage.getItem("importedCampaign"); } catch { return null; } })();
+      console.log("[live] activating. saved liveLogDir:", JSON.stringify(dir), "liveSaveDir:", JSON.stringify(liveSaveDir), "importedCampaign:", JSON.stringify(importedCampaign));
+      // Log dir is always Rome/logs so we only sanity-check the
+      // SAVE dir against the imported campaign. If they disagree
+      // (saved Rome/saves but imported Alexander), clear and redetect.
+      if (liveSaveDir && importedCampaign) {
+        const norm = liveSaveDir.toLowerCase().replace(/\\/g, "/");
+        const expected = "/" + importedCampaign.toLowerCase() + "/saves";
+        const matches = norm.includes(expected);
+        console.log("[live] saveDir/campaign match check:", "norm=", norm, "expected=", expected, "matches=", matches);
+        if (!matches) {
+          console.log("[live] CLEARING stale dirs (save dir campaign mismatch)");
+          dir = null;
+          setLiveLogDir(null);
+          setLiveSaveDir(null);
+          try { localStorage.removeItem("liveLogDir"); } catch {}
+          try { localStorage.removeItem("liveSaveDir"); } catch {}
+        }
+      } else if (dir && !liveSaveDir && importedCampaign) {
+        // Legacy saved state: only liveLogDir set (pointed at Rome
+        // in older builds). Force re-detect to populate liveSaveDir
+        // per-campaign.
+        console.log("[live] legacy liveLogDir without liveSaveDir — forcing redetect");
+        dir = null;
+        setLiveLogDir(null);
+        try { localStorage.removeItem("liveLogDir"); } catch {}
+      }
+      // No saved path yet — pick a campaign folder. Priority:
+      //   1. The campaign the user last imported files from
+      //      (saved in localStorage as "importedCampaign", set by
+      //      the import flow when it detects alexander/ or bi/ in
+      //      the chosen source path).
+      //   2. Among installed campaigns, whichever has the newest
+      //      .sav file — the one the user is most likely playing.
+      let saveDirChoice = liveSaveDir;
+      if (!dir || !saveDirChoice) {
+        const paths = await api?.getAppPaths();
+        const roots = [];
+        if (paths?.localAppData) roots.push(paths.localAppData.replace(/\\/g, "/") + "/Feral Interactive/Total War ROME REMASTERED/VFS/Local");
+        if (paths?.home) roots.push(paths.home.replace(/\\/g, "/") + "/Library/Application Support/Feral Interactive/Total War Rome Remastered/VFS/Local");
+        console.log("[live] auto-detect roots:", JSON.stringify(roots));
+        const camps = ["Alexander", "Barbarian Invasion", "Rome"];
+        // RR writes logs into .../Rome/logs regardless of which
+        // campaign the game is running, but each campaign has its
+        // own .../<camp>/saves folder. So we pick the save dir
+        // per-campaign and always use Rome/logs for the log dir.
+        let chosenSaveDir = null;
+        let chosenRoot = null;
+        if (importedCampaign && camps.includes(importedCampaign)) {
+          for (const root of roots) {
+            const saveDir = root + "/" + importedCampaign + "/saves";
+            const latest = await api?.getLatestSaveMtime?.(saveDir);
+            console.log("[live] trying imported-campaign saveDir:", saveDir, "latestSave:", latest?.file || "(none)");
+            if (latest) { chosenSaveDir = saveDir; chosenRoot = root; break; }
+          }
+        }
+        if (!chosenSaveDir) {
+          let best = null;
+          for (const c of camps) {
+            for (const root of roots) {
+              const saveDir = root + "/" + c + "/saves";
+              const latest = await api?.getLatestSaveMtime?.(saveDir);
+              if (!latest) continue;
+              const mtime = latest.mtime || 0;
+              console.log("[live] candidate:", c, "latestSave:", latest.file, "mtime:", mtime);
+              if (!best || mtime > best.mtime) best = { saveDir, root, camp: c, mtime };
+              break;
+            }
+          }
+          if (best) { chosenSaveDir = best.saveDir; chosenRoot = best.root; console.log("[live] picking newest-save winner:", best.camp, best.saveDir); }
+        }
+        if (chosenRoot) {
+          dir = chosenRoot + "/Rome/logs"; // RR's log dir is always under /Rome/logs
+          saveDirChoice = chosenSaveDir;
+        }
+        // Last resort: ask user.
+        if (!dir) {
+          dir = await api?.selectLogFolder();
+          if (!dir) return;
+          const norm = dir.replace(/\\/g, "/");
+          const check = await api.readFile(norm + "/message_log.txt");
+          if (!check) {
+            const check2 = await api.readFile(norm + "/logs/message_log.txt");
+            if (check2) { dir = norm + "/logs"; }
+            else { alert("message_log.txt not found.\nNavigate to the 'logs' folder inside your Rome Remastered data directory."); return; }
+          }
+          saveDirChoice = saveDirChoice || dir.replace(/[/\\]logs\/?$/, "/saves");
+        }
+        setLiveLogDir(dir);
+        try { localStorage.setItem("liveLogDir", dir); } catch {}
+        if (saveDirChoice) {
+          setLiveSaveDir(saveDirChoice);
+          try { localStorage.setItem("liveSaveDir", saveDirChoice); } catch {}
+          console.log("[live] final dirs — log:", dir, "save:", saveDirChoice);
+        }
+      }
+      // Clean-slate activation: we don't replay historical logs because
+      // the RR log files don't distinguish "events from before you opened
+      // Provincia" from "events happening right now". Instead we:
+      //   - Snapshot the starting state (for future diff references).
+      //   - Clear any previous live history / events / sieges.
+      //   - Let the useEffects for log-watch and save-watch start from EOF
+      //     / latest autosave and produce forward-only events.
+      baseRegionsRef.current = JSON.parse(JSON.stringify(regions));
+      baseFactionMapRef.current = JSON.parse(JSON.stringify(factionRegionsMap));
+
+      currentTurnRef.current = 0;
+      currentCampaignRef.current = null;
+      setLiveHistory([]);
+      setLiveLogEvents([]);
+      setLiveLogTurn(null);
+      setActiveSieges({});
+      setLiveTurnsEnded(0);
+      if (api?.saveUserFile) api.saveUserFile("live_history.json", "[]");
+
+      setLiveLogActive(true);
+      pushToast(`Live mode: ${saveDirChoice || dir}`, "info");
+      // Faction gets auto-detected from the autosave filename inside
+      // the save-watch effect — no manual prompt needed.
+    }
+  };
+
   function renderMapModeToggle() {
     const pillStyle = {
       display: "inline-flex",
@@ -10933,6 +11067,9 @@ function App() {
               </button>
             );
           })()}
+          {/* 0.9.x: Live toggle — moved here from the controls pill so it sits
+              next to the map-mode category tabs. onClick is handleLiveToggle. */}
+          <button className="map-mode-btn" onClick={handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : undefined }}><MapBtnBadge k="view.live" />Live</button>
         </div>
         {/* 0.9.824: the open category's modes render in their OWN row directly
             under the category tabs (a "row under"), not inline or as a popover.
@@ -11559,6 +11696,8 @@ function App() {
             pointerEvents: "auto",
           }}>
             <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 8, color: "#e8a030" }}>Keyboard Shortcuts</div>
+            {/* 3rd element = dev-only: hidden outside dev mode. The dev-mode
+                TOGGLE itself is always shown so non-dev users can find it. */}
             {[
               ["Ctrl+1 – 8", "Open map-mode group (1 Geopolitics … 7 Geography, 8 Overlays)"],
               ["Ctrl+`", "Switch campaign slot"],
@@ -11566,17 +11705,17 @@ function App() {
               ["Ctrl+K", "Search everywhere"],
               [", / .", "Step through recent regions"],
               ["Ctrl+Shift+D", "Toggle dev mode"],
-              ["Ctrl+Z", "Undo"],
-              ["Ctrl+Shift+Z / Ctrl+Y", "Redo"],
+              ["Ctrl+Z", "Undo", true],
+              ["Ctrl+Shift+Z / Ctrl+Y", "Redo", true],
               ["Escape", "Close open group, then deselect"],
               ["Arrow keys", "Pan map"],
               ["Scroll wheel", "Zoom in/out"],
               ["Double-click map", "Zoom in"],
               ["Shift+click faction", "Multi-select factions"],
               ["Double-click faction", "Zoom to territory"],
-              ["Right-click campaign tab", "Import files into that slot"],
+              ["Right-click campaign tab", "Import files into that slot", true],
               ["Right-click save", "Rename save"],
-            ].map(([key, desc]) => (
+            ].filter(([, , dev]) => devMode || !dev).map(([key, desc]) => (
               <div key={key} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 3 }}>
                 <kbd style={{ background: "rgba(255,255,255,0.1)", padding: "1px 5px", borderRadius: 3, fontSize: "0.68rem", color: "#8bf", whiteSpace: "nowrap" }}>{key}</kbd>
                 <span style={{ color: "#aab" }}>{desc}</span>
@@ -11655,136 +11794,7 @@ function App() {
               opens the full Validate dashboard, which covers EDB resources, unit
               localization/images, and the rest. Not in MAP_BTN_ORDER, so no
               letters shift. */}
-          <button className="map-mode-btn" onClick={async () => {
-            if (liveLogActive) {
-              // Deactivate — restore to latest state
-              setLiveLogActive(false);
-              setLiveSliderTurn(null);
-            } else {
-              const api = window.electronAPI;
-              let dir = liveLogDir;
-              const importedCampaign = (() => { try { return localStorage.getItem("importedCampaign"); } catch { return null; } })();
-              console.log("[live] activating. saved liveLogDir:", JSON.stringify(dir), "liveSaveDir:", JSON.stringify(liveSaveDir), "importedCampaign:", JSON.stringify(importedCampaign));
-              // Log dir is always Rome/logs so we only sanity-check the
-              // SAVE dir against the imported campaign. If they disagree
-              // (saved Rome/saves but imported Alexander), clear and redetect.
-              if (liveSaveDir && importedCampaign) {
-                const norm = liveSaveDir.toLowerCase().replace(/\\/g, "/");
-                const expected = "/" + importedCampaign.toLowerCase() + "/saves";
-                const matches = norm.includes(expected);
-                console.log("[live] saveDir/campaign match check:", "norm=", norm, "expected=", expected, "matches=", matches);
-                if (!matches) {
-                  console.log("[live] CLEARING stale dirs (save dir campaign mismatch)");
-                  dir = null;
-                  setLiveLogDir(null);
-                  setLiveSaveDir(null);
-                  try { localStorage.removeItem("liveLogDir"); } catch {}
-                  try { localStorage.removeItem("liveSaveDir"); } catch {}
-                }
-              } else if (dir && !liveSaveDir && importedCampaign) {
-                // Legacy saved state: only liveLogDir set (pointed at Rome
-                // in older builds). Force re-detect to populate liveSaveDir
-                // per-campaign.
-                console.log("[live] legacy liveLogDir without liveSaveDir — forcing redetect");
-                dir = null;
-                setLiveLogDir(null);
-                try { localStorage.removeItem("liveLogDir"); } catch {}
-              }
-              // No saved path yet — pick a campaign folder. Priority:
-              //   1. The campaign the user last imported files from
-              //      (saved in localStorage as "importedCampaign", set by
-              //      the import flow when it detects alexander/ or bi/ in
-              //      the chosen source path).
-              //   2. Among installed campaigns, whichever has the newest
-              //      .sav file — the one the user is most likely playing.
-              let saveDirChoice = liveSaveDir;
-              if (!dir || !saveDirChoice) {
-                const paths = await api?.getAppPaths();
-                const roots = [];
-                if (paths?.localAppData) roots.push(paths.localAppData.replace(/\\/g, "/") + "/Feral Interactive/Total War ROME REMASTERED/VFS/Local");
-                if (paths?.home) roots.push(paths.home.replace(/\\/g, "/") + "/Library/Application Support/Feral Interactive/Total War Rome Remastered/VFS/Local");
-                console.log("[live] auto-detect roots:", JSON.stringify(roots));
-                const camps = ["Alexander", "Barbarian Invasion", "Rome"];
-                // RR writes logs into .../Rome/logs regardless of which
-                // campaign the game is running, but each campaign has its
-                // own .../<camp>/saves folder. So we pick the save dir
-                // per-campaign and always use Rome/logs for the log dir.
-                let chosenSaveDir = null;
-                let chosenRoot = null;
-                if (importedCampaign && camps.includes(importedCampaign)) {
-                  for (const root of roots) {
-                    const saveDir = root + "/" + importedCampaign + "/saves";
-                    const latest = await api?.getLatestSaveMtime?.(saveDir);
-                    console.log("[live] trying imported-campaign saveDir:", saveDir, "latestSave:", latest?.file || "(none)");
-                    if (latest) { chosenSaveDir = saveDir; chosenRoot = root; break; }
-                  }
-                }
-                if (!chosenSaveDir) {
-                  let best = null;
-                  for (const c of camps) {
-                    for (const root of roots) {
-                      const saveDir = root + "/" + c + "/saves";
-                      const latest = await api?.getLatestSaveMtime?.(saveDir);
-                      if (!latest) continue;
-                      const mtime = latest.mtime || 0;
-                      console.log("[live] candidate:", c, "latestSave:", latest.file, "mtime:", mtime);
-                      if (!best || mtime > best.mtime) best = { saveDir, root, camp: c, mtime };
-                      break;
-                    }
-                  }
-                  if (best) { chosenSaveDir = best.saveDir; chosenRoot = best.root; console.log("[live] picking newest-save winner:", best.camp, best.saveDir); }
-                }
-                if (chosenRoot) {
-                  dir = chosenRoot + "/Rome/logs"; // RR's log dir is always under /Rome/logs
-                  saveDirChoice = chosenSaveDir;
-                }
-                // Last resort: ask user.
-                if (!dir) {
-                  dir = await api?.selectLogFolder();
-                  if (!dir) return;
-                  const norm = dir.replace(/\\/g, "/");
-                  const check = await api.readFile(norm + "/message_log.txt");
-                  if (!check) {
-                    const check2 = await api.readFile(norm + "/logs/message_log.txt");
-                    if (check2) { dir = norm + "/logs"; }
-                    else { alert("message_log.txt not found.\nNavigate to the 'logs' folder inside your Rome Remastered data directory."); return; }
-                  }
-                  saveDirChoice = saveDirChoice || dir.replace(/[/\\]logs\/?$/, "/saves");
-                }
-                setLiveLogDir(dir);
-                try { localStorage.setItem("liveLogDir", dir); } catch {}
-                if (saveDirChoice) {
-                  setLiveSaveDir(saveDirChoice);
-                  try { localStorage.setItem("liveSaveDir", saveDirChoice); } catch {}
-                  console.log("[live] final dirs — log:", dir, "save:", saveDirChoice);
-                }
-              }
-              // Clean-slate activation: we don't replay historical logs because
-              // the RR log files don't distinguish "events from before you opened
-              // Provincia" from "events happening right now". Instead we:
-              //   - Snapshot the starting state (for future diff references).
-              //   - Clear any previous live history / events / sieges.
-              //   - Let the useEffects for log-watch and save-watch start from EOF
-              //     / latest autosave and produce forward-only events.
-              baseRegionsRef.current = JSON.parse(JSON.stringify(regions));
-              baseFactionMapRef.current = JSON.parse(JSON.stringify(factionRegionsMap));
-
-              currentTurnRef.current = 0;
-              currentCampaignRef.current = null;
-              setLiveHistory([]);
-              setLiveLogEvents([]);
-              setLiveLogTurn(null);
-              setActiveSieges({});
-              setLiveTurnsEnded(0);
-              if (api?.saveUserFile) api.saveUserFile("live_history.json", "[]");
-
-              setLiveLogActive(true);
-              pushToast(`Live mode: ${saveDirChoice || dir}`, "info");
-              // Faction gets auto-detected from the autosave filename inside
-              // the save-watch effect — no manual prompt needed.
-            }
-          }}
-            style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : undefined }}><MapBtnBadge k="view.live" />Live</button>
+          {/* 0.9.x: Live button moved up to the map-mode category pill (next to the Geopolitics/.../Overlays tabs); its handler is handleLiveToggle. */}
           {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
               a new game + save at turn 0 so the auto-cache pass picks up
               real save-read stats and uses them in non-live mode. The
@@ -14060,22 +14070,22 @@ function App() {
           {/* 0.9.845: keyboard-shortcuts "?" moved here from the dev pill — sits
               at the right of the strip, just left of the native minimise button
               (the reserved TITLEBAR_CONTROLS_W gap). Dev-only, as before. */}
-          {devMode && (
-            <button
-              onClick={() => setShowShortcuts((p) => !p)}
-              title="Keyboard shortcuts"
-              style={{
-                WebkitAppRegion: "no-drag",
-                marginLeft: "auto",
-                width: 22, height: 22, padding: 0, borderRadius: 6,
-                border: "1px solid rgba(255,255,255,0.18)",
-                background: showShortcuts ? "rgba(220,166,74,0.25)" : "rgba(255,255,255,0.06)",
-                color: "#cfd6e0", fontSize: "0.8rem", fontWeight: 700,
-                cursor: "pointer", lineHeight: 1,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            >?</button>
-          )}
+          {/* 0.9.846: "?" always available (not dev-gated); the panel itself
+              hides dev-only shortcut rows outside dev mode. */}
+          <button
+            onClick={() => setShowShortcuts((p) => !p)}
+            title="Keyboard shortcuts"
+            style={{
+              WebkitAppRegion: "no-drag",
+              marginLeft: "auto",
+              width: 22, height: 22, padding: 0, borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.18)",
+              background: showShortcuts ? "rgba(220,166,74,0.25)" : "rgba(255,255,255,0.06)",
+              color: "#cfd6e0", fontSize: "0.8rem", fontWeight: 700,
+              cursor: "pointer", lineHeight: 1,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >?</button>
         </div>
       )}
       <canvas

@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.846",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Moved the Live button up next to the map-mode tabs** (out of the lower controls row). Calibrate/Stats and the rest stay where they were." },
+      { type: "change", text: "**The keyboard-shortcuts \"?\" is now always available** (was dev-only). The panel hides dev-only shortcuts (Undo/Redo, slot import) outside dev mode, but always shows the dev-mode toggle so it's discoverable." },
+    ],
+  },
+  {
     version: "0.9.845",
     date: "2026-06-02",
     items: [
