@@ -8096,8 +8096,34 @@ function attachLiveSaveExtras(newData, saveBuf, modDataDir, prevEventLog) {
 let _reparsing = false;
 let _reparsePending = false;
 
+// Renderer-liveness guard. After the renderer process crashes (e.g. the game
+// CTDs mid-live-run and the OS thrashes — observed 2026-06-02: a 9h live run hit
+// renderer OOM → white screen), the BrowserWindow can linger while its web
+// frame is disposed. Sending IPC to it throws "Render frame was disposed" and
+// every save-watch reparse then spams that error while doing useless work.
+// Treat a destroyed window / webContents (or a crashed renderer) as gone.
+function getLiveWindow() {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (!win || win.isDestroyed()) return null;
+  const wc = win.webContents;
+  try {
+    if (!wc || wc.isDestroyed() || wc.isCrashed()) return null;
+  } catch { return null; }
+  return win;
+}
+// Send to the renderer only if it's alive; never throw if the frame is gone.
+function safeSend(channel, payload) {
+  const win = getLiveWindow();
+  if (!win) return false;
+  try { win.webContents.send(channel, payload); return true; }
+  catch { return false; }
+}
+
 async function reparseLatestSave() {
   if (!activeSaveDir) return;
+  // Don't burn a reparse (heavy parse + worker threads) when the renderer is
+  // gone — that's the post-game-crash thrash that pinned the machine.
+  if (!getLiveWindow()) { _reparsePending = false; return; }
   if (_reparsing) {
     _reparsePending = true;
     console.log("[save-watch] queued (reparse already in progress)");
@@ -8120,8 +8146,8 @@ async function reparseLatestSave() {
       }
     }
   }, 120000);
-  const win = BrowserWindow.getAllWindows()[0];
-  if (!win) { _reparsing = false; return; }
+  const win = getLiveWindow();
+  if (!win) { _reparsing = false; clearTimeout(watchdog); return; }
   // Pinned save wins: user explicitly chose a specific file to follow.
   // Otherwise fall back to the newest .sav in the directory.
   const latestFile = activePinnedSave || findLatestSave(activeSaveDir);
@@ -8375,7 +8401,7 @@ async function reparseLatestSave() {
     try { logAppDiagnostics(runAppDiagnostics(buildLiveDiagInput(newData, latestFile))); }
     catch (e) { console.warn("[diag] live self-check failed:", e && e.message); }
     emitSaveProgress("Done", 100);
-    win.webContents.send("save-snapshot", { file: latestFile, data: newData });
+    safeSend("save-snapshot", { file: latestFile, data: newData });
     // Re-anchor live-log tracking to the moment of this save. Save state
     // is authoritative; the log is only useful for events that happened
     // AFTER this save was written. Anything older is either reflected in
@@ -8390,7 +8416,7 @@ async function reparseLatestSave() {
         const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
         if (fs.existsSync(ap)) logOffsetAI = fs.statSync(ap).size;
         clearPassengers();
-        win.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
+        safeSend("live-char-moves", { moves: [], deaths: [], reset: true });
       } catch {}
     }
     lastSaveData = newData;
@@ -8420,8 +8446,7 @@ const _yield = () => new Promise(resolve => setImmediate(resolve));
 // Emit a progress update to the renderer's loading banner. `stage` is a
 // short user-facing label; `pct` is 0..100 (integer or null).
 function emitSaveProgress(stage, pct) {
-  const win = BrowserWindow.getAllWindows()[0];
-  if (win) win.webContents.send("save-progress", { stage, pct });
+  safeSend("save-progress", { stage, pct });
 }
 
 ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {

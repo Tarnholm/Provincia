@@ -104,6 +104,18 @@ function CommanderPortraitImg({ charContext, culture, modDataDir, fallback, styl
 
 const PUBLIC_URL = import.meta.env.BASE_URL || "./";
 
+// 0.9.833: [building-edit-cap] diagnostics fire in the building-card RENDER, so
+// in a long live run (9h AI auto-run observed) they logged 72k+ lines — a major
+// contributor to renderer memory/IO pressure → OOM white screen. Throttle them
+// to ONCE per unique key so the diagnostic stays useful without flooding.
+function capLogOnce(key, msg) {
+  if (typeof window === "undefined") return;
+  window.__bldCapLogged = window.__bldCapLogged || new Set();
+  if (window.__bldCapLogged.has(key)) return;
+  window.__bldCapLogged.add(key);
+  console.log(msg);
+}
+
 // Religion colors for ethnicity bar (duplicated subset from App.js)
 const ETHNICITY_COLORS = {
   macedonian:[55,85,185], dorian:[80,120,200], ionian:[100,150,220],
@@ -2015,9 +2027,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       }
                     }}
                     title={`${fullName} · age ${c.age != null ? c.age : "?"}${statsStr}${status}\nRight-click to view traits`}
-                    style={{ padding: "1px 0", color: c.isDead ? "#c88" : "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: onShowInfo ? "context-menu" : "default" }}
+                    style={{ padding: "1px 0", color: c.isDead ? "#c88" : "#eee", display: "flex", alignItems: "center", gap: 3, overflow: "hidden", cursor: onShowInfo ? "context-menu" : "default" }}
                   >
-                    {sym ? sym + " " : ""}{fullName}
+                    {/* 0.9.833: leader/heir crown (and gender mark) sits in a
+                        fixed-width slot to the LEFT so the names stay aligned
+                        in the column whether or not a character has a marker. */}
+                    <span style={{ width: 12, flexShrink: 0, textAlign: "center" }}>{sym}</span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName}</span>
                   </div>
                 );
               })}
@@ -2481,10 +2497,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const showUpDisabled = devMode && upTargetLevel != null && upBlockedByTier;
               const canDown = devMode && chainIdx > 0;
               if (devMode && upBlockedByRequires) {
-                console.log(`[building-edit-cap] disabled up: ${b.type} ${b.level} → ${upTargetLevel} (requires clause excludes region)`);
+                capLogOnce(`up-req:${b.type}|${b.level}|${region}`, `[building-edit-cap] disabled up: ${b.type} ${b.level} → ${upTargetLevel} (requires clause excludes region)`);
               }
               if (showUpDisabled) {
-                console.log(`[building-edit-cap] disabled up: ${b.type} ${b.level} → ${upTargetLevel} (needs ${upDetail.requiredTier}, have ${currentCoreLevel || "none"})`);
+                capLogOnce(`up-tier:${b.type}|${b.level}|${region}`, `[building-edit-cap] disabled up: ${b.type} ${b.level} → ${upTargetLevel} (needs ${upDetail.requiredTier}, have ${currentCoreLevel || "none"})`);
               }
               // 0.9.473: tier-mismatch flag — current level's settlement_min
               // is higher than current settlement tier (user demolished core
@@ -2493,7 +2509,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               // proves enforcement is working.
               const mismatch = devMode ? tierMismatch(b.type, b.level) : null;
               if (mismatch) {
-                console.log(`[building-edit-cap] tier-mismatch flagged: ${b.type} ${b.level} (needs ${mismatch.requiredTier}, have ${mismatch.currentTier}) in region ${region}`);
+                capLogOnce(`mismatch:${b.type}|${b.level}|${region}`, `[building-edit-cap] tier-mismatch flagged: ${b.type} ${b.level} (needs ${mismatch.requiredTier}, have ${mismatch.currentTier}) in region ${region}`);
               }
               const isDragOver = dragOverBuildingIdx === b.idx;
               return (

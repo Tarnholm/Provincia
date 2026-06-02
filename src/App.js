@@ -16931,9 +16931,20 @@ function App() {
                               const kept = garrisonDecisions.filter((d) => d.inGarrison);
                               const dropped = garrisonDecisions.filter((d) => !d.inGarrison);
                               const droppedCmds = [...new Set(dropped.map((d) => d.cmd).filter(Boolean))];
-                              console.log(`[garrison] ${r.city || r.region}: ${rawFresh.length} region units → ${kept.length} garrison, ${dropped.length} routed to field armies` +
+                              const _gmsg = `[garrison] ${r.city || r.region}: ${rawFresh.length} region units → ${kept.length} garrison, ${dropped.length} routed to field armies` +
                                 `${droppedCmds.length ? ` (field cmds: ${droppedCmds.join(", ")})` : ""}` +
-                                ` | settlementTile=${settlementTile ? `${settlementTile.x},${settlementTile.y}` : "?"} cmdsAtSettlement=${cmdsAtSettlement.size} governorUuid=${governorUuid ? governorUuid.toString(16) : "none"}`);
+                                ` | settlementTile=${settlementTile ? `${settlementTile.x},${settlementTile.y}` : "?"} cmdsAtSettlement=${cmdsAtSettlement.size} governorUuid=${governorUuid ? governorUuid.toString(16) : "none"}`;
+                              // 0.9.833: this fires in the garrison-grouping RENDER; throttle
+                              // identical lines (same region+counts) so a long live run doesn't
+                              // re-log it every re-render (was 16k+ lines in a 9h AI run).
+                              if (typeof window !== "undefined") {
+                                window.__garrisonLogged = window.__garrisonLogged || new Set();
+                                if (!window.__garrisonLogged.has(_gmsg)) {
+                                  if (window.__garrisonLogged.size > 4000) window.__garrisonLogged.clear();
+                                  window.__garrisonLogged.add(_gmsg);
+                                  console.log(_gmsg);
+                                }
+                              }
                             } catch (e) { /* logging must never break render */ }
                           } else if (legacy) {
                             normalised = legacy.map((u) => ({

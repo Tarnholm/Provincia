@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.833",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Provincia no longer thrashes after the game crashes in live mode.** When the renderer dies (e.g. a long AI auto-run hits memory limits → white screen, or the game CTDs mid-save), the background save-watcher would keep re-parsing the save every file-change and firing IPC at the dead window — spamming \"Render frame was disposed\" errors and pinning the machine. It now detects a gone/crashed renderer and skips the work + sends instead." },
+      { type: "fix", text: "**Stopped two diagnostic log floods that bloated memory on long live runs.** `[building-edit-cap]` (building-card render) and `[garrison]` (region grouping) were logging on every re-render — 72k + 16k lines in one 9-hour session. They're now throttled to once per unique entry, which also keeps provincia.log readable." },
+      { type: "improvement", text: "**Faction leader/heir crowns now sit in a fixed slot to the left of character names**, so the names line up in a column whether or not a character has a crown." },
+    ],
+  },
+  {
     version: "0.9.832",
     date: "2026-06-02",
     items: [
