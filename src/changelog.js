@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.828",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Recruitment map mode now shows real numbers instead of None/Few/Many.** Hovering a region shows its exact unique-recruitable-unit count (e.g. \"7 unique units (max 12)\"), and the legend scale is labelled 0 → max." },
+      { type: "improvement", text: "**Map-mode category tabs sit even tighter together** (smaller gap + padding) to fit more per row." },
+    ],
+  },
+  {
     version: "0.9.827",
     date: "2026-06-02",
     items: [

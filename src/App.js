@@ -2291,6 +2291,11 @@ function App() {
   // section is open at a time. Transient UI state — not persisted. null = all
   // collapsed.
   const [openFanSection, setOpenFanSection] = useState(null);
+  // 0.9.828: Recruitment map mode exposes real numbers (was none/few/many).
+  // The coloring pass computes the per-region unique-recruit count anyway; we
+  // stash { max, byName } here so the hover readout and legend can show the
+  // actual counts. byName is keyed by lowercased region name.
+  const [recruitmentInfo, setRecruitmentInfo] = useState({ max: 0, byName: {} });
   // Collapse the open fan-out section when the user clicks anywhere outside
   // the map-modes pill. Only armed while a section is open.
   useEffect(() => {
@@ -7021,8 +7026,15 @@ function App() {
         };
         // Cache per-region count to keep the per-pixel pass cheap.
         const counts = new Map();
-        for (const [k, r] of Object.entries(regions)) counts.set(k, getCount(r));
+        const byName = {};
+        for (const [k, r] of Object.entries(regions)) {
+          const c = getCount(r);
+          counts.set(k, c);
+          if (r.region) byName[r.region.toLowerCase()] = c;
+        }
         const max = Math.max(1, ...counts.values());
+        // Expose real numbers to the hover readout + legend (0.9.828).
+        setRecruitmentInfo((prev) => (prev.max === max && prev.byName === byName ? prev : { max, byName }));
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           const k = `${pr},${pg},${pb}`;
           const c = counts.get(k) || 0;
@@ -10773,7 +10785,7 @@ function App() {
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
-        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 2, padding: "3px 4px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
+        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 1, padding: "3px 3px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {modeSections.map((sec) => {
             // `dev` members show only in dev mode; `live` members (e.g.
             // Explored, whose fog grid only exists in a loaded save) show only
@@ -10794,7 +10806,7 @@ function App() {
             // slate) so you can tell which group the member row below belongs to.
             const catStyle = {
               // 0.9.826: smaller + tighter so more category tabs fit per row.
-              padding: "2px 6px",
+              padding: "2px 5px",
               borderRadius: 6,
               border: `1px solid ${open ? "rgba(150,180,220,0.85)" : sectionActive ? "rgba(150,180,220,0.6)" : "rgba(150,180,220,0.32)"}`,
               background: open
@@ -12203,9 +12215,11 @@ function App() {
       return { label: "Wealth (est.)", value: `${total} (resources ${resSum}, farm ×${farm}, port ×${port})` };
     }
     if (colorMode === "recruitment") {
-      // No on-the-fly count — too expensive per hover. Just point to the
-      // recruitable list shown in the bottom region-info panel.
-      return { label: "Recruitment", value: "See bottom panel for details" };
+      // 0.9.828: show the actual unique-recruit count for this region (the
+      // coloring pass already computed it into recruitmentInfo.byName).
+      const c = info.region ? recruitmentInfo.byName[info.region.toLowerCase()] : undefined;
+      if (typeof c !== "number") return { label: "Recruitment", value: "—" };
+      return { label: "Recruitment", value: `${c} unique unit${c === 1 ? "" : "s"}${recruitmentInfo.max ? ` (max ${recruitmentInfo.max})` : ""}` };
     }
     if (colorMode === "garrison") {
       if (!saveArmiesData) return { label: "Garrison", value: "Live save required" };
@@ -12376,9 +12390,9 @@ function App() {
           {!legendCollapsed && <>
             <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(40,40,120), rgb(140,80,120), rgb(240,140,40))" }} />
             <div style={labelRow}>
-              <span>None</span><span>Few</span><span>Many</span>
+              <span>0</span><span>{Math.round((recruitmentInfo.max || 0) / 2)}</span><span>{recruitmentInfo.max || 0}</span>
             </div>
-            <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Unique unit count per region (turn-0 buildings).</div>
+            <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Unique recruitable unit count per region (turn-0 buildings). Hover a region for its exact count.</div>
           </>}
         </div>
       );
