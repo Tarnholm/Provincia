@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.829",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Removed the Garrison map mode** (the soldier-count heatmap) — garrison/army counts are still in the region panel and army lists." },
+      { type: "fix", text: "**Fixed the wide empty gap in the map-control bar** — the button pills were stretching to the full column width (translucent background bleeding past the buttons). They now shrink to fit their contents, so the category tabs and rows sit compactly at the top-left." },
+    ],
+  },
+  {
     version: "0.9.828",
     date: "2026-06-02",
     items: [

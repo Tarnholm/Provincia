@@ -1150,7 +1150,7 @@ function splitAorsByLayer(tags, cityName) {
   return { primary, secondary, all };
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "garrison", "happiness", "income", "public_order"]);
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "happiness", "income", "public_order"]);
 
 // Per-tile geography palette. Decoded from RTW's map_ground_types.tga whose
 // pixels carry one of ~14 fixed RGB values. The map_ground_types raw colors
@@ -2281,7 +2281,13 @@ function App() {
   const [groundTypesSize, setGroundTypesSize] = useState({ width: 0, height: 0 });
   const groundTypesLoadingRef = useRef(false);
   const [colorMode, setColorMode] = useState(
-    () => localStorage.getItem("colorMode") || "faction"
+    () => {
+      const saved = localStorage.getItem("colorMode");
+      // 0.9.829: "garrison" map mode was removed — fall back so a stale saved
+      // value doesn't leave the map stuck on a mode that no longer exists.
+      if (!saved || saved === "garrison") return "faction";
+      return saved;
+    }
   );
   // 0.9.813: Paradox-style fan-out for the single-select map-mode buttons.
   // Map modes are grouped into EU5-style sections (Geopolitics / Government /
@@ -7050,66 +7056,6 @@ function App() {
             Math.max(0, Math.min(255, blue + v)),
           ];
         }));
-      } else if (colorMode === "garrison") {
-        // Heatmap of garrison soldier counts per region. Sums all units
-        // currently bucketed under a region by the save parser
-        // (commander-less defenders + units whose commander sits on the
-        // settlement tile). saveArmiesData is the legacy flat map keyed
-        // by region and city — adequate for a coarse heatmap; the
-        // precise garrison vs field-army split is only available inside
-        // RegionInfo's per-region pipeline. No-data regions render as
-        // neutral gray.
-        const GREY = [70, 70, 70];
-        const sumSoldiers = (arr) => {
-          if (!Array.isArray(arr)) return 0;
-          let s = 0;
-          for (const u of arr) s += (u.soldiers || 0);
-          return s;
-        };
-        const garrisonByRgb = new Map();
-        let minV = Infinity, maxV = 0, withData = 0;
-        if (saveArmiesData) {
-          for (const [k, r] of Object.entries(regions)) {
-            const arr = saveArmiesData[r.region] || saveArmiesData[r.city];
-            const total = sumSoldiers(arr);
-            if (total > 0) {
-              garrisonByRgb.set(k, total);
-              if (total < minV) minV = total;
-              if (total > maxV) maxV = total;
-              withData++;
-            }
-          }
-        }
-        const hasAnyData = withData > 0;
-        if (!hasAnyData) minV = 0;
-        console.log(`[heatmap] mode garrison: range min=${minV} max=${maxV} (${withData} regions with data)`);
-        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          if (!hasAnyData) return GREY;
-          const k = `${pr},${pg},${pb}`;
-          const total = garrisonByRgb.get(k);
-          if (!total) return GREY;
-          const span = Math.max(1, maxV - minV);
-          const t = Math.min(1, Math.max(0, (total - minV) / span));
-          // Dark navy → muted teal → bright gold
-          let red, green, blue;
-          if (t < 0.5) {
-            const u = t * 2;
-            red   = Math.round(20 + u * (60 - 20));
-            green = Math.round(35 + u * (150 - 35));
-            blue  = Math.round(90 + u * (140 - 90));
-          } else {
-            const u = (t - 0.5) * 2;
-            red   = Math.round(60 + u * (240 - 60));
-            green = Math.round(150 + u * (200 - 150));
-            blue  = Math.round(140 + u * (40 - 140));
-          }
-          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
-          return [
-            Math.max(0, Math.min(255, red + v)),
-            Math.max(0, Math.min(255, green + v)),
-            Math.max(0, Math.min(255, blue + v)),
-          ];
-        }));
       } else if (colorMode === "happiness" || colorMode === "public_order") {
         // Happiness and public order are red→yellow→green gradients over
         // saveHappinessByCity (f32 at settlement.offset-30, raw 100..200
@@ -10741,7 +10687,6 @@ function App() {
       ]},
       { id: "military", title: "Military", members: [
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
-        { key: "garrison", label: "Garrison", badge: "devmode.garrison", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
         { key: "aor", label: "AOR", badge: "devmode.aor", dev: true },
       ]},
@@ -10783,7 +10728,7 @@ function App() {
     const isMemberActive = (m) => m.key === "paint" ? paintMode : colorMode === m.key;
 
     return (
-      <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
+      <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
         <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 1, padding: "3px 3px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {modeSections.map((sec) => {
@@ -12221,14 +12166,6 @@ function App() {
       if (typeof c !== "number") return { label: "Recruitment", value: "—" };
       return { label: "Recruitment", value: `${c} unique unit${c === 1 ? "" : "s"}${recruitmentInfo.max ? ` (max ${recruitmentInfo.max})` : ""}` };
     }
-    if (colorMode === "garrison") {
-      if (!saveArmiesData) return { label: "Garrison", value: "Live save required" };
-      const arr = saveArmiesData[info.region] || saveArmiesData[info.city];
-      if (!Array.isArray(arr) || arr.length === 0) return { label: "Garrison", value: "None" };
-      let total = 0;
-      for (const u of arr) total += (u.soldiers || 0);
-      return { label: "Garrison", value: `${total.toLocaleString()} soldiers` };
-    }
     if (colorMode === "happiness") {
       if (!saveHappinessByCity) return { label: "Happiness", value: "Live save required" };
       const v = saveHappinessByCity[info.city];
@@ -12393,45 +12330,6 @@ function App() {
               <span>0</span><span>{Math.round((recruitmentInfo.max || 0) / 2)}</span><span>{recruitmentInfo.max || 0}</span>
             </div>
             <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Unique recruitable unit count per region (turn-0 buildings). Hover a region for its exact count.</div>
-          </>}
-        </div>
-      );
-    }
-    if (colorMode === "garrison") {
-      const sumSoldiers = (arr) => {
-        if (!Array.isArray(arr)) return 0;
-        let s = 0;
-        for (const u of arr) s += (u.soldiers || 0);
-        return s;
-      };
-      const vals = [];
-      if (saveArmiesData) {
-        for (const r of Object.values(regions)) {
-          const t = sumSoldiers(saveArmiesData[r.region] || saveArmiesData[r.city]);
-          if (t > 0) vals.push(t);
-        }
-      }
-      const hasData = vals.length > 0;
-      const minV = hasData ? Math.min(...vals) : 0;
-      const maxV = hasData ? Math.max(...vals) : 0;
-      const midV = hasData ? Math.round((minV + maxV) / 2) : 0;
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Garrison <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            {hasData ? <>
-              <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(20,35,90), rgb(60,150,140), rgb(240,200,40))" }} />
-              <div style={labelRow}>
-                <span>{minV.toLocaleString()}</span>
-                <span>{midV.toLocaleString()}</span>
-                <span>{maxV.toLocaleString()}</span>
-              </div>
-              <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Soldiers in regional garrison (live save).</div>
-            </> : (
-              <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
-                Heatmap requires a live save game.
-              </div>
-            )}
           </>}
         </div>
       );
@@ -14827,7 +14725,7 @@ function App() {
           ["aor", "Areas of Recruitment"], ["terrain", "Terrain"], ["climate", "Climate"],
           ["port_level", "Port Level"], ["irrigation", "Irrigation"], ["earthquakes", "Earthquakes"],
           ["rivertrade", "River Trade"], ["hidden_resource", "Hidden Resource"],
-          ["garrison", "Garrison"], ["happiness", "Happiness"], ["income", "Income"],
+          ["happiness", "Happiness"], ["income", "Income"],
           ["public_order", "Public Order"], ["loyalist", "Loyalist"],
         ];
         for (const [m, label] of MODES) {
