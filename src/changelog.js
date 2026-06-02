@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.841",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**The Overlays tab is now teal-green** (the map-mode category tabs stay slate-blue), so it's clear at a glance that overlays aren't map modes. The expanded overlays tray border matches." },
+    ],
+  },
+  {
     version: "0.9.840",
     date: "2026-06-02",
     items: [

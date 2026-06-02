@@ -10813,18 +10813,23 @@ function App() {
     // The slate uppercase "category tab" look, shared by the color-mode
     // section tabs and the OVERLAYS tab. `open` = this tab's fan is expanded;
     // `sectionActive` = this tab has an active mode/overlay (brighter border).
-    const makeCatStyle = (open, sectionActive) => ({
+    // 0.9.841: category-tab colour schemes. Map-mode groups are SLATE-BLUE;
+    // the OVERLAYS group is TEAL-GREEN so the user can see at a glance that
+    // overlays aren't map modes.
+    const CAT_SCHEME = {
+      modes:    { border: "150,180,220", open: "rgba(120,152,198,0.5) 0%, rgba(86,116,162,0.5) 100%",  dim: "rgba(108,138,182,0.26) 0%, rgba(80,108,150,0.2) 100%",  text: "#dce6f5", shadow: "86,116,162" },
+      overlays: { border: "120,205,160", open: "rgba(86,176,132,0.5) 0%, rgba(54,134,98,0.5) 100%",    dim: "rgba(80,160,120,0.26) 0%, rgba(52,120,90,0.2) 100%",   text: "#d6f2e2", shadow: "54,134,98" },
+    };
+    const makeCatStyle = (open, sectionActive, scheme = CAT_SCHEME.modes) => ({
       // 0.9.826: smaller + tighter so more category tabs fit per row.
       // 0.9.830: margin:0 cancels the global button{margin:5px} that was
       // forcing the tabs ~10px apart regardless of the pill's gap.
       margin: 0,
       padding: "2px 5px",
       borderRadius: 6,
-      border: `1px solid ${open ? "rgba(150,180,220,0.85)" : sectionActive ? "rgba(150,180,220,0.6)" : "rgba(150,180,220,0.32)"}`,
-      background: open
-        ? "linear-gradient(180deg, rgba(120,152,198,0.5) 0%, rgba(86,116,162,0.5) 100%)"
-        : "linear-gradient(180deg, rgba(108,138,182,0.26) 0%, rgba(80,108,150,0.2) 100%)",
-      color: "#dce6f5",
+      border: `1px solid rgba(${scheme.border},${open ? "0.85" : sectionActive ? "0.6" : "0.32"})`,
+      background: `linear-gradient(180deg, ${open ? scheme.open : scheme.dim})`,
+      color: scheme.text,
       fontWeight: 700,
       fontSize: "0.58rem",
       letterSpacing: "0.02em",
@@ -10835,7 +10840,7 @@ function App() {
       display: "inline-flex",
       alignItems: "center",
       gap: 3,
-      boxShadow: open ? "0 2px 8px rgba(86,116,162,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
+      boxShadow: open ? `0 2px 8px rgba(${scheme.shadow},0.4)` : "0 1px 3px rgba(0,0,0,0.2)",
     });
 
     return (
@@ -10886,7 +10891,7 @@ function App() {
             return (
               <button key="overlays" onClick={() => setOpenFanSection(open ? null : "overlays")}
                 title={open ? "Collapse Overlays" : "Overlays — display toggles (Flat, Grid, Borders, …). Click to expand."}
-                style={makeCatStyle(open, overlaysActive)}>
+                style={makeCatStyle(open, overlaysActive, CAT_SCHEME.overlays)}>
                 OVERLAYS
                 {!open && overlaysActiveCount > 0 && (
                   <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)", borderRadius: 4, padding: "0 5px" }}>{overlaysActiveCount}</span>
@@ -10903,8 +10908,10 @@ function App() {
           // 0.9.840: the OVERLAYS tab renders the display toggles in this same
           // slate tray; the color-mode sections render their members as before.
           if (openFanSection === "overlays") {
+            // 0.9.841: teal-green tray border to match the OVERLAYS tab (so the
+            // overlays group reads as distinct from the slate map-mode trays).
             return (
-              <div data-mapmodes-zone style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280), border: "1px solid rgba(150,180,220,0.45)" }}>
+              <div data-mapmodes-zone style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280), border: "1px solid rgba(120,205,160,0.5)" }}>
                 {renderOverlayToggles()}
               </div>
             );
