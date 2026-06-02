@@ -3884,6 +3884,42 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
       }
       fs.writeFileSync(lookupPath, lkLines.join(lkEol), "utf8");
     }
+    // 0.9.869: register minted names in the faction's CULTURE NAMELIST
+    // (descr_namelists.txt). RTW validates every descr_strat character name
+    // against the faction's men/women namelist — a minted token (e.g.
+    // "PhilocharisA") that lives only in names.txt + descr_names_lookup.txt but
+    // NOT here makes the campaign fail to start. Group minted tokens by gender.
+    if (res.namesAppend.length) {
+      try {
+        const smP = path.join(activeModDataDir, "descr_sm_factions.txt");
+        const nlP = path.join(activeModDataDir, "descr_namelists.txt");
+        if (fs.existsSync(smP) && fs.existsSync(nlP)) {
+          const facNl = (descrGen.parseSmFactionNamelists(fs.readFileSync(smP, "utf8"))[selection.factionName]) || {};
+          const menToks = res.namesAppend.filter((n) => n.gender === "male").map((n) => n.token);
+          const womenToks = res.namesAppend.filter((n) => n.gender === "female").map((n) => n.token);
+          let nlRaw = fs.readFileSync(nlP, "utf8");
+          const nlEol = nlRaw.includes("\r\n") ? "\r\n" : "\n";
+          let changed = false;
+          if (facNl.men && menToks.length) {
+            const upd = descrGen.insertNamelistTokens(nlRaw, facNl.men, menToks, nlEol);
+            if (upd) { nlRaw = upd; changed = true; }
+          }
+          if (facNl.women && womenToks.length) {
+            const upd = descrGen.insertNamelistTokens(nlRaw, facNl.women, womenToks, nlEol);
+            if (upd) { nlRaw = upd; changed = true; }
+          }
+          if (changed) {
+            fs.copyFileSync(nlP, nlP + "." + stamp + ".bak");
+            fs.writeFileSync(nlP, nlRaw, "utf8");
+            console.log(`[addgen] registered minted names in descr_namelists.txt — ${menToks.length} male (${facNl.men}), ${womenToks.length} female (${facNl.women})`);
+          } else {
+            console.warn(`[addgen] descr_namelists NOT updated for ${selection.factionName} (men=${facNl.men} women=${facNl.women}); minted names: ${res.namesAppend.map((n) => n.token + ":" + n.gender).join(", ")} — campaign may reject them`);
+          }
+        } else {
+          console.warn("[addgen] descr_sm_factions.txt / descr_namelists.txt missing — cannot register minted names in the namelist (RTW may reject the new character)");
+        }
+      } catch (nlErr) { console.warn("[addgen] namelist registration failed:", nlErr && nlErr.message); }
+    }
     // Re-parse the mod's descr_strat so the new general shows in the Characters
     // view + Family Tree immediately (these read cached parses).
     try { loadModCharacterData(activeModDataDir); console.log("[addgen] re-parsed mod character data after write"); }

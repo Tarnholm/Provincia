@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.869",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Add General no longer breaks the campaign.** When the tool minted a new name token (e.g. \"PhilocharisA\") it was added to names.txt + descr_names_lookup.txt but NOT to the faction's culture namelist (descr_namelists.txt) — and RTW validates every character name against that namelist, so the campaign refused to start. Add General now also registers each minted name in the faction's men/women namelist (looked up via descr_sm_factions.txt), and backs the file up first. Existing characters' names are unaffected." },
+    ],
+  },
+  {
     version: "0.9.868",
     date: "2026-06-02",
     items: [

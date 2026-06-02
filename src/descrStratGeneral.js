@@ -216,6 +216,26 @@ function parseNamelistPools(text) {
   return out;
 }
 
+// 0.9.869: insert name tokens into a descr_namelists.txt pool's `names` array.
+// RTW validates EVERY descr_strat character name against the faction's culture
+// namelist; a minted token that's only in names.txt + descr_names_lookup.txt
+// (but not here) breaks campaign start. Inserts right after the pool's `[`,
+// matching the file's `\t\t\t"Name",` style. Skips tokens already present.
+// Returns the modified raw text, or null if the pool isn't found / nothing to do.
+function insertNamelistTokens(raw, poolName, tokens, eol = "\r\n") {
+  if (!raw || !poolName || !Array.isArray(tokens) || !tokens.length) return null;
+  const esc = poolName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`("${esc}"\\s*:\\s*\\{\\s*"names"\\s*:\\s*\\[)([\\s\\S]*?)\\]`, "m");
+  const m = re.exec(raw);
+  if (!m) return null;
+  const existing = new Set((m[2].match(/"([^"]+)"/g) || []).map((s) => s.slice(1, -1)));
+  const add = tokens.filter((t) => t && !existing.has(t));
+  if (!add.length) return null;
+  const insertAt = m.index + m[1].length; // right after the opening '['
+  const block = add.map((t) => `${eol}\t\t\t"${t}",`).join("");
+  return raw.slice(0, insertAt) + block + raw.slice(insertAt);
+}
+
 // Per-faction display-name pools for the UI, classified by gender + family.
 // `extra` (optional) carries the faction's LIVE culture namelist tokens
 // ({ men:[…], women:[…] }) so names registered in descr_namelists.txt that no
@@ -304,11 +324,19 @@ function composeAddGeneral(parsed, names, selection) {
   const generalUnit = selection.generalUnit || fac.generalUnit || "roman general";
   const used = new Set([...fac.usedFirstTokens, ...fac.usedFamilyTokens, ...fac.usedFullKeys]);
   const namesAppend = [], lookupAppend = [];
-  const take = (display, opts) => {
+  const take = (display, opts = {}) => {
     const r = resolveFreeToken(display, names, used, opts);
     if (!r) throw new Error(`no free token for "${display}"`);
     used.add(r.token);
-    if (r.mint) { namesAppend.push({ token: r.token, display: r.display }); lookupAppend.push(r.token); }
+    if (r.mint) {
+      // 0.9.869: tag gender so the writer can register a minted token in the
+      // RIGHT culture namelist (men vs women) in descr_namelists.txt — RTW
+      // validates every descr_strat character name against the faction's
+      // namelist, so a minted token missing from it breaks campaign start.
+      const gender = opts.female ? "female" : (opts.family ? null : "male");
+      namesAppend.push({ token: r.token, display: r.display, gender });
+      lookupAppend.push(r.token);
+    }
     return r.token;
   };
 
@@ -519,7 +547,7 @@ function diploLine(kind, from, to, value) {
 
 module.exports = {
   parseNamesTxt, parseLookup, parseDescrStrat, buildPools, findDuplicateNames,
-  parseSmFactionNamelists, parseNamelistPools,
+  parseSmFactionNamelists, parseNamelistPools, insertNamelistTokens,
   resolveFreeToken, composeAddGeneral, isFamilyToken,
   buildSettlementCoordIndex, resolveSettlement,
   parseDescrRegions, buildRegionCoords, factionOwnedSettlements,
