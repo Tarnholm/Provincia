@@ -1425,7 +1425,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           w=0.1991. Row anchors are y=0.0056 / 0.3148 / 0.4573 with a
           common GAP_FRAC≈0.0035 between rows. */}
       <Movable id="region.info" title="Region info" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.5720, y: 0.0083, w: 0.2090, h: 0.2600 }}>
+        defaultPct={{ x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3400 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={{ padding: "8px 14px", overflow: "auto", height: "100%", boxSizing: "border-box" }}>
         {region && (
@@ -1951,7 +1951,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <Movable id="region.characters" title="Characters" designMode={designMode} colBox={colBox}
         posOverride={addGenOpen ? { y: 0.4400, h: 0.3130 } : null}
         zIndex={addGenOpen ? 6 : 2}
-        defaultPct={{ x: 0.5720, y: 0.4760, w: 0.2090, h: 0.2500 }}>
+        defaultPct={{ x: 0.5720, y: 0.5550, w: 0.2090, h: 0.1720 }}>
       <div className={panelInnerClass} style={addGenOpen ? { ...panelInner, background: "#181b21" } : panelInner}>
         <div style={widgetHeader}>
           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
@@ -2052,7 +2052,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           and a diplomacy summary (war/ally counts). Data decoded from the
           save via the cracked faction_id + treasury + diplomacy records. */}
       <Movable id="region.diplomacy" title="Diplomacy & Treasury" designMode={designMode} colBox={colBox}
-        defaultPct={{ x: 0.5720, y: 0.2770, w: 0.2090, h: 0.1500 }}>
+        defaultPct={{ x: 0.5720, y: 0.3560, w: 0.2090, h: 0.1900 }}>
       <div className={panelInnerClass} style={panelInner}
         title={(devMode && ownerFactionId) ? "Right-click to inspect raw diplomacy data" : undefined}
         onContextMenu={(devMode && ownerFactionId && (diplomacyMatrix || (factionState && !factionState.noData))) ? (e) => { e.preventDefault(); e.stopPropagation(); setDiploRawOpen((v) => !v); } : undefined}>

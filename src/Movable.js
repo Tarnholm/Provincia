@@ -133,7 +133,7 @@ export function saveWidgetPos(id, pos) {
 // selected provinces etc got moved." Keep 14 to stop further forced
 // migrations; the new bottom.selected default still applies for users
 // whose saved position is missing, but customised layouts are left alone.
-const LAYOUT_VERSION = 25;
+const LAYOUT_VERSION = 26;
 // Canonical v5: snapped to the user's hand-tuned 2026-05-16 layout +
 // uniform vertical/horizontal pixel-spacing (~13 px both directions on a
 // 1920×1080 viewport). Includes all bottom-strip widgets and the seven
@@ -148,10 +148,14 @@ const CANONICAL_V4 = {
   // war/ally lists + treasury + wealth sparkline), so region.characters and
   // region.buildings moved DOWN; region.buildings shrunk to just fit the fixed
   // 5×4 = 20 building grid, freeing the reclaimed vertical space for diplomacy.
-  "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.2600 },
+  // 0.9.834 (LAYOUT_VERSION 26): region.info grows (+0.08) to take the space
+  // freed by shrinking region.characters to ~10 rows; diplomacy shifts down to
+  // keep the ~8px gaps even. Stack stays: info → diplomacy → characters →
+  // buildings, all x=0.5720 w=0.2090.
+  "region.info":        { x: 0.5720, y: 0.0083, w: 0.2090, h: 0.3400 },
   "region.recruit":     { x: 0.7857, y: 0.0083, w: 0.2090, h: 0.3287 },
-  "region.diplomacy":   { x: 0.5720, y: 0.2770, w: 0.2090, h: 0.1900 },
-  "region.characters":  { x: 0.5720, y: 0.4760, w: 0.2090, h: 0.2500 },
+  "region.diplomacy":   { x: 0.5720, y: 0.3560, w: 0.2090, h: 0.1900 },
+  "region.characters":  { x: 0.5720, y: 0.5550, w: 0.2090, h: 0.1720 },
   "region.unitQueue":   { x: 0.7857, y: 0.3453, w: 0.1021, h: 0.1550 },
   "region.queue":       { x: 0.8925, y: 0.3453, w: 0.1022, h: 0.1550 },
   "region.buildings":   { x: 0.5720, y: 0.7350, w: 0.2090, h: 0.2540 },

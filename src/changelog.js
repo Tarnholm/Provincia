@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.834",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Region panel layout: the Characters section is now sized for ~10 rows and the reclaimed space goes to the Region info panel** (which grew). The Characters list scrolls if a faction has more than that. (Resets the right-column default layout — drag any panel to re-tune.)" },
+    ],
+  },
+  {
     version: "0.9.833",
     date: "2026-06-02",
     items: [
