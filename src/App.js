@@ -11528,18 +11528,17 @@ function App() {
               slot so the other letters don't shift. */}
           <button className="map-mode-btn" onClick={() => setShowSettlementTier(prev => !prev)}
             style={{ ...btnStyle(showSettlementTier), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.settlements" />Settlements</button>
-          {/* 0.9.818: Terrain + Inspect merged into one multi-state button
-              (like Labels). Cycle: off → Terrain → Inspect → Both → off, so
-              you can still have both on at once. */}
+          {/* 0.9.839: Terrain is a simple toggle again — it turns the terrain
+              tint AND the hover-inspect tooltip on together (inspect is now the
+              default behaviour for Terrain). The old off→Terrain→Inspect→Both
+              cycle and the separate "Both" state are gone. */}
           <button className="map-mode-btn" onClick={() => {
-              const g = showGeographyOverlay, i = showTileInspect;
-              if (!g && !i) { setShowGeographyOverlay(true); setShowTileInspect(false); }      // → Terrain
-              else if (g && !i) { setShowGeographyOverlay(false); setShowTileInspect(true); }  // → Inspect
-              else if (!g && i) { setShowGeographyOverlay(true); setShowTileInspect(true); }   // → Both
-              else { setShowGeographyOverlay(false); setShowTileInspect(false); }              // → off
+              const on = showGeographyOverlay || showTileInspect;
+              setShowGeographyOverlay(!on);
+              setShowTileInspect(!on);
             }}
-            title="Cycle: Terrain tint → Inspect tooltip → Both → off. Terrain tints land tiles by ground type; Inspect shows a hover tooltip with the tile's region, owner, and terrain type."
-            style={{ ...btnStyle(showGeographyOverlay || showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.terrain" />{showGeographyOverlay && showTileInspect ? "Terr+Insp" : showTileInspect ? "Inspect" : "Terrain"}</button>
+            title="Terrain: tint land tiles by ground type AND show a hover tooltip with the tile's region, owner, and terrain type. Click to toggle both."
+            style={{ ...btnStyle(showGeographyOverlay || showTileInspect), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.terrain" />Terrain</button>
           <button className="map-mode-btn" onClick={() => setShowHeightsOverlay(prev => !prev)}
             title="Hillshaded relief — fake NW light source over the mod's map_heights.tga. Mountains gain shadows, plains stay flat. Soft-light blend so it shades whatever map mode is active without replacing the colours."
             style={{ ...btnStyle(showHeightsOverlay), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.heights" />Heights</button>

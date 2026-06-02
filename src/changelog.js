@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.839",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Terrain is a simple toggle again and now includes hover-inspect by default.** Turning Terrain on tints the land by ground type AND shows the hover tooltip (region/owner/terrain) together; turning it off hides both. The previous off → Terrain → Inspect → Both cycle (and the separate \"Terr+Insp\" state) is gone." },
+    ],
+  },
+  {
     version: "0.9.838",
     date: "2026-06-02",
     items: [
