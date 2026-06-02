@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.842",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**The window no longer grows a little wider on every (auto-update) relaunch.** A few-pixel measurement drift in the content-size round-trip was being persisted each launch, so with frequent updates the window crept larger. It now re-saves the exact restored size unless you actually resize the window yourself." },
+    ],
+  },
+  {
     version: "0.9.841",
     date: "2026-06-02",
     items: [

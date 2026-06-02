@@ -2378,7 +2378,7 @@ function readSavedWindowState() {
   }
 }
 
-function saveWindowState(win) {
+function saveWindowState(win, sizeOverride) {
   if (!win || win.isDestroyed()) return;
   try {
     const maximized = win.isMaximized();
@@ -2393,6 +2393,15 @@ function saveWindowState(win) {
     let width = bounds.width, height = bounds.height;
     if (!maximized) {
       try { const cb = win.getContentBounds(); width = cb.width; height = cb.height; } catch {}
+    }
+    // 0.9.842: getContentBounds() still drifts a few px per launch on Windows
+    // (setContentSize → getContentBounds round-trip), so with frequent auto-
+    // update relaunches the window crept wider every time. When the user did
+    // NOT manually resize this session, re-persist the EXACT size we restored
+    // (sizeOverride) instead of the drifted measurement, breaking the creep.
+    if (sizeOverride && !maximized && typeof sizeOverride.width === "number" && typeof sizeOverride.height === "number") {
+      width = sizeOverride.width;
+      height = sizeOverride.height;
     }
     const state = {
       x: bounds.x, y: bounds.y, width, height,
@@ -2444,17 +2453,26 @@ function createWindow() {
   // happen while the user is dragging without thrashing the disk. close
   // also writes — that's the authoritative final state.
   let saveTimer = null;
-  const scheduleSave = () => {
+  // 0.9.842: distinguish a genuine USER resize from the programmatic restore +
+  // its measurement drift. While `userResized` is false we keep persisting the
+  // EXACT size we restored (saved), so the window can't creep wider each auto-
+  // update relaunch. Resize events in the first 1.5s are the restore settling
+  // and don't count. A real user resize/maximize after that drops the override.
+  let userResized = false;
+  let settled = false;
+  setTimeout(() => { settled = true; }, 1500);
+  const scheduleSave = (fromResize) => {
+    if (fromResize && settled) userResized = true;
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => { saveWindowState(win); saveTimer = null; }, 500);
+    saveTimer = setTimeout(() => { saveWindowState(win, userResized ? null : saved); saveTimer = null; }, 500);
   };
-  win.on("move", scheduleSave);
-  win.on("resize", scheduleSave);
-  win.on("maximize", scheduleSave);
-  win.on("unmaximize", scheduleSave);
+  win.on("move", () => scheduleSave(false));
+  win.on("resize", () => scheduleSave(true));
+  win.on("maximize", () => { userResized = true; scheduleSave(false); });
+  win.on("unmaximize", () => { userResized = true; scheduleSave(false); });
   win.on("close", () => {
     if (saveTimer) clearTimeout(saveTimer);
-    saveWindowState(win);
+    saveWindowState(win, userResized ? null : saved);
   });
 
   if (useDevServer) {
