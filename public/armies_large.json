@@ -69,87 +69,69 @@
         "weapon": 0
       },
       {
-        "name": "roman leves",
+        "name": "roman equites early",
         "exp": 0,
-        "armour": 1,
+        "armour": 0,
         "weapon": 0
       },
       {
-        "name": "roman leves",
+        "name": "roman equites early",
         "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 1,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 1,
+        "armour": 0,
         "weapon": 0
       },
       {
         "name": "roman triarii early",
         "exp": 0,
-        "armour": 1,
+        "armour": 0,
         "weapon": 0
       },
       {
-        "name": "roman triarii early",
+        "name": "roman principes early",
         "exp": 0,
-        "armour": 1,
+        "armour": 0,
         "weapon": 0
       },
       {
-        "name": "roman triarii early",
+        "name": "roman principes early",
         "exp": 0,
-        "armour": 1,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman rorarii",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman rorarii",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman leves",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman leves",
+        "exp": 0,
+        "armour": 0,
         "weapon": 0
       }
     ]
@@ -371,18 +353,6 @@
       },
       {
         "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -1932,37 +1902,7 @@
         "weapon": 0
       },
       {
-        "name": "roman triarii early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
         "name": "roman principes early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -1987,30 +1927,6 @@
       },
       {
         "name": "aor italiote epibatai",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "aor italiote epibatai",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "aor italiote epibatai",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -2219,6 +2135,12 @@
       },
       {
         "name": "aor oscan javelinmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor oscan light cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0

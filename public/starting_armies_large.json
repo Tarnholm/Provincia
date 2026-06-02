@@ -155,7 +155,8 @@
     }
   },
   "Xiongnu_Region": {
-    "garrison": [
+    "garrison": [],
+    "field": [
       {
         "character": "Biggus Dickus",
         "faction": "dummies",
@@ -204,7 +205,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 998,
       "y": 4
@@ -27315,37 +27315,7 @@
             "weapon": 0
           },
           {
-            "name": "roman triarii early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
             "name": "roman principes early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -27370,30 +27340,6 @@
           },
           {
             "name": "aor italiote epibatai",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor italiote epibatai",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "aor italiote epibatai",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman leves",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman leves",
             "exp": 0,
             "armour": 0,
             "weapon": 0
@@ -29224,7 +29170,9 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "Philochoros",
         "faction": "athens",
@@ -29351,7 +29299,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 411,
       "y": 350
@@ -47835,6 +47782,12 @@
             "exp": 0,
             "armour": 0,
             "weapon": 0
+          },
+          {
+            "name": "aor oscan light cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
           }
         ],
         "age": 39,
@@ -48956,6 +48909,115 @@
   "Taras": {
     "garrison": [
       {
+        "character": "Milon",
+        "faction": "taras",
+        "x": 336,
+        "y": 384,
+        "units": [
+          {
+            "name": "greek general",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "italiote hoplites",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "italiote hoplites",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "italiote epibatai",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek slingers",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "xystophoroi",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "prodromoi",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 53,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingEpirote",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Corrupt",
+            "level": 1
+          },
+          {
+            "name": "NaturalEnergy",
+            "level": 2
+          },
+          {
+            "name": "NaturalIntelligence",
+            "level": 1
+          },
+          {
+            "name": "NaturalCharisma",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          },
+          {
+            "name": "GoodAttacker",
+            "level": 1
+          },
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "LoyaltyLevel",
+            "level": 3
+          },
+          {
+            "name": "FasterCharacters",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 5
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
         "character": "Aulus Gabinius",
         "faction": "romans_julii",
         "x": 337,
@@ -49094,116 +49156,8 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      },
-      {
-        "character": "Milon",
-        "faction": "taras",
-        "x": 336,
-        "y": 384,
-        "units": [
-          {
-            "name": "greek general",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "italiote hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "italiote hoplites",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "italiote epibatai",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "greek slingers",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "xystophoroi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "prodromoi",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 53,
-        "tags": [
-          "leader",
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingEpirote",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Corrupt",
-            "level": 1
-          },
-          {
-            "name": "NaturalEnergy",
-            "level": 2
-          },
-          {
-            "name": "NaturalIntelligence",
-            "level": 1
-          },
-          {
-            "name": "NaturalCharisma",
-            "level": 1
-          },
-          {
-            "name": "Drink",
-            "level": 1
-          },
-          {
-            "name": "GoodAttacker",
-            "level": 1
-          },
-          {
-            "name": "GoodCommander",
-            "level": 1
-          },
-          {
-            "name": "LoyaltyLevel",
-            "level": 3
-          },
-          {
-            "name": "FasterCharacters",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 5
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 336,
       "y": 384
@@ -60171,87 +60125,69 @@
             "weapon": 0
           },
           {
-            "name": "roman leves",
+            "name": "roman equites early",
             "exp": 0,
-            "armour": 1,
+            "armour": 0,
             "weapon": 0
           },
           {
-            "name": "roman leves",
+            "name": "roman equites early",
             "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman leves",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman leves",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman hastati early",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 1,
-            "weapon": 0
-          },
-          {
-            "name": "roman principes early",
-            "exp": 0,
-            "armour": 1,
+            "armour": 0,
             "weapon": 0
           },
           {
             "name": "roman triarii early",
             "exp": 0,
-            "armour": 1,
+            "armour": 0,
             "weapon": 0
           },
           {
-            "name": "roman triarii early",
+            "name": "roman principes early",
             "exp": 0,
-            "armour": 1,
+            "armour": 0,
             "weapon": 0
           },
           {
-            "name": "roman triarii early",
+            "name": "roman principes early",
             "exp": 0,
-            "armour": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati early",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati early",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman rorarii",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman rorarii",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman leves",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman leves",
+            "exp": 0,
+            "armour": 0,
             "weapon": 0
           }
         ],
@@ -71712,18 +71648,6 @@
             "exp": 0,
             "armour": 0,
             "weapon": 0
-          },
-          {
-            "name": "roman leves",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "roman leves",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
           }
         ],
         "age": 43,
@@ -72060,6 +71984,108 @@
   "Naissitania": {
     "garrison": [
       {
+        "character": "Morkon",
+        "faction": "slave",
+        "x": 384,
+        "y": 427,
+        "units": [
+          {
+            "name": "illyrian warlords bodyguard",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "illyrian warband",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 29,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "BeingDelmato_Pannonian",
+            "level": 1
+          },
+          {
+            "name": "ReligionAssigned",
+            "level": 1
+          },
+          {
+            "name": "Dardanoi",
+            "level": 1
+          },
+          {
+            "name": "TribalAssigned",
+            "level": 1
+          },
+          {
+            "name": "Supplies",
+            "level": 7
+          },
+          {
+            "name": "GeneralExperience",
+            "level": 3
+          },
+          {
+            "name": "HaleAndHearty",
+            "level": 2
+          },
+          {
+            "name": "Handsome",
+            "level": 3
+          },
+          {
+            "name": "Girls",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 2
+          },
+          {
+            "name": "GoodSiegeAttacker",
+            "level": 2
+          },
+          {
+            "name": "GoodAmbusher",
+            "level": 1
+          },
+          {
+            "name": "GoodRiskyAttacker",
+            "level": 2
+          },
+          {
+            "name": "Lewd",
+            "level": 1
+          },
+          {
+            "name": "HatesArdiaei",
+            "level": 1
+          },
+          {
+            "name": "Untouchable",
+            "level": 1
+          },
+          {
+            "name": "Immovable",
+            "level": 1
+          },
+          {
+            "name": "TurnsAlive",
+            "level": 2
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
         "character": "Times",
         "faction": "dardania",
         "x": 385,
@@ -72166,109 +72192,8 @@
           "master_smith"
         ],
         "charType": "general"
-      },
-      {
-        "character": "Morkon",
-        "faction": "slave",
-        "x": 384,
-        "y": 427,
-        "units": [
-          {
-            "name": "illyrian warlords bodyguard",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "illyrian warband",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 29,
-        "tags": [
-          "named"
-        ],
-        "traits": [
-          {
-            "name": "BeingDelmato_Pannonian",
-            "level": 1
-          },
-          {
-            "name": "ReligionAssigned",
-            "level": 1
-          },
-          {
-            "name": "Dardanoi",
-            "level": 1
-          },
-          {
-            "name": "TribalAssigned",
-            "level": 1
-          },
-          {
-            "name": "Supplies",
-            "level": 7
-          },
-          {
-            "name": "GeneralExperience",
-            "level": 3
-          },
-          {
-            "name": "HaleAndHearty",
-            "level": 2
-          },
-          {
-            "name": "Handsome",
-            "level": 3
-          },
-          {
-            "name": "Girls",
-            "level": 1
-          },
-          {
-            "name": "Energetic",
-            "level": 2
-          },
-          {
-            "name": "GoodSiegeAttacker",
-            "level": 2
-          },
-          {
-            "name": "GoodAmbusher",
-            "level": 1
-          },
-          {
-            "name": "GoodRiskyAttacker",
-            "level": 2
-          },
-          {
-            "name": "Lewd",
-            "level": 1
-          },
-          {
-            "name": "HatesArdiaei",
-            "level": 1
-          },
-          {
-            "name": "Untouchable",
-            "level": 1
-          },
-          {
-            "name": "Immovable",
-            "level": 1
-          },
-          {
-            "name": "TurnsAlive",
-            "level": 2
-          }
-        ],
-        "ancillaries": [],
-        "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 384,
       "y": 427

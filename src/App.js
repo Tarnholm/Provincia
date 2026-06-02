@@ -99,6 +99,12 @@ const MAP_WIDTH_ADJUST = 120;
 // this is just the first-paint baseline.
 const REGIONINFO_HEIGHT = 200;
 const ICON_SIZE = 72;
+// 0.9.853: faction-grid icon size. Smaller than ICON_SIZE so that a narrow
+// quarter-4K panel fits 5 WHOLE columns (72px clipped a partial 5th) and a
+// full-4K panel fits ~10 at the SAME size. Used with grid auto-fill, which
+// only ever lays out whole columns — so icons can never be clipped, with no
+// dependence on JS/ResizeObserver timing.
+const FACTION_ICON_SIZE = 64;
 const ICON_GAP = 3;
 const ICON_SIDE_PAD = 0;
 const SCROLLBAR_GUTTER = 0;
@@ -1651,41 +1657,13 @@ function App() {
   // Responsive faction grid: measure the icon-grid container's width and
   // derive the column count (clamped 5..10). A ResizeObserver keeps it in
   // sync as the bottom.factions Movable is resized or the window changes.
+  // 0.9.853: faction-grid sizing is now PURE CSS (grid auto-fill at a fixed
+  // FACTION_ICON_SIZE) — no ResizeObserver. The previous JS-measured approach
+  // didn't reliably attach to the grid node, so it kept the 72px default and
+  // clipped the 5th column. auto-fill lays out only whole columns at the fixed
+  // size, so 5 fit a narrow panel and ~10 a wide one, never clipped. The ref is
+  // retained (harmless) for any future measurement needs.
   const factionGridRef = useRef(null);
-  const [factionGrid, setFactionGrid] = useState({ cols: 5, size: ICON_SIZE });
-  useEffect(() => {
-    const el = factionGridRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    // Pick the MOST icon columns that fit without shrinking an icon below
-    // MIN_ICON, then size the icons up to fill the row (capped at ICON_SIZE
-    // = 72). So a narrow quarter-4K panel keeps ~5 columns by shrinking the
-    // icons a little instead of dropping to 4 — and icons are NEVER clipped
-    // (we only ever fit whole columns) and NEVER balloon past 72px. The count
-    // grows with panel width up to 10 columns. (0.9.851)
-    const GAP = 6;        // must match the grid's columnGap
-    const MIN_ICON = 56;  // smallest we let an icon shrink to before dropping a column
-    const MAX_COLS = 10;
-    const recompute = () => {
-      // clientWidth includes the grid's 5px L/R padding; subtract it plus a
-      // 2px safety margin so rounding never pushes a column past the edge.
-      const avail = el.clientWidth - 10 - 2;
-      if (avail <= 0) return;
-      let cols = 1, size = Math.min(ICON_SIZE, avail);
-      for (let c = MAX_COLS; c >= 1; c--) {
-        const s = Math.floor((avail - GAP * (c - 1)) / c);
-        if (s >= MIN_ICON || c === 1) {
-          cols = c;
-          size = Math.max(1, Math.min(ICON_SIZE, s));
-          break;
-        }
-      }
-      setFactionGrid((cur) => (cur.cols === cols && cur.size === size ? cur : { cols, size }));
-    };
-    recompute();
-    const ro = new ResizeObserver(recompute);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
   const [showFactionSummary, setShowFactionSummary] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [devRecoveryPrompt, setDevRecoveryPrompt] = useState(false); // show recovery banner on dev mode enter
@@ -10046,16 +10024,17 @@ function App() {
           ref={factionGridRef}
           style={{
             display: "grid",
-            // 0.9.851: column count + icon size are computed from the live panel
-            // width (factionGrid, via the ResizeObserver above). We fit the MOST
-            // whole columns that keep the icon ≥ MIN_ICON, then size icons up to
-            // fill (capped at 72). So a narrow quarter-4K panel shows ~5 columns
-            // at ~67px and a full-4K panel shows ~10 columns at the SAME ~66px —
-            // icons are never clipped (whole columns only) and never balloon.
-            gridTemplateColumns: `repeat(${factionGrid.cols}, ${factionGrid.size}px)`,
+            // 0.9.853: fixed-size icons with auto-fill. The grid lays out as
+            // many WHOLE FACTION_ICON_SIZE(64px) columns as actually fit the
+            // panel and centres them — so a narrow quarter-4K panel shows 5
+            // columns and a full-4K panel ~10, all at the same size, and a
+            // partial column is NEVER rendered (no clipping). maxWidth caps it
+            // at 10 columns so icons don't sprawl on an ultra-wide panel.
+            gridTemplateColumns: `repeat(auto-fill, ${FACTION_ICON_SIZE}px)`,
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
+            maxWidth: FACTION_ICON_SIZE * 10 + 6 * 9,
             // 0.9.827: vertical padding bumped 1 → 6 so the selected tile's
             // highlight ring + glow (box-shadow spread 2px + 8px glow, plus the
             // 1.04 scale) isn't clipped by this scroll container's overflow on
@@ -19455,6 +19434,18 @@ function App() {
                 for (const [reg, p] of Object.entries(settlementByRegion)) {
                   tileKeyToRegion[`${p.x},${p.y}`] = reg;
                 }
+                // 0.9.853: region → owning faction, inverted from the parsed
+                // descr_strat faction→regions map. Used to keep a FOREIGN
+                // faction's army off the town garrison: a besieger / passing
+                // stack sitting on or beside the settlement tile (e.g. the
+                // Roman general Aulus Gabinius next to taras-owned Tarentum)
+                // was being merged into the garrison and even used as its
+                // header. Garrison membership now also requires the army's
+                // faction to match the settlement owner.
+                const ownerByRegion = {};
+                for (const [fac, regs] of Object.entries(factions || {})) {
+                  for (const rn of regs || []) ownerByRegion[rn] = String(fac).toLowerCase();
+                }
                 const byRegion = {}; // { region: { garrison: [armies], field: [armies], settlement: {x,y} } }
                 // Seed the settlement tile coords for every region we found.
                 for (const [reg, p] of Object.entries(settlementByRegion)) {
@@ -19491,6 +19482,18 @@ function App() {
                   if (!isGarrison) {
                     const st = settlementByRegion[region];
                     if (st && isOnSettlementTile(a.x, a.y, st.x, st.y)) isGarrison = true;
+                  }
+                  // 0.9.853: a unit can only be in the garrison if it belongs to
+                  // the settlement's OWNER. A different faction's stack on/next to
+                  // the tile (besieger, passing army) is a FIELD army, not part of
+                  // the town garrison — this stops e.g. the Roman Aulus Gabinius
+                  // being merged into taras-owned Tarentum's garrison. If the owner
+                  // is unknown (no faction data) we keep the position-only result
+                  // so nothing regresses.
+                  if (isGarrison && region) {
+                    const owner = ownerByRegion[region];
+                    const aFac = (a.faction || "").toLowerCase();
+                    if (owner && aFac && aFac !== owner) isGarrison = false;
                   }
                   if (!byRegion[region]) byRegion[region] = { garrison: [], field: [], settlement: settlementByRegion[region] || null };
                   byRegion[region][isGarrison ? "garrison" : "field"].push(a);

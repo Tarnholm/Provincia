@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.853",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Faction icons are now slightly smaller so 5 fit per row in a narrow panel** (and ~10 in a wide one) — at the same size, never clipped. Switched the grid to whole-column auto-fill so a partial column can never be cut off, with no dependence on resize timing." },
+      { type: "fix", text: "**A foreign army next to a settlement is no longer merged into its garrison.** A besieging or passing stack from another faction (e.g. a Roman general beside a Greek-owned town) was being lumped into the town garrison and even shown as its commander. Garrison membership now requires the army to belong to the settlement's owner; other factions' stacks show under Field armies." },
+    ],
+  },
+  {
     version: "0.9.852",
     date: "2026-06-02",
     items: [

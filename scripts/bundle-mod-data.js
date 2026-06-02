@@ -125,7 +125,15 @@ function readTga(buf) {
 // adjacent to a region-coloured pixel), then buckets armies into
 // garrison/field per region. Synthetic garrisoned_army entries (no x/y) are
 // snapped to their settlement tile via the captured `region` field.
-function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
+function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap, factions) {
+  // 0.9.853: region → owning faction (inverted from descr_strat
+  // faction→regions). Used below so a FOREIGN army on/next to a settlement
+  // tile (a besieger / passing stack, e.g. the Roman Aulus Gabinius beside
+  // taras-owned Tarentum) is bucketed as FIELD, not merged into the garrison.
+  const ownerByRegion = {};
+  for (const [fac, regs] of Object.entries(factions || {})) {
+    for (const rn of regs || []) ownerByRegion[rn] = String(fac).toLowerCase();
+  }
   const idLen = tgaBuf[0];
   const w = tgaBuf[12] | (tgaBuf[13] << 8);
   const h = tgaBuf[14] | (tgaBuf[15] << 8);
@@ -214,6 +222,14 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap) {
     if (!isGarrison) {
       const st = settlementByRegion[region];
       if (st && Math.abs(a.x - st.x) <= 1 && Math.abs(a.y - st.y) <= 1) isGarrison = true;
+    }
+    // 0.9.853: garrison membership requires the army to belong to the
+    // settlement OWNER — a different faction's stack on/beside the tile is a
+    // FIELD army. Owner unknown → keep the position-only result (no regression).
+    if (isGarrison && region) {
+      const owner = ownerByRegion[region];
+      const aFac = (a.faction || "").toLowerCase();
+      if (owner && aFac && aFac !== owner) isGarrison = false;
     }
     if (!byRegion[region]) byRegion[region] = { garrison: [], field: [], settlement: settlementByRegion[region] || null };
     byRegion[region][isGarrison ? "garrison" : "field"].push({
@@ -566,7 +582,7 @@ function run() {
     // settlements (and any other settlement using `garrisoned_army` rather
     // than character-based armies) show empty in the region info panel.
     if (tgaBuf) {
-      const startingByRegion = buildStartingArmiesByRegion(armies, tgaBuf, regions);
+      const startingByRegion = buildStartingArmiesByRegion(armies, tgaBuf, regions, factions);
       writeJson(`starting_armies_${c.suffix}.json`, startingByRegion);
     }
   }

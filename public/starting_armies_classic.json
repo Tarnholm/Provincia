@@ -11293,6 +11293,39 @@
   "Rhegion": {
     "garrison": [
       {
+        "character": "Decius",
+        "faction": "slave",
+        "x": 160,
+        "y": 175,
+        "units": [
+          {
+            "name": "lucanian infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "lucanian infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "lucanian infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 43,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
         "character": "Gnaeus Cornelius Scipio",
         "faction": "roman_rebels_2",
         "x": 161,
@@ -11462,40 +11495,8 @@
           "drillmaster"
         ],
         "charType": "general"
-      },
-      {
-        "character": "Decius",
-        "faction": "slave",
-        "x": 160,
-        "y": 175,
-        "units": [
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          },
-          {
-            "name": "lucanian infantry",
-            "exp": 0,
-            "armour": 0,
-            "weapon": 0
-          }
-        ],
-        "age": 43,
-        "tags": [],
-        "traits": [],
-        "ancillaries": [],
-        "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 160,
       "y": 175
