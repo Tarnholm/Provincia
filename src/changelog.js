@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.870",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**The Garrison / Field-armies panel now auto-refreshes from the live mod** — it no longer shows stale cached units after you edit descr_strat (move units between armies, Add General, etc.). Provincia re-parses the loaded mod's actual descr_strat (with the proper garrison/field classification) when the mod loads and again after each in-app army edit, so the panel matches what the game will load. (Previously it only updated on a manual dev re-import.)" },
+    ],
+  },
+  {
     version: "0.9.869",
     date: "2026-06-02",
     items: [

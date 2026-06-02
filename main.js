@@ -199,6 +199,7 @@ const { parseEventSchedule: cxParseEventSchedule } = require("./src/eventSchedul
 const { parseFactionKnowledge: cxParseFactionKnowledge } = require("./src/factionKnowledgeParser.js");
 const { findFactionRecords, summarizeFactionArray } = require("./src/factionRecordParser.js");
 const { findLuaCounters, indexCountersByName } = require("./src/luaCounterParser.js");
+const { buildStartingArmiesFromMod } = require("./src/startingArmiesBuilder.js");
 const {
   parseHeader: cxParseHeader,
   parseFactionDiscoveredBitmask: cxParseBitmask,
@@ -3927,6 +3928,31 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     console.log(`[addgen] added ${res.summary.general} to ${res.summary.faction} @${selection.x},${selection.y}; minted=[${res.summary.minted.join(",")}]; backup ${stamp}`);
     return { ok: true, summary: res.summary, backupStamp: stamp };
   } catch (e) { console.warn("[addgen] apply failed:", e && e.message); return { ok: false, error: e.message }; }
+});
+
+// Live starting-armies refresh: re-parse the active mod's descr_strat.txt (+
+// map_regions.tga / descr_regions.txt / factions) and return the same
+// { region: { garrison, field, settlement } } object the build-time bundle
+// writes. Lets the non-live Garrison / Field-armies panel reflect mid-session
+// edits (Add General, army-unit Save to Mod) instead of stale bundled data.
+// modDataDir defaults to the active mod; campaignDir is the folder under
+// world/maps/campaign (imperial_campaign / ris_classic). Returns { error } on
+// failure — caller keeps the prior state (no fabricated data).
+ipcMain.handle("get-live-starting-armies", async (_event, modDataDir, campaignDir) => {
+  try {
+    const dir = modDataDir || activeModDataDir;
+    if (!dir) return { error: "no active mod" };
+    const byRegion = await buildStartingArmiesFromMod(dir, campaignDir);
+    if (!byRegion) {
+      try { _writeLog(`[starting-armies] live refresh: no data (dir=${dir} campaign=${campaignDir || "auto"})`); } catch {}
+      return { error: "starting armies not found" };
+    }
+    try { _writeLog(`[starting-armies] live refresh: ${Object.keys(byRegion).length} regions (campaign=${campaignDir || "auto"})`); } catch {}
+    return byRegion;
+  } catch (e) {
+    try { _writeLog(`[starting-armies] live refresh failed: ${e && e.message}`); } catch {}
+    return { error: e && e.message ? e.message : String(e) };
+  }
 });
 
 // 0.9.437: descr_strat ancillary editor — rewrite the `ancillaries Foo,

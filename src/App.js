@@ -5970,6 +5970,26 @@ function App() {
       .catch(() => setPopulationData({}));
   }, [loadCampaignData, mapCampaign]);
 
+  // Auto-refresh starting armies from the LIVE mod. The bundled
+  // starting_armies_<suffix>.json is baked at build time / last dev import, so
+  // after the user edits descr_strat (moves units, Add General, army-unit Save
+  // to Mod) the non-live Garrison / Field panel would show stale units. When a
+  // real mod is active, re-parse its descr_strat and override the bundled data.
+  // Resilient: on any error/empty result, leave the existing state untouched
+  // (never blank the panel — no fabricated data).
+  const refreshLiveStartingArmies = useCallback(async () => {
+    if (!window.electronAPI?.getLiveStartingArmies || !modDataDir) return;
+    // mapCampaign is 'classic' | 'imperial'; map to the campaign folder the
+    // same way the trade-network / vc-region-owners flows do.
+    const campaignDir = mapCampaign === "classic" ? "ris_classic" : "imperial_campaign";
+    try {
+      const result = await window.electronAPI.getLiveStartingArmies(modDataDir, campaignDir);
+      if (result && !result.error && typeof result === "object" && Object.keys(result).length > 0) {
+        setStartingArmiesByRegion(result);
+      }
+    } catch { /* keep prior state */ }
+  }, [modDataDir, mapCampaign]);
+
   // Load armies data
   useEffect(() => {
     const campaign = CAMPAIGNS[mapCampaign];
@@ -5983,8 +6003,11 @@ function App() {
     const startFile = campaign.armiesFile.replace(/armies_/, "starting_armies_");
     loadCampaignData(startFile)
       .then((r) => setStartingArmiesByRegion(JSON.parse(r.text)))
-      .catch(() => setStartingArmiesByRegion({}));
-  }, [loadCampaignData, mapCampaign]);
+      .catch(() => setStartingArmiesByRegion({}))
+      // After the bundled fetch settles, if a real mod is active, override with
+      // the live mod's current descr_strat so the panel reflects edits.
+      .finally(() => { refreshLiveStartingArmies(); });
+  }, [loadCampaignData, mapCampaign, refreshLiveStartingArmies]);
 
   // Pre-load resource icon images whenever resourcesData is available — used
   // by the resource map mode AND by the region info bar's resource chips.
@@ -20657,6 +20680,13 @@ function App() {
                     console.log(`[army-units] refreshed ${appliedUnits.length} army unit-list(s) in snapshots for this session`);
                   }
                   pushToast(`Applied ${okCount} write${okCount === 1 ? "" : "s"} to mod files.`, "info", 6000);
+                  // Auto-refresh starting armies from the now-updated live mod.
+                  // The optimistic snapshot patches above keep the panel correct
+                  // synchronously; this re-reads descr_strat from disk so Add
+                  // General + army-unit "Save to Mod" edits show ground-truth
+                  // (e.g. moved units / new generals) without a manual re-import.
+                  // Resilient: leaves the patched state if the re-parse fails.
+                  refreshLiveStartingArmies();
                 } else {
                   pushToast(`Applied ${okCount}, ${failCount} failed: ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "…" : ""}`, "warning", 10000);
                 }

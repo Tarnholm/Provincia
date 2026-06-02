@@ -67,6 +67,55 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      }
+    ]
+  },
+  {
+    "name": "Marcus Ogulnius Gallus",
+    "charType": "general",
+    "armyClass": "field",
+    "location": "",
+    "faction": "romans_julii",
+    "x": 283,
+    "y": 402,
+    "age": 30,
+    "tags": [
+      "heir",
+      "named"
+    ],
+    "traits": [
+      {
+        "name": "BeingItalic",
+        "level": 1
+      },
+      {
+        "name": "ReligionAssigned",
+        "level": 1
+      },
+      {
+        "name": "GoodAdministrator",
+        "level": 2
+      },
+      {
+        "name": "Patrician",
+        "level": 1
+      },
+      {
+        "name": "FasterCharacters",
+        "level": 1
+      },
+      {
+        "name": "TurnsAlive",
+        "level": 3
+      }
+    ],
+    "ancillaries": [],
+    "units": [
+      {
+        "name": "roman general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       },
       {
         "name": "roman equites early",
@@ -172,55 +221,6 @@
       },
       {
         "name": "latin hastati",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Marcus Ogulnius Gallus",
-    "charType": "general",
-    "armyClass": "field",
-    "location": "",
-    "faction": "romans_julii",
-    "x": 283,
-    "y": 402,
-    "age": 30,
-    "tags": [
-      "heir",
-      "named"
-    ],
-    "traits": [
-      {
-        "name": "BeingItalic",
-        "level": 1
-      },
-      {
-        "name": "ReligionAssigned",
-        "level": 1
-      },
-      {
-        "name": "GoodAdministrator",
-        "level": 2
-      },
-      {
-        "name": "Patrician",
-        "level": 1
-      },
-      {
-        "name": "FasterCharacters",
-        "level": 1
-      },
-      {
-        "name": "TurnsAlive",
-        "level": 3
-      }
-    ],
-    "ancillaries": [],
-    "units": [
-      {
-        "name": "roman general",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -1261,7 +1261,7 @@
         "weapon": 0
       },
       {
-        "name": "aor italiote hoplites",
+        "name": "aor greek slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -2326,11 +2326,11 @@
   {
     "name": "Marcus Livius Drusus",
     "charType": "general",
-    "armyClass": "field",
-    "location": "Outside Metapontum",
+    "armyClass": "garrison",
+    "location": "Metapontum",
     "faction": "romans_julii",
-    "x": 329,
-    "y": 379,
+    "x": 331,
+    "y": 382,
     "age": 36,
     "tags": [
       "named"
@@ -2388,6 +2388,24 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "aor italiote hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor italiote hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor psiloi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -2395,10 +2413,10 @@
     "name": "Lucius Valerius Flaccus",
     "charType": "general",
     "armyClass": "field",
-    "location": "Outside Thurii",
+    "location": "Outside Rhegium",
     "faction": "romans_julii",
-    "x": 327,
-    "y": 374,
+    "x": 323,
+    "y": 353,
     "age": 48,
     "tags": [
       "named"
@@ -2734,13 +2752,13 @@
         "weapon": 0
       },
       {
-        "name": "towered forest elephants",
+        "name": "sacred band of baal",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "towered forest elephants",
+        "name": "sacred band of baal",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -2977,6 +2995,54 @@
     "units": [
       {
         "name": "carthaginian general's bodyguard",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "african infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "african infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyo phoenician infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyo phoenician infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyan phalangites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyan light infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyan light infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -4553,6 +4619,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "libyan light infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "libyan skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -4770,6 +4848,18 @@
     "units": [
       {
         "name": "carthaginian general's bodyguard",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian light infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian javelinmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -4993,6 +5083,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "iberian skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian heavy swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -5058,6 +5160,60 @@
     "units": [
       {
         "name": "carthaginian general's bodyguard",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian chosen infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian chosen infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian heavy swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian heavy swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian heavy swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian heavy cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "iberian slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -8505,37 +8661,25 @@
     "ancillaries": [],
     "units": [
       {
-        "name": "antigonid general",
+        "name": "syracusan general",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "merc greek hoplites",
+        "name": "syracusan neaniskoi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "merc greek hoplites",
+        "name": "syracusan hoplites",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "merc greek peltasts",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "merc greek peltasts",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "merc tarentine cavalry",
+        "name": "sicel thureophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -11199,7 +11343,31 @@
     ],
     "units": [
       {
-        "name": "ptolemaic cavalry of the court",
+        "name": "syracusan general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sicel peltophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan neaniskoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sicel thureophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -76651,6 +76819,36 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "syracusan neaniskoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan neaniskoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan neaniskoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -77018,6 +77216,18 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "syracusan neaniskoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sicel peltophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -77105,6 +77315,18 @@
     "units": [
       {
         "name": "syracusan general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sicel peltophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -77231,19 +77453,19 @@
         "weapon": 0
       },
       {
-        "name": "italiote hoplites",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "italiote hoplites",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
         "name": "italiote epibatai",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -77255,90 +77477,13 @@
         "weapon": 0
       },
       {
+        "name": "tarentine cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
         "name": "xystophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "prodromoi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Leophron",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Metapontum",
-    "faction": "taras",
-    "x": 336,
-    "y": 384,
-    "age": 23,
-    "tags": [
-      "heir",
-      "named"
-    ],
-    "traits": [
-      {
-        "name": "BeingDorian",
-        "level": 1
-      },
-      {
-        "name": "ReligionAssigned",
-        "level": 1
-      },
-      {
-        "name": "Metapontum",
-        "level": 1
-      },
-      {
-        "name": "GreekCityAssigned",
-        "level": 1
-      },
-      {
-        "name": "Corrupt",
-        "level": 1
-      },
-      {
-        "name": "Brave",
-        "level": 1
-      },
-      {
-        "name": "LoyaltyLevel",
-        "level": 7
-      },
-      {
-        "name": "GoodFarmer",
-        "level": 1
-      },
-      {
-        "name": "NightBattleCapable",
-        "level": 1
-      },
-      {
-        "name": "Stoic",
-        "level": 1
-      },
-      {
-        "name": "Xenophobia",
-        "level": 1
-      },
-      {
-        "name": "FasterCharacters",
-        "level": 1
-      },
-      {
-        "name": "TurnsAlive",
-        "level": 2
-      }
-    ],
-    "ancillaries": [],
-    "units": [
-      {
-        "name": "greek general",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -77375,6 +77520,18 @@
     "units": [
       {
         "name": "greek general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "italiote hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0

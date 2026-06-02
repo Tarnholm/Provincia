@@ -100,6 +100,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   readCampaignFile: (name) => ipcRenderer.invoke("read-campaign-file", name),
   addgenGetData: () => ipcRenderer.invoke("addgen-get-data"),
   addgenApply: (selection) => ipcRenderer.invoke("addgen-apply", selection),
+  getLiveStartingArmies: (modDataDir, campaignDir) => ipcRenderer.invoke("get-live-starting-armies", modDataDir, campaignDir),
   getUserDataPath: () => ipcRenderer.invoke("get-user-data-path"),
   saveUserFile: (name, content) => ipcRenderer.invoke("save-user-file", name, content),
   readUserFile: (name) => ipcRenderer.invoke("read-user-file", name),
