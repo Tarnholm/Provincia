@@ -1534,6 +1534,11 @@ function App() {
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
   const [tileInspect, setTileInspect] = useState(null);
   const lastInspectKeyRef = useRef("");
+  // 0.9.830: cursor position + hovered region for the at-pointer map-mode
+  // value tooltip (shows e.g. the recruitment count right under the mouse).
+  // Set on region crossing (not per-pixel); the VALUE is computed at render
+  // time from getModeExtra so it always reflects the current mode/data.
+  const [hoverPos, setHoverPos] = useState(null);
   const [showTileInspect, setShowTileInspect] = useState(() => {
     try { return localStorage.getItem("showTileInspect") !== "0"; } catch { return true; }
   });
@@ -8956,8 +8961,11 @@ function App() {
         // RegionInfo + downstream consumers many times per second.
         if (regions[rgbKey]) {
           setRegionInfo(prev => prev?.rgb === rgbKey ? prev : { ...regions[rgbKey], rgb: rgbKey });
+          // Record cursor position for the at-pointer mode-value tooltip
+          // (only on region change, to match the inspect tooltip's cadence).
+          setHoverPos(prev => (prev && prev.rgb === rgbKey) ? prev : { sx: mouseScreenX, sy: mouseScreenY, rgb: rgbKey });
         }
-        else setRegionInfo(prev => prev === null ? prev : null);
+        else { setRegionInfo(prev => prev === null ? prev : null); setHoverPos(prev => prev === null ? prev : null); }
         // 0.9.535: hover-to-inspect tooltip. Sample terrain (ground type) at
         // the hovered tile + resolve region/owner. Gated on a composite key
         // (region + ground colour) so we only setState when the tile's
@@ -8990,7 +8998,7 @@ function App() {
             }
           }
         }
-      } else { setRegionInfo(prev => prev === null ? prev : null); if (tileInspect) { lastInspectKeyRef.current = ""; setTileInspect(null); } }
+      } else { setRegionInfo(prev => prev === null ? prev : null); setHoverPos(prev => prev === null ? prev : null); if (tileInspect) { lastInspectKeyRef.current = ""; setTileInspect(null); } }
 
       // Resource icon hover detection — active in dedicated mode OR overlay
       if (colorMode === "resource" || showResourcesOverlay) {
@@ -10633,6 +10641,10 @@ function App() {
     const btnStyle = (active) => ({
       // 0.9.826: ~85% of the previous size (font 0.76→0.65rem, tighter padding)
       // so more buttons fit per row at 1/4 4k.
+      // 0.9.830: margin:0 to cancel the global `button { margin:5px }` rule —
+      // that 5px was forcing ~10px between every map/view button regardless of
+      // the flex container's gap.
+      margin: 0,
       padding: "2px 7px",
       borderRadius: 6,
       border: active ? "1px solid rgba(220,166,74,0.6)" : "1px solid rgba(255,255,255,0.15)",
@@ -10730,7 +10742,7 @@ function App() {
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
-        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 1, padding: "3px 3px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
+        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {modeSections.map((sec) => {
             // `dev` members show only in dev mode; `live` members (e.g.
             // Explored, whose fog grid only exists in a loaded save) show only
@@ -10751,6 +10763,9 @@ function App() {
             // slate) so you can tell which group the member row below belongs to.
             const catStyle = {
               // 0.9.826: smaller + tighter so more category tabs fit per row.
+              // 0.9.830: margin:0 cancels the global button{margin:5px} that was
+              // forcing the tabs ~10px apart regardless of the pill's gap.
+              margin: 0,
               padding: "2px 5px",
               borderRadius: 6,
               border: `1px solid ${open ? "rgba(150,180,220,0.85)" : sectionActive ? "rgba(150,180,220,0.6)" : "rgba(150,180,220,0.32)"}`,
@@ -10796,7 +10811,7 @@ function App() {
           const openMembers = openSec.members.filter((m) => (!m.dev || devMode) && (!m.live || liveLogActive));
           if (!openMembers.length) return null;
           return (
-            <div data-mapmodes-zone style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280), border: "1px solid rgba(150,180,220,0.45)" }}>
+            <div data-mapmodes-zone style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280), border: "1px solid rgba(150,180,220,0.45)" }}>
               {openMembers.map((m) => renderModeMember(m))}
             </div>
           );
@@ -11484,7 +11499,7 @@ function App() {
           </div>
         )}
         {/* View options — always visible */}
-        <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, maxWidth: Math.max(200, canvasSize.width - 280) }}>
+        <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
           <span style={{ opacity: 0.7, fontSize: "0.78rem" }}>View:</span>
           <button className="map-mode-btn" onClick={() => setDevFlatColors(prev => !prev)}
             style={{ ...btnStyle(devFlatColors), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.flat" />Flat</button>
@@ -15585,7 +15600,7 @@ function App() {
                   onMouseMove={handleMouseMove}
                   onMouseDown={handleMouseDown}
                   onMouseUp={handleMouseUp}
-                  onMouseLeave={() => { handleMouseUp(); setHoveredResource(null); setHoveredArmy(null); setHoveredCity(null); lastInspectKeyRef.current = ""; setTileInspect(null); }}
+                  onMouseLeave={() => { handleMouseUp(); setHoveredResource(null); setHoveredArmy(null); setHoveredCity(null); lastInspectKeyRef.current = ""; setTileInspect(null); setHoverPos(null); }}
                   onDoubleClick={handleDoubleClick}
                   tabIndex={0}
                   width={canvasSize.width}
@@ -15633,6 +15648,38 @@ function App() {
                     {tileInspect.terrain && <div style={{ color: "#9ec78a" }}>⛰ {tileInspect.terrain}</div>}
                   </div>
                 )}
+
+                {/* 0.9.830: at-pointer map-mode value. Shows the active data
+                    mode's value (e.g. Recruitment count) right under the cursor
+                    for the hovered province. Value computed at render time from
+                    getModeExtra so it always reflects the current mode/data.
+                    Offset below the inspect tooltip when both are visible. */}
+                {hoverPos && regionInfo && (() => {
+                  const me = getModeExtra(regionInfo);
+                  if (!me || me.value == null) return null;
+                  const inspectShown = showTileInspect && tileInspect && (tileInspect.region || tileInspect.terrain);
+                  return (
+                    <div style={{
+                      position: "absolute",
+                      left: Math.min(hoverPos.sx + 16, canvasSize.width - 200),
+                      top: Math.min(hoverPos.sy + 16 + (inspectShown ? 58 : 0), canvasSize.height - 36),
+                      pointerEvents: "none",
+                      zIndex: 6,
+                      background: "rgba(20,18,14,0.94)",
+                      border: "1px solid rgba(220,166,74,0.55)",
+                      borderRadius: 6,
+                      padding: "4px 9px",
+                      fontSize: "0.74rem",
+                      color: "#f4f4f4",
+                      lineHeight: 1.3,
+                      maxWidth: 240,
+                      boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+                      whiteSpace: "nowrap",
+                    }}>
+                      <span style={{ color: "#ffd98a", fontWeight: 700 }}>{me.label}:</span> {me.value}
+                    </div>
+                  );
+                })()}
 
                 {/* Diplomatic-web overlay — absolutely positioned SVG over
                     the map canvas. pointer-events:none so clicks fall

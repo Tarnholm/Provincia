@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.830",
+    date: "2026-06-02",
+    items: [
+      { type: "feature", text: "**Data map modes now show their value at the mouse pointer.** Hovering a province in a value mode (Recruitment, Population, Happiness, Public Order, Income, Wealth, …) pops a small tooltip right under the cursor — e.g. \"Recruitment: 7 unique units (max 12)\" — instead of only updating the side panel. It tucks below the Inspect tooltip when both are on." },
+      { type: "fix", text: "**Tightened the spacing of the map-mode category tabs and the View toggles.** A leftover global `button { margin: 5px }` was forcing ~10px between every button regardless of the layout; the map controls now zero that out and use a clean 4px gap between buttons with 5px padding from the pill edge." },
+    ],
+  },
+  {
     version: "0.9.829",
     date: "2026-06-02",
     items: [
