@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.848",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Removed the leftover empty control pill** left behind when Live moved up, and **Calibrate + the live controls (Stats / Reset / Pick save / unpin) now follow the Live button** in the map-mode row instead of floating in their own pill." },
+    ],
+  },
+  {
     version: "0.9.847",
     date: "2026-06-02",
     items: [

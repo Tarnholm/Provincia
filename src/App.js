@@ -10824,6 +10824,128 @@ function App() {
     }
   };
 
+  // 0.9.x: Calibrate handler — extracted verbatim from the old view-options
+  // pill's inline onClick when the Calibrate button moved up next to the Live
+  // button in the map-mode category pill. Same pattern as handleLiveToggle.
+  // Logic unchanged.
+  const handleCalibrate = async () => {
+              try {
+                if (!window.electronAPI?.selectSaveFile || !window.electronAPI?.calibrateFromSave) {
+                  pushToast("Calibration unavailable — older app build.", "warning");
+                  return;
+                }
+                const pick = await window.electronAPI.selectSaveFile(liveSaveDir || undefined);
+                if (!pick || !pick.path) return; // user cancelled
+                pushToast("Calibrating from save…", "info", 3000);
+                const res = await window.electronAPI.calibrateFromSave(pick.path);
+                if (!res || !res.ok) {
+                  pushToast("Calibration failed: " + (res?.error || "unknown"), "warning");
+                  return;
+                }
+                // 0.9.516: thread v1PortraitsByCoord through so the family
+                // tree picks up v1 portraits in calibrate mode (not just
+                // live save-watch). Without this, the family tree falls to
+                // hash pool while the bodyguard card uses v1's portrait,
+                // producing two different icons for the same character.
+                if (res.v1PortraitsByCoord) setV1PortraitsByCoord(res.v1PortraitsByCoord);
+                // 0.9.532: faction data now comes back from Calibrate too, so
+                // the Wealth panel (treasuries + AI personality + diplomacy)
+                // populates without needing Live mode.
+                if (res.factionTreasuries) setFactionTreasuries(res.factionTreasuries);
+                if (res.treasuryByFaction) setSaveTreasuryRecords(res.treasuryByFaction);
+                if (res.factionRecordOwners) setFactionRecordOwners(res.factionRecordOwners);
+                if (res.factionDiplomacy) setFactionDiplomacy(res.factionDiplomacy);
+                if (res.allFactionDiplomacy) setAllFactionDiplomacy(res.allFactionDiplomacy);
+                if (res.diplomacyMatrix) setDiplomacyMatrix(res.diplomacyMatrix);
+                if (res.treasuryHistory) setTreasuryHistory(res.treasuryHistory);
+                // 0.9.826: settlement happiness/public-order from the calibrate
+                // save → the Public Order & Happiness map modes now work from a
+                // picked save, not just live.
+                if (res.happinessByCity) setSaveHappinessByCity(res.happinessByCity);
+                // Only adopt the save-derived player faction if one isn't
+                // already set (don't override the user's pick or save-name detect).
+                if (res.savePlayerFaction) setPlayerFaction(prev => prev || res.savePlayerFaction);
+                const updates = {};
+                const sampleKeys = [];
+                // 0.9.440: prevent same-firstName collision on the stripped
+                // key. After 0.9.438 relaxed the filter to keep portrait-
+                // only chars, every "Dionysios" / "Perdikkas" / etc. in a
+                // faction wrote to the same `dionysios||antigonid` slot.
+                // Last writer won — usually a stat-less captain — and the
+                // governor / general's portrait got clobbered.
+                //
+                // Fix: score each entry (traits=3, stats=2, portrait=1)
+                // and only overwrite an existing slot when the new entry's
+                // score is STRICTLY HIGHER. ALSO uses writeBest for the
+                // full key (0.9.503) — previously the full key was written
+                // unconditionally, so when the parser found two records
+                // with the same name (e.g. Achaios at age 47 with real
+                // stats + 21 traits, AND a stub at age 51 with 0 traits +
+                // bogus 0/1/0/0 stats), the stub overwrote the real one.
+                const score = (e) => {
+                  let s = 0;
+                  if (e.command != null || e.influence != null || e.management != null) s += 2;
+                  if (e.portrait) s += 1;
+                  // 0.9.503: trait count is the strongest signal of a
+                  // real character (stub records have 0 traits).
+                  if (e.traitCount && e.traitCount > 0) s += 3;
+                  return s;
+                };
+                const writeBest = (k, entry) => {
+                  const cur = updates[k];
+                  if (!cur || score(entry) > score(cur)) updates[k] = entry;
+                };
+                for (const c of res.characters || []) {
+                  const entry = {
+                    command: c.command, influence: c.influence,
+                    management: c.management, loyalty: c.loyalty,
+                    turn: c.turn,
+                    portrait: c.portrait || null,
+                    // 0.9.451: cache age so the non-live bodyguard-swap
+                    // can pass the right age bucket to the IPC hash.
+                    age: typeof c.age === "number" ? c.age : null,
+                    secondaryUuid: c.secondaryUuid || null,
+                    // 0.9.503: forward trait count so the scoring above
+                    // can favor records with full trait lists over
+                    // 0-trait stub records that share the same name.
+                    traitCount: typeof c.traitCount === "number" ? c.traitCount : 0,
+                    // 0.9.505: epithet/cognomen lastName (e.g. "the Elder"
+                    // for Achaios after the trait-epithet pass in main.js).
+                    // Without this, bodyguard-swap shows just "Achaios"
+                    // when the in-game and tooltip both say "Achaios the
+                    // Elder". The cache entry now carries it through.
+                    lastName: c.lastName || null,
+                    faction: c.faction || null,
+                  };
+                  const fnNorm = (c.firstName || "").toLowerCase();
+                  const lnNorm = (c.lastName || "").replace(/_/g, " ").toLowerCase();
+                  const facNorm = (c.faction || "").toLowerCase();
+                  // 0.9.503: writeBest for the full key too — same reason
+                  // as the stripped keys: the parser sometimes returns
+                  // duplicate records for the same character, and the
+                  // earlier code's unconditional write let the stub win.
+                  writeBest(`${fnNorm}|${lnNorm}|${facNorm}`, entry);
+                  // Stripped keys are collision-prone — use writeBest so a
+                  // stats-bearing entry isn't overwritten by a portrait-only
+                  // entry that happens to share firstName.
+                  writeBest(`${fnNorm}||${facNorm}`, entry);
+                  writeBest(`${fnNorm}||`, entry);
+                  if (sampleKeys.length < 8) sampleKeys.push(`"${fnNorm}|${lnNorm}|${facNorm}"=${c.command}/${c.influence}/${c.management}/${c.loyalty} portrait=${c.portrait ? "Y" : "N"}`);
+                }
+                setStatsCache(() => {
+                  // 0.9.455: REPLACE the cache instead of merging.
+                  try { localStorage.setItem("statsCache", JSON.stringify(updates)); } catch {}
+                  console.log(`[stats-cache] REPLACED cache with ${Object.keys(updates).length} keys (${(res.characters || []).length} chars) from ${pick.file} (turn ${res.turn ?? "?"}). Sample: ${sampleKeys.join("  |  ")}`);
+                  return updates;
+                });
+                // 0.9.461: statsCacheCharCount is now a useMemo over the cache.
+                const turnLabel = res.turn != null ? ` (turn ${res.turn})` : "";
+                pushToast(`Calibrated ${res.characters.length} characters from ${pick.file}${turnLabel}.`, "info", 6000);
+              } catch (e) {
+                pushToast("Calibration error: " + e.message, "warning");
+              }
+  };
+
   function renderMapModeToggle() {
     const pillStyle = {
       display: "inline-flex",
@@ -11101,6 +11223,86 @@ function App() {
           {/* 0.9.x: Live toggle — moved here from the controls pill so it sits
               next to the map-mode category tabs. onClick is handleLiveToggle. */}
           <button className="map-mode-btn" onClick={handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : undefined }}><MapBtnBadge k="view.live" />Live</button>
+          {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
+              a new game + save at turn 0 so the auto-cache pass picks up
+              real save-read stats and uses them in non-live mode. The
+              cache populates automatically on any save load; this button
+              is the human-readable explainer.
+              0.9.817: dev-only now (moved out of the always-on row).
+              0.9.x: moved here from the (now-removed) view-options pill so
+              it follows the Live button; onClick extracted to handleCalibrate. */}
+          {devMode && (
+          <button
+            className="map-mode-btn"
+            onClick={handleCalibrate}
+            title={(() => {
+              const n = statsCacheCharCount || 0;
+              return n === 0
+                ? "Pick a save to calibrate stats for non-live mode. For accurate 'starting' stats, pick a turn-0 save."
+                : `${n} characters cached. Click to recalibrate from a different save.`;
+            })()}
+            style={{ ...btnStyle(false), minWidth: 0, position: "relative", fontSize: "0.65rem", padding: "1px 6px" }}>
+            <MapBtnBadge k="view.calibrate" />🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
+          </button>
+          )}
+          {liveLogActive && (
+            <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
+              title={saveLuaCounters && saveLuaCounters.count
+                ? "Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
+                : "Campaign Stats — waiting on save data"}
+              style={{ ...btnStyle(showStatsPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="live.stats" />Stats</button>
+          )}
+          {liveLogActive && (
+            <button
+              className="map-mode-btn"
+              onClick={async () => {
+                try {
+                  const res = await window.electronAPI?.logWatchReset?.();
+                  if (res?.ok) {
+                    pushToast("Live tracking reset — log re-anchored to now", "info");
+                  } else {
+                    pushToast("Reset failed: " + (res?.reason || res?.error || "unknown"), "warning");
+                  }
+                } catch (e) {
+                  pushToast("Reset failed: " + e.message, "warning");
+                }
+              }}
+              title="Re-anchor the live log watcher to the current end of message_log.txt and drop all live tracking state (passenger lists, unit-flow, char positions). Use after loading a save mid-session — Provincia will then only react to events from this moment forward."
+              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px", position: "relative" }}
+            >
+              <MapBtnBadge k="live.reset" />Reset
+            </button>
+          )}
+          {liveLogActive && (
+            <button
+              className="map-mode-btn"
+              onClick={async () => {
+                const api = window.electronAPI;
+                const res = await api?.selectSaveFile?.(liveSaveDir);
+                if (!res) return;
+                if (res.error) { alert(res.error); return; }
+                setPinnedSaveFile(res.file);
+                try { localStorage.setItem("pinnedSaveFile", res.file); } catch {}
+                pushToast(`Tracking ${res.file}`, "info");
+              }}
+              title={pinnedSaveFile ? `Pinned: ${pinnedSaveFile}\nClick to pick a different save.` : "Pick a specific save to track instead of the newest one."}
+              style={{ ...btnStyle(!!pinnedSaveFile), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px", position: "relative" }}
+            >
+              <MapBtnBadge k="live.picksave" />{pinnedSaveFile ? "Pinned" : "Pick save…"}
+            </button>
+          )}
+          {liveLogActive && pinnedSaveFile && (
+            <button
+              className="map-mode-btn"
+              onClick={() => {
+                setPinnedSaveFile(null);
+                try { localStorage.removeItem("pinnedSaveFile"); } catch {}
+                pushToast("Following newest save again", "info");
+              }}
+              title="Stop pinning — resume newest-by-mtime tracking"
+              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 4px", position: "relative" }}
+            ><MapBtnBadge k="live.unpin" />×</button>
+          )}
         </div>
         {/* 0.9.824: the open category's modes render in their OWN row directly
             under the category tabs (a "row under"), not inline or as a popover.
@@ -11808,219 +12010,10 @@ function App() {
             </div>
           </div>
         )}
-        {/* View options — always visible */}
-        {/* 0.9.840: the 12 display toggles (Flat … Labels) moved into the
-            OVERLAYS category fan-out above (renderOverlayToggles). This pill now
-            holds only the Live / Calibrate / Stats / Reset / Pick-save controls,
-            which are NOT display overlays. */}
-        <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
-          {/* 0.9.810: "Reload mod data" button removed per user request — it
-              re-parsed the mod's EDB/EDU/text files without a restart (mod-
-              iteration convenience). Restart Provincia to pick up mod edits.
-              MAP_BTN_ORDER keeps view.reload's slot so the other letters don't
-              shift; the badge just no longer renders. */}
-          {/* 0.9.811: standalone "Validate" map-control button removed per user
-              request — it dumped an ad-hoc recruit-vs-EDU sweep to the DevTools
-              console + a toast. Redundant now that the dev-pill "Validate" (BE)
-              opens the full Validate dashboard, which covers EDB resources, unit
-              localization/images, and the rest. Not in MAP_BTN_ORDER, so no
-              letters shift. */}
-          {/* 0.9.x: Live button moved up to the map-mode category pill (next to the Geopolitics/.../Overlays tabs); its handler is handleLiveToggle. */}
-          {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
-              a new game + save at turn 0 so the auto-cache pass picks up
-              real save-read stats and uses them in non-live mode. The
-              cache populates automatically on any save load; this button
-              is the human-readable explainer.
-              0.9.817: dev-only now (moved out of the always-on row). */}
-          {devMode && (
-          <button
-            className="map-mode-btn"
-            onClick={async () => {
-              try {
-                if (!window.electronAPI?.selectSaveFile || !window.electronAPI?.calibrateFromSave) {
-                  pushToast("Calibration unavailable — older app build.", "warning");
-                  return;
-                }
-                const pick = await window.electronAPI.selectSaveFile(liveSaveDir || undefined);
-                if (!pick || !pick.path) return; // user cancelled
-                pushToast("Calibrating from save…", "info", 3000);
-                const res = await window.electronAPI.calibrateFromSave(pick.path);
-                if (!res || !res.ok) {
-                  pushToast("Calibration failed: " + (res?.error || "unknown"), "warning");
-                  return;
-                }
-                // 0.9.516: thread v1PortraitsByCoord through so the family
-                // tree picks up v1 portraits in calibrate mode (not just
-                // live save-watch). Without this, the family tree falls to
-                // hash pool while the bodyguard card uses v1's portrait,
-                // producing two different icons for the same character.
-                if (res.v1PortraitsByCoord) setV1PortraitsByCoord(res.v1PortraitsByCoord);
-                // 0.9.532: faction data now comes back from Calibrate too, so
-                // the Wealth panel (treasuries + AI personality + diplomacy)
-                // populates without needing Live mode.
-                if (res.factionTreasuries) setFactionTreasuries(res.factionTreasuries);
-                if (res.treasuryByFaction) setSaveTreasuryRecords(res.treasuryByFaction);
-                if (res.factionRecordOwners) setFactionRecordOwners(res.factionRecordOwners);
-                if (res.factionDiplomacy) setFactionDiplomacy(res.factionDiplomacy);
-                if (res.allFactionDiplomacy) setAllFactionDiplomacy(res.allFactionDiplomacy);
-                if (res.diplomacyMatrix) setDiplomacyMatrix(res.diplomacyMatrix);
-                if (res.treasuryHistory) setTreasuryHistory(res.treasuryHistory);
-                // 0.9.826: settlement happiness/public-order from the calibrate
-                // save → the Public Order & Happiness map modes now work from a
-                // picked save, not just live.
-                if (res.happinessByCity) setSaveHappinessByCity(res.happinessByCity);
-                // Only adopt the save-derived player faction if one isn't
-                // already set (don't override the user's pick or save-name detect).
-                if (res.savePlayerFaction) setPlayerFaction(prev => prev || res.savePlayerFaction);
-                const updates = {};
-                const sampleKeys = [];
-                // 0.9.440: prevent same-firstName collision on the stripped
-                // key. After 0.9.438 relaxed the filter to keep portrait-
-                // only chars, every "Dionysios" / "Perdikkas" / etc. in a
-                // faction wrote to the same `dionysios||antigonid` slot.
-                // Last writer won — usually a stat-less captain — and the
-                // governor / general's portrait got clobbered.
-                //
-                // Fix: score each entry (traits=3, stats=2, portrait=1)
-                // and only overwrite an existing slot when the new entry's
-                // score is STRICTLY HIGHER. ALSO uses writeBest for the
-                // full key (0.9.503) — previously the full key was written
-                // unconditionally, so when the parser found two records
-                // with the same name (e.g. Achaios at age 47 with real
-                // stats + 21 traits, AND a stub at age 51 with 0 traits +
-                // bogus 0/1/0/0 stats), the stub overwrote the real one.
-                const score = (e) => {
-                  let s = 0;
-                  if (e.command != null || e.influence != null || e.management != null) s += 2;
-                  if (e.portrait) s += 1;
-                  // 0.9.503: trait count is the strongest signal of a
-                  // real character (stub records have 0 traits).
-                  if (e.traitCount && e.traitCount > 0) s += 3;
-                  return s;
-                };
-                const writeBest = (k, entry) => {
-                  const cur = updates[k];
-                  if (!cur || score(entry) > score(cur)) updates[k] = entry;
-                };
-                for (const c of res.characters || []) {
-                  const entry = {
-                    command: c.command, influence: c.influence,
-                    management: c.management, loyalty: c.loyalty,
-                    turn: c.turn,
-                    portrait: c.portrait || null,
-                    // 0.9.451: cache age so the non-live bodyguard-swap
-                    // can pass the right age bucket to the IPC hash.
-                    age: typeof c.age === "number" ? c.age : null,
-                    secondaryUuid: c.secondaryUuid || null,
-                    // 0.9.503: forward trait count so the scoring above
-                    // can favor records with full trait lists over
-                    // 0-trait stub records that share the same name.
-                    traitCount: typeof c.traitCount === "number" ? c.traitCount : 0,
-                    // 0.9.505: epithet/cognomen lastName (e.g. "the Elder"
-                    // for Achaios after the trait-epithet pass in main.js).
-                    // Without this, bodyguard-swap shows just "Achaios"
-                    // when the in-game and tooltip both say "Achaios the
-                    // Elder". The cache entry now carries it through.
-                    lastName: c.lastName || null,
-                    faction: c.faction || null,
-                  };
-                  const fnNorm = (c.firstName || "").toLowerCase();
-                  const lnNorm = (c.lastName || "").replace(/_/g, " ").toLowerCase();
-                  const facNorm = (c.faction || "").toLowerCase();
-                  // 0.9.503: writeBest for the full key too — same reason
-                  // as the stripped keys: the parser sometimes returns
-                  // duplicate records for the same character, and the
-                  // earlier code's unconditional write let the stub win.
-                  writeBest(`${fnNorm}|${lnNorm}|${facNorm}`, entry);
-                  // Stripped keys are collision-prone — use writeBest so a
-                  // stats-bearing entry isn't overwritten by a portrait-only
-                  // entry that happens to share firstName.
-                  writeBest(`${fnNorm}||${facNorm}`, entry);
-                  writeBest(`${fnNorm}||`, entry);
-                  if (sampleKeys.length < 8) sampleKeys.push(`"${fnNorm}|${lnNorm}|${facNorm}"=${c.command}/${c.influence}/${c.management}/${c.loyalty} portrait=${c.portrait ? "Y" : "N"}`);
-                }
-                setStatsCache(() => {
-                  // 0.9.455: REPLACE the cache instead of merging.
-                  try { localStorage.setItem("statsCache", JSON.stringify(updates)); } catch {}
-                  console.log(`[stats-cache] REPLACED cache with ${Object.keys(updates).length} keys (${(res.characters || []).length} chars) from ${pick.file} (turn ${res.turn ?? "?"}). Sample: ${sampleKeys.join("  |  ")}`);
-                  return updates;
-                });
-                // 0.9.461: statsCacheCharCount is now a useMemo over the cache.
-                const turnLabel = res.turn != null ? ` (turn ${res.turn})` : "";
-                pushToast(`Calibrated ${res.characters.length} characters from ${pick.file}${turnLabel}.`, "info", 6000);
-              } catch (e) {
-                pushToast("Calibration error: " + e.message, "warning");
-              }
-            }}
-            title={(() => {
-              const n = statsCacheCharCount || 0;
-              return n === 0
-                ? "Pick a save to calibrate stats for non-live mode. For accurate 'starting' stats, pick a turn-0 save."
-                : `${n} characters cached. Click to recalibrate from a different save.`;
-            })()}
-            style={{ ...btnStyle(false), minWidth: 0, position: "relative", fontSize: "0.65rem", padding: "1px 6px" }}>
-            <MapBtnBadge k="view.calibrate" />🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
-          </button>
-          )}
-          {liveLogActive && (
-            <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
-              title={saveLuaCounters && saveLuaCounters.count
-                ? "Open the Campaign Stats panel — surfaces the save's lua persistent counters (battles fought, mercenary recruitment, faction reform progress, rebellion state)"
-                : "Campaign Stats — waiting on save data"}
-              style={{ ...btnStyle(showStatsPanel), minWidth: 0, position: "relative" }}><MapBtnBadge k="live.stats" />Stats</button>
-          )}
-          {liveLogActive && (
-            <button
-              className="map-mode-btn"
-              onClick={async () => {
-                try {
-                  const res = await window.electronAPI?.logWatchReset?.();
-                  if (res?.ok) {
-                    pushToast("Live tracking reset — log re-anchored to now", "info");
-                  } else {
-                    pushToast("Reset failed: " + (res?.reason || res?.error || "unknown"), "warning");
-                  }
-                } catch (e) {
-                  pushToast("Reset failed: " + e.message, "warning");
-                }
-              }}
-              title="Re-anchor the live log watcher to the current end of message_log.txt and drop all live tracking state (passenger lists, unit-flow, char positions). Use after loading a save mid-session — Provincia will then only react to events from this moment forward."
-              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px", position: "relative" }}
-            >
-              <MapBtnBadge k="live.reset" />Reset
-            </button>
-          )}
-          {liveLogActive && (
-            <button
-              className="map-mode-btn"
-              onClick={async () => {
-                const api = window.electronAPI;
-                const res = await api?.selectSaveFile?.(liveSaveDir);
-                if (!res) return;
-                if (res.error) { alert(res.error); return; }
-                setPinnedSaveFile(res.file);
-                try { localStorage.setItem("pinnedSaveFile", res.file); } catch {}
-                pushToast(`Tracking ${res.file}`, "info");
-              }}
-              title={pinnedSaveFile ? `Pinned: ${pinnedSaveFile}\nClick to pick a different save.` : "Pick a specific save to track instead of the newest one."}
-              style={{ ...btnStyle(!!pinnedSaveFile), minWidth: 0, fontSize: "0.65rem", padding: "1px 6px", position: "relative" }}
-            >
-              <MapBtnBadge k="live.picksave" />{pinnedSaveFile ? "Pinned" : "Pick save…"}
-            </button>
-          )}
-          {liveLogActive && pinnedSaveFile && (
-            <button
-              className="map-mode-btn"
-              onClick={() => {
-                setPinnedSaveFile(null);
-                try { localStorage.removeItem("pinnedSaveFile"); } catch {}
-                pushToast("Following newest save again", "info");
-              }}
-              title="Stop pinning — resume newest-by-mtime tracking"
-              style={{ ...btnStyle(false), minWidth: 0, fontSize: "0.65rem", padding: "1px 4px", position: "relative" }}
-            ><MapBtnBadge k="live.unpin" />×</button>
-          )}
-        </div>
+        {/* 0.9.x: the old "view-options" pill that lived here (Live / Calibrate
+            / Stats / Reset / Pick-save) is gone. Live moved into the map-mode
+            category pill; Calibrate + the live-only controls now follow it
+            there. The empty translucent pill no longer renders. */}
         {/* Live log event feed + turn slider */}
         {liveLogActive && (liveLogEvents.length > 0 || liveHistory.length > 0) && (() => {
           const turnEvents = liveHistory.filter(e => e.type === "turn");
