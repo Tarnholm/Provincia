@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.824",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**The open map-mode category's modes now appear in their own row directly beneath the category tabs** (a real \"row under\"), instead of a floating popover. The active category stays highlighted so you can tell which group the row belongs to." },
+      { type: "change", text: "**Removed the ▸/▾ arrows from the category buttons** to save horizontal space." },
+    ],
+  },
+  {
     version: "0.9.823",
     date: "2026-06-02",
     items: [

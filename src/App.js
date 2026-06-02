@@ -2302,7 +2302,7 @@ function App() {
   useEffect(() => {
     if (!openFanSection) return;
     const onDown = (e) => {
-      const inPill = e.target?.closest?.('[data-ui-highlight="map-modes"]');
+      const inPill = e.target?.closest?.('[data-mapmodes-zone]');
       if (!inPill) setOpenFanSection(null);
     };
     document.addEventListener("mousedown", onDown, true);
@@ -10786,7 +10786,7 @@ function App() {
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
-        <div data-ui-highlight="map-modes" className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
+        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {modeSections.map((sec) => {
             const members = sec.members.filter((m) => !m.dev || devMode);
             if (!members.length) return null;
@@ -10800,11 +10800,12 @@ function App() {
                 ? (colorMode === "aor" ? "AOR" : "Hidden Res.")
                 : activeMember.label;
             // Category ("folder") button — deliberately styled UNLIKE a map-
-            // mode button: a slate, uppercase tab with a chevron. This is the
-            // visual cue that separates CATEGORIES (slate tabs) from the MODES
-            // inside them (the normal amber-when-active buttons). It always
-            // shows the category name; when one of its modes is active it also
-            // shows a small amber chip naming that mode.
+            // mode button: a slate, uppercase tab. This is the visual cue that
+            // separates CATEGORIES (slate tabs) from the MODES inside them (the
+            // normal amber-when-active buttons). It always shows the category
+            // name; when one of its modes is active it also shows a small amber
+            // chip naming that mode. The active group is highlighted (brighter
+            // slate) so you can tell which group the member row below belongs to.
             const catStyle = {
               padding: "3px 8px",
               borderRadius: 7,
@@ -10825,36 +10826,37 @@ function App() {
               gap: 4,
               boxShadow: open ? "0 2px 8px rgba(86,116,162,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
             };
+            // The open section's members render in a SEPARATE row directly
+            // beneath this pill (see below), not inline here — so a category
+            // button is just the tab. No chevron, to save horizontal space.
             return (
-              // position:relative so the open member list can be absolutely
-              // positioned directly BENEATH this category button (a dropdown),
-              // rather than expanding inline in the row.
-              <div key={sec.id} style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-                <button onClick={() => setOpenFanSection(open ? null : sec.id)}
-                  title={open ? `Collapse ${sec.title}` : `${sec.title} map modes — click to expand`}
-                  style={catStyle}>
-                  {sec.title}
-                  {!open && activeLabel && (
-                    <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)", borderRadius: 4, padding: "0 5px" }}>{activeLabel}</span>
-                  )}
-                  <span style={{ opacity: 0.6, fontSize: "0.85em" }}>{open ? "▾" : "▸"}</span>
-                </button>
-                {open && (
-                  <div style={{
-                    position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 60,
-                    display: "flex", flexWrap: "wrap", gap: 3, maxWidth: 360,
-                    padding: 5, borderRadius: 9,
-                    background: "rgba(18,26,38,0.97)", border: "1px solid rgba(150,180,220,0.45)",
-                    boxShadow: "0 6px 18px rgba(0,0,0,0.5)", pointerEvents: "auto",
-                  }}>
-                    {members.map((m) => renderModeMember(m))}
-                  </div>
+              <button key={sec.id} onClick={() => setOpenFanSection(open ? null : sec.id)}
+                title={open ? `Collapse ${sec.title}` : `${sec.title} map modes — click to expand`}
+                style={catStyle}>
+                {sec.title}
+                {!open && activeLabel && (
+                  <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)", borderRadius: 4, padding: "0 5px" }}>{activeLabel}</span>
                 )}
-              </div>
+              </button>
             );
           })}
           {/* 0.9.817: Paint moved into the Geography section (dev member). */}
         </div>
+        {/* 0.9.824: the open category's modes render in their OWN row directly
+            under the category tabs (a "row under"), not inline or as a popover.
+            Shares data-mapmodes-zone so the click-outside handler treats a
+            member click as inside (else mousedown would close it first). */}
+        {(() => {
+          const openSec = modeSections.find((s) => s.id === openFanSection);
+          if (!openSec) return null;
+          const openMembers = openSec.members.filter((m) => !m.dev || devMode);
+          if (!openMembers.length) return null;
+          return (
+            <div data-mapmodes-zone style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280), border: "1px solid rgba(150,180,220,0.45)" }}>
+              {openMembers.map((m) => renderModeMember(m))}
+            </div>
+          );
+        })()}
         {/* Bottom-right stack: mute at top, optional dev-controls in middle,
             Dev button always anchored at the bottom. Portalled to document.body
             so parent stacking contexts (topBarRef) can't clamp its z-index
