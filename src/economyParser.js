@@ -23,9 +23,17 @@
 //   INCOME side (slots 0..10):
 //     f0  = income.farming      (CONFIRMED: Julii 18105)
 //     f1  = income.taxes        (CONFIRMED: Julii 8928)
-//     f2  = income.mining       (INFERRED: small/rare 5th income slot; 0 for Julii,
-//                                900 antigonid / 480 seleucid — the only spare
-//                                nonzero income slot. Labelled mining; see caveat.)
+//     f2  = income.mining       (INFERRED-STRONG: small/rare 5th income slot; 0 for
+//                                Julii, 900 antigonid / 480 seleucid — the only spare
+//                                nonzero income slot. Cross-faction CONFIRMS the
+//                                mining label: of the 8 f2>0 factions on this save,
+//                                6 own a `mines` building and the other 2 own
+//                                resource-extraction industries; every f2=0-but-owns-
+//                                `mines` faction has only a base L0 mine (pays 0).
+//                                Merchants is RULED OUT — this save has 0 merchant
+//                                agents (0/1049 characters) yet 8 factions show f2>0,
+//                                so f2 cannot be Merchants. Not crib-pinned only
+//                                because Julii's own mining is 0; see caveat.)
 //     f3  = income.trade        (CONFIRMED: Julii 4426)
 //     f9  = income.other        (CONFIRMED: Julii 2026)
 //     f4-f8, f10 = always 0 across the whole corpus (reserved category slots,
@@ -62,6 +70,55 @@
 // future save shows a nonzero merchants/recruitment/construction line in an
 // unattributed slot, the parser surfaces it as `_unattributed` rather than
 // guessing the label — [[provincia-no-fallbacks]] (never fabricate a category).
+//
+// =============================================================================
+// PER-LINE COUNTS (Generals&Admirals 34, Units 82) — NOT a stored finance field
+// =============================================================================
+// The Financial Overview's per-line counts ("Generals & Admirals: 34; Agents: 0"
+// on the Wages line; "Units: 82" on Army-upkeep; "Buildings: 0" on Construction)
+// are NOT serialized as dedicated finance fields. A file-wide crib search for
+// 34 and 82 (i32/i16, aligned and unaligned) found NO clean count record near
+// the Julii faction record or its econ-history block: the only 34/82 adjacencies
+// sit in unrelated dense small-int noise (offset ~34.2M), and the lone isolated
+// 34/82 pair (offset 19237816, Δ52) has junk between them — not a counts struct.
+// The reserved finance slots f4–f8/f10/f13–f21 are all 0 for Julii, but Julii's
+// counts are nonzero (34/82), so the counts are NOT in the 23-i32 block either.
+// Conclusion: the panel COUNTS these at runtime from the character roster and the
+// army/unit lists. They are therefore DERIVED from crackSave (characters/armies/
+// units), never read from a finance offset — [[provincia-no-fallbacks]] forbids
+// inventing an offset. (To pin a stored count we would need a save where a count
+// changes by a known delta with everything else fixed — and even then the engine
+// likely recomputes it; this is a runtime tally, not a saved ledger field.)
+//
+// =============================================================================
+// PER-SETTLEMENT income — a single pop-tax scalar, NO category split
+// =============================================================================
+// The per-settlement income field (settlement marker −1586) is EXACTLY
+// population × DEFAULT_TAX_COEFFICIENT (corr(income,pop)=1.000 over all 25 Julii
+// cities; Rome 9000→924, every 3000-pop city→308 regardless of coastal/inland).
+// Its companion (−1582) is that value ×4.19 (a derived display figure). A
+// controlled same-population PORT-vs-INLAND diff over the whole −1620..−1100
+// window found NO field that varies with trade exposure and reads as small
+// denarii: the only differing neighbours are packed million-scale state words
+// (building/order/growth bitfields), not an income split. So there is NO
+// per-settlement trade/farming/tax breakdown stored — the per-settlement record
+// carries only the pop-derived tax scalar; the trade/farming/tax SPLIT exists
+// only at the faction level (the f0/f1/f3 econ-block slots). The Σ per-settlement
+// income (6347) is the pop-tax sum, NOT the income total (33485) — the historical
+// RED HERRING.
+//
+// =============================================================================
+// TOTALS / NET — derived (summed), not stored as discrete fields
+// =============================================================================
+// The in-game income total (33485), expenditure total (35186) and net (−1701)
+// are NOT stored as their own i32 fields anywhere in the faction region (a search
+// of ehStart−400..core+3000 finds none of them). They are computed by summing the
+// block's income / expenditure halves; net = income.total − expenditure.total
+// (matches the in-game net to the denarius). The player's f13 per-turn treasury
+// checkpoint is 0 for the in-progress turn (engine-zeroed), so there is no
+// alternative stored net — the summed block net is the authoritative source and
+// is what this module returns. The faction-record +4 field (−58483 for Julii) is
+// the AI treasury accumulator, NOT income (see rtw-economy-and-regression-gate).
 //
 // =============================================================================
 // [[provincia-no-fallbacks]] — HARD PROJECT RULE
@@ -182,6 +239,11 @@ function emptyFactionEconomy() {
       expenditure: "not-located",     // → "stored" once the block is read
       net: "unavailable",             // → "stored" (inc-exp) or "history" (delta)
       treasury: "none",
+      // The income.mining slot (f2) label confidence. The slot VALUE is stored
+      // exactly; only the category LABEL is cross-faction-inferred (see header):
+      // → "inferred-strong" once read (f2>0 tracks mine/resource-industry
+      // ownership; Merchants ruled out — no merchant agents exist in this corpus).
+      mining: "none",
     },
     // Set when a nonzero income/expenditure slot falls OUTSIDE the pinned set
     // (so the UI never silently drops engine money). Normally empty.
@@ -504,6 +566,9 @@ function parseFactionEconomy(buffer, context) {
       eco._confidence.incomeBreakdown = "stored";
       eco._confidence.expenditure = "stored";
       eco._confidence.net = "stored";
+      // Mining VALUE is stored exactly; the category LABEL is cross-faction
+      // inferred (strong: tracks mine/resource ownership; Merchants ruled out).
+      eco._confidence.mining = "inferred-strong";
       if (eco.treasury != null) eco.estimatedNextTurn = eco.treasury + decoded.net;
 
       factionsWithBreakdown++;
@@ -559,6 +624,22 @@ function parseFactionEconomy(buffer, context) {
             "Merchants/recruitment/construction are 0 in this corpus (reported 0 only " +
             "when the pinned slots fully account for the engine totals). Factions whose " +
             "block cannot be located fall back to Σ settlement income + history net.",
+      // 2026-06-02 finance-DETAIL pass (findings-finance-detail-2026-06-02.md):
+      detail: {
+        mining: "f2=income.mining upgraded to inferred-strong: f2>0 tracks " +
+                "mine/resource-industry ownership across factions; Merchants ruled " +
+                "out (0 merchant agents in this save). Value stored exactly; label inferred.",
+        counts: "Per-line counts (Generals&Admirals 34, Units 82, Agents/Buildings 0) " +
+                "are NOT a stored finance field — no count record found near the faction " +
+                "record/econ-block; the engine tallies them at runtime from the character " +
+                "roster + army/unit lists. Derived from crackSave, never from an offset.",
+        perSettlement: "No per-settlement category split: marker-1586 income = " +
+                "population×taxCoefficient exactly (pure pop-tax); same-pop port vs " +
+                "inland cities are identical. Trade/farming/tax split exists only at " +
+                "the faction level (econ-block slots).",
+        totalsNet: "income/expenditure TOTALS and NET are derived (summed), not stored " +
+                "as discrete fields; net = income.total-expenditure.total (matches in-game).",
+      },
       taxCoefficient,
     },
   };

@@ -290,6 +290,26 @@ describe("economyParser — Julii Financial Overview save (STORED breakdown)", (
     expect(j._confidence.expenditure).toBe("stored");
     expect(j._confidence.net).toBe("stored");
     expect(j._confidence.treasury).toBe("confirmed");
+    // Mining slot VALUE is stored exactly; the LABEL is cross-faction inferred
+    // (strong: f2>0 tracks mine/resource ownership; Merchants ruled out — no
+    // merchant agents in this save). See findings-finance-detail-2026-06-02.md.
+    expect(j._confidence.mining).toBe("inferred-strong");
+
+    // ── f2 (mining) cross-faction structural check: every faction whose stored
+    //    mining slot is >0 should also report a positive income total (the slot
+    //    feeds the income half), and mining is never negative. This is the
+    //    structural evidence behind the inferred-strong mining label. ──────────
+    let miningFactions = 0;
+    for (const eco of Object.values(out.byFaction)) {
+      if (eco._confidence.incomeBreakdown !== "stored") continue;
+      expect(eco.income.mining).toBeGreaterThanOrEqual(0); // never negative
+      if (eco.income.mining > 0) {
+        miningFactions++;
+        expect(eco.income.total).toBeGreaterThan(0);
+      }
+    }
+    // Several factions (antigonid/seleucid/athens/arverni/…) have f2>0 on this save.
+    expect(miningFactions).toBeGreaterThanOrEqual(5);
 
     // ── Cross-faction sanity: every faction with a breakdown is internally
     //    consistent (each pinned income/exp slot ≥0; net = inc-exp) ───────────
