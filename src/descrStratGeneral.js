@@ -188,8 +188,39 @@ function resolveSettlement(parsed, settlementName, factionHint) {
 // AttalosC → "Attalos III"; the base token (no suffix) stays plain "Attalos".
 const ROMAN_FOR_SUFFIX = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
+// Parse descr_sm_factions.txt → { factionId: { men, women } } namelist assignment.
+// Faction ids sit at one-tab indent ("\t\"id\":"); each block has a "namelists"
+// object naming its men/women lists (e.g. taras → greek_men / greek_women).
+function parseSmFactionNamelists(text) {
+  const out = {};
+  if (!text) return out;
+  const ids = [...text.matchAll(/^\t"(\w+)":/gm)];
+  for (let i = 0; i < ids.length; i++) {
+    const blk = text.slice(ids[i].index, i + 1 < ids.length ? ids[i + 1].index : text.length);
+    const nl = /"namelists"\s*:\s*\{([\s\S]*?)\}/.exec(blk);
+    if (!nl) continue;
+    const men = /"men"\s*:\s*"([^"]+)"/.exec(nl[1]);
+    const women = /"women"\s*:\s*"([^"]+)"/.exec(nl[1]);
+    out[ids[i][1]] = { men: men ? men[1] : null, women: women ? women[1] : null };
+  }
+  return out;
+}
+
+// Parse descr_namelists.txt → { namelistName: [token, ...] } (e.g. greek_men → [...]).
+function parseNamelistPools(text) {
+  const out = {};
+  if (!text) return out;
+  const re = /"(\w+)"\s*:\s*\{\s*"names"\s*:\s*\[([\s\S]*?)\]/g;
+  let m;
+  while ((m = re.exec(text))) out[m[1]] = (m[2].match(/"([^"]+)"/g) || []).map((s) => s.slice(1, -1));
+  return out;
+}
+
 // Per-faction display-name pools for the UI, classified by gender + family.
-function buildPools(fac, names) {
+// `extra` (optional) carries the faction's LIVE culture namelist tokens
+// ({ men:[…], women:[…] }) so names registered in descr_namelists.txt that no
+// character uses yet are still offered in the dropdowns.
+function buildPools(fac, names, extra) {
   const male = new Set(), female = new Set();
   const disp = (tok) => names.tokenToDisplay.get(tok) || tok.replace(/_/g, " ");
   const regnal = (tok) => {
@@ -202,6 +233,12 @@ function buildPools(fac, names) {
   for (const rel of fac.relatives) male.add(disp(rel.headFirst));
   for (const t of (fac._sons || [])) male.add(disp(t));
   for (const t of (fac._females || [])) female.add(disp(t));
+  // Live culture namelist names (caller passes the faction's greek_men/greek_women
+  // etc. token lists) — surfaces namelist names not yet used by any character.
+  if (extra) {
+    for (const t of (extra.men || [])) male.add(disp(t));
+    for (const t of (extra.women || [])) female.add(disp(t));
+  }
   // Surname culture (Roman: First_Family) vs single-name (Greek/Eastern: First).
   const usesSurnames = fac.characters.some((c) => c.famTok) || fac.relatives.some((r) => r.headFam)
     || fac.characterRecords.some((r) => r.famTok && isFamilyToken(r.famTok));
@@ -482,6 +519,7 @@ function diploLine(kind, from, to, value) {
 
 module.exports = {
   parseNamesTxt, parseLookup, parseDescrStrat, buildPools, findDuplicateNames,
+  parseSmFactionNamelists, parseNamelistPools,
   resolveFreeToken, composeAddGeneral, isFamilyToken,
   buildSettlementCoordIndex, resolveSettlement,
   parseDescrRegions, buildRegionCoords, factionOwnedSettlements,

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.866",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Add General name dropdowns now read the live culture namelists.** Previously the General / Wife / Children name lists only offered names already used by that faction's existing characters, so a brand-new name you'd registered in `descr_namelists.txt` never showed up. Now Provincia parses `descr_sm_factions.txt` (faction → men/women namelist) and `descr_namelists.txt` live on every Add-General open, and unions the faction's full culture namelist into the dropdowns — e.g. a name added to `greek_men` is immediately selectable for Taras (and every Greek faction). Read fresh each time; falls back to existing-names-only if the namelist files can't be read." },
+    ],
+  },
+  {
     version: "0.9.865",
     date: "2026-06-02",
     items: [

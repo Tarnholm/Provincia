@@ -3792,6 +3792,17 @@ ipcMain.handle("addgen-get-data", async () => {
     const namesPath = path.join(activeModDataDir, "text", "names.txt");
     const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
     const parsed = descrGen.parseDescrStrat(fs.readFileSync(dsPath, "utf8"));
+    // LIVE culture namelists → so the name dropdowns offer every name registered
+    // in descr_namelists.txt for the faction's culture (e.g. greek_men), not just
+    // names already used by existing characters. Read fresh each call; best-effort.
+    let facNamelists = {}, nlPools = {};
+    try {
+      const smP = path.join(activeModDataDir, "descr_sm_factions.txt");
+      if (fs.existsSync(smP)) facNamelists = descrGen.parseSmFactionNamelists(fs.readFileSync(smP, "utf8"));
+      const nlP = path.join(activeModDataDir, "descr_namelists.txt");
+      if (fs.existsSync(nlP)) nlPools = descrGen.parseNamelistPools(fs.readFileSync(nlP, "utf8"));
+      console.log(`[addgen] namelists: ${Object.keys(facNamelists).length} faction maps, ${Object.keys(nlPools).length} pools`);
+    } catch (ne) { console.warn("[addgen] namelist load failed (dropdown = existing names only):", ne && ne.message); }
     const settIdx = descrGen.buildSettlementCoordIndex(parsed);
     const settlements = {};
     for (const [name, v] of settIdx) settlements[name] = { faction: v.faction, x: v.x, y: v.y, hint: v.hint };
@@ -3810,7 +3821,9 @@ ipcMain.handle("addgen-get-data", async () => {
     } catch (re) { console.warn("[addgen] owned-settlement resolve failed (falling back to governor index):", re && re.message); }
     const factions = {};
     for (const fac of parsed.factions) {
-      const pools = descrGen.buildPools(fac, names);
+      const nl = facNamelists[fac.name] || {};
+      const extra = { men: nlPools[nl.men] || [], women: nlPools[nl.women] || [] };
+      const pools = descrGen.buildPools(fac, names, extra);
       factions[fac.name] = {
         name: fac.name, generalUnit: fac.generalUnit, generalUnits: fac.generalUnits,
         maleFirst: pools.maleFirst, femaleFirst: pools.femaleFirst, families: pools.families,
