@@ -22,6 +22,18 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
+// Custom title-bar strip height — widgets positioned as RAW viewport
+// fractions (the else-branch below + the design-y top anchor) must be pushed
+// down by this so they sit BELOW the Discord-style strip instead of under it.
+// Mirrors App.js's TITLEBAR_H (0 on macOS, 32 elsewhere; the test stub has no
+// "darwin" platform so it reserves the strip — harmless for layout math).
+const TITLEBAR_H =
+  typeof window !== "undefined" &&
+  window.electronAPI &&
+  window.electronAPI.platform === "darwin"
+    ? 0
+    : 32;
+
 const MIN_FRAC = 0.02;        // 2% of viewport is the floor for w/h
 const SNAP_FRAC = 0.0055;     // ≈ 6 px at 1080p — narrow snap pull-in
 const GUIDE_FRAC = 0.014;     // ≈ 15 px at 1080p — wider band where the cyan
@@ -516,7 +528,9 @@ export function Movable({
     const maxBottom = vp.h - 6;
     if (top + height > maxBottom) height = Math.max(14, maxBottom - top);
   } else {
-    top = Math.round(ePos.y * vp.h);
+    // Raw viewport-fraction placement — inset by the title-bar strip so a
+    // widget at y≈0 lands just below the strip, not under it.
+    top = Math.round(ePos.y * vp.h) + TITLEBAR_H;
     height = Math.max(40, Math.round(ePos.h * vp.h));
   }
 

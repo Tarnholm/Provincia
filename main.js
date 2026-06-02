@@ -2434,6 +2434,15 @@ function createWindow() {
     minWidth: 1280,
     minHeight: 720,
     autoHideMenuBar: true,
+    // Discord-style custom title bar. On macOS keep the normal native frame
+    // (titleBarStyle 'default'); on Windows/Linux hide the OS title bar and
+    // draw a custom 32px strip in the renderer, while Electron still paints
+    // the native min/maximize/close on the RIGHT via titleBarOverlay so window
+    // controls keep working. height:32 matches the renderer's TITLEBAR_H.
+    titleBarStyle: process.platform === "darwin" ? "default" : "hidden",
+    ...(process.platform === "darwin"
+      ? {}
+      : { titleBarOverlay: { color: "#15181e", symbolColor: "#cfd6e0", height: 32 } }),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

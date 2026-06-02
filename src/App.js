@@ -61,6 +61,27 @@ function updateErrToast(raw) {
 
 // Layout constants
 const MAP_PADDING = 6;
+// Custom title-bar strip height (Discord-style). On Windows/Linux the native
+// frame is hidden (main.js titleBarStyle:'hidden' + titleBarOverlay), so the
+// renderer content extends to the very top edge and we reserve TITLEBAR_H for
+// the custom strip. On macOS the native frame is kept, so there's no inset.
+// process.platform isn't available in the renderer; the preload exposes it as
+// window.electronAPI.platform. Anything other than darwin (incl. the test
+// stub) reserves the strip — matches the main.js platform gate.
+const IS_DARWIN =
+  typeof window !== "undefined" &&
+  window.electronAPI &&
+  window.electronAPI.platform === "darwin";
+const TITLEBAR_H = IS_DARWIN ? 0 : 32;
+// Width kept clear on the RIGHT of the strip for the native min/max/close
+// buttons drawn by Electron's titleBarOverlay (so the drag strip never covers
+// them). ~140px matches the overlay control cluster on Windows 11.
+const TITLEBAR_CONTROLS_W = 140;
+// Top anchor for the map column / right column / everything that previously
+// pinned to MAP_PADDING from the true viewport top. With the custom strip the
+// content area starts TITLEBAR_H lower, so MAP_TOP = MAP_PADDING + TITLEBAR_H
+// (== MAP_PADDING on macOS where TITLEBAR_H is 0).
+const MAP_TOP = MAP_PADDING + TITLEBAR_H;
 // 0.9.647: PANELS_GAP was 6px — too small, made the right column read as flush
 // with the map. Bumped to match the natural inter-panel vertical gap (the
 // Diplomacy/Characters/Buildings Movables sit ~0.009 vh apart vertically by
@@ -1794,6 +1815,12 @@ function App() {
   const [showFileImport, setShowFileImport] = useState(false);
   const [fileImportDone, setFileImportDone] = useState(false);
   const [importPicker, setImportPicker] = useState(null); // { suffix, campaigns, camp } — shown when multiple campaigns found
+  // Title-bar campaign button → right-click import. Holds the slot key
+  // ("classic"/"imperial") to pre-target when the import modal opens, so the
+  // folder picker auto-fires for that slot. Consumed (once) inside the import
+  // modal's render IIFE, cleared via the ref guard.
+  const [pendingImportSlot, setPendingImportSlot] = useState(null);
+  const pendingImportSlotRef = useRef(null);
   const [devContextMenu, setDevContextMenu] = useState(null); // { x, y, rgbKey, region }
   const [devEditsCount, setDevEditsCount] = useState(0);
   const [devDirtyFiles, setDevDirtyFiles] = useState(new Set());
@@ -8591,7 +8618,7 @@ function App() {
     // computed canvasSize.
     registerFixedRect("map.canvas", {
       x: MAP_PADDING / vw,
-      y: MAP_PADDING / vh,
+      y: MAP_TOP / vh,
       w: canvasSize.width / vw,
       h: canvasSize.height / vh,
     });
@@ -8618,8 +8645,10 @@ function App() {
         ? Math.round(window.innerHeight * bottomStripPct)
         : 0;
       const effectiveBottom = overrideBottomH || REGIONINFO_HEIGHT;
+      // Subtract TITLEBAR_H: the usable content area starts below the custom
+      // title-bar strip, so the map has that much less vertical room.
       let availableHeightForMap =
-        window.innerHeight - MAP_PADDING * 2 - effectiveBottom - MAP_PADDING;
+        window.innerHeight - TITLEBAR_H - MAP_PADDING * 2 - effectiveBottom - MAP_PADDING;
 
       // Dynamic canvas sizing — also constrain by any Movable widget that
       // sits in the map's lane. If the user dragged a widget toward the
@@ -8649,7 +8678,9 @@ function App() {
         // Widget extends into the map's horizontal span (anywhere x < 0.5)
         // and starts below the map's top edge → it caps the map's bottom.
         if (w.x < 0.5 && w.y > 0.1) {
-          const widgetTopPx = Math.floor(w.y * window.innerHeight);
+          // Widgets render inset by the title-bar strip (see Movable.js), so
+          // add TITLEBAR_H to reconstruct the widget's real pixel top here.
+          const widgetTopPx = Math.floor(w.y * window.innerHeight) + TITLEBAR_H;
           const maxMapBottom = widgetTopPx - gapPx;
           const candidate = maxMapBottom - MAP_PADDING;
           if (candidate > 50 && candidate < availableHeightForMap) {
@@ -10662,9 +10693,6 @@ function App() {
       boxShadow: active ? "0 2px 0 #b8842a, 0 1px 6px rgba(220,166,74,0.3)" : "0 1px 3px rgba(0,0,0,0.2)",
     });
 
-    const campaigns = Object.values(CAMPAIGNS);
-    const isImperial = mapCampaign === "imperial";
-
     // 0.9.813: single-select map modes are grouped into Paradox-style
     // sections. Each section collapses to one button; clicking it fans the
     // members out sideways. `dev:true` members only appear in dev mode.
@@ -12048,43 +12076,9 @@ function App() {
             </div>
           );
         })()}
-        {/* Campaign toggle — lamp-switch style with labels outside */}
-        <div className={welcomeHighlight === "campaigns" ? "ws-ui-glow" : ""} style={{ display: "inline-flex", alignItems: "center", gap: 8, pointerEvents: "auto", width: "fit-content" }}
-          title={`Switch to ${isImperial ? campaigns[0].label : campaigns[1].label}`}
-        >
-          <span style={{
-            fontSize: "0.78rem", fontWeight: !isImperial ? 700 : 400,
-            color: !isImperial ? "#fff" : "rgba(255,255,255,0.45)",
-            textShadow: "0 1px 3px rgba(0,0,0,0.7)",
-            transition: "color 0.3s, font-weight 0.3s",
-          }}>{campaigns[0].label}</span>
-          <div onClick={() => setMapCampaign(isImperial ? campaigns[0].key : campaigns[1].key)} style={{
-            position: "relative", width: 40, height: 20, borderRadius: 10,
-            background: isImperial ? "rgba(60,100,180,0.7)" : "rgba(80,80,80,0.7)",
-            backdropFilter: "blur(6px)",
-            cursor: "pointer", transition: "background 0.3s",
-            boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)",
-            border: "1px solid rgba(255,255,255,0.15)",
-            flexShrink: 0,
-          }}>
-            <MapBtnBadge k="campaign.toggle" />
-            <span style={{
-              position: "absolute",
-              left: isImperial ? 2 : "auto",
-              right: isImperial ? "auto" : 2,
-              top: 2, width: 14, height: 14, borderRadius: "50%",
-              background: "#fff",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
-              transition: "left 0.25s ease, right 0.25s ease",
-            }} />
-          </div>
-          <span style={{
-            fontSize: "0.78rem", fontWeight: isImperial ? 700 : 400,
-            color: isImperial ? "#fff" : "rgba(255,255,255,0.45)",
-            textShadow: "0 1px 3px rgba(0,0,0,0.7)",
-            transition: "color 0.3s, font-weight 0.3s",
-          }}>{campaigns[1].label}</span>
-        </div>
+        {/* Campaign toggle MOVED to the custom title bar (Discord-style strip
+            at the top of the window). The two campaign-slot buttons now live
+            there; clicking switches slots, right-click imports into a slot. */}
       </div>
     );
   }
@@ -13971,6 +13965,98 @@ function App() {
   return (
     <AnimationLayoutProvider designMode={designMode}>
       <style>{globalScrollbarKill}</style>
+      {/* Discord-style custom title bar (Windows/Linux only; TITLEBAR_H is 0
+          on macOS so this strip collapses away and the native frame shows).
+          The strip itself is a drag region; the title text + campaign buttons
+          are no-drag so they stay clickable. The right ~140px is left clear so
+          the strip never covers Electron's native min/maximize/close drawn by
+          titleBarOverlay. */}
+      {TITLEBAR_H > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: TITLEBAR_H,
+            zIndex: 100000,
+            background: "#15181e",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            paddingLeft: 10,
+            // keep the native window controls (drawn on the right by the OS
+            // overlay) uncovered
+            paddingRight: TITLEBAR_CONTROLS_W,
+            WebkitAppRegion: "drag",
+            userSelect: "none",
+          }}
+        >
+          <span
+            style={{
+              WebkitAppRegion: "no-drag",
+              fontSize: "0.74rem",
+              fontWeight: 700,
+              letterSpacing: 0.3,
+              color: "#cfd6e0",
+              textShadow: "0 1px 2px rgba(0,0,0,0.6)",
+            }}
+          >
+            Provincia
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, WebkitAppRegion: "no-drag" }}>
+            {Object.values(CAMPAIGNS).map((camp) => {
+              const active = mapCampaign === camp.key;
+              return (
+                <button
+                  key={camp.key}
+                  onClick={() => setMapCampaign(camp.key)}
+                  onContextMenu={(e) => {
+                    // Right-click → import new files into THIS slot. Opens the
+                    // import modal pre-targeted to this campaign (dev-only, like
+                    // the dev-pill Import button).
+                    e.preventDefault();
+                    setPendingImportSlot(camp.key);
+                    setFileImportDone(false);
+                    setShowFileImport(true);
+                  }}
+                  title={
+                    active
+                      ? `${camp.label} (active) — right-click to import files into this slot`
+                      : `Switch to ${camp.label} — right-click to import files into this slot`
+                  }
+                  style={{
+                    WebkitAppRegion: "no-drag",
+                    margin: 0,
+                    padding: "2px 10px",
+                    height: 22,
+                    borderRadius: 6,
+                    cursor: active ? "default" : "pointer",
+                    maxWidth: 220,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    border: active
+                      ? "1px solid rgba(220,166,74,0.7)"
+                      : "1px solid rgba(255,255,255,0.14)",
+                    background: active
+                      ? "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)"
+                      : "rgba(255,255,255,0.06)",
+                    color: active ? "#1a1400" : "#cfd6e0",
+                    textShadow: active ? "none" : "0 1px 2px rgba(0,0,0,0.4)",
+                    boxShadow: active ? "0 1px 4px rgba(220,166,74,0.3)" : "none",
+                  }}
+                >
+                  {camp.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <canvas
         ref={bgCanvasRef}
         aria-hidden="true"
@@ -15408,7 +15494,7 @@ function App() {
               />
             )}
             {/* LEFT COLUMN: Map */}
-            <div style={{ position: "absolute", top: MAP_PADDING, left: MAP_PADDING, width: canvasSize.width }}>
+            <div style={{ position: "absolute", top: MAP_TOP, left: MAP_PADDING, width: canvasSize.width }}>
               <div style={{ position: "relative" }}>
                 {renderMapModeToggle()}
                 <div className="legend-panel" style={{
@@ -16180,7 +16266,7 @@ function App() {
                 in design mode. Headers/buttons stay put; only inner
                 content scrolls. */}
             <Movable id="bottom.search" title="Search" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
               defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
               zIndex={2}>
               {/* Search widget is just the input — no surrounding panel
@@ -16205,7 +16291,7 @@ function App() {
             </Movable>
 
             <Movable id="bottom.factions" title="Factions" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
               defaultPct={{ x: 0.0047, y: 0.7300, w: 0.2076, h: 0.2650 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
@@ -16220,7 +16306,7 @@ function App() {
 
             {pinnedRegions.length > 0 && (
               <Movable id="bottom.pinned" title="Pinned" designMode={designMode}
-                colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
+                colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
                 defaultPct={{ x: 0.190, y: 0.755, w: 0.375, h: 0.040 }}>
                 <div className="panel" style={{ width: "100%", height: "100%", padding: "8px 10px", boxSizing: "border-box", overflow: "auto" }}>
                   <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 5, color: "#dca64a" }}>📌 Pinned Regions</div>
@@ -16250,7 +16336,7 @@ function App() {
             )}
 
             <Movable id="bottom.selected" title="Selected provinces" designMode={designMode}
-              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_PADDING + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_PADDING + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
+              colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941 }}
               defaultPct={{ x: 0.2170, y: 0.7009, w: 0.3496, h: 0.2941 }}>
               {/* Three sections in this widget:
                     1) Recent regions chips + Summary toggle (fixed row)
@@ -16380,7 +16466,7 @@ function App() {
             <div
               style={{
                 position: "fixed",
-                top: MAP_PADDING,
+                top: MAP_TOP,
                 left: MAP_PADDING + canvasSize.width + PANELS_GAP,
                 right: MAP_PADDING,
                 bottom: MAP_PADDING,
@@ -19527,6 +19613,25 @@ function App() {
             setImportPicker({ suffix: camp.suffix, campaigns: result.campaigns, camp });
           }
         };
+
+        // Right-click on a title-bar campaign button opens this modal with
+        // pendingImportSlot set to the clicked slot. Auto-fire the folder
+        // picker for exactly that slot (once — the ref guard stops re-fires on
+        // every re-render of the IIFE) so the import targets the right slot.
+        if (isElectron && pendingImportSlot && !pendingImportSlotRef.current) {
+          // ref acts as an "in-flight" latch so the IIFE re-rendering before
+          // the state flush can't fire the picker twice. Cleared on the next
+          // tick once we've consumed the slot.
+          pendingImportSlotRef.current = pendingImportSlot;
+          const camp = campaigns.find((c) => c.key === pendingImportSlot);
+          setPendingImportSlot(null);
+          if (camp) {
+            console.log("[titlebar-import] right-click import for slot:", camp.key);
+            setTimeout(() => { handleElectronSelect(camp); pendingImportSlotRef.current = null; }, 0);
+          } else {
+            pendingImportSlotRef.current = null;
+          }
+        }
 
         // Browser fallback: webkitdirectory input
         const findFile = (files, name) => {

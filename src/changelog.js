@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.843",
+    date: "2026-06-02",
+    items: [
+      { type: "feature", text: "**Campaign chooser moved into a Discord-style title bar.** The top of the window is now a custom strip (native minimise/maximise/close stay on the right) with the two campaign-slot buttons, each labelled by the mod loaded into that slot. Click to switch campaigns; **right-click a slot to import new files into it**. Replaces the old lamp-switch toggle. (Windows; macOS keeps its native frame.)" },
+    ],
+  },
+  {
     version: "0.9.842",
     date: "2026-06-02",
     items: [
