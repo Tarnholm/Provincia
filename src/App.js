@@ -11502,7 +11502,7 @@ function App() {
         )}
         {/* View options — always visible */}
         <div className={welcomeHighlight === "view-options" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 4, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
-          <span style={{ opacity: 0.7, fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 700 }}>View</span>
+          {/* 0.9.832: "View" label removed per user request. */}
           <button className="map-mode-btn" onClick={() => setDevFlatColors(prev => !prev)}
             style={{ ...btnStyle(devFlatColors), minWidth: 0, position: "relative" }}><MapBtnBadge k="view.flat" />Flat</button>
           <button className="map-mode-btn" onClick={() => setDevGrid(prev => !prev)}

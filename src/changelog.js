@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.832",
+    date: "2026-06-02",
+    items: [
+      { type: "change", text: "**Removed the \"View\" label** from the view-options button row." },
+    ],
+  },
+  {
     version: "0.9.831",
     date: "2026-06-02",
     items: [
