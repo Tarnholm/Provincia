@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.863",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Faction Wealth CSV export now includes the Financial Overview breakdown** — per-faction income total + categories (farming/trade/taxes/mining/other), expenditure total, and net — so you can analyse every faction's economy in a spreadsheet, not just treasury." },
+    ],
+  },
+  {
     version: "0.9.862",
     date: "2026-06-02",
     items: [

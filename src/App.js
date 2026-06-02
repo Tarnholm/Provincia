@@ -20863,15 +20863,24 @@ function App() {
                           const s = String(v);
                           return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
                         };
-                        const snapshotHeader = ["faction","display_name","ai_personality","current_treasury","wealth_is_live","turn_start_treasury","starting_wealth","current_regions","starting_regions","current_armies"];
+                        // 0.9.863: include the stored Financial Overview breakdown
+                        // (income categories, expenditure total, net) per faction.
+                        const snapshotHeader = ["faction","display_name","ai_personality","current_treasury","wealth_is_live","turn_start_treasury","starting_wealth","current_regions","starting_regions","current_armies","income_total","income_farming","income_trade","income_taxes","income_mining","income_other","expenditure_total","net"];
                         const snapshotRows = [snapshotHeader.join(",")];
+                        const ecoMap = (saveEconomy && saveEconomy.byFaction) || {};
+                        const ecoCell = (v) => (typeof v === "number" ? v : "");
                         for (const r of rows) {
+                          const ec = ecoMap[r.faction] || null;
+                          const ein = ec && ec.income ? ec.income : {};
+                          const eex = ec && ec.expenditure ? ec.expenditure : {};
                           snapshotRows.push([
                             r.faction, r.name, r.aiPersonality || "",
                             r.wealth ?? "", r.wealthIsLive ? "yes" : "no",
                             r.wealthTurnStart ?? "",
                             factionWealth[r.faction] != null ? factionWealth[r.faction] : (factionWealth[r.faction?.toLowerCase()] ?? ""),
                             r.regions, r.startingRegions, r.armies,
+                            ecoCell(ein.total), ecoCell(ein.farming), ecoCell(ein.trade), ecoCell(ein.taxes != null ? ein.taxes : ein.tax), ecoCell(ein.mining), ecoCell(ein.other),
+                            ecoCell(eex.total), ec ? ecoCell(ec.net) : "",
                           ].map(csvEscape).join(","));
                         }
                         const snapshotCsv = snapshotRows.join("\n");
