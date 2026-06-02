@@ -2793,6 +2793,30 @@ function App() {
     stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
   }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
 
+  // 0.9.857: move a unit from one army to another (e.g. Rome's garrison → a
+  // field general in the same province). Drops the unit from the source army's
+  // staged list and appends it to the target army's staged list, staging BOTH.
+  // Commander/general tags are stripped on transfer — a moved unit is a plain
+  // unit in its new army, we never fabricate a second named general.
+  const onMoveUnitBetweenArmies = useCallback((sourceDesc, targetDesc, fromIdx) => {
+    if (!sourceDesc || !targetDesc) return;
+    const srcKey = armyKey(sourceDesc.faction, sourceDesc.locator);
+    const tgtKey = armyKey(targetDesc.faction, targetDesc.locator);
+    if (!srcKey || !tgtKey || srcKey === tgtKey) return;
+    const srcPending = pendingArmyUnits.get(srcKey) || appliedArmyUnits.get(srcKey);
+    const srcCur = srcPending ? srcPending.units : (sourceDesc.originalUnits || []);
+    const tgtPending = pendingArmyUnits.get(tgtKey) || appliedArmyUnits.get(tgtKey);
+    const tgtCur = tgtPending ? tgtPending.units : (targetDesc.originalUnits || []);
+    if (fromIdx < 0 || fromIdx >= srcCur.length) return;
+    const moved = { ...srcCur[fromIdx] };
+    delete moved.commanderUuid; delete moved.commanderName;
+    delete moved.commanderLastName; delete moved.commanderFaction;
+    const srcNext = srcCur.filter((_, i) => i !== fromIdx);
+    const tgtNext = [...(tgtCur || []), moved];
+    stageArmyUnits(sourceDesc.faction, sourceDesc.locator, srcNext, sourceDesc.label);
+    stageArmyUnits(targetDesc.faction, targetDesc.locator, tgtNext, targetDesc.label);
+  }, [pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
+
   // 0.9.855: drag-and-drop reorder within the selected army. Moves the unit at
   // fromIdx so it lands at toIdx in the staged list.
   const onReorderUnitInSelectedArmy = useCallback((fromIdx, toIdx) => {
@@ -16585,6 +16609,7 @@ function App() {
                       onRemoveUnitFromSelectedArmy={onRemoveUnitFromSelectedArmy}
                       onDuplicateUnitInSelectedArmy={onDuplicateUnitInSelectedArmy}
                       onReorderUnitInSelectedArmy={onReorderUnitInSelectedArmy}
+                      onMoveUnitBetweenArmies={onMoveUnitBetweenArmies}
                       armyKeyOf={armyKey}
                       onToggleWealthPanel={() => setShowWealthPanel(prev => !prev)}
                       wealthPanelOpen={showWealthPanel}

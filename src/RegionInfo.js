@@ -528,7 +528,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -891,10 +891,28 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
   const [savingMsg, setSavingMsg] = useState(null);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const [addQuery, setAddQuery] = useState("");
-  // 0.9.855: index (in the underlying army-unit list) of the card currently
-  // being dragged, for drag-and-drop reorder within the selected army.
-  const unitDragIdxRef = useRef(null);
+  // 0.9.855/0.9.857: payload for the card currently being dragged —
+  // { desc, idx } where desc is the SOURCE army descriptor and idx the unit's
+  // index in that army's list. Used for reorder within an army AND moving a
+  // unit to another army (drop on a different army's grid).
+  const unitDragRef = useRef(null);
   const [unitDragOverIdx, setUnitDragOverIdx] = useState(null);
+  const [dragOverArmyKey, setDragOverArmyKey] = useState(null);
+  // Resolve a drop: same army → reorder to targetIdx; different army → move.
+  const handleUnitDrop = (targetDesc, targetIdx) => {
+    const p = unitDragRef.current;
+    unitDragRef.current = null;
+    setUnitDragOverIdx(null);
+    setDragOverArmyKey(null);
+    if (!p || !p.desc || !targetDesc) return;
+    const srcKey = armyKeyOf ? armyKeyOf(p.desc.faction, p.desc.locator) : null;
+    const tgtKey = armyKeyOf ? armyKeyOf(targetDesc.faction, targetDesc.locator) : null;
+    if (srcKey && tgtKey && srcKey === tgtKey) {
+      if (onReorderUnitInSelectedArmy && targetIdx != null && targetIdx >= 0) onReorderUnitInSelectedArmy(p.idx, targetIdx);
+    } else if (onMoveUnitBetweenArmies) {
+      onMoveUnitBetweenArmies(p.desc, targetDesc, p.idx);
+    }
+  };
   // 0.9.467: edits stage to the pending-changes registry in App.js (via
   // onEditBuildings); the descr_strat IPC fires only when the user clicks
   // Apply in the review modal. logMsg becomes the human-readable line in
@@ -3095,7 +3113,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}{garrisonCommander.bodyguardRegion ? <span style={{ color: "#aaa", marginLeft: 4 }}>(bodyguard at {garrisonCommander.bodyguardRegion})</span> : null}
             </div>
           ) : null}
-          <div style={{
+          <div
+            // 0.9.857: drop zone — dragging a unit from ANOTHER army onto the
+            // garrison grid moves it into the garrison.
+            onDragOver={(e) => {
+              const p = unitDragRef.current;
+              if (!p) return;
+              const srcKey = armyKeyOf ? armyKeyOf(p.desc.faction, p.desc.locator) : null;
+              if (garrisonKey && srcKey && srcKey !== garrisonKey) { e.preventDefault(); setDragOverArmyKey(garrisonKey); }
+            }}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverArmyKey((c) => c === garrisonKey ? null : c); }}
+            onDrop={(e) => { if (!unitDragRef.current) return; e.preventDefault(); handleUnitDrop(garrisonArmyDesc, null); }}
+            style={{
             display: "grid",
             // Cards capped at 32 px wide so they stay compact (10×2 = 20
             // slots max in any settlement). `minmax(0, 32px)` lets cards
@@ -3107,7 +3136,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             justifyContent: "start",
             alignContent: "start",
             // 0.9.648: highlight box when this army is the selected edit target.
-            outline: isGarrisonSelected ? "2px solid #facc15" : "none",
+            // 0.9.857: teal highlight when it's a valid cross-army drop target.
+            outline: dragOverArmyKey && dragOverArmyKey === garrisonKey
+              ? "2px solid #38bdf8"
+              : (isGarrisonSelected ? "2px solid #facc15" : "none"),
             outlineOffset: 2,
             borderRadius: 3,
           }}>
@@ -3175,25 +3207,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   draggable={isGarrisonSelected && !!onReorderUnitInSelectedArmy}
                   onDragStart={(e) => {
                     if (!isGarrisonSelected) return;
-                    unitDragIdxRef.current = garrison.indexOf(u);
+                    unitDragRef.current = { desc: garrisonArmyDesc, idx: garrison.indexOf(u) };
                     e.dataTransfer.effectAllowed = "move";
-                    try { e.dataTransfer.setData("text/plain", String(unitDragIdxRef.current)); } catch {}
+                    try { e.dataTransfer.setData("text/plain", "unit"); } catch {}
                     // 0.9.856: drag the whole CARD (border + icon + badges), not
                     // just the bare unit image the browser picks by default.
                     try { const card = e.currentTarget; e.dataTransfer.setDragImage(card, card.offsetWidth / 2, card.offsetHeight / 2); } catch {}
                   }}
-                  onDragOver={(e) => { if (isGarrisonSelected && unitDragIdxRef.current != null) { e.preventDefault(); const di = garrison.indexOf(u); setUnitDragOverIdx((c) => c === di ? c : di); } }}
+                  onDragOver={(e) => { if (unitDragRef.current) { e.preventDefault(); const di = garrison.indexOf(u); setUnitDragOverIdx((c) => c === di ? c : di); } }}
                   onDragLeave={() => setUnitDragOverIdx((c) => c === garrison.indexOf(u) ? null : c)}
                   onDrop={(e) => {
-                    if (!isGarrisonSelected || !onReorderUnitInSelectedArmy) return;
+                    if (!unitDragRef.current) return;
                     e.preventDefault();
-                    const from = unitDragIdxRef.current;
-                    const to = garrison.indexOf(u);
-                    unitDragIdxRef.current = null;
-                    setUnitDragOverIdx(null);
-                    if (from != null && to >= 0) onReorderUnitInSelectedArmy(from, to);
+                    e.stopPropagation();
+                    handleUnitDrop(garrisonArmyDesc, garrison.indexOf(u));
                   }}
-                  onDragEnd={() => { unitDragIdxRef.current = null; setUnitDragOverIdx(null); }}
+                  onDragEnd={() => { unitDragRef.current = null; setUnitDragOverIdx(null); setDragOverArmyKey(null); }}
                   onMouseEnter={() => setHoveredUnit(u)}
                   onMouseLeave={() => setHoveredUnit((cur) => cur === u ? null : cur)}
                   onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}
@@ -3449,12 +3478,25 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     }}>
                     {a.character || (fac ? factionLabel(fac) + " army" : "Army")}{isFieldSelected ? " · selected" : ""}
                   </div>
-                  <div style={{
+                  <div
+                    // 0.9.857: drop zone — drag a unit from another army onto
+                    // this field army's grid to move it here.
+                    onDragOver={(e) => {
+                      const p = unitDragRef.current;
+                      if (!p || !fieldKey) return;
+                      const srcKey = armyKeyOf ? armyKeyOf(p.desc.faction, p.desc.locator) : null;
+                      if (srcKey && srcKey !== fieldKey) { e.preventDefault(); setDragOverArmyKey(fieldKey); }
+                    }}
+                    onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverArmyKey((c) => c === fieldKey ? null : c); }}
+                    onDrop={(e) => { if (!unitDragRef.current) return; e.preventDefault(); handleUnitDrop(fieldDesc, null); }}
+                    style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(10, 1fr)",
                     gap: 2,
                     justifyContent: "start",
-                    outline: isFieldSelected ? "2px solid #facc15" : "none",
+                    outline: dragOverArmyKey && fieldKey && dragOverArmyKey === fieldKey
+                      ? "2px solid #38bdf8"
+                      : (isFieldSelected ? "2px solid #facc15" : "none"),
                     outlineOffset: 2,
                     borderRadius: 3,
                   }}>
@@ -3490,22 +3532,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         draggable={isFieldSelected && !!onReorderUnitInSelectedArmy}
                         onDragStart={(e) => {
                           if (!isFieldSelected) return;
-                          unitDragIdxRef.current = a.units.indexOf(u);
+                          unitDragRef.current = { desc: fieldDesc, idx: a.units.indexOf(u) };
                           e.dataTransfer.effectAllowed = "move";
-                          try { e.dataTransfer.setData("text/plain", String(unitDragIdxRef.current)); } catch {}
+                          try { e.dataTransfer.setData("text/plain", "unit"); } catch {}
                           // 0.9.856: drag the whole card as the drag image.
                           try { const card = e.currentTarget; e.dataTransfer.setDragImage(card, card.offsetWidth / 2, card.offsetHeight / 2); } catch {}
                         }}
-                        onDragOver={(e) => { if (isFieldSelected && unitDragIdxRef.current != null) { e.preventDefault(); } }}
+                        onDragOver={(e) => { if (unitDragRef.current) e.preventDefault(); }}
                         onDrop={(e) => {
-                          if (!isFieldSelected || !onReorderUnitInSelectedArmy) return;
+                          if (!unitDragRef.current) return;
                           e.preventDefault();
-                          const from = unitDragIdxRef.current;
-                          const to = a.units.indexOf(u);
-                          unitDragIdxRef.current = null;
-                          if (from != null && to >= 0) onReorderUnitInSelectedArmy(from, to);
+                          e.stopPropagation();
+                          handleUnitDrop(fieldDesc, a.units.indexOf(u));
                         }}
-                        onDragEnd={() => { unitDragIdxRef.current = null; }}
+                        onDragEnd={() => { unitDragRef.current = null; setUnitDragOverIdx(null); setDragOverArmyKey(null); }}
                         onMouseEnter={() => setHoveredFieldUnit(u)}
                         onMouseLeave={() => setHoveredFieldUnit((cur) => cur === u ? null : cur)}
                         onContextMenu={(e) => { if (onShowInfo) { e.preventDefault(); onShowInfo({ type: "unit", faction: u.faction, name: u.unit, label: u.unit.replace(/_/g, " ") }); } }}

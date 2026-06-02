@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.857",
+    date: "2026-06-02",
+    items: [
+      { type: "feature", text: "**Move units between armies by drag-and-drop.** Select an army to edit (dev mode), then drag one of its unit cards onto another army's grid in the same region — e.g. pull a unit out of Rome's garrison and drop it on a field general standing in the province. The target army highlights teal while you hover; the unit is removed from the source and added to the target. Dropping back on the same army still reorders." },
+    ],
+  },
+  {
     version: "0.9.856",
     date: "2026-06-02",
     items: [
