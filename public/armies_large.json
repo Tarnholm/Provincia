@@ -1872,18 +1872,6 @@
         "weapon": 0
       },
       {
-        "name": "aor italiote epibatai",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "aor italiote epibatai",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
         "name": "roman hastati early",
         "exp": 0,
         "armour": 0,
@@ -1891,6 +1879,18 @@
       },
       {
         "name": "roman hastati early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman principes early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman principes early",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -1902,6 +1902,18 @@
         "weapon": 0
       },
       {
+        "name": "roman equites early",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "roman rorarii",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
         "name": "roman leves",
         "exp": 0,
         "armour": 0,
@@ -1914,25 +1926,61 @@
         "weapon": 0
       },
       {
-        "name": "roman rorarii",
+        "name": "aor campanian cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "roman rorarii",
+        "name": "aor campanian cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "roman equites early",
+        "name": "aor etruscan thureophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "roman equites early",
+        "name": "aor etruscan thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor umbrian light spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor umbrian light spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor faliscan hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor marsi swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor oscan javelinmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor oscan javelinmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0

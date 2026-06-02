@@ -99,12 +99,6 @@ const MAP_WIDTH_ADJUST = 120;
 // this is just the first-paint baseline.
 const REGIONINFO_HEIGHT = 200;
 const ICON_SIZE = 72;
-// 0.9.853: faction-grid icon size. Smaller than ICON_SIZE so that a narrow
-// quarter-4K panel fits 5 WHOLE columns (72px clipped a partial 5th) and a
-// full-4K panel fits ~10 at the SAME size. Used with grid auto-fill, which
-// only ever lays out whole columns — so icons can never be clipped, with no
-// dependence on JS/ResizeObserver timing.
-const FACTION_ICON_SIZE = 64;
 const ICON_GAP = 3;
 const ICON_SIDE_PAD = 0;
 const SCROLLBAR_GUTTER = 0;
@@ -1657,13 +1651,36 @@ function App() {
   // Responsive faction grid: measure the icon-grid container's width and
   // derive the column count (clamped 5..10). A ResizeObserver keeps it in
   // sync as the bottom.factions Movable is resized or the window changes.
-  // 0.9.853: faction-grid sizing is now PURE CSS (grid auto-fill at a fixed
-  // FACTION_ICON_SIZE) — no ResizeObserver. The previous JS-measured approach
-  // didn't reliably attach to the grid node, so it kept the 72px default and
-  // clipped the 5th column. auto-fill lays out only whole columns at the fixed
-  // size, so 5 fit a narrow panel and ~10 a wide one, never clipped. The ref is
-  // retained (harmless) for any future measurement needs.
-  const factionGridRef = useRef(null);
+  // 0.9.858: faction-grid sizing is MEASURED via a CALLBACK ref (guaranteed to
+  // fire on mount, unlike the useEffect([]) version that sometimes never
+  // attached and left the grid at its 72/64px default → only 4 fit). We FORCE a
+  // minimum of 5 columns and SHRINK the icons to fit the measured panel width,
+  // growing to up to 10 columns on a wide panel — so a quarter-4K panel always
+  // shows ≥5 and a full-4K panel ~10, at a consistent size, never clipped.
+  const factionGridRoRef = useRef(null);
+  const [factionGrid, setFactionGrid] = useState({ cols: 5, size: 56 });
+  const computeFactionGrid = useCallback((node) => {
+    if (!node) return;
+    // clientWidth includes the grid's 5px L/R padding; subtract it + a 2px
+    // safety margin so a forced column never spills past the edge.
+    const avail = node.clientWidth - 10 - 2;
+    if (avail <= 0) return;
+    const GAP = 6, MIN_COLS = 5, MAX_COLS = 10, TARGET = 56, MIN_SIZE = 22, MAX_SIZE = 72;
+    // Column count grows with width (a ~TARGET-px slot each) but is clamped to
+    // [5,10]. Then size = fit-to-cols, so when 5 are forced into a narrow panel
+    // the icons shrink to fit instead of clipping.
+    const cols = Math.max(MIN_COLS, Math.min(MAX_COLS, Math.floor((avail + GAP) / (TARGET + GAP))));
+    const size = Math.max(MIN_SIZE, Math.min(MAX_SIZE, Math.floor((avail - GAP * (cols - 1)) / cols)));
+    setFactionGrid((cur) => (cur.cols === cols && cur.size === size ? cur : { cols, size }));
+  }, []);
+  const factionGridRef = useCallback((node) => {
+    if (factionGridRoRef.current) { factionGridRoRef.current.disconnect(); factionGridRoRef.current = null; }
+    if (!node || typeof ResizeObserver === "undefined") { if (node) computeFactionGrid(node); return; }
+    computeFactionGrid(node);
+    const ro = new ResizeObserver(() => computeFactionGrid(node));
+    ro.observe(node);
+    factionGridRoRef.current = ro;
+  }, [computeFactionGrid]);
   const [showFactionSummary, setShowFactionSummary] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [devRecoveryPrompt, setDevRecoveryPrompt] = useState(false); // show recovery banner on dev mode enter
@@ -10078,17 +10095,15 @@ function App() {
           ref={factionGridRef}
           style={{
             display: "grid",
-            // 0.9.853: fixed-size icons with auto-fill. The grid lays out as
-            // many WHOLE FACTION_ICON_SIZE(64px) columns as actually fit the
-            // panel and centres them — so a narrow quarter-4K panel shows 5
-            // columns and a full-4K panel ~10, all at the same size, and a
-            // partial column is NEVER rendered (no clipping). maxWidth caps it
-            // at 10 columns so icons don't sprawl on an ultra-wide panel.
-            gridTemplateColumns: `repeat(auto-fill, ${FACTION_ICON_SIZE}px)`,
+            // 0.9.858: MEASURED columns + icon size (factionGrid, from the
+            // callback-ref ResizeObserver). At least 5 columns are forced and
+            // the icons shrink to fit the panel, growing to up to 10 columns on
+            // a wide panel — so a quarter-4K panel always shows ≥5 (never the
+            // clipped 4 it used to) and a full-4K panel ~10, never clipped.
+            gridTemplateColumns: `repeat(${factionGrid.cols}, ${factionGrid.size}px)`,
             columnGap: 6,
             rowGap: 6,
             justifyContent: "center",
-            maxWidth: FACTION_ICON_SIZE * 10 + 6 * 9,
             // 0.9.827: vertical padding bumped 1 → 6 so the selected tile's
             // highlight ring + glow (box-shadow spread 2px + 8px glow, plus the
             // 1.04 scale) isn't clipped by this scroll container's overflow on

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.858",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Faction grid now always shows at least 5 icons per row** (quarter-4K was stuck at 4). The grid measures the panel width and shrinks the icons just enough to fit 5 columns, growing to up to 10 columns on a wider panel — at a consistent size, never clipped." },
+    ],
+  },
+  {
     version: "0.9.857",
     date: "2026-06-02",
     items: [
