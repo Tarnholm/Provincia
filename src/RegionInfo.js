@@ -3178,6 +3178,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     unitDragIdxRef.current = garrison.indexOf(u);
                     e.dataTransfer.effectAllowed = "move";
                     try { e.dataTransfer.setData("text/plain", String(unitDragIdxRef.current)); } catch {}
+                    // 0.9.856: drag the whole CARD (border + icon + badges), not
+                    // just the bare unit image the browser picks by default.
+                    try { const card = e.currentTarget; e.dataTransfer.setDragImage(card, card.offsetWidth / 2, card.offsetHeight / 2); } catch {}
                   }}
                   onDragOver={(e) => { if (isGarrisonSelected && unitDragIdxRef.current != null) { e.preventDefault(); const di = garrison.indexOf(u); setUnitDragOverIdx((c) => c === di ? c : di); } }}
                   onDragLeave={() => setUnitDragOverIdx((c) => c === garrison.indexOf(u) ? null : c)}
@@ -3490,6 +3493,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                           unitDragIdxRef.current = a.units.indexOf(u);
                           e.dataTransfer.effectAllowed = "move";
                           try { e.dataTransfer.setData("text/plain", String(unitDragIdxRef.current)); } catch {}
+                          // 0.9.856: drag the whole card as the drag image.
+                          try { const card = e.currentTarget; e.dataTransfer.setDragImage(card, card.offsetWidth / 2, card.offsetHeight / 2); } catch {}
                         }}
                         onDragOver={(e) => { if (isFieldSelected && unitDragIdxRef.current != null) { e.preventDefault(); } }}
                         onDrop={(e) => {

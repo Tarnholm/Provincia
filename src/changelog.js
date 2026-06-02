@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.856",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Editing an army no longer reverts the general to a plain bodyguard.** The general's portrait tag is now preserved through add / remove / duplicate / reorder (both garrison and field armies), including when the general's card is dragged away from the first slot." },
+      { type: "improvement", text: "**Dragging a unit now shows the whole card** (border + icon + badges) as the drag image, instead of just the bare unit picture." },
+    ],
+  },
+  {
     version: "0.9.855",
     date: "2026-06-02",
     items: [

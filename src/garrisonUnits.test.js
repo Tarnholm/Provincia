@@ -41,6 +41,21 @@ describe("garrisonUnits — overlay commander tag survives the merge", () => {
     expect(out[1].xp).toBe(1);
   });
 
+  it("0.9.856: preserves a per-unit commander tag after a reorder (general not at index 0)", () => {
+    // After the user drags the general's card down, the staged list carries the
+    // commanderName on the MOVED unit. The overlay must keep it there (not snap
+    // it back to unit 0) so the general's face card follows the card.
+    const reordered = [
+      { unit: "hastati", xp: 1 },
+      { unit: "roman general", xp: 0, commanderName: "Appius", commanderLastName: "Claudius Pulcher", commanderFaction: "romans_julii" },
+    ];
+    const out = tagOverlayGarrisonUnits(reordered, pisaeGarrison, "romans_julii");
+    expect(out[0].commanderName).toBeNull();           // hastati stays a plain unit
+    expect(out[1].commanderName).toBe("Appius");        // general keeps its face at its new spot
+    expect(out[1].commanderLastName).toBe("Claudius Pulcher");
+    expect(out[1].commanderFaction).toBe("romans_julii");
+  });
+
   it("empty/edge inputs don't throw", () => {
     expect(tagOverlayGarrisonUnits([], pisaeGarrison, "romans_julii")).toEqual([]);
     expect(tagOverlayGarrisonUnits(null, null, null)).toEqual([]);

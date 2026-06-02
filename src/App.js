@@ -18172,11 +18172,18 @@ function App() {
                               ...army,
                               units: (pending.units || []).map((u) => ({
                                 unit: u.unit,
-                                xp: u.exp || 0,
+                                xp: u.xp != null ? u.xp : (u.exp || 0),
                                 armour: u.armour || 0,
-                                weapon: u.weapon || 0,
+                                weapon: u.weapon != null ? u.weapon : (u.weapon_lvl || 0),
                                 faction: army.faction,
                                 icon: army.faction ? getCachedUnitIcon(army.faction, u.unit) : null,
+                                // 0.9.856: preserve the bodyguard-swap tags so a
+                                // general's face card survives editing (was dropped
+                                // → reverted to the plain bodyguard icon).
+                                commanderUuid: u.commanderUuid || null,
+                                commanderName: u.commanderName || null,
+                                commanderLastName: u.commanderLastName || null,
+                                commanderFaction: u.commanderFaction || null,
                               })),
                             };
                           };
@@ -18258,20 +18265,24 @@ function App() {
                           if (!pending) return army;
                           return {
                             ...army,
-                            units: (pending.units || []).map((u, ui) => ({
+                            units: (pending.units || []).map((u) => ({
                               unit: u.unit,
-                              xp: u.exp || 0,
+                              xp: u.xp != null ? u.xp : (u.exp || 0),
                               armour: u.armour || 0,
-                              weapon: u.weapon || 0,
+                              weapon: u.weapon != null ? u.weapon : (u.weapon_lvl || 0),
                               faction: army.faction || null,
                               icon: army.faction ? getCachedUnitIcon(army.faction, u.unit) : null,
-                              // Preserve the bodyguard-swap hint on the first
-                              // unit so the general's face card still renders
-                              // after edits (matches the non-live entry's
-                              // commanderName / commanderFaction tagging
-                              // above — only the first card is tagged).
-                              commanderName: null,
-                              commanderFaction: null,
+                              // 0.9.856: preserve the bodyguard-swap tags from the
+                              // staged unit so the general's face card survives
+                              // add/remove/duplicate/reorder. Previously these were
+                              // nulled, so any edit reverted the general to the
+                              // plain bodyguard icon. The original units carry
+                              // commanderName (non-live) / commanderUuid (live);
+                              // edits keep them on the same object.
+                              commanderUuid: u.commanderUuid || null,
+                              commanderName: u.commanderName || null,
+                              commanderLastName: u.commanderLastName || null,
+                              commanderFaction: u.commanderFaction || null,
                             })),
                           };
                         };

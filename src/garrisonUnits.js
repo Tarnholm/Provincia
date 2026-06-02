@@ -41,14 +41,33 @@ export function garrisonCommanderTag(garrisonArmies, ownerId) {
 // FIRST unit with the region's named commander so the portrait swap survives.
 // (This is the exact path that regressed in pre-0.9.837 builds.)
 export function tagOverlayGarrisonUnits(pendingUnits, garrisonArmies, ownerId) {
+  const list = pendingUnits || [];
+  // 0.9.856: if the edited list ALREADY carries a per-unit commander tag (it
+  // does once the user has edited a selected army — the original units keep
+  // their commanderName), preserve those tags so drag-reorder / duplicate keep
+  // the general's face on the RIGHT card instead of snapping it back to unit 0.
+  // Only when NO unit is tagged (a fresh overlay built from untagged units) do
+  // we fall back to tagging unit 0 from the region's named commander — the
+  // original v0.9.837 governor-portrait guard. Also read both key spellings
+  // (xp/exp, weapon/weapon_lvl) since staged adds use exp/weapon_lvl while the
+  // original garrison units use xp/weapon — so edits don't zero out upgrades.
+  const anyTagged = list.some((u) => u && u.commanderName);
   const { firstName, lastName, faction } = garrisonCommanderTag(garrisonArmies, ownerId);
-  return (pendingUnits || []).map((u, ui) => ({
-    unit: u.unit,
-    xp: u.exp || 0,
-    armour: u.armour || 0,
-    weapon: u.weapon || 0,
-    commanderName: ui === 0 && firstName ? firstName : null,
-    commanderLastName: ui === 0 && firstName ? lastName : null,
-    commanderFaction: ui === 0 && firstName ? faction : null,
-  }));
+  return list.map((u, ui) => {
+    const keepOwn = anyTagged && !!u.commanderName;
+    const tagIdx0 = !anyTagged && ui === 0 && !!firstName;
+    return {
+      unit: u.unit,
+      xp: u.xp != null ? u.xp : (u.exp || 0),
+      armour: u.armour || 0,
+      weapon: u.weapon != null ? u.weapon : (u.weapon_lvl || 0),
+      upgradeLevel: typeof u.upgradeLevel === "number" ? u.upgradeLevel : null,
+      soldiers: typeof u.soldiers === "number" ? u.soldiers : null,
+      max: typeof u.max === "number" ? u.max : null,
+      commanderUuid: keepOwn ? (u.commanderUuid || null) : null,
+      commanderName: keepOwn ? u.commanderName : (tagIdx0 ? firstName : null),
+      commanderLastName: keepOwn ? (u.commanderLastName || null) : (tagIdx0 ? lastName : null),
+      commanderFaction: keepOwn ? (u.commanderFaction || null) : (tagIdx0 ? faction : null),
+    };
+  });
 }
