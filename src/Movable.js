@@ -479,6 +479,7 @@ export function Movable({
   zIndex = 2,
   colBox = null,
   posOverride = null,
+  heightPx = null,
 }) {
   const [pos, setPos] = useWidgetPos(id, defaultPct);
   // `isDragging` toggles position transitions off during active drag/
@@ -560,7 +561,19 @@ export function Movable({
     // Raw viewport-fraction placement — inset by the title-bar strip so a
     // widget at y≈0 lands just below the strip, not under it.
     top = Math.round(ePos.y * vp.h) + TITLEBAR_H;
-    height = Math.max(40, Math.round(ePos.h * vp.h));
+    if (heightPx != null && !designMode) {
+      // HUG-CONTENT height (0.9.852): the widget is exactly heightPx tall
+      // (e.g. Buildings = header + the N card rows it actually has) instead of
+      // a viewport fraction — so it doesn't grow a big empty area below the
+      // cards on a tall 4K window. Clamp to the space remaining above the
+      // viewport floor so it never runs off a short window (it scrolls
+      // internally instead). Disabled in design mode so the widget stays
+      // freely resizable while editing the layout.
+      const avail = vp.h - top - 6;
+      height = Math.max(40, Math.min(Math.round(heightPx), avail));
+    } else {
+      height = Math.max(40, Math.round(ePos.h * vp.h));
+    }
   }
 
   const startDrag = (e) => {

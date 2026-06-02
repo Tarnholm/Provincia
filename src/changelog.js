@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.852",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**The Buildings panel now hugs its cards** instead of leaving a large empty area below them on a tall (4K) window. The panel height tracks the actual number of building rows (still capped at the 20-slot max), so there's no wasted space — and it still scrolls/clamps safely on a short window." },
+    ],
+  },
+  {
     version: "0.9.851",
     date: "2026-06-02",
     items: [

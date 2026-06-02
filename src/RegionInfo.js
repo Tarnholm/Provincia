@@ -2417,8 +2417,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       </div>
       </Movable>
 
-      {/* Buildings grid — Movable widget */}
+      {/* Buildings grid — Movable widget. heightPx hugs the actual card rows
+          (header + N×54px rows) so the panel doesn't leave a big empty area
+          below the cards on a tall 4K window — the 20-slot cap meant the grid
+          stopped at 225px while the fraction-height widget kept growing. The
+          row count drives the height (1..4 rows for 1..20 buildings; +1 slot
+          for the dev "Add" tile). Clamped to the viewport in Movable. */}
       <Movable id="region.buildings" title="Buildings" designMode={designMode} colBox={colBox}
+        heightPx={37 + (() => {
+          const slots = Math.min(20, (buildingItems.length || 0) + (devMode ? 1 : 0));
+          const rows = Math.max(1, Math.ceil(slots / 5));
+          return rows * 54 + (rows - 1) * 3;  // gridAutoRows 54 + 3px row gaps
+        })()}
         defaultPct={{ x: 0.5720, y: 0.7440, w: 0.2090, h: 0.2450 }}>
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
