@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.860",
+    date: "2026-06-02",
+    items: [
+      { type: "feature", text: "**Financial Overview in the Faction Wealth panel.** Open 💰 Faction Wealth with a save loaded and you now see the focused faction's real per-category economy read straight from the save — Income (Farming / Trade / Taxes / Mining / Merchants / Other) and Expenditure (Army upkeep / Wages / Recruitment / Construction / Other) with totals, plus Net and estimated next-turn balance. These are the engine's own stored figures (they match the in-game Finance & Family panel to the denarius), not estimates. Click any faction row to see its breakdown; unstored fields show \"—\"." },
+    ],
+  },
+  {
     version: "0.9.859",
     date: "2026-06-02",
     items: [

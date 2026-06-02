@@ -4972,6 +4972,44 @@ ipcMain.handle("get-unit-stats", async (_event, modDataDir, unitName) => {
   return stats;
 });
 
+// 0.9.860: bulk EDU upkeep map for the economy/Financial-Overview feature.
+// Parses export_descr_unit.txt ONCE into { <unit type name>: upkeep } (the
+// stat_cost 3rd field — same value the per-unit get-unit-stats returns as
+// block.upkeep). Cached per modDataDir. Used to compute a faction's total
+// per-turn unit upkeep = Σ over its units of upkeep[unit.name]. Mod-last-wins
+// so RIS overrides vanilla. Returns {} on failure (caller shows "—", never 0).
+const _unitUpkeepMapCache = new Map();
+function getUnitUpkeepMap(modDataDir) {
+  const cacheKey = modDataDir || "";
+  if (_unitUpkeepMapCache.has(cacheKey)) return _unitUpkeepMapCache.get(cacheKey);
+  const map = {};
+  const sources = getEdbSourceFiles(modDataDir, "export_descr_unit.txt");
+  const stripComments = (line) => { const i = line.indexOf(";"); return i >= 0 ? line.slice(0, i) : line; };
+  for (const src of sources) {
+    if (!fs.existsSync(src)) continue;
+    try {
+      const buf = fs.readFileSync(src);
+      const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
+      let curUnit = null;
+      for (const rawLine of text.split(/\r?\n/)) {
+        const s = stripComments(rawLine).trim();
+        if (!s) continue;
+        const tm = s.match(/^type\s+(.+)$/);
+        if (tm) { curUnit = tm[1].trim().toLowerCase(); continue; }
+        if (!curUnit) continue;
+        const cm = s.match(/^stat_cost\s+(.+)$/i);
+        if (cm) {
+          const p = cm[1].split(",").map((x) => parseInt(x.trim(), 10));
+          if (p.length >= 3 && Number.isFinite(p[2])) map[curUnit] = p[2]; // mod-last-wins
+        }
+      }
+    } catch (e) { console.warn("[unit-upkeep-map]", src, e.message); }
+  }
+  _unitUpkeepMapCache.set(cacheKey, map);
+  return map;
+}
+ipcMain.handle("get-unit-upkeep-map", async (_event, modDataDir) => getUnitUpkeepMap(modDataDir));
+
 // IPC: parse recruit capabilities from EDB. Inside each level's block:
 //   <level> requires factions { … } {
 //     capability { recruit "unit name" <tier>  [requires factions { … }] }
@@ -5914,8 +5952,46 @@ ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
   try {
     const { crackSave } = require("./src/saveCracker.js");
     const buf = fs.readFileSync(savePath);
-    return crackSave(buf, modDataDir);
+    const cracked = crackSave(buf, modDataDir);
+    // 0.9.860: attach the per-faction Financial Overview breakdown (income by
+    // category, expenditure by category, net) read from the stored econ-history
+    // KPI block. This is the REAL in-game breakdown (matches the Finance & Family
+    // panel to the denarius), not a derivation. Failure is non-fatal — the rest
+    // of the crack still returns.
+    try {
+      const { parseFinancialOverview } = require("./src/economyParser.js");
+      cracked.economy = parseFinancialOverview(buf, cracked);
+      const pf = cracked.economy && cracked.economy.playerFaction;
+      const pe = pf && cracked.economy.byFaction ? cracked.economy.byFaction[pf] : null;
+      if (pe) _writeLog(`[economy] ${pf} income=${pe.income?.total} expend=${pe.expenditure?.total} net=${pe.net} treasury=${pe.treasury}`);
+    } catch (e2) { _writeLog(`[economy] parse failed: ${e2 && e2.message}`); }
+    return cracked;
   } catch (e) {
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
+// 0.9.860: dedicated Financial Overview IPC. Cracks the save and returns ONLY
+// the per-faction economy breakdown (income/expenditure by category, net,
+// treasury) read from the stored econ-history KPI block — the REAL in-game
+// numbers. Decoupled from the live/calibrate pipelines (which use the lighter
+// extras parser) so the economy panel can fetch on-demand per save-file change,
+// exactly like the trade-network effect. Returns { error } on failure.
+ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
+  try {
+    if (!savePath) return { error: "no save path" };
+    const { crackSave } = require("./src/saveCracker.js");
+    const { parseFinancialOverview } = require("./src/economyParser.js");
+    const buf = fs.readFileSync(savePath);
+    const cracked = crackSave(buf, modDataDir);
+    const economy = parseFinancialOverview(buf, cracked);
+    const pf = economy && economy.playerFaction;
+    const pe = pf && economy.byFaction ? economy.byFaction[pf] : null;
+    if (pe) _writeLog(`[economy] ${path.basename(savePath)} ${pf} income=${pe.income?.total} expend=${pe.expenditure?.total} net=${pe.net} treasury=${pe.treasury}`);
+    else _writeLog(`[economy] ${path.basename(savePath)} no player-faction economy (pf=${pf})`);
+    return economy;
+  } catch (e) {
+    _writeLog(`[economy] get-save-economy failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
   }
 });

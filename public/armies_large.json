@@ -133,6 +133,48 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "latin equites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "latin equites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "latin triarii",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "latin principes",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "latin principes",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "latin hastati",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "latin hastati",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -299,72 +341,6 @@
     "units": [
       {
         "name": "roman general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman equites early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman equites early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman triarii early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -610,78 +586,6 @@
     "ancillaries": [
       "aged_retainer"
     ],
-    "units": [
-      {
-        "name": "roman general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      }
-    ]
-  },
-  {
-    "name": "Lucius Caecilius Metellus",
-    "charType": "general",
-    "armyClass": "garrison",
-    "location": "Falerii",
-    "faction": "romans_julii",
-    "x": 283,
-    "y": 410,
-    "age": 20,
-    "tags": [
-      "named"
-    ],
-    "traits": [
-      {
-        "name": "BeingItalic",
-        "level": 1
-      },
-      {
-        "name": "ReligionAssigned",
-        "level": 1
-      },
-      {
-        "name": "GoodCommander",
-        "level": 1
-      },
-      {
-        "name": "NaturalMilitarySkill",
-        "level": 1
-      },
-      {
-        "name": "PublicFaith",
-        "level": 2
-      },
-      {
-        "name": "GoodAdministrator",
-        "level": 1
-      },
-      {
-        "name": "Patrician",
-        "level": 1
-      },
-      {
-        "name": "Senatorial",
-        "level": 1
-      },
-      {
-        "name": "Estates",
-        "level": 1
-      },
-      {
-        "name": "Civil_Career_Restriction",
-        "level": 1
-      },
-      {
-        "name": "FasterCharacters",
-        "level": 1
-      },
-      {
-        "name": "TurnsAlive",
-        "level": 2
-      }
-    ],
-    "ancillaries": [],
     "units": [
       {
         "name": "roman general",

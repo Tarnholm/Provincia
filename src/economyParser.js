@@ -2,162 +2,196 @@
 // panel) economy figures for a faction from a parsed .sav.
 //
 // =============================================================================
-// HEADLINE FINDING (why this module looks the way it does)
+// HEADLINE FINDING (2026-06-02 BREAKTHROUGH — the breakdown IS stored)
 // =============================================================================
 // The per-CATEGORY income/expenditure breakdown the in-game Financial Overview
-// shows (Trade / Mining / Farming / Tax  and  Wages / Construction / Recruitment)
-// is **NOT serialized in the save**. It is recomputed at runtime by the engine
-// from buildings + resources + population + unit roster + tax policy. Confirmed
-// exhaustively across the RIS corpus:
-//   - findings-economics-2026-05-30.md  (no per-faction income ledger; only
-//     treasury +0 and an AI accumulator at +4)
-//   - findings-treasury-net-2026-06-01.md / -v2  (+4 is NOT net income — it is a
-//     campaign-seed-dependent AI accumulator; do NOT surface it)
-//   - findings-financial-overview-2026-06-02.md (this module's evidence doc):
-//     a byte scan of the player settlement records (Rome/Arretium/Neapolis/...)
-//     around the income field marker-1586 shows the income is a SINGLE combined
-//     u32 scalar with NO adjacent trade/mining/farming/tax sub-fields (the whole
-//     neighbourhood is zero-padding; the only other copy of the value is a
-//     prev-turn snapshot at marker-1142). There is no per-settlement category
-//     decomposition stored.
-//   - SAVE-FORMAT-SPEC.md §2 "NO per-faction income/expense/tax ledger exists".
+// shows (Farming / Mining / Trade / Merchants / Taxes / income-Other  and
+// Wages / Army-upkeep / Recruitment / Construction / expenditure-Other) **IS
+// serialized in the save**, in the per-faction econ-history block that sits
+// immediately before each faction record (the same N×23-i32 block whose field
+// 13 is the per-turn treasury checkpoint — findings-treasury-history-keying).
 //
-// WHAT *IS* RELIABLY AVAILABLE (CONFIRMED), and what this module returns:
-//   - GROSS turn income (total only)  = Σ over the faction's settlements of the
-//     per-settlement income field (settlementFields[city].income, marker-1586),
-//     selected via ownerByCity. CONFIRMED against in-game numbers (Rome
-//     924/949/1005) and against the econ-history block f11 (julii sum 6347 vs
-//     f11 6350). This is the engine's actual gross income, but it arrives as ONE
-//     number — the trade/mining/farming/tax split is not recoverable.
-//   - TREASURY (start-of-turn balance)  = factions[name].treasury (record +0).
-//   - NET turn income  = consecutive-turn delta of the f13 treasury checkpoints
-//     (treasuryHistory). Only available from turn >= 3 (a faction needs >= 2
-//     completed checkpoints), and the PLAYER faction's own f13 series reads
-//     all-zeros, so net is typically null for the player. We expose it ONLY when
-//     the caller passes a usable history series; otherwise null.
-//   - ESTIMATED next-turn balance  = treasury + net, ONLY when net is non-null.
+// A prior pass (findings-financial-overview-2026-06-02.md /
+// findings-financial-breakdown-2026-06-02.md) FOUND these exact integers in the
+// Julii block ("18105, 8928, 4426, 2026, 26594, 2242") but DISCARDED them after
+// wrongly assuming the gross income was 6347 (the per-settlement marker-1586 sum
+// — a RED HERRING; 6350 is the *Wages* line rounded, not the income total). The
+// MAPPED follow-up (findings-financial-overview-MAPPED-2026-06-02.md) corrects
+// that: the block's LAST (current-turn) 23-i32 sub-block holds the breakdown.
 //
-// WHAT IS NULL, AND WHY (honest, per the [[provincia-no-fallbacks]] rule):
-//   - income.trade / income.mining / income.farming / income.tax  → null
-//     (category split not stored; recomputed at runtime — never fabricate).
-//   - income.other → null (no residual category exists to attribute).
+// SLOT → CATEGORY MAP (block-field index within the final 23-i32 sub-block):
+//   INCOME side (slots 0..10):
+//     f0  = income.farming      (CONFIRMED: Julii 18105)
+//     f1  = income.taxes        (CONFIRMED: Julii 8928)
+//     f2  = income.mining       (INFERRED: small/rare 5th income slot; 0 for Julii,
+//                                900 antigonid / 480 seleucid — the only spare
+//                                nonzero income slot. Labelled mining; see caveat.)
+//     f3  = income.trade        (CONFIRMED: Julii 4426)
+//     f9  = income.other        (CONFIRMED: Julii 2026)
+//     f4-f8, f10 = always 0 across the whole corpus (reserved category slots,
+//                  incl. Merchants — 0 in this corpus; not individually pinned).
+//   EXPENDITURE side (slots 11..22):
+//     f11 = expenditure.wages       (CONFIRMED: Julii 6350; generals/admirals/agents)
+//     f12 = expenditure.army_upkeep (CONFIRMED: Julii 26594)
+//     f22 = expenditure.other       (CONFIRMED: Julii 2242)
+//     f13-f21 = always 0 across the corpus (reserved, incl. Recruitment &
+//               Construction — 0 in this corpus; not individually pinned).
+//
+//   income.total = f0+f1+f2+f3+f9   (Julii 33485 — matches in-game EXACTLY)
+//   expenditure.total = f11+f12+f22 (Julii 35186 — matches in-game EXACTLY)
+//   net = income.total - expenditure.total   (Julii -1701 — matches in-game)
+//
+// VALIDATION:
+//   - Julii (save_Juliieco1.sav): all three crib sums match to the denarius
+//     (33485 / 35186 / -1701). No rounding delta.
+//   - Cross-faction: 220/220 faction blocks in the same save are internally
+//     consistent (every income slot ≥0, every expenditure slot ≥0; net = inc-exp
+//     by construction). carthage 64935/43153, ptolemaic 132813/120344, etc.
+//   - Slot set is stable across julii1/julii3 saves (income {0,1,2,3,9},
+//     expenditure {11,12,22}; all other slots zero).
 //
 // =============================================================================
-// DERIVED (NOT stored) — population-based TAX estimate  (findings-financial-
-// breakdown-2026-06-02.md)
+// MERCHANTS / RECRUITMENT / CONSTRUCTION (0 in this corpus)
 // =============================================================================
-// The 2026-06-02 second pass established (whole-file scan + per-settlement fit)
-// that NO category split is stored — not adjacent to the per-settlement income
-// field, not in the faction record, and the gross 6347 appears nowhere in the
-// 34 MB file. So income.trade/mining/farming/tax stay null (stored = absent).
-//
-// BUT a useful structural fact emerged: on the Julii test save the per-settlement
-// income (marker-1586) is, to within ±0.8 denarius, EXACTLY committedPopulation
-// (marker-1494) × 0.10264 across all 25 cities (Rome 924 = 9000×0.10264). On
-// early turns the engine income is dominated by the population-derived TAX term;
-// trade/farming/mining add < ~1 den/city before the empire develops. So the TAX
-// category is reproducible to ~1 den as `population × taxCoefficient` at the
-// default ("normal") bracket. This is a DERIVATION (an estimate), not a save
-// field, so we expose it SEPARATELY in `incomeEstimate` with `estimated:true`
-// and NEVER as the (null) stored `income.tax`. The UI must label it an estimate.
-// (Later in a campaign the trade/farming share grows and this pure-pop tax model
-// under-counts total income — by design it only estimates the TAX line.)
-//   - expenditure.upkeep / .construction / .recruitment / .other → null
-//     (NO per-unit upkeep, NO construction/recruitment cost ledger is stored;
-//     SAVE-FORMAT-SPEC §2/§6. Could in theory be APPROXIMATED by summing EDU
-//     upkeep over the unit roster + reading queued build/recruit costs, but that
-//     is a derivation/estimate, not a save field, so it is intentionally left
-//     null here rather than surfaced as if it were the engine's number.)
-//   - expenditure.total / net (when no history) / estimatedNextTurn (when no
-//     net) → null.
+// The in-game cribs list Merchants, Recruitment and Construction all = 0 for the
+// Julii save, and the engine income/expenditure TOTALS are FULLY accounted by the
+// pinned nonzero slots (no residual): so these three categories are genuinely 0
+// here and are reported as 0 ONLY when the pinned slots sum exactly to the income
+// / expenditure total (no unattributed remainder). Their exact block slots are
+// NOT individually pinned (they are zero in every save in this corpus), so if a
+// future save shows a nonzero merchants/recruitment/construction line in an
+// unattributed slot, the parser surfaces it as `_unattributed` rather than
+// guessing the label — [[provincia-no-fallbacks]] (never fabricate a category).
 //
 // =============================================================================
 // [[provincia-no-fallbacks]] — HARD PROJECT RULE
 // =============================================================================
-// This module NEVER fabricates a placeholder/default number. Every field that
-// cannot be reliably cracked is returned as `null` (the UI shows "—"/unknown).
-// `income.total` is non-null ONLY when at least one of the faction's settlements
-// produced a numeric income; if a faction has no resolvable settlement income at
-// all, income.total is null (not 0).
+// This module NEVER fabricates a placeholder/default number. A faction whose
+// econ-history breakdown block cannot be located returns null for every breakdown
+// field (the UI shows "—"/unknown). A genuine STORED 0 (e.g. Julii Mining 0) IS
+// reported as 0 — that is the engine's real value, not a fabricated default.
 //
 // =============================================================================
-// FIELD OFFSETS (all relative to a settlement NAME marker, already decoded by
-// settlementFieldsParser.js / buildingParser.findAllSettlementMarkers):
-//   marker-1586  u32  income this turn (CONFIRMED; Rome 924/949/1005)
-//   marker-1142  u32  prev-turn income snapshot (sibling copy; not used here)
-// Faction treasury record (saveCrackerExtras.parseFactionTreasuries):
-//   +0  i32  treasury (start-of-turn balance)   CONFIRMED
-//   +4  i32  AI accumulator — NOT net income     DO NOT SURFACE
-// Treasury history (saveCrackerExtras.parseFactionTreasuryHistory):
-//   f13 per-turn end-of-turn treasury checkpoint; net = checkpoint[n]-checkpoint[n-1]
+// ATTRIBUTION (which block belongs to which faction)
 // =============================================================================
+// The econ-history block precedes each faction record (parseFactionTreasuries
+// scans them in file order; field 13 = treasury checkpoint). crackSave's
+// `factions` map is keyed by name in faction-id order, but a phantom/zero record
+// in the raw scan introduces a one-slot drift partway through (the same drift the
+// treasury-history keying note documents). We anchor by the faction record's
+// treasury at +0: walk faction names in order and greedily consume the next raw
+// record (within a tiny window) whose +0 treasury equals that faction's treasury.
+// This matched 238/239 factions on the Julii save and keeps the PLAYER (record 0)
+// exact. A faction we cannot align to a block gets a null breakdown (never faked).
 //
-// This is a PURE function module: it does NOT read the save itself for the
-// confirmed fields — it consumes the output of saveCracker.crackSave() (passed
-// as `context`), which already extracts settlementFields, ownerByCity, factions
-// (treasury) and turn. It only touches the buffer (optional) for the OPTIONAL
-// net-income history, which crackSave does not roll up per-faction.
+// This module consumes the output of saveCracker.crackSave() (passed as
+// `context`) for owners/settlement income/treasury, and reads the raw `buffer`
+// (via saveCrackerExtras.parseFactionTreasuries) for the econ-history blocks.
 
 "use strict";
 
+const path = require("path");
+// Read-only use of the sibling cracker extras (faction-record scanner). We do NOT
+// edit it — only call parseFactionTreasuries to locate each faction record.
+let parseFactionTreasuries = null;
+try {
+  ({ parseFactionTreasuries } = require(path.join(__dirname, "saveCrackerExtras.js")));
+} catch (_e) {
+  // If unavailable (e.g. isolated unit test of the pure helpers), the buffer-
+  // backed breakdown simply stays null and the pure paths still work.
+  parseFactionTreasuries = null;
+}
+
+// ── Econ-history block layout ────────────────────────────────────────────────
+const BLOCK_STRIDE = 23; // i32 per per-turn sub-block
+// Slot → category. (See SLOT → CATEGORY MAP in the header.)
+const INCOME_SLOTS = { farming: 0, taxes: 1, mining: 2, trade: 3, other: 9 };
+const EXPENDITURE_SLOTS = { wages: 11, army_upkeep: 12, other: 22 };
+// Every slot we read on each side, used to detect any UNATTRIBUTED nonzero slot.
+const INCOME_SLOT_SET = new Set(Object.values(INCOME_SLOTS));
+const EXPENDITURE_SLOT_SET = new Set(Object.values(EXPENDITURE_SLOTS));
+const INCOME_SLOT_RANGE = [0, 10];        // slots 0..10 are the income half
+const EXPENDITURE_SLOT_RANGE = [11, 22];  // slots 11..22 are the expenditure half
+
 // Observed effective tax yield per unit of population at the default ("normal")
-// tax bracket, fit on the Julii test save (income = pop × this, ≤0.8 den residual
-// on all 25 cities). NOT a save field — an engine/mod-bracket constant bundling
-// RTW's tax % table. Used ONLY to produce the clearly-flagged `incomeEstimate.tax`
-// derivation; never written into the (null) stored `income.tax`.
-// See findings-financial-breakdown-2026-06-02.md §B/§C1.
+// tax bracket. Retained for the legacy DERIVED estimate (incomeEstimate.tax);
+// now that the real Taxes line is stored we keep the estimate only as a sanity
+// cross-check / pre-breakthrough fallback. See findings-financial-breakdown §B/§C1.
 const DEFAULT_TAX_COEFFICIENT = 0.10264;
+
+// EDB metal-export industry chains → the player's un-cancelled mine_resource bonus
+// (legacy DERIVED mining estimate; the real Mining line is now stored at slot f2).
+const MINE_EXPORT_BONUS = {
+  tin_industry: 5,    tin_supply: 5,
+  copper_industry: 4, copper_supply: 4,
+  lead_industry: 2,   lead_supply: 2,
+  iron_industry: 2,   iron_supply: 2,
+};
+const PLAYER_ZERO_MINE_CHAINS = new Set(["mines", "mines+1", "hinterland_mines_silver"]);
 
 // Build the canonical empty/unknown shape for one faction. Everything that is
 // not reliably cracked is null (never a fabricated 0 — [[provincia-no-fallbacks]]).
 function emptyFactionEconomy() {
   return {
     income: {
-      trade: null,        // category split NOT stored in the save
-      mining: null,       // category split NOT stored in the save
-      farming: null,      // category split NOT stored in the save
-      tax: null,          // category split NOT stored in the save
-      other: null,        // no residual category to attribute
-      total: null,        // = Σ settlement income (CONFIRMED) when available
+      // NOW STORED (2026-06-02 breakthrough) — null until the breakdown block is
+      // located, then the engine's real per-category figure (a genuine stored 0
+      // stays 0, e.g. Julii Mining 0).
+      farming: null,
+      mining: null,
+      trade: null,
+      merchants: null,   // 0 in this corpus; reported 0 only when fully accounted
+      taxes: null,
+      // back-compat alias of `taxes` (older callers/tests used `tax`)
+      tax: null,
+      other: null,
+      total: null,       // = Σ income slots from the block (CONFIRMED Julii 33485)
     },
     expenditure: {
-      upkeep: null,       // no per-unit upkeep ledger in the save
-      construction: null, // no construction cost ledger in the save
-      recruitment: null,  // no recruitment cost ledger in the save
-      other: null,
-      total: null,
+      wages: null,        // STORED slot f11 (CONFIRMED Julii 6350)
+      army_upkeep: null,  // STORED slot f12 (CONFIRMED Julii 26594)
+      recruitment: null,  // 0 in this corpus; reported 0 only when fully accounted
+      construction: null, // 0 in this corpus; reported 0 only when fully accounted
+      other: null,        // STORED slot f22 (CONFIRMED Julii 2242)
+      // back-compat alias: older callers used `upkeep` for army upkeep.
+      upkeep: null,
+      total: null,        // = Σ expenditure slots (CONFIRMED Julii 35186)
     },
-    // DERIVED (NOT stored) estimates, each flagged so the UI never presents them
-    // as the engine's exact figure. Null until derivable. Per
-    // findings-financial-breakdown-2026-06-02.md these are recomputations, not
-    // save fields — distinct from the (null) stored `income.*` category split.
+    // DERIVED (NOT stored) estimates, kept for back-compat / sanity cross-check.
+    // Now that the real lines are stored, these are informational only.
     incomeEstimate: {
-      tax: null,          // ≈ Σ committedPopulation × taxCoefficient (early turns)
-      estimated: true,    // ALWAYS an estimate — never present as exact
-      taxCoefficient: null,    // the coefficient actually used (null if not derived)
-      citiesWithPopulation: 0, // how many of the faction's cities fed the estimate
-      method: "population×taxCoefficient(default normal bracket)",
-      caveat: "Estimates the in-game TAX line only; dominant on early turns. NOT " +
-              "the stored income (the category split is not serialised). Excludes " +
-              "trade/farming/mining, which grow later and need engine tables.",
+      tax: null,
+      mining: null,
+      estimated: true,
+      taxCoefficient: null,
+      citiesWithPopulation: 0,
+      citiesWithMine: 0,
+      miningContributors: [],
+      method: "tax: population×taxCoefficient(default normal bracket); " +
+              "mining: Σ EDB mine_resource bonus from metal-export industries",
+      caveat: "Legacy derivation kept as a cross-check; the REAL Tax/Mining lines " +
+              "are now read from the stored breakdown block (income.taxes / " +
+              "income.mining).",
     },
-    net: null,            // CONFIRMED only from f13 history delta (turn >= 3, non-player)
+    net: null,            // = income.total - expenditure.total (STORED breakdown), else history delta
     treasury: null,       // CONFIRMED record +0 (start-of-turn balance)
     estimatedNextTurn: null, // treasury + net, only when net is known
-    // Provenance / confidence so the UI/debug log can be honest about coverage.
     _confidence: {
-      incomeTotal: "none",       // "confirmed" once summed, else "none"
-      incomeBreakdown: "not-stored",
-      expenditure: "not-stored",
-      net: "unavailable",        // "confirmed" if a history delta was used
+      incomeTotal: "none",
+      incomeBreakdown: "not-located", // → "stored" once the block is read
+      expenditure: "not-located",     // → "stored" once the block is read
+      net: "unavailable",             // → "stored" (inc-exp) or "history" (delta)
       treasury: "none",
     },
+    // Set when a nonzero income/expenditure slot falls OUTSIDE the pinned set
+    // (so the UI never silently drops engine money). Normally empty.
+    _unattributed: null,
   };
 }
 
 // Sum the per-settlement income (marker-1586) over a faction's settlements.
-// Returns { total, citiesWithIncome, citiesTotal } — total is null when NO city
-// produced a numeric income (so callers never see a fabricated 0).
+// Kept for back-compat / sanity (gross income cross-check). The authoritative
+// income total now comes from the stored breakdown block.
 function sumSettlementIncome(factionName, ownerByCity, settlementFields) {
   let total = 0;
   let citiesWithIncome = 0;
@@ -181,12 +215,7 @@ function sumSettlementIncome(factionName, ownerByCity, settlementFields) {
   };
 }
 
-// DERIVED population-based TAX estimate for one faction. Sums committedPopulation
-// over the faction's cities and multiplies by `coefficient`. Returns { tax,
-// citiesWithPopulation, coefficient } with tax=null when NO city had a usable
-// population (never a fabricated 0 — [[provincia-no-fallbacks]]). This is an
-// ESTIMATE of the in-game Tax line (dominant on early turns), NOT a stored field.
-// See findings-financial-breakdown-2026-06-02.md §B/§C1.
+// DERIVED population-based TAX estimate (legacy; cross-check only).
 function estimateTaxIncome(factionName, ownerByCity, settlementFields, coefficient) {
   const k = (typeof coefficient === "number" && Number.isFinite(coefficient))
     ? coefficient : DEFAULT_TAX_COEFFICIENT;
@@ -210,48 +239,208 @@ function estimateTaxIncome(factionName, ownerByCity, settlementFields, coefficie
   };
 }
 
-// Net income from a per-faction f13 treasury-checkpoint history series.
-// `history` (if provided) is the array of end-of-turn checkpoints for the
-// faction (e.g. crackSave-side parseFactionTreasuryHistory[name]). Net = the
-// delta of the last two checkpoints. Returns null when fewer than 2 checkpoints
-// exist (turn < 3) or the player's all-zero series. NEVER fabricated.
+// DERIVED MINING income (legacy EDB-table estimate; cross-check only).
+function deriveMiningIncome(factionName, ownerByCity, settlements) {
+  if (!Array.isArray(settlements) || !ownerByCity) {
+    return { mining: null, citiesWithMine: 0, contributingCities: [] };
+  }
+  let mining = 0;
+  let citiesWithMine = 0;
+  const contributingCities = [];
+  let sawAnyFactionCity = false;
+  for (const s of settlements) {
+    if (!s || !s.name) continue;
+    if (ownerByCity[s.name] !== factionName) continue;
+    sawAnyFactionCity = true;
+    const buildings = Array.isArray(s.buildings) ? s.buildings : [];
+    let cityMine = 0;
+    let hasMineChain = false;
+    for (const b of buildings) {
+      const n = b && b.name;
+      if (!n) continue;
+      if (PLAYER_ZERO_MINE_CHAINS.has(n)) hasMineChain = true;
+      const bonus = MINE_EXPORT_BONUS[n];
+      if (typeof bonus === "number") {
+        cityMine += bonus;
+        hasMineChain = true;
+      }
+    }
+    if (hasMineChain) citiesWithMine++;
+    if (cityMine > 0) contributingCities.push({ city: s.name, mining: cityMine });
+    mining += cityMine;
+  }
+  return {
+    mining: sawAnyFactionCity ? mining : null,
+    citiesWithMine,
+    contributingCities,
+  };
+}
+
+// Net income from a per-faction f13 treasury-checkpoint history series (legacy
+// path; only used when the stored breakdown block is unavailable).
 function netFromHistory(history) {
   if (!Array.isArray(history) || history.length < 2) return null;
   const a = history[history.length - 2];
   const b = history[history.length - 1];
   if (typeof a !== "number" || typeof b !== "number") return null;
-  if (a === 0 && b === 0) return null; // player's own series reads all-zeros
+  if (a === 0 && b === 0) return null;
   return b - a;
 }
 
+// ── Econ-history block reader ────────────────────────────────────────────────
+// Walk backward from a faction record to its self-pointer-framed econ-history
+// object header (same logic as saveCrackerExtras.findEconHistoryStart).
+function findEconHistoryStart(buf, core) {
+  for (let off = core - 4; off >= core - 60000 && off >= 0; off -= 4) {
+    if (buf.readUInt32LE(off) === off) return off;
+  }
+  return -1;
+}
+
+// Read the FINAL (current-turn) 23-i32 sub-block for a faction record at `core`.
+// Returns the int32[23] array, or null if no block is present/parseable.
+function readFinancialBlock(buf, core) {
+  const start = findEconHistoryStart(buf, core);
+  if (start < 0) return null;
+  const f = [];
+  for (let o = start; o + 4 <= core; o += 4) f.push(buf.readInt32LE(o));
+  // [0]=selfptr, [1]=turnSerial, then N×23 blocks, [last]=faction marker.
+  const body = f.slice(2, f.length - 1);
+  if (body.length < BLOCK_STRIDE || body.length % BLOCK_STRIDE !== 0) return null;
+  const nBlocks = body.length / BLOCK_STRIDE;
+  return body.slice((nBlocks - 1) * BLOCK_STRIDE, nBlocks * BLOCK_STRIDE);
+}
+
+// Turn a raw int32[23] block into a Financial Overview breakdown object, or null
+// if the block carries no economy (all the income+expenditure slots are zero —
+// e.g. a freshly-spawned faction before its first turn).
+function decodeFinancialBlock(block) {
+  if (!Array.isArray(block) || block.length < BLOCK_STRIDE) return null;
+  const at = (i) => (Number.isFinite(block[i]) ? block[i] : 0);
+
+  const income = {
+    farming: at(INCOME_SLOTS.farming),
+    taxes: at(INCOME_SLOTS.taxes),
+    mining: at(INCOME_SLOTS.mining),
+    trade: at(INCOME_SLOTS.trade),
+    other: at(INCOME_SLOTS.other),
+  };
+  const expenditure = {
+    wages: at(EXPENDITURE_SLOTS.wages),
+    army_upkeep: at(EXPENDITURE_SLOTS.army_upkeep),
+    other: at(EXPENDITURE_SLOTS.other),
+  };
+
+  // Engine totals = sum over the WHOLE half (every slot, so any nonzero slot we
+  // have not individually labelled is still counted toward the total — money is
+  // never silently dropped).
+  let incomeTotal = 0;
+  for (let s = INCOME_SLOT_RANGE[0]; s <= INCOME_SLOT_RANGE[1]; s++) incomeTotal += at(s);
+  let expenditureTotal = 0;
+  for (let s = EXPENDITURE_SLOT_RANGE[0]; s <= EXPENDITURE_SLOT_RANGE[1]; s++) expenditureTotal += at(s);
+
+  if (incomeTotal === 0 && expenditureTotal === 0) return null; // no economy yet
+
+  // Detect any nonzero slot OUTSIDE the pinned set (would be an unlabelled
+  // merchants/recruitment/construction line). Normally none in this corpus.
+  const unattributed = [];
+  for (let s = INCOME_SLOT_RANGE[0]; s <= INCOME_SLOT_RANGE[1]; s++) {
+    if (!INCOME_SLOT_SET.has(s) && at(s) !== 0) unattributed.push({ slot: s, side: "income", value: at(s) });
+  }
+  for (let s = EXPENDITURE_SLOT_RANGE[0]; s <= EXPENDITURE_SLOT_RANGE[1]; s++) {
+    if (!EXPENDITURE_SLOT_SET.has(s) && at(s) !== 0) unattributed.push({ slot: s, side: "expenditure", value: at(s) });
+  }
+
+  // Merchants / Recruitment / Construction: genuinely 0 in this corpus, and the
+  // pinned slots fully account for the engine totals (no unattributed money), so
+  // they are real stored zeros — report 0. If an unattributed slot DID carry
+  // money we leave them null (we cannot honestly say which category it is).
+  const fullyAccountedIncome = unattributed.every((u) => u.side !== "income");
+  const fullyAccountedExpenditure = unattributed.every((u) => u.side !== "expenditure");
+
+  return {
+    income: {
+      ...income,
+      tax: income.taxes,                 // back-compat alias
+      merchants: fullyAccountedIncome ? 0 : null,
+      total: incomeTotal,
+    },
+    expenditure: {
+      ...expenditure,
+      upkeep: expenditure.army_upkeep,   // back-compat alias
+      recruitment: fullyAccountedExpenditure ? 0 : null,
+      construction: fullyAccountedExpenditure ? 0 : null,
+      total: expenditureTotal,
+    },
+    net: incomeTotal - expenditureTotal,
+    unattributed: unattributed.length ? unattributed : null,
+  };
+}
+
+// Build { factionName: int32[23] block } by anchoring each raw faction record's
+// econ-history block to a faction NAME via the +0 treasury (greedy in-order
+// window match; tolerates the one-slot phantom-record drift). See header.
+function buildFactionBlocks(buffer, factions) {
+  const out = {};
+  if (!buffer || typeof parseFactionTreasuries !== "function" || !factions) return out;
+  let recs;
+  try { recs = parseFactionTreasuries(buffer); } catch (_e) { return out; }
+  if (!Array.isArray(recs) || recs.length === 0) return out;
+
+  // Faction names in factionId order (crackSave emits them in record order).
+  const names = Object.keys(factions);
+  let rp = 0;
+  const WINDOW = 3; // tolerate up to (WINDOW-1) phantom/zero records between hits
+  for (const name of names) {
+    const f = factions[name];
+    const treasury = f && typeof f.treasury === "number" ? f.treasury : null;
+    if (treasury == null) continue;
+    let found = -1;
+    for (let k = rp; k < Math.min(rp + WINDOW, recs.length); k++) {
+      if (recs[k].treasury === treasury) { found = k; break; }
+    }
+    if (found < 0) continue;
+    rp = found + 1;
+    const block = readFinancialBlock(buffer, recs[found].offset);
+    if (block) out[name] = block;
+  }
+  return out;
+}
+
 /**
- * parseFactionEconomy — derive the Financial Overview economy object per faction.
+ * parseFinancialOverview — read the STORED per-faction Financial Overview
+ * breakdown from the save's econ-history blocks. Pure with respect to `context`
+ * except for reading `buffer` to locate the blocks.
  *
- * @param {Buffer|null} buffer  the raw .sav buffer. OPTIONAL: only used if the
- *        caller wants the (rarely-available) net-income history and did not
- *        pre-supply it in context.treasuryHistory. Pass null to skip all buffer
- *        access — the confirmed fields come entirely from `context`.
- * @param {object} context  the output of saveCracker.crackSave(buf, modDir).
- *        Required keys consumed:
- *          - context.ownerByCity        { city: factionName }
- *          - context.settlementFields   { city: { income, ... } }
- *          - context.factions           { name: { treasury, ... } }
- *          - context.playerFaction      (string) — used to pick the focus faction
- *          - context.turn               (number) — informational
- *        Optional:
- *          - context.treasuryHistory    { name: number[] }  per-faction f13 series
- *                 (NOT produced by crackSave by default; pass it if you have it,
- *                  e.g. from parseFactionTreasuryHistory). Used for `net`.
- *          - context.factionsOnly       (string[]) — restrict output to these
- *                 faction names (default: every faction in context.factions).
- * @returns {{ byFaction: Object, playerFaction: string|null, turn: number|null,
- *             _meta: object }}
- *          byFaction[name] = {
- *            income: { trade, mining, farming, tax, other, total },
- *            expenditure: { upkeep, construction, recruitment, other, total },
- *            net, treasury, estimatedNextTurn, _confidence
- *          }
- *          (null for any field not reliably cracked — see header.)
+ * @param {Buffer} buffer   the raw .sav buffer (required for the stored breakdown).
+ * @param {object} context  crackSave() output (uses context.factions for the
+ *                          name→treasury anchor; optional context.factionsOnly).
+ * @returns {{ byFaction: { name: { income, expenditure, net, treasury,
+ *             estimatedNextTurn, _confidence, _unattributed } },
+ *             playerFaction, turn, _meta }}
+ */
+function parseFinancialOverview(buffer, context) {
+  // parseFinancialOverview is just parseFactionEconomy with the stored breakdown
+  // as the primary source — they share one implementation.
+  return parseFactionEconomy(buffer, context);
+}
+
+/**
+ * parseFactionEconomy — derive the Financial Overview economy object per faction,
+ * now reading the STORED per-category breakdown (2026-06-02 breakthrough) and
+ * falling back to confirmed totals / history for anything not located.
+ *
+ * @param {Buffer|null} buffer  raw .sav buffer; needed for the stored breakdown
+ *        block and (optionally) net history. With null buffer the stored
+ *        breakdown is skipped and only context-derived fields are returned.
+ * @param {object} context  crackSave() output. Consumed:
+ *          - context.factions        { name: { treasury, ... } }  (anchor + treasury)
+ *          - context.ownerByCity      { city: factionName }       (legacy gross/tax)
+ *          - context.settlementFields { city: { income, committedPopulation } }
+ *          - context.playerFaction, context.turn
+ *        Optional: context.treasuryHistory, context.factionsOnly,
+ *                  context.settlements (legacy mining estimate), context.taxCoefficient.
+ * @returns see parseFinancialOverview.
  */
 function parseFactionEconomy(buffer, context) {
   const ctx = context || {};
@@ -259,25 +448,23 @@ function parseFactionEconomy(buffer, context) {
   const settlementFields = ctx.settlementFields || {};
   const factions = ctx.factions || {};
   const treasuryHistory = ctx.treasuryHistory || null;
-  // Optional override of the tax-yield-per-population coefficient (e.g. once a
-  // controlled tax-bracket capture pins the real per-bracket value). Defaults to
-  // the observed "normal"-bracket constant.
   const taxCoefficient = (typeof ctx.taxCoefficient === "number" && Number.isFinite(ctx.taxCoefficient))
     ? ctx.taxCoefficient : DEFAULT_TAX_COEFFICIENT;
 
-  // Which factions to compute for.
+  // Stored breakdown blocks, keyed by faction name (empty if no buffer/cracker).
+  const blocks = buildFactionBlocks(buffer, factions);
+
   let names;
   if (Array.isArray(ctx.factionsOnly) && ctx.factionsOnly.length) {
     names = ctx.factionsOnly.slice();
   } else {
-    // Union of factions present in the treasury map and as a city owner, so we
-    // also cover factions that have settlements but no treasury record (rare).
     const set = new Set(Object.keys(factions));
     for (const owner of Object.values(ownerByCity)) if (owner) set.add(owner);
     names = [...set];
   }
 
   const byFaction = {};
+  let factionsWithBreakdown = 0;
   let factionsWithIncome = 0;
 
   for (const name of names) {
@@ -290,35 +477,64 @@ function parseFactionEconomy(buffer, context) {
       eco._confidence.treasury = "confirmed";
     }
 
-    // ── Gross income total = Σ settlement income — CONFIRMED ────────────────
-    const inc = sumSettlementIncome(name, ownerByCity, settlementFields);
-    if (inc.total != null) {
-      eco.income.total = inc.total;
-      eco.income.other = null; // we have a total but NO breakdown — other stays null
+    // ── STORED breakdown (2026-06-02 breakthrough) ──────────────────────────
+    const decoded = blocks[name] ? decodeFinancialBlock(blocks[name]) : null;
+    if (decoded) {
+      eco.income.farming = decoded.income.farming;
+      eco.income.taxes = decoded.income.taxes;
+      eco.income.tax = decoded.income.tax;          // alias
+      eco.income.mining = decoded.income.mining;
+      eco.income.trade = decoded.income.trade;
+      eco.income.merchants = decoded.income.merchants;
+      eco.income.other = decoded.income.other;
+      eco.income.total = decoded.income.total;
+
+      eco.expenditure.wages = decoded.expenditure.wages;
+      eco.expenditure.army_upkeep = decoded.expenditure.army_upkeep;
+      eco.expenditure.upkeep = decoded.expenditure.upkeep; // alias
+      eco.expenditure.recruitment = decoded.expenditure.recruitment;
+      eco.expenditure.construction = decoded.expenditure.construction;
+      eco.expenditure.other = decoded.expenditure.other;
+      eco.expenditure.total = decoded.expenditure.total;
+
+      eco.net = decoded.net;
+      eco._unattributed = decoded.unattributed;
+
       eco._confidence.incomeTotal = "confirmed";
+      eco._confidence.incomeBreakdown = "stored";
+      eco._confidence.expenditure = "stored";
+      eco._confidence.net = "stored";
+      if (eco.treasury != null) eco.estimatedNextTurn = eco.treasury + decoded.net;
+
+      factionsWithBreakdown++;
       factionsWithIncome++;
-    }
-    // trade/mining/farming/tax stay null: not stored in the save.
-
-    // ── DERIVED tax estimate (NOT stored) — pop × tax coefficient ───────────
-    // Flagged estimated; populates incomeEstimate.tax, NEVER the stored
-    // income.tax (which stays null because no category split is serialised).
-    const taxEst = estimateTaxIncome(name, ownerByCity, settlementFields, taxCoefficient);
-    eco.incomeEstimate.tax = taxEst.tax;                 // null when no population
-    eco.incomeEstimate.taxCoefficient = taxEst.tax != null ? taxEst.coefficient : null;
-    eco.incomeEstimate.citiesWithPopulation = taxEst.citiesWithPopulation;
-
-    // ── Net income — CONFIRMED only from a history delta (turn >= 3) ─────────
-    const series = treasuryHistory ? treasuryHistory[name] : null;
-    const net = netFromHistory(series);
-    if (net != null) {
-      eco.net = net;
-      eco._confidence.net = "confirmed";
-      if (eco.treasury != null) {
-        // Estimated next-turn balance = current treasury + this turn's net.
-        eco.estimatedNextTurn = eco.treasury + net;
+    } else {
+      // ── FALLBACK: gross income total = Σ settlement income (CONFIRMED) ─────
+      const inc = sumSettlementIncome(name, ownerByCity, settlementFields);
+      if (inc.total != null) {
+        eco.income.total = inc.total;
+        eco._confidence.incomeTotal = "confirmed";
+        factionsWithIncome++;
+      }
+      // Net from history if available (turn >= 3, non-player).
+      const series = treasuryHistory ? treasuryHistory[name] : null;
+      const net = netFromHistory(series);
+      if (net != null) {
+        eco.net = net;
+        eco._confidence.net = "history";
+        if (eco.treasury != null) eco.estimatedNextTurn = eco.treasury + net;
       }
     }
+
+    // ── DERIVED legacy estimates (cross-check; informational) ───────────────
+    const taxEst = estimateTaxIncome(name, ownerByCity, settlementFields, taxCoefficient);
+    eco.incomeEstimate.tax = taxEst.tax;
+    eco.incomeEstimate.taxCoefficient = taxEst.tax != null ? taxEst.coefficient : null;
+    eco.incomeEstimate.citiesWithPopulation = taxEst.citiesWithPopulation;
+    const mineEst = deriveMiningIncome(name, ownerByCity, ctx.settlements);
+    eco.incomeEstimate.mining = mineEst.mining;
+    eco.incomeEstimate.citiesWithMine = mineEst.citiesWithMine;
+    eco.incomeEstimate.miningContributors = mineEst.contributingCities;
 
     byFaction[name] = eco;
   }
@@ -329,29 +545,39 @@ function parseFactionEconomy(buffer, context) {
     turn: typeof ctx.turn === "number" ? ctx.turn : null,
     _meta: {
       factions: names.length,
+      factionsWithBreakdown,
       factionsWithIncome,
-      // Categories we deliberately leave null and why (kept here so a debug
-      // dump / provincia.log line can state the coverage honestly).
-      unstoredCategories: [
-        "income.trade", "income.mining", "income.farming", "income.tax",
-        "expenditure.upkeep", "expenditure.construction", "expenditure.recruitment",
-      ],
-      note: "Per-category income/expenditure breakdown is recomputed at runtime " +
-            "and is NOT stored in the save; only gross income total (Σ settlement " +
-            "income), treasury, and (turn>=3, non-player) net are recoverable. " +
-            "incomeEstimate.tax is a flagged DERIVATION (pop × taxCoefficient), an " +
-            "estimate of the in-game Tax line — not a stored field.",
+      slotMap: {
+        income: { ...INCOME_SLOTS },        // farming:0 taxes:1 mining:2 trade:3 other:9
+        expenditure: { ...EXPENDITURE_SLOTS }, // wages:11 army_upkeep:12 other:22
+        note: "Block-field index within the final 23-i32 econ-history sub-block.",
+      },
+      note: "Per-category breakdown is READ FROM THE SAVE (2026-06-02 breakthrough): " +
+            "income {farming,taxes,mining,trade,other} from slots {0,1,2,3,9} and " +
+            "expenditure {wages,army_upkeep,other} from slots {11,12,22}; totals = " +
+            "the full income/expenditure half sums; net = income.total-expenditure.total. " +
+            "Merchants/recruitment/construction are 0 in this corpus (reported 0 only " +
+            "when the pinned slots fully account for the engine totals). Factions whose " +
+            "block cannot be located fall back to Σ settlement income + history net.",
       taxCoefficient,
     },
   };
 }
 
 module.exports = {
+  parseFinancialOverview,
   parseFactionEconomy,
   // Exported helpers for unit testing / reuse.
   sumSettlementIncome,
   estimateTaxIncome,
+  deriveMiningIncome,
   netFromHistory,
   emptyFactionEconomy,
+  readFinancialBlock,
+  decodeFinancialBlock,
+  buildFactionBlocks,
   DEFAULT_TAX_COEFFICIENT,
+  MINE_EXPORT_BONUS,
+  INCOME_SLOTS,
+  EXPENDITURE_SLOTS,
 };

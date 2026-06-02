@@ -80,6 +80,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // directly. Returns { header, playerFaction, factions:{[name]:{treasury,regionCount,...,diplomacy}}, settlements, characters, _stats }
   // or { error } on failure.
   crackSave: (savePath, modDataDir) => ipcRenderer.invoke("crack-save", savePath, modDataDir),
+  // Financial Overview economy breakdown (src/economyParser.parseFinancialOverview):
+  // { byFaction:{ [name]:{ income:{farming,mining,trade,merchants,taxes,other,total},
+  // expenditure:{wages,army_upkeep,recruitment,construction,other,total}, net, treasury,
+  // estimatedNextTurn } }, playerFaction, turn } or { error }. The REAL stored in-game
+  // numbers. Computed on demand per save-file change (cracks the save).
+  getSaveEconomy: (savePath, modDataDir) => ipcRenderer.invoke("get-save-economy", savePath, modDataDir),
   // Trade-network derivation (src/tradeNetwork.js). Returns { trade: { settlements:
   // { name: { faction, landPartners[], seaPartners[], partners[], tradeScoreHypothesis,
   // topPartnersHypothesis[] } } }, ... } or { error }. Pass savePath=null to reuse the

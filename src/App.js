@@ -2473,6 +2473,10 @@ function App() {
   // 2026-05-31: on-demand trade network (computeTradeNetwork via crack-trade-network IPC),
   // computed once per save-file change. { settlements: { name: { faction, landPartners, seaPartners, ... } }, ... }.
   const [tradeNetwork, setTradeNetwork] = useState(null);
+  // 0.9.860: per-faction Financial Overview economy (income/expenditure by
+  // category, net, treasury) read from the stored econ-history KPI block.
+  // Fetched on-demand per save-file change (see effect below), like tradeNetwork.
+  const [saveEconomy, setSaveEconomy] = useState(null);
   // 0.9.542: faction-level save data is now PERSISTED to localStorage and
   // rehydrated on launch, so one sync (live snapshot or 🎯 Calibrate) keeps
   // the Diplomacy & Treasury widget populated for EVERY faction across app
@@ -5542,6 +5546,34 @@ function App() {
       .catch((e) => { if (!cancelled) { setTradeNetwork(null); console.warn("[trade-network] error:", e?.message); } });
     return () => { cancelled = true; };
   }, [liveSaveFile, modDataDir, mapCampaign, liveSaveDir]);
+
+  // 0.9.860: fetch the Financial Overview economy ONCE per save-file change
+  // (mirrors the trade-network effect). Reads the stored econ-history KPI block
+  // so the panel shows the REAL in-game income/expenditure breakdown.
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api || !api.getSaveEconomy) return;
+    if (!liveSaveFile || !modDataDir) { setSaveEconomy(null); return; }
+    const savePath = liveSaveDir ? `${liveSaveDir}\\${liveSaveFile}` : null;
+    if (!savePath) { setSaveEconomy(null); return; }
+    let cancelled = false;
+    api.getSaveEconomy(savePath, modDataDir)
+      .then((r) => {
+        if (cancelled) return;
+        if (r && !r.error && r.byFaction) {
+          setSaveEconomy(r);
+          try {
+            const pe = r.playerFaction && r.byFaction[r.playerFaction];
+            console.log(`[economy] ${r.playerFaction}: income=${pe?.income?.total} expend=${pe?.expenditure?.total} net=${pe?.net} treasury=${pe?.treasury}`);
+          } catch {}
+        } else {
+          setSaveEconomy(null);
+          if (r && r.error) console.warn("[economy] failed:", r.error);
+        }
+      })
+      .catch((e) => { if (!cancelled) { setSaveEconomy(null); console.warn("[economy] error:", e?.message); } });
+    return () => { cancelled = true; };
+  }, [liveSaveFile, modDataDir, liveSaveDir]);
 
   // UI batch 2 (feature 3): scan a chosen saves folder into a campaign timeline.
   // On-demand (cracks every save) — never on the live path. Defaults the folder
@@ -20875,6 +20907,53 @@ function App() {
                     title="Close (Esc)">×</button>
                 </div>
               </div>
+              {/* 0.9.860: Financial Overview — the REAL stored per-category
+                  income/expenditure breakdown for the focused faction (player by
+                  default; click a faction row to switch). Matches the in-game
+                  Finance & Family panel to the denarius. "—" for any unstored
+                  field ([[provincia-no-fallbacks]]); a genuine stored 0 shows 0. */}
+              {saveEconomy && saveEconomy.byFaction && (() => {
+                const focus = (selectedFaction && saveEconomy.byFaction[selectedFaction]) ? selectedFaction : saveEconomy.playerFaction;
+                const e = focus && saveEconomy.byFaction[focus];
+                if (!e) return null;
+                const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString());
+                const disp = (factionDisplayNames && (factionDisplayNames[focus] || factionDisplayNames[String(focus).toLowerCase()])) || focus;
+                const inc = e.income || {}, exp = e.expenditure || {};
+                const incomeRows = [["Farming", inc.farming], ["Trade", inc.trade], ["Taxes", inc.taxes != null ? inc.taxes : inc.tax], ["Mining", inc.mining], ["Merchants", inc.merchants], ["Other", inc.other]];
+                const expRows = [["Army upkeep", exp.army_upkeep != null ? exp.army_upkeep : exp.upkeep], ["Wages", exp.wages], ["Recruitment", exp.recruitment], ["Construction", exp.construction], ["Other", exp.other]];
+                const netColor = e.net == null ? "#888" : e.net < 0 ? "#e85050" : "#9ec78a";
+                const col = (rows, label, accent, total) => (
+                  <div>
+                    <div style={{ color: accent, fontWeight: 600, fontSize: "0.7rem", marginBottom: 2, letterSpacing: "0.03em" }}>{label}</div>
+                    {rows.map(([k, v]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", color: v ? "#ddd" : "#6b7280", lineHeight: 1.5 }}>
+                        <span>{k}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmt(v)}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.12)", marginTop: 2, paddingTop: 2, fontWeight: 700 }}>
+                      <span>Total</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</span>
+                    </div>
+                  </div>
+                );
+                return (
+                  <div style={{ padding: "8px 16px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", fontSize: "0.8rem" }}>
+                    <div style={{ fontWeight: 700, color: "#dca64a", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                      <span>📊 Financial Overview — <span style={{ textTransform: "capitalize" }}>{disp}</span></span>
+                      {saveEconomy.turn != null && <span style={{ color: "#8a93a8", fontWeight: 400, fontSize: "0.72rem" }}>turn {saveEconomy.turn}</span>}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
+                      {col(incomeRows, "INCOME", "#9ec78a", inc.total)}
+                      {col(expRows, "EXPENDITURE", "#e89030", exp.total)}
+                    </div>
+                    <div style={{ display: "flex", gap: 16, justifyContent: "flex-end", marginTop: 6, fontSize: "0.78rem" }}>
+                      <span style={{ color: "#999" }}>Treasury <span style={{ color: "#f4cd57", fontVariantNumeric: "tabular-nums" }}>{fmt(e.treasury)}</span></span>
+                      <span style={{ color: "#999" }}>Net <span style={{ color: netColor, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{e.net == null ? "—" : (e.net >= 0 ? "+" : "") + Number(e.net).toLocaleString()}</span></span>
+                      {e.estimatedNextTurn != null && <span style={{ color: "#999" }}>Next ≈ <span style={{ color: "#cfd6e0", fontVariantNumeric: "tabular-nums" }}>{fmt(e.estimatedNextTurn)}</span></span>}
+                    </div>
+                    <div style={{ color: "#6b7280", fontSize: "0.64rem", marginTop: 4 }}>Stored save figures (matches the in-game Finance &amp; Family panel). Click a faction below to see its breakdown.</div>
+                  </div>
+                );
+              })()}
               <div style={{ overflowY: "auto", padding: "4px 8px" }}>
                 <div style={{
                   display: "grid", gridTemplateColumns: "28px 1fr 90px 70px 60px",
