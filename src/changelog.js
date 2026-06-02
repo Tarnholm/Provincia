@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.861",
+    date: "2026-06-02",
+    items: [
+      { type: "improvement", text: "**Financial Overview: Mining is flagged \"(label inferred)\".** Deeper cracking confirmed the save stores nothing beyond the category totals + net + treasury (per-line counts, per-settlement splits and the totals themselves are recomputed by the game at runtime). The Mining figure is read exactly, but its category label is inferred from cross-faction structure — so it's now marked as such for honesty, rather than presented as certain." },
+    ],
+  },
+  {
     version: "0.9.860",
     date: "2026-06-02",
     items: [

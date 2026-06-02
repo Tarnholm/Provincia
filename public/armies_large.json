@@ -1467,11 +1467,11 @@
   {
     "name": "Aulus Gabinius",
     "charType": "general",
-    "armyClass": "field",
-    "location": "Outside Taras",
+    "armyClass": "garrison",
+    "location": "Falerii (Aulus Gabinius replaces Caecilius_Metellus)",
     "faction": "romans_julii",
-    "x": 337,
-    "y": 385,
+    "x": 283,
+    "y": 410,
     "age": 32,
     "tags": [
       "named"
@@ -1522,72 +1522,6 @@
     "units": [
       {
         "name": "roman general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman hastati early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman principes early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman triarii early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman leves",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman rorarii",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman equites early",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "roman equites early",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -42675,6 +42609,24 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "oscan hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "oscan heavy skirmisher",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "oscan light cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -44585,6 +44537,48 @@
     "units": [
       {
         "name": "campanian general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian javelinmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "oscan heavy skirmisher",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "oscan light cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -60000,7 +59994,19 @@
     ],
     "units": [
       {
-        "name": "greek general",
+        "name": "messapian general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian hoplite",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian light spearmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -65992,6 +65998,48 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "messapian light spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian light spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian hoplite",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian hoplite",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian light cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "messapian javelinmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -70871,6 +70919,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "picentine heavy spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -73006,6 +73060,24 @@
     "units": [
       {
         "name": "oscan general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "samnite hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "samnite axemen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "oscan heavy skirmisher",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -77270,6 +77342,48 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "italiote hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "italiote hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "italiote epibatai",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "tarentine cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -81305,25 +81419,31 @@
         "weapon": 0
       },
       {
+        "name": "etruscan hoplite",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "etruscan elite swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
         "name": "etruscan spearmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "etruscan light swordsmen",
+        "name": "etruscan slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "etruscan thureophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "etruscan lancer cavalry",
+        "name": "etruscan javelinmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -92017,7 +92137,13 @@
         "weapon": 0
       },
       {
-        "name": "campanian heavy cavalry",
+        "name": "campanian hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "campanian hoplites",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -92029,7 +92155,13 @@
         "weapon": 0
       },
       {
-        "name": "campanian hoplites",
+        "name": "campanian thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "oscan spearmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0

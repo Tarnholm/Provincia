@@ -20919,15 +20919,19 @@ function App() {
                 const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString());
                 const disp = (factionDisplayNames && (factionDisplayNames[focus] || factionDisplayNames[String(focus).toLowerCase()])) || focus;
                 const inc = e.income || {}, exp = e.expenditure || {};
-                const incomeRows = [["Farming", inc.farming], ["Trade", inc.trade], ["Taxes", inc.taxes != null ? inc.taxes : inc.tax], ["Mining", inc.mining], ["Merchants", inc.merchants], ["Other", inc.other]];
+                // Mining value is read exactly from the block, but its slot LABEL
+                // is cross-faction-inferred (no save in the corpus has the player's
+                // Mining > 0 to crib-pin it) — flag it honestly.
+                const miningInferred = e._confidence && /inferred/.test(e._confidence.mining || "");
+                const incomeRows = [["Farming", inc.farming], ["Trade", inc.trade], ["Taxes", inc.taxes != null ? inc.taxes : inc.tax], ["Mining", inc.mining, miningInferred ? "label inferred" : null], ["Merchants", inc.merchants], ["Other", inc.other]];
                 const expRows = [["Army upkeep", exp.army_upkeep != null ? exp.army_upkeep : exp.upkeep], ["Wages", exp.wages], ["Recruitment", exp.recruitment], ["Construction", exp.construction], ["Other", exp.other]];
                 const netColor = e.net == null ? "#888" : e.net < 0 ? "#e85050" : "#9ec78a";
                 const col = (rows, label, accent, total) => (
                   <div>
                     <div style={{ color: accent, fontWeight: 600, fontSize: "0.7rem", marginBottom: 2, letterSpacing: "0.03em" }}>{label}</div>
-                    {rows.map(([k, v]) => (
+                    {rows.map(([k, v, hint]) => (
                       <div key={k} style={{ display: "flex", justifyContent: "space-between", color: v ? "#ddd" : "#6b7280", lineHeight: 1.5 }}>
-                        <span>{k}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmt(v)}</span>
+                        <span>{k}{hint && <span style={{ color: "#6b7280", fontSize: "0.6rem", fontStyle: "italic", marginLeft: 4 }} title="The value is read exactly from the save; the category label here is inferred from cross-faction structure (no save with the player's Mining > 0 to confirm it directly).">({hint})</span>}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmt(v)}</span>
                       </div>
                     ))}
                     <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.12)", marginTop: 2, paddingTop: 2, fontWeight: 700 }}>
