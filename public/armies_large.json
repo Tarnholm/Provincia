@@ -77269,14 +77269,14 @@
     ]
   },
   {
-    "name": "Leophron",
+    "name": "Philocharis",
     "charType": "general",
     "armyClass": "garrison",
-    "location": "Metapontum",
+    "location": "Tarentum (Philocharis)",
     "faction": "taras",
-    "x": 331,
-    "y": 382,
-    "age": 23,
+    "x": 336,
+    "y": 384,
+    "age": 30,
     "tags": [
       "heir",
       "named"
@@ -77291,15 +77291,7 @@
         "level": 1
       },
       {
-        "name": "Metapontum",
-        "level": 1
-      },
-      {
-        "name": "GreekCityAssigned",
-        "level": 1
-      },
-      {
-        "name": "Corrupt",
+        "name": "GoodCommander",
         "level": 1
       },
       {
@@ -77309,22 +77301,6 @@
       {
         "name": "LoyaltyLevel",
         "level": 7
-      },
-      {
-        "name": "GoodFarmer",
-        "level": 1
-      },
-      {
-        "name": "NightBattleCapable",
-        "level": 1
-      },
-      {
-        "name": "Stoic",
-        "level": 1
-      },
-      {
-        "name": "Xenophobia",
-        "level": 1
       },
       {
         "name": "FasterCharacters",

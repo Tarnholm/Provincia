@@ -20839,7 +20839,7 @@ function App() {
               border: "1px solid rgba(255,255,255,0.15)",
               borderRadius: 10,
               padding: "12px 0",
-              width: "min(540px, 90vw)",
+              width: "min(680px, 94vw)",
               maxHeight: "80vh",
               boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
               color: "#f4f4f4",
@@ -20960,20 +20960,29 @@ function App() {
               })()}
               <div style={{ overflowY: "auto", padding: "4px 8px" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "28px 1fr 90px 70px 60px",
+                  display: "grid", gridTemplateColumns: "24px 1fr 84px 80px 74px 52px 46px",
                   fontSize: "0.7rem", color: "#999", padding: "4px 8px",
                   borderBottom: "1px solid rgba(255,255,255,0.06)",
                 }}>
                   <span></span><span>Faction</span>
                   <span style={{ textAlign: "right" }}>Treasury</span>
+                  <span style={{ textAlign: "right" }} title="Gross turn income (sum of the stored income categories)">Income</span>
+                  <span style={{ textAlign: "right" }} title="Net turn income = income − expenditure (from the stored Financial Overview block)">Net</span>
                   <span style={{ textAlign: "right" }}>Regions</span>
                   <span style={{ textAlign: "right" }}>Armies</span>
                 </div>
-                {rows.map((r, i) => (
+                {rows.map((r, i) => {
+                  // 0.9.862: per-faction Income + Net from the stored Financial
+                  // Overview block (saveEconomy). "—" when this faction has no
+                  // economy block (e.g. no save loaded).
+                  const eco = saveEconomy && saveEconomy.byFaction ? saveEconomy.byFaction[r.faction] : null;
+                  const ecoIncome = eco && eco.income ? eco.income.total : null;
+                  const ecoNet = eco ? eco.net : null;
+                  return (
                   <div key={r.faction}
                     onClick={() => jumpToFaction(r.faction)}
                     style={{
-                      display: "grid", gridTemplateColumns: "28px 1fr 90px 70px 60px",
+                      display: "grid", gridTemplateColumns: "24px 1fr 84px 80px 74px 52px 46px",
                       alignItems: "center", padding: "4px 8px", borderRadius: 6,
                       cursor: "pointer", fontSize: "0.85rem",
                       background: selectedFaction === r.faction ? "rgba(220,166,74,0.18)" : "transparent",
@@ -21001,6 +21010,14 @@ function App() {
                       {r.wealth == null ? "—" : r.wealth.toLocaleString()}
                       {r.wealthIsLive && <span style={{ color: "#4a8", marginLeft: 4, fontSize: "0.7rem", fontWeight: 400 }}>·live</span>}
                     </span>
+                    <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: ecoIncome == null ? "#555" : "#9ec78a" }}
+                      title={ecoIncome == null ? "No Financial Overview for this faction (load a save)." : "Gross turn income (sum of the stored income categories)."}>
+                      {ecoIncome == null ? "—" : ecoIncome.toLocaleString()}
+                    </span>
+                    <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: ecoNet == null ? "#555" : ecoNet < 0 ? "#e85050" : "#9ec78a" }}
+                      title={ecoNet == null ? "Net needs the stored Financial Overview block." : "Net turn income = income − expenditure (stored)."}>
+                      {ecoNet == null ? "—" : (ecoNet >= 0 ? "+" : "") + ecoNet.toLocaleString()}
+                    </span>
                     <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums",
                                    color: r.isLive ? (r.regions > r.startingRegions ? "#9ec78a" : r.regions < r.startingRegions ? "#e89030" : "#bbb") : "#bbb" }}
                       title={r.isLive
@@ -21018,10 +21035,11 @@ function App() {
                       {r.isLive ? r.armies : "—"}
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <div style={{ padding: "8px 16px 0", fontSize: "0.7rem", color: "#888", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                Treasury = starting denari from descr_strat. Click a row to zoom to that faction's territory.
+                Treasury = current (live) or starting denarii. Income/Net = stored Financial Overview (load a save). Click a row to zoom to that faction.
               </div>
             </div>
           </div>,

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.862",
+    date: "2026-06-02",
+    items: [
+      { type: "feature", text: "**Faction Wealth panel now shows Income and Net per faction**, alongside Treasury — read from each faction's stored Financial Overview block. Compare every faction's economy at a glance (green/red net), not just the focused one. Shows \"—\" for factions without an economy block." },
+    ],
+  },
+  {
     version: "0.9.861",
     date: "2026-06-02",
     items: [
