@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.837",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Found the real cause of the missing governor portraits (Appius@Pisae, Decimus@Iguvium, …).** When a region's garrison has a pending or already-applied army-units overlay, the code that merges that overlay rebuilt the unit list but dropped the commander tag — so the general's bodyguard card fell back to the plain unit icon instead of his face. Regions without an overlay (Volaterrae, Cosa) were unaffected, which is why it looked random. The overlay merge now re-tags the bodyguard unit with the region's garrison commander, so the portrait swaps correctly." },
+    ],
+  },
+  {
     version: "0.9.836",
     date: "2026-06-02",
     items: [

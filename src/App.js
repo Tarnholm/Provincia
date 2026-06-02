@@ -17064,11 +17064,31 @@ function App() {
                           || (pendingKey2 && appliedArmyUnits.get(pendingKey2))
                           || null;
                         if (pendingEntry) {
-                          normalised = (pendingEntry.units || []).map((u) => ({
+                          // 0.9.837: an army-units overlay (pending edit OR an
+                          // already-applied one) REPLACES the garrison units —
+                          // but it must KEEP the commander tag on the first
+                          // unit, or the general's portrait swap is lost and the
+                          // card shows the plain bodyguard icon. THIS is why
+                          // Appius (Pisae) / Decimus (Iguvium) had no portrait
+                          // while Volaterrae/Cosa (no overlay) were fine. Re-tag
+                          // unit 0 from the region's starting-garrison commander,
+                          // exactly like the non-overlay branch does.
+                          const gar = (startingArmiesByRegion?.[r.region]?.garrison || []).find((g) => {
+                            const nm = (g.character || "").toLowerCase();
+                            return nm && !nm.startsWith("garrison of") && nm !== "biggus dickus";
+                          });
+                          const gp = gar && gar.character ? String(gar.character).split(/\s+/) : [];
+                          const gFirst = gp[0] || null;
+                          const gLast = gp.slice(1).join(" ") || null;
+                          const gFac = ((gar && gar.faction) || ownerId || "").toString().toLowerCase() || null;
+                          normalised = (pendingEntry.units || []).map((u, ui) => ({
                             unit: u.unit,
                             xp: u.exp || 0,
                             armour: u.armour || 0,
                             weapon: u.weapon || 0,
+                            commanderName: ui === 0 && gFirst ? gFirst : null,
+                            commanderLastName: ui === 0 && gFirst ? gLast : null,
+                            commanderFaction: ui === 0 && gFirst ? gFac : null,
                           }));
                         }
                         // 0.9.664: diagnostic — surfaces in provincia.log when
