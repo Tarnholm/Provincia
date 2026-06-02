@@ -6364,9 +6364,40 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
     const treasuryByFaction = (factionTreasuries && factionTreasuries.length > 0)
       ? { records: factionTreasuries.map(r => ({ pos: r.offset, treasury: r.treasury, turnStart: r.turnStartTreasury, regionCount: r.regionCount })) }
       : null;
+    // 0.9.826: also parse settlement happiness / public-order from the save so
+    // the Public Order (and Happiness) MAP MODES work from a CALIBRATE / pick-
+    // save, not just live. Mirrors the live parseSaveData block: scan 0x01
+    // settlement markers, read the f32 at marker-30, gated to the campaigns the
+    // offset was verified on. See [happiness] notes in parseSaveData.
+    let happinessByCity = null;
+    try {
+      const d = saveBuf;
+      const campaignLen = d.length >= 0x40 ? d.readUInt16LE(0x3a) : 0;
+      let campaignName = "";
+      if (campaignLen > 0 && campaignLen < 64 && 0x3c + campaignLen * 2 <= d.length) {
+        for (let i = 0; i < campaignLen; i++) {
+          const ch = d.readUInt16LE(0x3c + i * 2);
+          if (ch >= 0x20 && ch <= 0x7e) campaignName += String.fromCharCode(ch);
+        }
+      }
+      if (campaignName === "imperial_campaign" || campaignName === "ris_classic") {
+        happinessByCity = {};
+        for (let i = 0; i < d.length - 10; i++) {
+          if (d[i] !== 0x01) continue;
+          const r = readUtf16Name(d, i + 1, d.length);
+          if (!r) continue;
+          const off = i - 30;
+          if (off < 0 || off + 4 > d.length) continue;
+          const v = d.readFloatLE(off);
+          if (Number.isFinite(v) && v >= 0 && v <= 500) happinessByCity[r.name] = v;
+        }
+      }
+    } catch (he) { console.warn("[calibrate] happiness parse failed:", he && he.message); happinessByCity = null; }
+    console.log(`[calibrate] happinessByCity: ${happinessByCity ? Object.keys(happinessByCity).length : 0} settlements (campaign-gated)`);
     return {
       ok: true, characters: out, turn, total: extras.characters.length, v1PortraitsByCoord,
       factionTreasuries, factionRecordOwners, factionDiplomacy, savePlayerFaction, treasuryByFaction, allFactionDiplomacy, diplomacyMatrix, treasuryHistory,
+      happinessByCity,
     };
   } catch (e) {
     console.warn("[calibrate] failed:", e && e.message);

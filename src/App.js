@@ -158,18 +158,12 @@ function letterFor(key) { return _MAP_BTN_LETTERS[key] || "?"; }
 // pointerEvents:none so it never intercepts clicks; absolutely positioned so it
 // doesn't affect button layout. The host button must be position:relative (the
 // map control buttons get that inline below).
-function MapBtnBadge({ k }) {
-  return (
-    <span
-      style={{
-        position: "absolute", top: -5, left: -5, zIndex: 50,
-        background: "rgba(214,40,40,0.95)", color: "#fff",
-        font: "700 9px system-ui, sans-serif", lineHeight: 1,
-        padding: "1px 3px", borderRadius: 4, pointerEvents: "none",
-        boxShadow: "0 0 0 1px rgba(0,0,0,0.6)", whiteSpace: "nowrap",
-      }}
-    >{letterFor(k)}</span>
-  );
+// 0.9.826: the A–Z letter badges were a temporary scaffolding aid for
+// referencing buttons in conversation; removed per user request. Kept as a
+// no-op (still imported at every button) so MAP_BTN_ORDER / letterFor and the
+// call sites stay intact and badges can be re-enabled by reverting this body.
+function MapBtnBadge() {
+  return null;
 }
 
 // Map variants (kept for localStorage compat but victory is now a colorMode)
@@ -10677,15 +10671,17 @@ function App() {
       pointerEvents: "auto",
     };
     const btnStyle = (active) => ({
-      padding: "3px 8px",
-      borderRadius: 7,
+      // 0.9.826: ~85% of the previous size (font 0.76→0.65rem, tighter padding)
+      // so more buttons fit per row at 1/4 4k.
+      padding: "2px 7px",
+      borderRadius: 6,
       border: active ? "1px solid rgba(220,166,74,0.6)" : "1px solid rgba(255,255,255,0.15)",
       background: active
         ? "linear-gradient(180deg, #dca64a 0%, #c48e30 100%)"
         : "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)",
       color: active ? "#1a1400" : "#e8e8e8",
       fontWeight: 600,
-      fontSize: "0.76rem",
+      fontSize: "0.65rem",
       cursor: active ? "default" : "pointer",
       textShadow: active ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
       boxShadow: active ? "0 2px 0 #b8842a, 0 1px 6px rgba(220,166,74,0.3)" : "0 1px 3px rgba(0,0,0,0.2)",
@@ -10786,7 +10782,7 @@ function App() {
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
-        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 3, padding: "3px 5px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
+        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 2, padding: "3px 4px", maxWidth: Math.max(200, canvasSize.width - 280) }}>
           {modeSections.map((sec) => {
             // `dev` members show only in dev mode; `live` members (e.g.
             // Explored, whose fog grid only exists in a loaded save) show only
@@ -10810,23 +10806,24 @@ function App() {
             // chip naming that mode. The active group is highlighted (brighter
             // slate) so you can tell which group the member row below belongs to.
             const catStyle = {
-              padding: "3px 8px",
-              borderRadius: 7,
+              // 0.9.826: smaller + tighter so more category tabs fit per row.
+              padding: "2px 6px",
+              borderRadius: 6,
               border: `1px solid ${open ? "rgba(150,180,220,0.85)" : sectionActive ? "rgba(150,180,220,0.6)" : "rgba(150,180,220,0.32)"}`,
               background: open
                 ? "linear-gradient(180deg, rgba(120,152,198,0.5) 0%, rgba(86,116,162,0.5) 100%)"
                 : "linear-gradient(180deg, rgba(108,138,182,0.26) 0%, rgba(80,108,150,0.2) 100%)",
               color: "#dce6f5",
               fontWeight: 700,
-              fontSize: "0.68rem",
-              letterSpacing: "0.05em",
+              fontSize: "0.58rem",
+              letterSpacing: "0.02em",
               textTransform: "uppercase",
               cursor: "pointer",
               position: "relative",
               minWidth: 0,
               display: "inline-flex",
               alignItems: "center",
-              gap: 4,
+              gap: 3,
               boxShadow: open ? "0 2px 8px rgba(86,116,162,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
             };
             // The open section's members render in a SEPARATE row directly
@@ -11780,6 +11777,10 @@ function App() {
                 if (res.allFactionDiplomacy) setAllFactionDiplomacy(res.allFactionDiplomacy);
                 if (res.diplomacyMatrix) setDiplomacyMatrix(res.diplomacyMatrix);
                 if (res.treasuryHistory) setTreasuryHistory(res.treasuryHistory);
+                // 0.9.826: settlement happiness/public-order from the calibrate
+                // save → the Public Order & Happiness map modes now work from a
+                // picked save, not just live.
+                if (res.happinessByCity) setSaveHappinessByCity(res.happinessByCity);
                 // Only adopt the save-derived player faction if one isn't
                 // already set (don't override the user's pick or save-name detect).
                 if (res.savePlayerFaction) setPlayerFaction(prev => prev || res.savePlayerFaction);

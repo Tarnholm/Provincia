@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.826",
+    date: "2026-06-02",
+    items: [
+      { type: "fix", text: "**Public Order (and Happiness) map modes now work from a Calibrate / picked save**, not just Live mode. The Calibrate path now parses each settlement's happiness/public-order value out of the save and feeds the heatmap." },
+      { type: "change", text: "**Removed the A–Z letter badges from the map buttons** (they were a temporary aid for referencing buttons in chat)." },
+      { type: "improvement", text: "**Tighter, smaller map controls** — buttons are ~85% of their previous size and the category tabs sit much closer together, so more fits on a row at 1/4 of a 4K screen." },
+    ],
+  },
+  {
     version: "0.9.825",
     date: "2026-06-02",
     items: [
