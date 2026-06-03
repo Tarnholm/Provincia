@@ -3135,6 +3135,13 @@ ipcMain.handle("set-mod-export-dir", async (_event, dir) => {
     console.log("[mod-export] export mode OFF — writes overwrite the live mod in place");
     return { ok: true, dir: null };
   }
+  // Guard against a non-string (e.g. the whole { dir, campaigns } object from
+  // select-folder) reaching path.resolve — String(obj) becomes "[object Object]"
+  // and resolves to a bogus path. Fail loudly so the caller fixes what it passes.
+  if (typeof dir !== "string") {
+    console.warn("[mod-export] set-mod-export-dir got non-string:", dir);
+    return { ok: false, error: `expected a folder path string, got ${typeof dir}` };
+  }
   try {
     const resolved = path.resolve(String(dir));
     if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {

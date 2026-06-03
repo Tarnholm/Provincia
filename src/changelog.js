@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.876",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Export-to-folder no longer fails with a [object Object] path.** Picking an export destination passed the folder picker's whole result object instead of the path, so the export folder resolved to a bogus ...\\[object Object] and every export was rejected. The path is now extracted correctly, and the main process refuses any non-string folder so this can't recur silently. Also fixed the same picker bug in the saves-timeline scan." },
+    ],
+  },
+  {
     version: "0.9.875",
     date: "2026-06-03",
     items: [

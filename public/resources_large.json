@@ -24,8 +24,8 @@
     {
       "type": "grain",
       "amount": 1,
-      "x": 284,
-      "y": 294,
+      "x": 282,
+      "y": 295,
       "category": "trade"
     },
     {
@@ -33,13 +33,6 @@
       "amount": 2,
       "x": 287,
       "y": 292,
-      "category": "trade"
-    },
-    {
-      "type": "salt",
-      "amount": 2,
-      "x": 282,
-      "y": 297,
       "category": "trade"
     },
     {
@@ -244,8 +237,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 310,
-      "y": 306,
+      "x": 306,
+      "y": 307,
       "category": "slave"
     }
   ],
@@ -809,14 +802,14 @@
       "type": "sheep",
       "amount": 2,
       "x": 307,
-      "y": 303,
+      "y": 300,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
-      "x": 309,
-      "y": 301,
+      "x": 310,
+      "y": 302,
       "category": "slave"
     }
   ],
@@ -5842,8 +5835,8 @@
     {
       "type": "olive_oil",
       "amount": 2,
-      "x": 143,
-      "y": 294,
+      "x": 142,
+      "y": 293,
       "category": "trade"
     },
     {
@@ -5856,15 +5849,15 @@
     {
       "type": "wine",
       "amount": 1,
-      "x": 147,
-      "y": 293,
+      "x": 146,
+      "y": 294,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
-      "x": 141,
-      "y": 292,
+      "x": 142,
+      "y": 297,
       "category": "slave"
     }
   ],
@@ -6208,7 +6201,7 @@
       "type": "slaves",
       "amount": 1,
       "x": 116,
-      "y": 349,
+      "y": 348,
       "category": "slave"
     }
   ],
@@ -7248,23 +7241,23 @@
   "Cerretania": [
     {
       "type": "gold",
-      "amount": 1,
-      "x": 175,
-      "y": 275,
+      "amount": 2,
+      "x": 171,
+      "y": 277,
       "category": "trade"
     },
     {
       "type": "livestock",
       "amount": 4,
-      "x": 174,
+      "x": 175,
       "y": 278,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
-      "x": 174,
-      "y": 276,
+      "x": 175,
+      "y": 274,
       "category": "slave"
     }
   ],
@@ -7678,8 +7671,8 @@
     {
       "type": "grain",
       "amount": 1,
-      "x": 155,
-      "y": 293,
+      "x": 154,
+      "y": 294,
       "category": "trade"
     },
     {
@@ -7693,7 +7686,7 @@
       "type": "wine",
       "amount": 1,
       "x": 151,
-      "y": 294,
+      "y": 293,
       "category": "trade"
     },
     {
@@ -8963,8 +8956,8 @@
     {
       "type": "hemp",
       "amount": 1,
-      "x": 151,
-      "y": 200,
+      "x": 150,
+      "y": 199,
       "category": "trade"
     },
     {
@@ -9144,7 +9137,7 @@
       "type": "perfumes",
       "amount": 1,
       "x": 167,
-      "y": 185,
+      "y": 186,
       "category": "trade"
     },
     {
@@ -9480,8 +9473,8 @@
     {
       "type": "fish",
       "amount": 3,
-      "x": 147,
-      "y": 216,
+      "x": 149,
+      "y": 215,
       "category": "trade"
     },
     {
@@ -9494,7 +9487,7 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 145,
+      "x": 147,
       "y": 213,
       "category": "slave"
     }
@@ -19219,7 +19212,7 @@
     {
       "type": "glass",
       "amount": 1,
-      "x": 395,
+      "x": 394,
       "y": 237,
       "category": "trade"
     },
@@ -19254,7 +19247,7 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 399,
+      "x": 400,
       "y": 235,
       "category": "slave"
     }
@@ -19338,7 +19331,7 @@
       "type": "pottery",
       "amount": 1,
       "x": 404,
-      "y": 247,
+      "y": 246,
       "category": "trade"
     },
     {
@@ -19485,7 +19478,7 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 398,
+      "x": 396,
       "y": 233,
       "category": "slave"
     }
@@ -20409,7 +20402,7 @@
       "type": "horses",
       "amount": 4,
       "x": 395,
-      "y": 326,
+      "y": 327,
       "category": "trade"
     },
     {
@@ -20431,6 +20424,13 @@
       "amount": 1,
       "x": 393,
       "y": 326,
+      "category": "slave"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 396,
+      "y": 325,
       "category": "slave"
     }
   ],
@@ -20526,7 +20526,7 @@
     {
       "type": "lead",
       "amount": 2,
-      "x": 413,
+      "x": 414,
       "y": 350,
       "category": "trade"
     },
@@ -22257,8 +22257,15 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 393,
-      "y": 303,
+      "x": 394,
+      "y": 304,
+      "category": "slave"
+    },
+    {
+      "type": "perfumes",
+      "amount": 1,
+      "x": 397,
+      "y": 302,
       "category": "slave"
     }
   ],
@@ -22273,16 +22280,9 @@
     {
       "type": "horses",
       "amount": 2,
-      "x": 395,
+      "x": 396,
       "y": 330,
       "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 395,
-      "y": 328,
-      "category": "slave"
     }
   ],
   "Histiaiotis": [
@@ -22357,7 +22357,7 @@
       "type": "slaves",
       "amount": 1,
       "x": 397,
-      "y": 332,
+      "y": 333,
       "category": "slave"
     }
   ],
@@ -22589,7 +22589,7 @@
       "type": "salt",
       "amount": 2,
       "x": 407,
-      "y": 348,
+      "y": 347,
       "category": "trade"
     },
     {
@@ -24527,37 +24527,14 @@
       "category": "slave"
     }
   ],
-  "Kaukonia": [
+  "Hellenike_Mariandynia": [
     {
       "type": "fish",
       "amount": 3,
-      "x": 493,
-      "y": 286,
+      "x": 487,
+      "y": 293,
       "category": "trade"
     },
-    {
-      "type": "coal",
-      "amount": 1,
-      "x": 497,
-      "y": 286,
-      "category": "trade"
-    },
-    {
-      "type": "olive_oil",
-      "amount": 1,
-      "x": 496,
-      "y": 284,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 495,
-      "y": 286,
-      "category": "slave"
-    }
-  ],
-  "Hellenike_Mariandynia": [
     {
       "type": "pottery",
       "amount": 2,
@@ -24568,8 +24545,8 @@
     {
       "type": "purple_dye",
       "amount": 1,
-      "x": 491,
-      "y": 288,
+      "x": 488,
+      "y": 292,
       "category": "trade"
     },
     {
@@ -24582,15 +24559,22 @@
     {
       "type": "wine",
       "amount": 3,
-      "x": 487,
-      "y": 293,
+      "x": 493,
+      "y": 287,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
-      "x": 488,
-      "y": 292,
+      "x": 486,
+      "y": 293,
+      "category": "slave"
+    },
+    {
+      "type": "fish",
+      "amount": 3,
+      "x": 491,
+      "y": 288,
       "category": "slave"
     }
   ],
@@ -24753,7 +24737,7 @@
     {
       "type": "livestock",
       "amount": 1,
-      "x": 488,
+      "x": 486,
       "y": 296,
       "category": "trade"
     },
@@ -24761,7 +24745,7 @@
       "type": "slaves",
       "amount": 1,
       "x": 488,
-      "y": 294,
+      "y": 295,
       "category": "slave"
     }
   ],
@@ -27091,6 +27075,29 @@
       "category": "slave"
     }
   ],
+  "Kaukonia": [
+    {
+      "type": "coal",
+      "amount": 1,
+      "x": 495,
+      "y": 286,
+      "category": "trade"
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 497,
+      "y": 284,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 495,
+      "y": 284,
+      "category": "slave"
+    }
+  ],
   "Kimiatene": [
     {
       "type": "copper",
@@ -27250,22 +27257,22 @@
     {
       "type": "fish",
       "amount": 2,
-      "x": 563,
-      "y": 278,
-      "category": "trade"
-    },
-    {
-      "type": "fruits",
-      "amount": 4,
       "x": 567,
       "y": 277,
       "category": "trade"
     },
     {
+      "type": "fruits",
+      "amount": 4,
+      "x": 563,
+      "y": 279,
+      "category": "trade"
+    },
+    {
       "type": "slaves",
       "amount": 1,
-      "x": 565,
-      "y": 279,
+      "x": 562,
+      "y": 280,
       "category": "slave"
     }
   ],
@@ -27377,7 +27384,7 @@
     {
       "type": "fruits",
       "amount": 2,
-      "x": 549,
+      "x": 547,
       "y": 279,
       "category": "trade"
     },
@@ -27389,9 +27396,23 @@
       "category": "trade"
     },
     {
+      "type": "timber",
+      "amount": 2,
+      "x": 549,
+      "y": 279,
+      "category": "trade"
+    },
+    {
       "type": "slaves",
       "amount": 1,
       "x": 546,
+      "y": 279,
+      "category": "slave"
+    },
+    {
+      "type": "honey",
+      "amount": 1,
+      "x": 549,
       "y": 279,
       "category": "slave"
     }
@@ -27401,42 +27422,28 @@
       "type": "honey",
       "amount": 1,
       "x": 552,
-      "y": 278,
-      "category": "trade"
-    },
-    {
-      "type": "timber",
-      "amount": 2,
-      "x": 552,
       "y": 280,
-      "category": "trade"
-    },
-    {
-      "type": "gemstones",
-      "amount": 2,
-      "x": 556,
-      "y": 283,
       "category": "trade"
     },
     {
       "type": "pitch",
       "amount": 1,
-      "x": 559,
+      "x": 558,
       "y": 282,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
-      "x": 554,
+      "x": 555,
       "y": 282,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
-      "x": 553,
-      "y": 281,
+      "x": 557,
+      "y": 284,
       "category": "slave"
     }
   ],
@@ -27444,22 +27451,22 @@
     {
       "type": "fish",
       "amount": 2,
-      "x": 555,
-      "y": 279,
+      "x": 556,
+      "y": 277,
       "category": "trade"
     },
     {
       "type": "livestock",
       "amount": 1,
       "x": 559,
-      "y": 279,
+      "y": 280,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
-      "x": 556,
-      "y": 277,
+      "x": 555,
+      "y": 279,
       "category": "slave"
     }
   ],
@@ -27467,7 +27474,7 @@
     {
       "type": "gemstones",
       "amount": 2,
-      "x": 552,
+      "x": 554,
       "y": 285,
       "category": "trade"
     },
@@ -27481,8 +27488,8 @@
     {
       "type": "wild_animals",
       "amount": 2,
-      "x": 547,
-      "y": 284,
+      "x": 557,
+      "y": 287,
       "category": "trade"
     },
     {
@@ -27502,8 +27509,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 547,
-      "y": 286,
+      "x": 550,
+      "y": 284,
       "category": "slave"
     }
   ],
@@ -30670,8 +30677,8 @@
     {
       "type": "grain",
       "amount": 3,
-      "x": 523,
-      "y": 434,
+      "x": 521,
+      "y": 436,
       "category": "trade"
     },
     {
@@ -30977,7 +30984,7 @@
     {
       "type": "livestock",
       "amount": 1,
-      "x": 522,
+      "x": 523,
       "y": 443,
       "category": "trade"
     },
@@ -31001,14 +31008,14 @@
       "type": "grain",
       "amount": 2,
       "x": 521,
-      "y": 440,
+      "y": 441,
       "category": "trade"
     },
     {
       "type": "livestock",
       "amount": 2,
       "x": 523,
-      "y": 438,
+      "y": 439,
       "category": "trade"
     },
     {
@@ -31021,7 +31028,7 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 520,
+      "x": 519,
       "y": 437,
       "category": "slave"
     }
@@ -32866,8 +32873,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 773,
-      "y": 436,
+      "x": 772,
+      "y": 437,
       "category": "slave"
     }
   ],
@@ -35876,15 +35883,15 @@
     {
       "type": "honey",
       "amount": 1,
-      "x": 562,
-      "y": 284,
+      "x": 565,
+      "y": 289,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 4,
-      "x": 564,
-      "y": 282,
+      "x": 563,
+      "y": 283,
       "category": "trade"
     },
     {
@@ -35911,8 +35918,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 568,
-      "y": 286,
+      "x": 570,
+      "y": 288,
       "category": "slave"
     }
   ],
@@ -40100,14 +40107,44 @@
       "category": "slave"
     }
   ],
-  "The_Road_to_Methora": [
+  "The_Road_to_Palibothra": [
     {
       "type": "cotton",
       "amount": 3,
-      "x": 1016,
-      "y": 212,
+      "x": 1019,
+      "y": 207,
       "category": "trade"
     },
+    {
+      "type": "glass",
+      "amount": 3,
+      "x": 1018,
+      "y": 205,
+      "category": "trade"
+    },
+    {
+      "type": "perfumes",
+      "amount": 3,
+      "x": 1019,
+      "y": 201,
+      "category": "trade"
+    },
+    {
+      "type": "silk",
+      "amount": 2,
+      "x": 1019,
+      "y": 207,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 1017,
+      "y": 206,
+      "category": "slave"
+    }
+  ],
+  "The_Road_to_Methora": [
     {
       "type": "elephants",
       "amount": 5,
@@ -40134,36 +40171,6 @@
       "amount": 1,
       "x": 1019,
       "y": 209,
-      "category": "slave"
-    }
-  ],
-  "The_Road_to_Palibothra": [
-    {
-      "type": "glass",
-      "amount": 3,
-      "x": 1018,
-      "y": 204,
-      "category": "trade"
-    },
-    {
-      "type": "perfumes",
-      "amount": 3,
-      "x": 1019,
-      "y": 201,
-      "category": "trade"
-    },
-    {
-      "type": "silk",
-      "amount": 2,
-      "x": 1019,
-      "y": 207,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 1017,
-      "y": 206,
       "category": "slave"
     }
   ],

@@ -5611,7 +5611,8 @@ function App() {
     if (!api || !api.scanSavesTimeline || !modDataDir) return;
     let dir = null;
     if (api.selectFolder) {
-      try { dir = await api.selectFolder(); } catch { /* cancelled */ }
+      // selectFolder resolves to { dir, campaigns, ... } — use the path string.
+      try { const picked = await api.selectFolder(); if (picked) dir = typeof picked === "string" ? picked : picked.dir; } catch { /* cancelled */ }
     }
     if (!dir) dir = liveSaveDir || null; // fallback to the active live dir
     if (!dir) { pushToast("Pick a saves folder to scan.", "info"); return; }
@@ -20355,8 +20356,14 @@ function App() {
                       let dir = exportModDir;
                       if (!dir) {
                         if (!api?.selectFolder) { pushToast("Folder picker unavailable.", "warning"); return; }
-                        dir = await api.selectFolder();
-                        if (!dir) return; // cancelled — leave the toggle off
+                        // selectFolder resolves to { dir, campaigns, ... } (or a
+                        // bare string in older builds) — pull out the path string,
+                        // never the whole object (that stringifies to "[object
+                        // Object]" and fails as a folder path).
+                        const picked = await api.selectFolder();
+                        if (!picked) return; // cancelled — leave the toggle off
+                        dir = typeof picked === "string" ? picked : picked.dir;
+                        if (!dir) return;
                       }
                       const r = api?.setModExportDir ? await api.setModExportDir(dir) : { ok: false, error: "IPC unavailable" };
                       if (!r?.ok) { pushToast(`Couldn't use that folder: ${r?.error || "?"}`, "warning", 8000); return; }
@@ -20380,7 +20387,12 @@ function App() {
                     onClick={async () => {
                       const api = window.electronAPI;
                       if (!api?.selectFolder) { pushToast("Folder picker unavailable.", "warning"); return; }
-                      const dir = await api.selectFolder();
+                      // selectFolder returns { dir, campaigns, ... } — extract the
+                      // path string (passing the object stringifies to "[object
+                      // Object]" and fails as a folder).
+                      const picked = await api.selectFolder();
+                      if (!picked) return;
+                      const dir = typeof picked === "string" ? picked : picked.dir;
                       if (!dir) return;
                       const r = api?.setModExportDir ? await api.setModExportDir(dir) : { ok: false, error: "IPC unavailable" };
                       if (!r?.ok) { pushToast(`Couldn't use that folder: ${r?.error || "?"}`, "warning", 8000); return; }
