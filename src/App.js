@@ -2068,7 +2068,21 @@ function App() {
     if (versionClickTimerRef.current) { clearTimeout(versionClickTimerRef.current); versionClickTimerRef.current = null; }
     toggleUpdateWatch();
   }, [toggleUpdateWatch]);
+  // Bundle-edit guard. Provincia ships bundled sample data so the map is
+  // viewable with no mod installed — but edits can't be saved without a mod
+  // loaded (there is no descr_strat to write to: every Apply fails with
+  // "no active mod"). Block staging any edit when no mod is loaded and pop the
+  // "load your mod" modal instead. modLoadedRef is synced from
+  // modDataDir/modIconsDir in an effect below (after those states exist).
+  const [showLoadModModal, setShowLoadModModal] = useState(false);
+  const modLoadedRef = useRef(false);
+  const requireMod = useCallback(() => {
+    if (modLoadedRef.current) return true;
+    setShowLoadModModal(true);
+    return false;
+  }, []);
   const markDirty = useCallback((...args) => {
+    if (!requireMod()) return;
     pushUndoRef.current();
     setDevEditsCount(c => c + 1);
     // 0.9.468: optional final argument is `{ description: string }` —
@@ -2095,7 +2109,7 @@ function App() {
         return out;
       });
     }
-  }, []);
+  }, [requireMod]);
   // 0.9.470: per-item revert handler for the pending modal × button.
   // Applies the stored `revert` instructions for one log entry, removes
   // that entry from the log, and (when no log entries reference the
@@ -2741,6 +2755,7 @@ function App() {
   // InfoPopup. Keyed by firstName|faction (matches the trait/ancillary editors).
   // Merges into any existing staged fields for the same character.
   const stageCharFields = useCallback((firstName, faction, patch, label) => {
+    if (!requireMod()) return;
     if (!firstName) return;
     const key = `${firstName}|${(faction || "").toLowerCase()}`;
     setPendingCharFields((prev) => {
@@ -2788,6 +2803,7 @@ function App() {
   // Stage an army's full unit list (add/remove). locator = {x,y} (character army)
   // or {region} (garrison). Keyed by faction|locator so re-edits replace.
   const stageArmyUnits = useCallback((faction, locator, units, label) => {
+    if (!requireMod()) return;
     const locKey = locator && locator.region != null ? `r:${locator.region}` : `c:${locator.x},${locator.y}`;
     const key = `${(faction || "").toLowerCase()}|${locKey}`;
     setPendingArmyUnits((prev) => {
@@ -2882,6 +2898,7 @@ function App() {
 
   // Stage a diplomacy edit from the editor. valueKind ∈ core|rel|agg.
   const stageDiplomacy = useCallback((valueKind, from, to, value, label) => {
+    if (!requireMod()) return;
     const key = `${valueKind}|${from}|${to}`;
     const kindWord = valueKind === "rel" ? "relationship" : valueKind === "agg" ? "aggression" : "attitude";
     setPendingDiplomacy((prev) => {
@@ -2901,6 +2918,7 @@ function App() {
   // in pendingGenerals + the change log so it shows in the Characters roster
   // and the Changes review, and writes to disk only on Save.
   const stageGeneral = useCallback((entry) => {
+    if (!requireMod()) return;
     const id = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
     setPendingGenerals((prev) => {
       const next = new Map(prev);
@@ -3023,6 +3041,10 @@ function App() {
   const factionDisplayMapRef = useRef({});
 
   const [modDataDir, setModDataDir] = useState(null);
+  // Keep the bundle-edit guard's ref in sync: a mod is "loaded" once its data
+  // dir or icons dir is known (either implies charactersInit ran / will run and
+  // activeModDataDir is set in main, so writes can land).
+  useEffect(() => { modLoadedRef.current = !!(modDataDir || modIconsDir); }, [modDataDir, modIconsDir]);
   // Portrait audit — fires when the Validate dashboard opens. Declared here
   // (after modDataDir's useState) to avoid TDZ — referencing modDataDir in
   // a useEffect dep array BEFORE its const declaration crashed the whole
@@ -9006,6 +9028,7 @@ function App() {
   }
   function handleMouseUp(e) {
     if (devDragGarrison && e) {
+      if (!requireMod()) { setDevDragGarrison(null); return; }
       const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
       const nx = Math.round((e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale);
       const nyTop = Math.round((e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale);
@@ -9031,6 +9054,7 @@ function App() {
       return;
     }
     if (devDragChar && e) {
+      if (!requireMod()) { setDevDragChar(null); return; }
       const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
       const nx = Math.round((e.nativeEvent.offsetX - baseOffsetX - offset.x) / totalScale);
       const nyTop = Math.round((e.nativeEvent.offsetY - baseOffsetY - offset.y) / totalScale);
@@ -16874,6 +16898,7 @@ function App() {
                         // 0.9.472: log entry now carries `after` (full new
                         // list) so revertOnePending can pop just this edit
                         // and replay the prior state for the same region.
+                        if (!requireMod()) return;
                         if (!regionName) return;
                         const key = regionName.toLowerCase();
                         const after = Array.isArray(newList) ? newList : [];
@@ -20186,6 +20211,7 @@ function App() {
           pendingCharFields={pendingCharFields}
           onStageCharFields={stageCharFields}
           onStageTraits={(firstName, faction, newTraits, descriptionFragment) => {
+            if (!requireMod()) return;
             if (!firstName) return;
             const key = `${firstName.toLowerCase()}|${(faction || "").toLowerCase()}`;
             const after = Array.isArray(newTraits) ? newTraits : [];
@@ -20215,6 +20241,7 @@ function App() {
             console.log(`[pending-edit] traits staged: ${firstName}|${faction} (${after.length} traits)`);
           }}
           onStageAncillaries={(firstName, faction, newList, descriptionFragment) => {
+            if (!requireMod()) return;
             if (!firstName) return;
             const key = `${firstName.toLowerCase()}|${(faction || "").toLowerCase()}`;
             const after = Array.isArray(newList) ? newList : [];
@@ -20244,6 +20271,56 @@ function App() {
             console.log(`[pending-edit] ancillaries staged: ${firstName}|${faction} (${after.length} ancs)`);
           }}
         />
+      )}
+      {/* Bundle-edit block: shown when the user tries to edit with no mod
+          loaded (only the bundled sample data is present). Editing is blocked
+          because there is no descr_strat to save into. Forces a mod load. */}
+      {showLoadModModal && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 12000, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setShowLoadModModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 460, maxWidth: "90vw", background: "#1c2230", border: "1px solid rgba(110,140,190,0.5)", borderRadius: 8, padding: "20px 22px", color: "#cdd6e6", boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}
+          >
+            <div style={{ fontSize: "1.05rem", fontWeight: 600, color: "#ffd479", marginBottom: 10 }}>Load your mod to edit</div>
+            <div style={{ fontSize: "0.85rem", lineHeight: 1.5, marginBottom: 16 }}>
+              You're viewing Provincia's <b>bundled sample data</b>, so there's no mod to save changes into — that's why edits fail with <i>"no active mod."</i>
+              <br /><br />
+              Load your mod's folder (the one containing <code>data\</code>) to make and save edits.
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowLoadModModal(false)}
+                style={{ padding: "6px 14px", background: "transparent", color: "#9aa", border: "1px solid rgba(150,160,180,0.4)", borderRadius: 4, cursor: "pointer", fontSize: "0.82rem" }}
+              >Cancel</button>
+              <button
+                onClick={async () => {
+                  const api = window.electronAPI;
+                  if (!api?.selectFolder || !api?.findFactionIconsDir) { pushToast("Folder picker unavailable.", "warning"); return; }
+                  const picked = await api.selectFolder();
+                  const folder = picked && (typeof picked === "string" ? picked : picked.dir);
+                  if (!folder) return; // cancelled
+                  // Locate the faction-icons dir inside the picked mod folder —
+                  // setting modIconsDir drives the effect that derives the data
+                  // dir and runs charactersInit (which sets the active mod in the
+                  // main process, enabling writes). Same path as auto-detect.
+                  const iconsDir = await api.findFactionIconsDir(folder);
+                  if (!iconsDir) {
+                    pushToast("That folder isn't a mod (no faction icons found). Pick the mod folder that contains data\\.", "warning", 8000);
+                    return;
+                  }
+                  setModIconsDir(iconsDir);
+                  try { localStorage.setItem("modIconsDir", iconsDir); } catch {}
+                  setShowLoadModModal(false);
+                  pushToast("Mod loaded — you can edit and save now.", "info", 5000);
+                }}
+                style={{ padding: "6px 14px", background: "rgba(110,140,190,0.25)", color: "#bfe0ff", border: "1px solid rgba(110,140,190,0.6)", borderRadius: 4, cursor: "pointer", fontSize: "0.82rem", fontWeight: 600 }}
+              >Load mod folder…</button>
+            </div>
+          </div>
+        </div>
       )}
       {pendingReviewOpen && (
         <div style={{

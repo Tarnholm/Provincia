@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.877",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Editing without a mod loaded now prompts you to load one** instead of silently staging edits that fail to save. Provincia ships bundled sample data so the map is viewable with no mod installed — but those edits have nowhere to save (every Apply failed with \"no active mod\"). Now any edit (resources, buildings, traits, generals, garrisons, character moves, diplomacy, etc.) on bundled data pops a \"Load your mod\" dialog with a one-click folder picker that loads your mod and enables saving." },
+    ],
+  },
+  {
     version: "0.9.876",
     date: "2026-06-04",
     items: [
