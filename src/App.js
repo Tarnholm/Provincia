@@ -16871,6 +16871,8 @@ function App() {
                       onDuplicateUnitInSelectedArmy={onDuplicateUnitInSelectedArmy}
                       onReorderUnitInSelectedArmy={onReorderUnitInSelectedArmy}
                       onMoveUnitBetweenArmies={onMoveUnitBetweenArmies}
+                      onSetUnitUpgrade={onSetUnitUpgrade}
+                      onSetAllUnitsUpgrade={onSetAllUnitsUpgrade}
                       armyKeyOf={armyKey}
                       onToggleWealthPanel={() => setShowWealthPanel(prev => !prev)}
                       wealthPanelOpen={showWealthPanel}

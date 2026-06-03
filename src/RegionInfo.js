@@ -528,7 +528,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -912,6 +912,42 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     } else if (onMoveUnitBetweenArmies) {
       onMoveUnitBetweenArmies(p.desc, targetDesc, p.idx);
     }
+  };
+  // 0.9.880: compact per-unit upgrade stepper bar, shown on a card when its
+  // army is the selected edit target. Three segments — C(hevrons/xp 0-9),
+  // W(eapon 0-3), A(rmour 0-3). Left-click +1, right-click −1. Writes every
+  // alias the display + descr_strat writer read (xp/exp, weapon/weapon_lvl,
+  // armour) so the badge and the saved unit both update.
+  const renderUpgradeBar = (u, idx, onSet) => {
+    if (!onSet || idx == null || idx < 0) return null;
+    const xp = u.xp ?? u.exp ?? 0;
+    const wp = u.weapon ?? u.weapon_lvl ?? 0;
+    const ar = u.armour ?? 0;
+    const seg = (label, full, val, max, apply) => (
+      <div
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (val < max) apply(val + 1); }}
+        onContextMenu={(e) => { e.stopPropagation(); e.preventDefault(); if (val > 0) apply(val - 1); }}
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+        title={`${full}: ${val} / ${max}\nleft-click +1 · right-click −1`}
+        style={{
+          flex: 1, textAlign: "center", fontSize: "0.5rem", fontWeight: 700,
+          lineHeight: 1.4, cursor: "pointer", userSelect: "none",
+          background: val > 0 ? "rgba(220,166,74,0.92)" : "rgba(0,0,0,0.6)",
+          color: val > 0 ? "#1a1205" : "#cfd6e6",
+        }}
+      >{label}{val}</div>
+    );
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "flex", gap: 1, zIndex: 6, borderRadius: "0 0 2px 2px", overflow: "hidden" }}
+      >
+        {seg("C", "Chevrons (experience)", xp, 9, (v) => onSet(idx, { xp: v, exp: v }))}
+        {seg("W", "Weapon upgrade", wp, 3, (v) => onSet(idx, { weapon: v, weapon_lvl: v }))}
+        {seg("A", "Armour upgrade", ar, 3, (v) => onSet(idx, { armour: v }))}
+      </div>
+    );
   };
   // 0.9.467: edits stage to the pending-changes registry in App.js (via
   // onEditBuildings); the descr_strat IPC fires only when the user clicks
@@ -3126,6 +3162,23 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               {garrisonCommander.character}{garrisonCommander.faction ? ` — ${factionLabel(garrisonCommander.faction)}` : ""}{garrisonCommander.bodyguardRegion ? <span style={{ color: "#aaa", marginLeft: 4 }}>(bodyguard at {garrisonCommander.bodyguardRegion})</span> : null}
             </div>
           ) : null}
+          {isGarrisonSelected && onSetAllUnitsUpgrade && garrison.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 4, fontSize: "0.6rem", color: "#cbd" }}>
+              <span style={{ color: "#dca64a", fontWeight: 700 }} title="Apply an upgrade to EVERY unit in this garrison at once — so you don't have to retrain the whole stack at game start">Set all:</span>
+              {[
+                { lbl: "Wpn", title: "Set every unit's weapon upgrade", mk: (v) => ({ weapon: v, weapon_lvl: v }) },
+                { lbl: "Arm", title: "Set every unit's armour upgrade", mk: (v) => ({ armour: v }) },
+              ].map(({ lbl, title, mk }) => (
+                <span key={lbl} style={{ display: "inline-flex", alignItems: "center", gap: 2 }} title={title}>
+                  <span style={{ color: "#9fbd8a" }}>{lbl}</span>
+                  {[0, 1, 2, 3].map((v) => (
+                    <button key={v} onClick={(e) => { e.stopPropagation(); onSetAllUnitsUpgrade(mk(v)); }}
+                      style={{ width: 14, height: 14, padding: 0, fontSize: "0.55rem", fontWeight: 700, cursor: "pointer", background: "rgba(0,0,0,0.5)", color: "#cfd6e6", border: "1px solid rgba(220,166,74,0.5)", borderRadius: 2, lineHeight: 1 }}>{v}</button>
+                  ))}
+                </span>
+              ))}
+            </div>
+          )}
           <div
             // 0.9.857: drop zone — dragging a unit from ANOTHER army onto the
             // garrison grid moves it into the garrison.
@@ -3280,6 +3333,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                       }}
                     >×</button>
                   )}
+                  {isGarrisonSelected && onSetUnitUpgrade && renderUpgradeBar(u, garrison.indexOf(u), onSetUnitUpgrade)}
                   {(() => {
                     // 0.9.410+ swap: same general-face-card swap as field-army
                     // path, applied to garrison bodyguard units.
@@ -3595,6 +3649,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                             }}
                           >×</button>
                         )}
+                        {isFieldSelected && onSetUnitUpgrade && renderUpgradeBar(u, a.units.indexOf(u), onSetUnitUpgrade)}
                         {(() => {
                           // 0.9.410+ swap: bodyguard unit card → general's face card.
                           let info = u.commanderUuid && commanderInfo ? commanderInfo.get(u.commanderUuid) : null;

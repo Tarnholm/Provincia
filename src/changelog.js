@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.880",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**Edit unit XP, weapon and armour upgrades right on the cards.** With an army selected (dev mode), each unit card gets a small 3-segment bar: **C** (chevrons/experience 0-9), **W** (weapon 0-3), **A** (armour 0-3). Left-click a segment to +1, right-click to −1. The chevron/sword/anvil badges update live and the values are written to descr_strat on Apply — no in-game retraining." },
+      { type: "feature", text: "**\"Set all\" garrison upgrade — stop retraining the whole stack at turn 1.** When a garrison is the selected edit target, a *Set all: Wpn 0-3 / Arm 0-3* row appears above the grid; click a level to apply that weapon/armour upgrade to **every** unit in the garrison at once." },
+      { type: "improvement", text: "Reminder surfaced in tooltips: with an army selected you can already **drag unit cards to reorder** them (within an army, or onto another army to move the unit), shift-click to duplicate, and × to remove." },
+    ],
+  },
+  {
     version: "0.9.879",
     date: "2026-06-04",
     items: [
