@@ -2896,6 +2896,31 @@ function App() {
     stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
   }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
 
+  // 0.9.879: set xp / weapon / armour upgrade on one unit in the selected army.
+  // `patch` is e.g. { exp }, { weapon_lvl }, or { armour }. The descr_strat
+  // writer already emits `exp N armour N weapon_lvl N`, so this just edits the
+  // staged unit's fields — no retraining needed in-game.
+  const onSetUnitUpgrade = useCallback((idx, patch) => {
+    if (!selectedArmyKey || !selectedArmyDesc || !patch) return;
+    const pending = pendingArmyUnits.get(selectedArmyKey) || appliedArmyUnits.get(selectedArmyKey);
+    const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
+    if (!cur || idx < 0 || idx >= cur.length) return;
+    const next = cur.map((u, i) => (i === idx ? { ...u, ...patch } : u));
+    stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
+
+  // 0.9.879: bulk-apply an upgrade patch to EVERY unit in the selected army —
+  // the "stop retraining the whole garrison by hand at turn 1" button. `patch`
+  // is e.g. { armour: 1 } or { weapon_lvl: 1, armour: 1 }.
+  const onSetAllUnitsUpgrade = useCallback((patch) => {
+    if (!selectedArmyKey || !selectedArmyDesc || !patch) return;
+    const pending = pendingArmyUnits.get(selectedArmyKey) || appliedArmyUnits.get(selectedArmyKey);
+    const cur = pending ? pending.units : selectedArmyDesc.originalUnits;
+    if (!cur || cur.length === 0) return;
+    const next = cur.map((u) => ({ ...u, ...patch }));
+    stageArmyUnits(selectedArmyDesc.faction, selectedArmyDesc.locator, next, selectedArmyDesc.label);
+  }, [selectedArmyKey, selectedArmyDesc, pendingArmyUnits, appliedArmyUnits, stageArmyUnits]);
+
   // Stage a diplomacy edit from the editor. valueKind ∈ core|rel|agg.
   const stageDiplomacy = useCallback((valueKind, from, to, value, label) => {
     if (!requireMod()) return;
@@ -6446,6 +6471,119 @@ function App() {
   }, [buildingsData, builtBuildingsByCity, liveLogActive, buildingLevelsLookup, buildingDisplayNames, HIDDEN_CHAINS, modDataDir, iconCacheVersion, gameDisplayNames, factionCultures, currentOwnerByCity, initialOwnerByCity, queuedBuildingsByCity, editedBuildingsByRegion]);
   // Keep the legacy module-level getter in sync for any code that still calls it.
   useEffect(() => { setBuildingsGetter(getBuildings); }, [getBuildings]);
+
+  // 0.9.879: currently-recruitable unit NAMES for one region, evaluated for a
+  // FIXED faction (ownerId/culture) against THAT region's built buildings +
+  // resources + tags. First-pass only (no upgrade-only potential). Mirrors the
+  // per-region Recruitable computation's gate logic exactly. Used to build the
+  // army-edit pool = the UNION of this over every region the army's faction
+  // owns ("Rome's full roster + AOR for every region it owns, nothing more").
+  const availableRecruitsForRegion = useCallback((reg, ownerId, culture) => {
+    if (!reg || !buildingRecruits) return [];
+    let builtList = null;
+    try { builtList = getBuildings(reg, true); } catch {}
+    if (!builtList || builtList.length === 0) return [];
+    const recruitResourceList = (resourcesData && (resourcesData[reg.region] || resourcesData[reg.city])) || [];
+    const regionResourceSet = new Set(recruitResourceList.map(x => String(x.type || "").toLowerCase()).filter(Boolean));
+    const tagSet = new Set(String(reg.tags || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
+    const aliasMap = buildingRecruits.__aliases || {};
+    const hasMinLevel = (chain, level) => {
+      const built = builtList.find(b => b.type === chain);
+      if (!built) return false;
+      if (level == null) return true;
+      const order = (buildingLevelsLookup && buildingLevelsLookup[chain]) || null;
+      if (!order) return built.level === level;
+      const haveIdx = order.indexOf(built.level);
+      const needIdx = order.indexOf(level);
+      return haveIdx >= 0 && needIdx >= 0 && haveIdx >= needIdx;
+    };
+    const evalTierAlias = (tok) => {
+      const branches = aliasMap[tok];
+      if (!branches) return false;
+      return branches.some(({ chain, level }) => hasMinLevel(chain, level));
+    };
+    const out = new Set();
+    for (const b of builtList) {
+      const lvls = buildingRecruits[b.type];
+      if (!lvls) continue;
+      const allLevels = (buildingLevelsLookup && buildingLevelsLookup[b.type]) || null;
+      let levelsToCheck;
+      if (allLevels && allLevels.length > 0) {
+        const idx = allLevels.indexOf(b.level);
+        levelsToCheck = idx >= 0 ? allLevels.slice(0, idx + 1) : [b.level];
+      } else levelsToCheck = [b.level];
+      for (const lvl of levelsToCheck) {
+        const recs = lvls[lvl];
+        if (!recs) continue;
+        for (const rec of recs) {
+          if (rec.factions && rec.factions.length > 0 && ownerId
+              && !rec.factions.includes("all") && !rec.factions.includes(ownerId) && !rec.factions.includes(culture)) continue;
+          if (rec.requires) {
+            if (/(?<!\bnot\s)\bmajor_event\b/.test(rec.requires)) continue;
+            if (/\bnot\s+is_player\b/.test(rec.requires)) continue;
+            if (/\bnot\s+factions\b/.test(rec.requires)) {
+              const nm = rec.requires.match(/not\s+factions\s*\{\s*([^}]*)\}/);
+              if (nm) {
+                const excluded = nm[1].split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+                if (ownerId && excluded.includes(ownerId)) continue;
+                if (culture && excluded.includes(culture)) continue;
+              }
+            }
+            {
+              const reqs = rec.requires;
+              let hrOk = true;
+              for (const neg of reqs.matchAll(/\bnot\s+hidden_resource\s+(\S+)/g)) { if (tagSet.has(neg[1].toLowerCase())) { hrOk = false; break; } }
+              if (!hrOk) continue;
+              const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+              for (const pos of positives.matchAll(/\bhidden_resource\s+(\S+)/g)) { if (!tagSet.has(pos[1].toLowerCase())) { hrOk = false; break; } }
+              if (!hrOk) continue;
+            }
+            if (!resourceReqAllows(rec.requires, regionResourceSet)) continue;
+            let ok = true;
+            {
+              const re = /(\bnot\s+)?\b(mic_tier|gov_tier|colony_tier|culture_tier)_\d+\b/g;
+              let m;
+              while ((m = re.exec(rec.requires)) !== null) {
+                const negated = !!m[1];
+                const tok = m[0].replace(/^not\s+/, "");
+                const sat = evalTierAlias(tok);
+                if (negated ? sat : !sat) { ok = false; break; }
+              }
+            }
+            if (!ok) continue;
+            {
+              const re = /(\bnot\s+)?\bbuilding_present_min_level\s+(\S+)\s+(\S+)/g;
+              let m;
+              while ((m = re.exec(rec.requires)) !== null) {
+                const negated = !!m[1];
+                const sat = hasMinLevel(m[2], m[3]);
+                if (negated ? sat : !sat) { ok = false; break; }
+              }
+            }
+            if (!ok) continue;
+            {
+              const re = /(\bnot\s+)?\bbuilding_present(?!_min_level)\s+(\S+)(?:\s+(\w+))?/g;
+              let m;
+              while ((m = re.exec(rec.requires)) !== null) {
+                if (m[3] === "queued") continue;
+                const negated = !!m[1];
+                const sat = hasMinLevel(m[2], null);
+                if (negated ? sat : !sat) { ok = false; break; }
+              }
+            }
+            if (!ok) continue;
+          }
+          if (unitOwnership) {
+            const owners = unitOwnership[rec.unit];
+            if (!owners) continue;
+            if (ownerId && !owners.includes("all") && !owners.includes(ownerId) && !owners.includes(culture)) continue;
+          }
+          out.add(rec.unit);
+        }
+      }
+    }
+    return [...out];
+  }, [buildingRecruits, buildingLevelsLookup, unitOwnership, resourcesData, getBuildings]);
 
   // Load victory conditions
   useEffect(() => {
@@ -18010,42 +18148,43 @@ function App() {
                         }));
                       })()}
                       recruitableAll={(() => {
-                        // Dev army-edit pool: every unit recruitable in ANY
-                        // settlement (all building chains/levels), so you can add
-                        // a unit even when THIS province lacks its building or
-                        // strategic resource (e.g. elephants). Province-specific
-                        // gates (building-present, resource, hidden_resource,
-                        // tier, faction) are intentionally dropped — the point is
-                        // "recruitable somewhere by someone". Only built in dev
-                        // mode (the only consumer) so non-dev renders pay nothing.
+                        // Dev army-edit pool: the army's FACTION roster — the
+                        // UNION of units currently recruitable across EVERY region
+                        // that faction owns (each region's real buildings +
+                        // resources + AOR tags), so you can add anything the
+                        // faction can train somewhere in its empire (e.g. an
+                        // elephant unit from a province that has the resource),
+                        // but NOT other factions' units. "Rome's full roster +
+                        // the AOR for every region it owns, nothing more."
+                        // Dev-mode only so non-dev renders pay nothing.
                         if (!devMode || !buildingRecruits) return null;
                         const r = lockedRegionInfo || regionInfo;
+                        if (!r) return null;
                         const ownerId = (
-                          (r && currentOwnerByCity && currentOwnerByCity[r.city])
-                          || (r && initialOwnerByCity && initialOwnerByCity[r.city])
-                          || (r && r.faction) || ""
+                          (currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (initialOwnerByCity && initialOwnerByCity[r.city])
+                          || r.faction || ""
                         ).toLowerCase();
-                        const seen = new Set();
-                        const names = [];
-                        for (const chain of Object.keys(buildingRecruits)) {
-                          if (chain.startsWith("__")) continue; // skip __aliases
-                          const lvls = buildingRecruits[chain];
-                          if (!lvls || typeof lvls !== "object") continue;
-                          for (const lvl of Object.keys(lvls)) {
-                            const recs = lvls[lvl];
-                            if (!Array.isArray(recs)) continue;
-                            for (const rec of recs) {
-                              if (!rec || !rec.unit || seen.has(rec.unit)) continue;
-                              seen.add(rec.unit);
-                              names.push(rec.unit);
-                            }
-                          }
+                        if (!ownerId) return null;
+                        const culture = factionCultures?.[ownerId] || null;
+                        const ownerOf = (reg) => (
+                          (currentOwnerByCity && currentOwnerByCity[reg.city])
+                          || (initialOwnerByCity && initialOwnerByCity[reg.city])
+                          || reg.faction || ""
+                        ).toLowerCase();
+                        const union = new Set();
+                        for (const reg of Object.values(regions || {})) {
+                          if (ownerOf(reg) !== ownerId) continue;
+                          for (const name of availableRecruitsForRegion(reg, ownerId, culture)) union.add(name);
                         }
-                        names.sort((a, b) => a.localeCompare(b));
+                        const names = [...union].sort((a, b) => a.localeCompare(b));
+                        if (names.length === 0) return null;
+                        const dictMap = unitOwnership?.__dictionary || {};
+                        prefetchUnitIcons(modDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
                         return names.map((name) => ({
                           unit: name,
                           faction: ownerId,
-                          icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
+                          icon: getCachedUnitIcon(ownerId, name),
                           gatedBy: [],
                           hrGates: [],
                           available: true,

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.879",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Army-edit recruitable pool is now your faction's real roster, not everyone's.** 0.9.878 showed units from every faction. Now when an army is the selected edit target, the Recruitable panel shows the union of units actually recruitable across all regions that army's faction owns — each region's true buildings + resources + AOR — so you get \"Rome's full roster plus the AOR for every region it owns, nothing more.\" Units another faction recruits, or that need a building/resource you don't have anywhere, no longer appear." },
+    ],
+  },
+  {
     version: "0.9.878",
     date: "2026-06-04",
     items: [
