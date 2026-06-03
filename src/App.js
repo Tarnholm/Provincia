@@ -18501,6 +18501,11 @@ function App() {
                             // 0.9.657: pending first, then applied (already-saved overlay).
                             const pending = pendingArmyUnits.get(key) || appliedArmyUnits.get(key);
                             if (!pending) return army;
+                            // Prefetch icons for the STAGED units — including ones
+                            // ADDED via the recruitable panel that the original
+                            // buildEntry prefetch never saw — so edited armies don't
+                            // show blank cards (0.9.881). Same dictMap as buildEntry.
+                            prefetchUnitIcons(modDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
                             return {
                               ...army,
                               units: (pending.units || []).map((u) => ({
@@ -18596,6 +18601,10 @@ function App() {
                           // 0.9.657: pending first, then applied (already-saved overlay).
                           const pending = pendingArmyUnits.get(key) || appliedArmyUnits.get(key);
                           if (!pending) return army;
+                          // Prefetch icons for the STAGED units — including ones ADDED
+                          // via the recruitable panel the original prefetch never saw —
+                          // so edited armies don't show blank cards (0.9.881).
+                          prefetchUnitIcons(modDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
                           return {
                             ...army,
                             units: (pending.units || []).map((u) => ({

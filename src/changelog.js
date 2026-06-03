@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.881",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Field-army unit cards no longer go blank in edit mode** (e.g. AOR italiote epibatai in a Roman field army). When a field army has staged or applied edits it renders through the pending-merge path, which resolved each unit's icon from cache but — unlike the normal path — never told the loader to fetch it, so any not-already-cached card showed blank. Both field-army merge paths now prefetch their units' icons (with the EDU dictionary, same as the garrison path), so the cards fill in. Garrisons were already fine." },
+    ],
+  },
+  {
     version: "0.9.880",
     date: "2026-06-04",
     items: [
