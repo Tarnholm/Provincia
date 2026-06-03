@@ -3000,13 +3000,13 @@
         "weapon": 0
       },
       {
-        "name": "african infantry",
+        "name": "libyo phoenician infantry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "african infantry",
+        "name": "libyo phoenician infantry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -3024,7 +3024,7 @@
         "weapon": 0
       },
       {
-        "name": "libyan phalangites",
+        "name": "libyan light infantry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -4853,13 +4853,13 @@
         "weapon": 0
       },
       {
-        "name": "numidian light infantry",
+        "name": "libyan light infantry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "numidian javelinmen",
+        "name": "libyan skirmishers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -5085,13 +5085,13 @@
         "weapon": 0
       },
       {
-        "name": "iberian skirmishers",
+        "name": "aor caetrati",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian heavy swordsmen",
+        "name": "caetrati swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -5165,58 +5165,58 @@
         "weapon": 0
       },
       {
-        "name": "iberian chosen infantry",
+        "name": "caetrati swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian chosen infantry",
+        "name": "caetrati swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian heavy swordsmen",
+        "name": "caetrati swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian heavy swordsmen",
+        "name": "caetrati swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian heavy swordsmen",
+        "name": "caetrati swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian skirmishers",
+        "name": "aor caetrati",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian skirmishers",
+        "name": "aor caetrati",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian heavy cavalry",
+        "name": "caetrati cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "iberian slingers",
+        "name": "aor iberian slingers",
         "exp": 0,
         "armour": 0,
-        "weapon": 0
+        "weapon": 1
       }
     ]
   },
@@ -8661,25 +8661,37 @@
     "ancillaries": [],
     "units": [
       {
-        "name": "syracusan general",
+        "name": "antigonid general",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "syracusan neaniskoi",
+        "name": "merc greek hoplites",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "syracusan hoplites",
+        "name": "merc greek hoplites",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "sicel thureophoroi",
+        "name": "merc greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "merc greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "merc tarentine cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -11343,31 +11355,7 @@
     ],
     "units": [
       {
-        "name": "syracusan general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "syracusan hoplites",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "sicel peltophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "syracusan neaniskoi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "sicel thureophoroi",
+        "name": "ptolemaic cavalry of the court",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -19233,18 +19221,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
-      },
-      {
-        "name": "prodromoi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "merc indian elephants",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       }
     ]
   },
@@ -19396,18 +19372,6 @@
         "weapon": 0
       },
       {
-        "name": "seleucid xystophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "prodromoi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
         "name": "prodromoi",
         "exp": 0,
         "armour": 0,
@@ -19515,126 +19479,16 @@
       {
         "name": "Supplies",
         "level": 7
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
     "units": [
       {
         "name": "seleucid general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "seleucid hypaspists",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "argyraspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "seleucid chalkaspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "seleucid chalkaspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "seleucid chalkaspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "seleucid chalkaspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "thureophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "thureophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "thureophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "aor cilician pirates",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "aor cilician spearmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "greek peltasts",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek archers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek archers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "seleucid xystophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "seleucid xystophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "prodromoi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "prodromoi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -19713,6 +19567,10 @@
       {
         "name": "Supplies",
         "level": 7
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -19722,12 +19580,6 @@
         "exp": 0,
         "armour": 0,
         "weapon": 1
-      },
-      {
-        "name": "greek slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
       },
       {
         "name": "greek slingers",
@@ -19809,6 +19661,10 @@
       {
         "name": "Supplies",
         "level": 7
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -19827,12 +19683,6 @@
       },
       {
         "name": "greek slingers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -19943,6 +19793,10 @@
       {
         "name": "Supplies",
         "level": 7
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -20021,30 +19875,6 @@
     "units": [
       {
         "name": "seleucid general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "seleucid chalkaspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "seleucid chalkaspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "seleucid chalkaspides",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "seleucid chalkaspides",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -20139,6 +19969,12 @@
       },
       {
         "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "psiloi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -20253,6 +20089,10 @@
       {
         "name": "TurnsAlive",
         "level": 4
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -20426,6 +20266,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 1
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -20507,7 +20353,7 @@
         "weapon": 1
       },
       {
-        "name": "greek slingers",
+        "name": "psiloi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -20598,6 +20444,10 @@
       {
         "name": "TurnsAlive",
         "level": 3
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -20610,6 +20460,12 @@
       },
       {
         "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -20715,6 +20571,10 @@
       },
       {
         "name": "TurnsAlive",
+        "level": 2
+      },
+      {
+        "name": "Record_Keeping_Career",
         "level": 2
       }
     ],
@@ -20904,12 +20764,22 @@
       {
         "name": "TurnsAlive",
         "level": 2
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -21151,6 +21021,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 1
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -21394,6 +21270,10 @@
       {
         "name": "TurnsAlive",
         "level": 3
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -21670,6 +21550,10 @@
       {
         "name": "TurnsAlive",
         "level": 3
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -21849,6 +21733,10 @@
       {
         "name": "TurnsAlive",
         "level": 4
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -21977,37 +21865,37 @@
         "name": "seleucid general",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "seleucid hypaspists",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "seleucid chalkaspides",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "seleucid chalkaspides",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "seleucid chalkaspides",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "seleucid chalkaspides",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "aor persian sparabara",
@@ -22025,13 +21913,13 @@
         "name": "thureophoroi",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "thureophoroi",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
         "name": "greek peltasts",
@@ -22065,18 +21953,6 @@
       },
       {
         "name": "seleucid xystophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 1
-      },
-      {
-        "name": "seleucid xystophoroi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "prodromoi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -22199,18 +22075,16 @@
       {
         "name": "TurnsAlive",
         "level": 2
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
     "units": [
       {
         "name": "seleucid general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -22305,6 +22179,10 @@
       {
         "name": "TurnsAlive",
         "level": 3
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -22653,6 +22531,10 @@
       {
         "name": "TurnsAlive",
         "level": 5
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -22765,6 +22647,10 @@
       {
         "name": "TurnsAlive",
         "level": 4
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -22777,6 +22663,12 @@
       },
       {
         "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -23034,6 +22926,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -23188,6 +23086,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 1
+      },
+      {
+        "name": "aor lydian akontistai",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -23391,6 +23295,10 @@
       {
         "name": "TurnsAlive",
         "level": 2
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [
@@ -23404,7 +23312,7 @@
         "weapon": 1
       },
       {
-        "name": "greek slingers",
+        "name": "aor lydian akontistai",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -23523,6 +23431,10 @@
       {
         "name": "TurnsAlive",
         "level": 5
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -23621,6 +23533,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -24564,6 +24482,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek archers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -25376,6 +25300,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -25470,6 +25400,10 @@
       },
       {
         "name": "TurnsAlive",
+        "level": 2
+      },
+      {
+        "name": "Greek_Aristocrat",
         "level": 2
       }
     ],
@@ -25987,6 +25921,10 @@
       {
         "name": "FasterCharacters",
         "level": 1
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -26005,6 +25943,12 @@
       },
       {
         "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "aor lydian akontistai",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -26556,6 +26500,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -26643,6 +26593,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -26791,6 +26747,12 @@
       },
       {
         "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -27503,6 +27465,10 @@
       {
         "name": "TurnsAlive",
         "level": 3
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [
@@ -28549,6 +28515,10 @@
       {
         "name": "TurnsAlive",
         "level": 2
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [
@@ -28558,6 +28528,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -28791,6 +28767,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -28918,6 +28900,10 @@
       {
         "name": "TurnsAlive",
         "level": 4
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -29139,6 +29125,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "psiloi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -29267,6 +29259,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -29384,6 +29382,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "psiloi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -29576,12 +29580,22 @@
       {
         "name": "TurnsAlive",
         "level": 1
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -29856,6 +29870,10 @@
       {
         "name": "TurnsAlive",
         "level": 1
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -29928,18 +29946,16 @@
       {
         "name": "TurnsAlive",
         "level": 1
+      },
+      {
+        "name": "Record_Keeping_Career",
+        "level": 2
       }
     ],
     "ancillaries": [],
     "units": [
       {
         "name": "seleucid general",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "greek slingers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -30021,6 +30037,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek archers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -30093,6 +30115,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "psiloi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -30126,6 +30154,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -30201,6 +30235,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "greek archers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -30240,6 +30280,12 @@
       },
       {
         "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "psiloi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -30306,6 +30352,10 @@
       {
         "name": "TurnsAlive",
         "level": 1
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -30348,6 +30398,10 @@
       {
         "name": "TurnsAlive",
         "level": 1
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -30390,6 +30444,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "psiloi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -30462,6 +30522,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "psiloi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -30651,6 +30717,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "psiloi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -30684,6 +30756,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -30726,6 +30804,12 @@
       },
       {
         "name": "greek slingers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "greek peltasts",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -30807,6 +30891,12 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "psiloi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -30834,6 +30924,10 @@
       {
         "name": "TurnsAlive",
         "level": 1
+      },
+      {
+        "name": "Greek_Aristocrat",
+        "level": 2
       }
     ],
     "ancillaries": [],
@@ -30876,6 +30970,12 @@
     "units": [
       {
         "name": "seleucid general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "psiloi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -34614,6 +34714,12 @@
         "weapon": 0
       },
       {
+        "name": "greek hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
         "name": "sicel thureophoroi",
         "exp": 0,
         "armour": 0,
@@ -34639,6 +34745,12 @@
       },
       {
         "name": "prodromoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "xystophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -42693,6 +42805,7 @@
     "y": 366,
     "age": 46,
     "tags": [
+      "leader",
       "named"
     ],
     "traits": [
@@ -44624,6 +44737,7 @@
     "y": 392,
     "age": 46,
     "tags": [
+      "leader",
       "named"
     ],
     "traits": [
@@ -47244,7 +47358,55 @@
         "weapon": 0
       },
       {
+        "name": "celtic swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
         "name": "celtic spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic ambacti",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic ambacti",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gaesatae",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gaesatae",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic light cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic light cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -47256,7 +47418,7 @@
         "weapon": 0
       },
       {
-        "name": "gallic light cavalry",
+        "name": "celtic skirmishers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -47859,6 +48021,36 @@
       },
       {
         "name": "celtic spearmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic swordsmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gaesatae",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "celtic skirmishers",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "gallic light cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -64511,19 +64703,13 @@
         "weapon": 0
       },
       {
-        "name": "oscan spearmen",
+        "name": "campanian hoplites",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "aor psiloi",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "campanian javelinmen",
+        "name": "campanian thureophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -64535,13 +64721,13 @@
         "weapon": 0
       },
       {
-        "name": "aor greek slingers",
+        "name": "campanian javelinmen",
         "exp": 0,
         "armour": 0,
-        "weapon": 1
+        "weapon": 0
       },
       {
-        "name": "aor prodromoi",
+        "name": "campanian cavalry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -65465,6 +65651,12 @@
         "weapon": 0
       },
       {
+        "name": "numidian cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
         "name": "numidian archers",
         "exp": 0,
         "armour": 0,
@@ -65477,43 +65669,19 @@
         "weapon": 0
       },
       {
-        "name": "numidian cavalry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian cavalry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian royal cavalry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian light infantry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian light infantry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "numidian light infantry",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
         "name": "numidian javelinmen",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian light infantry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "numidian light infantry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -66070,6 +66238,7 @@
     "y": 386,
     "age": 46,
     "tags": [
+      "leader",
       "named"
     ],
     "traits": [
@@ -71003,6 +71172,7 @@
     "y": 418,
     "age": 46,
     "tags": [
+      "leader",
       "named"
     ],
     "traits": [
@@ -73147,6 +73317,7 @@
     "y": 398,
     "age": 46,
     "tags": [
+      "leader",
       "named"
     ],
     "traits": [
@@ -73262,6 +73433,7 @@
     "y": 380,
     "age": 46,
     "tags": [
+      "leader",
       "named"
     ],
     "traits": [
@@ -73299,43 +73471,31 @@
         "weapon": 0
       },
       {
-        "name": "caetrati swordsmen",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
         "name": "iberian heavy swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "merc sardinian archers",
+        "name": "gallaecian elite infantry",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "merc sardinian archers",
+        "name": "iberian skirmishers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "merc sardinian archers",
+        "name": "sardinian archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "merc sardinian archers",
-        "exp": 0,
-        "armour": 0,
-        "weapon": 0
-      },
-      {
-        "name": "merc sardinian archers",
+        "name": "sardinian archers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -73389,6 +73549,7 @@
     "y": 433,
     "age": 46,
     "tags": [
+      "leader",
       "named"
     ],
     "traits": [
@@ -73408,31 +73569,37 @@
     "ancillaries": [],
     "units": [
       {
-        "name": "picentine general",
+        "name": "umbrian general",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "picentine light spearmen",
+        "name": "umbrian light spearmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "picentine heavy spearmen",
+        "name": "umbrian heavy spearmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "picentine swordsmen",
+        "name": "umbrian swordsmen",
         "exp": 0,
         "armour": 0,
         "weapon": 0
       },
       {
-        "name": "picentine light cavalry",
+        "name": "umbrian light cavalry",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "umbrian skirmishers",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -73469,7 +73636,7 @@
     "ancillaries": [],
     "units": [
       {
-        "name": "picentine general",
+        "name": "umbrian general",
         "exp": 0,
         "armour": 0,
         "weapon": 0
@@ -77036,6 +77203,30 @@
         "exp": 0,
         "armour": 0,
         "weapon": 0
+      },
+      {
+        "name": "syracusan hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sicel peltophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan neaniskoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sicel thureophoroi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
       }
     ]
   },
@@ -77129,6 +77320,24 @@
     "units": [
       {
         "name": "syracusan general",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan neaniskoi",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "syracusan hoplites",
+        "exp": 0,
+        "armour": 0,
+        "weapon": 0
+      },
+      {
+        "name": "sicel thureophoroi",
         "exp": 0,
         "armour": 0,
         "weapon": 0

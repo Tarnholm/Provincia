@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.871",
+    date: "2026-06-03",
+    items: [
+      { type: "fix", text: "**Critical: 0.9.870 wouldn't launch.** The new live-armies module wasn't included in the packaged app, so the main process crashed on startup. Added it (and the economy + shared parser modules) to the package file list. Sorry for the breakage." },
+    ],
+  },
+  {
     version: "0.9.870",
     date: "2026-06-02",
     items: [
