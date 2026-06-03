@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.878",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Editing an army's units now lets you add ANY recruitable unit, not just this province's.** When an army is the selected edit target (click its general/title in dev mode), the Recruitable panel switches to the full pool — every unit recruitable in any settlement — so you can add units this province can't normally train (e.g. elephants without the elephant resource). Click a card to add it to the selected army. When no army is selected, the Recruitable panel behaves exactly as before (this province's real recruit list)." },
+    ],
+  },
+  {
     version: "0.9.877",
     date: "2026-06-04",
     items: [

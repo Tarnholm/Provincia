@@ -528,7 +528,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -2954,7 +2954,15 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             }
           }
           const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-          return recruitable && recruitable.length > 0 ? (
+          // Dev army-edit mode: when an army is the selected edit target, swap
+          // the province-specific recruit list for the FULL pool (every unit
+          // recruitable in ANY settlement) so you can add units this province
+          // can't normally train (e.g. elephants). Out of edit mode the section
+          // shows the normal province-specific list, unchanged.
+          const armyEditMode = devMode && selectedArmyKey && onAddUnitToSelectedArmy;
+          const showAllPool = armyEditMode && Array.isArray(recruitableAll) && recruitableAll.length > 0;
+          const recruitList = showAllPool ? recruitableAll : recruitable;
+          return recruitList && recruitList.length > 0 ? (
             <div style={{
               display: "grid",
               // 6 columns, all 1fr → cards scale with widget width. Cards
@@ -2967,7 +2975,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               minHeight: 0,
               overflowY: "auto",
             }}>
-              {recruitable.map((u, i) => {
+              {showAllPool && (
+                <div style={{ gridColumn: "1 / -1", fontSize: "0.6rem", color: "#dca64a", fontStyle: "italic", marginBottom: 1 }}>
+                  All recruitable units (edit mode) — click to add to the selected army
+                </div>
+              )}
+              {recruitList.map((u, i) => {
                 const gatedSet = u.gatedBy || (recruitGatedBy?.[u.unit] ?? []);
                 const linkedFromBuilding = hoveredChain && gatedSet.includes(hoveredChain);
                 const linkedFromHr = hoveredHr && (u.hrGates || []).includes(hoveredHr);

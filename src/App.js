@@ -18009,6 +18009,49 @@ function App() {
                           upgradeHint: !availableSet.has(name) ? computeUpgradeHint(name) : null,
                         }));
                       })()}
+                      recruitableAll={(() => {
+                        // Dev army-edit pool: every unit recruitable in ANY
+                        // settlement (all building chains/levels), so you can add
+                        // a unit even when THIS province lacks its building or
+                        // strategic resource (e.g. elephants). Province-specific
+                        // gates (building-present, resource, hidden_resource,
+                        // tier, faction) are intentionally dropped — the point is
+                        // "recruitable somewhere by someone". Only built in dev
+                        // mode (the only consumer) so non-dev renders pay nothing.
+                        if (!devMode || !buildingRecruits) return null;
+                        const r = lockedRegionInfo || regionInfo;
+                        const ownerId = (
+                          (r && currentOwnerByCity && currentOwnerByCity[r.city])
+                          || (r && initialOwnerByCity && initialOwnerByCity[r.city])
+                          || (r && r.faction) || ""
+                        ).toLowerCase();
+                        const seen = new Set();
+                        const names = [];
+                        for (const chain of Object.keys(buildingRecruits)) {
+                          if (chain.startsWith("__")) continue; // skip __aliases
+                          const lvls = buildingRecruits[chain];
+                          if (!lvls || typeof lvls !== "object") continue;
+                          for (const lvl of Object.keys(lvls)) {
+                            const recs = lvls[lvl];
+                            if (!Array.isArray(recs)) continue;
+                            for (const rec of recs) {
+                              if (!rec || !rec.unit || seen.has(rec.unit)) continue;
+                              seen.add(rec.unit);
+                              names.push(rec.unit);
+                            }
+                          }
+                        }
+                        names.sort((a, b) => a.localeCompare(b));
+                        return names.map((name) => ({
+                          unit: name,
+                          faction: ownerId,
+                          icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
+                          gatedBy: [],
+                          hrGates: [],
+                          available: true,
+                          upgradeHint: null,
+                        }));
+                      })()}
                       fieldArmies={(() => {
                         // Live mode: use commander coords (extracted from
                         // the save's world-object records) to classify each
