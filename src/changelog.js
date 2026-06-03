@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.884",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Dev mode now overlays the portrait index number in the centre of each commander face** — so you can read which numbered portrait Provincia resolved and compare it to the in-game face to confirm (or report) a mismatch." },
+    ],
+  },
+  {
     version: "0.9.883",
     date: "2026-06-04",
     items: [
