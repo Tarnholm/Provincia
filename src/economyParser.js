@@ -442,7 +442,7 @@ function decodeFinancialBlock(block) {
 // Build { factionName: int32[23] block } by anchoring each raw faction record's
 // econ-history block to a faction NAME via the +0 treasury (greedy in-order
 // window match; tolerates the one-slot phantom-record drift). See header.
-function buildFactionBlocks(buffer, factions) {
+function buildFactionBlocks(buffer, factions, playerFaction) {
   const out = {};
   if (!buffer || typeof parseFactionTreasuries !== "function" || !factions) return out;
   let recs;
@@ -465,6 +465,36 @@ function buildFactionBlocks(buffer, factions) {
     rp = found + 1;
     const block = readFinancialBlock(buffer, recs[found].offset);
     if (block) out[name] = block;
+  }
+
+  // 0.9.873: the PLAYER faction's econ record is ROTATED TO recs[0] (the save is
+  // centered on the player), while its NAME stays at its normal factionId
+  // position in `factions` — so the name-ordered window-walk above never reaches
+  // recs[0] and the player's OWN breakdown was missed, falling back to a
+  // misleading settlement-income sum (Athens t56: showed gross 1183, real 45437).
+  // Anchor the player explicitly: prefer recs[0] when its treasury matches, else
+  // a globally-UNIQUE treasury match. Verified recs[0]==player in 6/7 corpus
+  // saves (findings-economy-corpus-2026-06-03.md). Additive — only fills the gap.
+  if (playerFaction && factions[playerFaction]) {
+    const pt = typeof factions[playerFaction].treasury === "number" ? factions[playerFaction].treasury : null;
+    if (pt != null && recs[0] && recs[0].treasury === pt) {
+      // recs[0] IS the player's record — AUTHORITATIVE. Override even if the
+      // name-walk already attributed the player to a DIFFERENT record that
+      // merely shares the player's treasury (common at turn 1 when dozens of
+      // factions start at the same denari — Parni T1 had 79 records == 5500,
+      // so the walk grabbed the wrong one and decoded an empty block).
+      const block = readFinancialBlock(buffer, recs[0].offset);
+      if (block) out[playerFaction] = block;
+    } else if (pt != null && !out[playerFaction]) {
+      // recs[0] treasury didn't match (rare) — only attribute on a GLOBALLY
+      // UNIQUE treasury so we never grab a same-treasury neighbour.
+      const matches = [];
+      for (let k = 0; k < recs.length; k++) if (recs[k].treasury === pt) matches.push(k);
+      if (matches.length === 1) {
+        const block = readFinancialBlock(buffer, recs[matches[0]].offset);
+        if (block) out[playerFaction] = block;
+      }
+    }
   }
   return out;
 }
@@ -514,7 +544,7 @@ function parseFactionEconomy(buffer, context) {
     ? ctx.taxCoefficient : DEFAULT_TAX_COEFFICIENT;
 
   // Stored breakdown blocks, keyed by faction name (empty if no buffer/cracker).
-  const blocks = buildFactionBlocks(buffer, factions);
+  const blocks = buildFactionBlocks(buffer, factions, ctx.playerFaction);
 
   let names;
   if (Array.isArray(ctx.factionsOnly) && ctx.factionsOnly.length) {

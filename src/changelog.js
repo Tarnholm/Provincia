@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.873",
+    date: "2026-06-03",
+    items: [
+      { type: "fix", text: "**The Financial Overview now reliably shows YOUR faction's real breakdown.** The player faction's economy record is rotated to the front of the save, so the old matcher often missed it (falling back to a misleading number) or grabbed a same-treasury neighbour's data. The player record is now read authoritatively. Verified across a 28-faction Discord save sweep — 26/28 player factions now resolve their full income/expenditure/net breakdown (the 2 left are obscure minor factions with a save-data quirk)." },
+      { type: "fix", text: "**More player factions are detected** (Mauryan, Edeta, Parni, Siraces, plus Getae/Athens/Pontus). Some minor/eastern factions have donor-seeded captain banners that defeated the usual detector; their save signatures are now recognised." },
+    ],
+  },
+  {
     version: "0.9.872",
     date: "2026-06-03",
     items: [

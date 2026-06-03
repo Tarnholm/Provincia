@@ -496,6 +496,22 @@ function crackSave(saveBuf, modDataDir) {
       const KNOWN_KNOWLEDGE = {
         414: "romans_julii", 173: "carthage", 161: "antigonid",
         207: "ptolemaic", 250: "seleucid", 83: "bactria",
+        // 0.9.873: added from the Discord corpus (findings-economy-corpus-2026-
+        // 06-03). MAURYAN's captain banners are absent/donor-seeded so the
+        // banner detector returns null and it fell through to here — but it was
+        // missing, so the player came back null and its whole econ block (recs[0])
+        // was mis-attributed. mauryan's sub6[0] knowledge is a stable 54 across
+        // T1/T2/T7/T14, no collision with any other corpus faction. Others
+        // (getae 70 / athens 133 / pontus 191) are corpus-confirmed too and only
+        // ever consulted when the primary banner detector fails — harmless extras.
+        54: "mauryan", 70: "getae", 133: "athens", 191: "pontus",
+        // More minor/eastern factions whose captain banners are donor-seeded
+        // (banner detector → null). Corpus-confirmed unique (28-faction sweep,
+        // findings-economy-corpus-2026-06-03). NOTE: knowledge collides on a few
+        // (bessi=23 == odrysians=23; saka=4 is too generic — minor/rebel factions
+        // collapse to 1/2/4 on late saves), so those two are intentionally NOT
+        // mapped here — they'd need a banner/factionId fix instead of a knowledge sig.
+        42: "edeta", 87: "parni", 48: "siraces",
       };
       if (KNOWN_KNOWLEDGE[firstKnowledge]) playerFaction = KNOWN_KNOWLEDGE[firstKnowledge];
     }
