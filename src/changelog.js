@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.874",
+    date: "2026-06-03",
+    items: [
+      { type: "fix", text: "**Bessi and Saka player factions are now detected** (Financial Overview works for them). These factions ship no captain-banner data in v7.2 so the usual detector couldn't name them; their save signatures are now recognised. Across the 28-faction test sweep, every faction with economy data now resolves its player breakdown." },
+    ],
+  },
+  {
     version: "0.9.873",
     date: "2026-06-03",
     items: [

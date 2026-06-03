@@ -507,11 +507,18 @@ function crackSave(saveBuf, modDataDir) {
         54: "mauryan", 70: "getae", 133: "athens", 191: "pontus",
         // More minor/eastern factions whose captain banners are donor-seeded
         // (banner detector → null). Corpus-confirmed unique (28-faction sweep,
-        // findings-economy-corpus-2026-06-03). NOTE: knowledge collides on a few
-        // (bessi=23 == odrysians=23; saka=4 is too generic — minor/rebel factions
-        // collapse to 1/2/4 on late saves), so those two are intentionally NOT
-        // mapped here — they'd need a banner/factionId fix instead of a knowledge sig.
+        // findings-economy-corpus-2026-06-03).
         42: "edeta", 87: "parni", 48: "siraces",
+        // bessi & saka have ZERO captain banners in the save (their banner files
+        // are missing in v7.2 → engine writes no captain_card path), so the
+        // banner detector ALWAYS fails for them and they reach here. The 23/4
+        // "collisions" are BENIGN: knowledge 23 also = odrysians, but odrysians
+        // has reliable captain banners so it is detected by the banner pass and
+        // NEVER reaches this map; knowledge 4 is only ever a PLAYER value for the
+        // isolated-nomad saka start (rebel/minor 1/2/4 sigs aren't player
+        // factions, which is all this map identifies). Verified: odrysians stays
+        // odrysians, bessi/saka now resolve.
+        23: "bessi", 4: "saka",
       };
       if (KNOWN_KNOWLEDGE[firstKnowledge]) playerFaction = KNOWN_KNOWLEDGE[firstKnowledge];
     }
