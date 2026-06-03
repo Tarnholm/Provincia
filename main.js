@@ -4424,6 +4424,17 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
     // Try mod dir first, then vanilla. The save path is rooted at "data/..."
     // so we strip that prefix to get "ui/..." and prepend each search dir.
     const subPath = rel.replace(/^data\//, "");
+    // RIS-layout fallback (0.9.882): the save stores the vanilla
+    // "…/portraits/cards/<bucket>/generals/NNN.tga" path, but RIS ships its
+    // portraits as "…/portraits/portraits/<bucket>/NNN.tga" — no `cards/` and no
+    // `generals/` subdir. Without this rewrite EVERY character whose save path
+    // points at the cards/ layout misses the fast-path and falls to a hash-pool
+    // face (wrong portrait, sometimes a different-culture-looking one). Try the
+    // rewritten path so the character gets their REAL indexed face.
+    const subPathRis = subPath
+      .replace(/\/portraits\/cards\//, "/portraits/portraits/")
+      .replace(/\/generals\//, "/");
+    const subPaths = subPathRis !== subPath ? [subPath, subPathRis] : [subPath];
     // Also try adding .dds — RTW stores the actual files as .tga.dds, save
     // references them as .tga.
     const candidates = [];
@@ -4433,8 +4444,10 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
       VANILLA_DATA,
     ].filter(Boolean);
     for (const d of dataDirs) {
-      candidates.push(path.join(d, subPath));
-      candidates.push(path.join(d, subPath + ".dds"));
+      for (const sp of subPaths) {
+        candidates.push(path.join(d, sp));
+        candidates.push(path.join(d, sp + ".dds"));
+      }
     }
     for (const candidate of candidates) {
       try {

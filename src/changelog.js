@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.882",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Characters get their real save portrait instead of a hash-pool fallback face.** The save stores portraits as `…/portraits/cards/<age>/generals/NNN.tga`, but RIS ships them as `…/portraits/portraits/<age>/NNN.tga` (no cards/ or generals/ subdir), so the exact-path lookup always missed and every character fell back to a deterministic hash face (sometimes a rough/other-culture-looking one, e.g. the \"nomad\" face on Statiis in Paestum). The resolver now also tries the RIS layout, so in-range portrait indices resolve to the character's actual face. (Indices beyond the mod's reduced pool still clamp to a same-culture hash face.)" },
+    ],
+  },
+  {
     version: "0.9.881",
     date: "2026-06-04",
     items: [
