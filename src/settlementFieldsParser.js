@@ -105,7 +105,11 @@ function settlementFieldsAt(buf, markerOffset) {
     committedPopulation,
     projectedPopulation,
     populationGrowth: growth,
-    income: u32(buf, o - 1586),
+    // 0.9.872: SIGNED — a settlement can run NEGATIVE income (e.g. just-captured
+    // / money-losing). Read as u32 it returned 0xFFFFFFFF (4294967295) for a -1
+    // settlement (Athens/Skyros t56), which then summed to a 4.29-billion faction
+    // "income" in the Financial Overview. i32 keeps -1 as -1. (marker-1586)
+    income: i32(buf, o - 1586),
     publicOrder: f32(buf, o - 30),
     prevPublicOrder: f32(buf, o - 1190),
     governorUuid: (gov === 0 || gov === -1 || gov === (0xffffffff | 0)) ? 0 : (gov >>> 0),

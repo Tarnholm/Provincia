@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.872",
+    date: "2026-06-03",
+    items: [
+      { type: "fix", text: "**Settlement income now reads correctly when negative.** A money-losing / just-captured settlement has negative income, but it was read as unsigned — so −1 showed as ~4.29 billion, which also blew up a faction's total income in the Financial Overview (found while cracking Discord saves: Athens' Skyros read 4294967295, inflating Athens' income to 4.29 B; now a sane 1,183). Income is read as a signed value everywhere (region panel + economy)." },
+    ],
+  },
+  {
     version: "0.9.871",
     date: "2026-06-03",
     items: [
