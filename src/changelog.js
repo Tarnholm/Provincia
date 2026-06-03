@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.883",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Real save portraits now resolve from the full vanilla pool (finishes 0.9.882).** A character's save portrait index points at the complete vanilla portrait set (e.g. roman #249), but the mod only ships a reduced folder (~130) — so high indices fell to a wrong hash face (Statiis in Paestum showed a nomadic face instead of his real one). The resolver now also checks the vanilla `…/portraits/portraits/<age>/generals/NNN.tga` layout, where those indices actually live, so the character gets their exact in-game face." },
+    ],
+  },
+  {
     version: "0.9.882",
     date: "2026-06-04",
     items: [

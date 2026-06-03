@@ -4431,10 +4431,17 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
     // points at the cards/ layout misses the fast-path and falls to a hash-pool
     // face (wrong portrait, sometimes a different-culture-looking one). Try the
     // rewritten path so the character gets their REAL indexed face.
-    const subPathRis = subPath
-      .replace(/\/portraits\/cards\//, "/portraits/portraits/")
-      .replace(/\/generals\//, "/");
-    const subPaths = subPathRis !== subPath ? [subPath, subPathRis] : [subPath];
+    // Two on-disk layouts host the same indexed pool:
+    //   vanilla RTW: …/portraits/portraits/<age>/generals/NNN.tga(.dds)  (KEEPS generals/)
+    //   RIS mod:     …/portraits/portraits/<age>/NNN.tga                 (DROPS generals/)
+    // The save's index points at the FULL vanilla pool (e.g. roman 249 — RIS's
+    // own folder only ships ~130, so without the vanilla path a high index falls
+    // to a hash face = wrong portrait). Try the cards→portraits rewrite BOTH with
+    // and without the generals/ subdir so the index resolves in whichever pool
+    // actually has it (vanilla generals/ first since that's where the index lives).
+    const subPathVanilla = subPath.replace(/\/portraits\/cards\//, "/portraits/portraits/");
+    const subPathRis = subPathVanilla.replace(/\/generals\//, "/");
+    const subPaths = [...new Set([subPath, subPathVanilla, subPathRis])];
     // Also try adding .dds — RTW stores the actual files as .tga.dds, save
     // references them as .tga.
     const candidates = [];
