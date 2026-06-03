@@ -329,6 +329,24 @@ let modTraitExcludeCultures = null;
 // 0.9.434: track the active mod's data dir so trait-edit IPC knows where
 // to find descr_strat.txt to patch.
 let activeModDataDir = null;
+// Export mode: when non-null, all mod-file writes are redirected UNDER this
+// folder (preserving the mod-relative path) instead of overwriting the live
+// mod in place. Set via the `set-mod-export-dir` IPC from the renderer's
+// pending-changes review modal. null = OFF = overwrite the live mod exactly
+// as before (the default and the byte-identical no-op path). See modOut().
+let _modExportDir = null;
+// Redirect a mod-file absolute path to the export dir when export mode is on.
+// Returns the path UNCHANGED when export is off (null _modExportDir) or when
+// the path is not under the active mod (so non-mod writes are never touched).
+// Creates the destination's parent dir on demand so the first write succeeds.
+function modOut(absModPath) {
+  if (!_modExportDir || !activeModDataDir) return absModPath;
+  const rel = path.relative(activeModDataDir, absModPath);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) return absModPath; // not under the mod → leave as-is
+  const dest = path.join(_modExportDir, rel);
+  try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch {}
+  return dest;
+}
 // Ancillary names indexed by id (0-based), loaded from
 // export_descr_ancillaries.txt. ID 0 = labrys_maker, ID 1 = saffron_merchant,
 // ... 1092 entries in RIS imperial. Decoded by save-cracker session 6:
@@ -3106,6 +3124,36 @@ ipcMain.handle("get-trait-data", async () => {
   };
 });
 
+// Export-instead-of-overwrite toggle. When `dir` is a writable folder, every
+// subsequent mod-file write (via modOut) is redirected under it, the live mod
+// is left untouched, and post-write backups + re-parses are skipped (the live
+// mod didn't change). Pass null to turn export OFF and restore in-place
+// overwrite (the default). Validates the folder exists + is writable.
+ipcMain.handle("set-mod-export-dir", async (_event, dir) => {
+  if (dir == null || dir === "") {
+    _modExportDir = null;
+    console.log("[mod-export] export mode OFF — writes overwrite the live mod in place");
+    return { ok: true, dir: null };
+  }
+  try {
+    const resolved = path.resolve(String(dir));
+    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+      return { ok: false, error: `not a folder: ${resolved}` };
+    }
+    // Probe writability with a throwaway file so we fail loudly up-front
+    // rather than mid-Apply.
+    const probe = path.join(resolved, ".provincia-export-probe");
+    try { fs.writeFileSync(probe, ""); fs.unlinkSync(probe); }
+    catch (we) { return { ok: false, error: `folder not writable: ${we.message}` }; }
+    _modExportDir = resolved;
+    console.log(`[mod-export] export mode ON — mod-file writes redirected under ${resolved}`);
+    return { ok: true, dir: resolved };
+  } catch (e) {
+    console.warn("[mod-export] set-mod-export-dir failed:", e && e.message);
+    return { ok: false, error: e.message };
+  }
+});
+
 // 0.9.434: descr_strat trait editor — rewrite a character's `traits Foo
 // 2, Bar 1` line. Used from the dev-mode trait editor in the right-click
 // character info panel. Persistent; affects next non-live load. Does NOT
@@ -3173,8 +3221,8 @@ ipcMain.handle("update-character-traits", async (_event, firstName, faction, tra
     // Write back. Preserve line endings as found in the file.
     const usesCRLF = text.includes("\r\n");
     const out = lines.join(usesCRLF ? "\r\n" : "\n");
-    fs.writeFileSync(dsPath, out, "utf8");
-    console.log(`[trait-edit] wrote ${traits.length} traits for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2}`);
+    fs.writeFileSync(modOut(dsPath), out, "utf8");
+    console.log(`[trait-edit] wrote ${traits.length} traits for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2}${_modExportDir ? " (exported)" : ""}`);
     return { ok: true, file: dsPath, line: traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2 };
   } catch (e) {
     console.warn(`[trait-edit] failed for ${firstName}: ${e.message}`);
@@ -3212,8 +3260,8 @@ ipcMain.handle("update-character-position", async (_event, faction, oldX, oldY, 
     if (hitIdx < 0) return { ok: false, error: `no character at (${oldX},${oldY}) in faction "${faction}"` };
     lines[hitIdx] = lines[hitIdx].replace(/\bx\s+-?\d+\s*,\s*y\s+-?\d+/i, `x ${newX}, y ${newY}`);
     const usesCRLF = text.includes("\r\n");
-    fs.writeFileSync(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
-    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-move] post-write re-parse failed:", e && e.message); }
+    fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    if (!_modExportDir) { try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-move] post-write re-parse failed:", e && e.message); } }
     console.log(`[char-move] ${faction} character (${oldX},${oldY}) → (${newX},${newY}) in ${path.basename(dsPath)}:${hitIdx + 1}`);
     return { ok: true, file: dsPath, line: hitIdx + 1 };
   } catch (e) {
@@ -3270,8 +3318,8 @@ ipcMain.handle("update-character-fields", async (_event, firstName, faction, fie
     if (!applied.length) return { ok: false, error: "no recognised fields to apply" };
     lines[charLineIdx] = line;
     const usesCRLF = text.includes("\r\n");
-    fs.writeFileSync(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
-    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-fields] post-write re-parse failed:", e && e.message); }
+    fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    if (!_modExportDir) { try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-fields] post-write re-parse failed:", e && e.message); } }
     console.log(`[char-fields] ${firstName} (${faction || "?"}): ${applied.join(", ")} in ${path.basename(dsPath)}:${charLineIdx + 1}`);
     return { ok: true, file: dsPath, line: charLineIdx + 1, applied };
   } catch (e) {
@@ -3424,8 +3472,8 @@ ipcMain.handle("relocate-garrison", async (_event, faction, region, newX, newY) 
     if (insAt < 0) insAt = ownerFacLine + 1;
     const block = [`character\t${captain}, general, age 20, , x ${newX}, y ${newY}`, "army", ...units, ""];
     lines.splice(insAt, 0, ...block);
-    fs.writeFileSync(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
-    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[garrison-relocate] post-write re-parse failed:", e && e.message); }
+    fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    if (!_modExportDir) { try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[garrison-relocate] post-write re-parse failed:", e && e.message); } }
     console.log(`[garrison-relocate] ${ownerFac} ${region}: ${units.length} units → captain "${captain}" at (${newX},${newY}) in ${path.basename(dsPath)}`);
     return { ok: true, captain, units: units.length, faction: ownerFac };
   } catch (e) {
@@ -3501,7 +3549,7 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
           let idx = ntLines.findIndex((l) => { const k = tokenOf(l); return k != null && k > tokLc; });
           if (idx < 0) { while (ntLines.length && ntLines[ntLines.length - 1].trim() === "") ntLines.pop(); ntLines.push(entry); }
           else ntLines.splice(idx, 0, entry);
-          fs.writeFileSync(namesPath, ntLines.join(ntEol), "utf16le");
+          fs.writeFileSync(modOut(namesPath), ntLines.join(ntEol), "utf16le");
           minted = true;
           if (fs.existsSync(lookupPath)) {
             const lk = fs.readFileSync(lookupPath, "utf8");
@@ -3511,14 +3559,14 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
               let li = lkLines.findIndex((l) => l.trim() && l.trim().toLowerCase() > tokLc);
               if (li < 0) { while (lkLines.length && lkLines[lkLines.length - 1].trim() === "") lkLines.pop(); lkLines.push(newFirst); }
               else lkLines.splice(li, 0, newFirst);
-              fs.writeFileSync(lookupPath, lkLines.join(lkEol), "utf8");
+              fs.writeFileSync(modOut(lookupPath), lkLines.join(lkEol), "utf8");
             }
           }
         }
       }
     } catch (ne) { console.warn("[char-rename] names.txt update failed:", ne && ne.message); }
-    fs.writeFileSync(dsPath, lines.join(eol), "utf8");
-    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-rename] re-parse failed:", e && e.message); }
+    fs.writeFileSync(modOut(dsPath), lines.join(eol), "utf8");
+    if (!_modExportDir) { try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-rename] re-parse failed:", e && e.message); } }
     console.log(`[char-rename] ${faction}: "${oldFull}" → "${newFull}" (${count} line(s)${minted ? ", minted name token" : ""})`);
     return { ok: true, count, minted, newFull };
   } catch (e) {
@@ -3764,8 +3812,8 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
     const fmtUnit = (u) => `${indent}unit\t\t${unitName(u)}\t\t\texp ${unitExp(u)} armour ${unitArm(u)} weapon_lvl ${unitWep(u)}`;
     const newLines = units.filter((u) => unitName(u)).map(fmtUnit);
     lines.splice(unitStart, unitEnd - unitStart, ...newLines);
-    fs.writeFileSync(dsPath, lines.join(eol), "utf8");
-    try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[army-units] re-parse failed:", e && e.message); }
+    fs.writeFileSync(modOut(dsPath), lines.join(eol), "utf8");
+    if (!_modExportDir) { try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[army-units] re-parse failed:", e && e.message); } }
     console.log(`[army-units] ${faction} ${byCoord ? `@(${locator.x},${locator.y})` : locator.region}: wrote ${newLines.length} unit(s)`);
     return { ok: true, units: newLines.length };
   } catch (e) {
@@ -3849,11 +3897,13 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
     const parsed = descrGen.parseDescrStrat(dsRaw);
     const res = descrGen.composeAddGeneral(parsed, names, selection);
+    // In export mode we don't back up the live files (we're not changing
+    // them); the timestamped .bak is skipped and backupStamp returns null.
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
-    fs.writeFileSync(dsPath, res.lines.join(eol), "utf8");
+    if (!_modExportDir) fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
+    fs.writeFileSync(modOut(dsPath), res.lines.join(eol), "utf8");
     if (res.namesAppend.length) {
-      fs.copyFileSync(namesPath, namesPath + "." + stamp + ".bak");
+      if (!_modExportDir) fs.copyFileSync(namesPath, namesPath + "." + stamp + ".bak");
       const nt = fs.readFileSync(namesPath, "utf16le");
       const ntEol = nt.includes("\r\n") ? "\r\n" : "\n";
       const ntLines = nt.split(/\r?\n/);
@@ -3868,10 +3918,10 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
         if (idx < 0) { while (ntLines.length && ntLines[ntLines.length - 1].trim() === "") ntLines.pop(); ntLines.push(entry); }
         else ntLines.splice(idx, 0, entry);
       }
-      fs.writeFileSync(namesPath, ntLines.join(ntEol), "utf16le");
+      fs.writeFileSync(modOut(namesPath), ntLines.join(ntEol), "utf16le");
     }
     if (res.lookupAppend.length) {
-      fs.copyFileSync(lookupPath, lookupPath + "." + stamp + ".bak");
+      if (!_modExportDir) fs.copyFileSync(lookupPath, lookupPath + "." + stamp + ".bak");
       const lk = fs.readFileSync(lookupPath, "utf8");
       const lkEol = lk.includes("\r\n") ? "\r\n" : "\n";
       const lkLines = lk.split(/\r?\n/);
@@ -3883,7 +3933,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
         if (idx < 0) { while (lkLines.length && lkLines[lkLines.length - 1].trim() === "") lkLines.pop(); lkLines.push(tok); }
         else lkLines.splice(idx, 0, tok);
       }
-      fs.writeFileSync(lookupPath, lkLines.join(lkEol), "utf8");
+      fs.writeFileSync(modOut(lookupPath), lkLines.join(lkEol), "utf8");
     }
     // 0.9.869: register minted names in the faction's CULTURE NAMELIST
     // (descr_namelists.txt). RTW validates every descr_strat character name
@@ -3910,8 +3960,8 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
             if (upd) { nlRaw = upd; changed = true; }
           }
           if (changed) {
-            fs.copyFileSync(nlP, nlP + "." + stamp + ".bak");
-            fs.writeFileSync(nlP, nlRaw, "utf8");
+            if (!_modExportDir) fs.copyFileSync(nlP, nlP + "." + stamp + ".bak");
+            fs.writeFileSync(modOut(nlP), nlRaw, "utf8");
             console.log(`[addgen] registered minted names in descr_namelists.txt — ${menToks.length} male (${facNl.men}), ${womenToks.length} female (${facNl.women})`);
           } else {
             console.warn(`[addgen] descr_namelists NOT updated for ${selection.factionName} (men=${facNl.men} women=${facNl.women}); minted names: ${res.namesAppend.map((n) => n.token + ":" + n.gender).join(", ")} — campaign may reject them`);
@@ -3922,11 +3972,15 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
       } catch (nlErr) { console.warn("[addgen] namelist registration failed:", nlErr && nlErr.message); }
     }
     // Re-parse the mod's descr_strat so the new general shows in the Characters
-    // view + Family Tree immediately (these read cached parses).
-    try { loadModCharacterData(activeModDataDir); console.log("[addgen] re-parsed mod character data after write"); }
-    catch (e) { console.warn("[addgen] post-write re-parse failed:", e && e.message); }
-    console.log(`[addgen] added ${res.summary.general} to ${res.summary.faction} @${selection.x},${selection.y}; minted=[${res.summary.minted.join(",")}]; backup ${stamp}`);
-    return { ok: true, summary: res.summary, backupStamp: stamp };
+    // view + Family Tree immediately (these read cached parses). Skip in export
+    // mode: the live mod is unchanged, so re-parsing it would discard the edit
+    // from the in-memory view.
+    if (!_modExportDir) {
+      try { loadModCharacterData(activeModDataDir); console.log("[addgen] re-parsed mod character data after write"); }
+      catch (e) { console.warn("[addgen] post-write re-parse failed:", e && e.message); }
+    }
+    console.log(`[addgen] added ${res.summary.general} to ${res.summary.faction} @${selection.x},${selection.y}; minted=[${res.summary.minted.join(",")}]; ${_modExportDir ? `exported under ${_modExportDir}` : `backup ${stamp}`}`);
+    return { ok: true, summary: res.summary, backupStamp: _modExportDir ? null : stamp };
   } catch (e) { console.warn("[addgen] apply failed:", e && e.message); return { ok: false, error: e.message }; }
 });
 
@@ -4017,7 +4071,7 @@ ipcMain.handle("update-character-ancillaries", async (_event, firstName, faction
     }
     const usesCRLF = text.includes("\r\n");
     const out = lines.join(usesCRLF ? "\r\n" : "\n");
-    fs.writeFileSync(dsPath, out, "utf8");
+    fs.writeFileSync(modOut(dsPath), out, "utf8");
     const reportLine = ancLineIdx >= 0 ? ancLineIdx + 1 : charLineIdx + 2;
     console.log(`[ancillary-edit] wrote ${cleaned.length} ancillaries for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${reportLine}`);
     return { ok: true, file: dsPath, line: reportLine };
@@ -4160,8 +4214,8 @@ ipcMain.handle("update-region-buildings", async (_event, regionName, buildings) 
         lines.splice(insertAt, 0, ...newLines);
         const usesCRLF = text.includes("\r\n");
         const out = lines.join(usesCRLF ? "\r\n" : "\n");
-        fs.writeFileSync(dsPath, out, "utf8");
-        console.log(`[building-edit] wrote ${buildings.length} buildings for region "${regionName}" to ${path.basename(dsPath)}:${insertAt + 1} (replaced ${buildingRanges.length} existing blocks)`);
+        fs.writeFileSync(modOut(dsPath), out, "utf8");
+        console.log(`[building-edit] wrote ${buildings.length} buildings for region "${regionName}" to ${path.basename(dsPath)}:${insertAt + 1} (replaced ${buildingRanges.length} existing blocks)${_modExportDir ? " (exported)" : ""}`);
         return { ok: true, file: dsPath, line: insertAt + 1 };
       }
       // Not our settlement — reset and keep scanning.
@@ -4580,7 +4634,7 @@ ipcMain.handle("update-core-attitudes", async (_event, edits) => {
     const lines = text.split(/\r?\n/);
     const dip = descrGen.parseDiplomacy(text);
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
+    if (!_modExportDir) fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
     const insertsByKind = { core: [], rel: [], agg: [] };
     let applied = 0;
     for (const e of edits) {
@@ -4595,9 +4649,9 @@ ipcMain.handle("update-core-attitudes", async (_event, edits) => {
     // Insert new lines high index → low so positions stay valid.
     const allInserts = [...insertsByKind.core, ...insertsByKind.rel, ...insertsByKind.agg].sort((a, b) => b.at - a.at);
     for (const ins of allInserts) lines.splice(ins.at + 1, 0, ins.line);
-    fs.writeFileSync(dsPath, lines.join(eol), "utf8");
-    console.log(`[diplo-edit] applied ${applied} diplomacy edit(s) to ${path.basename(dsPath)}; backup ${stamp}`);
-    return { ok: true, applied, backupStamp: stamp };
+    fs.writeFileSync(modOut(dsPath), lines.join(eol), "utf8");
+    console.log(`[diplo-edit] applied ${applied} diplomacy edit(s) to ${path.basename(dsPath)}; ${_modExportDir ? `exported under ${_modExportDir}` : `backup ${stamp}`}`);
+    return { ok: true, applied, backupStamp: _modExportDir ? null : stamp };
   } catch (e) { console.warn("[diplo-edit] update failed:", e && e.message); return { ok: false, error: e.message }; }
 });
 
@@ -9125,12 +9179,12 @@ ipcMain.handle("write-active-mod-file", async (_event, relPath, content) => {
   if (!WRITE_SAFELIST.has(normalised)) {
     return { ok: false, error: `path not in safelist: ${normalised}` };
   }
-  const full = path.join(activeModDataDir, normalised);
+  const full = modOut(path.join(activeModDataDir, normalised));
   try {
     // Ensure parent dir exists (it should, but be defensive)
     fs.mkdirSync(path.dirname(full), { recursive: true });
     fs.writeFileSync(full, content, "utf8");
-    console.log(`[write-active-mod-file] wrote ${normalised} (${content.length} bytes)`);
+    console.log(`[write-active-mod-file] wrote ${normalised} (${content.length} bytes)${_modExportDir ? " (exported)" : ""}`);
     return { ok: true, path: full };
   } catch (e) {
     console.warn(`[write-active-mod-file] failed for ${normalised}: ${e.message}`);

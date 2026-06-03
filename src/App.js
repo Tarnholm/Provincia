@@ -1448,12 +1448,13 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
     for (const [regionName, entries] of Object.entries(resourcesData)) {
       if (!Array.isArray(entries)) continue;
       for (const res of entries) {
-        const type = (res.type + ",").padEnd(24);
-        const amount = (String(res.amount || 1) + ",").padEnd(5);
-        const x = String(res.x).padStart(5);
-        const y = String(res.y).padStart(5);
+        // Reuse fmtResource so this insert-fresh fallback applies the SAME
+        // display→strat Y-flip (mapHeight - res.y) as the in-place replace
+        // path above. Writing res.y raw here was a latent bug: every resource
+        // landed at its display Y instead of strat Y, throwing it ~half the
+        // map away (descr_strat is bottom-up; the app is top-down).
         const cat = (res.category === "slave" || res.category === "ambience") ? res.category : "trade";
-        byCat[cat].push(`resource        ${type}${amount}      ${x},${y}      ; ${regionName}`);
+        byCat[cat].push(fmtResource(regionName, res));
       }
     }
     for (const l of byCat.trade) newLines.push(l);
@@ -2695,6 +2696,33 @@ function App() {
     } catch { return []; }
   });
   const [pendingReviewOpen, setPendingReviewOpen] = useState(false);
+  // Export-instead-of-overwrite: when ON, "Apply" writes the edited mod files
+  // under `exportModDir` instead of overwriting the live mod in place (the live
+  // mod is left untouched). Persisted so the choice survives a reload; the main
+  // process is re-told the dir on load via the effect below.
+  const [exportModeOn, setExportModeOn] = useState(() => {
+    try { return localStorage.getItem("exportModeOn") === "1"; } catch { return false; }
+  });
+  const [exportModDir, setExportModDir] = useState(() => {
+    try { return localStorage.getItem("exportModDir") || null; } catch { return null; }
+  });
+  // Re-assert the export dir with the main process on load (and whenever the
+  // toggle/dir changes) so a reload doesn't silently fall back to in-place
+  // overwrite while the checkbox still reads ON.
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api?.setModExportDir) return;
+    const dir = (exportModeOn && exportModDir) ? exportModDir : null;
+    api.setModExportDir(dir).then((r) => {
+      if (dir && !(r && r.ok)) {
+        // Folder vanished / not writable — fall back to in-place + warn.
+        console.warn("[mod-export] re-assert failed:", r && r.error);
+        try { pushToast(`Export folder unavailable (${r?.error || "?"}) — reverting to overwrite mode.`, "warning", 8000); } catch {}
+        setExportModeOn(false);
+        try { localStorage.setItem("exportModeOn", "0"); } catch {}
+      }
+    }).catch(() => {});
+  }, [exportModeOn, exportModDir]);
   const persistMap = (key, map) => {
     try { localStorage.setItem(key, JSON.stringify([...map.entries()])); } catch {}
   };
@@ -20311,6 +20339,59 @@ function App() {
                 Final write targets: {pendingBuildings.size} region{pendingBuildings.size === 1 ? "" : "s"} of buildings, {pendingTraits.size} character{pendingTraits.size === 1 ? "" : "s"} of traits, {pendingAncils.size} character{pendingAncils.size === 1 ? "" : "s"} of ancillaries{pendingGenerals.size > 0 ? `, ${pendingGenerals.size} new general${pendingGenerals.size === 1 ? "" : "s"}` : ""}{pendingArmyUnits.size > 0 ? `, ${pendingArmyUnits.size} army${pendingArmyUnits.size === 1 ? "" : " units"} edit${pendingArmyUnits.size === 1 ? "" : "s"}` : ""}{pendingCharPos.size > 0 ? `, ${pendingCharPos.size} character move${pendingCharPos.size === 1 ? "" : "s"}` : ""}{pendingCharFields.size > 0 ? `, ${pendingCharFields.size} character field edit${pendingCharFields.size === 1 ? "" : "s"}` : ""}{pendingGarrisonMoves.size > 0 ? `, ${pendingGarrisonMoves.size} garrison relocation${pendingGarrisonMoves.size === 1 ? "" : "s"}` : ""}{pendingDiplomacy.size > 0 ? `, ${pendingDiplomacy.size} diplomacy edit${pendingDiplomacy.size === 1 ? "" : "s"}` : ""}{devDirtyFiles.size > 0 ? `; descr_strat / descr_regions changes for ${[...devDirtyFiles].join(", ")}` : ""}.
               </div>
             </div>
+            {/* Export-instead-of-overwrite toggle. ON = Apply writes the edited
+                files under a chosen folder, leaving the live mod untouched. */}
+            <div style={{ background: "rgba(110,140,190,0.10)", border: "1px solid rgba(110,140,190,0.35)", borderRadius: 6, padding: "8px 10px", fontSize: "0.76rem", color: "#bcd", display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={exportModeOn}
+                  onChange={async (ev) => {
+                    const on = ev.target.checked;
+                    const api = window.electronAPI;
+                    if (on) {
+                      // Pick a destination folder once. If one is already
+                      // remembered, reuse it without re-prompting.
+                      let dir = exportModDir;
+                      if (!dir) {
+                        if (!api?.selectFolder) { pushToast("Folder picker unavailable.", "warning"); return; }
+                        dir = await api.selectFolder();
+                        if (!dir) return; // cancelled — leave the toggle off
+                      }
+                      const r = api?.setModExportDir ? await api.setModExportDir(dir) : { ok: false, error: "IPC unavailable" };
+                      if (!r?.ok) { pushToast(`Couldn't use that folder: ${r?.error || "?"}`, "warning", 8000); return; }
+                      setExportModDir(r.dir);
+                      setExportModeOn(true);
+                      try { localStorage.setItem("exportModeOn", "1"); localStorage.setItem("exportModDir", r.dir); } catch {}
+                    } else {
+                      if (api?.setModExportDir) await api.setModExportDir(null);
+                      setExportModeOn(false);
+                      try { localStorage.setItem("exportModeOn", "0"); } catch {}
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                />
+                <span><b>Export</b> edited files to a folder instead of overwriting the mod</span>
+              </label>
+              {exportModeOn && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, paddingLeft: 24 }}>
+                  <code style={{ flex: 1, minWidth: 0, color: "#9bf", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={exportModDir || ""}>{exportModDir || "(no folder)"}</code>
+                  <button
+                    onClick={async () => {
+                      const api = window.electronAPI;
+                      if (!api?.selectFolder) { pushToast("Folder picker unavailable.", "warning"); return; }
+                      const dir = await api.selectFolder();
+                      if (!dir) return;
+                      const r = api?.setModExportDir ? await api.setModExportDir(dir) : { ok: false, error: "IPC unavailable" };
+                      if (!r?.ok) { pushToast(`Couldn't use that folder: ${r?.error || "?"}`, "warning", 8000); return; }
+                      setExportModDir(r.dir);
+                      try { localStorage.setItem("exportModDir", r.dir); } catch {}
+                    }}
+                    style={{ flexShrink: 0, padding: "2px 8px", background: "rgba(110,140,190,0.18)", color: "#9bf", border: "1px solid rgba(110,140,190,0.45)", borderRadius: 3, cursor: "pointer", fontSize: "0.72rem" }}
+                  >Change…</button>
+                </div>
+              )}
+            </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button onClick={() => {
                 if (!confirm(`Discard all ${pendingCount} pending edits?\n\nEvery staged change will be reverted in the UI immediately.`)) return;
@@ -20374,9 +20455,24 @@ function App() {
                 if (!api) { pushToast("Electron IPC unavailable.", "warning"); return; }
                 let okCount = 0, failCount = 0;
                 const errors = [];
+                // Re-assert the active mod in the main process before writing.
+                // On a recovered/auto-updated session the renderer restores its
+                // pending edits + UI snapshot, but `activeModDataDir` (main-process
+                // state) can still be null if charactersInit hasn't run/resolved yet
+                // — which made descr_strat writes fail with "no active mod" even
+                // though the mod path was known. charactersInit is idempotent and
+                // safe to re-call, so await it here to guarantee the writes land.
+                try {
+                  const modPath = modDataDir || (() => { try { return localStorage.getItem("modDataDir"); } catch { return null; } })();
+                  if (modPath && api.charactersInit) await api.charactersInit(modPath);
+                } catch (e) { console.warn("[apply] active-mod re-assert failed:", e); }
                 // Safety net: snapshot the campaign text files before any write,
                 // so a bad edit can be rolled back via "Restore last backup".
-                try { if (api.backupModFiles) await api.backupModFiles(); } catch (e) { console.warn("[backup] pre-save backup failed:", e); }
+                // Skipped in export mode — the live mod isn't being changed, so
+                // there's nothing to roll back.
+                if (!exportModeOn) {
+                  try { if (api.backupModFiles) await api.backupModFiles(); } catch (e) { console.warn("[backup] pre-save backup failed:", e); }
+                }
                 for (const [regionKey, buildings] of pendingBuildings.entries()) {
                   try {
                     // We have lowercased key but the IPC expects the
@@ -20562,7 +20658,11 @@ function App() {
                   // Reload descr_strat-derived character data so a freshly-saved
                   // general shows in the Characters roster + family tree as a
                   // real (non-pending) entry, without a manual re-import.
-                  if (hadGenerals && reloadModCharacters) reloadModCharacters();
+                  // Skipped in export mode: the LIVE mod is unchanged, so a
+                  // re-parse would read the OLD file and discard the edit from
+                  // the in-memory view. The optimistic snapshot patches below
+                  // keep the session view correct instead.
+                  if (hadGenerals && reloadModCharacters && !exportModeOn) reloadModCharacters();
                   // Inject the saved generals into the army snapshots so they
                   // show in the Field Armies widget + on the map this session.
                   if (appliedGens.length) {
@@ -20679,20 +20779,26 @@ function App() {
                     });
                     console.log(`[army-units] refreshed ${appliedUnits.length} army unit-list(s) in snapshots for this session`);
                   }
-                  pushToast(`Applied ${okCount} write${okCount === 1 ? "" : "s"} to mod files.`, "info", 6000);
+                  if (exportModeOn) {
+                    pushToast(`Exported ${okCount} edited file write${okCount === 1 ? "" : "s"} to ${exportModDir} (live mod untouched).`, "info", 8000);
+                  } else {
+                    pushToast(`Applied ${okCount} write${okCount === 1 ? "" : "s"} to mod files.`, "info", 6000);
+                  }
                   // Auto-refresh starting armies from the now-updated live mod.
                   // The optimistic snapshot patches above keep the panel correct
                   // synchronously; this re-reads descr_strat from disk so Add
                   // General + army-unit "Save to Mod" edits show ground-truth
                   // (e.g. moved units / new generals) without a manual re-import.
                   // Resilient: leaves the patched state if the re-parse fails.
-                  refreshLiveStartingArmies();
+                  // Skipped in export mode — the live mod is unchanged, so a
+                  // re-read would revert the optimistic in-memory snapshot.
+                  if (!exportModeOn) refreshLiveStartingArmies();
                 } else {
                   pushToast(`Applied ${okCount}, ${failCount} failed: ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "…" : ""}`, "warning", 10000);
                 }
                 console.log(`[pending-apply] ok=${okCount} fail=${failCount}${errors.length ? " errors=" + errors.join("; ") : ""}`);
               }} style={{ padding: "5px 12px", background: "rgba(95,200,80,0.2)", color: "#9fc78a", border: "1px solid rgba(95,200,80,0.5)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem", fontWeight: 700 }}>
-                Apply {pendingCount} change{pendingCount === 1 ? "" : "s"}
+                {exportModeOn ? "Export" : "Apply"} {pendingCount} change{pendingCount === 1 ? "" : "s"}
               </button>
             </div>
           </div>

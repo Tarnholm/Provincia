@@ -67,6 +67,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Victory-conditions helper: region-list CSV in → region,owner_faction CSV out.
   vcRegionOwnersCsv: (modDataDir, campaign) => ipcRenderer.invoke("vc-region-owners-csv", modDataDir, campaign),
   selectFolder: () => ipcRenderer.invoke("select-folder"),
+  // Export-instead-of-overwrite: when given a folder, subsequent "Save to Mod"
+  // writes are redirected under it (the live mod is left untouched). Pass null
+  // to turn it off (back to in-place overwrite). Returns { ok, dir }.
+  setModExportDir: (dir) => ipcRenderer.invoke("set-mod-export-dir", dir),
   // Scan a known path WITHOUT a dialog. Used to auto-reimport on launch
   // from the last-imported location.
   scanFolder: (dir) => ipcRenderer.invoke("scan-folder", dir),

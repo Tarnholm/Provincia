@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.875",
+    date: "2026-06-03",
+    items: [
+      { type: "feature", text: "**Export instead of overwrite.** A new toggle in the Pending-changes review lets you write all your edited mod files to a folder you choose, leaving the live mod untouched. Pick a destination once and it's remembered; turn it off to go back to writing the live mod in place. Backups are skipped in export mode since nothing live is changed." },
+      { type: "fix", text: "**Save-to-Mod no longer fails with descr_strat: no active mod.** On a recovered or freshly auto-updated session the active mod could still be unset when you hit Apply, so every descr_strat edit failed. Apply now re-asserts the active mod before writing, so staged edits land reliably." },
+      { type: "fix", text: "**Resource moves no longer land half the map away.** When a region had no existing resources to replace, newly placed resources were written at their on-screen Y instead of the bottom-up descr_strat Y, flinging them across the map. Both write paths now apply the same flip." },
+    ],
+  },
+  {
     version: "0.9.874",
     date: "2026-06-03",
     items: [
