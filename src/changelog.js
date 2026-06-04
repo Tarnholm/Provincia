@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.907",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Autosave now captures every kind of edit, and reverting actually undoes the edit.** Some edits — like moving a character — never created an autosave because they don't go through the map-data change counter; now any staged edit (character moves, army/unit edits, buildings, traits, diplomacy, ownership, resources, population…) makes an autosave. Each autosave is the state from *just before* that edit, so picking it in **Revert to autosave** rolls back exactly that edit and anything after it. (So: \"what counts as an edit\" = anything that shows up in Pending changes.)" },
+    ],
+  },
+  {
     version: "0.9.906",
     date: "2026-06-04",
     items: [

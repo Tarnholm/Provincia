@@ -237,8 +237,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 306,
-      "y": 307,
+      "x": 308,
+      "y": 305,
       "category": "slave"
     }
   ],
@@ -20425,13 +20425,6 @@
       "x": 393,
       "y": 326,
       "category": "slave"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 396,
-      "y": 325,
-      "category": "slave"
     }
   ],
   "Boiotia": [
@@ -22255,17 +22248,17 @@
       "category": "trade"
     },
     {
-      "type": "slaves",
-      "amount": 1,
-      "x": 394,
-      "y": 304,
-      "category": "slave"
-    },
-    {
       "type": "perfumes",
       "amount": 1,
       "x": 397,
       "y": 302,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 394,
+      "y": 304,
       "category": "slave"
     }
   ],
@@ -22283,6 +22276,13 @@
       "x": 396,
       "y": 330,
       "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 396,
+      "y": 327,
+      "category": "slave"
     }
   ],
   "Histiaiotis": [
@@ -22356,8 +22356,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 397,
-      "y": 333,
+      "x": 400,
+      "y": 334,
       "category": "slave"
     }
   ],
@@ -24536,6 +24536,13 @@
       "category": "trade"
     },
     {
+      "type": "fish",
+      "amount": 3,
+      "x": 491,
+      "y": 288,
+      "category": "trade"
+    },
+    {
       "type": "pottery",
       "amount": 2,
       "x": 490,
@@ -24568,13 +24575,6 @@
       "amount": 1,
       "x": 486,
       "y": 293,
-      "category": "slave"
-    },
-    {
-      "type": "fish",
-      "amount": 3,
-      "x": 491,
-      "y": 288,
       "category": "slave"
     }
   ],
@@ -27396,6 +27396,13 @@
       "category": "trade"
     },
     {
+      "type": "honey",
+      "amount": 1,
+      "x": 549,
+      "y": 279,
+      "category": "trade"
+    },
+    {
       "type": "timber",
       "amount": 2,
       "x": 549,
@@ -27406,13 +27413,6 @@
       "type": "slaves",
       "amount": 1,
       "x": 546,
-      "y": 279,
-      "category": "slave"
-    },
-    {
-      "type": "honey",
-      "amount": 1,
-      "x": 549,
       "y": 279,
       "category": "slave"
     }
@@ -27442,8 +27442,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 557,
-      "y": 284,
+      "x": 552,
+      "y": 281,
       "category": "slave"
     }
   ],
@@ -27509,8 +27509,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 550,
-      "y": 284,
+      "x": 545,
+      "y": 287,
       "category": "slave"
     }
   ],
@@ -31028,8 +31028,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 519,
-      "y": 437,
+      "x": 523,
+      "y": 438,
       "category": "slave"
     }
   ],
@@ -35918,8 +35918,8 @@
     {
       "type": "slaves",
       "amount": 1,
-      "x": 570,
-      "y": 288,
+      "x": 566,
+      "y": 289,
       "category": "slave"
     }
   ],

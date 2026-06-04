@@ -5864,6 +5864,27 @@ function App() {
     };
   }, [pendingLog, pendingBuildings, pendingTraits, pendingAncils, pendingGenerals, pendingCharPos, pendingCharFields, pendingGarrisonMoves, pendingArmyUnits, pendingDiplomacy, devDirtyFiles]);
 
+  // Capture the FULL editable state (data slices + pending-edit queue) as a
+  // plain serialisable object — used both for autosave snapshots and to hold
+  // the "pre-edit" state so reverting to an entry undoes that edit.
+  const captureState = useCallback(() => {
+    const es = editStateRef.current || {};
+    const mapEntries = (m) => (m instanceof Map ? [...m.entries()] : []);
+    return {
+      regions: { ...regions },
+      resourcesData: JSON.parse(JSON.stringify(resourcesData)),
+      populationData: { ...populationData },
+      victoryConditions: JSON.parse(JSON.stringify(victoryConditions)),
+      pending: {
+        log: Array.isArray(es.log) ? es.log : [],
+        buildings: mapEntries(es.buildings), traits: mapEntries(es.traits), ancils: mapEntries(es.ancils),
+        generals: mapEntries(es.generals), charPos: mapEntries(es.charPos), charFields: mapEntries(es.charFields),
+        garrisonMoves: mapEntries(es.garrisonMoves), armyUnits: mapEntries(es.armyUnits), diplomacy: mapEntries(es.diplomacy),
+        dirty: es.dirty instanceof Set ? [...es.dirty] : [],
+      },
+    };
+  }, [regions, resourcesData, populationData, victoryConditions]);
+
   // Save a snapshot to autosave history. Persists to localStorage so the last
   // 30 edits survive Provincia being closed. NOT cleared on Save/Export — the
   // autosave history is independent of the pending-edit queue.
@@ -5940,28 +5961,45 @@ function App() {
     setTimelineIndex(null);
   }, [autosaves]);
 
-  // Auto-save on every edit (dev mode only)
-  const prevEditsRef = useRef(0);
+  // Autosave on EVERY staged edit. "An edit" = anything that grows the pending
+  // queue (pendingLog: building / trait / ancillary / army / character move /
+  // character field / garrison / diplomacy / new general) OR a markDirty-tracked
+  // map-data change (resources / population / ownership via devEditsCount). We
+  // snapshot the PRE-edit state and label it with the edit just made, so picking
+  // that entry in "Revert to autosave" undoes exactly that edit.
+  const preEditStateRef = useRef(null);
+  const editSigRef = useRef(null);
   useEffect(() => {
     if (!devMode) return;
-    if (devEditsCount > prevEditsRef.current) {
-      saveAutosaveSnapshot(false);
+    const sig = { edits: devEditsCount, log: pendingLog.length };
+    if (editSigRef.current === null) {
+      // First pass in dev mode — establish the baseline state to snapshot when
+      // the first edit lands.
+      editSigRef.current = sig;
+      preEditStateRef.current = captureState();
+      return;
     }
-    prevEditsRef.current = devEditsCount;
-  }, [devMode, devEditsCount, saveAutosaveSnapshot]);
-
-  // Periodic checkpoint every 5 minutes (dev mode only, only if edits exist)
-  const checkpointEditsRef = useRef(0);
-  useEffect(() => {
-    if (!devMode) return;
-    const id = setInterval(() => {
-      if (devEditsCount > checkpointEditsRef.current) {
-        saveAutosaveSnapshot(true);
-        checkpointEditsRef.current = devEditsCount;
-      }
-    }, CHECKPOINT_INTERVAL);
-    return () => clearInterval(id);
-  }, [devMode, devEditsCount, saveAutosaveSnapshot]);
+    const prev = editSigRef.current;
+    const grewLog = sig.log > prev.log;
+    const grew = sig.edits > prev.edits || grewLog;
+    editSigRef.current = sig;
+    if (!grew) {
+      // Queue shrank (discard / revert / apply) — resync the pre-edit baseline.
+      preEditStateRef.current = captureState();
+      return;
+    }
+    const last = grewLog && pendingLog.length ? pendingLog[pendingLog.length - 1] : null;
+    const pre = preEditStateRef.current || captureState();
+    const snapshot = {
+      ts: Date.now(), checkpoint: false,
+      label: last ? last.description : "Map data edit",
+      kind: last ? last.kind : "map",
+      ...pre,
+    };
+    setAutosaves(p => { let m = [...p, snapshot]; if (m.length > AUTOSAVE_MAX) m = m.slice(-AUTOSAVE_MAX); return m; });
+    preEditStateRef.current = captureState(); // this edit's result becomes the next pre-edit
+    setTimelineIndex(null);
+  }, [devMode, devEditsCount, pendingLog, captureState]);
 
   // Restore a specific autosave snapshot (timeline scrubbing — no undo push)
   const timelineStashRef = useRef(null); // stash live state when entering timeline
@@ -20867,7 +20905,7 @@ function App() {
               <button onClick={() => setRevertAutosaveOpen(false)} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>
             </div>
             <div style={{ fontSize: "0.75rem", color: "#aaa", lineHeight: 1.4 }}>
-              Provincia keeps the last {AUTOSAVE_MAX} edits (retained after you Save/Export, and across restarts). Pick one to roll the whole app — map data <i>and</i> staged edits — back to that point. The revert itself can be undone. Newest first.
+              Provincia keeps your last {AUTOSAVE_MAX} edits (retained after you Save/Export, and across restarts). Each row is one edit — pick it to roll the whole app (map data <i>and</i> staged edits) back to <b>just before that edit</b>, undoing it and anything after. The revert itself can be undone. Newest first.
             </div>
             <div style={{ overflow: "auto", flex: 1, minHeight: 0, background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "4px 4px", fontSize: "0.8rem" }}>
               {autosaves.length === 0 ? (
