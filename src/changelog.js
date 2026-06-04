@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.897",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Explored mode no longer reveals every faction's armies through the fog.** On-map army/garrison markers (and scheduled-event glyphs) now respect the active faction's fog of war — only the ones on tiles that faction has actually scouted are drawn, instead of every faction's garrisons scattered across the dark map." },
+    ],
+  },
+  {
     version: "0.9.896",
     date: "2026-06-04",
     items: [

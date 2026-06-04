@@ -8201,6 +8201,24 @@ function App() {
       }
     }
 
+    // In Explored (fog-of-war) mode, on-map position markers (army/garrison
+    // dots, scheduled-event glyphs) must respect the active faction's fog:
+    // don't reveal a stack/event on a tile that faction has never scouted
+    // (otherwise every faction's garrisons litter the dark map — reported
+    // 2026-06-04). Outside Explored mode, or with no fog grid, all markers show.
+    const _fogGate = colorMode === "explored";
+    const _fogSrc = _fogGate ? ((fogVision && fogVision.grid) ? fogVision : playerExploration) : null;
+    const _fg = _fogSrc && _fogSrc.grid;
+    const _fgW = (_fogSrc && _fogSrc.width) || 1020, _fgH = (_fogSrc && _fogSrc.height) || 700;
+    const fogShowsTile = (wx, wy) => {
+      if (!_fg) return true;
+      const W = imgSize.width, H = imgSize.height;
+      if (!W || !H) return true;
+      const gx = Math.min(_fgW - 1, Math.max(0, Math.floor(wx * _fgW / W)));
+      const gy = Math.min(_fgH - 1, Math.max(0, Math.floor(wy * _fgH / H)));
+      return _fg[gy * _fgW + gx] > 0;
+    };
+
     // Draw siege indicators on besieged settlements
     if (Object.keys(activeSieges).length > 0) {
       const mh = (CAMPAIGNS[mapCampaign]?.mapHeight || 350) - 1;
@@ -8270,6 +8288,7 @@ function App() {
       const curYr = saveCurrentYear;
       for (const r of saveEventSchedule.records) {
         if (r.x == null || r.y == null) continue;
+        if (_fogGate && !fogShowsTile(r.x, r.y)) continue;
         const mapY = (imgSize.height - 1) - r.y;
         const drawX = r.x + 0.5, drawMapY = mapY + 0.5;
         const sx = drawX * totalScale + baseOffsetX + offset.x;
@@ -8320,6 +8339,8 @@ function App() {
         if (army.armyClass === 'field'    && !showFieldArmies) continue;
         if (army.armyClass === 'navy'     && !showNavies) continue;
         if (typeof army.x !== 'number' || typeof army.y !== 'number') continue;
+        // Fog gate: hide markers the active faction hasn't scouted (Explored mode).
+        if (_fogGate && !fogShowsTile(army.x, army.y)) continue;
         const mapY = (imgSize.height - 1) - army.y;
         // Staged move (or active drag) — render the marker where the character
         // WILL spawn after Save, not its current descr_strat tile.
