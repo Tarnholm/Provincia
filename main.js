@@ -2753,6 +2753,28 @@ ipcMain.handle("get-vanilla-icons-dir", async () => {
   } catch { return null; }
 });
 
+// IPC: the vanilla imperial-campaign descr_strat.txt text, read live from the
+// install — so the playable-nations editor shows VANILLA factions on Slot 1.
+ipcMain.handle("read-vanilla-strat", async () => {
+  try {
+    const dd = getVanillaDataDir();
+    if (!dd) return null;
+    const p = path.join(dd, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    return fs.existsSync(p) ? fs.readFileSync(p, "latin1") : null;
+  } catch { return null; }
+});
+
+// IPC: vanilla descr_sm_factions.txt text — gives the bundled vanilla Slot 1 its
+// real faction COLOURS (and names), instead of the mod's shared copy.
+ipcMain.handle("read-vanilla-sm-factions", async () => {
+  try {
+    const dd = getVanillaDataDir();
+    if (!dd) return null;
+    const p = path.join(dd, "descr_sm_factions.txt");
+    return fs.existsSync(p) ? fs.readFileSync(p, "latin1") : null;
+  } catch { return null; }
+});
+
 // IPC: resolve a building-chain icon for the currently-loaded mod.
 // Given a culture (e.g., "greek", "roman") and a level name (e.g., "odeon",
 // "stone_wall"), searches the mod's data/ui/<culture>/buildings/ folder for

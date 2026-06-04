@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.926",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Vanilla Slot 1 now uses vanilla data, not the mod's.** Faction colours on the map read from the game's own descr_sm_factions, and the Playable Nations editor lists the actual vanilla factions (read live from your install). Imported mod slots are unchanged — they use that mod's data." },
+    ],
+  },
+  {
     version: "0.9.925",
     date: "2026-06-05",
     items: [

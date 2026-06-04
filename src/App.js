@@ -6388,6 +6388,19 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Vanilla Slot 1 reads the game's OWN descr_sm_factions for correct
+      // vanilla faction colours, not the mod's bundled/shared copy.
+      const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
+      if (isVanillaSlot && window.electronAPI?.readVanillaSmFactions) {
+        try {
+          const vtext = await window.electronAPI.readVanillaSmFactions();
+          if (cancelled) return;
+          if (vtext) {
+            const vparsed = parseSmFactions(vtext);
+            if (Object.keys(vparsed).length > 0) { setFactionColors(vparsed); return; }
+          }
+        } catch {}
+      }
       let primaryErr = null;
       try {
         const r = await loadCampaignData("descr_sm_factions.txt");
@@ -6414,7 +6427,7 @@ function App() {
       if (!cancelled) pushToast(`Could not load faction colours (${primaryErr?.message || "unknown"}). Map will fall back to region RGB.`);
     })();
     return () => { cancelled = true; };
-  }, [loadCampaignData, pushToast]);
+  }, [loadCampaignData, pushToast, mapCampaign, campaignLabels]);
 
   // Load buildings data
   useEffect(() => {
@@ -12810,7 +12823,14 @@ function App() {
               >🎬 First-run</button>
               <button
                 onClick={async () => {
-                  const text = devOrigStratRef.current;
+                  // Use the ACTIVE slot's descr_strat: the vanilla Slot 1 reads
+                  // the game's own (so it lists VANILLA factions); a mod slot uses
+                  // the imported mod's descr_strat.
+                  const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
+                  let text = devOrigStratRef.current;
+                  if (isVanillaSlot && window.electronAPI?.readVanillaStrat) {
+                    try { const v = await window.electronAPI.readVanillaStrat(); if (v) text = v; } catch {}
+                  }
                   if (!text) { pushToast("Import/load a mod first — no descr_strat available to edit.", "warning"); return; }
                   const st = parseFactionStatus(text);
                   if (!st.playable.length && !st.nonplayable.length) { pushToast("Couldn't find playable/nonplayable factions in descr_strat.", "warning", 7000); return; }
