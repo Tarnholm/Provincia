@@ -56,18 +56,32 @@ const MOD_ROOT = process.env.RIS_MOD_ROOT || "C:\\RIS\\RIS";
 const CLASSIC_DIR = process.env.RIS_CLASSIC_DIR || "C:\\RIS\\_submods\\RIS_Classic\\data\\world\\maps\\campaign\\ris_classic";
 const PUBLIC_DIR = path.resolve(__dirname, "..", "public");
 
+// Vanilla Rome: Total War Remastered ships its base data under
+// Contents/Resources/Data (Feral layout, same on Windows). Slot 2 bundles the
+// vanilla imperial campaign so a fresh install always has a real map to explore
+// before the user imports a mod. Override with VANILLA_RTW_DATA.
+const VANILLA_ROOT = process.env.VANILLA_RTW_DATA ||
+  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Total War ROME REMASTERED\\Contents\\Resources\\Data";
+
 const CAMPAIGNS = [
   {
+    // Slot 1: intentionally EMPTY by default — a fresh install prompts the user
+    // to import their own mod here (see onboarding). Set BUNDLE_CLASSIC=1 to
+    // populate it from RIS_Classic instead.
     suffix: "classic",
     mapHeight: 350,
     stratDir: CLASSIC_DIR,
     baseDir: null, // classic has all files in its campaign dir
+    empty: !process.env.BUNDLE_CLASSIC,
   },
   {
+    // Slot 2: vanilla Rome imperial campaign (NOT the mod) — the out-of-the-box
+    // map. Set RIS_MOD_ROOT-style override via VANILLA_RTW_DATA if the install
+    // lives elsewhere.
     suffix: "large",
     mapHeight: 700,
-    stratDir: path.join(MOD_ROOT, "data", "world", "maps", "campaign", "imperial_campaign"),
-    baseDir: path.join(MOD_ROOT, "data", "world", "maps", "base"),
+    stratDir: path.join(VANILLA_ROOT, "data", "world", "maps", "campaign", "imperial_campaign"),
+    baseDir: path.join(VANILLA_ROOT, "data", "world", "maps", "base"),
   },
 ];
 
@@ -145,6 +159,25 @@ function run() {
 
   // 2. Per-campaign files
   for (const c of CAMPAIGNS) {
+    if (c.empty) {
+      // Ship an empty slot: blank JSON outputs + remove any stale map/raw
+      // copies so the app shows an "import a mod" prompt instead of old data.
+      log(`--- campaign: ${c.suffix} (EMPTY by default — fresh import slot) ---`);
+      writeJson(`regions_${c.suffix}.json`, {});
+      writeJson(`factions_with_regions_${c.suffix}.json`, []);
+      writeJson(`faction_wealth_${c.suffix}.json`, {});
+      writeJson(`faction_relationships_${c.suffix}.json`, {});
+      writeJson(`descr_strat_buildings_${c.suffix}.json`, []);
+      writeJson(`population_${c.suffix}.json`, {});
+      writeJson(`resources_${c.suffix}.json`, {});
+      writeJson(`armies_${c.suffix}.json`, {});
+      writeJson(`starting_armies_${c.suffix}.json`, {});
+      for (const stale of [`map_regions_${c.suffix}.tga`, `descr_win_conditions_${c.suffix}.txt`, `map_ground_types_${c.suffix}.tga`, `map_heights_${c.suffix}.tga`]) {
+        const p = path.join(PUBLIC_DIR, stale);
+        if (fs.existsSync(p)) { fs.unlinkSync(p); log(`removed stale public/${stale}`); }
+      }
+      continue;
+    }
     log(`--- campaign: ${c.suffix} (${c.stratDir}) ---`);
     const regionsPath = findSource(c, "descr_regions.txt");
     const stratPath = findSource(c, "descr_strat.txt");
@@ -201,10 +234,17 @@ function run() {
     let tgaBuf = null;
     if (mapPath) tgaBuf = fs.readFileSync(mapPath);
 
-    const resources = parseDescrStratResources(stratText, c.mapHeight, tgaBuf, regions);
+    // Derive the map height from the ACTUAL region TGA, not the hardcoded
+    // slot default — vanilla Rome's region map is 255×156, RIS's is 1020×700,
+    // and the descr_strat Y coords are flipped against the real map height.
+    // Using the wrong height mis-places every resource and army.
+    const mapHeight = tgaBuf ? tgaBuf.readUInt16LE(14) : c.mapHeight;
+    if (tgaBuf && mapHeight !== c.mapHeight) log(`${c.suffix}: map height ${mapHeight} (TGA) overrides slot default ${c.mapHeight}`);
+
+    const resources = parseDescrStratResources(stratText, mapHeight, tgaBuf, regions);
     writeJson(`resources_${c.suffix}.json`, resources);
 
-    const armies = parseArmiesClassified(stratText, tgaBuf, c.mapHeight);
+    const armies = parseArmiesClassified(stratText, tgaBuf, mapHeight);
     writeJson(`armies_${c.suffix}.json`, armies);
 
     // Build starting_armies_<suffix>.json: { region: { settlement: {x,y},

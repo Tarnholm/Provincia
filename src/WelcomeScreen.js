@@ -8,14 +8,14 @@ const PUBLIC_URL = import.meta.env.BASE_URL || ".";
 const ONBOARDING_PAGES = [
   {
     title: "Welcome to Provincia",
-    body: "Provincia is a living map and companion for Rome: Total War and its mods. Load a mod, point it at your campaign, and watch it unfold turn by turn \u2014 armies on the march, borders redrawn, treasuries and diplomacy shifting in real time. Dig into any faction, province, building, character or resource, and when you want to tinker, the built-in editor reshapes the mod and writes it straight back. New here? Start by following your live campaign.",
+    body: "Provincia is a living map and companion for Rome: Total War and its mods. Load a mod, point it at your campaign, and watch it unfold turn by turn \u2014 armies on the march, borders redrawn, treasuries and diplomacy shifting in real time. Dig into any faction, province, building, character or resource, and when you want to tinker, the built-in editor reshapes the mod and writes it straight back.",
     image: `${PUBLIC_URL}/splash.png`,
     highlight: null,
   },
   {
-    title: "Campaigns \u2014 in the Title Bar",
-    body: "The two campaign slots sit in the window's title bar at the very top, each labelled by the mod loaded into it. Click a slot to switch campaigns. RIGHT-CLICK a slot to import a mod's data folder into it \u2014 Provincia auto-detects all the files it needs.",
-    tip: "Imported data is saved locally, so you only import once per mod version. Ctrl+` switches campaign slots.",
+    title: "Load Your Mod \u2014 or Explore Vanilla",
+    body: "Provincia has two campaign slots in the title bar (top-left). Slot 2 comes loaded with vanilla Rome, so there's a real map to explore right now. Slot 1 is empty and waiting for your mod \u2014 click Slot 1, then RIGHT-CLICK it to import a mod's data folder. Provincia auto-detects everything it needs, and the map becomes your world.",
+    tip: "Watch the map switch from vanilla to your mod as it loads. Imported data is saved locally \u2014 you only import once per mod version, and you can re-import any time by right-clicking a slot.",
     highlight: "campaigns",
   },
   {

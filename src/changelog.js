@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.917",
+    date: "2026-06-05",
+    items: [
+      { type: "change", text: "**Vanilla Rome out of the box.** Slot 2 now ships the vanilla imperial campaign, so a fresh install has a real map to explore before importing anything. Slot 1 starts empty with a friendly “import a mod” prompt. (Your own imported data still wins in whichever slot you imported it into.)" },
+      { type: "improvement", text: "**Importing a mod is now available to everyone**, not just dev mode — click a campaign slot in the title bar and right-click to import a mod's data folder. The onboarding walks new users through it." },
+      { type: "fix", text: "**Per-slot map height is now read from the actual map**, not hardcoded. Vanilla Rome's region map (255×156) and a 1020×700 mod no longer share one height, so resources, armies and live positions land in the right place in both." },
+      { type: "improvement", text: "**Onboarding:** the second card now guides you to load your mod (or explore the bundled vanilla map) and the intro card lost its stray “follow your live campaign” line." },
+      { type: "improvement", text: "**Playable Nations editor** now shows faction icons in a selector grid — playable nations are highlighted; click any to toggle, with the search box and live count kept." },
+    ],
+  },
+  {
     version: "0.9.916",
     date: "2026-06-04",
     items: [

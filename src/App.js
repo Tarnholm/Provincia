@@ -2432,14 +2432,24 @@ function App() {
   });
   useEffect(() => { localStorage.setItem("campaignLabels", JSON.stringify(campaignLabels)); }, [campaignLabels]);
 
-  // Build CAMPAIGNS from defaults + custom labels
+  // Per-slot map height — the descr_strat Y axis is flipped against the region
+  // map's pixel height, which differs per slot (vanilla Rome = 156, RIS = 700,
+  // and an imported mod can be anything). We learn it from the loaded TGA and
+  // persist it so live-log / save-coord maths use the right value before the
+  // map even finishes decoding. Falls back to the slot's DEFAULT_CAMPAIGNS hint.
+  const [campaignMapHeights, setCampaignMapHeights] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("campaignMapHeights")) || {}; } catch { return {}; }
+  });
+  useEffect(() => { localStorage.setItem("campaignMapHeights", JSON.stringify(campaignMapHeights)); }, [campaignMapHeights]);
+
+  // Build CAMPAIGNS from defaults + custom labels + learned map heights
   const CAMPAIGNS = useMemo(() => {
     const result = {};
     for (const [k, v] of Object.entries(DEFAULT_CAMPAIGNS)) {
-      result[k] = { ...v, label: campaignLabels[k] || v.label };
+      result[k] = { ...v, label: campaignLabels[k] || v.label, mapHeight: campaignMapHeights[k] || v.mapHeight };
     }
     return result;
-  }, [campaignLabels]);
+  }, [campaignLabels, campaignMapHeights]);
 
   // Map campaign + view mode — persisted in localStorage
   const [mapCampaign, setMapCampaign] = useState(
@@ -9047,6 +9057,7 @@ function App() {
           offCtx.putImageData(new ImageData(decoded.data, decoded.width, decoded.height), 0, 0);
           pixelDataRef.current = offCtx.getImageData(0, 0, decoded.width, decoded.height).data;
           setImgSize({ width: decoded.width, height: decoded.height });
+          setCampaignMapHeights((prev) => prev[mapCampaign] === decoded.height ? prev : { ...prev, [mapCampaign]: decoded.height });
           setOffscreen(off);
           setAssetError(null);
         } else {
@@ -9057,6 +9068,7 @@ function App() {
           img.onload = () => {
             if (cancelled) return;
             setImgSize({ width: img.width, height: img.height });
+            setCampaignMapHeights((prev) => prev[mapCampaign] === img.height ? prev : { ...prev, [mapCampaign]: img.height });
             const off = document.createElement("canvas");
             off.width = img.width;
             off.height = img.height;
@@ -16400,7 +16412,36 @@ function App() {
           </div>
         )}
 
-        {assetError && !proceedAnyway && (
+        {/* Empty slot (no imported data + no bundled map) — a friendly import
+            prompt, NOT the scary asset-error panel. This is the default state of
+            Slot 1, which onboarding sends new users to. */}
+        {assetError && !proceedAnyway && (!regions || Object.keys(regions).length === 0) && (() => {
+          const otherKey = Object.keys(CAMPAIGNS).find((k) => k !== mapCampaign);
+          const otherLabel = otherKey ? CAMPAIGNS[otherKey].label : null;
+          return (
+            <div style={overlayBase}>
+              <div className="panel" style={{ maxWidth: 520, margin: 16, padding: "22px 26px", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: 6 }}>🗺️</div>
+                <div style={{ fontWeight: 700, fontSize: "1.25rem", marginBottom: 8 }}>This slot is empty</div>
+                <div style={{ marginBottom: 18, opacity: 0.85, lineHeight: 1.5 }}>
+                  Import a mod's <b>data</b> folder to load it here — Provincia auto-detects the files it needs. {otherLabel ? <>Or explore <b>{otherLabel}</b> while you decide.</> : null}
+                </div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => { setPendingImportSlot(mapCampaign); setFileImportDone(false); setShowFileImport(true); }}
+                    style={{ padding: "8px 18px", fontWeight: 700, background: "#e8a030", color: "#1a1a1a", border: "none", borderRadius: 6, cursor: "pointer" }}
+                  >📂 Import a mod into this slot</button>
+                  {otherKey && (
+                    <button onClick={() => setMapCampaign(otherKey)} style={{ padding: "8px 18px", borderRadius: 6, cursor: "pointer" }}>
+                      ← Explore {otherLabel}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        {assetError && !proceedAnyway && regions && Object.keys(regions).length > 0 && (
           <div style={overlayBase}>
             <div className="panel" style={{ maxWidth: 700, margin: 16, padding: 16, textAlign: "left" }}>
               <div style={{ fontWeight: 700, fontSize: "1.2rem", marginBottom: 8 }}>Asset load error</div>
@@ -20268,8 +20309,10 @@ function App() {
           </>
         );
       })()}
-      {/* ── Dev File Import Modal ──────────────────────────────────── */}
-      {showFileImport && devMode && (() => {
+      {/* ── File Import Modal ──────────────────────────────────────── */}
+      {/* Available to ALL users (not dev-gated): importing a mod's data folder
+          to VIEW it is the core first-run action. Editing stays dev-gated. */}
+      {showFileImport && (() => {
         const isElectron = !!(window.electronAPI && window.electronAPI.isElectron);
         // Restore the last-import green status text from localStorage on
         // mount so users see "Done — Rome: ..." persisted across launches
@@ -21183,20 +21226,33 @@ function App() {
                 <button onClick={() => setPlayableEditorOpen(false)} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>
               </div>
               <div style={{ fontSize: "0.74rem", color: "#9aa" }}>
-                Tick the nations you want selectable in the campaign menu. The menu holds at most <b>{limit}</b> (what this mod ships) — go over and you'll need to untick one before saving.
+Highlighted nations appear in the campaign-select menu. Click any nation to toggle it on/off. The menu holds at most <b>{limit}</b> (what this mod ships) — go over and you'll need to switch one off before saving.
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <input value={playableSearch} onChange={(e) => setPlayableSearch(e.target.value)} placeholder="Filter nations…" style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 8px", fontSize: "0.78rem" }} />
                 <span style={{ fontWeight: 700, fontSize: "0.82rem", color: over > 0 ? "#e85050" : "#9ec78a", whiteSpace: "nowrap" }}>{stagedPlayable.size} / {limit}{over > 0 ? ` (untick ${over})` : ""}</span>
               </div>
-              <div style={{ overflow: "auto", flex: 1, minHeight: 0, background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "4px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", alignContent: "start" }}>
+              <div style={{ overflow: "auto", flex: 1, minHeight: 0, background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: 8, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: 8, alignContent: "start" }}>
                 {shown.map((f) => {
                   const on = stagedPlayable.has(f);
                   return (
-                    <label key={f} style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 6px", borderRadius: 4, cursor: "pointer", color: on ? "#cfe" : "#9aa", fontSize: "0.76rem", background: on ? "rgba(90,155,136,0.12)" : "transparent" }}>
-                      <input type="checkbox" checked={on} onChange={() => toggle(f)} />
-                      <span style={{ textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.replace(/_/g, " ")}</span>
-                    </label>
+                    <button
+                      key={f}
+                      onClick={() => toggle(f)}
+                      title={`${f.replace(/_/g, " ")} — ${on ? "playable (click to make non-playable)" : "non-playable (click to make playable)"}`}
+                      style={{
+                        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                        padding: "8px 4px 6px", borderRadius: 8, cursor: "pointer",
+                        border: on ? "2px solid #e8c873" : "2px solid transparent",
+                        background: on ? "rgba(232,200,115,0.14)" : "rgba(255,255,255,0.03)",
+                        opacity: on ? 1 : 0.45, transition: "opacity .12s, background .12s, border-color .12s",
+                      }}
+                    >
+                      <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <FactionIcon iconPath={`faction_icons/${f}.tga`} alt={f} size={40} tightCrop modIconsDir={modIconsDir} />
+                      </div>
+                      <span style={{ fontSize: "0.66rem", textAlign: "center", textTransform: "capitalize", color: on ? "#f2e3b8" : "#9aa", lineHeight: 1.15, maxWidth: "100%", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{f.replace(/_/g, " ")}</span>
+                    </button>
                   );
                 })}
               </div>
