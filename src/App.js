@@ -1902,7 +1902,7 @@ function App() {
   // overlay was off-by-default which buried the feature behind a toggle
   // most users didn't know existed.
   const [showArmies, setShowArmies] = useState(() => {
-    try { return localStorage.getItem("showArmies") !== "0"; } catch { return true; }
+    try { return localStorage.getItem("showArmies") === "1"; } catch { return false; } // 0 overlays by default
   });
   useEffect(() => {
     try { localStorage.setItem("showArmies", showArmies ? "1" : "0"); } catch {}
@@ -11340,7 +11340,7 @@ function App() {
       </div>
     ) : null;
     return (
-      <div data-ui-highlight={welcomeHighlight === "factions" ? "factions" : undefined} className={welcomeHighlight === "factions" ? "ws-ui-glow" : undefined} style={{ position: "relative", zIndex: welcomeHighlight === "factions" ? 10001 : undefined }}>
+      <div data-ui-highlight="factions" className={welcomeHighlight === "factions" ? "ws-ui-glow" : undefined} style={{ position: "relative", zIndex: welcomeHighlight === "factions" ? 10001 : undefined }}>
         <input
           type="text"
           ref={searchInputRef}
@@ -12031,7 +12031,8 @@ function App() {
     return (
       <div ref={topBarRef} style={{ position: "absolute", top: 8, left: 8, zIndex: welcomeHighlight === "map-modes" || welcomeHighlight === "view-options" || welcomeHighlight === "campaigns" ? 10001 : 5, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, pointerEvents: "none" }}>
         {/* Map mode buttons — dev modes added when dev is active */}
-        <div data-ui-highlight="map-modes" data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 5, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
+        <div data-mapmodes-zone className={welcomeHighlight === "map-modes" ? "ws-ui-glow" : ""} style={{ ...pillStyle, flexWrap: "wrap", gap: 5, padding: 5, maxWidth: Math.max(200, canvasSize.width - 280) }}>
+          <div data-ui-highlight="map-modes" style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
           {modeSections.map((sec) => {
             // `dev` members show only in dev mode; `live` members (e.g.
             // Explored, whose fog grid only exists in a loaded save) show only
@@ -12065,6 +12066,7 @@ function App() {
               </button>
             );
           })}
+          </div>
           {/* 0.9.817: Paint moved into the Geography section (dev member). */}
           {/* 0.9.840: OVERLAYS category tab — folds the 12 multi-select display
               toggles (Flat … Labels) into the same fan-out as the color-mode
@@ -12768,6 +12770,10 @@ function App() {
                     "Cancel = keep your mods & edits, just replay the welcome flow."
                   );
                   try { localStorage.removeItem("welcomeLastVersion"); localStorage.removeItem("onboardingDone"); } catch {}
+                  // Mark this as a DEV test run of onboarding (survives the reload
+                  // via sessionStorage, gone on a real app restart) so the Skip
+                  // button shows for testing but not for genuine first-timers.
+                  try { sessionStorage.setItem("devOnboardingTest", "1"); } catch {}
                   if (api?.saveUserFile) {
                     try { await api.saveUserFile("welcome_version.txt", ""); } catch {}
                     try { await api.saveUserFile("onboarding_done.txt", ""); } catch {}
@@ -12828,6 +12834,7 @@ function App() {
               `.dev-btn--active`. */}
           <button
             key={`dev-btn-${devMode ? "on" : "off"}`}
+            data-ui-highlight={welcomeHighlight === "shortcuts" ? "shortcuts" : undefined}
             className={`dev-btn${devMode ? " dev-btn--active" : ""}`}
             onClick={() => setDevMode(prev => {
               const next = !prev;
@@ -15086,6 +15093,7 @@ function App() {
           {/* 0.9.846: "?" always available (not dev-gated); the panel itself
               hides dev-only shortcut rows outside dev mode. */}
           <button
+            data-ui-highlight={welcomeHighlight === "shortcuts" ? "shortcuts" : undefined}
             onClick={() => setShowShortcuts((p) => !p)}
             title="Keyboard shortcuts"
             style={{
@@ -20820,12 +20828,10 @@ function App() {
         };
 
         // Right-click on a title-bar campaign button opens this modal pre-aimed
-        // at the clicked slot. We do NOT auto-open the OS folder picker anymore —
-        // the user picks the folder with the modal's own "Select folder" button
-        // (avoids a surprise second Explorer window popping over the app).
-        if (isElectron && pendingImportSlot) {
-          setPendingImportSlot(null);
-        }
+        // at the clicked slot (pendingImportSlot drives which section is
+        // highlighted below). We do NOT auto-open the OS folder picker — the user
+        // picks the folder with the modal's own "Select folder" button.
+        const targetSlot = pendingImportSlot || mapCampaign;
 
         // Browser fallback: webkitdirectory input
         const findFile = (files, name) => {
@@ -20922,14 +20928,15 @@ function App() {
               </div>
               {campaigns.map((camp) => {
                 const isActive = mapCampaign === camp.key;
+                const isTarget = targetSlot === camp.key; // the slot you right-clicked → emphasised
                 return (
-                  <div key={camp.key} style={sectionStyle(isActive)}>
+                  <div key={camp.key} style={sectionStyle(isTarget)}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                       <div>
-                        <span style={{ fontWeight: 700, fontSize: "1rem", color: isActive ? "#e8a030" : "#888" }}>
+                        <span style={{ fontWeight: 700, fontSize: "1rem", color: (isTarget || isActive) ? "#e8a030" : "#888" }}>
                           {camp.label}
                         </span>
-                        {isActive && <span style={{ fontSize: "0.75rem", color: "#e8a030", marginLeft: 8 }}>(active)</span>}
+                        {isActive && <span style={{ fontSize: "0.75rem", color: "#888", marginLeft: 8 }}>(active)</span>}
                       </div>
                       {isElectron ? (
                         <button onClick={() => handleElectronSelect(camp)} style={{
@@ -20964,65 +20971,8 @@ function App() {
                   </div>
                 );
               })}
-              {/* Shared file: descr_sm_factions.txt */}
-              <div style={{ padding: "12px 16px", marginBottom: 8, borderRadius: 8, border: "1px solid #555", background: "rgba(255,255,255,0.02)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                  <div>
-                    <span style={{ fontWeight: 700, fontSize: "1rem", color: "#aaa" }}>Shared: descr_sm_factions.txt</span>
-                    <div style={{ fontSize: "0.72rem", color: "#666" }}>Faction colours — shared across campaigns</div>
-                  </div>
-                  {isElectron ? (
-                    <button onClick={async () => {
-                      const result = await window.electronAPI.selectFolder();
-                      if (!result) return;
-                      // Find descr_sm_factions.txt — check sharedFound first, then campaign dirs
-                      let filePath = result.sharedFound && result.sharedFound["descr_sm_factions.txt"];
-                      if (!filePath && result.campaigns) {
-                        for (const c of result.campaigns) {
-                          if (c.found["descr_sm_factions.txt"]) { filePath = c.found["descr_sm_factions.txt"]; break; }
-                        }
-                      }
-                      if (!filePath) {
-                        const el = document.getElementById("dev-status-smfactions");
-                        if (el) { el.textContent = "descr_sm_factions.txt not found in folder"; el.style.color = "#c44"; }
-                        return;
-                      }
-                      const text = await window.electronAPI.readFile(filePath);
-                      if (text) {
-                        const parsed = parseSmFactions(text);
-                        const count = Object.keys(parsed).length;
-                        if (count > 0) {
-                          setFactionColors(parsed);
-                          if (window.electronAPI.saveFile) await window.electronAPI.saveFile("descr_sm_factions.txt", text);
-                          if (window.electronAPI.saveUserFile) await window.electronAPI.saveUserFile("faction_colors.json", JSON.stringify(parsed));
-                          const el = document.getElementById("dev-status-smfactions");
-                          if (el) { el.textContent = `Done — ${count} factions`; el.style.color = "#7c4"; }
-                          setFileImportDone(true);
-                        }
-                      }
-                    }} style={{
-                      padding: "5px 14px", borderRadius: 6, border: "1px solid #e8a030",
-                      background: "rgba(232,160,48,0.15)", color: "#e8a030", fontWeight: 600,
-                      cursor: "pointer", fontSize: "0.82rem",
-                    }}>Select Folder</button>
-                  ) : (
-                    <input type="file" accept=".txt" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const text = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsText(file); });
-                      const parsed = parseSmFactions(text);
-                      const count = Object.keys(parsed).length;
-                      if (count > 0) {
-                        setFactionColors(parsed);
-                        const el = document.getElementById("dev-status-smfactions");
-                        if (el) { el.textContent = `Done — ${count} factions`; el.style.color = "#7c4"; }
-                        setFileImportDone(true);
-                      }
-                    }} style={{ fontSize: "0.78rem", maxWidth: 220 }} />
-                  )}
-                </div>
-                <div id="dev-status-smfactions" style={{ fontSize: "0.75rem", color: "#666", minHeight: 18 }}></div>
-              </div>
+              {/* Shared descr_sm_factions.txt is imported automatically with the
+                  mod (it lives in the mod's data folder), so no separate row. */}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
                 {!fileImportDone && (
                   <button onClick={() => setShowFileImport(false)} style={{

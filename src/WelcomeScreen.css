@@ -3,11 +3,16 @@
 .ws-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  /* Above the in-app highlight z-raises (10001) so the explainer card is ALWAYS
+     in front of the panel it points at. */
+  z-index: 10010;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.45);
+  /* Let clicks reach the highlighted UI underneath (e.g. right-click Slot 2 to
+     import) — only the card itself captures input (see .ws-card). */
+  pointer-events: none;
   /* Note: backdrop-filter removed intentionally — it was covering the bottom-right
      mute/Dev controls even though they sit at a higher z-index, because Chromium's
      backdrop-filter stacking can bleed through nested contexts. The rgba background
@@ -24,6 +29,9 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  /* The overlay is pointer-events:none so highlighted UI stays clickable; the
+     card itself must re-enable input for its own buttons. */
+  pointer-events: auto;
 }
 
 /* Light mode — warm parchment, not pure white */

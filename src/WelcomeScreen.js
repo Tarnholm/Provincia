@@ -62,17 +62,10 @@ const ONBOARDING_PAGES = [
     highlight: "region-family",
   },
   {
-    title: "Stats Calibration (Non-Live Mode)",
-    body: "descr_strat doesn't store character stats inline \u2014 the engine derives them at game start. Provincia caches every character's real stats from any save and uses them in non-live mode. Calibrate now from a turn-0 save (recommended), or skip and use the \ud83c\udfaf Calibrate button later (it sits right after Live).",
-    tip: "Calibration also auto-populates on every save load and now feeds Public Order too. The first pass seeds real values instead of trait-effect estimates.",
-    highlight: null,
-    action: "calibrate",
-  },
-  {
     title: "Shortcuts & Dev Mode",
     body: "Press the \u201c?\u201d in the title bar for the full keyboard-shortcut list. Toggle DEV MODE (Ctrl+Shift+D) to unlock editing \u2014 building chains, diplomacy, add-a-general, icon replacement, validators, the embedded Scripts suite, and per-slot import tools.",
     tip: "Dev-only controls stay hidden until you switch dev mode on; everything else works for everyone.",
-    highlight: null,
+    highlight: "shortcuts",
   },
 ];
 
@@ -84,6 +77,22 @@ const HIGHLIGHT_SELECTORS = {
   "region-info": ['[data-widget="region.info"]', '[data-ui-highlight="region-info"]'], // settlement details + lock
   "region-diplo": ['[data-widget="region.diplomacy"]', '[data-widget="region.characters"]', '[data-widget="region.garrison"]'],
   "region-family": ['[data-widget="region.characters"]'],
+};
+
+/* Deterministic card corner per highlight key: [justifyContent, alignItems].
+   Keeps the card clear of the UI it points at, set once on page change (no
+   re-positioning jump). Top-left controls → card bottom-right; right-column
+   region panels → card left; etc. */
+const CARD_PLACEMENT = {
+  campaigns: ["flex-end", "flex-end"],
+  "map-modes": ["flex-end", "flex-end"],
+  overlays: ["flex-end", "flex-end"],
+  live: ["flex-end", "flex-end"],
+  factions: ["center", "flex-start"],
+  "region-info": ["flex-start", "center"],
+  "region-diplo": ["flex-start", "center"],
+  "region-family": ["flex-start", "center"],
+  shortcuts: ["flex-start", "center"],
 };
 
 /* ── Type badge colours ──────────────────────────────────────────── */
@@ -215,6 +224,10 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
   const [spotRects, setSpotRects] = useState([]); // live bounding boxes of highlighted UI element(s)
   const isLast = page === pages.length - 1;
   const p = pages[page];
+  // Skip is only offered when the dev launched this run via the First-run test
+  // button (sessionStorage flag, gone on real restart) — never for genuine
+  // first-timers, who must go through the guided import.
+  const allowSkip = (() => { try { return sessionStorage.getItem("devOnboardingTest") === "1"; } catch { return false; } })();
 
   // Notify parent which UI element to highlight for the current page
   useEffect(() => {
@@ -253,17 +266,9 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
     prevImportedRef.current = modImported;
   }, [modImported, p.requireImport, isLast]);
 
-  // Place the card in whichever half has the most room away from the highlight(s).
-  let justifyContent = "center", alignItems = "center";
-  if (spotRects.length && typeof window !== "undefined") {
-    const minL = Math.min(...spotRects.map((r) => r.left));
-    const maxR = Math.max(...spotRects.map((r) => r.left + r.width));
-    const minT = Math.min(...spotRects.map((r) => r.top));
-    const maxB = Math.max(...spotRects.map((r) => r.top + r.height));
-    const cx = (minL + maxR) / 2, cy = (minT + maxB) / 2;
-    if (maxR - minL < window.innerWidth * 0.6) justifyContent = cx > window.innerWidth / 2 ? "flex-start" : "flex-end";
-    if (maxB - minT < window.innerHeight * 0.6) alignItems = cy > window.innerHeight / 2 ? "flex-start" : "flex-end";
-  }
+  // Deterministic per-card placement so the card lands in its spot ONCE (no
+  // jump from centre once the rings are measured). [justify, align].
+  const [justifyContent, alignItems] = CARD_PLACEMENT[p.highlight] || ["center", "center"];
 
   return (
     <div className="ws-overlay" style={{ justifyContent, alignItems, padding: "5vh 4vw" }}>
@@ -273,11 +278,11 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
           aria-hidden
           style={{
             position: "fixed",
-            top: r.top - 6, left: r.left - 6,
-            width: r.width + 12, height: r.height + 12,
-            border: "3px solid #e8c873", borderRadius: 10,
-            boxShadow: "0 0 16px 4px rgba(232,200,115,0.7)",
-            pointerEvents: "none", zIndex: 10001,
+            top: r.top - 3, left: r.left - 3,
+            width: r.width + 6, height: r.height + 6,
+            border: "2px solid #e8c873", borderRadius: 8,
+            boxShadow: "0 0 12px 2px rgba(232,200,115,0.65)",
+            pointerEvents: "none", zIndex: 10011,
             animation: "ws-pulse 1.8s ease-in-out infinite",
           }}
         />
@@ -316,8 +321,11 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
           </p>
         )}
 
-        {/* Nav (no Skip — onboarding is a guided flow) */}
-        <div className="ws-nav" style={{ justifyContent: "flex-end" }}>
+        {/* Nav — Skip only in dev test runs (guided flow otherwise) */}
+        <div className="ws-nav" style={{ justifyContent: allowSkip ? "space-between" : "flex-end" }}>
+          {allowSkip && (
+            <button className="ws-btn ws-btn--skip" onClick={onFinish}>Skip (dev)</button>
+          )}
           <div className="ws-nav-right">
             {page > 0 && (
               <button

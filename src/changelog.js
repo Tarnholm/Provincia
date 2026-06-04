@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.924",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Onboarding card is always in front now** and clicks pass through to the UI it points at (so you can right-click Slot 2 while the card is up). Each card lands in its spot once instead of jumping, and the spotlight rings are tighter (the lock ring isn't oversized)." },
+      { type: "improvement", text: "**Card tweaks:** Skip is back but only during a dev First-run test; the Stats Calibration card is gone; the Shortcuts card highlights the ? and Dev buttons; the Map Modes card rings just the group tabs (not Overlays/Live); the Factions card also rings the province search box." },
+      { type: "improvement", text: "**Import dialog:** the slot you right-clicked is the one highlighted, and the separate “Shared: descr_sm_factions.txt” row is gone — it's imported automatically with the mod. Overlays now start with none active by default." },
+    ],
+  },
+  {
     version: "0.9.923",
     date: "2026-06-05",
     items: [
