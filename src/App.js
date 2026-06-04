@@ -7339,16 +7339,14 @@ function App() {
           const owner = rgbToOwner[rgbKey];
           const fc = owner && factionColors[owner.toLowerCase()];
           const base = (fc && fc.primary) || [100, 100, 100];
-          // THREE-TIER fog of war (matches the game):
+          // Fog of war:
           //   v>=2  currently in line of sight → full owner colour (bright)
-          //   v==1  explored before, not currently seen → dim shroud. A NEUTRAL
-          //         dark tone (no owner tint) so a large remembered area (e.g.
-          //         byzantium's) reads as a faint shroud, not a bright "lit-up"
-          //         mosaic of faction colours. Settlements you remember still
-          //         show as dots on top.
-          //   v==0  never seen → near-black fog.
+          //   v<2   not currently seen → near-black. The LAND of a
+          //         remembered-but-not-current area is NOT shown (no grey
+          //         "shroud" patches lighting up around settlements — the user
+          //         wants only the settlement pixel itself). Remembered
+          //         settlements get a grey marker pixel in the dot pass below.
           if (v >= 2) return base;
-          if (v === 1) return [22, 23, 30];
           return [6, 6, 10];
         }));
       } else if (colorMode === "pop_growth") {
@@ -8528,14 +8526,22 @@ function App() {
       for (const cp of cityPixels) {
         const region = regions[cp.rgbKey];
         if (!region) continue;
-        let explored = true;
+        let vv = 2; // no grid → treat as current sight
         if (fg && W && H) {
           const gx = Math.min(gW - 1, Math.max(0, Math.floor(cp.x * gW / W)));
           const gy = Math.min(gH - 1, Math.max(0, Math.floor((H - 1 - cp.y) * gH / H)));
-          explored = fg[gy * gW + gx] > 0;
+          vv = fg[gy * gW + gx];
         }
-        fogCityExplored[cp.rgbKey] = explored;
-        if (explored) continue; // leave the real black dot on scouted land
+        fogCityExplored[cp.rgbKey] = vv > 0;
+        if (vv >= 2) continue; // current sight: black dot sits on bright land
+        if (vv === 1) {
+          // Remembered (explored, not currently seen): the land is black, so
+          // mark the settlement with a grey dot — ONLY the settlement pixel.
+          ctx.fillStyle = "rgb(82,88,104)";
+          ctx.fillRect(cp.x, cp.y, 1, 1);
+          continue;
+        }
+        // vv === 0: never seen.
         const isVictoryTarget = vcCities.has((region.city || "").toLowerCase());
         if (isVictoryTarget) {
           fogCityRevealed[cp.rgbKey] = true;

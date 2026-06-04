@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.902",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Remembered land is now just a settlement dot, not a grey patch.** Tiles you've explored but can't currently see no longer paint a grey shroud around their settlements — the land stays black and only the settlement itself shows, as a small grey marker. So a faction with a big remembered area (byzantium) shows clean dots instead of grey blobs; only what it currently sees is lit." },
+    ],
+  },
+  {
     version: "0.9.901",
     date: "2026-06-04",
     items: [
