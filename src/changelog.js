@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.921",
+    date: "2026-06-05",
+    items: [
+      { type: "change", text: "**Slots reversed so a fresh install boots straight into Vanilla Rome.** Slot 1 (left) now ships vanilla Rome and is the default on launch; Slot 2 (right) is the empty import slot. The second onboarding card walks you through it: right-click Slot 2, point it at your mod's data folder, then click Slot 2 to watch the map go from vanilla to your world." },
+    ],
+  },
+  {
     version: "0.9.920",
     date: "2026-06-05",
     items: [

@@ -1,1 +1,23 @@
-{}
+{
+  "romans_julii": 5000,
+  "romans_brutii": 5000,
+  "romans_scipii": 5000,
+  "romans_senate": 5000,
+  "macedon": 5000,
+  "egypt": 5000,
+  "seleucid": 3000,
+  "carthage": 7000,
+  "parthia": 5000,
+  "pontus": 3000,
+  "gauls": 5000,
+  "germans": 5000,
+  "britons": 5000,
+  "armenia": 3000,
+  "dacia": 3000,
+  "greek_cities": 5000,
+  "numidia": 3000,
+  "scythia": 3000,
+  "spain": 3000,
+  "thrace": 3000,
+  "slave": 10000
+}

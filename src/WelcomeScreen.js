@@ -13,9 +13,9 @@ const ONBOARDING_PAGES = [
     highlight: null,
   },
   {
-    title: "Load Your Mod \u2014 or Explore Vanilla",
-    body: "Provincia has two campaign slots in the title bar (top-left). Slot 2 comes loaded with vanilla Rome, so there's a real map to explore right now. Slot 1 is empty and waiting for your mod \u2014 click Slot 1, then RIGHT-CLICK it to import a mod's data folder. Provincia auto-detects everything it needs, and the map becomes your world.",
-    tip: "Watch the map switch from vanilla to your mod as it loads. Imported data is saved locally \u2014 you only import once per mod version, and you can re-import any time by right-clicking a slot.",
+    title: "Two Slots \u2014 Vanilla & Your Mod",
+    body: "Up in the title bar are two campaign slots. Slot 1 (left) is loaded with Vanilla Rome \u2014 that's the map you're looking at right now. Slot 2 (right) is empty, ready for your mod: RIGHT-CLICK Slot 2 and point it at your mod's data folder. Provincia auto-detects everything it needs. Then click Slot 2 to switch the map from vanilla to your world.",
+    tip: "Imported data is saved locally \u2014 you only import once per mod version, and you can re-import any time by right-clicking a slot.",
     highlight: "campaigns",
   },
   {

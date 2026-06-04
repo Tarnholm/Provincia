@@ -1,1 +1,7230 @@
-{}
+{
+  "Sahara": {
+    "garrison": [
+      {
+        "character": "Akbar",
+        "faction": "slave",
+        "x": 61,
+        "y": 1,
+        "units": [
+          {
+            "name": "numidian cavalry",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian cavalry",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 61,
+      "y": 1
+    }
+  },
+  "Libya": {
+    "garrison": [
+      {
+        "character": "Muttines",
+        "faction": "numidia",
+        "x": 166,
+        "y": 2,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 3
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "desert_scout"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 166,
+      "y": 2
+    }
+  },
+  "Thebais": {
+    "garrison": [
+      {
+        "character": "Nakhrankh",
+        "faction": "egypt",
+        "x": 187,
+        "y": 2,
+        "units": [
+          {
+            "name": "egyptian archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 187,
+      "y": 2
+    }
+  },
+  "Middle_Egypt": {
+    "garrison": [
+      {
+        "character": "Khnumhoptep",
+        "faction": "egypt",
+        "x": 183,
+        "y": 13,
+        "units": [
+          {
+            "name": "egyptian general's bodyguard early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 40,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "StrategicSkill",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 3
+          }
+        ],
+        "ancillaries": [
+          "magician"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Kiya",
+        "faction": "egypt",
+        "x": 183,
+        "y": 10,
+        "units": [
+          {
+            "name": "egyptian general's bodyguard early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 28,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "master_of_archers"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 183,
+      "y": 13
+    }
+  },
+  "Sinai": {
+    "garrison": [
+      {
+        "character": "Xshathrita",
+        "faction": "slave",
+        "x": 206,
+        "y": 14,
+        "units": [
+          {
+            "name": "east archer",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east infantry",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc bedouin archers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc arab cavalry",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 206,
+      "y": 14
+    }
+  },
+  "Gaetulia": {
+    "garrison": [
+      {
+        "character": "Juva",
+        "faction": "numidia",
+        "x": 38,
+        "y": 18,
+        "units": [
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian slinger",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 38,
+      "y": 18
+    }
+  },
+  "Tripolitania": {
+    "garrison": [
+      {
+        "character": "Gelon",
+        "faction": "slave",
+        "x": 96,
+        "y": 19,
+        "units": [
+          {
+            "name": "carthaginian city militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 96,
+      "y": 19
+    }
+  },
+  "Cyrenaica": {
+    "garrison": [
+      {
+        "character": "Diodoros",
+        "faction": "slave",
+        "x": 130,
+        "y": 19,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 130,
+      "y": 19
+    }
+  },
+  "Nile_Delta": {
+    "garrison": [
+      {
+        "character": "Hekhemmut",
+        "faction": "egypt",
+        "x": 178,
+        "y": 19,
+        "units": [
+          {
+            "name": "egyptian general's bodyguard early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian chariot archer",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian chariot archer",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 55,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 2
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "librarian",
+          "master_embalmer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 178,
+      "y": 19
+    }
+  },
+  "Arabia": {
+    "garrison": [
+      {
+        "character": "Rashne",
+        "faction": "slave",
+        "x": 240,
+        "y": 25,
+        "units": [
+          {
+            "name": "merc bedouin",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc bedouin archers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 240,
+      "y": 25
+    }
+  },
+  "Nabataea": {
+    "garrison": [
+      {
+        "character": "Umamaita",
+        "faction": "slave",
+        "x": 213,
+        "y": 27,
+        "units": [
+          {
+            "name": "east archer",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc bedouin archers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc arab cavalry",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 213,
+      "y": 27
+    }
+  },
+  "Judaea": {
+    "garrison": [
+      {
+        "character": "Ptahhotep",
+        "faction": "egypt",
+        "x": 202,
+        "y": 32,
+        "units": [
+          {
+            "name": "egyptian general's bodyguard early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 35,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 2
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 3
+          },
+          {
+            "name": "Embezzler",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "mathematician"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 202,
+      "y": 32
+    }
+  },
+  "Byzacium": {
+    "garrison": [
+      {
+        "character": "Burrhus",
+        "faction": "carthage",
+        "x": 83,
+        "y": 34,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 41,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "GoodTrader",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "priest_of_Tanit",
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 83,
+      "y": 34
+    }
+  },
+  "Crete": {
+    "garrison": [
+      {
+        "character": "Kallipos",
+        "faction": "slave",
+        "x": 146,
+        "y": 38,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc cretan archers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc cretan archers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc cilician pirate",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 146,
+      "y": 38
+    }
+  },
+  "Numidia": {
+    "garrison": [
+      {
+        "character": "Syphax",
+        "faction": "numidia",
+        "x": 55,
+        "y": 41,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian slinger",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "desert_scout",
+          "astrologer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Oxynta",
+        "faction": "numidia",
+        "x": 57,
+        "y": 42,
+        "units": [
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian javelinmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 55,
+      "y": 41
+    }
+  },
+  "Phoenicia": {
+    "garrison": [
+      {
+        "character": "Neferet",
+        "faction": "egypt",
+        "x": 199,
+        "y": 42,
+        "units": [
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 199,
+      "y": 42
+    }
+  },
+  "Coele_Syria": {
+    "garrison": [
+      {
+        "character": "Demetrius",
+        "faction": "seleucid",
+        "x": 205,
+        "y": 43,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 26,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "mentor"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 205,
+      "y": 43
+    }
+  },
+  "Sicilia_Graecus": {
+    "garrison": [
+      {
+        "character": "Dionysios of Sparta",
+        "faction": "greek_cities",
+        "x": 106,
+        "y": 44,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 34,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "brilliant_inventor",
+          "playwright"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 106,
+      "y": 44
+    }
+  },
+  "Africa": {
+    "garrison": [
+      {
+        "character": "Hasdrubal",
+        "faction": "carthage",
+        "x": 82,
+        "y": 45,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc numidian cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 45,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 3
+          },
+          {
+            "name": "GoodDefender",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "GoodAmbusher",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "Herald"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 82,
+      "y": 45
+    }
+  },
+  "Rhodos": {
+    "garrison": [
+      {
+        "character": "Memnon of Sparta",
+        "faction": "greek_cities",
+        "x": 161,
+        "y": 45,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc rhodian slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 29,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "GoodTrader",
+            "level": 2
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "merchant",
+          "mentor"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 161,
+      "y": 45
+    }
+  },
+  "Cyprus": {
+    "garrison": [
+      {
+        "character": "Miwsher",
+        "faction": "egypt",
+        "x": 189,
+        "y": 45,
+        "units": [
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian nubian spearmen",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "egyptian peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 189,
+      "y": 45
+    }
+  },
+  "Mauretania": {
+    "garrison": [
+      {
+        "character": "Gisgo",
+        "faction": "numidia",
+        "x": 12,
+        "y": 46,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "numidian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 35,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 12,
+      "y": 46
+    }
+  },
+  "Laconia": {
+    "garrison": [
+      {
+        "character": "Kleomenes of Sparta",
+        "faction": "greek_cities",
+        "x": 138,
+        "y": 46,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite spartan",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 56,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "GoodDefender",
+            "level": 1
+          },
+          {
+            "name": "Austere",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "wrestler"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 138,
+      "y": 46
+    }
+  },
+  "Regnum_Palmyrae": {
+    "garrison": [
+      {
+        "character": "Xanthos",
+        "faction": "slave",
+        "x": 212,
+        "y": 46,
+        "units": [
+          {
+            "name": "east archer",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east archer",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east infantry",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc bedouin",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 212,
+      "y": 46
+    }
+  },
+  "Sicilia_Poeni": {
+    "garrison": [
+      {
+        "character": "Theages",
+        "faction": "carthage",
+        "x": 94,
+        "y": 48,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 23,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "freeman_clerk",
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Hanno",
+        "faction": "carthage",
+        "x": 96,
+        "y": 49,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian elephant forest",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc balearic slingers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc numidian cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 65,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "GoodDefender",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "GoodTrader",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "spymaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 94,
+      "y": 48
+    }
+  },
+  "Lycia": {
+    "garrison": [
+      {
+        "character": "Iollas",
+        "faction": "slave",
+        "x": 158,
+        "y": 49,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc cretan archers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc rhodian slingers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 158,
+      "y": 49
+    }
+  },
+  "Peloponnesus": {
+    "garrison": [
+      {
+        "character": "Damasos",
+        "faction": "macedon",
+        "x": 139,
+        "y": 50,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "tutor"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 139,
+      "y": 50
+    }
+  },
+  "Elymais": {
+    "garrison": [
+      {
+        "character": "Bagabigna",
+        "faction": "parthia",
+        "x": 253,
+        "y": 50,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east slinger",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east slinger",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 35,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "PublicFaith",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "priest_of_Zoroastra"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 253,
+      "y": 50
+    }
+  },
+  "Sicilia_Romanus": {
+    "garrison": [
+      {
+        "character": "Cornelius Scipio",
+        "faction": "romans_scipii",
+        "x": 106,
+        "y": 51,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 54,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          },
+          {
+            "name": "GoodInfantryGeneral",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "aged_retainer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Quintus Scipio",
+        "faction": "romans_scipii",
+        "x": 106,
+        "y": 50,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman archer",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 35,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Generous",
+            "level": 1
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 106,
+      "y": 51
+    }
+  },
+  "Attica": {
+    "garrison": [
+      {
+        "character": "Demosthenes",
+        "faction": "slave",
+        "x": 144,
+        "y": 52,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 144,
+      "y": 52
+    }
+  },
+  "Babylonia": {
+    "garrison": [
+      {
+        "character": "Aristarchus",
+        "faction": "seleucid",
+        "x": 241,
+        "y": 53,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 40,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Aesthetic",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 3
+          },
+          {
+            "name": "Embezzler",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "exotic_slave",
+          "biographer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 241,
+      "y": 53
+    }
+  },
+  "Aetolia": {
+    "garrison": [
+      {
+        "character": "Antigonos of Sparta",
+        "faction": "greek_cities",
+        "x": 132,
+        "y": 55,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc cretan archers",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 33,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "mentor",
+          "poet"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 132,
+      "y": 55
+    }
+  },
+  "Syria": {
+    "garrison": [
+      {
+        "character": "Antiochus",
+        "faction": "seleucid",
+        "x": 200,
+        "y": 55,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "heroic_saviour"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 200,
+      "y": 55
+    }
+  },
+  "Sardinia": {
+    "garrison": [
+      {
+        "character": "Milkpilles",
+        "faction": "carthage",
+        "x": 79,
+        "y": 57,
+        "units": [
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 79,
+      "y": 57
+    }
+  },
+  "Bruttium": {
+    "garrison": [
+      {
+        "character": "Tiberius Brutus",
+        "faction": "romans_brutii",
+        "x": 114,
+        "y": 57,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 52,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "GoodAttacker",
+            "level": 1
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "drillmaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 114,
+      "y": 57
+    }
+  },
+  "Ionia": {
+    "garrison": [
+      {
+        "character": "Alexander",
+        "faction": "seleucid",
+        "x": 162,
+        "y": 57,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "desert_scout"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 162,
+      "y": 57
+    }
+  },
+  "Baetica": {
+    "garrison": [
+      {
+        "character": "Theophanes",
+        "faction": "carthage",
+        "x": 17,
+        "y": 58,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian infantry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian infantry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc balearic slingers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 21,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "StrategicSkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "famous_warrior",
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 17,
+      "y": 58
+    }
+  },
+  "Hispania": {
+    "garrison": [
+      {
+        "character": "Matugenus",
+        "faction": "spain",
+        "x": 36,
+        "y": 58,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "spanish scutarii",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 25,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "armourer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 36,
+      "y": 58
+    }
+  },
+  "Cilicia": {
+    "garrison": [
+      {
+        "character": "Molon",
+        "faction": "seleucid",
+        "x": 193,
+        "y": 58,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 193,
+      "y": 58
+    }
+  },
+  "Thessalia": {
+    "garrison": [
+      {
+        "character": "Gyras",
+        "faction": "macedon",
+        "x": 136,
+        "y": 59,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek light lancer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 32,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Generous",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "actor"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 136,
+      "y": 59
+    }
+  },
+  "Assyria": {
+    "garrison": [
+      {
+        "character": "Achaeus of Hippus",
+        "faction": "seleucid",
+        "x": 216,
+        "y": 60,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 216,
+      "y": 60
+    }
+  },
+  "Phrygia": {
+    "garrison": [
+      {
+        "character": "Eumenes of Sparta",
+        "faction": "greek_cities",
+        "x": 154,
+        "y": 61,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 31,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 3
+          }
+        ],
+        "ancillaries": [
+          "mentor",
+          "comedian"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 154,
+      "y": 61
+    }
+  },
+  "Baliares": {
+    "garrison": [
+      {
+        "character": "Theodekles",
+        "faction": "carthage",
+        "x": 54,
+        "y": 63,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc balearic slingers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc balearic slingers",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 22,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 54,
+      "y": 63
+    }
+  },
+  "Apulia": {
+    "garrison": [
+      {
+        "character": "Vibius Brutus",
+        "faction": "romans_brutii",
+        "x": 114,
+        "y": 63,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 2
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Aulus Brutus",
+        "faction": "romans_brutii",
+        "x": 111,
+        "y": 68,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 34,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 2
+          },
+          {
+            "name": "Rabblerouser",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "quartermaster"
+        ],
+        "charType": "general"
+      },
+      {
+        "character": "Amulius Brutus",
+        "faction": "romans_brutii",
+        "x": 116,
+        "y": 64,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman light cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 31,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "doctor"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 114,
+      "y": 63
+    }
+  },
+  "Epirus": {
+    "garrison": [
+      {
+        "character": "Pyrrhus",
+        "faction": "slave",
+        "x": 124,
+        "y": 63,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 124,
+      "y": 63
+    }
+  },
+  "Galatia": {
+    "garrison": [
+      {
+        "character": "Brennus",
+        "faction": "slave",
+        "x": 174,
+        "y": 67,
+        "units": [
+          {
+            "name": "barb naked fanatics slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb naked fanatics slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb naked fanatics slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 174,
+      "y": 67
+    }
+  },
+  "Campania": {
+    "garrison": [
+      {
+        "character": "Julianus Scipio",
+        "faction": "romans_scipii",
+        "x": 102,
+        "y": 68,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 36,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 3
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 1
+          },
+          {
+            "name": "GoodRiskyAttacker",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "drillmaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Gaius Scipio",
+        "faction": "romans_scipii",
+        "x": 101,
+        "y": 67,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 29,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 3
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Generous",
+            "level": 1
+          },
+          {
+            "name": "AuthoritarianRomanVirtue",
+            "level": 2
+          }
+        ],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 102,
+      "y": 68
+    }
+  },
+  "Macedonia": {
+    "garrison": [
+      {
+        "character": "Antigonos",
+        "faction": "macedon",
+        "x": 138,
+        "y": 68,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek heavy cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek heavy cavalry",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek light lancer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 50,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "GoodRiskyAttacker",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "shieldbearer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 138,
+      "y": 68
+    }
+  },
+  "Cappadocia": {
+    "garrison": [
+      {
+        "character": "Herakles",
+        "faction": "pontus",
+        "x": 192,
+        "y": 68,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 3
+          }
+        ],
+        "ancillaries": [
+          "freeman_clerk",
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 192,
+      "y": 68
+    }
+  },
+  "Latium": {
+    "garrison": [
+      {
+        "character": "Decius Maxentius",
+        "faction": "romans_senate",
+        "x": 95,
+        "y": 71,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman princeps",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman princeps",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman triarii",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "doctor"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Marcus Maxentius",
+        "faction": "romans_senate",
+        "x": 93,
+        "y": 73,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman triarii",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bodyguard"
+        ],
+        "charType": "general"
+      },
+      {
+        "character": "Servius Maxentius",
+        "faction": "romans_senate",
+        "x": 94,
+        "y": 69,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman princeps",
+            "exp": 3,
+            "armour": 1,
+            "weapon": 0
+          },
+          {
+            "name": "roman triarii",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 36,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "scribe_ancillary"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 95,
+      "y": 71
+    }
+  },
+  "Lusitania": {
+    "garrison": [
+      {
+        "character": "Caraunios",
+        "faction": "spain",
+        "x": 8,
+        "y": 72,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 40,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 3
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bodyguard"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 8,
+      "y": 72
+    }
+  },
+  "Bithynia": {
+    "garrison": [
+      {
+        "character": "Ziepyrus",
+        "faction": "slave",
+        "x": 165,
+        "y": 72,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc thracian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 165,
+      "y": 72
+    }
+  },
+  "Propontis": {
+    "garrison": [
+      {
+        "character": "Damon",
+        "faction": "slave",
+        "x": 160,
+        "y": 73,
+        "units": [
+          {
+            "name": "greek hoplite",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 160,
+      "y": 73
+    }
+  },
+  "Celtiberia": {
+    "garrison": [
+      {
+        "character": "Rianorix",
+        "faction": "gauls",
+        "x": 26,
+        "y": 75,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peltast gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 35,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "beastmaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 26,
+      "y": 75
+    }
+  },
+  "Dalmatia": {
+    "garrison": [
+      {
+        "character": "Ifestionas",
+        "faction": "slave",
+        "x": 118,
+        "y": 75,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc cilician pirate",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 118,
+      "y": 75
+    }
+  },
+  "Taraconenis": {
+    "garrison": [
+      {
+        "character": "Lucco",
+        "faction": "spain",
+        "x": 44,
+        "y": 76,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "civilized_slave",
+          "beastmaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 44,
+      "y": 76
+    }
+  },
+  "Paionia": {
+    "garrison": [
+      {
+        "character": "Euenus",
+        "faction": "macedon",
+        "x": 136,
+        "y": 77,
+        "units": [
+          {
+            "name": "greek general's guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 27,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "treasurer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 136,
+      "y": 77
+    }
+  },
+  "Media": {
+    "garrison": [
+      {
+        "character": "Ardumanish",
+        "faction": "parthia",
+        "x": 253,
+        "y": 78,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east slinger",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east slinger",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 40,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 1
+          },
+          {
+            "name": "GoodCavalryGeneral",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "galloper"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Arsaces",
+        "faction": "parthia",
+        "x": 252,
+        "y": 78,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east heavy cataphract",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east heavy cataphract",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "foodtaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 253,
+      "y": 78
+    }
+  },
+  "Etruria": {
+    "garrison": [
+      {
+        "character": "Lucius Julius",
+        "faction": "romans_julii",
+        "x": 91,
+        "y": 80,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 31,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 3
+          },
+          {
+            "name": "Energetic",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "freeman_clerk"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Flavius Julius",
+        "faction": "romans_julii",
+        "x": 89,
+        "y": 82,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman triarii",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman archer",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 47,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "GoodDefender",
+            "level": 1
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 3
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "aged_retainer"
+        ],
+        "charType": "general"
+      },
+      {
+        "character": "Vibius Julius",
+        "faction": "romans_julii",
+        "x": 88,
+        "y": 81,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman hastati",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman velite",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 28,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "PoliticsSkill",
+            "level": 2
+          },
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 91,
+      "y": 80
+    }
+  },
+  "Pontus": {
+    "garrison": [
+      {
+        "character": "Mithradates",
+        "faction": "pontus",
+        "x": 190,
+        "y": 80,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east heavy cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "aged_retainer",
+          "chief_eunuch"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Pharnaces",
+        "faction": "pontus",
+        "x": 190,
+        "y": 75,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east heavy cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 40,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "GoodCavalryGeneral",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "famous_courtesan",
+          "foodtaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 190,
+      "y": 80
+    }
+  },
+  "Transalpine_Gaul": {
+    "garrison": [
+      {
+        "character": "Cleon",
+        "faction": "slave",
+        "x": 67,
+        "y": 82,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 67,
+      "y": 82
+    }
+  },
+  "Umbria": {
+    "garrison": [
+      {
+        "character": "Quintus Julius",
+        "faction": "romans_julii",
+        "x": 96,
+        "y": 82,
+        "units": [
+          {
+            "name": "roman generals guard cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "roman city militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 29,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 3
+          },
+          {
+            "name": "GoodAttacker",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "drillmaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 96,
+      "y": 82
+    }
+  },
+  "Atropatene": {
+    "garrison": [
+      {
+        "character": "Caspar",
+        "faction": "slave",
+        "x": 241,
+        "y": 82,
+        "units": [
+          {
+            "name": "east infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east infantry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 241,
+      "y": 82
+    }
+  },
+  "Thrace": {
+    "garrison": [
+      {
+        "character": "Byzas",
+        "faction": "thrace",
+        "x": 150,
+        "y": 83,
+        "units": [
+          {
+            "name": "thracian bodyguard early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "freeman_clerk",
+          "wise_man"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Sautes",
+        "faction": "thrace",
+        "x": 151,
+        "y": 78,
+        "units": [
+          {
+            "name": "thracian bodyguard early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband falx thracian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband falx thracian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "GoodAttacker",
+            "level": 2
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "wine_steward",
+          "comedian",
+          "aged_retainer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 150,
+      "y": 83
+    }
+  },
+  "Narbonensis": {
+    "garrison": [
+      {
+        "character": "Voteporix of Alesia",
+        "faction": "gauls",
+        "x": 57,
+        "y": 84,
+        "units": [
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bodyguard"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Vindex",
+        "faction": "gauls",
+        "x": 58,
+        "y": 82,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peltast gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 32,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "galloper"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 57,
+      "y": 84
+    }
+  },
+  "Liguria": {
+    "garrison": [
+      {
+        "character": "Erbin",
+        "faction": "slave",
+        "x": 83,
+        "y": 84,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peasant slave",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 83,
+      "y": 84
+    }
+  },
+  "Gallaecia": {
+    "garrison": [
+      {
+        "character": "Viriathus",
+        "faction": "spain",
+        "x": 20,
+        "y": 87,
+        "units": [
+          {
+            "name": "carthaginian general's cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "spanish scutarii",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "spanish scutarii",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian cavalry",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "carthaginian peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bard"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 20,
+      "y": 87
+    }
+  },
+  "Armenia": {
+    "garrison": [
+      {
+        "character": "Artaxias",
+        "faction": "armenia",
+        "x": 227,
+        "y": 87,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east heavy cataphract",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "chief_eunuch"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Aramu",
+        "faction": "armenia",
+        "x": 220,
+        "y": 87,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "MathematicsSkill",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "freeman_clerk",
+          "drinking_companion"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 227,
+      "y": 87
+    }
+  },
+  "Venetia": {
+    "garrison": [
+      {
+        "character": "Dumnorix of Bibrax",
+        "faction": "gauls",
+        "x": 94,
+        "y": 90,
+        "units": [
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Lugotorix",
+        "faction": "gauls",
+        "x": 92,
+        "y": 91,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peltast gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 18,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "civilized_slave"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 94,
+      "y": 90
+    }
+  },
+  "Illyria": {
+    "garrison": [
+      {
+        "character": "Scyles",
+        "faction": "slave",
+        "x": 105,
+        "y": 90,
+        "units": [
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 105,
+      "y": 90
+    }
+  },
+  "Colchis": {
+    "garrison": [
+      {
+        "character": "Rusa",
+        "faction": "armenia",
+        "x": 216,
+        "y": 91,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 35,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "galloper"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 216,
+      "y": 91
+    }
+  },
+  "Cisalpine_Gaul": {
+    "garrison": [
+      {
+        "character": "Eporedorix",
+        "faction": "gauls",
+        "x": 84,
+        "y": 92,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 36,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 3
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "drunken_uncle",
+          "drinking_companion"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 84,
+      "y": 92
+    }
+  },
+  "Lugdinensis": {
+    "garrison": [
+      {
+        "character": "Diviciacus",
+        "faction": "slave",
+        "x": 66,
+        "y": 93,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry slave",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 66,
+      "y": 93
+    }
+  },
+  "Bosphorus": {
+    "garrison": [
+      {
+        "character": "Chersis",
+        "faction": "slave",
+        "x": 175,
+        "y": 95,
+        "units": [
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers slave",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 175,
+      "y": 95
+    }
+  },
+  "Dacia": {
+    "garrison": [
+      {
+        "character": "Zyraxes",
+        "faction": "dacia",
+        "x": 140,
+        "y": 98,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early dacian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "bard"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Scyles",
+        "faction": "dacia",
+        "x": 140,
+        "y": 89,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early dacian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband falx dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 3
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "civilized_slave"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 140,
+      "y": 98
+    }
+  },
+  "Aquitania": {
+    "garrison": [
+      {
+        "character": "Maglocunus of Lemonum",
+        "faction": "gauls",
+        "x": 47,
+        "y": 99,
+        "units": [
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 47,
+      "y": 99
+    }
+  },
+  "Tribus_Getae": {
+    "garrison": [
+      {
+        "character": "Pytros",
+        "faction": "thrace",
+        "x": 156,
+        "y": 100,
+        "units": [
+          {
+            "name": "thracian bodyguard early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband falx thracian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek hoplite militia",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "greek peltast",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 40,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 2
+          },
+          {
+            "name": "Drink",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "wine_steward"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 156,
+      "y": 100
+    }
+  },
+  "Pannonia": {
+    "garrison": [
+      {
+        "character": "Dicomes",
+        "faction": "slave",
+        "x": 116,
+        "y": 101,
+        "units": [
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "merc illyrian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 116,
+      "y": 101
+    }
+  },
+  "Noricum": {
+    "garrison": [
+      {
+        "character": "Morirex",
+        "faction": "slave",
+        "x": 99,
+        "y": 104,
+        "units": [
+          {
+            "name": "barb naked fanatics slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peasant slave",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 99,
+      "y": 104
+    }
+  },
+  "Central_Gaul": {
+    "garrison": [
+      {
+        "character": "Brennus",
+        "faction": "gauls",
+        "x": 66,
+        "y": 106,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry gaul",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb druids gaul",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 52,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bard",
+          "civilized_slave"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 66,
+      "y": 106
+    }
+  },
+  "Tribus_Iazyges": {
+    "garrison": [
+      {
+        "character": "Vezina",
+        "faction": "dacia",
+        "x": 131,
+        "y": 106,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early dacian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer dacian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 35,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "armourer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 131,
+      "y": 106
+    }
+  },
+  "Scythia": {
+    "garrison": [
+      {
+        "character": "Zipoetes",
+        "faction": "scythia",
+        "x": 157,
+        "y": 106,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early scythian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 50,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "Energetic",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "armourer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 157,
+      "y": 106
+    }
+  },
+  "Armorica": {
+    "garrison": [
+      {
+        "character": "Casticos of Vesontio",
+        "faction": "gauls",
+        "x": 46,
+        "y": 113,
+        "units": [
+          {
+            "name": "barb infantry gaul",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 46,
+      "y": 113
+    }
+  },
+  "Boihaemum": {
+    "garrison": [
+      {
+        "character": "Brycham",
+        "faction": "slave",
+        "x": 111,
+        "y": 113,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 111,
+      "y": 113
+    }
+  },
+  "Germania_Superior": {
+    "garrison": [
+      {
+        "character": "Ariogaisus",
+        "faction": "germans",
+        "x": 79,
+        "y": 114,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early german",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peltast german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb screeching women german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 40,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "GoodAmbusher",
+            "level": 1
+          },
+          {
+            "name": "NightBattleCapable",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bard",
+          "beastmaster"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 79,
+      "y": 114
+    }
+  },
+  "Maeotis": {
+    "garrison": [
+      {
+        "character": "Belnirari",
+        "faction": "scythia",
+        "x": 190,
+        "y": 114,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early scythian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 27,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bard",
+          "goldsmith"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 190,
+      "y": 114
+    }
+  },
+  "Agri_Decumates": {
+    "garrison": [
+      {
+        "character": "Malorix",
+        "faction": "germans",
+        "x": 88,
+        "y": 117,
+        "units": [
+          {
+            "name": "warband spear german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 88,
+      "y": 117
+    }
+  },
+  "Belgica": {
+    "garrison": [
+      {
+        "character": "Caradog",
+        "faction": "britons",
+        "x": 61,
+        "y": 118,
+        "units": [
+          {
+            "name": "barb peasant briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Belenus",
+        "faction": "britons",
+        "x": 60,
+        "y": 118,
+        "units": [
+          {
+            "name": "barb british general briton",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb slinger briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb chariot light briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bard"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 61,
+      "y": 118
+    }
+  },
+  "Regnum_Marcomannii": {
+    "garrison": [
+      {
+        "character": "Hariulfus",
+        "faction": "germans",
+        "x": 115,
+        "y": 125,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early german",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "civilized_slave"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 115,
+      "y": 125
+    }
+  },
+  "Germania_Inferior": {
+    "garrison": [
+      {
+        "character": "Ricburgis",
+        "faction": "germans",
+        "x": 84,
+        "y": 127,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early german",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peltast german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peltast german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 25,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 2
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "GoodAmbusher",
+            "level": 1
+          },
+          {
+            "name": "NightBattleCapable",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "armourer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 84,
+      "y": 127
+    }
+  },
+  "Britannia_Superior": {
+    "garrison": [
+      {
+        "character": "Barrivendos",
+        "faction": "britons",
+        "x": 57,
+        "y": 128,
+        "units": [
+          {
+            "name": "barb british general briton",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb chariot light briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 50,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "Austere",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "druid"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 57,
+      "y": 128
+    }
+  },
+  "Pripet": {
+    "garrison": [
+      {
+        "character": "Dapyx",
+        "faction": "slave",
+        "x": 149,
+        "y": 129,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 149,
+      "y": 129
+    }
+  },
+  "Tribus_Chattii": {
+    "garrison": [
+      {
+        "character": "Arminius",
+        "faction": "germans",
+        "x": 95,
+        "y": 130,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early german",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry german",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "warband spear german",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb screeching women german",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 60,
+        "tags": [
+          "leader",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "PublicFaith",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "bodyguard",
+          "civilized_slave"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 95,
+      "y": 130
+    }
+  },
+  "Tribus_Alanni": {
+    "garrison": [
+      {
+        "character": "Partatua",
+        "faction": "scythia",
+        "x": 229,
+        "y": 131,
+        "units": [
+          {
+            "name": "barb chieftain cavalry early scythian",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb horse archers scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "heir",
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodCommander",
+            "level": 1
+          },
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Drink",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "galloper"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 229,
+      "y": 131
+    }
+  },
+  "Locus_Gothi": {
+    "garrison": [
+      {
+        "character": "Gunderic",
+        "faction": "slave",
+        "x": 111,
+        "y": 136,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb cavalry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 111,
+      "y": 136
+    }
+  },
+  "Tribus_Silurii": {
+    "garrison": [
+      {
+        "character": "Budic",
+        "faction": "britons",
+        "x": 48,
+        "y": 139,
+        "units": [
+          {
+            "name": "barb infantry briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peasant briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [
+      {
+        "character": "Cynfawr",
+        "faction": "britons",
+        "x": 42,
+        "y": 141,
+        "units": [
+          {
+            "name": "barb british general briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb druids briton",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 31,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "Energetic",
+            "level": 1
+          },
+          {
+            "name": "PublicFaith",
+            "level": 3
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "druid2"
+        ],
+        "charType": "general"
+      }
+    ],
+    "settlement": {
+      "x": 48,
+      "y": 139
+    }
+  },
+  "Tribus_Saxones": {
+    "garrison": [
+      {
+        "character": "Adalwolf",
+        "faction": "slave",
+        "x": 87,
+        "y": 139,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 87,
+      "y": 139
+    }
+  },
+  "Locus_Gepidae": {
+    "garrison": [
+      {
+        "character": "Adalmun",
+        "faction": "slave",
+        "x": 135,
+        "y": 139,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 135,
+      "y": 139
+    }
+  },
+  "Britannia_Inferior": {
+    "garrison": [
+      {
+        "character": "Prasutagus",
+        "faction": "britons",
+        "x": 55,
+        "y": 140,
+        "units": [
+          {
+            "name": "barb british general briton",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb slinger briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb peasant briton",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 24,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "NaturalMilitarySkill",
+            "level": 1
+          },
+          {
+            "name": "Intelligent",
+            "level": 1
+          },
+          {
+            "name": "Bloodthirsty",
+            "level": 2
+          }
+        ],
+        "ancillaries": [
+          "armourer"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 55,
+      "y": 140
+    }
+  },
+  "Tribus_Sarmatae": {
+    "garrison": [
+      {
+        "character": "Phillipos",
+        "faction": "scythia",
+        "x": 181,
+        "y": 140,
+        "units": [
+          {
+            "name": "barb archer scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb archer scythian",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 181,
+      "y": 140
+    }
+  },
+  "Hibernia": {
+    "garrison": [
+      {
+        "character": "Brigomaglos",
+        "faction": "slave",
+        "x": 36,
+        "y": 142,
+        "units": [
+          {
+            "name": "barb infantry slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb infantry slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "barb druids slave",
+            "exp": 2,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 36,
+      "y": 142
+    }
+  },
+  "Tribus_Sakae": {
+    "garrison": [
+      {
+        "character": "Phraotes",
+        "faction": "parthia",
+        "x": 248,
+        "y": 152,
+        "units": [
+          {
+            "name": "east generals cavalry early",
+            "exp": 1,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east horse archer",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "east peasant",
+            "exp": 0,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 30,
+        "tags": [
+          "named"
+        ],
+        "traits": [
+          {
+            "name": "GoodAdministrator",
+            "level": 2
+          },
+          {
+            "name": "Intelligent",
+            "level": 2
+          },
+          {
+            "name": "GoodCavalryGeneral",
+            "level": 1
+          }
+        ],
+        "ancillaries": [
+          "merchant"
+        ],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 248,
+      "y": 152
+    }
+  },
+  "Hyperboria": {
+    "garrison": [
+      {
+        "character": "Artemas",
+        "faction": "slave",
+        "x": 186,
+        "y": 153,
+        "units": [
+          {
+            "name": "rebel amazon chariots",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "rebel amazon chariots",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "rebel amazon chariots",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "rebel amazon chariots",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "rebel amazon chariots",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          },
+          {
+            "name": "rebel amazon chariots",
+            "exp": 3,
+            "armour": 0,
+            "weapon": 0
+          }
+        ],
+        "age": 20,
+        "tags": [],
+        "traits": [],
+        "ancillaries": [],
+        "charType": "general"
+      }
+    ],
+    "field": [],
+    "settlement": {
+      "x": 186,
+      "y": 153
+    }
+  }
+}

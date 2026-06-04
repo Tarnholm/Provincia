@@ -57,31 +57,31 @@ const CLASSIC_DIR = process.env.RIS_CLASSIC_DIR || "C:\\RIS\\_submods\\RIS_Class
 const PUBLIC_DIR = path.resolve(__dirname, "..", "public");
 
 // Vanilla Rome: Total War Remastered ships its base data under
-// Contents/Resources/Data (Feral layout, same on Windows). Slot 2 bundles the
-// vanilla imperial campaign so a fresh install always has a real map to explore
-// before the user imports a mod. Override with VANILLA_RTW_DATA.
+// Contents/Resources/Data (Feral layout, same on Windows). Slot 1 bundles the
+// vanilla imperial campaign so a fresh install always boots into a real map to
+// explore before the user imports a mod. Override with VANILLA_RTW_DATA.
 const VANILLA_ROOT = process.env.VANILLA_RTW_DATA ||
   "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Total War ROME REMASTERED\\Contents\\Resources\\Data";
 
 const CAMPAIGNS = [
   {
-    // Slot 1: intentionally EMPTY by default — a fresh install prompts the user
-    // to import their own mod here (see onboarding). Set BUNDLE_CLASSIC=1 to
-    // populate it from RIS_Classic instead.
+    // Slot 1 (left, shown on launch): vanilla Rome imperial campaign (NOT a mod)
+    // — the out-of-the-box map. mapHeight is overridden by the real TGA (vanilla
+    // region map is 255×156). Override location via VANILLA_RTW_DATA.
     suffix: "classic",
     mapHeight: 350,
-    stratDir: CLASSIC_DIR,
-    baseDir: null, // classic has all files in its campaign dir
-    empty: !process.env.BUNDLE_CLASSIC,
-  },
-  {
-    // Slot 2: vanilla Rome imperial campaign (NOT the mod) — the out-of-the-box
-    // map. Set RIS_MOD_ROOT-style override via VANILLA_RTW_DATA if the install
-    // lives elsewhere.
-    suffix: "large",
-    mapHeight: 700,
     stratDir: path.join(VANILLA_ROOT, "data", "world", "maps", "campaign", "imperial_campaign"),
     baseDir: path.join(VANILLA_ROOT, "data", "world", "maps", "base"),
+  },
+  {
+    // Slot 2 (right): intentionally EMPTY by default — onboarding tells the user
+    // to right-click this slot and import their mod here. Set BUNDLE_LARGE=1 to
+    // populate it from RIS_MOD_ROOT instead.
+    suffix: "large",
+    mapHeight: 700,
+    stratDir: path.join(MOD_ROOT, "data", "world", "maps", "campaign", "imperial_campaign"),
+    baseDir: path.join(MOD_ROOT, "data", "world", "maps", "base"),
+    empty: !process.env.BUNDLE_LARGE,
   },
 ];
 

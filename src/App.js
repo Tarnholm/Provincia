@@ -198,7 +198,7 @@ const MAP_VARIANTS = {
 const DEFAULT_CAMPAIGNS = {
   classic: {
     key: "classic",
-    label: "Classic",
+    label: "Vanilla Rome",
     mapFile: "map_regions_classic.tga",
     mapType: "tga",
     mapHeight: 350,
@@ -2453,7 +2453,7 @@ function App() {
 
   // Map campaign + view mode — persisted in localStorage
   const [mapCampaign, setMapCampaign] = useState(
-    () => localStorage.getItem("mapCampaign") || DEFAULT_CAMPAIGNS.imperial.key
+    () => localStorage.getItem("mapCampaign") || DEFAULT_CAMPAIGNS.classic.key // Slot 1 = vanilla Rome, shown on first launch
   );
   const [mapVariant, setMapVariant] = useState(
     () => localStorage.getItem("mapVariant") || MAP_VARIANTS.starting.key

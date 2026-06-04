@@ -1,1 +1,1032 @@
-{}
+{
+  "232,41,198": {
+    "region": "Britannia_Inferior",
+    "city": "Eburacum",
+    "faction": "britons",
+    "culture": "Brigantes",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "232,41,55": {
+    "region": "Tribus_Saxones",
+    "city": "Bordesholm",
+    "faction": "germans",
+    "culture": "Saxones",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "58,177,95": {
+    "region": "Locus_Gepidae",
+    "city": "Domus_Dulcis_Domus",
+    "faction": "germans",
+    "culture": "Gepids",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "2",
+    "ethnicities": ""
+  },
+  "58,89,177": {
+    "region": "Hyperboria",
+    "city": "Themiskyra",
+    "faction": "scythia",
+    "culture": "Amazons",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "2",
+    "ethnicities": ""
+  },
+  "177,170,58": {
+    "region": "Tribus_Alanni",
+    "city": "Campus_Alanni",
+    "faction": "scythia",
+    "culture": "Alans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "58,177,75": {
+    "region": "Tribus_Sakae",
+    "city": "Campus_Sakae",
+    "faction": "parthia",
+    "culture": "Saka",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "212,232,41": {
+    "region": "Hibernia",
+    "city": "Tara",
+    "faction": "britons",
+    "culture": "Hibernians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "177,58,83": {
+    "region": "Tribus_Sarmatae",
+    "city": "Campus_Sarmatae",
+    "faction": "scythia",
+    "culture": "Sarmatians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "41,232,63": {
+    "region": "Tribus_Silurii",
+    "city": "Deva",
+    "faction": "britons",
+    "culture": "Silures",
+    "tags": "none",
+    "farm_level": "0",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "203,41,232": {
+    "region": "Locus_Gothi",
+    "city": "Vicus_Gothi",
+    "faction": "germans",
+    "culture": "Goths",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "131,33,125": {
+    "region": "Pripet",
+    "city": "Vicus_Venedae",
+    "faction": "dacia",
+    "culture": "Venedae",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "232,41,46": {
+    "region": "Britannia_Superior",
+    "city": "Londinium",
+    "faction": "britons",
+    "culture": "Iceni",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "41,162,232": {
+    "region": "Germania_Inferior",
+    "city": "Batavodurum",
+    "faction": "germans",
+    "culture": "Batavi",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "232,198,41": {
+    "region": "Tribus_Chattii",
+    "city": "Damme",
+    "faction": "germans",
+    "culture": "Chatti",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "177,78,58": {
+    "region": "Regnum_Marcomannii",
+    "city": "Vicus_Marcomannii",
+    "faction": "germans",
+    "culture": "Marcomanni",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "232,90,41": {
+    "region": "Belgica",
+    "city": "Samarobriva",
+    "faction": "britons",
+    "culture": "Belgae",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "131,89,33": {
+    "region": "Maeotis",
+    "city": "Tanais",
+    "faction": "scythia",
+    "culture": "Maeotae",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "63,232,41": {
+    "region": "Agri_Decumates",
+    "city": "Mogontiacum",
+    "faction": "germans",
+    "culture": "Alamanni",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "33,131,116": {
+    "region": "Scythia",
+    "city": "Campus_Scythii",
+    "faction": "scythia",
+    "culture": "Roxolani",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "232,41,135": {
+    "region": "Armorica",
+    "city": "Condate_Redonum",
+    "faction": "gauls",
+    "culture": "Veneti",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "72,41,232": {
+    "region": "Germania_Superior",
+    "city": "Trier",
+    "faction": "germans",
+    "culture": "Treveri",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "58,150,177": {
+    "region": "Boihaemum",
+    "city": "Lovosice",
+    "faction": "gauls",
+    "culture": "Boii",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "33,100,131": {
+    "region": "Tribus_Iazyges",
+    "city": "Campus_Iazyges",
+    "faction": "dacia",
+    "culture": "Iazyges",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "31,75,37": {
+    "region": "Central_Gaul",
+    "city": "Alesia",
+    "faction": "gauls",
+    "culture": "Senones",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "72,177,58": {
+    "region": "Dacia",
+    "city": "Porrolissum",
+    "faction": "dacia",
+    "culture": "Carpi",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "230,41,232": {
+    "region": "Noricum",
+    "city": "Iuvavum",
+    "faction": "gauls",
+    "culture": "Helvetii",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "131,33,38": {
+    "region": "Tribus_Getae",
+    "city": "Campus_Getae",
+    "faction": "thrace",
+    "culture": "Troglodytae",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "131,61,33": {
+    "region": "Pannonia",
+    "city": "Aquincum",
+    "faction": "dacia",
+    "culture": "Scordisci",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "17,74,202": {
+    "region": "Bosphorus",
+    "city": "Chersonesos",
+    "faction": "macedon",
+    "culture": "Bosphorans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "68,232,41": {
+    "region": "Aquitania",
+    "city": "Lemonum",
+    "faction": "gauls",
+    "culture": "Pictones",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "85,114,141": {
+    "region": "Lugdinensis",
+    "city": "Lugdunum",
+    "faction": "gauls",
+    "culture": "Aedui",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "199,31,143": {
+    "region": "Colchis",
+    "city": "Kotais",
+    "faction": "armenia",
+    "culture": "Colchians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "61,239,246": {
+    "region": "Atropatene",
+    "city": "Phraaspa",
+    "faction": "parthia",
+    "culture": "Medes",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "221,232,41": {
+    "region": "Cisalpine_Gaul",
+    "city": "Mediolanium",
+    "faction": "gauls",
+    "culture": "Insubres",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "10",
+    "ethnicities": ""
+  },
+  "13,198,117": {
+    "region": "Venetia",
+    "city": "Patavium",
+    "faction": "gauls",
+    "culture": "Veneti",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "14",
+    "ethnicities": ""
+  },
+  "117,198,13": {
+    "region": "Transalpine_Gaul",
+    "city": "Massilia",
+    "faction": "gauls",
+    "culture": "Vocontii",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "58,173,177": {
+    "region": "Illyria",
+    "city": "Segestica",
+    "faction": "greek_cities",
+    "culture": "Illyrians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "218,246,61": {
+    "region": "Thrace",
+    "city": "Tylis",
+    "faction": "thrace",
+    "culture": "Odrysae",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "10",
+    "ethnicities": ""
+  },
+  "13,157,198": {
+    "region": "Gallaecia",
+    "city": "Asturica",
+    "faction": "spain",
+    "culture": "Iberians",
+    "tags": "none",
+    "farm_level": "0",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "202,61,17": {
+    "region": "Armenia",
+    "city": "Artaxarta",
+    "faction": "armenia",
+    "culture": "Cappadocians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "61,177,58": {
+    "region": "Dalmatia",
+    "city": "Salona",
+    "faction": "greek_cities",
+    "culture": "Illyrians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "196,13,198": {
+    "region": "Narbonensis",
+    "city": "Narbo_Martius",
+    "faction": "gauls",
+    "culture": "Volcae",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "198,13,35": {
+    "region": "Celtiberia",
+    "city": "Numantia",
+    "faction": "gauls",
+    "culture": "Iberians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "157,13,198": {
+    "region": "Liguria",
+    "city": "Segesta",
+    "faction": "gauls",
+    "culture": "Ligurians",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "202,156,17": {
+    "region": "Pontus",
+    "city": "Sinope",
+    "faction": "pontus",
+    "culture": "Paphlagonians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "10",
+    "ethnicities": ""
+  },
+  "131,33,100": {
+    "region": "Paionia",
+    "city": "Bylazora",
+    "faction": "macedon",
+    "culture": "Paionians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "157,198,13": {
+    "region": "Etruria",
+    "city": "Arretium",
+    "faction": "macedon",
+    "culture": "Etruscans",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "58,167,177": {
+    "region": "Media",
+    "city": "Arsakia",
+    "faction": "parthia",
+    "culture": "Medes",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "13,196,198": {
+    "region": "Taraconenis",
+    "city": "Osca",
+    "faction": "spain",
+    "culture": "Iberians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "198,43,13": {
+    "region": "Umbria",
+    "city": "Ariminum",
+    "faction": "macedon",
+    "culture": "Umbrians",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "13,198,30": {
+    "region": "Lusitania",
+    "city": "Scallabis",
+    "faction": "spain",
+    "culture": "Iberians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "198,35,13": {
+    "region": "Sardinia",
+    "city": "Caralis",
+    "faction": "carthage",
+    "culture": "Beronicensis",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "52,13,198": {
+    "region": "Latium",
+    "city": "Rome",
+    "faction": "macedon",
+    "culture": "Latins",
+    "tags": "rome, italy",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "177,58,148": {
+    "region": "Cappadocia",
+    "city": "Mazaka",
+    "faction": "pontus",
+    "culture": "Cappadocians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "118,131,33": {
+    "region": "Propontis",
+    "city": "Byzantium",
+    "faction": "macedon",
+    "culture": "Sithones",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "12",
+    "ethnicities": ""
+  },
+  "202,17,122": {
+    "region": "Bithynia",
+    "city": "Nicomedia",
+    "faction": "macedon",
+    "culture": "Bithynians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "11",
+    "ethnicities": ""
+  },
+  "83,58,177": {
+    "region": "Epirus",
+    "city": "Apollonia",
+    "faction": "macedon",
+    "culture": "Epirots",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "177,58,145": {
+    "region": "Macedonia",
+    "city": "Thessalonica",
+    "faction": "macedon",
+    "culture": "Edones",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "10",
+    "ethnicities": ""
+  },
+  "17,165,202": {
+    "region": "Galatia",
+    "city": "Ancyra",
+    "faction": "gauls",
+    "culture": "Galatians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "187,198,13": {
+    "region": "Hispania",
+    "city": "Carthago_Nova",
+    "faction": "spain",
+    "culture": "Iberians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "33,196,58": {
+    "region": "Apulia",
+    "city": "Tarentum",
+    "faction": "macedon",
+    "culture": "Calabrians",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "198,13,174": {
+    "region": "Campania",
+    "city": "Capua",
+    "faction": "macedon",
+    "culture": "Campanians",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "244,122,13": {
+    "region": "Assyria",
+    "city": "Hatra",
+    "faction": "seleucid",
+    "culture": "Syrians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "17,13,198": {
+    "region": "Baetica",
+    "city": "Corduba",
+    "faction": "spain",
+    "culture": "Iberians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "13",
+    "ethnicities": ""
+  },
+  "33,59,131": {
+    "region": "Phrygia",
+    "city": "Pergamum",
+    "faction": "macedon",
+    "culture": "Lesbians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "12",
+    "ethnicities": ""
+  },
+  "17,202,52": {
+    "region": "Cilicia",
+    "city": "Tarsus",
+    "faction": "seleucid",
+    "culture": "Cilicians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "12",
+    "ethnicities": ""
+  },
+  "177,83,58": {
+    "region": "Thessalia",
+    "city": "Larissa",
+    "faction": "macedon",
+    "culture": "Thessalians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "12",
+    "ethnicities": ""
+  },
+  "41,232,225": {
+    "region": "Baliares",
+    "city": "Palma",
+    "faction": "spain",
+    "culture": "Iberians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "13,170,198": {
+    "region": "Bruttium",
+    "city": "Croton",
+    "faction": "macedon",
+    "culture": "Lucanians",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "149,109,127": {
+    "region": "Ionia",
+    "city": "Sardis",
+    "faction": "seleucid",
+    "culture": "Ionians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "10",
+    "ethnicities": ""
+  },
+  "177,58,167": {
+    "region": "Babylonia",
+    "city": "Seleucia",
+    "faction": "seleucid",
+    "culture": "Syrians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "13,244,165": {
+    "region": "Syria",
+    "city": "Antioch",
+    "faction": "seleucid",
+    "culture": "Syrians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "13,18,244": {
+    "region": "Aetolia",
+    "city": "Thermon",
+    "faction": "macedon",
+    "culture": "Aetolians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "58,177,106": {
+    "region": "Attica",
+    "city": "Athens",
+    "faction": "macedon",
+    "culture": "Athenians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "72,58,177": {
+    "region": "Elymais",
+    "city": "Susa",
+    "faction": "parthia",
+    "culture": "Elamites",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "131,83,77": {
+    "region": "Lycia",
+    "city": "Halicarnasus",
+    "faction": "macedon",
+    "culture": "Lycians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "10",
+    "ethnicities": ""
+  },
+  "225,192,192": {
+    "region": "Peloponnesus",
+    "city": "Corinth",
+    "faction": "macedon",
+    "culture": "Achaeans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "177,142,58": {
+    "region": "Sicilia_Romanus",
+    "city": "Messana",
+    "faction": "macedon",
+    "culture": "Sicani",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "65,17,202": {
+    "region": "Sicilia_Poeni",
+    "city": "Lilybaeum",
+    "faction": "carthage",
+    "culture": "Sicani",
+    "tags": "italy",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "202,126,17": {
+    "region": "Mauretania",
+    "city": "Tingi",
+    "faction": "numidia",
+    "culture": "Moors",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "126,144,111": {
+    "region": "Cyprus",
+    "city": "Salamis",
+    "faction": "macedon",
+    "culture": "Cypriots",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "175,171,244": {
+    "region": "Regnum_Palmyrae",
+    "city": "Palmyra",
+    "faction": "armenia",
+    "culture": "Palmyrans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "33,131,128": {
+    "region": "Phoenicia",
+    "city": "Sidon",
+    "faction": "seleucid",
+    "culture": "Phoenicians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "17,83,202": {
+    "region": "Numidia",
+    "city": "Cirta",
+    "faction": "numidia",
+    "culture": "Moors",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "202,191,17": {
+    "region": "Africa",
+    "city": "Carthage",
+    "faction": "carthage",
+    "culture": "Poeni",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "14",
+    "ethnicities": ""
+  },
+  "198,178,13": {
+    "region": "Sicilia_Graecus",
+    "city": "Syracuse",
+    "faction": "macedon",
+    "culture": "Syracusans",
+    "tags": "sparta, italy",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "244,13,24": {
+    "region": "Laconia",
+    "city": "Sparta",
+    "faction": "macedon",
+    "culture": "Helots",
+    "tags": "sparta",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "244,203,14": {
+    "region": "Coele_Syria",
+    "city": "Damascus",
+    "faction": "seleucid",
+    "culture": "Syrians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "131,33,77": {
+    "region": "Rhodos",
+    "city": "Rhodes",
+    "faction": "macedon",
+    "culture": "Rhodians",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "6",
+    "ethnicities": ""
+  },
+  "13,171,244": {
+    "region": "Arabia",
+    "city": "Dumatha",
+    "faction": "parthia",
+    "culture": "Nabataeans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "3",
+    "ethnicities": ""
+  },
+  "31,202,17": {
+    "region": "Byzacium",
+    "city": "Thapsus",
+    "faction": "carthage",
+    "culture": "Poeni",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "9",
+    "ethnicities": ""
+  },
+  "193,162,206": {
+    "region": "Crete",
+    "city": "Kydonia",
+    "faction": "macedon",
+    "culture": "Cretans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "7",
+    "ethnicities": ""
+  },
+  "244,13,29": {
+    "region": "Judaea",
+    "city": "Jerusalem",
+    "faction": "parthia",
+    "culture": "Judaeans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "13,244,160": {
+    "region": "Nabataea",
+    "city": "Bostra",
+    "faction": "parthia",
+    "culture": "Nabataeans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "244,13,138": {
+    "region": "Gaetulia",
+    "city": "Dimmidi",
+    "faction": "numidia",
+    "culture": "Gaetuli",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  },
+  "202,17,48": {
+    "region": "Tripolitania",
+    "city": "Lepcis_Magna",
+    "faction": "carthage",
+    "culture": "Poeni",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "5",
+    "ethnicities": ""
+  },
+  "244,171,13": {
+    "region": "Cyrenaica",
+    "city": "Cyrene",
+    "faction": "macedon",
+    "culture": "Libyans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "244,13,214": {
+    "region": "Nile_Delta",
+    "city": "Alexandria",
+    "faction": "egypt",
+    "culture": "Libyans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "12",
+    "ethnicities": ""
+  },
+  "35,244,13": {
+    "region": "Sinai",
+    "city": "Petra",
+    "faction": "parthia",
+    "culture": "Nabataeans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "4",
+    "ethnicities": ""
+  },
+  "42,232,77": {
+    "region": "Libya",
+    "city": "Siwa",
+    "faction": "egypt",
+    "culture": "Libyans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "2",
+    "ethnicities": ""
+  },
+  "122,13,244": {
+    "region": "Middle_Egypt",
+    "city": "Memphis",
+    "faction": "egypt",
+    "culture": "Libyans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "10",
+    "ethnicities": ""
+  },
+  "41,86,232": {
+    "region": "Sahara",
+    "city": "Nepte",
+    "faction": "numidia",
+    "culture": "Gaetuli",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "1",
+    "ethnicities": ""
+  },
+  "241,244,13": {
+    "region": "Thebais",
+    "city": "Thebes",
+    "faction": "egypt",
+    "culture": "Libyans",
+    "tags": "none",
+    "farm_level": "5",
+    "pop_level": "8",
+    "ethnicities": ""
+  }
+}
