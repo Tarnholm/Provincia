@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.923",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Onboarding region cards no longer blank.** Region Details, Diplomacy/Characters/Armies and Family Tree now pin a sample region — the first playable faction's capital (Rome in RIS) — so their panels show real data (owner, garrison, characters, family) instead of an empty right column." },
+      { type: "improvement", text: "**Tighter region highlights:** each of those three cards rings only its own panels (settlement details + lock / diplomacy + characters + garrison / characters) rather than the whole right side." },
+    ],
+  },
+  {
     version: "0.9.922",
     date: "2026-06-05",
     items: [

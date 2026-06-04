@@ -16558,11 +16558,20 @@ function App() {
                 }}
                 onHighlight={(target) => {
                   setWelcomeHighlight(target);
-                  if (target === "region-info") {
-                    // Show the showcase region (Roma) in the info panel — fall
-                    // back to the first region if it isn't in this mod.
+                  // The region cards (details / diplomacy / family) all need a
+                  // region pinned so their panels aren't blank. Prefer the first
+                  // PLAYABLE faction's capital (RIS → romans_julii → Rome).
+                  if (target && target.startsWith("region")) {
                     const entries = Object.entries(regions);
-                    let pick = entries.find(([, r]) => r && (String(r.region || "").toLowerCase() === "roma" || String(r.city || "").toLowerCase() === "rome"));
+                    const lc = (s) => String(s || "").toLowerCase();
+                    let pick = entries.find(([, r]) => r && (lc(r.region) === "roma" || lc(r.city) === "rome"));
+                    if (!pick) {
+                      try {
+                        const status = devOrigStratRef.current ? parseFactionStatus(devOrigStratRef.current) : null;
+                        const fp = status && status.playable[0];
+                        if (fp) pick = entries.find(([, r]) => r && lc(r.faction) === lc(fp));
+                      } catch {}
+                    }
                     if (!pick) pick = entries[0];
                     if (pick) setLockedRegionInfo({ ...pick[1], rgb: pick[0] });
                   } else {

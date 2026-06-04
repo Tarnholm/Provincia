@@ -47,7 +47,7 @@ const ONBOARDING_PAGES = [
     title: "Diplomacy, Characters & Armies",
     body: "The right column shows the owning faction's treasury, AI personality and diplomacy (wars / allies / trade); the region's characters with the \ud83d\udc6a Family Tree button; the garrison and any field armies (general face-cards included); and the units recruitable there. Open the Wealth list from the Diplomacy & Treasury header.",
     tip: "Leader \ud83d\udc51 and heir markers show in the Characters list; the panels fill the space as you grow the window.",
-    highlight: "region-info",
+    highlight: "region-diplo",
   },
   {
     title: "Live Mode \u2014 Watch Your Campaign",
@@ -59,7 +59,7 @@ const ONBOARDING_PAGES = [
     title: "Family Tree & Character Info",
     body: "Open the Family Tree from the Characters header to see each faction's house \u2014 engine-assigned portraits, spouses, children, leader + heir markers, and faded deceased members. Right-click ANY character (list, tree, or a commander's bodyguard card) for full stats, every trait and ancillary with effects, clan links, and children.",
     tip: "A general's bodyguard unit card is swapped for the engine's face card of the commanding character.",
-    highlight: null,
+    highlight: "region-family",
   },
   {
     title: "Stats Calibration (Non-Live Mode)",
@@ -75,6 +75,16 @@ const ONBOARDING_PAGES = [
     highlight: null,
   },
 ];
+
+/* ── Highlight → element selector(s). Most keys map to a single
+   [data-ui-highlight] anchor; the region cards ring specific RegionInfo
+   widgets (each carries a data-widget id) so they don't light the whole
+   right column. ─────────────────────────────────────────────────────── */
+const HIGHLIGHT_SELECTORS = {
+  "region-info": ['[data-widget="region.info"]', '[data-ui-highlight="region-info"]'], // settlement details + lock
+  "region-diplo": ['[data-widget="region.diplomacy"]', '[data-widget="region.characters"]', '[data-widget="region.garrison"]'],
+  "region-family": ['[data-widget="region.characters"]'],
+};
 
 /* ── Type badge colours ──────────────────────────────────────────── */
 const TYPE_COLOURS = {
@@ -220,13 +230,14 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
     const key = p.highlight;
     if (!key) { setSpotRects([]); return; }
     let raf = 0, timer = 0, cancelled = false;
+    const selectors = HIGHLIGHT_SELECTORS[key] || [`[data-ui-highlight="${key}"]`];
     const measure = () => {
       if (cancelled) return;
       const rects = [];
-      document.querySelectorAll(`[data-ui-highlight="${key}"]`).forEach((el) => {
+      selectors.forEach((sel) => document.querySelectorAll(sel).forEach((el) => {
         const r = el.getBoundingClientRect();
         if (r.width > 1 && r.height > 1) rects.push({ top: r.top, left: r.left, width: r.width, height: r.height });
-      });
+      }));
       setSpotRects(rects);
     };
     raf = requestAnimationFrame(measure);
