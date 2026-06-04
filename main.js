@@ -7671,13 +7671,22 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
     // (save-cracker sessions 103 + 105, 2026-05-16). The player faction
     // record is the LARGEST one (~334 KB vs ~6 KB per NPC). After the
     // 24 B header come stride-2 RLE pairs <u8 value><u8 count> that
-    // expand to a 510×1400 grid (half-x, double-y of the 1020×700 TGA;
-    // odd rows are stride-filler, real data lives on even rows).
+    // expand row-major to the full 1020×700 strategic-tile grid.
     //
-    // Value semantics (session 105):
-    //   0 = unexplored / never-seen
-    //   1 = ever-explored land
-    //   2..7 = active LOS halo, falloff ~ (8 − distance-from-character)
+    // CORRECTED 2026-06-04 (findings-faction-knowledge-entities): the grid
+    // is 1020 wide × 700 tall, row-major, index = tileY*1020 + tileX in the
+    // save's engine tile coords (tileY bottom-up). The old 510×1400 ("half-x,
+    // double-y, even-rows-only") interpretation was WRONG — it squashed x 2:1
+    // and dropped the right half of every row, so the Explored overlay scored
+    // only 2.1% of own settlements on explored tiles. The 1020×700 model
+    // scores 100.0% (20728/20738) across the 28-save corpus. The RLE decode
+    // itself is unchanged (linear fill); only the grid dims (used by the
+    // renderer's sampler) were wrong.
+    //
+    // Value semantics:
+    //   0 = unexplored / never-seen (~99% of tiles)
+    //   1 = ever-explored land (settlement tiles are uniformly state 1)
+    //   2..24 = vision/recency gradient over explored tiles
     //   count == 0 in an RLE pair is the TERMINATOR. Session 103's
     //   hard-coded end at +0xc264 was wrong — it leaked ASCII bytes
     //   from the trailing settlement-list as fake high tile values.
@@ -7686,7 +7695,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
       for (const r of fr) {
         if ((r.size || 0) > (largest.size || 0)) largest = r;
       }
-      const GRID_W = 510, GRID_H = 1400;
+      const GRID_W = 1020, GRID_H = 700;
       const RLE_START = largest.offset + 0x18;
       const RLE_MAX = Math.min(largest.offset + largest.size, data.length);
       if (largest.size >= 0x18 + 4 && RLE_START < data.length) {

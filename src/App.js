@@ -7225,15 +7225,19 @@ function App() {
         }));
       } else if (colorMode === "explored") {
         // Player's ever-explored tile grid from the save (session 103,
-        // 2026-05-16). Paints regions in their normal faction colour
-        // where the player has been (value ≥ 1) and dims to dark grey
-        // where they've never seen (value = 0). Grid is 510×1400; TGA
-        // is 1020×700. Mapping: strategic_x = floor(px / 2),
-        // strategic_y = floor(py * (1400 / TGA_H)) with flipY because
-        // the grid is stored top-down and the TGA is bottom-up.
+        // 2026-05-16; coordinate model CORRECTED 2026-06-04). Paints regions
+        // in their normal faction colour where the player has been (value ≥ 1)
+        // and dims to dark grey where they've never seen (value = 0). The grid
+        // is the full 1020×700 strategic-tile map, row-major, index =
+        // tileY*1020 + tileX (engine tileY bottom-up). The generic sampler
+        // below maps each region-map pixel (srcX,srcY) → grid cell via
+        // gx = srcX*gridW/W, gy = (H-1-srcY)*gridH/H (flipY: image is top-down,
+        // engine tileY is bottom-up). The earlier 510×1400 dims squashed x 2:1
+        // and dropped the map's right half (only 2.1% of own settlements landed
+        // on explored tiles); 1020×700 scores 100.0% corpus-wide.
         const grid = playerExploration && playerExploration.grid;
-        const gridW = (playerExploration && playerExploration.width) || 510;
-        const gridH = (playerExploration && playerExploration.height) || 1400;
+        const gridW = (playerExploration && playerExploration.width) || 1020;
+        const gridH = (playerExploration && playerExploration.height) || 700;
         // Build current owner → colour map (same as faction mode)
         const rgbToOwner = {};
         for (const [faction, regionNames] of Object.entries(factionRegionsMap || {})) {

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.890",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**The \"Explored\" map mode is fixed — it was showing the wrong fog-of-war the whole time.** The player's ever-explored grid was being read with a broken 510×1400 coordinate model that squashed the map 2:1 and threw away the right half, so the overlay dimmed almost the entire map as \"unexplored\" (only ~2% of your own settlements even registered as seen). It's now decoded as the true 1020×700 strategic-tile grid — your own settlements land on explored tiles 100% of the time (verified across a 28-save corpus). Switch to the **Explored** view and you'll finally see the correct shape of what you've scouted." },
+    ],
+  },
+  {
     version: "0.9.889",
     date: "2026-06-04",
     items: [
