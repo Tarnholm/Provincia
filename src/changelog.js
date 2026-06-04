@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.892",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Fog of War legend polish** — shows the explored area as a percentage of the map, and no longer gets stuck on \"Loading…\" for an eliminated faction (it now says there's no explored data for that faction)." },
+    ],
+  },
+  {
     version: "0.9.891",
     date: "2026-06-04",
     items: [

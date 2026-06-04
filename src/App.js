@@ -2487,6 +2487,7 @@ function App() {
   // playerExploration) + a settlement-coverage confidence.
   const [fogFaction, setFogFaction] = useState(null);
   const [fogVision, setFogVision] = useState(null); // { faction, grid, width, height, coverage, exploredCount }
+  const [fogLoading, setFogLoading] = useState(false); // fetch in flight (vs error/no-data)
   const [savePopulationByCity, setSavePopulationByCity] = useState(null); // { city: u32 } live population from save parser (u32 at settlement.offset-1494, save-cracker session 2)
   const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
   const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
@@ -5665,14 +5666,16 @@ function App() {
   // fetched grid.
   useEffect(() => {
     const api = window.electronAPI;
-    if (!fogFaction) { setFogVision(null); return; }
-    if (!api || !api.getFactionVision || !liveSaveFile || !modDataDir) { setFogVision(null); return; }
+    if (!fogFaction) { setFogVision(null); setFogLoading(false); return; }
+    if (!api || !api.getFactionVision || !liveSaveFile || !modDataDir) { setFogVision(null); setFogLoading(false); return; }
     const savePath = liveSaveDir ? `${liveSaveDir}\\${liveSaveFile}` : null;
-    if (!savePath) { setFogVision(null); return; }
+    if (!savePath) { setFogVision(null); setFogLoading(false); return; }
     let cancelled = false;
+    setFogVision(null); setFogLoading(true);
     api.getFactionVision(savePath, modDataDir, fogFaction)
       .then((r) => {
         if (cancelled) return;
+        setFogLoading(false);
         if (r && !r.error && r.grid) {
           // IPC returns a Buffer/Uint8Array; normalize to Uint8Array.
           const grid = r.grid instanceof Uint8Array ? r.grid : new Uint8Array(r.grid);
@@ -5683,7 +5686,7 @@ function App() {
           if (r && r.error) console.warn("[fog] failed:", r.error);
         }
       })
-      .catch((e) => { if (!cancelled) { setFogVision(null); console.warn("[fog] error:", e?.message); } });
+      .catch((e) => { if (!cancelled) { setFogVision(null); setFogLoading(false); console.warn("[fog] error:", e?.message); } });
     return () => { cancelled = true; };
   }, [fogFaction, liveSaveFile, modDataDir, liveSaveDir]);
 
@@ -12741,8 +12744,10 @@ function App() {
             {fogFaction && (
               <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#bbb" }}>
                 {fogVision
-                  ? <>Explored {(fogVision.exploredCount || 0).toLocaleString()} tiles{cov != null && cov >= 0 ? ` · match ${(cov * 100).toFixed(0)}%` : ""}{cov != null && cov >= 0 && cov < 0.7 ? " (approx.)" : ""}</>
-                  : <span style={{ color: "#e0a030" }}>Loading…</span>}
+                  ? <>Explored {(fogVision.exploredCount || 0).toLocaleString()} tiles ({(100 * (fogVision.exploredCount || 0) / (1020 * 700)).toFixed(1)}% of map){cov != null && cov >= 0 ? ` · match ${(cov * 100).toFixed(0)}%` : ""}{cov != null && cov >= 0 && cov < 0.7 ? " (approx.)" : ""}</>
+                  : fogLoading
+                    ? <span style={{ color: "#e0a030" }}>Loading…</span>
+                    : <span style={{ color: "#c98" }}>No explored data for this faction (eliminated or not in this save).</span>}
               </div>
             )}
             {!fogFaction && !playerExploration && (
