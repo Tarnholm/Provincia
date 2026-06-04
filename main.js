@@ -6125,6 +6125,29 @@ ipcMain.handle("get-user-data-path", () => {
   return app.getPath("userData");
 });
 
+// IPC: persist the dev autosave history to a file (not localStorage — 30 full
+// state snapshots blow past the ~5MB localStorage cap). Stored in userData so it
+// survives app restarts and isn't touched by Save/Export.
+const AUTOSAVE_FILE = () => path.join(app.getPath("userData"), "devAutosaves.json");
+ipcMain.handle("read-autosaves", async () => {
+  try {
+    const fp = AUTOSAVE_FILE();
+    if (!fs.existsSync(fp)) return { autosaves: [] };
+    const arr = JSON.parse(fs.readFileSync(fp, "utf8"));
+    return { autosaves: Array.isArray(arr) ? arr : [] };
+  } catch (e) {
+    return { autosaves: [], error: e && e.message ? e.message : String(e) };
+  }
+});
+ipcMain.handle("write-autosaves", async (_e, json) => {
+  try {
+    fs.writeFileSync(AUTOSAVE_FILE(), typeof json === "string" ? json : JSON.stringify(json));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: unified save cracker. Anywhere in the app that wants per-faction data
 // (regions, treasury, characters, diplomacy) should call this — NOT reach into
 // saveCrackerExtras directly, which has fields that look right but are wrong

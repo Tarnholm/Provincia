@@ -2720,6 +2720,7 @@ function App() {
     } catch { return []; }
   });
   const [pendingReviewOpen, setPendingReviewOpen] = useState(false);
+  const [revertAutosaveOpen, setRevertAutosaveOpen] = useState(false); // "Revert to autosave" picker
   // Export-instead-of-overwrite: when ON, "Apply" writes the edited mod files
   // under `exportModDir` instead of overwriting the live mod in place (the live
   // mod is left untouched). Persisted so the choice survives a reload; the main
@@ -5780,37 +5781,140 @@ function App() {
   // ── Dev Autosave System ──
   // Keeps the last 10 per-edit snapshots + periodic 5-min checkpoints (up to 30 total)
   const AUTOSAVE_KEY = "devAutosaves";
-  const AUTOSAVE_MAX = 30;
-  const AUTOSAVE_RECENT = 10;       // keep last 10 edit-level saves
+  const AUTOSAVE_MAX = 30;           // keep the last 30 edits (older ones drop off)
   const CHECKPOINT_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  // Autosave history lives in a userData FILE (loaded on mount below) — 30 full
+  // snapshots are far too big for localStorage. Seed from any legacy localStorage
+  // copy so older installs don't start empty before the file load resolves.
   const [autosaves, setAutosaves] = useState(() => {
     try { return JSON.parse(localStorage.getItem(AUTOSAVE_KEY)) || []; } catch { return []; }
   });
   const [timelineIndex, setTimelineIndex] = useState(null); // null = live (latest state)
+  const autosavesLoadedRef = useRef(false);
 
-  // Save a snapshot to autosave history
+  // Load the persisted autosave history from the userData file on mount.
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api?.readAutosaves) { autosavesLoadedRef.current = true; return; }
+    (async () => {
+      try {
+        const r = await api.readAutosaves();
+        if (Array.isArray(r?.autosaves) && r.autosaves.length) setAutosaves(r.autosaves);
+      } catch {}
+      finally { autosavesLoadedRef.current = true; }
+    })();
+  }, []);
+
+  // Persist autosaves to the file whenever they change (debounced so a burst of
+  // edits writes once). Skipped until the initial file load completes so we don't
+  // clobber the file with the empty/seed state.
+  const autosaveWriteTimer = useRef(null);
+  useEffect(() => {
+    if (!autosavesLoadedRef.current) return;
+    const api = window.electronAPI;
+    if (!api?.writeAutosaves) {
+      // No file IPC (e.g. web build) — fall back to a best-effort localStorage write.
+      try { localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(autosaves)); } catch {}
+      return;
+    }
+    if (autosaveWriteTimer.current) clearTimeout(autosaveWriteTimer.current);
+    autosaveWriteTimer.current = setTimeout(() => {
+      try { api.writeAutosaves(JSON.stringify(autosaves)); } catch {}
+    }, 1000);
+    return () => { if (autosaveWriteTimer.current) clearTimeout(autosaveWriteTimer.current); };
+  }, [autosaves]);
+
+  // Ref mirror of ALL editable state so an autosave can snapshot the complete
+  // "state of Provincia at that point" (the 4 data slices PLUS the pending-edit
+  // maps for buildings / traits / armies / characters / diplomacy), and label
+  // itself with the edit that produced it — without re-creating the snapshot
+  // callback on every keystroke.
+  const editStateRef = useRef({});
+  useEffect(() => {
+    editStateRef.current = {
+      log: pendingLog,
+      buildings: pendingBuildings, traits: pendingTraits, ancils: pendingAncils,
+      generals: pendingGenerals, charPos: pendingCharPos, charFields: pendingCharFields,
+      garrisonMoves: pendingGarrisonMoves, armyUnits: pendingArmyUnits, diplomacy: pendingDiplomacy,
+      dirty: devDirtyFiles,
+    };
+  }, [pendingLog, pendingBuildings, pendingTraits, pendingAncils, pendingGenerals, pendingCharPos, pendingCharFields, pendingGarrisonMoves, pendingArmyUnits, pendingDiplomacy, devDirtyFiles]);
+
+  // Save a snapshot to autosave history. Persists to localStorage so the last
+  // 30 edits survive Provincia being closed. NOT cleared on Save/Export — the
+  // autosave history is independent of the pending-edit queue.
   const saveAutosaveSnapshot = useCallback((isCheckpoint = false) => {
+    const es = editStateRef.current || {};
+    const log = es.log || [];
+    const last = log.length ? log[log.length - 1] : null;
+    const mapEntries = (m) => (m instanceof Map ? [...m.entries()] : []);
     const snapshot = {
       ts: Date.now(),
       checkpoint: isCheckpoint,
+      label: last ? last.description : (isCheckpoint ? "Checkpoint" : "Edit"),
+      kind: last ? last.kind : null,
       regions: { ...regions },
       resourcesData: JSON.parse(JSON.stringify(resourcesData)),
       populationData: { ...populationData },
       victoryConditions: JSON.parse(JSON.stringify(victoryConditions)),
+      // Full pending-edit queue at this instant (Maps → entry arrays).
+      pending: {
+        log: Array.isArray(es.log) ? es.log : [],
+        buildings: mapEntries(es.buildings), traits: mapEntries(es.traits), ancils: mapEntries(es.ancils),
+        generals: mapEntries(es.generals), charPos: mapEntries(es.charPos), charFields: mapEntries(es.charFields),
+        garrisonMoves: mapEntries(es.garrisonMoves), armyUnits: mapEntries(es.armyUnits), diplomacy: mapEntries(es.diplomacy),
+        dirty: es.dirty instanceof Set ? [...es.dirty] : [],
+      },
     };
     setAutosaves(prev => {
-      const next = [...prev, snapshot];
-      // Prune: keep all checkpoints + last AUTOSAVE_RECENT edit saves, capped at AUTOSAVE_MAX
-      const checkpoints = next.filter(s => s.checkpoint);
-      const edits = next.filter(s => !s.checkpoint);
-      const keptEdits = edits.slice(-AUTOSAVE_RECENT);
-      let merged = [...checkpoints, ...keptEdits].sort((a, b) => a.ts - b.ts);
+      let merged = [...prev, snapshot];
+      // Keep only the most recent AUTOSAVE_MAX (30); older ones drop off.
+      // Persistence to the userData file is handled by the debounced effect.
       if (merged.length > AUTOSAVE_MAX) merged = merged.slice(-AUTOSAVE_MAX);
-      try { localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(merged)); } catch {}
       return merged;
     });
     setTimelineIndex(null); // reset to live
   }, [regions, resourcesData, populationData, victoryConditions]);
+
+  // Revert the WHOLE app state to a chosen autosave (data slices + the pending
+  // edit maps). Pushes an undo first so the revert itself can be undone.
+  const revertToAutosave = useCallback((index) => {
+    if (index < 0 || index >= autosaves.length) return;
+    const snap = autosaves[index];
+    try { pushUndoRef.current(); } catch {}
+    setRegions(snap.regions);
+    setResourcesData(snap.resourcesData);
+    setPopulationData(snap.populationData);
+    setVictoryConditions(snap.victoryConditions);
+    const p = snap.pending || {};
+    const toMap = (a) => new Map(Array.isArray(a) ? a : []);
+    setPendingLog(Array.isArray(p.log) ? p.log : []);
+    setPendingBuildings(toMap(p.buildings));
+    setPendingTraits(toMap(p.traits));
+    setPendingAncils(toMap(p.ancils));
+    setPendingGenerals(toMap(p.generals));
+    setPendingCharPos(toMap(p.charPos));
+    setPendingCharFields(toMap(p.charFields));
+    setPendingGarrisonMoves(toMap(p.garrisonMoves));
+    setPendingArmyUnits(toMap(p.armyUnits));
+    setPendingDiplomacy(toMap(p.diplomacy));
+    setDevDirtyFiles(new Set(Array.isArray(p.dirty) ? p.dirty : []));
+    // Persist the restored pending queue so it survives a reload too.
+    try {
+      const j = (a) => JSON.stringify(Array.isArray(a) ? a : []);
+      localStorage.setItem("pendingLog", j(p.log));
+      localStorage.setItem("pendingBuildings", j(p.buildings));
+      localStorage.setItem("pendingTraits", j(p.traits));
+      localStorage.setItem("pendingAncils", j(p.ancils));
+      localStorage.setItem("pendingGenerals", j(p.generals));
+      localStorage.setItem("pendingCharPos", j(p.charPos));
+      localStorage.setItem("pendingCharFields", j(p.charFields));
+      localStorage.setItem("pendingGarrisonMoves", j(p.garrisonMoves));
+      localStorage.setItem("pendingArmyUnits", j(p.armyUnits));
+      localStorage.setItem("pendingDiplomacy", j(p.diplomacy));
+    } catch {}
+    setTimelineIndex(null);
+  }, [autosaves]);
 
   // Auto-save on every edit (dev mode only)
   const prevEditsRef = useRef(0);
@@ -20731,6 +20835,47 @@ function App() {
           </div>
         </div>
       )}
+      {revertAutosaveOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 11001, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setRevertAutosaveOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#1a1a1a", color: "#eee", borderRadius: 10, padding: "16px 18px", maxWidth: "62vw", maxHeight: "82vh", display: "flex", flexDirection: "column", gap: 10, border: "1px solid rgba(150,120,200,0.4)", boxShadow: "0 12px 48px rgba(0,0,0,0.7)", minWidth: 480 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+              <h2 style={{ margin: 0, fontSize: "1rem", color: "#b69adb" }}>Revert to autosave</h2>
+              <button onClick={() => setRevertAutosaveOpen(false)} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "#aaa", lineHeight: 1.4 }}>
+              Provincia keeps the last {AUTOSAVE_MAX} edits (retained after you Save/Export, and across restarts). Pick one to roll the whole app — map data <i>and</i> staged edits — back to that point. The revert itself can be undone. Newest first.
+            </div>
+            <div style={{ overflow: "auto", flex: 1, minHeight: 0, background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "4px 4px", fontSize: "0.8rem" }}>
+              {autosaves.length === 0 ? (
+                <div style={{ color: "#888", fontStyle: "italic", padding: "8px 10px" }}>No autosaves yet — make an edit (in dev mode) and they'll appear here.</div>
+              ) : (
+                [...autosaves].map((s, i) => ({ s, i })).reverse().map(({ s, i }) => {
+                  const when = new Date(s.ts);
+                  const ago = (() => { const d = Date.now() - s.ts; const m = Math.floor(d / 60000); if (m < 1) return "just now"; if (m < 60) return m + "m ago"; const h = Math.floor(m / 60); if (h < 24) return h + "h ago"; return Math.floor(h / 24) + "d ago"; })();
+                  const isLatest = i === autosaves.length - 1;
+                  return (
+                    <button key={s.ts + "_" + i} onClick={() => {
+                      if (!confirm(`Revert Provincia to this autosave?\n\n"${s.label || "Edit"}"\n${when.toLocaleString()}\n\nThis rolls the map data AND your staged edits back to that point. (You can undo it.)`)) return;
+                      revertToAutosave(i);
+                      setRevertAutosaveOpen(false);
+                      setPendingReviewOpen(false);
+                      pushToast(`Reverted to autosave: ${s.label || "edit"} (${ago})`, "info", 5000);
+                    }} style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 8, padding: "6px 10px", background: isLatest ? "rgba(150,120,200,0.10)" : "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", color: "#ddd", cursor: "pointer" }}>
+                      <span style={{ flexShrink: 0, color: "#888", fontSize: "0.68rem", width: "4.6em" }}>{ago}</span>
+                      <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {s.kind && <span style={{ color: "#888", fontSize: "0.68rem" }}>[{s.kind}] </span>}
+                        {s.label || "Edit"}{isLatest && <span style={{ color: "#b69adb", fontSize: "0.66rem" }}> · latest</span>}
+                      </span>
+                      <span style={{ flexShrink: 0, color: "#777", fontSize: "0.66rem" }}>{when.toLocaleTimeString()}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            <div style={{ fontSize: "0.68rem", color: "#777" }}>Autosaves older than the last {AUTOSAVE_MAX} edits are dropped automatically.</div>
+          </div>
+        </div>
+      )}
       {pendingReviewOpen && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 11000,
@@ -20891,6 +21036,11 @@ function App() {
               )}
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                title="Roll the whole app back to one of the last 30 autosaved edit states."
+                onClick={() => setRevertAutosaveOpen(true)}
+                style={{ marginRight: "auto", padding: "5px 12px", background: "rgba(150,120,200,0.15)", color: "#b69adb", border: "1px solid rgba(150,120,200,0.45)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}
+              >↩ Revert to autosave</button>
               <button onClick={() => {
                 if (!confirm(`Discard all ${pendingCount} pending edits?\n\nEvery staged change will be reverted in the UI immediately.`)) return;
                 // 0.9.472: walk newest→oldest so each revert sees a clean

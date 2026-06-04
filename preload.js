@@ -94,6 +94,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // { faction, width:1020, height:700, grid: Uint8Array(714000), coverage, exploredCount }
   // or { error }. Record→faction matched robustly by settlement coverage.
   getFactionVision: (savePath, modDataDir, factionName) => ipcRenderer.invoke("get-faction-vision", savePath, modDataDir, factionName),
+  // Dev autosave history persisted to a userData file (survives restart; too
+  // big for localStorage). readAutosaves → { autosaves:[...] }; writeAutosaves(json).
+  readAutosaves: () => ipcRenderer.invoke("read-autosaves"),
+  writeAutosaves: (json) => ipcRenderer.invoke("write-autosaves", json),
   // Resolvable faction list for the fog picker: { factions: [{faction, explored}] }
   // — only factions whose vision record resolves from this save (no rebels/slave/
   // all-seeing/empty), so every dropdown option is guaranteed to work.

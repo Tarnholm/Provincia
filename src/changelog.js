@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.905",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**Autosave history + Revert to autosave.** Provincia now keeps your last 30 edits as autosaves — written to a file, so they survive closing the app and are NOT cleared when you Save or Export. The Pending changes screen has a new **↩ Revert to autosave** button that opens a list of those 30 edits (shown like the pending changes, newest first); click one and confirm to roll the whole app — map data *and* staged edits — back to that point. The revert itself can be undone. Autosaves older than the last 30 drop off automatically." },
+    ],
+  },
+  {
     version: "0.9.904",
     date: "2026-06-04",
     items: [
