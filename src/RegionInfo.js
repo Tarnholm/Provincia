@@ -807,15 +807,16 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const clickable = !!onHighlightFactions && highlightIds.length > 0;
     return (
       <div
-        style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.66rem", color: labelColor, marginBottom: 3, cursor: clickable ? "pointer" : "default", lineHeight: 1.5 }}
+        style={{ display: "flex", alignItems: "center", gap: 3, fontSize: "0.66rem", color: labelColor, marginBottom: 3, cursor: clickable ? "pointer" : "default", lineHeight: 1.5 }}
         onClick={clickable ? () => onHighlightFactions(highlightIds) : undefined}
         title={clickable ? `Highlight these ${highlightIds.length} faction${highlightIds.length === 1 ? "" : "s"} on the map` : undefined}
       >
         {/* 0.9.887: fixed emoji column + min-width label column so the faction
-            icons line up across rows (war/allied/trade/protects). */}
-        <span style={{ width: 16, textAlign: "center", flexShrink: 0 }}>{emoji}</span>
-        <span style={{ minWidth: "5.5em", flexShrink: 0, whiteSpace: "nowrap" }}>{label} ({entries.length})</span>
-        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, minWidth: 0 }}>
+            icons line up across rows (war/allied/trade/protects); tightened in
+            0.9.888 — narrower label column + smaller icon gaps. */}
+        <span style={{ width: 15, textAlign: "center", flexShrink: 0 }}>{emoji}</span>
+        <span style={{ minWidth: "4.4em", flexShrink: 0, whiteSpace: "nowrap" }}>{label} ({entries.length})</span>
+        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, minWidth: 0 }}>
         {allText ? (
           <span style={{ color: "#ddd", whiteSpace: "normal" }}>{allText}</span>
         ) : (
@@ -832,7 +833,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 key={e.id || i}
                 onClick={pillClickable ? (ev) => { ev.stopPropagation(); onHighlightFactions([e.id]); } : undefined}
                 title={pillClickable ? `${e.name} — click to highlight on the map` : e.name}
-                style={{ display: "inline-flex", alignItems: "center", margin: "0 1px", verticalAlign: "middle", cursor: pillClickable ? "pointer" : "default" }}
+                style={{ display: "inline-flex", alignItems: "center", verticalAlign: "middle", cursor: pillClickable ? "pointer" : "default" }}
               >
                 <FactionIcon iconPath={`faction_icons/${e.id}.tga`} alt={e.name} size={16} tightCrop modIconsDir={modIconsDir} />
               </span>
@@ -1972,8 +1973,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {orderedCats.map((cat) => (
-                  <div key={cat} style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.62rem", color: "#a8a094", marginRight: 2, minWidth: 56 }}>{cat}</span>
+                  <div key={cat} style={{ display: "flex", alignItems: "flex-start", gap: 4 }}>
+                    {/* 0.9.888: fixed label column so the value chips line up
+                        across rows even for the long labels (Hidden Resource,
+                        Hazards & Trade). Chips wrap within their own container. */}
+                    <span style={{ fontSize: "0.62rem", color: "#a8a094", minWidth: 84, flexShrink: 0, whiteSpace: "nowrap", paddingTop: 1 }}>{cat}</span>
+                    <span style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px", alignItems: "center", minWidth: 0 }}>
                     {groups[cat].map((t, i) => {
                       const isHr = cat === "Hidden Resource";
                       const isActive = isHr && hoveredHr === t.toLowerCase();
@@ -1995,6 +2000,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                           }}>{t}</span>
                       );
                     })}
+                    </span>
                   </div>
                 ))}
               </div>

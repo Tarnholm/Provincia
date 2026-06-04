@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.888",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Tags panel value chips now line up.** Terrain / Climate / Irrigation / Port / Hazards & Trade / Hidden Resource use a fixed label column, so all the chips start at the same position instead of stepping in and out with the label length." },
+      { type: "improvement", text: "**Tighter diplomacy rows** — less space between the faction icons and the icons sit closer to the labels." },
+    ],
+  },
+  {
     version: "0.9.887",
     date: "2026-06-04",
     items: [
