@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.901",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**Three-tier fog of war.** Explored mode now distinguishes what you currently see from what you only remember: tiles in current line of sight show in full owner colour, tiles you've explored before but can't currently see are a dim shroud, and never-seen land is black. This fixes factions with a large remembered area (e.g. byzantium) \"lighting up\" everywhere — only their actual current vision is bright now. Live army markers also only appear in current sight, not in the remembered shroud." },
+    ],
+  },
+  {
     version: "0.9.900",
     date: "2026-06-04",
     items: [

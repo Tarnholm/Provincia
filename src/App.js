@@ -7327,25 +7327,28 @@ function App() {
         }
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb, srcX, srcY) => {
           // Look up the grid cell. flipY: TGA bottom-up → grid top-down.
-          let explored = true; // if no grid loaded, treat everything as explored
+          let v = 2; // no grid loaded → treat everything as currently-visible
           if (grid) {
             const gx = Math.min(gridW - 1, Math.max(0, Math.floor(srcX * gridW / W)));
             const flippedY = (H - 1 - srcY);
             const gy = Math.min(gridH - 1, Math.max(0, Math.floor(flippedY * gridH / H)));
-            const v = grid[gy * gridW + gx];
-            explored = v > 0;
+            v = grid[gy * gridW + gx];
           }
           // Owner colour
           const rgbKey = `${pr},${pg},${pb}`;
           const owner = rgbToOwner[rgbKey];
           const fc = owner && factionColors[owner.toLowerCase()];
           const base = (fc && fc.primary) || [100, 100, 100];
-          if (explored) return base;
-          // Unexplored: near-BLACK fog. A faction shouldn't see the ownership
-          // of land it has never scouted, nor where the settlements are. (Grey
-          // fog let the black settlement-centre pixels show through as dots all
-          // over the map — those are repainted to this same colour below so the
-          // unexplored map reads as proper all-black fog of war.)
+          // THREE-TIER fog of war (matches the game):
+          //   v>=2  currently in line of sight → full owner colour (bright)
+          //   v==1  explored before, not currently seen → dim shroud. A NEUTRAL
+          //         dark tone (no owner tint) so a large remembered area (e.g.
+          //         byzantium's) reads as a faint shroud, not a bright "lit-up"
+          //         mosaic of faction colours. Settlements you remember still
+          //         show as dots on top.
+          //   v==0  never seen → near-black fog.
+          if (v >= 2) return base;
+          if (v === 1) return [22, 23, 30];
           return [6, 6, 10];
         }));
       } else if (colorMode === "pop_growth") {
@@ -8216,7 +8219,9 @@ function App() {
       if (!W || !H) return true;
       const gx = Math.min(_fgW - 1, Math.max(0, Math.floor(wx * _fgW / W)));
       const gy = Math.min(_fgH - 1, Math.max(0, Math.floor(wy * _fgH / H)));
-      return _fg[gy * _fgW + gx] > 0;
+      // Only CURRENT line of sight (v>=2) reveals live armies — not the remembered
+      // shroud (v==1), where the game shows terrain but not current units.
+      return _fg[gy * _fgW + gx] >= 2;
     };
 
     // Draw siege indicators on besieged settlements
