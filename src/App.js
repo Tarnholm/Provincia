@@ -1356,6 +1356,50 @@ function applyOwnershipMoves(lines, ownerChanges) {
   return out;
 }
 
+// Patch descr_regions.txt IN PLACE from the current `regions` state — replaces
+// only the editable per-region lines (faction, culture, and the tags line that
+// holds hidden_resources / port level / climate / AOR / farm / religion) while
+// preserving the original tabs, blank-line block separators, header comments,
+// rgb, farm_level, pop_level and ethnicities. Block format per region:
+//   RegionName            (col 0, not indented)
+//   \tSettlement / \tFaction / \tCulture / \tRGB / \tTags / \tFarm / \tPop / \tEthnicities
+// then a blank line. Returns the patched text (same EOL as the original).
+function patchDescrRegions(originalText, regions) {
+  if (!originalText) return null;
+  const byName = {};
+  for (const r of Object.values(regions || {})) {
+    if (r && r.region) byName[String(r.region).trim()] = r;
+  }
+  const eol = originalText.includes("\r\n") ? "\r\n" : "\n";
+  const lines = originalText.split(/\r?\n/);
+  const indentOf = (s) => { const m = String(s).match(/^([ \t]*)/); return m ? m[1] : "\t"; };
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    // A region header is a non-blank, non-comment line with NO leading whitespace.
+    if (trimmed && !trimmed.startsWith(";") && !/^[ \t]/.test(line)) {
+      const r = byName[trimmed];
+      if (r) {
+        // Collect the consecutive indented, non-comment field lines that follow.
+        const fields = [];
+        let j = i + 1;
+        while (j < lines.length && /^[ \t]/.test(lines[j]) && lines[j].trim() && !lines[j].trim().startsWith(";")) {
+          fields.push(j); j++;
+        }
+        // fields: [0]settlement [1]faction [2]culture [3]rgb [4]tags [5]farm [6]pop [7]ethnicities
+        if (fields[1] != null && r.faction != null) lines[fields[1]] = indentOf(lines[fields[1]]) + r.faction;
+        if (fields[2] != null && r.culture != null) lines[fields[2]] = indentOf(lines[fields[2]]) + r.culture;
+        if (fields[4] != null && r.tags != null) lines[fields[4]] = indentOf(lines[fields[4]]) + r.tags;
+        i = j;
+        continue;
+      }
+    }
+    i++;
+  }
+  return lines.join(eol);
+}
+
 // Patch descr_strat.txt with updated resources, population and/or ownership
 function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles, mapHeight, ownerChanges) {
   const lines = originalText.split(/\r?\n/);
@@ -1859,6 +1903,7 @@ function App() {
   const [devEditsCount, setDevEditsCount] = useState(0);
   const [devDirtyFiles, setDevDirtyFiles] = useState(new Set());
   const devOrigStratRef = useRef(null); // stores original descr_strat.txt text for patching on export
+  const devOrigRegionsRef = useRef(null); // original descr_regions.txt text — patched in place on save (preserves tabs/blank lines/header)
 
   // Restore persisted files on startup (Electron only)
   useEffect(() => {
@@ -1866,6 +1911,9 @@ function App() {
       window.electronAPI.readUserFile("descr_strat_original.txt").then(text => {
         if (text) devOrigStratRef.current = text;
       });
+      window.electronAPI.readUserFile("descr_regions_original.txt").then(text => {
+        if (text) devOrigRegionsRef.current = text;
+      }).catch(() => {});
       // Read last seen version for welcome/what's-new screen
       window.electronAPI.readUserFile("welcome_version.txt").then(text => {
         setLastSeenVersion(text ? text.trim() : null); // null = first install
@@ -12447,13 +12495,13 @@ function App() {
                   }
 
                   // descr_regions.txt — region tags, faction, culture, etc.
+                  // Patch the original text in place (preserves format/header).
                   if (dirty.has("descr_regions.txt")) {
-                    const regLines = [];
-                    for (const [rgbKey, r] of Object.entries(regions)) {
-                      const rgb = rgbKey.split(",").join(" ");
-                      regLines.push(r.region, r.city, r.faction, r.culture, rgb, r.tags, r.farm_level, r.pop_level, r.ethnicities);
+                    if (devOrigRegionsRef.current) {
+                      download("descr_regions.txt", patchDescrRegions(devOrigRegionsRef.current, regions));
+                    } else {
+                      pushToast("descr_regions: original text not loaded; re-import the mod folder first.", "warning", 8000);
                     }
-                    download("descr_regions.txt", regLines.join("\n") + "\n");
                   }
                   // descr_strat.txt — resources, population and/or ownership changes
                   const stratNeeded = dirty.has("resources") || dirty.has("population") || dirty.has("descr_strat.txt");
@@ -20099,11 +20147,20 @@ function App() {
           const canSave = isElectron && window.electronAPI.saveFile;
 
           if (fileContents["descr_regions.txt"]) {
-            const parsed = parseDescrRegions(fileContents["descr_regions.txt"]);
+            const text = fileContents["descr_regions.txt"];
+            const parsed = parseDescrRegions(text);
             const count = Object.keys(parsed).length;
             if (count > 0) {
               if (canSave) await window.electronAPI.saveFile(camp.out.regions, JSON.stringify(parsed, null, 2));
-              if (isActiveCampaign(camp)) setRegions(parsed);
+              if (isActiveCampaign(camp)) {
+                setRegions(parsed);
+                // Keep the ORIGINAL text so descr_regions edits patch it in place
+                // (preserving tabs / blank lines / header) instead of a flat rebuild.
+                devOrigRegionsRef.current = text;
+                if (isElectron && window.electronAPI.saveUserFile) {
+                  window.electronAPI.saveUserFile("descr_regions_original.txt", text);
+                }
+              }
               updated.push(`regions (${count})`);
             }
           }
@@ -21304,17 +21361,21 @@ function App() {
                   }
                 }
                 if (devDirtyFiles.has("descr_regions.txt")) {
-                  try {
-                    const regLines = [];
-                    for (const [rgbKey, r] of Object.entries(regions)) {
-                      const rgb = rgbKey.split(",").join(" ");
-                      regLines.push(r.region, r.city, r.faction, r.culture, rgb, r.tags, r.farm_level, r.pop_level, r.ethnicities);
-                    }
-                    const camp = CAMPAIGNS[mapCampaign];
-                    const relPath = camp?.regionsPath || "world/maps/base/descr_regions.txt";
-                    const res = await api.writeActiveModFile(relPath, regLines.join("\n") + "\n");
-                    if (res?.ok) okCount++; else { failCount++; errors.push(`descr_regions: ${res?.error || "?"}`); }
-                  } catch (e) { failCount++; errors.push(`descr_regions: ${e.message}`); }
+                  if (!devOrigRegionsRef.current) {
+                    failCount++;
+                    errors.push("descr_regions: original text not loaded; re-import the mod folder first");
+                  } else {
+                    try {
+                      // Patch the ORIGINAL file in place (preserves tabs / blank
+                      // lines / header) instead of a flat rebuild that RTW's parser
+                      // would reject.
+                      const patched = patchDescrRegions(devOrigRegionsRef.current, regions);
+                      const camp = CAMPAIGNS[mapCampaign];
+                      const relPath = camp?.regionsPath || "world/maps/base/descr_regions.txt";
+                      const res = await api.writeActiveModFile(relPath, patched);
+                      if (res?.ok) okCount++; else { failCount++; errors.push(`descr_regions: ${res?.error || "?"}`); }
+                    } catch (e) { failCount++; errors.push(`descr_regions: ${e.message}`); }
+                  }
                 }
                 if (devDirtyFiles.has("descr_win_conditions.txt")) {
                   try {

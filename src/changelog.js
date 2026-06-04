@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.909",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**descr_regions edits (port level, hidden resources, region faction/culture) now save correctly.** The save was rebuilding descr_regions.txt from scratch — flat, with no tabs, no blank lines between regions, and no header — which RTW's parser rejected, so those edits silently didn't take effect in-game. It now patches the original file in place, changing only the edited line and preserving everything else (verified: a port-level change touches exactly one line). NOTE: re-import your mod folder once so Provincia has the original descr_regions to patch (older installs didn't keep it)." },
+    ],
+  },
+  {
     version: "0.9.908",
     date: "2026-06-04",
     items: [
