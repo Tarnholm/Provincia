@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.887",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Garrison vs field-army classification is now 100% exact — no fuzzy tolerance.** A full-map audit confirmed every real garrison commander sits EXACTLY on its settlement tile (the map_regions scan is precise), so the old 1-tile tolerance never rescued a real garrison — it only merged genuinely-adjacent field armies into the garrison (e.g. Capua's heir one tile outside the town). Removed it everywhere (bundle builder + runtime import + the shared classifier). Two generals on the SAME settlement tile still show together — that's a real in-town stack, not a merge." },
+      { type: "fix", text: "**Diplomacy panel rows now line up.** The war / allied / trade / protects rows use a fixed icon column + aligned label column, so the faction icons sit in a tidy column instead of starting at ragged positions." },
+    ],
+  },
+  {
     version: "0.9.886",
     date: "2026-06-04",
     items: [

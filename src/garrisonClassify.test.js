@@ -56,16 +56,19 @@ describe("isGarrisonUnit — Rome garrison vs field-army split", () => {
 // Pulcher at Pisae. The settlement-tile scan can land 1 px off from the
 // commander's descr_strat coord; an exact match then mis-buckets him into FIELD
 // and his Garrison commander card loses its portrait.
-describe("isOnSettlementTile — non-live garrison tolerance", () => {
-  test("exact match → garrison (Volaterrae / Gaius, the case that always worked)", () => {
+describe("isOnSettlementTile — EXACT settlement-tile garrison rule (0.9.887)", () => {
+  test("exact match → garrison (Pisae / Appius: char at 263,431 AND settlement 263,431)", () => {
     expect(isOnSettlementTile(268, 426, 268, 426)).toBe(true);
+    expect(isOnSettlementTile(263, 431, 263, 431)).toBe(true);
   });
 
-  test("1-px-off settlement scan still groups the commander → garrison (Pisae / Appius)", () => {
-    // Appius at (263,431); the TGA scan landed the settlement tile 1 px up/over.
-    expect(isOnSettlementTile(263, 431, 262, 430)).toBe(true);
-    expect(isOnSettlementTile(263, 431, 264, 432)).toBe(true);
-    expect(isOnSettlementTile(263, 431, 263, 430)).toBe(true);
+  test("a commander ONE tile off the settlement is a FIELD army, not garrison", () => {
+    // The scan is exact; a stack one tile away (e.g. Capua's heir Auls @302,393
+    // beside the town tile 303,392) must NOT be folded into the garrison.
+    expect(isOnSettlementTile(302, 393, 303, 392)).toBe(false);
+    expect(isOnSettlementTile(263, 431, 262, 430)).toBe(false);
+    expect(isOnSettlementTile(263, 431, 264, 432)).toBe(false);
+    expect(isOnSettlementTile(263, 431, 263, 430)).toBe(false);
   });
 
   test("a genuine field army 2+ tiles away stays field", () => {

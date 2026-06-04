@@ -807,13 +807,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const clickable = !!onHighlightFactions && highlightIds.length > 0;
     return (
       <div
-        style={{ fontSize: "0.66rem", color: labelColor, marginBottom: 3, cursor: clickable ? "pointer" : "default", lineHeight: 1.6 }}
+        style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.66rem", color: labelColor, marginBottom: 3, cursor: clickable ? "pointer" : "default", lineHeight: 1.5 }}
         onClick={clickable ? () => onHighlightFactions(highlightIds) : undefined}
         title={clickable ? `Highlight these ${highlightIds.length} faction${highlightIds.length === 1 ? "" : "s"} on the map` : undefined}
       >
-        {emoji} {label} ({entries.length}):{" "}
+        {/* 0.9.887: fixed emoji column + min-width label column so the faction
+            icons line up across rows (war/allied/trade/protects). */}
+        <span style={{ width: 16, textAlign: "center", flexShrink: 0 }}>{emoji}</span>
+        <span style={{ minWidth: "5.5em", flexShrink: 0, whiteSpace: "nowrap" }}>{label} ({entries.length})</span>
+        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, minWidth: 0 }}>
         {allText ? (
-          <span style={{ color: "#ddd" }}>{allText}</span>
+          <span style={{ color: "#ddd", whiteSpace: "normal" }}>{allText}</span>
         ) : (
           entries.map((e, i) => {
             // Clicking an individual pill highlights ONLY that faction (and
@@ -835,6 +839,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             );
           })
         )}
+        </span>
       </div>
     );
   };

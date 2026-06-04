@@ -49,5 +49,11 @@ export function isGarrisonUnit(unit, ctx) {
 // tile of (sx,sy).
 export function isOnSettlementTile(ax, ay, sx, sy) {
   if (ax == null || ay == null || sx == null || sy == null) return false;
-  return Math.abs(ax - sx) <= 1 && Math.abs(ay - sy) <= 1;
+  // 0.9.887: EXACT match only. A full-map audit confirmed every real garrison
+  // commander sits EXACTLY on its settlement tile (the map_regions.tga scan is
+  // precise — Appius @ Pisae is at (263,431) and the settlement tile is also
+  // (263,431)). The old Chebyshev-≤1 tolerance never rescued a real garrison; it
+  // only pulled genuinely-adjacent FIELD armies in (e.g. Capua's heir Auls one
+  // tile outside the town), merging two stacks into one garrison.
+  return ax === sx && ay === sy;
 }
