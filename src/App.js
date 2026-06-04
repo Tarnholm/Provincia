@@ -2770,6 +2770,14 @@ function App() {
   const [pendingReviewOpen, setPendingReviewOpen] = useState(false);
   const [revertAutosaveOpen, setRevertAutosaveOpen] = useState(false); // "Revert to autosave" picker
   const [aiDiagOpen, setAiDiagOpen] = useState(false); // AI Diagnostics panel
+  // Configurable AI-diagnostics thresholds (persisted). Mods vary wildly in
+  // economy scale, so the user sets these. dormantTurns is for the upcoming
+  // cross-turn checks.
+  const [aiDiagConfig, setAiDiagConfig] = useState(() => {
+    const def = { hoardTreasury: 12000, hoardInvest: 150, lowTreasury: 0, dormantTurns: 8 };
+    try { return { ...def, ...(JSON.parse(localStorage.getItem("aiDiagConfig")) || {}) }; } catch { return def; }
+  });
+  useEffect(() => { try { localStorage.setItem("aiDiagConfig", JSON.stringify(aiDiagConfig)); } catch {} }, [aiDiagConfig]);
   // Export-instead-of-overwrite: when ON, "Apply" writes the edited mod files
   // under `exportModDir` instead of overwriting the live mod in place (the live
   // mod is left untouched). Persisted so the choice survives a reload; the main
@@ -2827,11 +2835,12 @@ function App() {
       const net = typeof e.net === "number" ? e.net : null;
       const exp = e.expenditure || {};
       const invest = (exp.recruitment || 0) + (exp.construction || 0);
-      if (treasury != null && treasury < 0) out.bankrupt.push({ faction, treasury, net });
+      const lowT = aiDiagConfig.lowTreasury || 0;
+      if (treasury != null && treasury < lowT) out.bankrupt.push({ faction, treasury, net });
       if (net != null && net < 0) out.bleeding.push({ faction, treasury, net });
-      if (treasury != null && net != null && treasury >= 0 && treasury + net < 0) out.willBankrupt.push({ faction, treasury, net, after: treasury + net });
+      if (treasury != null && net != null && treasury >= lowT && treasury + net < lowT) out.willBankrupt.push({ faction, treasury, net, after: treasury + net });
       // Passed-out economy: lots of cash, ~nothing spent on recruiting/building.
-      if (treasury != null && treasury > 12000 && invest < 150) out.hoarding.push({ faction, treasury, net, invest });
+      if (treasury != null && treasury > (aiDiagConfig.hoardTreasury || 12000) && invest < (aiDiagConfig.hoardInvest || 150)) out.hoarding.push({ faction, treasury, net, invest });
     }
     const byTreasuryAsc = (a, b) => (a.treasury ?? 0) - (b.treasury ?? 0);
     const byNetAsc = (a, b) => (a.net ?? 0) - (b.net ?? 0);
@@ -2841,7 +2850,7 @@ function App() {
     out.hoarding.sort((a, b) => (b.treasury ?? 0) - (a.treasury ?? 0));
     out.total = out.bankrupt.length + out.bleeding.length + out.willBankrupt.length + out.hoarding.length;
     return out;
-  }, [saveEconomy]);
+  }, [saveEconomy, aiDiagConfig]);
   // Stage a character scalar-field edit (age / leader-heir tag) from the
   // InfoPopup. Keyed by firstName|faction (matches the trait/ancillary editors).
   // Merges into any existing staged fields for the same character.
@@ -21028,6 +21037,22 @@ function App() {
             <div style={{ fontSize: "0.74rem", color: "#9aa" }}>
               Economic health of every faction in the loaded save (from the cracked Financial Overview). Cross-turn checks — stuck units, factions dormant for N turns — are coming next off the timeline scanner.
             </div>
+            {(() => {
+              const inputStyle = { width: 90, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, padding: "2px 6px", fontSize: "0.74rem", fontVariantNumeric: "tabular-nums" };
+              const num = (key) => (
+                <input type="number" value={aiDiagConfig[key]} style={inputStyle}
+                  onChange={(e) => { const v = e.target.value === "" ? 0 : Number(e.target.value); setAiDiagConfig((c) => ({ ...c, [key]: Number.isFinite(v) ? v : c[key] })); }} />
+              );
+              return (
+                <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "8px 10px", fontSize: "0.74rem", color: "#bcd", display: "flex", flexWrap: "wrap", gap: "8px 18px", alignItems: "center" }}>
+                  <span style={{ fontWeight: 700, color: "#9ab" }}>Thresholds:</span>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>Hoarding — treasury above {num("hoardTreasury")}</label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>and invested below {num("hoardInvest")}</label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>Low-treasury alert below {num("lowTreasury")}</label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#8a93a8" }} title="Used by the upcoming cross-turn 'dormant faction' / 'stuck unit' checks.">Dormant window (turns) {num("dormantTurns")}</label>
+                </div>
+              );
+            })()}
             <div style={{ overflow: "auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 12, paddingRight: 4 }}>
               {(() => {
                 const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString());
@@ -21051,7 +21076,7 @@ function App() {
                 );
                 return (
                   <>
-                    <Section title="💀 Bankrupt (treasury below 0)" color="#e85050" rows={aiDiagnostics.bankrupt} empty="None in the red." render={(r) => `treasury ${fmt(r.treasury)} · net ${fmt(r.net)}/turn`} />
+                    <Section title={`💀 Bankrupt (treasury below ${Number(aiDiagConfig.lowTreasury || 0).toLocaleString()})`} color="#e85050" rows={aiDiagnostics.bankrupt} empty="None below the threshold." render={(r) => `treasury ${fmt(r.treasury)} · net ${fmt(r.net)}/turn`} />
                     <Section title="📉 Will go bankrupt next turn" color="#e0913a" rows={aiDiagnostics.willBankrupt} empty="None projected to cross 0 next turn." render={(r) => `${fmt(r.treasury)} ${r.net < 0 ? "−" : "+"} ${fmt(Math.abs(r.net))} → ${fmt(r.after)}`} />
                     <Section title="🩸 Bleeding (negative income)" color="#d06a6a" rows={aiDiagnostics.bleeding} empty="Everyone's net income is ≥ 0." render={(r) => `net ${fmt(r.net)}/turn · treasury ${fmt(r.treasury)}`} />
                     <Section title="😴 Hoarding (cash, no recruiting/building)" color="#caa84a" rows={aiDiagnostics.hoarding} empty="No idle-cash factions detected." render={(r) => `treasury ${fmt(r.treasury)} · invested ${fmt(r.invest)}`} />
@@ -21059,7 +21084,7 @@ function App() {
                 );
               })()}
             </div>
-            <div style={{ fontSize: "0.68rem", color: "#667" }}>“Hoarding” = treasury &gt; 12,000 with under 150 spent on recruitment + construction this turn — a strong proxy for a “passed-out” AI. Click any faction to select it on the map.</div>
+            <div style={{ fontSize: "0.68rem", color: "#667" }}>“Hoarding” = treasury &gt; {Number(aiDiagConfig.hoardTreasury).toLocaleString()} with under {Number(aiDiagConfig.hoardInvest).toLocaleString()} spent on recruitment + construction this turn — a proxy for a “passed-out” AI. Thresholds save automatically. Click any faction to select it on the map.</div>
           </div>
         </div>
       )}

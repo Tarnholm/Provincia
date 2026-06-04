@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.911",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**AI Diagnostics thresholds are now editable** (and saved). Mod economies vary hugely, so the 🩺 AI panel lets you set the \"hoarding\" treasury cutoff and recruitment+construction spend cutoff, plus a low-treasury alert level (and a dormant-turns window for the upcoming cross-turn checks). Every flag list re-filters live as you change them." },
+    ],
+  },
+  {
     version: "0.9.910",
     date: "2026-06-04",
     items: [
