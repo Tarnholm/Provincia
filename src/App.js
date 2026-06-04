@@ -2774,7 +2774,18 @@ function App() {
   // economy scale, so the user sets these. dormantTurns is for the upcoming
   // cross-turn checks.
   const [aiDiagConfig, setAiDiagConfig] = useState(() => {
-    const def = { hoardTreasury: 12000, hoardInvest: 150, lowTreasury: 0, dormantTurns: 8 };
+    const def = {
+      hoardInvest: 150, lowTreasury: 0, dormantTurns: 8,
+      // Hoarding threshold per faction. "flat" = a fixed number; "scaled" =
+      // sized to the faction: perSettlement·(# settlements) + perTier·(Σ tier
+      // weights) + perPop·(total population). A small faction sitting on cash
+      // trips it; a big empire's same cash is just its scale.
+      hoardMode: "scaled",
+      hoardTreasury: 12000,
+      hoardPerSettlement: 30000,
+      hoardPerTier: 0,
+      hoardPerPop: 0,
+    };
     try { return { ...def, ...(JSON.parse(localStorage.getItem("aiDiagConfig")) || {}) }; } catch { return def; }
   });
   useEffect(() => { try { localStorage.setItem("aiDiagConfig", JSON.stringify(aiDiagConfig)); } catch {} }, [aiDiagConfig]);
@@ -2820,37 +2831,8 @@ function App() {
     [pendingBuildings, pendingTraits, pendingAncils, pendingGenerals, pendingCharPos, pendingCharFields, pendingGarrisonMoves, pendingArmyUnits, pendingDiplomacy, devDirtyFiles]
   );
 
-  // AI DIAGNOSTICS (v1, 2026-06-04): scan the loaded save's per-faction economy
-  // for AI-health red flags — bankruptcy, bleeding treasury, and "passed-out"
-  // factions sitting on cash without investing it. All derived from the already
-  // -cracked Financial Overview (saveEconomy.byFaction); cross-turn checks
-  // (stuck units, dormant N turns) come later off the timeline scanner.
-  const aiDiagnostics = useMemo(() => {
-    const out = { bankrupt: [], bleeding: [], willBankrupt: [], hoarding: [] };
-    const byFac = saveEconomy && saveEconomy.byFaction;
-    if (!byFac) return out;
-    for (const [faction, e] of Object.entries(byFac)) {
-      if (!e) continue;
-      const treasury = typeof e.treasury === "number" ? e.treasury : null;
-      const net = typeof e.net === "number" ? e.net : null;
-      const exp = e.expenditure || {};
-      const invest = (exp.recruitment || 0) + (exp.construction || 0);
-      const lowT = aiDiagConfig.lowTreasury || 0;
-      if (treasury != null && treasury < lowT) out.bankrupt.push({ faction, treasury, net });
-      if (net != null && net < 0) out.bleeding.push({ faction, treasury, net });
-      if (treasury != null && net != null && treasury >= lowT && treasury + net < lowT) out.willBankrupt.push({ faction, treasury, net, after: treasury + net });
-      // Passed-out economy: lots of cash, ~nothing spent on recruiting/building.
-      if (treasury != null && treasury > (aiDiagConfig.hoardTreasury || 12000) && invest < (aiDiagConfig.hoardInvest || 150)) out.hoarding.push({ faction, treasury, net, invest });
-    }
-    const byTreasuryAsc = (a, b) => (a.treasury ?? 0) - (b.treasury ?? 0);
-    const byNetAsc = (a, b) => (a.net ?? 0) - (b.net ?? 0);
-    out.bankrupt.sort(byTreasuryAsc);
-    out.bleeding.sort(byNetAsc);
-    out.willBankrupt.sort((a, b) => a.after - b.after);
-    out.hoarding.sort((a, b) => (b.treasury ?? 0) - (a.treasury ?? 0));
-    out.total = out.bankrupt.length + out.bleeding.length + out.willBankrupt.length + out.hoarding.length;
-    return out;
-  }, [saveEconomy, aiDiagConfig]);
+  // AI DIAGNOSTICS — factionSize + aiDiagnostics useMemos live further down,
+  // after settlementTierMap is declared (they depend on it).
   // Stage a character scalar-field edit (age / leader-heir tag) from the
   // InfoPopup. Keyed by firstName|faction (matches the trait/ancillary editors).
   // Merges into any existing staged fields for the same character.
@@ -6232,6 +6214,70 @@ function App() {
     }
     return map;
   }, [buildingsData, regions]);
+
+  // Per-faction SIZE — settlement count, tier-weight sum, and total population.
+  // Sizes the "hoarding" treasury threshold to the faction (a small faction's
+  // 100k is hoarding; a 100-settlement empire's 100k is just scale).
+  const factionSize = useMemo(() => {
+    const TIER_W = { village: 1, town: 2, large_town: 3, city: 4, large_city: 5, huge_city: 6 };
+    const pop = savePopulationByCity || populationData || {};
+    const out = {};
+    for (const [rgbKey, r] of Object.entries(regions || {})) {
+      if (!r || !r.faction || !r.city) continue;
+      const f = String(r.faction).toLowerCase();
+      const tier = settlementTierMap[rgbKey];
+      const tw = tier ? (TIER_W[tier] || 1) : 1;
+      const p = Number((pop[r.city] != null ? pop[r.city] : pop[r.region]) || 0) || 0;
+      if (!out[f]) out[f] = { count: 0, tierSum: 0, popSum: 0 };
+      out[f].count++; out[f].tierSum += tw; out[f].popSum += p;
+    }
+    return out;
+  }, [regions, settlementTierMap, savePopulationByCity, populationData]);
+
+  // AI DIAGNOSTICS (2026-06-04): per-faction AI-health red flags from the cracked
+  // Financial Overview + treasury history. The "hoarding / passed-out" check: a
+  // faction is flagged when it has more treasury than its SIZE warrants AND it
+  // isn't spending on army/buildings (recruitment + construction ~ 0) AND its
+  // treasury isn't shrinking (sitting on / growing the pile rather than using
+  // it). All thresholds are user-set (aiDiagConfig).
+  const aiDiagnostics = useMemo(() => {
+    const out = { bankrupt: [], bleeding: [], willBankrupt: [], hoarding: [] };
+    const byFac = saveEconomy && saveEconomy.byFaction;
+    if (!byFac) return out;
+    const cfg = aiDiagConfig;
+    const lowT = cfg.lowTreasury || 0;
+    const tHist = treasuryHistory || {};
+    for (const [faction, e] of Object.entries(byFac)) {
+      if (!e) continue;
+      const treasury = typeof e.treasury === "number" ? e.treasury : null;
+      const net = typeof e.net === "number" ? e.net : null;
+      const exp = e.expenditure || {};
+      const recruitment = exp.recruitment || 0, construction = exp.construction || 0;
+      const invest = recruitment + construction;
+      if (treasury != null && treasury < lowT) out.bankrupt.push({ faction, treasury, net });
+      if (net != null && net < 0) out.bleeding.push({ faction, treasury, net });
+      if (treasury != null && net != null && treasury >= lowT && treasury + net < lowT) out.willBankrupt.push({ faction, treasury, net, after: treasury + net });
+      // Hoarding / passed-out.
+      const fl = String(faction).toLowerCase();
+      const size = factionSize[fl] || { count: 0, tierSum: 0, popSum: 0 };
+      const threshold = cfg.hoardMode === "flat"
+        ? (cfg.hoardTreasury || 0)
+        : (cfg.hoardPerSettlement || 0) * size.count + (cfg.hoardPerTier || 0) * size.tierSum + (cfg.hoardPerPop || 0) * size.popSum;
+      const hist = tHist[fl] || tHist[faction];
+      let growth = null;
+      if (Array.isArray(hist) && hist.length >= 2) growth = (Number(hist[hist.length - 1]) || 0) - (Number(hist[hist.length - 2]) || 0);
+      const notSpendingDown = growth == null || growth >= 0; // treasury flat or rising
+      if (treasury != null && treasury > threshold && invest < (cfg.hoardInvest || 0) && notSpendingDown) {
+        out.hoarding.push({ faction, treasury, net, invest, recruitment, construction, threshold, growth, settlements: size.count });
+      }
+    }
+    out.bankrupt.sort((a, b) => (a.treasury ?? 0) - (b.treasury ?? 0));
+    out.bleeding.sort((a, b) => (a.net ?? 0) - (b.net ?? 0));
+    out.willBankrupt.sort((a, b) => a.after - b.after);
+    out.hoarding.sort((a, b) => (b.treasury - b.threshold) - (a.treasury - a.threshold));
+    out.total = out.bankrupt.length + out.bleeding.length + out.willBankrupt.length + out.hoarding.length;
+    return out;
+  }, [saveEconomy, aiDiagConfig, factionSize, treasuryHistory]);
 
   // Government type lookup: rgb key → { type, level } (e.g. "governmentA", "gov1")
   const governmentMap = useMemo(() => {
@@ -21038,16 +21084,32 @@ function App() {
               Economic health of every faction in the loaded save (from the cracked Financial Overview). Cross-turn checks — stuck units, factions dormant for N turns — are coming next off the timeline scanner.
             </div>
             {(() => {
-              const inputStyle = { width: 90, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, padding: "2px 6px", fontSize: "0.74rem", fontVariantNumeric: "tabular-nums" };
+              const inputStyle = { width: 84, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, padding: "2px 6px", fontSize: "0.74rem", fontVariantNumeric: "tabular-nums" };
               const num = (key) => (
                 <input type="number" value={aiDiagConfig[key]} style={inputStyle}
                   onChange={(e) => { const v = e.target.value === "" ? 0 : Number(e.target.value); setAiDiagConfig((c) => ({ ...c, [key]: Number.isFinite(v) ? v : c[key] })); }} />
               );
+              const scaled = aiDiagConfig.hoardMode !== "flat";
               return (
-                <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "8px 10px", fontSize: "0.74rem", color: "#bcd", display: "flex", flexWrap: "wrap", gap: "8px 18px", alignItems: "center" }}>
-                  <span style={{ fontWeight: 700, color: "#9ab" }}>Thresholds:</span>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>Hoarding — treasury above {num("hoardTreasury")}</label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>and invested below {num("hoardInvest")}</label>
+                <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "8px 10px", fontSize: "0.74rem", color: "#bcd", display: "flex", flexWrap: "wrap", gap: "6px 16px", alignItems: "center" }}>
+                  <span style={{ fontWeight: 700, color: "#caa84a", width: "100%" }}>😴 Hoarding threshold — flag a faction whose treasury exceeds:</span>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <select value={aiDiagConfig.hoardMode} onChange={(e) => setAiDiagConfig((c) => ({ ...c, hoardMode: e.target.value }))} style={{ ...inputStyle, width: "auto" }}>
+                      <option value="scaled">scaled to faction size</option>
+                      <option value="flat">a flat amount</option>
+                    </select>
+                  </label>
+                  {scaled ? (
+                    <>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>per settlement {num("hoardPerSettlement")}</label>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6 }} title="Extra per settlement-tier point (village 1 … huge city 6). 0 = ignore tiers.">+ per tier-point {num("hoardPerTier")}</label>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6 }} title="Extra per unit of total population. 0 = ignore population.">+ per population {num("hoardPerPop")}</label>
+                    </>
+                  ) : (
+                    <label style={{ display: "flex", alignItems: "center", gap: 6 }}>amount {num("hoardTreasury")}</label>
+                  )}
+                  <span style={{ width: "100%", height: 1, background: "rgba(255,255,255,0.07)" }} />
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }} title="…AND it spent less than this on recruitment + construction this turn (so it isn't using the money). Treasury must also be flat/rising, not shrinking.">…and spent on army+buildings below {num("hoardInvest")}</label>
                   <label style={{ display: "flex", alignItems: "center", gap: 6 }}>Low-treasury alert below {num("lowTreasury")}</label>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#8a93a8" }} title="Used by the upcoming cross-turn 'dormant faction' / 'stuck unit' checks.">Dormant window (turns) {num("dormantTurns")}</label>
                 </div>
@@ -21079,7 +21141,7 @@ function App() {
                     <Section title={`💀 Bankrupt (treasury below ${Number(aiDiagConfig.lowTreasury || 0).toLocaleString()})`} color="#e85050" rows={aiDiagnostics.bankrupt} empty="None below the threshold." render={(r) => `treasury ${fmt(r.treasury)} · net ${fmt(r.net)}/turn`} />
                     <Section title="📉 Will go bankrupt next turn" color="#e0913a" rows={aiDiagnostics.willBankrupt} empty="None projected to cross 0 next turn." render={(r) => `${fmt(r.treasury)} ${r.net < 0 ? "−" : "+"} ${fmt(Math.abs(r.net))} → ${fmt(r.after)}`} />
                     <Section title="🩸 Bleeding (negative income)" color="#d06a6a" rows={aiDiagnostics.bleeding} empty="Everyone's net income is ≥ 0." render={(r) => `net ${fmt(r.net)}/turn · treasury ${fmt(r.treasury)}`} />
-                    <Section title="😴 Hoarding (cash, no recruiting/building)" color="#caa84a" rows={aiDiagnostics.hoarding} empty="No idle-cash factions detected." render={(r) => `treasury ${fmt(r.treasury)} · invested ${fmt(r.invest)}`} />
+                    <Section title="😴 Hoarding / passed-out (has money, not using it)" color="#caa84a" rows={aiDiagnostics.hoarding} empty="No idle-cash factions detected." render={(r) => `${fmt(r.treasury)} (cap ${fmt(Math.round(r.threshold))}) · ${r.settlements} setl · recruit ${fmt(r.recruitment)} / build ${fmt(r.construction)}${r.growth != null ? ` · ${r.growth >= 0 ? "+" : "−"}${fmt(Math.abs(r.growth))}/turn` : ""}`} />
                   </>
                 );
               })()}

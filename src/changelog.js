@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.912",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**AI Diagnostics \"hoarding\" detection is now size-aware and behaviour-aware** — it catches factions that *have money and aren't using it*, not just factions with a big number. The treasury threshold scales to each faction (set an amount **per settlement**, **+ per tier-point** (village 1 … huge city 6), and **+ per population** — or switch to a flat amount). A faction is only flagged if it ALSO spent under your cutoff on recruitment + construction this turn **and** its treasury isn't shrinking (it's sitting on / growing the pile). Each flagged faction shows its treasury vs its size-cap, settlement count, recruit/build spend, and treasury change per turn." },
+    ],
+  },
+  {
     version: "0.9.911",
     date: "2026-06-04",
     items: [
