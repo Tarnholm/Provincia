@@ -8548,7 +8548,10 @@ function App() {
           // Reveal through the fog in the FULL colour of the faction that owns
           // the settlement (e.g. an Epirus-held target reads as Epirus green),
           // so the victory map shows who currently holds each objective.
-          const owner = currentOwnerByCity ? currentOwnerByCity[region.city] : null;
+          // Owner: live ownership if known, else the region's stored owner
+          // (region.faction). currentOwnerByCity can miss distant/unexplored
+          // settlements, which left byzantium's far targets all grey.
+          const owner = (currentOwnerByCity && currentOwnerByCity[region.city]) || region.faction || null;
           const fc = owner && factionColors[owner.toLowerCase()];
           const base = (fc && fc.primary) || [150, 150, 160];
           ctx.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`;

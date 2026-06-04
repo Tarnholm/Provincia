@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.904",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Distant victory targets show their owner's colour instead of grey.** Live ownership data doesn't always cover far-off settlements, so byzantium's targets came out all grey; they now fall back to the region's stored owner, so each shows its faction colour." },
+    ],
+  },
+  {
     version: "0.9.903",
     date: "2026-06-04",
     items: [
