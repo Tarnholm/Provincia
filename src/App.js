@@ -7341,12 +7341,12 @@ function App() {
           const fc = owner && factionColors[owner.toLowerCase()];
           const base = (fc && fc.primary) || [100, 100, 100];
           if (explored) return base;
-          // Unexplored: UNIFORM dark fog — no owner tint. A faction shouldn't
-          // reveal the ownership of land it has never scouted, and the old
-          // dim-owner-colour made the map a busy "byzantine" mosaic of faded
-          // faction colours. Plain dark grey reads as proper fog of war; the
-          // black settlement-centre pixels still pass through as dark markers.
-          return [24, 24, 30];
+          // Unexplored: near-BLACK fog. A faction shouldn't see the ownership
+          // of land it has never scouted, nor where the settlements are. (Grey
+          // fog let the black settlement-centre pixels show through as dots all
+          // over the map — those are repainted to this same colour below so the
+          // unexplored map reads as proper all-black fog of war.)
+          return [6, 6, 10];
         }));
       } else if (colorMode === "pop_growth") {
         // Headroom = pop_level (cap from descr_strat) − current population
@@ -8499,19 +8499,20 @@ function App() {
       }
     }
 
-    // Explored mode: keep the black settlement-centre pixel placed everywhere
-    // (it passes through buildColoredCanvas unchanged) so every settlement's
-    // LOCATION shows as a dark marker — including unexplored ones sitting on the
-    // dark fog (requested 2026-06-04: "dark but have the black settlement pixel
-    // placed"). We don't recolour the dots; we only record which cities are
-    // unexplored so the labels pass can withhold their NAMES (a name would
-    // reveal a city the faction hasn't scouted).
+    // Explored mode: settlements a faction has never scouted must be ALL BLACK
+    // (requested 2026-06-04). The black settlement-centre pixels pass through
+    // buildColoredCanvas unchanged, so on the dark fog they'd show as a scatter
+    // of dots revealing every settlement's location. Repaint each UNEXPLORED
+    // settlement pixel to the fog colour so it vanishes; leave explored ones
+    // black (a real marker on your scouted, faction-coloured land). Also record
+    // unexplored cities so the labels pass withholds their names.
     const fogCityExplored = {}; // rgbKey -> bool, used by the labels pass
     if (colorMode === "explored" && cityPixels.length > 0) {
       const fogSrc = (fogVision && fogVision.grid) ? fogVision : playerExploration;
       const fg = fogSrc && fogSrc.grid;
       const gW = (fogSrc && fogSrc.width) || 1020, gH = (fogSrc && fogSrc.height) || 700;
       const W = imgSize.width, H = imgSize.height;
+      ctx.fillStyle = "rgb(6,6,10)"; // matches the unexplored fog colour
       for (const cp of cityPixels) {
         if (!regions[cp.rgbKey]) continue;
         let explored = true;
@@ -8521,6 +8522,7 @@ function App() {
           explored = fg[gy * gW + gx] > 0;
         }
         fogCityExplored[cp.rgbKey] = explored;
+        if (!explored) ctx.fillRect(cp.x, cp.y, 1, 1); // bury the dot in the fog
       }
     }
 

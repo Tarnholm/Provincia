@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.898",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Unexplored land in Explored mode is now properly black.** It was dark grey, which let the black settlement-centre dots show through as a scatter across the whole map — revealing every settlement's location even in unscouted territory. Unexplored land is now near-black and the undiscovered settlement dots are buried in it, so the fog reads as real fog of war. Settlement markers still show on land you've actually scouted." },
+    ],
+  },
+  {
     version: "0.9.897",
     date: "2026-06-04",
     items: [
