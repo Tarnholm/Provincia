@@ -2474,11 +2474,19 @@ function App() {
   const [saveQueues, setSaveQueues] = useState(null); // { city: [chainName, ...] } currently-queued buildings from save parser
   const [saveTaxByCity, setSaveTaxByCity] = useState(null); // { city: "low"|"normal"|"high"|"very_high" } from save parser
   const [saveHappinessByCity, setSaveHappinessByCity] = useState(null); // { city: f32 } from save parser (f32 at settlement.offset-30, raw 100..200 scale, see save-cracker dossier 2026-05-10)
-  // Player's ever-explored tile grid from save (session 103, 2026-05-16).
-  // { grid: Uint8Array(510*1400), width: 510, height: 1400 }. value=0 means
+  // Player's ever-explored tile grid from save (session 103, 2026-05-16;
+  // coordinate model corrected to 1020×700 on 2026-06-04).
+  // { grid: Uint8Array(1020*700), width: 1020, height: 700 }. value=0 means
   // never explored, value≥1 means ever-explored land. Drives the "Explored"
   // map mode that dims unexplored regions.
   const [playerExploration, setPlayerExploration] = useState(null);
+  // Per-faction fog-of-war (2026-06-04): the Explored mode can show ANY
+  // faction's known-world map, not just the player's. fogFaction = null means
+  // "the player" (playerExploration, the largest record). When a faction is
+  // picked, fogVision holds that faction's fetched grid (same shape as
+  // playerExploration) + a settlement-coverage confidence.
+  const [fogFaction, setFogFaction] = useState(null);
+  const [fogVision, setFogVision] = useState(null); // { faction, grid, width, height, coverage, exploredCount }
   const [savePopulationByCity, setSavePopulationByCity] = useState(null); // { city: u32 } live population from save parser (u32 at settlement.offset-1494, save-cracker session 2)
   const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
   const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
@@ -5650,6 +5658,35 @@ function App() {
     return () => { cancelled = true; };
   }, [liveSaveFile, modDataDir, liveSaveDir]);
 
+  // Per-faction fog-of-war fetch (2026-06-04). When the Explored map mode is
+  // active and a non-player faction is selected, fetch that faction's explored
+  // grid on demand (main resolves the record robustly via settlement coverage).
+  // fogFaction === null → use the player's grid (playerExploration); clear any
+  // fetched grid.
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!fogFaction) { setFogVision(null); return; }
+    if (!api || !api.getFactionVision || !liveSaveFile || !modDataDir) { setFogVision(null); return; }
+    const savePath = liveSaveDir ? `${liveSaveDir}\\${liveSaveFile}` : null;
+    if (!savePath) { setFogVision(null); return; }
+    let cancelled = false;
+    api.getFactionVision(savePath, modDataDir, fogFaction)
+      .then((r) => {
+        if (cancelled) return;
+        if (r && !r.error && r.grid) {
+          // IPC returns a Buffer/Uint8Array; normalize to Uint8Array.
+          const grid = r.grid instanceof Uint8Array ? r.grid : new Uint8Array(r.grid);
+          setFogVision({ faction: r.faction, grid, width: r.width, height: r.height, coverage: r.coverage, exploredCount: r.exploredCount });
+          try { console.log(`[fog] ${r.faction} coverage=${r.coverage < 0 ? "n/a" : (100 * r.coverage).toFixed(0) + "%"} explored=${r.exploredCount}`); } catch {}
+        } else {
+          setFogVision(null);
+          if (r && r.error) console.warn("[fog] failed:", r.error);
+        }
+      })
+      .catch((e) => { if (!cancelled) { setFogVision(null); console.warn("[fog] error:", e?.message); } });
+    return () => { cancelled = true; };
+  }, [fogFaction, liveSaveFile, modDataDir, liveSaveDir]);
+
   // UI batch 2 (feature 3): scan a chosen saves folder into a campaign timeline.
   // On-demand (cracks every save) — never on the live path. Defaults the folder
   // picker to the live saves dir when one is active.
@@ -7235,9 +7272,12 @@ function App() {
         // engine tileY is bottom-up). The earlier 510×1400 dims squashed x 2:1
         // and dropped the map's right half (only 2.1% of own settlements landed
         // on explored tiles); 1020×700 scores 100.0% corpus-wide.
-        const grid = playerExploration && playerExploration.grid;
-        const gridW = (playerExploration && playerExploration.width) || 1020;
-        const gridH = (playerExploration && playerExploration.height) || 700;
+        // Source grid: the player's own (default) or, when a faction is picked
+        // in the Explored-mode legend, that faction's fetched grid.
+        const fogSource = (fogFaction && fogVision && fogVision.grid) ? fogVision : playerExploration;
+        const grid = fogSource && fogSource.grid;
+        const gridW = (fogSource && fogSource.width) || 1020;
+        const gridH = (fogSource && fogSource.height) || 700;
         // Build current owner → colour map (same as faction mode)
         const rgbToOwner = {};
         for (const [faction, regionNames] of Object.entries(factionRegionsMap || {})) {
@@ -7751,7 +7791,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -12679,6 +12719,39 @@ function App() {
     const collapseArrow = legendCollapsed ? "\u25B6" : "\u25BC";
     const collapseToggle = { cursor: "pointer", userSelect: "none" };
     const onCollapseClick = () => setLegendCollapsed(p => !p);
+
+    if (colorMode === "explored") {
+      const factionOpts = Object.keys(factionRegionsMap || {}).filter(Boolean).sort();
+      const selStyle = {
+        width: "100%", padding: "4px 6px", borderRadius: 6, marginTop: 2,
+        background: "rgba(255,255,255,0.08)", color: "#f6f6f6",
+        border: "1px solid rgba(255,255,255,0.15)", fontSize: "0.75rem",
+      };
+      const cov = fogVision && typeof fogVision.coverage === "number" ? fogVision.coverage : null;
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Explored / Fog of War <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ fontSize: "0.7rem", color: "#bbb", marginBottom: 6 }}>Regions a faction has never scouted are dimmed to dark grey.</div>
+            <label style={{ display: "block", fontSize: "0.7rem", color: "#ccc" }}>Show knowledge of:</label>
+            <select value={fogFaction || ""} onChange={(e) => setFogFaction(e.target.value || null)} style={selStyle}>
+              <option value="">Player (your faction)</option>
+              {factionOpts.map((f) => <option key={f} value={f}>{f.replace(/_/g, " ")}</option>)}
+            </select>
+            {fogFaction && (
+              <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#bbb" }}>
+                {fogVision
+                  ? <>Explored {(fogVision.exploredCount || 0).toLocaleString()} tiles{cov != null && cov >= 0 ? ` · match ${(cov * 100).toFixed(0)}%` : ""}{cov != null && cov >= 0 && cov < 0.7 ? " (approx.)" : ""}</>
+                  : <span style={{ color: "#e0a030" }}>Loading…</span>}
+              </div>
+            )}
+            {!fogFaction && !playerExploration && (
+              <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#e0a030" }}>Load a save to see explored tiles.</div>
+            )}
+          </>}
+        </div>
+      );
+    }
 
     if (colorMode === "population") {
       const vals = Object.values(populationData);

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.891",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**Fog of War: see ANY faction's explored map, not just your own.** The **Explored** view now has a faction picker in its legend — choose \"Player (your faction)\" or any other faction to see what *they* have scouted, with everything they've never seen dimmed to dark grey. Great for reading what an enemy or ally knows about the map. Each faction's record is matched robustly by settlement coverage (its own settlements always sit on its explored tiles), and the legend shows the match confidence." },
+    ],
+  },
+  {
     version: "0.9.890",
     date: "2026-06-04",
     items: [

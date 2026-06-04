@@ -6178,6 +6178,108 @@ ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
   }
 });
 
+// IPC: per-faction fog-of-war / explored map (2026-06-04). Returns the chosen
+// faction's ever-explored tile grid (the corrected 1020×700 model — see
+// findings-faction-knowledge-entities-2026-06-04.md). Record→faction is
+// resolved robustly: engineOrder gives a fast primary pick, then we VERIFY by
+// settlement coverage — a faction's own settlements are 100% on its own
+// explored grid — and fall back to the best-covering record if the primary
+// pick is poor. Self-validating, so it survives engineOrder's high-index
+// off-by-one. `coverage` is returned so the UI can flag a weak match.
+function readStratFactionOrder(modDataDir) {
+  const candidates = [
+    path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
+    path.join(modDataDir, "world", "maps", "campaign", "alexander", "descr_strat.txt"),
+    path.join(modDataDir, "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
+  ];
+  for (const src of candidates) {
+    if (!fs.existsSync(src)) continue;
+    const text = fs.readFileSync(src, "utf8");
+    const out = [];
+    for (const line of text.split(/\r?\n/)) {
+      const m = line.match(/^\s*faction\s+([a-z_0-9]+)/i);
+      if (m && !out.includes(m[1])) out.push(m[1]);
+    }
+    return out;
+  }
+  return [];
+}
+ipcMain.handle("get-faction-vision", async (_event, savePath, modDataDir, factionName) => {
+  try {
+    if (!savePath || !fs.existsSync(savePath)) return { error: "no save path" };
+    if (!factionName) return { error: "no faction" };
+    const { findFactionRecords, parseFactionKnowledge } = require("./src/factionKnowledgeParser.js");
+    const { deriveEngineFactionOrder } = require("./src/saveCrackerExtras.js");
+    const buf = fs.readFileSync(savePath);
+    const recs = findFactionRecords(buf);
+    if (!recs.length) return { error: "no faction records" };
+    const GRID_W = 1020, GRID_H = 700, CELLS = GRID_W * GRID_H;
+    const stratOrder = readStratFactionOrder(modDataDir);
+    const engineOrder = deriveEngineFactionOrder(stratOrder);
+    const stratIdx = stratOrder.indexOf(factionName);
+    // F's own settlement tiles (engine linear index) from the global tag-27 set.
+    const ownTiles = [];
+    if (stratIdx >= 0) {
+      const fk = parseFactionKnowledge(buf);
+      const seen = new Set();
+      for (const r of fk.records || []) {
+        for (const t of r.tuples || []) {
+          if (t.tag === 27 && t.owner === stratIdx && t.tileX < GRID_W && t.tileY < GRID_H) {
+            const li = t.tileY * GRID_W + t.tileX;
+            if (!seen.has(li)) { seen.add(li); ownTiles.push(li); }
+          }
+        }
+      }
+    }
+    const decodeGrid = (rec) => {
+      const grid = new Uint8Array(CELLS);
+      let gi = 0, i = rec.offset + 0x18, MAX = Math.min(rec.offset + rec.size, buf.length);
+      while (i + 2 <= MAX && gi < CELLS) {
+        const v = buf[i], c = buf[i + 1];
+        if (c === 0) break;
+        const lim = Math.min(c, CELLS - gi);
+        if (v !== 0) grid.fill(v, gi, gi + lim);
+        gi += lim; i += 2;
+      }
+      return { grid, decoded: gi };
+    };
+    const coverage = (grid) => {
+      if (!ownTiles.length) return -1; // unknown (can't verify)
+      let hit = 0;
+      for (const li of ownTiles) if (grid[li] > 0) hit++;
+      return hit / ownTiles.length;
+    };
+    // Primary pick via engineOrder.
+    let recIdx = engineOrder.indexOf(factionName);
+    let best = null;
+    if (recIdx >= 0 && recIdx < recs.length) {
+      const d = decodeGrid(recs[recIdx]);
+      if (d.decoded >= 100000) best = { idx: recIdx, grid: d.grid, cov: coverage(d.grid), decoded: d.decoded };
+    }
+    // Robust fallback: if the primary pick can't be verified well, search all
+    // records for the one whose grid best covers F's settlements.
+    if (ownTiles.length && (!best || best.cov < 0.7)) {
+      for (let k = 0; k < recs.length; k++) {
+        const d = decodeGrid(recs[k]);
+        if (d.decoded < 100000) continue;
+        const cov = coverage(d.grid);
+        if (!best || cov > best.cov) best = { idx: k, grid: d.grid, cov, decoded: d.decoded };
+      }
+    }
+    if (!best) return { error: "no decodable vision record" };
+    let exploredCount = 0;
+    for (let k = 0; k < CELLS; k++) if (best.grid[k] > 0) exploredCount++;
+    _writeLog(`[fog] ${factionName} rec#${best.idx} cov=${best.cov < 0 ? "n/a" : (100 * best.cov).toFixed(0) + "%"} explored=${exploredCount}`);
+    return {
+      faction: factionName, width: GRID_W, height: GRID_H,
+      grid: Buffer.from(best.grid), coverage: best.cov, exploredCount,
+    };
+  } catch (e) {
+    _writeLog(`[fog] get-faction-vision failed: ${e && e.message}`);
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: trade-network derivation (src/tradeNetwork.js). DERIVED, not stored in
 // the save — computes road/sea connectivity + trade-rights gating to list each
 // settlement's trade partners (CONFIRMED structure) plus a relative trade-score
