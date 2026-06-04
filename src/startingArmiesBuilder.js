@@ -105,6 +105,23 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap, factions) {
       ? { name: u, exp: 0, armour: 0, weapon: 0 }
       : { name: u.name, exp: u.exp || 0, armour: u.armour || 0, weapon: u.weapon || 0 }
   );
+  // A region already has a REAL garrison when an (owner) army sits EXACTLY on
+  // its settlement tile, or there's an explicit garrisoned_army. When that's
+  // true, the 1-tile tolerance below must NOT also pull in genuinely-adjacent
+  // FIELD armies (e.g. Capua's heir Auls "Outside Capua", one diagonal tile from
+  // the leader Minatis who holds the town — they were merging into one garrison).
+  // The tolerance is only a fallback for when the settlement-tile scan landed a
+  // pixel off the real garrison commander and nothing sits exactly on it.
+  const hasExactGarrison = {};
+  for (const a of armies) {
+    if (a._garrisoned && a.region) { hasExactGarrison[a.region] = true; continue; }
+    if (a.x == null || a.y == null) continue;
+    const reg = tileKeyToRegion[`${a.x},${a.y}`];
+    if (!reg) continue;
+    const owner = ownerByRegion[reg];
+    const aFac = (a.faction || "").toLowerCase();
+    if (!owner || !aFac || aFac === owner) hasExactGarrison[reg] = true;
+  }
   for (const a of armies) {
     // Synthetic garrisoned_army: pin to its declared region's settlement tile.
     if (a._garrisoned && a.region) {
@@ -134,7 +151,7 @@ function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap, factions) {
     // FIELD and strip his commander-card portrait.
     if (!isGarrison) {
       const st = settlementByRegion[region];
-      if (st && Math.abs(a.x - st.x) <= 1 && Math.abs(a.y - st.y) <= 1) isGarrison = true;
+      if (st && !hasExactGarrison[region] && Math.abs(a.x - st.x) <= 1 && Math.abs(a.y - st.y) <= 1) isGarrison = true;
     }
     // 0.9.853: garrison membership requires the army to belong to the
     // settlement OWNER — a different faction's stack on/beside the tile is a

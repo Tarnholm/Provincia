@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import FactionIcon from "./FactionIcon";
 import { Movable } from "./Movable";
-import { loadPortrait, getCachedPortrait, getCachedPortraitMeta } from "./portraitIcons";
+import { loadPortrait, getCachedPortrait } from "./portraitIcons";
 import { displayFirstName, displayFullName } from "./displayName";
 import { loadBuildingIcon, invalidateBuildingIcon } from "./buildingIcons";
 import AddGeneralModal from "./AddGeneralModal";
@@ -61,7 +61,7 @@ function TreasurySparkline({ series, width = 130, height = 26 }) {
 //     matches what RTW would have rendered for the same character.
 // Both flows go through loadPortrait/getCachedPortrait so cache hits across
 // re-renders.
-function CommanderPortraitImg({ charContext, culture, modDataDir, fallback, style, showIndex }) {
+function CommanderPortraitImg({ charContext, culture, modDataDir, fallback, style }) {
   const slot = "general";
   // 0.9.464: TWO BUGS were stacking to produce the "garrison Antigonos II
   // = Roman portrait" symptom:
@@ -75,15 +75,11 @@ function CommanderPortraitImg({ charContext, culture, modDataDir, fallback, styl
   // unit-icon fallback shows instead), and re-fetch on every dep change.
   const cultureKey = culture ? String(culture).toLowerCase() : null;
   const [url, setUrl] = useState(() => cultureKey ? getCachedPortrait(cultureKey, slot, charContext) : null);
-  // 0.9.884: resolved portrait index for the dev-mode overlay (so the user can
-  // read which numbered face Provincia chose and match it to the in-game face).
-  const [idx, setIdx] = useState(() => cultureKey ? (getCachedPortraitMeta(cultureKey, slot, charContext)?.index ?? null) : null);
   useEffect(() => {
     if (!charContext || !modDataDir || !cultureKey) {
       // Clear any stale blob URL when ctx/culture goes missing so the
       // fallback (unit icon) shows instead of a previous wrong portrait.
       setUrl(null);
-      setIdx(null);
       if (typeof window !== "undefined" && charContext && !window.__bodyguardSwapLogged?.has(`no-ctx|${charContext?.name || "?"}`)) {
         window.__bodyguardSwapLogged ||= new Set();
         window.__bodyguardSwapLogged.add(`no-ctx|${charContext?.name || "?"}`);
@@ -98,26 +94,12 @@ function CommanderPortraitImg({ charContext, culture, modDataDir, fallback, styl
         window.__bodyguardSwapLogged.add(`load|${charContext.name}|${cultureKey}`);
         console.log(`[bodyguard-swap] ${u ? "OK" : "FAIL"} "${charContext.name}" culture="${cultureKey}" savePath="${charContext.savePath || "(none)"}"`);
       }
-      if (alive) {
-        setUrl(u || null);
-        setIdx(getCachedPortraitMeta(cultureKey, slot, charContext)?.index ?? null);
-      }
+      if (alive) setUrl(u || null);
     });
     return () => { alive = false; };
   }, [charContext, cultureKey, modDataDir]);
   if (!url) return fallback || null;
-  return (
-    <div style={{ position: "relative", ...style }}>
-      <img src={url} alt="" style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-      {showIndex && idx != null && (
-        <div style={{
-          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-          pointerEvents: "none", color: "#fff", fontWeight: 800, fontSize: "0.95rem",
-          textShadow: "0 0 2px #000, 0 0 3px #000, 1px 1px 2px #000", fontVariantNumeric: "tabular-nums",
-        }}>{idx}</div>
-      )}
-    </div>
-  );
+  return <img src={url} alt="" style={style} onError={(e) => { e.currentTarget.style.display = "none"; }} />;
 }
 
 const PUBLIC_URL = import.meta.env.BASE_URL || "./";
@@ -3404,7 +3386,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         age: info.age != null ? Number(info.age) : null,
                         savePath: info.savePath || undefined,
                       };
-                      return <CommanderPortraitImg charContext={ctx} culture={culture || info.faction} modDataDir={modDataDir} fallback={fallback} style={imgStyle} showIndex={devMode} />;
+                      return <CommanderPortraitImg charContext={ctx} culture={culture || info.faction} modDataDir={modDataDir} fallback={fallback} style={imgStyle} />;
                     }
                     return fallback;
                   })()}
@@ -3720,7 +3702,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                               age: info.age != null ? Number(info.age) : null,
                               savePath: info.savePath || undefined,
                             };
-                            return <CommanderPortraitImg charContext={ctx} culture={culture || info.faction} modDataDir={modDataDir} fallback={fallback} style={imgStyle} showIndex={devMode} />;
+                            return <CommanderPortraitImg charContext={ctx} culture={culture || info.faction} modDataDir={modDataDir} fallback={fallback} style={imgStyle} />;
                           }
                           return fallback;
                         })()}

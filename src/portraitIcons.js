@@ -48,20 +48,6 @@ async function pixelsToBlobUrl({ width, height, pixels }) {
   });
 }
 
-// 0.9.884: parallel cache of the RESOLVED portrait file's index + path, keyed
-// the same way as the blob cache. Lets a dev-mode overlay show exactly which
-// numbered face Provincia chose so it can be matched against the in-game face.
-const metaCache = new Map();
-function parsePortraitIndex(p) {
-  if (!p) return null;
-  const m = String(p).match(/(\d+)\.tga(?:\.dds)?$/i);
-  return m ? parseInt(m[1], 10) : null;
-}
-export function getCachedPortraitMeta(culture, slot, charContext) {
-  if (!culture || !slot) return null;
-  return metaCache.get(makeKey(culture, slot, charContext)) || null;
-}
-
 export function loadPortrait(modDataDir, culture, slot, charContext) {
   if (!culture || !slot) return Promise.resolve(null);
   const key = makeKey(culture, slot, charContext);
@@ -79,7 +65,6 @@ export function loadPortrait(modDataDir, culture, slot, charContext) {
         cache.set(key, "none");
         return null;
       }
-      metaCache.set(key, { index: parsePortraitIndex(res.path), path: res.path });
       let width, height, pixels;
       if (res.encoded === "rtw-tga-dds") {
         try {

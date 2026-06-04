@@ -8175,7 +8175,9 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "Philiskos",
         "faction": "rhodes",
@@ -8306,7 +8308,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 232,
       "y": 167
@@ -8888,7 +8889,9 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "Areus",
         "faction": "sparta",
@@ -9109,7 +9112,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 199,
       "y": 168
@@ -10312,7 +10314,9 @@
         "traits": [],
         "ancillaries": [],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "Hanno",
         "faction": "carthage",
@@ -10473,7 +10477,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 141,
       "y": 172
@@ -11926,7 +11929,9 @@
           "poet"
         ],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "Margos",
         "faction": "achaea",
@@ -12049,9 +12054,7 @@
           "priest_of_Apollo"
         ],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
         "character": "Kleinias",
         "faction": "achaea",
@@ -12268,7 +12271,9 @@
           "historian"
         ],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "Chremonides",
         "faction": "athens",
@@ -12402,7 +12407,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 205,
       "y": 176
@@ -20578,12 +20582,14 @@
           "scribe_ancillary"
         ],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
-        "character": "Servius Ogulnius Gallus",
+        "character": "Marcus Ogulnius Gallus",
         "faction": "roman_senate",
-        "x": 143,
-        "y": 202,
+        "x": 146,
+        "y": 199,
         "units": [
           {
             "name": "tribunus militum",
@@ -20592,8 +20598,9 @@
             "weapon": 0
           }
         ],
-        "age": 36,
+        "age": 30,
         "tags": [
+          "heir",
           "named"
         ],
         "traits": [
@@ -20624,14 +20631,12 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      }
-    ],
-    "field": [
+      },
       {
-        "character": "Marcus Ogulnius Gallus",
+        "character": "Servius Ogulnius Gallus",
         "faction": "roman_senate",
-        "x": 146,
-        "y": 199,
+        "x": 143,
+        "y": 202,
         "units": [
           {
             "name": "tribunus militum",
@@ -20640,9 +20645,8 @@
             "weapon": 0
           }
         ],
-        "age": 30,
+        "age": 36,
         "tags": [
-          "heir",
           "named"
         ],
         "traits": [
@@ -26595,7 +26599,9 @@
         ],
         "ancillaries": [],
         "charType": "general"
-      },
+      }
+    ],
+    "field": [
       {
         "character": "AetorB",
         "faction": "delmatae",
@@ -26738,7 +26744,6 @@
         "charType": "general"
       }
     ],
-    "field": [],
     "settlement": {
       "x": 168,
       "y": 215

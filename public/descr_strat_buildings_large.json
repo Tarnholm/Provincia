@@ -937,10 +937,6 @@
             "level": "trader"
           },
           {
-            "type": "military_industrial_complex",
-            "level": "mic_1"
-          },
-          {
             "type": "port_buildings",
             "level": "port"
           },
@@ -28361,10 +28357,6 @@
     ]
   },
   {
-    "faction": "scythians",
-    "settlements": []
-  },
-  {
     "faction": "mamertines",
     "settlements": [
       {
@@ -32466,6 +32458,10 @@
         ]
       }
     ]
+  },
+  {
+    "faction": "scythians",
+    "settlements": []
   },
   {
     "faction": "selge",

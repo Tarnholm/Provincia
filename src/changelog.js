@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.886",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Two armies stacked on one town no longer merge into the garrison.** A general standing just outside a settlement (e.g. Capua's heir Auls, one diagonal tile from the leader Minatis who holds the town) was pulled into the garrison by the 1-tile settlement-tile tolerance. Now that tolerance only applies when nothing sits exactly on the settlement tile (its real purpose — a pixel-off tile scan); when a real garrison is present, adjacent armies correctly show as separate Field armies." },
+      { type: "change", text: "Removed the dev-mode portrait index number overlay (it was a temporary debugging aid for the portrait-face fix)." },
+    ],
+  },
+  {
     version: "0.9.885",
     date: "2026-06-04",
     items: [
