@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.895",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Fog faction picker is readable now.** The dropdown list was white-on-white (text invisible unless highlighted) because the open option rows used the OS default background. The control and its options now use the same dark grey as the rest of the UI." },
+    ],
+  },
+  {
     version: "0.9.894",
     date: "2026-06-04",
     items: [

@@ -12802,9 +12802,14 @@ function App() {
       }
       const selStyle = {
         width: "100%", padding: "4px 6px", borderRadius: 6, marginTop: 2,
-        background: "rgba(255,255,255,0.08)", color: "#f6f6f6",
-        border: "1px solid rgba(255,255,255,0.15)", fontSize: "0.75rem",
+        // Solid dark-gray (not translucent) so the OPEN dropdown list — which
+        // the OS renders on its own surface — isn't white-on-white. The <option>
+        // elements below get the same background explicitly (Chromium ignores the
+        // select's bg for the popup rows).
+        background: "#2c2d33", color: "#f6f6f6",
+        border: "1px solid rgba(255,255,255,0.18)", fontSize: "0.75rem",
       };
+      const optStyle = { background: "#2c2d33", color: "#f6f6f6" };
       const cov = fogVision && typeof fogVision.coverage === "number" ? fogVision.coverage : null;
       const playerLabel = playerFaction ? `Player — ${playerFaction.replace(/_/g, " ")}` : "Player (your faction)";
       const shown = fogVision ? fogVision.faction : null;
@@ -12815,8 +12820,8 @@ function App() {
             <div style={{ fontSize: "0.7rem", color: "#bbb", marginBottom: 6 }}>Regions a faction has never scouted are dimmed to dark grey.</div>
             <label style={{ display: "block", fontSize: "0.7rem", color: "#ccc" }}>Show knowledge of:</label>
             <select value={fogFaction || ""} onChange={(e) => setFogFaction(e.target.value || null)} style={selStyle}>
-              <option value="">{playerLabel}</option>
-              {factionOpts.map((f) => <option key={f} value={f}>{f.replace(/_/g, " ")}</option>)}
+              <option value="" style={optStyle}>{playerLabel}</option>
+              {factionOpts.map((f) => <option key={f} value={f} style={optStyle}>{f.replace(/_/g, " ")}</option>)}
             </select>
             <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#bbb" }}>
               {fogVision
