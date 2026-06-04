@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.893",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Fog of War default now shows YOUR faction, not the all-seeing rebels.** The \"Player\" view was picking the largest vision record in the save, which at most turns is the slave/rebel record that sees almost the whole map — so it looked like nothing was fogged. It now resolves to the detected player faction and shows its actual explored map." },
+      { type: "fix", text: "**The fog faction picker is no longer empty.** The \"Show knowledge of\" dropdown was sourced from a list that's empty while a live save is loaded, so you couldn't select anyone. It's now built from the full faction list (plus whoever's present in the live save), so every faction is selectable." },
+    ],
+  },
+  {
     version: "0.9.892",
     date: "2026-06-04",
     items: [
