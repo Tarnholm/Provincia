@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.916",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**Unlock playable nations:** a new 🏛️ Playable button (dev pill) opens an editor listing every faction in the campaign. Tick the nations you want selectable in the campaign-select menu. The menu can only hold as many as the mod already ships (RIS = 69), so to make a new nation playable you untick one to make room — a 1-for-1 swap that keeps the menu from breaking. Saving writes descr_strat in the active mod (a backup is taken first); restart the game to see the new menu." },
+    ],
+  },
+  {
     version: "0.9.915",
     date: "2026-06-04",
     items: [

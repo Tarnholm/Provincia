@@ -1400,6 +1400,52 @@ function patchDescrRegions(originalText, regions) {
   return lines.join(eol);
 }
 
+// Parse the playable / unlockable / nonplayable faction lists from the top of
+// descr_strat.txt. Returns { playable:[token], unlockable:[token],
+// nonplayable:[token] } in file order.
+function parseFactionStatus(text) {
+  const out = { playable: [], unlockable: [], nonplayable: [] };
+  if (!text) return out;
+  let section = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const t = raw.trim();
+    if (t === "playable") { section = "playable"; continue; }
+    if (t === "unlockable") { section = "unlockable"; continue; }
+    if (t === "nonplayable") { section = "nonplayable"; continue; }
+    if (t === "end") { section = null; continue; }
+    if (section && /^[a-z_0-9]+$/.test(t)) out[section].push(t);
+  }
+  return out;
+}
+
+// Rewrite the playable + nonplayable sections of descr_strat from new lists,
+// preserving the rest of the file, the section keywords, the tab indentation,
+// and the unlockable section. (The ;;; grouping comments inside the playable
+// block are dropped — the engine ignores them; faction order is preserved.)
+function patchFactionStatus(originalText, playable, nonplayable) {
+  if (!originalText) return null;
+  const eol = originalText.includes("\r\n") ? "\r\n" : "\n";
+  const lines = originalText.split(/\r?\n/);
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const t = lines[i].trim();
+    if (t === "playable" || t === "nonplayable") {
+      const list = t === "playable" ? playable : nonplayable;
+      out.push(lines[i]);
+      for (const f of list) out.push("\t" + f);
+      i++;
+      while (i < lines.length && lines[i].trim() !== "end") i++;
+      if (i < lines.length) out.push(lines[i]); // the "end"
+      i++;
+      continue;
+    }
+    out.push(lines[i]);
+    i++;
+  }
+  return out.join(eol);
+}
+
 // Patch descr_strat.txt with updated resources, population and/or ownership
 function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles, mapHeight, ownerChanges) {
   const lines = originalText.split(/\r?\n/);
@@ -2770,6 +2816,13 @@ function App() {
   const [pendingReviewOpen, setPendingReviewOpen] = useState(false);
   const [revertAutosaveOpen, setRevertAutosaveOpen] = useState(false); // "Revert to autosave" picker
   const [aiDiagOpen, setAiDiagOpen] = useState(false); // AI Diagnostics panel
+  // Playable-factions editor: which factions appear in the campaign-select menu.
+  // The menu can't hold more than the mod already ships (RIS = 69), so promoting
+  // a nation requires demoting one to stay at/under the limit.
+  const [playableEditorOpen, setPlayableEditorOpen] = useState(false);
+  const [factionStatusData, setFactionStatusData] = useState(null); // { playable:[], unlockable:[], nonplayable:[] }
+  const [stagedPlayable, setStagedPlayable] = useState(null); // Set of faction tokens staged as playable
+  const [playableSearch, setPlayableSearch] = useState("");
   // Configurable AI-diagnostics thresholds (persisted). Mods vary wildly in
   // economy scale, so the user sets these. dormantTurns is for the upcoming
   // cross-turn checks.
@@ -12708,6 +12761,25 @@ function App() {
                   cursor: "pointer", position: "relative",
                 }}
               >🎬 First-run</button>
+              <button
+                onClick={() => {
+                  const text = devOrigStratRef.current;
+                  if (!text) { pushToast("Import/load a mod first — no descr_strat available to edit.", "warning"); return; }
+                  const st = parseFactionStatus(text);
+                  if (!st.playable.length && !st.nonplayable.length) { pushToast("Couldn't find playable/nonplayable factions in descr_strat.", "warning", 7000); return; }
+                  setFactionStatusData(st);
+                  setStagedPlayable(new Set(st.playable));
+                  setPlayableSearch("");
+                  setPlayableEditorOpen(true);
+                }}
+                title="Unlock playable nations — choose which factions appear in the campaign-select menu (swap nations in/out within the menu's limit)."
+                style={{
+                  ...btnStyle(false),
+                  background: "rgba(60,60,60,0.7)", color: "#9ad0c0", border: "1px solid #5a9b88",
+                  minWidth: 0, padding: "3px 8px", fontSize: "0.72rem", fontWeight: 600,
+                  cursor: "pointer", position: "relative",
+                }}
+              >🏛️ Playable</button>
               {/* 0.9.845: the "?" keyboard-shortcuts button moved to the title
                   bar (next to the native minimise). Removed from the dev pill. */}
               {/* 0.9.472: removed the autosave-snapshot "Save" button, the
@@ -21095,6 +21167,74 @@ function App() {
           </div>
         </div>
       )}
+      {playableEditorOpen && factionStatusData && stagedPlayable && (() => {
+        const limit = factionStatusData.playable.length; // menu max = what the mod ships
+        const over = stagedPlayable.size - limit;
+        const all = [...factionStatusData.playable, ...factionStatusData.unlockable, ...factionStatusData.nonplayable];
+        const q = playableSearch.trim().toLowerCase();
+        const shown = all.filter((f) => !q || f.replace(/_/g, " ").toLowerCase().includes(q)).sort((a, b) => a.localeCompare(b));
+        const toggle = (f) => setStagedPlayable((prev) => { const n = new Set(prev); if (n.has(f)) n.delete(f); else n.add(f); return n; });
+        const dirty = stagedPlayable.size !== factionStatusData.playable.length || factionStatusData.playable.some((f) => !stagedPlayable.has(f));
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 11001, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setPlayableEditorOpen(false)}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: "#16181c", color: "#eee", borderRadius: 10, padding: "16px 18px", width: 560, maxWidth: "70vw", maxHeight: "84vh", display: "flex", flexDirection: "column", gap: 10, border: "1px solid rgba(90,155,136,0.4)", boxShadow: "0 12px 48px rgba(0,0,0,0.7)" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                <h2 style={{ margin: 0, fontSize: "1rem", color: "#9ad0c0" }}>🏛️ Playable Nations</h2>
+                <button onClick={() => setPlayableEditorOpen(false)} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>
+              </div>
+              <div style={{ fontSize: "0.74rem", color: "#9aa" }}>
+                Tick the nations you want selectable in the campaign menu. The menu holds at most <b>{limit}</b> (what this mod ships) — go over and you'll need to untick one before saving.
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input value={playableSearch} onChange={(e) => setPlayableSearch(e.target.value)} placeholder="Filter nations…" style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 8px", fontSize: "0.78rem" }} />
+                <span style={{ fontWeight: 700, fontSize: "0.82rem", color: over > 0 ? "#e85050" : "#9ec78a", whiteSpace: "nowrap" }}>{stagedPlayable.size} / {limit}{over > 0 ? ` (untick ${over})` : ""}</span>
+              </div>
+              <div style={{ overflow: "auto", flex: 1, minHeight: 0, background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "4px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", alignContent: "start" }}>
+                {shown.map((f) => {
+                  const on = stagedPlayable.has(f);
+                  return (
+                    <label key={f} style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 6px", borderRadius: 4, cursor: "pointer", color: on ? "#cfe" : "#9aa", fontSize: "0.76rem", background: on ? "rgba(90,155,136,0.12)" : "transparent" }}>
+                      <input type="checkbox" checked={on} onChange={() => toggle(f)} />
+                      <span style={{ textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.replace(/_/g, " ")}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
+                <span style={{ marginRight: "auto", fontSize: "0.68rem", color: "#667" }}>Writes descr_strat (a backup is taken first). Restart the game to see the menu change.</span>
+                <button onClick={() => setStagedPlayable(new Set(factionStatusData.playable))} style={{ padding: "5px 12px", background: "rgba(255,255,255,0.06)", color: "#bbb", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}>Reset</button>
+                <button
+                  disabled={over > 0 || !dirty}
+                  onClick={async () => {
+                    const api = window.electronAPI;
+                    const text = devOrigStratRef.current;
+                    if (!api?.writeActiveModFile || !text) { pushToast("Can't write descr_strat (no active mod / original text).", "warning", 7000); return; }
+                    if (!confirm(`Save playable nations?\n\n${stagedPlayable.size} playable (was ${factionStatusData.playable.length}). Writes descr_strat.txt in the active mod (a backup is taken first). Restart the game to see the menu change.`)) return;
+                    const orderedPlayable = [
+                      ...factionStatusData.playable.filter((f) => stagedPlayable.has(f)),
+                      ...[...stagedPlayable].filter((f) => !factionStatusData.playable.includes(f)),
+                    ];
+                    const newNon = all.filter((f) => !stagedPlayable.has(f) && !factionStatusData.unlockable.includes(f));
+                    const patched = patchFactionStatus(text, orderedPlayable, newNon);
+                    try { if (api.backupModFiles) await api.backupModFiles(); } catch {}
+                    const camp = CAMPAIGNS[mapCampaign];
+                    const relPath = camp?.stratPath || "world/maps/campaign/imperial_campaign/descr_strat.txt";
+                    const res = await api.writeActiveModFile(relPath, patched);
+                    if (res?.ok) {
+                      devOrigStratRef.current = patched;
+                      try { if (api.saveUserFile) await api.saveUserFile("descr_strat_original.txt", patched); } catch {}
+                      setFactionStatusData(parseFactionStatus(patched));
+                      pushToast(`Saved — ${orderedPlayable.length} playable nations.`, "info", 6000);
+                      setPlayableEditorOpen(false);
+                    } else pushToast(`Save failed: ${res?.error || "?"}`, "warning", 8000);
+                  }}
+                  style={{ padding: "5px 14px", background: over > 0 || !dirty ? "rgba(60,60,60,0.6)" : "#5a9b88", color: over > 0 || !dirty ? "#888" : "#fff", border: "1px solid " + (over > 0 || !dirty ? "#555" : "#5a9b88"), borderRadius: 4, cursor: over > 0 || !dirty ? "default" : "pointer", fontSize: "0.8rem", fontWeight: 600 }}
+                >Save to mod</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {aiDiagOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 11001, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setAiDiagOpen(false)}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#16181c", color: "#eee", borderRadius: 10, padding: "16px 18px", maxWidth: "66vw", maxHeight: "84vh", display: "flex", flexDirection: "column", gap: 10, border: "1px solid rgba(200,90,90,0.4)", boxShadow: "0 12px 48px rgba(0,0,0,0.7)", minWidth: 520 }}>
