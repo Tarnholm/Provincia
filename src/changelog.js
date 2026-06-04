@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.885",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Roman commanders no longer show nomadic faces.** The game loads `.tga.dds` portraits and ignores loose `.tga`; RIS ships its roman portraits as `.tga` (which the engine doesn't use — it falls back to the vanilla `.tga.dds` pool). Provincia was reading RIS's unused `.tga` roman pool, so every commander resolved against the wrong, nomadic-looking faces. Portrait resolution now prefers the `.tga.dds` pool the engine actually loads (a genuine mod `.tga.dds` override still wins), matching the in-game face." },
+    ],
+  },
+  {
     version: "0.9.884",
     date: "2026-06-04",
     items: [
