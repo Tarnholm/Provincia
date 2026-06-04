@@ -8545,15 +8545,16 @@ function App() {
         const isVictoryTarget = vcCities.has((region.city || "").toLowerCase());
         if (isVictoryTarget) {
           fogCityRevealed[cp.rgbKey] = true;
-          // Reveal through the fog, dimmed: owner colour at ~60% so it reads as
-          // "known but fogged". 2×2 so a single tile is visible on the black map.
+          // Reveal through the fog in the FULL colour of the faction that owns
+          // the settlement (e.g. an Epirus-held target reads as Epirus green),
+          // so the victory map shows who currently holds each objective.
           const owner = currentOwnerByCity ? currentOwnerByCity[region.city] : null;
           const fc = owner && factionColors[owner.toLowerCase()];
           const base = (fc && fc.primary) || [150, 150, 160];
-          ctx.fillStyle = `rgb(${Math.round(base[0] * 0.6)},${Math.round(base[1] * 0.6)},${Math.round(base[2] * 0.6)})`;
-          // Single tile (not 2×2) — at dense target clusters (e.g. byzantium's
-          // Aegean) larger markers merged into solid "areas". One tile = the
-          // settlement's footprint, stays a distinct dot.
+          ctx.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`;
+          // Single tile — at dense target clusters (e.g. byzantium's Aegean)
+          // larger markers merged into solid "areas"; one tile = the settlement's
+          // footprint, stays a distinct dot.
           ctx.fillRect(cp.x, cp.y, 1, 1);
         } else {
           ctx.fillStyle = FOG_RGB; // bury the dot in the fog

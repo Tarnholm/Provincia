@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.903",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Victory-target settlements in the fog now show their owner's faction colour.** A target currently held by Epirus reads as Epirus green, etc. (full colour instead of the previous dimmed dot), so the fog map tells you at a glance who holds each of your objectives." },
+    ],
+  },
+  {
     version: "0.9.902",
     date: "2026-06-04",
     items: [
