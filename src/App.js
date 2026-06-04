@@ -12757,16 +12757,28 @@ function App() {
               )}
               <button
                 onClick={async () => {
-                  if (!confirm("Reset Provincia to its first-launch state and reload?\n\nYou'll see the splash, onboarding music, and the intro cards again — exactly like a fresh install. (Your mod / edits aren't touched.)")) return;
-                  try { localStorage.removeItem("welcomeLastVersion"); localStorage.removeItem("onboardingDone"); } catch {}
+                  if (!confirm("Reset Provincia to its first-launch state and reload?\n\nYou'll see the splash, onboarding music, and the intro cards again.")) return;
                   const api = window.electronAPI;
+                  // Offer a TRUE fresh install — wipe imported mod data + all
+                  // settings so the slots fall back to bundled defaults (Slot 2 =
+                  // vanilla Rome, Slot 1 = empty). Otherwise just replay onboarding.
+                  const fullWipe = confirm(
+                    "Also wipe ALL imported mod data + settings for a 100% fresh install?\n\n" +
+                    "OK = full wipe — you'll re-import your mod afterwards; Slot 2 shows vanilla Rome and Slot 1 starts empty.\n" +
+                    "Cancel = keep your mods & edits, just replay the welcome flow."
+                  );
+                  try { localStorage.removeItem("welcomeLastVersion"); localStorage.removeItem("onboardingDone"); } catch {}
                   if (api?.saveUserFile) {
                     try { await api.saveUserFile("welcome_version.txt", ""); } catch {}
                     try { await api.saveUserFile("onboarding_done.txt", ""); } catch {}
                   }
+                  if (fullWipe) {
+                    try { if (api?.factoryReset) await api.factoryReset(); } catch {}
+                    try { localStorage.clear(); } catch {}
+                  }
                   window.location.reload();
                 }}
-                title="Reload the app into its first-time-setup state (splash + onboarding music + intro cards), like a fresh install — for testing/iterating on the welcome flow."
+                title="Reload into first-time-setup (splash + onboarding + intro cards). Optionally wipe imported mod data for a 100% fresh install — for testing the welcome flow."
                 style={{
                   ...btnStyle(false),
                   background: "rgba(60,60,60,0.7)", color: "#caa6e0", border: "1px solid #957bb8",

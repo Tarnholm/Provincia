@@ -4688,6 +4688,27 @@ ipcMain.handle("clear-mod-caches", async () => {
   return true;
 });
 
+// IPC: wipe all persisted imported mod data + per-mod user files so the app
+// falls back to its bundled defaults (vanilla Slot 2 / empty Slot 1) — a "100%
+// fresh install" for testing the first-run experience. The renderer clears
+// localStorage separately and reloads. Does NOT touch provincia.log.
+ipcMain.handle("factory-reset", async () => {
+  const ud = app.getPath("userData");
+  const removed = [];
+  try { fs.rmSync(path.join(ud, "campaign_data"), { recursive: true, force: true }); removed.push("campaign_data/"); } catch {}
+  const files = [
+    "descr_strat_original.txt", "descr_regions_original.txt",
+    "faction_colors.json", "live_history.json", "devAutosaves.json",
+    "welcome_version.txt", "onboarding_done.txt",
+  ];
+  for (const f of files) {
+    try { if (fs.existsSync(path.join(ud, f))) { fs.rmSync(path.join(ud, f), { force: true }); removed.push(f); } } catch {}
+  }
+  try { for (const c of _factionCultureCache ? [_factionCultureCache] : []) c.clear(); } catch {}
+  console.log("[factory-reset] removed:", removed.join(", "));
+  return { ok: true, removed };
+});
+
 // IPC: return mtimes for the mod data files we care about. Renderer
 // polls this periodically; if any mtime is newer than what it last
 // saw, a "reload mod data" badge flashes so the modder knows their

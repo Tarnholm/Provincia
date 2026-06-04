@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.919",
+    date: "2026-06-05",
+    items: [
+      { type: "improvement", text: "**First-run reset can now do a true 100% fresh install** — it offers to wipe all imported mod data and settings so the slots fall back to the bundled defaults (Slot 2 = vanilla Rome, Slot 1 = empty). Decline and it just replays the welcome flow with your mods intact." },
+    ],
+  },
+  {
     version: "0.9.918",
     date: "2026-06-05",
     items: [
