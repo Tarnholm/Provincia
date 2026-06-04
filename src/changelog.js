@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.918",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Onboarding highlights now show reliably.** A glowing spotlight ring is drawn over the highlighted control (Factions & Search, Region Details, Live, etc.) — previously some highlights never appeared because the control was trapped in a stacking context below the overlay." },
+      { type: "fix", text: "**The explainer card now steps aside** so it never sits under (or on top of) the panel it's pointing at — the Region Details card's buttons are reachable and readable again." },
+      { type: "improvement", text: "**Playable Nations** lists factions in descr_sm_factions order (featured factions first) instead of alphabetically, and the Live onboarding card highlights the actual Live button." },
+      { type: "improvement", text: "**Faster start:** the splash screen no longer holds for a minimum time — it clears the instant the map is ready." },
+    ],
+  },
+  {
     version: "0.9.917",
     date: "2026-06-05",
     items: [

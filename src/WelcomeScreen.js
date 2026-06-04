@@ -52,7 +52,7 @@ const ONBOARDING_PAGES = [
     title: "Live Mode \u2014 Watch Your Campaign",
     body: "Click \u201cLive\u201d (right after the map-mode tabs) and point it at your Rome Remastered logs folder. Provincia parses every autosave \u2014 armies, characters, owners, buildings, build & recruit queues, traits, ancillaries, stats, treasury, diplomacy, fog-of-war, and family events all update as you play.",
     tip: "Your faction auto-detects from the autosave filename and the save's captain banner \u2014 no manual picking. The save folder is found automatically.",
-    highlight: "map-modes",
+    highlight: "live",
   },
   {
     title: "Family Tree & Character Info",
@@ -200,6 +200,7 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
 /* ── Onboarding walkthrough ──────────────────────────────────────── */
 function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }) {
   const [page, setPage] = useState(0);
+  const [spotRect, setSpotRect] = useState(null); // live bounding box of the highlighted UI element
   const isLast = page === pages.length - 1;
   const p = pages[page];
 
@@ -208,8 +209,54 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }
     if (onHighlight) onHighlight(p.highlight || null);
   }, [page, p.highlight, onHighlight]);
 
+  // Track the highlighted element's on-screen rect so we can draw a glowing
+  // spotlight ring that's ALWAYS visible (the element's own z-index can be
+  // trapped in a parent stacking context and never rise above the overlay —
+  // that's why some highlights "didn't show"). We also use the rect to push the
+  // card to the opposite side so it never sits under the highlighted panel.
+  useEffect(() => {
+    const key = p.highlight;
+    if (!key) { setSpotRect(null); return; }
+    let raf = 0, timer = 0, cancelled = false;
+    const measure = () => {
+      if (cancelled) return;
+      const el = document.querySelector(`[data-ui-highlight="${key}"]`);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 1 && r.height > 1) { setSpotRect({ top: r.top, left: r.left, width: r.width, height: r.height }); return; }
+      }
+      setSpotRect(null);
+    };
+    raf = requestAnimationFrame(measure);
+    timer = setInterval(measure, 400); // re-measure: the target may mount / reflow after the card appears
+    window.addEventListener("resize", measure);
+    return () => { cancelled = true; cancelAnimationFrame(raf); clearInterval(timer); window.removeEventListener("resize", measure); };
+  }, [page, p.highlight]);
+
+  // Place the card in whichever half has the most room away from the highlight.
+  let justifyContent = "center", alignItems = "center";
+  if (spotRect && typeof window !== "undefined") {
+    const cx = spotRect.left + spotRect.width / 2, cy = spotRect.top + spotRect.height / 2;
+    if (spotRect.width < window.innerWidth * 0.6) justifyContent = cx > window.innerWidth / 2 ? "flex-start" : "flex-end";
+    if (spotRect.height < window.innerHeight * 0.6) alignItems = cy > window.innerHeight / 2 ? "flex-start" : "flex-end";
+  }
+
   return (
-    <div className="ws-overlay">
+    <div className="ws-overlay" style={{ justifyContent, alignItems, padding: "5vh 4vw" }}>
+      {spotRect && (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed",
+            top: spotRect.top - 6, left: spotRect.left - 6,
+            width: spotRect.width + 12, height: spotRect.height + 12,
+            border: "3px solid #e8c873", borderRadius: 10,
+            boxShadow: "0 0 16px 4px rgba(232,200,115,0.7)",
+            pointerEvents: "none", zIndex: 10001,
+            animation: "ws-pulse 1.8s ease-in-out infinite",
+          }}
+        />
+      )}
       <div className="ws-card ws-onboarding">
         {p.image && (
           <img

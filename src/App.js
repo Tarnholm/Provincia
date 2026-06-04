@@ -105,7 +105,7 @@ const SCROLLBAR_GUTTER = 0;
 const RIGHT_MIN_WIDTH = 220;
 const ICON_DROP_SHADOW =
   "drop-shadow(0 0 1.25px rgba(0,0,0,0.85)) drop-shadow(0 0 2.5px rgba(0,0,0,0.45))";
-const SPLASH_MIN_MS = 800;   // tiny floor so splash is briefly visible even on fast loads
+const SPLASH_MIN_MS = 0;     // no artificial floor — splash vanishes the instant assets are ready (user: "no splashscreen if possible")
 const SPLASH_HARD_MAX_MS = 30000; // safety cap if something gets wedged
 const THUMB_MIN_PX = Math.round(ICON_SIZE * 0.46);
 const SCROLL_SKIN = {
@@ -2833,6 +2833,7 @@ function App() {
   const [factionStatusData, setFactionStatusData] = useState(null); // { playable:[], unlockable:[], nonplayable:[] }
   const [stagedPlayable, setStagedPlayable] = useState(null); // Set of faction tokens staged as playable
   const [playableSearch, setPlayableSearch] = useState("");
+  const [smFactionsOrder, setSmFactionsOrder] = useState(null); // faction tokens in descr_sm_factions order (for the playable editor)
   // Configurable AI-diagnostics thresholds (persisted). Mods vary wildly in
   // economy scale, so the user sets these. dormantTurns is for the upcoming
   // cross-turn checks.
@@ -12085,7 +12086,7 @@ function App() {
           })()}
           {/* 0.9.x: Live toggle — moved here from the controls pill so it sits
               next to the map-mode category tabs. onClick is handleLiveToggle. */}
-          <button className="map-mode-btn" onClick={handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : undefined }}><MapBtnBadge k="view.live" />Live</button>
+          <button data-ui-highlight="live" className="map-mode-btn" onClick={handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : undefined }}><MapBtnBadge k="view.live" />Live</button>
           {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
               a new game + save at turn 0 so the auto-cache pass picks up
               real save-read stats and uses them in non-live mode. The
@@ -12774,11 +12775,20 @@ function App() {
                 }}
               >🎬 First-run</button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   const text = devOrigStratRef.current;
                   if (!text) { pushToast("Import/load a mod first — no descr_strat available to edit.", "warning"); return; }
                   const st = parseFactionStatus(text);
                   if (!st.playable.length && !st.nonplayable.length) { pushToast("Couldn't find playable/nonplayable factions in descr_strat.", "warning", 7000); return; }
+                  // Order factions by descr_sm_factions (its canonical roster order:
+                  // featured factions first, then the rest) rather than alphabetically.
+                  try {
+                    const r = await loadCampaignData("descr_sm_factions.txt");
+                    if (r?.text) {
+                      const order = [...r.text.matchAll(/^\t"([^"]+)"\s*:/gm)].map((m) => m[1].toLowerCase());
+                      setSmFactionsOrder(order.length ? order : null);
+                    } else setSmFactionsOrder(null);
+                  } catch { setSmFactionsOrder(null); }
                   setFactionStatusData(st);
                   setStagedPlayable(new Set(st.playable));
                   setPlayableSearch("");
@@ -15008,7 +15018,7 @@ function App() {
           >
             Provincia
           </span>
-          <div className={welcomeHighlight === "campaigns" ? "ws-ui-glow" : undefined} style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 6, WebkitAppRegion: "no-drag" }}>
+          <div data-ui-highlight="campaigns" className={welcomeHighlight === "campaigns" ? "ws-ui-glow" : undefined} style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 6, WebkitAppRegion: "no-drag" }}>
             {Object.values(CAMPAIGNS).map((camp) => {
               const active = mapCampaign === camp.key;
               return (
@@ -17353,7 +17363,7 @@ function App() {
               colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941, topPx: 31, fillToBottom: true }}
               defaultPct={{ x: 0.0047, y: 0.7300, w: 0.2076, h: 0.2650 }}
               zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
-              <div className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
+              <div data-ui-highlight="factions" className={"panel factions-panel" + (welcomeHighlight === "factions" ? " ws-ui-glow" : "")}
                 style={{ width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", padding: 0 }}>
                 {renderFactionSelector()}
               </div>
@@ -17523,6 +17533,7 @@ function App() {
                 just past the map. Width = whatever's left after the map.
                 Internal grid still scrolls horizontally if needed. */}
             <div
+              data-ui-highlight="region-info"
               style={{
                 position: "fixed",
                 top: MAP_TOP,
@@ -21215,7 +21226,16 @@ function App() {
         const over = stagedPlayable.size - limit;
         const all = [...factionStatusData.playable, ...factionStatusData.unlockable, ...factionStatusData.nonplayable];
         const q = playableSearch.trim().toLowerCase();
-        const shown = all.filter((f) => !q || f.replace(/_/g, " ").toLowerCase().includes(q)).sort((a, b) => a.localeCompare(b));
+        const orderIdx = (f) => {
+          if (!smFactionsOrder) return -1;
+          const i = smFactionsOrder.indexOf(f.toLowerCase());
+          return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+        };
+        const shown = all.filter((f) => !q || f.replace(/_/g, " ").toLowerCase().includes(q)).sort((a, b) => {
+          const ia = orderIdx(a), ib = orderIdx(b);
+          if (ia !== ib) return ia - ib;          // descr_sm_factions order when available
+          return a.localeCompare(b);              // ties / unknowns fall back to alphabetical
+        });
         const toggle = (f) => setStagedPlayable((prev) => { const n = new Set(prev); if (n.has(f)) n.delete(f); else n.add(f); return n; });
         const dirty = stagedPlayable.size !== factionStatusData.playable.length || factionStatusData.playable.some((f) => !stagedPlayable.has(f));
         return (
