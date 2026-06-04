@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.896",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Explored mode reads like real fog of war now.** Unexplored land is plain dark fog instead of a busy mosaic of dimmed faction colours (you no longer \"see\" who owns territory you've never scouted). Settlement locations stay placed as dark markers — including undiscovered ones sitting on the fog — but a city's name is withheld until your faction has actually scouted it." },
+    ],
+  },
+  {
     version: "0.9.895",
     date: "2026-06-04",
     items: [
