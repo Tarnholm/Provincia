@@ -2769,6 +2769,7 @@ function App() {
   });
   const [pendingReviewOpen, setPendingReviewOpen] = useState(false);
   const [revertAutosaveOpen, setRevertAutosaveOpen] = useState(false); // "Revert to autosave" picker
+  const [aiDiagOpen, setAiDiagOpen] = useState(false); // AI Diagnostics panel
   // Export-instead-of-overwrite: when ON, "Apply" writes the edited mod files
   // under `exportModDir` instead of overwriting the live mod in place (the live
   // mod is left untouched). Persisted so the choice survives a reload; the main
@@ -2810,6 +2811,37 @@ function App() {
     () => pendingBuildings.size + pendingTraits.size + pendingAncils.size + pendingGenerals.size + pendingCharPos.size + pendingCharFields.size + pendingGarrisonMoves.size + pendingArmyUnits.size + pendingDiplomacy.size + (devDirtyFiles?.size || 0),
     [pendingBuildings, pendingTraits, pendingAncils, pendingGenerals, pendingCharPos, pendingCharFields, pendingGarrisonMoves, pendingArmyUnits, pendingDiplomacy, devDirtyFiles]
   );
+
+  // AI DIAGNOSTICS (v1, 2026-06-04): scan the loaded save's per-faction economy
+  // for AI-health red flags — bankruptcy, bleeding treasury, and "passed-out"
+  // factions sitting on cash without investing it. All derived from the already
+  // -cracked Financial Overview (saveEconomy.byFaction); cross-turn checks
+  // (stuck units, dormant N turns) come later off the timeline scanner.
+  const aiDiagnostics = useMemo(() => {
+    const out = { bankrupt: [], bleeding: [], willBankrupt: [], hoarding: [] };
+    const byFac = saveEconomy && saveEconomy.byFaction;
+    if (!byFac) return out;
+    for (const [faction, e] of Object.entries(byFac)) {
+      if (!e) continue;
+      const treasury = typeof e.treasury === "number" ? e.treasury : null;
+      const net = typeof e.net === "number" ? e.net : null;
+      const exp = e.expenditure || {};
+      const invest = (exp.recruitment || 0) + (exp.construction || 0);
+      if (treasury != null && treasury < 0) out.bankrupt.push({ faction, treasury, net });
+      if (net != null && net < 0) out.bleeding.push({ faction, treasury, net });
+      if (treasury != null && net != null && treasury >= 0 && treasury + net < 0) out.willBankrupt.push({ faction, treasury, net, after: treasury + net });
+      // Passed-out economy: lots of cash, ~nothing spent on recruiting/building.
+      if (treasury != null && treasury > 12000 && invest < 150) out.hoarding.push({ faction, treasury, net, invest });
+    }
+    const byTreasuryAsc = (a, b) => (a.treasury ?? 0) - (b.treasury ?? 0);
+    const byNetAsc = (a, b) => (a.net ?? 0) - (b.net ?? 0);
+    out.bankrupt.sort(byTreasuryAsc);
+    out.bleeding.sort(byNetAsc);
+    out.willBankrupt.sort((a, b) => a.after - b.after);
+    out.hoarding.sort((a, b) => (b.treasury ?? 0) - (a.treasury ?? 0));
+    out.total = out.bankrupt.length + out.bleeding.length + out.willBankrupt.length + out.hoarding.length;
+    return out;
+  }, [saveEconomy]);
   // Stage a character scalar-field edit (age / leader-heir tag) from the
   // InfoPopup. Keyed by firstName|faction (matches the trait/ancillary editors).
   // Merges into any existing staged fields for the same character.
@@ -12588,6 +12620,20 @@ function App() {
                   }}
                 ><MapBtnBadge k="devpill.changes" />Changes ({pendingCount})</button>
               )}
+              {saveEconomy && saveEconomy.byFaction && (
+                <button
+                  onClick={() => setAiDiagOpen(true)}
+                  title="AI Diagnostics — economic red flags across all factions (bankruptcies, bleeding treasuries, factions hoarding cash without investing)."
+                  style={{
+                    ...btnStyle(false),
+                    background: aiDiagnostics.total > 0 ? "rgba(120,40,40,0.5)" : "rgba(60,60,60,0.7)",
+                    color: aiDiagnostics.total > 0 ? "#f3a" : "#9a9",
+                    border: "1px solid " + (aiDiagnostics.total > 0 ? "#c55" : "#666"),
+                    minWidth: 0, padding: "3px 8px", fontSize: "0.72rem", fontWeight: 600,
+                    cursor: "pointer", position: "relative",
+                  }}
+                >🩺 AI {aiDiagnostics.total > 0 ? `(${aiDiagnostics.total})` : ""}</button>
+              )}
               {/* 0.9.845: the "?" keyboard-shortcuts button moved to the title
                   bar (next to the native minimise). Removed from the dev pill. */}
               {/* 0.9.472: removed the autosave-snapshot "Save" button, the
@@ -20969,6 +21015,51 @@ function App() {
                 style={{ padding: "6px 14px", background: "rgba(110,140,190,0.25)", color: "#bfe0ff", border: "1px solid rgba(110,140,190,0.6)", borderRadius: 4, cursor: "pointer", fontSize: "0.82rem", fontWeight: 600 }}
               >Load mod folder…</button>
             </div>
+          </div>
+        </div>
+      )}
+      {aiDiagOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 11001, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setAiDiagOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#16181c", color: "#eee", borderRadius: 10, padding: "16px 18px", maxWidth: "66vw", maxHeight: "84vh", display: "flex", flexDirection: "column", gap: 10, border: "1px solid rgba(200,90,90,0.4)", boxShadow: "0 12px 48px rgba(0,0,0,0.7)", minWidth: 520 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+              <h2 style={{ margin: 0, fontSize: "1rem", color: "#e88" }}>🩺 AI Diagnostics{saveEconomy?.turn != null ? <span style={{ color: "#8a93a8", fontWeight: 400, fontSize: "0.78rem" }}> — turn {saveEconomy.turn}</span> : null}</h2>
+              <button onClick={() => setAiDiagOpen(false)} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>
+            </div>
+            <div style={{ fontSize: "0.74rem", color: "#9aa" }}>
+              Economic health of every faction in the loaded save (from the cracked Financial Overview). Cross-turn checks — stuck units, factions dormant for N turns — are coming next off the timeline scanner.
+            </div>
+            <div style={{ overflow: "auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 12, paddingRight: 4 }}>
+              {(() => {
+                const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString());
+                const disp = (f) => (factionDisplayNames && (factionDisplayNames[f] || factionDisplayNames[String(f).toLowerCase()])) || String(f).replace(/_/g, " ");
+                const Section = ({ title, color, rows, render, empty }) => (
+                  <div>
+                    <div style={{ fontWeight: 700, color, fontSize: "0.8rem", borderBottom: `1px solid ${color}44`, paddingBottom: 2, marginBottom: 4 }}>{title} <span style={{ color: "#888", fontWeight: 400 }}>({rows.length})</span></div>
+                    {rows.length === 0 ? <div style={{ color: "#667", fontStyle: "italic", fontSize: "0.74rem" }}>{empty}</div> : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {rows.map((r) => (
+                          <div key={r.faction} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.78rem", padding: "2px 6px", borderRadius: 4, cursor: "pointer" }}
+                            onClick={() => { setSelectedFaction(r.faction); setAiDiagOpen(false); }}
+                            title="Click to select this faction on the map">
+                            <span style={{ flex: 1, textTransform: "capitalize", color: "#ddd" }}>{disp(r.faction)}</span>
+                            <span style={{ color: "#9aa", fontVariantNumeric: "tabular-nums", fontSize: "0.72rem" }}>{render(r)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+                return (
+                  <>
+                    <Section title="💀 Bankrupt (treasury below 0)" color="#e85050" rows={aiDiagnostics.bankrupt} empty="None in the red." render={(r) => `treasury ${fmt(r.treasury)} · net ${fmt(r.net)}/turn`} />
+                    <Section title="📉 Will go bankrupt next turn" color="#e0913a" rows={aiDiagnostics.willBankrupt} empty="None projected to cross 0 next turn." render={(r) => `${fmt(r.treasury)} ${r.net < 0 ? "−" : "+"} ${fmt(Math.abs(r.net))} → ${fmt(r.after)}`} />
+                    <Section title="🩸 Bleeding (negative income)" color="#d06a6a" rows={aiDiagnostics.bleeding} empty="Everyone's net income is ≥ 0." render={(r) => `net ${fmt(r.net)}/turn · treasury ${fmt(r.treasury)}`} />
+                    <Section title="😴 Hoarding (cash, no recruiting/building)" color="#caa84a" rows={aiDiagnostics.hoarding} empty="No idle-cash factions detected." render={(r) => `treasury ${fmt(r.treasury)} · invested ${fmt(r.invest)}`} />
+                  </>
+                );
+              })()}
+            </div>
+            <div style={{ fontSize: "0.68rem", color: "#667" }}>“Hoarding” = treasury &gt; 12,000 with under 150 spent on recruitment + construction this turn — a strong proxy for a “passed-out” AI. Click any faction to select it on the map.</div>
           </div>
         </div>
       )}

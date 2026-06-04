@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.910",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**AI Diagnostics (v1) — find faction AI problems at a glance.** A new 🩺 AI button (dev pill, when a save is loaded) scans every faction's economy from the save and flags: **bankrupt** factions (treasury below 0), factions that'll **go bankrupt next turn**, factions **bleeding money** (negative income), and **\"passed-out\"** factions sitting on a big treasury while spending almost nothing on recruitment or construction. Click any faction to select it on the map. Next up: cross-turn checks off the timeline scanner — units stuck on the same tile for N turns, and factions dormant (no growth/recruiting/building) for N turns." },
+    ],
+  },
+  {
     version: "0.9.909",
     date: "2026-06-04",
     items: [
