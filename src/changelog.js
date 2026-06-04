@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.920",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Fixed a crash (white screen) on the empty Slot 1 / fresh-install state.** The empty slot's bundled army list was written as the wrong type, so the app threw “map is not a function”. Empty slots now ship the correct shapes, and the army loader guards against bad data so a malformed file can never white-screen the app again." },
+    ],
+  },
+  {
     version: "0.9.919",
     date: "2026-06-05",
     items: [

@@ -162,15 +162,18 @@ function run() {
     if (c.empty) {
       // Ship an empty slot: blank JSON outputs + remove any stale map/raw
       // copies so the app shows an "import a mod" prompt instead of old data.
+      // IMPORTANT: each empty file must keep the SAME shape consumers expect —
+      // arrays for armies/buildings, objects for the region/faction maps — or
+      // a `.map`/`Object.keys` on the wrong type throws and white-screens the app.
       log(`--- campaign: ${c.suffix} (EMPTY by default — fresh import slot) ---`);
-      writeJson(`regions_${c.suffix}.json`, {});
-      writeJson(`factions_with_regions_${c.suffix}.json`, []);
+      writeJson(`regions_${c.suffix}.json`, {});                  // region map keyed by RGB
+      writeJson(`factions_with_regions_${c.suffix}.json`, {});    // keyed by faction name (OBJECT)
       writeJson(`faction_wealth_${c.suffix}.json`, {});
       writeJson(`faction_relationships_${c.suffix}.json`, {});
-      writeJson(`descr_strat_buildings_${c.suffix}.json`, []);
+      writeJson(`descr_strat_buildings_${c.suffix}.json`, []);    // ARRAY of factions
       writeJson(`population_${c.suffix}.json`, {});
       writeJson(`resources_${c.suffix}.json`, {});
-      writeJson(`armies_${c.suffix}.json`, {});
+      writeJson(`armies_${c.suffix}.json`, []);                   // ARRAY of armies
       writeJson(`starting_armies_${c.suffix}.json`, {});
       for (const stale of [`map_regions_${c.suffix}.tga`, `descr_win_conditions_${c.suffix}.txt`, `map_ground_types_${c.suffix}.tga`, `map_heights_${c.suffix}.tga`]) {
         const p = path.join(PUBLIC_DIR, stale);

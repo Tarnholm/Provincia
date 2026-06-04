@@ -6509,7 +6509,7 @@ function App() {
     const campaign = CAMPAIGNS[mapCampaign];
     if (!campaign.armiesFile) { setArmiesData([]); return; }
     loadCampaignData(campaign.armiesFile)
-      .then((r) => setArmiesData(JSON.parse(r.text)))
+      .then((r) => { const d = JSON.parse(r.text); setArmiesData(Array.isArray(d) ? d : []); }) // guard: armiesData MUST be an array (empty/corrupt files must not white-screen)
       .catch(() => setArmiesData([]));
     // starting_armies is the region→armies-with-units lookup saved by the
     // import flow. Fall back to empty if the bundled campaign didn't ship
