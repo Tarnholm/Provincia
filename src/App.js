@@ -8540,7 +8540,10 @@ function App() {
           const fc = owner && factionColors[owner.toLowerCase()];
           const base = (fc && fc.primary) || [150, 150, 160];
           ctx.fillStyle = `rgb(${Math.round(base[0] * 0.6)},${Math.round(base[1] * 0.6)},${Math.round(base[2] * 0.6)})`;
-          ctx.fillRect(cp.x - 0.5, cp.y - 0.5, 2, 2);
+          // Single tile (not 2×2) — at dense target clusters (e.g. byzantium's
+          // Aegean) larger markers merged into solid "areas". One tile = the
+          // settlement's footprint, stays a distinct dot.
+          ctx.fillRect(cp.x, cp.y, 1, 1);
         } else {
           ctx.fillStyle = FOG_RGB; // bury the dot in the fog
           ctx.fillRect(cp.x, cp.y, 1, 1);

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.900",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Fogged victory-target markers no longer merge into blobs.** They were drawn 2×2, so where a faction's targets are densely packed (e.g. byzantium's Aegean) adjacent markers ran together into solid areas. Each is now a single settlement tile, so they stay distinct dots in the fog." },
+    ],
+  },
+  {
     version: "0.9.899",
     date: "2026-06-04",
     items: [
