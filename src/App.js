@@ -3044,9 +3044,17 @@ function App() {
     const m = {};
     for (const [rgbKey, r] of Object.entries(regions || {})) {
       if (!r) continue;
-      const f = (r.region && nameToFaction[String(r.region).toLowerCase()]) || (r.city && nameToFaction[String(r.city).toLowerCase()]);
+      // GLOBAL starting owner (fog-independent), tried in order: descr_strat
+      // faction→region map, the descr_strat starting-ownership map, then the
+      // region's own stored owner / rebel-default. This is what lets a NON-player
+      // faction's targets colour even where the player never scouted (current
+      // OwnerByCity is the player's fog-limited knowledge and misses them).
+      let f = (r.region && nameToFaction[String(r.region).toLowerCase()]) || (r.city && nameToFaction[String(r.city).toLowerCase()]) || null;
+      if (!f && initialOwnerByCity && r.city) f = initialOwnerByCity[r.city] || null;
+      if (!f) f = r.faction || r.rebelDefault || null;
       if (f) m[rgbKey] = f;
     }
+    // Live override where the save DOES know the current owner.
     if (currentOwnerByCity) {
       for (const [rgbKey, r] of Object.entries(regions || {})) {
         const live = r && r.city ? currentOwnerByCity[r.city] : null;
@@ -3054,7 +3062,7 @@ function App() {
       }
     }
     return m;
-  }, [factionRegionsMap, regions, currentOwnerByCity]);
+  }, [factionRegionsMap, regions, currentOwnerByCity, initialOwnerByCity]);
   const [factionDisplayNames, setFactionDisplayNames] = useState(null); // { factionId: displayName } from mod text/expanded_bi.txt
   const [factionCultures, setFactionCultures] = useState(null); // { factionId: cultureFolderName } from descr_sm_factions.txt
   // Bumping this counter invalidates every mod-derived useEffect that
@@ -8719,7 +8727,17 @@ function App() {
           // fall back to currentOwnerByCity / region.faction if needed.
           const owner = rgbToOwnerMap[cp.rgbKey] || (currentOwnerByCity && currentOwnerByCity[region.city]) || region.faction || null;
           const fc = owner && factionColors[owner.toLowerCase()];
-          const base = (fc && fc.primary) || [150, 150, 160];
+          let base = fc && fc.primary;
+          if (!base && owner) {
+            // Owner resolved, but no colour is loaded for it (a minor faction
+            // missing from descr_sm_factions / the colour cache — e.g. athens,
+            // sparta). Derive a STABLE distinct colour from the name so it's not
+            // an indistinguishable grey. (Re-importing the mod loads exact ones.)
+            let h = 2166136261;
+            for (let i = 0; i < owner.length; i++) { h ^= owner.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+            base = [70 + (h % 160), 70 + ((h >>> 8) % 160), 70 + ((h >>> 16) % 160)];
+          }
+          if (!base) base = [150, 150, 160];
           ctx.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`;
           // Single tile — at dense target clusters (e.g. byzantium's Aegean)
           // larger markers merged into solid "areas"; one tile = the settlement's

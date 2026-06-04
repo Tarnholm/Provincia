@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.908",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Victory targets colour by owner for non-player factions too (not just the player).** The owner was coming from the save's live ownership, which only covers what the *player* has scouted — so any other faction's unexplored targets came out grey. It now uses the global starting ownership (covers every region regardless of fog), and if a faction has no colour loaded (a minor faction missing from descr_sm_factions) it derives a stable distinct colour instead of grey." },
+    ],
+  },
+  {
     version: "0.9.907",
     date: "2026-06-04",
     items: [
