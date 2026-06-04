@@ -6216,7 +6216,15 @@ ipcMain.handle("get-faction-vision", async (_event, savePath, modDataDir, factio
     const GRID_W = 1020, GRID_H = 700, CELLS = GRID_W * GRID_H;
     const stratOrder = readStratFactionOrder(modDataDir);
     const engineOrder = deriveEngineFactionOrder(stratOrder);
-    const stratIdx = stratOrder.indexOf(factionName);
+    // Case-insensitive name match against both orders (the renderer may pass a
+    // name whose casing differs from descr_strat).
+    const ci = (arr, name) => {
+      let k = arr.indexOf(name);
+      if (k >= 0) return k;
+      const low = String(name).toLowerCase();
+      return arr.findIndex((x) => x && x.toLowerCase() === low);
+    };
+    const stratIdx = ci(stratOrder, factionName);
     // F's own settlement tiles (engine linear index) from the global tag-27 set.
     const ownTiles = [];
     if (stratIdx >= 0) {
@@ -6249,8 +6257,9 @@ ipcMain.handle("get-faction-vision", async (_event, savePath, modDataDir, factio
       for (const li of ownTiles) if (grid[li] > 0) hit++;
       return hit / ownTiles.length;
     };
-    // Primary pick via engineOrder.
-    let recIdx = engineOrder.indexOf(factionName);
+    // Primary pick via engineOrder (case-insensitive).
+    let recIdx = ci(engineOrder, factionName);
+    _writeLog(`[fog] request "${factionName}" -> engineIdx=${recIdx} stratIdx=${stratIdx} ownTiles=${ownTiles.length}`);
     let best = null;
     if (recIdx >= 0 && recIdx < recs.length) {
       const d = decodeGrid(recs[recIdx]);
@@ -6276,6 +6285,53 @@ ipcMain.handle("get-faction-vision", async (_event, savePath, modDataDir, factio
     };
   } catch (e) {
     _writeLog(`[fog] get-faction-vision failed: ${e && e.message}`);
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
+// IPC: the faction list for the fog-of-war picker (2026-06-04). Returns ONLY
+// factions whose vision record actually resolves from THIS save (engineOrder ↔
+// record), with their explored-tile count — so the dropdown can never offer a
+// name get-faction-vision can't honour (the prior empty/mismatched-dropdown
+// bug). Excludes the rebel/slave records and the all-seeing record (explored ≈
+// whole map) and dead/empty factions (explored < 50). Cheap: counts explored
+// via the RLE walk without materialising grids.
+ipcMain.handle("get-vision-faction-list", async (_event, savePath, modDataDir) => {
+  try {
+    if (!savePath || !fs.existsSync(savePath)) return { error: "no save path" };
+    const { findFactionRecords } = require("./src/factionKnowledgeParser.js");
+    const { deriveEngineFactionOrder } = require("./src/saveCrackerExtras.js");
+    const buf = fs.readFileSync(savePath);
+    const recs = findFactionRecords(buf);
+    const GRID_W = 1020, GRID_H = 700, CELLS = GRID_W * GRID_H;
+    const stratOrder = readStratFactionOrder(modDataDir);
+    const engineOrder = deriveEngineFactionOrder(stratOrder);
+    const exploredOf = (rec) => {
+      let i = rec.offset + 0x18, MAX = Math.min(rec.offset + rec.size, buf.length), total = 0, exp = 0;
+      while (i + 2 <= MAX && total < CELLS) {
+        const v = buf[i], c = buf[i + 1];
+        if (c === 0) break;
+        const lim = Math.min(c, CELLS - total);
+        if (v !== 0) exp += lim;
+        total += lim; i += 2;
+      }
+      return { exp, total };
+    };
+    const out = [];
+    for (let i = 0; i < recs.length; i++) {
+      const name = engineOrder[i];
+      if (!name || /rebel|slave/i.test(name)) continue; // drop rebel/slave slots
+      const { exp, total } = exploredOf(recs[i]);
+      if (total !== CELLS) continue;                    // not a normal vision record
+      if (exp < 50) continue;                           // dead / never-played faction
+      if (exp > 0.85 * CELLS) continue;                 // all-seeing record
+      out.push({ faction: name, explored: exp });
+    }
+    out.sort((a, b) => a.faction.localeCompare(b.faction));
+    _writeLog(`[fog] faction-list: ${out.length} resolvable factions (of ${recs.length} records)`);
+    return { factions: out };
+  } catch (e) {
+    _writeLog(`[fog] get-vision-faction-list failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
   }
 });

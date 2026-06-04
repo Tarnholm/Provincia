@@ -2488,6 +2488,7 @@ function App() {
   const [fogFaction, setFogFaction] = useState(null);
   const [fogVision, setFogVision] = useState(null); // { faction, grid, width, height, coverage, exploredCount }
   const [fogLoading, setFogLoading] = useState(false); // fetch in flight (vs error/no-data)
+  const [fogFactionList, setFogFactionList] = useState(null); // [{faction, explored}] resolvable from the live save
   const [savePopulationByCity, setSavePopulationByCity] = useState(null); // { city: u32 } live population from save parser (u32 at settlement.offset-1494, save-cracker session 2)
   const [saveIncomeByCity, setSaveIncomeByCity] = useState(null); // { city: { perTurn, cumulative } } from save parser (u32 at settlement.offset+(683-2269), session 3)
   const [saveSizeByCity, setSaveSizeByCity] = useState(null); // { city: "village"|"town"|"large_town"|"city"|"large_city"|"huge_city" } from save parser (u8 at settlement.offset+(62-2269), session 3)
@@ -5693,6 +5694,27 @@ function App() {
     return () => { cancelled = true; };
   }, [fogFaction, playerFaction, colorMode, liveSaveFile, modDataDir, liveSaveDir]);
 
+  // Fetch the resolvable faction list for the fog picker (2026-06-04). Sourcing
+  // the dropdown from the SAVE's own resolvable records guarantees every option
+  // works with get-faction-vision (the prior dropdown was sourced from a list
+  // that's empty live / can carry names the resolver doesn't honour).
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (colorMode !== "explored") return;
+    if (!api || !api.getVisionFactionList || !liveSaveFile || !modDataDir) { setFogFactionList(null); return; }
+    const savePath = liveSaveDir ? `${liveSaveDir}\\${liveSaveFile}` : null;
+    if (!savePath) { setFogFactionList(null); return; }
+    let cancelled = false;
+    api.getVisionFactionList(savePath, modDataDir)
+      .then((r) => {
+        if (cancelled) return;
+        if (r && !r.error && Array.isArray(r.factions)) setFogFactionList(r.factions);
+        else { setFogFactionList(null); if (r && r.error) console.warn("[fog] faction-list failed:", r.error); }
+      })
+      .catch((e) => { if (!cancelled) { setFogFactionList(null); console.warn("[fog] faction-list error:", e?.message); } });
+    return () => { cancelled = true; };
+  }, [colorMode, liveSaveFile, modDataDir, liveSaveDir]);
+
   // UI batch 2 (feature 3): scan a chosen saves folder into a campaign timeline.
   // On-demand (cracks every save) — never on the live path. Defaults the folder
   // picker to the live saves dir when one is active.
@@ -8456,6 +8478,40 @@ function App() {
       }
     }
 
+    // Explored mode: hide the settlement "black dots". They're non-region
+    // (0,0,0) pixels passed through buildColoredCanvas unchanged, so they show
+    // even for cities a faction has never discovered. Repaint each to match its
+    // region's explored/unexplored shade — undiscovered cities then vanish into
+    // the fog (requested 2026-06-04), and discovered ones blend into their land.
+    const fogCityExplored = {}; // rgbKey -> bool, reused by the labels pass
+    if (colorMode === "explored" && cityPixels.length > 0) {
+      const fogSrc = (fogVision && fogVision.grid) ? fogVision : playerExploration;
+      const fg = fogSrc && fogSrc.grid;
+      const gW = (fogSrc && fogSrc.width) || 1020, gH = (fogSrc && fogSrc.height) || 700;
+      const W = imgSize.width, H = imgSize.height;
+      for (const cp of cityPixels) {
+        const region = regions[cp.rgbKey];
+        if (!region) continue;
+        let explored = true;
+        if (fg && W && H) {
+          const gx = Math.min(gW - 1, Math.max(0, Math.floor(cp.x * gW / W)));
+          const gy = Math.min(gH - 1, Math.max(0, Math.floor((H - 1 - cp.y) * gH / H)));
+          explored = fg[gy * gW + gx] > 0;
+        }
+        fogCityExplored[cp.rgbKey] = explored;
+        const owner = currentOwnerByCity ? currentOwnerByCity[region.city] : null;
+        const fc = owner && factionColors[owner.toLowerCase()];
+        const base = (fc && fc.primary) || [100, 100, 100];
+        const col = explored ? base : [
+          Math.round(base[0] * 0.30 + 18),
+          Math.round(base[1] * 0.30 + 18),
+          Math.round(base[2] * 0.30 + 22),
+        ];
+        ctx.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+        ctx.fillRect(cp.x, cp.y, 1, 1);
+      }
+    }
+
     // Draw city/region name labels on the map
     if (showLabels !== "off" && cityPixels.length > 0) {
       ctx.save();
@@ -8467,6 +8523,8 @@ function App() {
       for (const cp of cityPixels) {
         const r = regions[cp.rgbKey];
         if (!r) continue;
+        // In Explored mode, don't label a city the faction has never discovered.
+        if (colorMode === "explored" && fogCityExplored[cp.rgbKey] === false) continue;
         const label = showLabels === "city" ? (r.city || r.region || "") : (r.region || r.city || "");
         if (!label) continue;
         const lx = cp.x + 0.5;
@@ -12728,15 +12786,20 @@ function App() {
     const onCollapseClick = () => setLegendCollapsed(p => !p);
 
     if (colorMode === "explored") {
-      // Faction list for the picker: the master faction list (file order),
-      // unioned with whatever's actually present live (currentOwnerByCity) and
-      // the political map (factionRegionsMap). Object.keys(factionRegionsMap)
-      // alone is EMPTY in live mode, which left the dropdown unselectable.
-      const factionSet = new Set();
-      for (const f of (factions || [])) if (f) factionSet.add(f);
-      for (const f of Object.keys(factionRegionsMap || {})) if (f) factionSet.add(f);
-      if (currentOwnerByCity) for (const v of Object.values(currentOwnerByCity)) if (v) factionSet.add(v);
-      const factionOpts = [...factionSet].sort();
+      // Faction list for the picker. PREFER the resolvable list fetched from
+      // the live save (fogFactionList) — every entry is guaranteed to resolve in
+      // get-faction-vision. Fall back to the master/live union only before that
+      // arrives (so the control isn't empty mid-load).
+      let factionOpts;
+      if (fogFactionList && fogFactionList.length) {
+        factionOpts = fogFactionList.map((e) => e.faction);
+      } else {
+        const factionSet = new Set();
+        for (const f of (factions || [])) if (f) factionSet.add(f);
+        for (const f of Object.keys(factionRegionsMap || {})) if (f) factionSet.add(f);
+        if (currentOwnerByCity) for (const v of Object.values(currentOwnerByCity)) if (v) factionSet.add(v);
+        factionOpts = [...factionSet].sort();
+      }
       const selStyle = {
         width: "100%", padding: "4px 6px", borderRadius: 6, marginTop: 2,
         background: "rgba(255,255,255,0.08)", color: "#f6f6f6",

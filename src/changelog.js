@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.894",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**The fog faction picker now actually switches factions.** The dropdown was built from a faction list whose names didn't always match what the vision lookup expects, so selecting another faction quietly fell back to your own. It's now populated directly from the save's resolvable vision records (223 factions in a full campaign), each guaranteed to load — and name matching is case-insensitive with diagnostic logging." },
+      { type: "fix", text: "**Explored mode no longer shows settlement dots for undiscovered cities.** The black settlement markers were drawn over the whole map regardless of fog; now each one takes its region's explored/unexplored shade, so a city your faction has never scouted vanishes into the fog (its label is hidden too)." },
+    ],
+  },
+  {
     version: "0.9.893",
     date: "2026-06-04",
     items: [

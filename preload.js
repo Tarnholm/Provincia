@@ -94,6 +94,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // { faction, width:1020, height:700, grid: Uint8Array(714000), coverage, exploredCount }
   // or { error }. Record→faction matched robustly by settlement coverage.
   getFactionVision: (savePath, modDataDir, factionName) => ipcRenderer.invoke("get-faction-vision", savePath, modDataDir, factionName),
+  // Resolvable faction list for the fog picker: { factions: [{faction, explored}] }
+  // — only factions whose vision record resolves from this save (no rebels/slave/
+  // all-seeing/empty), so every dropdown option is guaranteed to work.
+  getVisionFactionList: (savePath, modDataDir) => ipcRenderer.invoke("get-vision-faction-list", savePath, modDataDir),
   // Trade-network derivation (src/tradeNetwork.js). Returns { trade: { settlements:
   // { name: { faction, landPartners[], seaPartners[], partners[], tradeScoreHypothesis,
   // topPartnersHypothesis[] } } }, ... } or { error }. Pass savePath=null to reuse the
