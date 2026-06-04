@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.899",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**Explored mode now mirrors the game's fog of war for settlements.** Just like in-game, the settlements in your (the viewing faction's) victory conditions are revealed through the fog — shown as a dimmed, owner-coloured marker with its name — while every *other* unexplored settlement is completely hidden. So viewing as Julii you'd see Carthage out in the fog but Britain would be empty. Scouted land still shows everything normally." },
+    ],
+  },
+  {
     version: "0.9.898",
     date: "2026-06-04",
     items: [

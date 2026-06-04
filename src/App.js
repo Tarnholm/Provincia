@@ -7820,7 +7820,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -8499,22 +8499,30 @@ function App() {
       }
     }
 
-    // Explored mode: settlements a faction has never scouted must be ALL BLACK
-    // (requested 2026-06-04). The black settlement-centre pixels pass through
-    // buildColoredCanvas unchanged, so on the dark fog they'd show as a scatter
-    // of dots revealing every settlement's location. Repaint each UNEXPLORED
-    // settlement pixel to the fog colour so it vanishes; leave explored ones
-    // black (a real marker on your scouted, faction-coloured land). Also record
-    // unexplored cities so the labels pass withholds their names.
+    // Explored mode: match the game's fog of war for settlements.
+    //  - Explored land: settlement shown normally (black dot on faction colour).
+    //  - Unexplored but in the VIEWING faction's victory conditions: the game
+    //    reveals these (e.g. Julii can see Carthage) — show a fogged owner-colour
+    //    marker so the location is visible through the fog.
+    //  - Every other unexplored settlement: TOTALLY hidden (dot buried in fog),
+    //    so Britain is empty for Julii at the start.
+    // (Requested 2026-06-04.) Also records unexplored cities so the labels pass
+    // withholds their names.
     const fogCityExplored = {}; // rgbKey -> bool, used by the labels pass
+    const fogCityRevealed = {}; // rgbKey -> true for unexplored victory targets
     if (colorMode === "explored" && cityPixels.length > 0) {
       const fogSrc = (fogVision && fogVision.grid) ? fogVision : playerExploration;
       const fg = fogSrc && fogSrc.grid;
       const gW = (fogSrc && fogSrc.width) || 1020, gH = (fogSrc && fogSrc.height) || 700;
       const W = imgSize.width, H = imgSize.height;
-      ctx.fillStyle = "rgb(6,6,10)"; // matches the unexplored fog colour
+      // Viewing faction's victory-target cities (hold_regions are city names).
+      const fogFac = (fogVision && fogVision.faction) || fogFaction || playerFaction;
+      const vc = fogFac && victoryConditions ? victoryConditions[fogFac] : null;
+      const vcCities = new Set((vc && vc.hold_regions ? vc.hold_regions : []).map((c) => c.toLowerCase()));
+      const FOG_RGB = "rgb(6,6,10)";
       for (const cp of cityPixels) {
-        if (!regions[cp.rgbKey]) continue;
+        const region = regions[cp.rgbKey];
+        if (!region) continue;
         let explored = true;
         if (fg && W && H) {
           const gx = Math.min(gW - 1, Math.max(0, Math.floor(cp.x * gW / W)));
@@ -8522,7 +8530,21 @@ function App() {
           explored = fg[gy * gW + gx] > 0;
         }
         fogCityExplored[cp.rgbKey] = explored;
-        if (!explored) ctx.fillRect(cp.x, cp.y, 1, 1); // bury the dot in the fog
+        if (explored) continue; // leave the real black dot on scouted land
+        const isVictoryTarget = vcCities.has((region.city || "").toLowerCase());
+        if (isVictoryTarget) {
+          fogCityRevealed[cp.rgbKey] = true;
+          // Reveal through the fog, dimmed: owner colour at ~60% so it reads as
+          // "known but fogged". 2×2 so a single tile is visible on the black map.
+          const owner = currentOwnerByCity ? currentOwnerByCity[region.city] : null;
+          const fc = owner && factionColors[owner.toLowerCase()];
+          const base = (fc && fc.primary) || [150, 150, 160];
+          ctx.fillStyle = `rgb(${Math.round(base[0] * 0.6)},${Math.round(base[1] * 0.6)},${Math.round(base[2] * 0.6)})`;
+          ctx.fillRect(cp.x - 0.5, cp.y - 0.5, 2, 2);
+        } else {
+          ctx.fillStyle = FOG_RGB; // bury the dot in the fog
+          ctx.fillRect(cp.x, cp.y, 1, 1);
+        }
       }
     }
 
@@ -8537,8 +8559,9 @@ function App() {
       for (const cp of cityPixels) {
         const r = regions[cp.rgbKey];
         if (!r) continue;
-        // In Explored mode, don't label a city the faction has never discovered.
-        if (colorMode === "explored" && fogCityExplored[cp.rgbKey] === false) continue;
+        // In Explored mode, don't label a city the faction has never discovered
+        // — UNLESS it's a revealed victory-condition target (the game shows it).
+        if (colorMode === "explored" && fogCityExplored[cp.rgbKey] === false && !fogCityRevealed[cp.rgbKey]) continue;
         const label = showLabels === "city" ? (r.city || r.region || "") : (r.region || r.city || "");
         if (!label) continue;
         const lx = cp.x + 0.5;
