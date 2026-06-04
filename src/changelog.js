@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.913",
+    date: "2026-06-04",
+    items: [
+      { type: "feature", text: "**🎬 First-run button** (dev pill) — reloads the app into its first-launch state (splash + onboarding music + intro cards), exactly like a fresh install, so you can review and iterate on the welcome flow without reinstalling. Your mod and edits are untouched." },
+    ],
+  },
+  {
     version: "0.9.912",
     date: "2026-06-04",
     items: [

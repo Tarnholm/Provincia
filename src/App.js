@@ -12689,6 +12689,25 @@ function App() {
                   }}
                 >🩺 AI {aiDiagnostics.total > 0 ? `(${aiDiagnostics.total})` : ""}</button>
               )}
+              <button
+                onClick={async () => {
+                  if (!confirm("Reset Provincia to its first-launch state and reload?\n\nYou'll see the splash, onboarding music, and the intro cards again — exactly like a fresh install. (Your mod / edits aren't touched.)")) return;
+                  try { localStorage.removeItem("welcomeLastVersion"); localStorage.removeItem("onboardingDone"); } catch {}
+                  const api = window.electronAPI;
+                  if (api?.saveUserFile) {
+                    try { await api.saveUserFile("welcome_version.txt", ""); } catch {}
+                    try { await api.saveUserFile("onboarding_done.txt", ""); } catch {}
+                  }
+                  window.location.reload();
+                }}
+                title="Reload the app into its first-time-setup state (splash + onboarding music + intro cards), like a fresh install — for testing/iterating on the welcome flow."
+                style={{
+                  ...btnStyle(false),
+                  background: "rgba(60,60,60,0.7)", color: "#caa6e0", border: "1px solid #957bb8",
+                  minWidth: 0, padding: "3px 8px", fontSize: "0.72rem", fontWeight: 600,
+                  cursor: "pointer", position: "relative",
+                }}
+              >🎬 First-run</button>
               {/* 0.9.845: the "?" keyboard-shortcuts button moved to the title
                   bar (next to the native minimise). Removed from the dev pill. */}
               {/* 0.9.472: removed the autosave-snapshot "Save" button, the
