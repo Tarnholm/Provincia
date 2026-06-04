@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import CHANGELOG from "./changelog";
 import "./WelcomeScreen.css";
 
@@ -14,9 +14,10 @@ const ONBOARDING_PAGES = [
   },
   {
     title: "Two Slots \u2014 Vanilla & Your Mod",
-    body: "Up in the title bar are two campaign slots. Slot 1 (left) is loaded with Vanilla Rome \u2014 that's the map you're looking at right now. Slot 2 (right) is empty, ready for your mod: RIGHT-CLICK Slot 2 and point it at your mod's data folder. Provincia auto-detects everything it needs. Then click Slot 2 to switch the map from vanilla to your world.",
+    body: "Up in the title bar are two campaign slots. Slot 1 (left) is loaded with Vanilla Rome \u2014 that's the map you're looking at right now. Slot 2 (right) is empty, ready for your mod: RIGHT-CLICK Slot 2 and point it at your mod's data folder. Provincia auto-detects everything it needs, then jumps straight to your world.",
     tip: "Imported data is saved locally \u2014 you only import once per mod version, and you can re-import any time by right-clicking a slot.",
     highlight: "campaigns",
+    requireImport: true,
   },
   {
     title: "Map Modes \u2014 Grouped",
@@ -28,7 +29,7 @@ const ONBOARDING_PAGES = [
     title: "Overlays",
     body: "The green OVERLAYS button (next to the map-mode categories) holds display toggles you can stack on top of any map mode \u2014 flat colours, grid, faction borders, faction pin, settlements, terrain, heights, resources, armies, events, insights, and labels.",
     tip: "Overlays are green so they read as distinct from the slate map-mode groups; the button shows how many are on.",
-    highlight: "map-modes",
+    highlight: "overlays",
   },
   {
     title: "Factions & Search",
@@ -114,7 +115,7 @@ function displayVersion(v) {
 /* ── Component ───────────────────────────────────────────────────── */
 const FORCE_TEST_MODE = false;
 
-export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboardingDone, forceOnboarding, onPhaseChange, onDone, onHighlight, mapCenterX, onCalibrate, statsCacheCount }) {
+export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboardingDone, forceOnboarding, onPhaseChange, onDone, onHighlight, mapCenterX, onCalibrate, statsCacheCount, modImported }) {
   // Persisted state is the source of truth. (We previously had a
   // "stale-saved-version" check that fired whenever lastSeenVersion was
   // higher than the topmost changelog entry — but the saved version is the
@@ -183,6 +184,7 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
         onFinish={handleOnboardingDone}
         onHighlight={onHighlight}
         mapCenterX={mapCenterX}
+        modImported={modImported}
       />
     );
   }
@@ -198,9 +200,9 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
 }
 
 /* ── Onboarding walkthrough ──────────────────────────────────────── */
-function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }) {
+function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, modImported }) {
   const [page, setPage] = useState(0);
-  const [spotRect, setSpotRect] = useState(null); // live bounding box of the highlighted UI element
+  const [spotRects, setSpotRects] = useState([]); // live bounding boxes of highlighted UI element(s)
   const isLast = page === pages.length - 1;
   const p = pages[page];
 
@@ -209,54 +211,66 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }
     if (onHighlight) onHighlight(p.highlight || null);
   }, [page, p.highlight, onHighlight]);
 
-  // Track the highlighted element's on-screen rect so we can draw a glowing
-  // spotlight ring that's ALWAYS visible (the element's own z-index can be
-  // trapped in a parent stacking context and never rise above the overlay —
-  // that's why some highlights "didn't show"). We also use the rect to push the
-  // card to the opposite side so it never sits under the highlighted panel.
+  // Track the highlighted element(s)' on-screen rects so we can draw glowing
+  // spotlight ring(s) that are ALWAYS visible (an element's own z-index can be
+  // trapped in a parent stacking context and never rise above the overlay).
+  // Several elements may share one highlight key (e.g. the faction panel AND the
+  // search box) — we ring each. The rects also push the card clear of them.
   useEffect(() => {
     const key = p.highlight;
-    if (!key) { setSpotRect(null); return; }
+    if (!key) { setSpotRects([]); return; }
     let raf = 0, timer = 0, cancelled = false;
     const measure = () => {
       if (cancelled) return;
-      const el = document.querySelector(`[data-ui-highlight="${key}"]`);
-      if (el) {
+      const rects = [];
+      document.querySelectorAll(`[data-ui-highlight="${key}"]`).forEach((el) => {
         const r = el.getBoundingClientRect();
-        if (r.width > 1 && r.height > 1) { setSpotRect({ top: r.top, left: r.left, width: r.width, height: r.height }); return; }
-      }
-      setSpotRect(null);
+        if (r.width > 1 && r.height > 1) rects.push({ top: r.top, left: r.left, width: r.width, height: r.height });
+      });
+      setSpotRects(rects);
     };
     raf = requestAnimationFrame(measure);
-    timer = setInterval(measure, 400); // re-measure: the target may mount / reflow after the card appears
+    timer = setInterval(measure, 400); // re-measure: targets may mount / reflow after the card appears
     window.addEventListener("resize", measure);
     return () => { cancelled = true; cancelAnimationFrame(raf); clearInterval(timer); window.removeEventListener("resize", measure); };
   }, [page, p.highlight]);
 
-  // Place the card in whichever half has the most room away from the highlight.
+  // Auto-advance off an import-gated card the moment a mod is imported.
+  const prevImportedRef = useRef(modImported);
+  useEffect(() => {
+    if (modImported && !prevImportedRef.current && p.requireImport && !isLast) setPage((pg) => pg + 1);
+    prevImportedRef.current = modImported;
+  }, [modImported, p.requireImport, isLast]);
+
+  // Place the card in whichever half has the most room away from the highlight(s).
   let justifyContent = "center", alignItems = "center";
-  if (spotRect && typeof window !== "undefined") {
-    const cx = spotRect.left + spotRect.width / 2, cy = spotRect.top + spotRect.height / 2;
-    if (spotRect.width < window.innerWidth * 0.6) justifyContent = cx > window.innerWidth / 2 ? "flex-start" : "flex-end";
-    if (spotRect.height < window.innerHeight * 0.6) alignItems = cy > window.innerHeight / 2 ? "flex-start" : "flex-end";
+  if (spotRects.length && typeof window !== "undefined") {
+    const minL = Math.min(...spotRects.map((r) => r.left));
+    const maxR = Math.max(...spotRects.map((r) => r.left + r.width));
+    const minT = Math.min(...spotRects.map((r) => r.top));
+    const maxB = Math.max(...spotRects.map((r) => r.top + r.height));
+    const cx = (minL + maxR) / 2, cy = (minT + maxB) / 2;
+    if (maxR - minL < window.innerWidth * 0.6) justifyContent = cx > window.innerWidth / 2 ? "flex-start" : "flex-end";
+    if (maxB - minT < window.innerHeight * 0.6) alignItems = cy > window.innerHeight / 2 ? "flex-start" : "flex-end";
   }
 
   return (
     <div className="ws-overlay" style={{ justifyContent, alignItems, padding: "5vh 4vw" }}>
-      {spotRect && (
+      {spotRects.map((r, i) => (
         <div
+          key={i}
           aria-hidden
           style={{
             position: "fixed",
-            top: spotRect.top - 6, left: spotRect.left - 6,
-            width: spotRect.width + 12, height: spotRect.height + 12,
+            top: r.top - 6, left: r.left - 6,
+            width: r.width + 12, height: r.height + 12,
             border: "3px solid #e8c873", borderRadius: 10,
             boxShadow: "0 0 16px 4px rgba(232,200,115,0.7)",
             pointerEvents: "none", zIndex: 10001,
             animation: "ws-pulse 1.8s ease-in-out infinite",
           }}
         />
-      )}
+      ))}
       <div className="ws-card ws-onboarding">
         {p.image && (
           <img
@@ -284,11 +298,15 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }
           ))}
         </div>
 
-        {/* Nav */}
-        <div className="ws-nav">
-          <button className="ws-btn ws-btn--skip" onClick={onFinish}>
-            Skip
-          </button>
+        {/* Import gate hint */}
+        {p.requireImport && !modImported && (
+          <p className="ws-tip" style={{ color: "#dca64a", fontWeight: 600 }}>
+            ⤴ Right-click <b>Slot 2</b> and import your mod to continue.
+          </p>
+        )}
+
+        {/* Nav (no Skip — onboarding is a guided flow) */}
+        <div className="ws-nav" style={{ justifyContent: "flex-end" }}>
           <div className="ws-nav-right">
             {page > 0 && (
               <button
@@ -305,7 +323,9 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }
             ) : (
               <button
                 className="ws-btn ws-btn--primary"
-                onClick={() => setPage(page + 1)}
+                disabled={p.requireImport && !modImported}
+                style={p.requireImport && !modImported ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
+                onClick={() => { if (!(p.requireImport && !modImported)) setPage(page + 1); }}
               >
                 Next
               </button>

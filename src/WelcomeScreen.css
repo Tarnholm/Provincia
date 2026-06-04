@@ -230,10 +230,9 @@ body.dark-mode .ws-btn--secondary { background: rgba(255, 255, 255, 0.1); }
 /* ── UI highlight glow during onboarding ─────────────────────────── */
 
 .ws-ui-glow {
-  outline: 2px solid #dca64a !important;
-  outline-offset: 3px;
-  border-radius: 10px;
-  animation: ws-pulse 1.8s ease-in-out infinite;
+  /* The visible glow is drawn by the spotlight ring in WelcomeScreen.js — this
+     class ONLY lifts the real control above the dark overlay so it stays bright
+     and clickable. No outline/animation here, or it double-rings with the ring. */
   z-index: 10001 !important;
   position: relative;
 }

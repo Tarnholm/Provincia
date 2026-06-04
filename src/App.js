@@ -214,7 +214,7 @@ const DEFAULT_CAMPAIGNS = {
   },
   imperial: {
     key: "imperial",
-    label: "Imperial Campaign",
+    label: "Slot 2", // empty by default; relabeled to the mod name on import
     mapFile: "map_regions_large.tga",
     mapType: "tga",
     mapHeight: 700,
@@ -11340,7 +11340,7 @@ function App() {
       </div>
     ) : null;
     return (
-      <div className={welcomeHighlight === "factions" ? "ws-ui-glow" : undefined} style={{ position: "relative", zIndex: welcomeHighlight === "factions" ? 10001 : undefined }}>
+      <div data-ui-highlight={welcomeHighlight === "factions" ? "factions" : undefined} className={welcomeHighlight === "factions" ? "ws-ui-glow" : undefined} style={{ position: "relative", zIndex: welcomeHighlight === "factions" ? 10001 : undefined }}>
         <input
           type="text"
           ref={searchInputRef}
@@ -12074,7 +12074,7 @@ function App() {
           {(() => {
             const open = openFanSection === "overlays";
             return (
-              <button key="overlays" onClick={() => setOpenFanSection(open ? null : "overlays")}
+              <button key="overlays" data-ui-highlight="overlays" onClick={() => setOpenFanSection(open ? null : "overlays")}
                 title={open ? "Collapse Overlays" : "Overlays — display toggles (Flat, Grid, Borders, …). Click to expand."}
                 style={makeCatStyle(open, overlaysActive, CAT_SCHEME.overlays)}>
                 OVERLAYS
@@ -16498,6 +16498,7 @@ function App() {
                 forceOnboarding={isTestBuild}
                 onPhaseChange={setWelcomePhase}
                 statsCacheCount={Object.keys(statsCache || {}).length}
+                modImported={!!campaignLabels[DEFAULT_CAMPAIGNS.imperial.key]}
                 onCalibrate={async () => {
                   // 0.9.425: invoked from the Calibration onboarding page.
                   // Same flow as the toolbar 🎯 Calibrate button.
@@ -17236,7 +17237,7 @@ function App() {
                   className="zoom-controls"
                   style={{ position: "absolute", right: 12, bottom: 12, display: "flex", gap: 6, zIndex: welcomeHighlight === "region-info" ? 10001 : 2 }}
                 >
-                  <button className={"zoom-btn" + (welcomeHighlight === "region-info" ? " ws-ui-glow" : "")} title={lockedRegionInfo ? `Locked: ${lockedRegionInfo.region} — click to unlock` : "No region locked"}
+                  <button data-ui-highlight={welcomeHighlight === "region-info" ? "region-info" : undefined} className={"zoom-btn" + (welcomeHighlight === "region-info" ? " ws-ui-glow" : "")} title={lockedRegionInfo ? `Locked: ${lockedRegionInfo.region} — click to unlock` : "No region locked"}
                     onClick={() => lockedRegionInfo && setLockedRegionInfo(null)}
                     disabled={!lockedRegionInfo}
                     style={{ fontSize: "0.9rem", color: lockedRegionInfo ? "#dca64a" : "inherit", zIndex: welcomeHighlight === "region-info" ? 10001 : undefined, position: "relative" }}>
@@ -17545,7 +17546,6 @@ function App() {
                 just past the map. Width = whatever's left after the map.
                 Internal grid still scrolls horizontally if needed. */}
             <div
-              data-ui-highlight="region-info"
               style={{
                 position: "fixed",
                 top: MAP_TOP,
@@ -20357,7 +20357,9 @@ function App() {
           }
         }, 0);
         const overlayStyle = {
-          position: "fixed", inset: 0, zIndex: 9999,
+          // Above the onboarding overlay (10000) + spotlight rings (10001) so the
+          // importer is usable when right-clicked from an onboarding card.
+          position: "fixed", inset: 0, zIndex: 10020,
           background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
           display: "flex", alignItems: "center", justifyContent: "center",
         };
@@ -20725,6 +20727,13 @@ function App() {
             const statusText = `Done — ${prettyName}: ${res.updated.join(", ")}` + (missingNames.length > 0 ? ` | Not found: ${missingNames.join(", ")}` : "");
             setStatus(camp.suffix, statusText, "#7c4");
             setFileImportDone(true);
+            // During onboarding: jump straight to the just-imported slot so its
+            // map loads in place (no reload, no splash) and close the importer so
+            // the next card shows. The onboarding card auto-advances on import.
+            if (showWelcome) {
+              setMapCampaign(camp.key);
+              setShowFileImport(false);
+            }
             // Persist last-import metadata so the next launch can:
             // (1) re-show the green "Done" status text in the import modal
             //     (otherwise teammates see a blank Import dialog and think
@@ -20801,23 +20810,12 @@ function App() {
           }
         };
 
-        // Right-click on a title-bar campaign button opens this modal with
-        // pendingImportSlot set to the clicked slot. Auto-fire the folder
-        // picker for exactly that slot (once — the ref guard stops re-fires on
-        // every re-render of the IIFE) so the import targets the right slot.
-        if (isElectron && pendingImportSlot && !pendingImportSlotRef.current) {
-          // ref acts as an "in-flight" latch so the IIFE re-rendering before
-          // the state flush can't fire the picker twice. Cleared on the next
-          // tick once we've consumed the slot.
-          pendingImportSlotRef.current = pendingImportSlot;
-          const camp = campaigns.find((c) => c.key === pendingImportSlot);
+        // Right-click on a title-bar campaign button opens this modal pre-aimed
+        // at the clicked slot. We do NOT auto-open the OS folder picker anymore —
+        // the user picks the folder with the modal's own "Select folder" button
+        // (avoids a surprise second Explorer window popping over the app).
+        if (isElectron && pendingImportSlot) {
           setPendingImportSlot(null);
-          if (camp) {
-            console.log("[titlebar-import] right-click import for slot:", camp.key);
-            setTimeout(() => { handleElectronSelect(camp); pendingImportSlotRef.current = null; }, 0);
-          } else {
-            pendingImportSlotRef.current = null;
-          }
         }
 
         // Browser fallback: webkitdirectory input

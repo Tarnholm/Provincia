@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.922",
+    date: "2026-06-05",
+    items: [
+      { type: "improvement", text: "**Guided import in onboarding.** Card 2 now requires importing a mod to continue: right-click Slot 2 (no surprise Explorer window pops up — use the importer's own Select-folder button), and the moment it loads, the map switches to your mod and the next card appears — no app reload, no splash. The empty slot reads \"Slot 2\" until then. The Skip button is gone." },
+      { type: "fix", text: "**Onboarding highlights cleaned up:** a single spotlight ring (no more double outline), it can ring several controls at once (the Factions card now also rings the search box), the Overlays card rings just the OVERLAYS button, and the Region Details card no longer lights up the entire right column." },
+      { type: "fix", text: "**Vanilla faction symbols load.** Bundled vanilla Rome's own faction icons (Britannia, the Greek Cities, Numidia, Parthia…) that the mod had renamed away, so Slot 1 shows real crests instead of blank tridents." },
+    ],
+  },
+  {
     version: "0.9.921",
     date: "2026-06-05",
     items: [

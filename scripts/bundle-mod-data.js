@@ -131,18 +131,19 @@ function writeJson(dstName, data) {
   log(`wrote public/${dstName}`);
 }
 
-function copyFactionIcons() {
-  const src = path.join(MOD_ROOT, "data", "ui", "faction_icons");
+function copyFactionIcons(src, { skipExisting = false, label = "" } = {}) {
   const dst = path.join(PUBLIC_DIR, "faction_icons");
-  if (!fs.existsSync(src)) { warn(`faction_icons dir not found at ${src} — skipping icon bundle`); return; }
+  if (!fs.existsSync(src)) { warn(`faction_icons dir not found at ${src} — skipping ${label} icon bundle`); return; }
   if (!fs.existsSync(dst)) fs.mkdirSync(dst, { recursive: true });
   let copied = 0;
   for (const name of fs.readdirSync(src)) {
     if (!name.toLowerCase().endsWith(".tga")) continue;
-    fs.copyFileSync(path.join(src, name), path.join(dst, name));
+    const out = path.join(dst, name);
+    if (skipExisting && fs.existsSync(out)) continue; // don't clobber mod icons; only fill gaps
+    fs.copyFileSync(path.join(src, name), out);
     copied++;
   }
-  log(`copied ${copied} faction icons → public/faction_icons/`);
+  log(`copied ${copied} ${label} faction icons → public/faction_icons/`);
 }
 
 function run() {
@@ -154,8 +155,12 @@ function run() {
   if (fs.existsSync(smPath)) copyRaw(smPath, "descr_sm_factions.txt");
   else warn(`descr_sm_factions.txt not found at ${smPath} (leaving existing public/ copy)`);
 
-  // 1b. Faction icons — bundled so first launch has visuals before user imports a mod
-  copyFactionIcons();
+  // 1b. Faction icons — bundled so first launch has visuals before user imports
+  // a mod. Copy the mod's icons first, then fill any gaps with vanilla Rome's
+  // own faction icons (britons, greek_cities, numidia, etc. that the mod renamed
+  // away) so the bundled vanilla Slot 1 shows real symbols, not blanks.
+  copyFactionIcons(path.join(MOD_ROOT, "data", "ui", "faction_icons"), { label: "mod" });
+  copyFactionIcons(path.join(VANILLA_ROOT, "data", "ui", "faction_icons"), { skipExisting: true, label: "vanilla" });
 
   // 2. Per-campaign files
   for (const c of CAMPAIGNS) {
