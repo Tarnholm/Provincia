@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.915",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Onboarding pass:** cards are now centred in the app window (not off to the map side); the Region Details / Diplomacy / Family Tree cards keep a sample region (Roma) loaded so their panels aren't blank; the Factions card also highlights the search bar; the Overlays card calls it the green OVERLAYS button (not a teal tab); and the region-details card dropped its dev-mode tip." },
+    ],
+  },
+  {
     version: "0.9.914",
     date: "2026-06-04",
     items: [

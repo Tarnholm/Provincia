@@ -11274,7 +11274,7 @@ function App() {
       </div>
     ) : null;
     return (
-      <div style={{ position: "relative" }}>
+      <div className={welcomeHighlight === "factions" ? "ws-ui-glow" : undefined} style={{ position: "relative", zIndex: welcomeHighlight === "factions" ? 10001 : undefined }}>
         <input
           type="text"
           ref={searchInputRef}
@@ -16423,9 +16423,12 @@ function App() {
                 onHighlight={(target) => {
                   setWelcomeHighlight(target);
                   if (target === "region-info") {
-                    // Show a sample region in the info panel
-                    const firstKey = Object.keys(regions)[0];
-                    if (firstKey && regions[firstKey]) setLockedRegionInfo({ ...regions[firstKey], rgb: firstKey });
+                    // Show the showcase region (Roma) in the info panel — fall
+                    // back to the first region if it isn't in this mod.
+                    const entries = Object.entries(regions);
+                    let pick = entries.find(([, r]) => r && (String(r.region || "").toLowerCase() === "roma" || String(r.city || "").toLowerCase() === "rome"));
+                    if (!pick) pick = entries[0];
+                    if (pick) setLockedRegionInfo({ ...pick[1], rgb: pick[0] });
                   } else {
                     setLockedRegionInfo(null);
                   }

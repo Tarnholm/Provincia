@@ -26,8 +26,8 @@ const ONBOARDING_PAGES = [
   },
   {
     title: "Overlays",
-    body: "The teal OVERLAYS tab (next to the map-mode categories) holds display toggles you can stack on top of any map mode \u2014 flat colours, grid, faction borders, faction pin, settlements, terrain, heights, resources, armies, events, insights, and labels.",
-    tip: "Overlays are teal so they read as distinct from the slate map-mode groups; the tab shows how many are on.",
+    body: "The green OVERLAYS button (next to the map-mode categories) holds display toggles you can stack on top of any map mode \u2014 flat colours, grid, faction borders, faction pin, settlements, terrain, heights, resources, armies, events, insights, and labels.",
+    tip: "Overlays are green so they read as distinct from the slate map-mode groups; the button shows how many are on.",
     highlight: "map-modes",
   },
   {
@@ -39,14 +39,14 @@ const ONBOARDING_PAGES = [
   {
     title: "Region Details",
     body: "Hover or click a province for its panel \u2014 settlement & tier, owner, culture, religion, fertility, resources, hidden resources, tags, and the full building list. Click the lock (\ud83d\udd12) to pin a region while you explore elsewhere.",
-    tip: "Right-click a region (in dev mode) for edit options. Hover a value mode (Population, Recruitment\u2026) to see its number at the cursor.",
+    tip: "Hover a value mode (Population, Recruitment\u2026) to see that region's number right at the cursor.",
     highlight: "region-info",
   },
   {
     title: "Diplomacy, Characters & Armies",
     body: "The right column shows the owning faction's treasury, AI personality and diplomacy (wars / allies / trade); the region's characters with the \ud83d\udc6a Family Tree button; the garrison and any field armies (general face-cards included); and the units recruitable there. Open the Wealth list from the Diplomacy & Treasury header.",
     tip: "Leader \ud83d\udc51 and heir markers show in the Characters list; the panels fill the space as you grow the window.",
-    highlight: null,
+    highlight: "region-info",
   },
   {
     title: "Live Mode \u2014 Watch Your Campaign",
@@ -209,8 +209,8 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }
   }, [page, p.highlight, onHighlight]);
 
   return (
-    <div className="ws-overlay" style={mapCenterX ? { justifyContent: "flex-start" } : undefined}>
-      <div className="ws-card ws-onboarding" style={mapCenterX ? { position: "absolute", left: mapCenterX, transform: "translateX(-50%)" } : undefined}>
+    <div className="ws-overlay">
+      <div className="ws-card ws-onboarding">
         {p.image && (
           <img
             src={p.image}
@@ -275,8 +275,8 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX }
 /* ── What's New (update changelog) ───────────────────────────────── */
 function WhatsNew({ entries, currentVersion, onFinish, mapCenterX }) {
   return (
-    <div className="ws-overlay" style={mapCenterX ? { justifyContent: "flex-start" } : undefined}>
-      <div className="ws-card ws-whatsnew" style={mapCenterX ? { position: "absolute", left: mapCenterX, transform: "translateX(-50%)" } : undefined}>
+    <div className="ws-overlay">
+      <div className="ws-card ws-whatsnew">
         <div className="ws-body">
           <h2 className="ws-title">What's New</h2>
           <p className="ws-subtitle">
