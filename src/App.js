@@ -3031,6 +3031,30 @@ function App() {
   // compare against descr_regions field 3.
   const [initialCreatorByCity, setInitialCreatorByCity] = useState(null);
   const [currentOwnerByCity, setCurrentOwnerByCity] = useState(null); // { city: factionId } — current ownership decoded from save
+  // Authoritative rgbKey → owner-faction map, resolved the SAME way the map
+  // coloring does: faction→region/city name match from factionRegionsMap, then
+  // the live save override (currentOwnerByCity). Used by the fog victory-target
+  // reveal so distant/unexplored targets colour correctly (currentOwnerByCity
+  // alone misses many of them, which left non-player factions' targets all grey).
+  const rgbToOwnerMap = useMemo(() => {
+    const nameToFaction = {};
+    for (const [faction, regionNames] of Object.entries(factionRegionsMap || {})) {
+      for (const rn of (regionNames || [])) { if (rn) nameToFaction[String(rn).toLowerCase()] = faction; }
+    }
+    const m = {};
+    for (const [rgbKey, r] of Object.entries(regions || {})) {
+      if (!r) continue;
+      const f = (r.region && nameToFaction[String(r.region).toLowerCase()]) || (r.city && nameToFaction[String(r.city).toLowerCase()]);
+      if (f) m[rgbKey] = f;
+    }
+    if (currentOwnerByCity) {
+      for (const [rgbKey, r] of Object.entries(regions || {})) {
+        const live = r && r.city ? currentOwnerByCity[r.city] : null;
+        if (live) m[rgbKey] = live;
+      }
+    }
+    return m;
+  }, [factionRegionsMap, regions, currentOwnerByCity]);
   const [factionDisplayNames, setFactionDisplayNames] = useState(null); // { factionId: displayName } from mod text/expanded_bi.txt
   const [factionCultures, setFactionCultures] = useState(null); // { factionId: cultureFolderName } from descr_sm_factions.txt
   // Bumping this counter invalidates every mod-derived useEffect that
@@ -7925,7 +7949,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -8652,10 +8676,10 @@ function App() {
           // Reveal through the fog in the FULL colour of the faction that owns
           // the settlement (e.g. an Epirus-held target reads as Epirus green),
           // so the victory map shows who currently holds each objective.
-          // Owner: live ownership if known, else the region's stored owner
-          // (region.faction). currentOwnerByCity can miss distant/unexplored
-          // settlements, which left byzantium's far targets all grey.
-          const owner = (currentOwnerByCity && currentOwnerByCity[region.city]) || region.faction || null;
+          // Owner resolved the same way as the map coloring (factionRegionsMap
+          // name-match + live override) so unexplored targets colour correctly;
+          // fall back to currentOwnerByCity / region.faction if needed.
+          const owner = rgbToOwnerMap[cp.rgbKey] || (currentOwnerByCity && currentOwnerByCity[region.city]) || region.faction || null;
           const fc = owner && factionColors[owner.toLowerCase()];
           const base = (fc && fc.primary) || [150, 150, 160];
           ctx.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`;

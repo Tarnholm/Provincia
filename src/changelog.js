@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.906",
+    date: "2026-06-04",
+    items: [
+      { type: "fix", text: "**Fog victory targets now colour correctly for every faction, not just the player.** The reveal was resolving each target's owner from live ownership only, which misses distant/unexplored settlements — so any non-player faction's targets came out grey. It now resolves the owner the same way the map coloring does (faction→region match + live override), so byzantium's (and everyone's) targets show their owner's colour." },
+    ],
+  },
+  {
     version: "0.9.905",
     date: "2026-06-04",
     items: [
