@@ -815,7 +815,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             icons line up across rows (war/allied/trade/protects); tightened in
             0.9.888 — narrower label column + smaller icon gaps. */}
         <span style={{ width: 15, textAlign: "center", flexShrink: 0 }}>{emoji}</span>
-        <span style={{ minWidth: "4.4em", flexShrink: 0, whiteSpace: "nowrap" }}>{label} ({entries.length})</span>
+        <span style={{ minWidth: "5em", flexShrink: 0, whiteSpace: "nowrap" }}>{label} ({entries.length})</span>
         <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, minWidth: 0 }}>
         {allText ? (
           <span style={{ color: "#ddd", whiteSpace: "normal" }}>{allText}</span>
@@ -2322,7 +2322,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     {diploLine("⚠", "hostile", "#e0c080", factionState.liveHostile)}
                     {diploLine("🔄", "trade", "#8fc9d6", factionState.liveTrade)}
                     {diploLine("🛡", "protects", "#9cc0e0", factionState.startProtects)}
-                    {diploLine("🛡", "protectorate of", "#9cc0e0", factionState.startProtectedBy)}
+                    {diploLine("🛡", "ward of", "#9cc0e0", factionState.startProtectedBy)}
                   </>
                 ) : ((factionState.startWars && factionState.startWars.length) || (factionState.startAllies && factionState.startAllies.length) || (factionState.startProtects && factionState.startProtects.length) || (factionState.startProtectedBy && factionState.startProtectedBy.length)) ? (
                   <>
@@ -2331,7 +2331,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     {diploLine("🤝", "allied", "#9ed09e", factionState.startAllies)}
                     {diploLine("🔄", "trade", "#8fc9d6", factionState.startTrade)}
                     {diploLine("🛡", "protects", "#9cc0e0", factionState.startProtects)}
-                    {diploLine("🛡", "protectorate of", "#9cc0e0", factionState.startProtectedBy)}
+                    {diploLine("🛡", "ward of", "#9cc0e0", factionState.startProtectedBy)}
                   </>
                 ) : (
                   <div style={{ color: "#888", fontSize: "0.68rem", fontStyle: "italic" }}>Starts neutral — no declared alliances, wars, or protectorates.</div>

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.889",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Diplomacy rows now line up properly.** The long \"protectorate of\" label was blowing out the column so its faction icons started further right than the others; it's shortened to \"ward of\" (same meaning — this faction is protected by another) and the label column widened to fit, so every row's icons share the same start position." },
+    ],
+  },
+  {
     version: "0.9.888",
     date: "2026-06-04",
     items: [
