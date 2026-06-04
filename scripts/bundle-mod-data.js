@@ -155,12 +155,10 @@ function run() {
   if (fs.existsSync(smPath)) copyRaw(smPath, "descr_sm_factions.txt");
   else warn(`descr_sm_factions.txt not found at ${smPath} (leaving existing public/ copy)`);
 
-  // 1b. Faction icons — bundled so first launch has visuals before user imports
-  // a mod. Copy the mod's icons first, then fill any gaps with vanilla Rome's
-  // own faction icons (britons, greek_cities, numidia, etc. that the mod renamed
-  // away) so the bundled vanilla Slot 1 shows real symbols, not blanks.
+  // 1b. Faction icons — bundle ONLY the mod's icons (first-launch fallback for
+  // the mod slot). Vanilla Slot 1 reads its crests live from the detected game
+  // install (get-vanilla-icons-dir), so vanilla art is NOT bundled.
   copyFactionIcons(path.join(MOD_ROOT, "data", "ui", "faction_icons"), { label: "mod" });
-  copyFactionIcons(path.join(VANILLA_ROOT, "data", "ui", "faction_icons"), { skipExisting: true, label: "vanilla" });
 
   // 2. Per-campaign files
   for (const c of CAMPAIGNS) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import CHANGELOG from "./changelog";
 import "./WelcomeScreen.css";
 
@@ -272,21 +273,27 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
 
   return (
     <div className="ws-overlay" style={{ justifyContent, alignItems, padding: "5vh 4vw" }}>
-      {spotRects.map((r, i) => (
-        <div
-          key={i}
-          aria-hidden
-          style={{
-            position: "fixed",
-            top: r.top - 3, left: r.left - 3,
-            width: r.width + 6, height: r.height + 6,
-            border: "2px solid #e8c873", borderRadius: 8,
-            boxShadow: "0 0 12px 2px rgba(232,200,115,0.65)",
-            pointerEvents: "none", zIndex: 10011,
-            animation: "ws-pulse 1.8s ease-in-out infinite",
-          }}
-        />
-      ))}
+      {/* Rings render through a portal to <body> so their position:fixed coords
+          are truly viewport-relative (a transformed ancestor of the overlay
+          would otherwise shift them — that's why the lock ring was off-centre). */}
+      {typeof document !== "undefined" && createPortal(
+        spotRects.map((r, i) => (
+          <div
+            key={i}
+            aria-hidden
+            style={{
+              position: "fixed",
+              top: r.top - 3, left: r.left - 3,
+              width: r.width + 6, height: r.height + 6,
+              border: "2px solid #e8c873", borderRadius: 8,
+              boxShadow: "0 0 12px 2px rgba(232,200,115,0.65)",
+              pointerEvents: "none", zIndex: 10011,
+              animation: "ws-pulse 1.8s ease-in-out infinite",
+            }}
+          />
+        )),
+        document.body
+      )}
       <div className="ws-card ws-onboarding">
         {p.image && (
           <img

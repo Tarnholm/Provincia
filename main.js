@@ -2740,6 +2740,19 @@ ipcMain.handle("read-faction-icon", async (_event, filePath) => {
   } catch { return null; }
 });
 
+// IPC: the vanilla RTW:R faction_icons directory, read live from the detected
+// game install (so vanilla art is NOT bundled into the app). null if the
+// install can't be located. The renderer uses it as the icons source for the
+// bundled vanilla Slot 1.
+ipcMain.handle("get-vanilla-icons-dir", async () => {
+  try {
+    const dd = getVanillaDataDir();
+    if (!dd) return null;
+    const iconsDir = path.join(dd, "ui", "faction_icons");
+    return fs.existsSync(iconsDir) ? iconsDir : null;
+  } catch { return null; }
+});
+
 // IPC: resolve a building-chain icon for the currently-loaded mod.
 // Given a culture (e.g., "greek", "roman") and a level name (e.g., "odeon",
 // "stone_wall"), searches the mod's data/ui/<culture>/buildings/ folder for

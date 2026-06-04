@@ -3238,6 +3238,22 @@ function App() {
       }
     });
   }, [modIconsDir]);
+  // Vanilla faction-icons dir, read LIVE from the detected RTW install (not
+  // bundled). Used as the icon source for the bundled vanilla Slot 1.
+  const [vanillaIconsDir, setVanillaIconsDir] = useState(null);
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api?.getVanillaIconsDir) return;
+    api.getVanillaIconsDir().then((d) => { if (d) setVanillaIconsDir(d); }).catch(() => {});
+  }, []);
+  // Icon source for the ACTIVE slot: the bundled-vanilla Slot 1 (classic, not
+  // imported over) reads its crests from the game install; everything else uses
+  // the imported mod's icons dir.
+  const activeIconsDir = useMemo(() => {
+    if (mapCampaign === "classic" && !campaignLabels[mapCampaign] && vanillaIconsDir) return vanillaIconsDir;
+    return modIconsDir;
+  }, [mapCampaign, campaignLabels, vanillaIconsDir, modIconsDir]);
+
   // Faction display-name → internal-id map, loaded from the mod's text files
   // (campaign_descriptions.txt). Lets us match "The House of Claudii" in a
   // save filename to the internal `romans_julii` faction key.
@@ -9333,14 +9349,14 @@ function App() {
     const jobs = [preloadIcon("faction_icons/slave.tga")];
     for (const f of factions) {
       jobs.push(preloadIcon(`faction_icons/${f}.tga`));
-      if (modIconsDir) jobs.push(preloadModIcon(modIconsDir, f));
+      if (activeIconsDir) jobs.push(preloadModIcon(activeIconsDir, f));
     }
-    if (modIconsDir) jobs.push(preloadModIcon(modIconsDir, "slave"));
+    if (activeIconsDir) jobs.push(preloadModIcon(activeIconsDir, "slave"));
     Promise.allSettled(jobs).then(() => {
       if (!cancelled) setIconsPreloaded(true);
     });
     return () => { cancelled = true; };
-  }, [factions, modIconsDir]);
+  }, [factions, activeIconsDir]);
 
   // Precompute borders
   useEffect(() => {
@@ -10994,7 +11010,7 @@ function App() {
                   }}
                 >
                   <div style={{ width: "100%", height: "100%", display: "block", filter: ICON_DROP_SHADOW }}>
-                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={"100%"} tightCrop modIconsDir={modIconsDir} />
+                    <FactionIcon iconPath={`faction_icons/${faction}.tga`} alt={faction} size={"100%"} tightCrop modIconsDir={activeIconsDir} />
                   </div>
                 </div>
               </Tooltip>
@@ -11413,7 +11429,7 @@ function App() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           {selectedFaction && (
             <div style={{ width: 40, height: 40, flexShrink: 0, filter: ICON_DROP_SHADOW }}>
-              <FactionIcon iconPath={`faction_icons/${selectedFaction}.tga`} alt={selectedFaction} size={40} tightCrop modIconsDir={modIconsDir} />
+              <FactionIcon iconPath={`faction_icons/${selectedFaction}.tga`} alt={selectedFaction} size={40} tightCrop modIconsDir={activeIconsDir} />
             </div>
           )}
           <div>
@@ -16395,7 +16411,7 @@ function App() {
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                 }}>
                   <div style={{ width: 72, height: 72, filter: ICON_DROP_SHADOW }}>
-                    <FactionIcon iconPath={`faction_icons/${f}.tga`} alt={f} size={72} tightCrop modIconsDir={modIconsDir} />
+                    <FactionIcon iconPath={`faction_icons/${f}.tga`} alt={f} size={72} tightCrop modIconsDir={activeIconsDir} />
                   </div>
                   <span style={{ fontSize: "0.7rem", textTransform: "capitalize" }}>
                     {f.replace(/_/g, " ")}
@@ -17831,7 +17847,7 @@ function App() {
                         });
                         console.log(`[icon-replace] pending logged: ${desc} (backup=${info.backupPath || "(none)"})`);
                       }}
-                      modIconsDir={modIconsDir}
+                      modIconsDir={activeIconsDir}
                       onFactionRightClick={({ factionId, displayName }) => {
                         setInfoPopup({
                           type: "faction",
@@ -21238,7 +21254,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       }}
                     >
                       <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <FactionIcon iconPath={`faction_icons/${f}.tga`} alt={f} size={40} tightCrop modIconsDir={modIconsDir} />
+                        <FactionIcon iconPath={`faction_icons/${f}.tga`} alt={f} size={40} tightCrop modIconsDir={activeIconsDir} />
                       </div>
                       <span style={{ fontSize: "0.66rem", textAlign: "center", textTransform: "capitalize", color: on ? "#f2e3b8" : "#9aa", lineHeight: 1.15, maxWidth: "100%", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{f.replace(/_/g, " ")}</span>
                     </button>

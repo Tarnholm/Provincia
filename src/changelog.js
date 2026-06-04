@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.925",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Vanilla faction crests now load** — they're read live from your Rome Remastered install instead of being bundled, so Slot 1 shows the real Britannia / Greek Cities / Numidia / Parthia symbols rather than placeholder tridents. (Previously the mod's icon folder hid them.)" },
+      { type: "fix", text: "**Onboarding spotlight rings are centred again** — they now render through a portal so a transformed parent can't offset them (the lock-icon ring was sitting up-and-left of the lock)." },
+    ],
+  },
+  {
     version: "0.9.924",
     date: "2026-06-05",
     items: [
