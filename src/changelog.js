@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.914",
+    date: "2026-06-04",
+    items: [
+      { type: "improvement", text: "**Reworked the welcome intro** — it now leads with the live-campaign experience (watch your campaign unfold turn by turn), mentions the explore + built-in editor sides, and nudges new users to start by following a live campaign." },
+    ],
+  },
+  {
     version: "0.9.913",
     date: "2026-06-04",
     items: [
