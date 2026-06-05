@@ -1370,7 +1370,7 @@ function patchDescrRegions(originalText, regions) {
   for (const r of Object.values(regions || {})) {
     if (r && r.region) byName[String(r.region).trim()] = r;
   }
-  const eol = originalText.includes("\r\n") ? "\r\n" : "\n";
+  const eol = "\r\n"; // RTW:R game text files MUST be CRLF — LF silently breaks the engine's descr_* parser, regardless of the source file's EOL
   const lines = originalText.split(/\r?\n/);
   const indentOf = (s) => { const m = String(s).match(/^([ \t]*)/); return m ? m[1] : "\t"; };
   let i = 0;
@@ -1424,7 +1424,7 @@ function parseFactionStatus(text) {
 // block are dropped — the engine ignores them; faction order is preserved.)
 function patchFactionStatus(originalText, playable, nonplayable) {
   if (!originalText) return null;
-  const eol = originalText.includes("\r\n") ? "\r\n" : "\n";
+  const eol = "\r\n"; // RTW:R game text files MUST be CRLF — LF silently breaks the engine's descr_* parser, regardless of the source file's EOL
   const lines = originalText.split(/\r?\n/);
   const out = [];
   let i = 0;
@@ -1451,7 +1451,7 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
   // RTW:R requires the original line endings (descr_strat is CRLF) — writing
   // LF silently breaks the game's parser ("Expected faction list starting with
   // playable" / "Expected start date of campaign"). Preserve the source EOL.
-  const eol = originalText.includes("\r\n") ? "\r\n" : "\n";
+  const eol = "\r\n"; // RTW:R game text files MUST be CRLF — LF silently breaks the engine's descr_* parser, regardless of the source file's EOL
   const lines = originalText.split(/\r?\n/);
   const out = [];
   const patchResources = dirtyFiles.has("resources");

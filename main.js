@@ -3,6 +3,20 @@ const { app, BrowserWindow, Menu, session, dialog, ipcMain, shell, nativeImage }
 const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
+
+// RTW:R game TEXT files MUST be written with CRLF line endings. Writing LF
+// silently breaks the engine's descr_* parsers ("Expected faction list starting
+// with playable" / "Expected start date of campaign") and stops the campaign
+// loading. This single chokepoint forces CRLF for every `.txt` write regardless
+// of the source file's or caller's line endings; binary/JSON writes pass through
+// untouched. Route any game-text writeFileSync through this — never trust the
+// caller or a "preserve source EOL" heuristic (that's what kept re-shipping LF).
+function gameTextCRLF(filePath, content) {
+  if (typeof content === "string" && /\.txt$/i.test(String(filePath))) {
+    return content.replace(/\r\n?|\n/g, "\r\n");
+  }
+  return content;
+}
 const { autoUpdater } = require("electron-updater");
 
 // Spawn the v1-character parser in a worker so it runs in parallel with
@@ -4032,7 +4046,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
           }
           if (changed) {
             if (!_modExportDir) fs.copyFileSync(nlP, nlP + "." + stamp + ".bak");
-            fs.writeFileSync(modOut(nlP), nlRaw, "utf8");
+            fs.writeFileSync(modOut(nlP), gameTextCRLF(nlP, nlRaw), "utf8");
             console.log(`[addgen] registered minted names in descr_namelists.txt — ${menToks.length} male (${facNl.men}), ${womenToks.length} female (${facNl.women})`);
           } else {
             console.warn(`[addgen] descr_namelists NOT updated for ${selection.factionName} (men=${facNl.men} women=${facNl.women}); minted names: ${res.namesAppend.map((n) => n.token + ":" + n.gender).join(", ")} — campaign may reject them`);
@@ -6513,7 +6527,7 @@ ipcMain.handle("save-file-as", async (_event, defaultName, content, filterDesc, 
     filters: [{ name: filterDesc || "All Files", extensions: filterExts || ["*"] }],
   });
   if (result.canceled || !result.filePath) return null;
-  fs.writeFileSync(result.filePath, content, "utf8");
+  fs.writeFileSync(result.filePath, gameTextCRLF(result.filePath, content), "utf8");
   return result.filePath;
 });
 
@@ -6521,12 +6535,12 @@ ipcMain.handle("save-file", async (_event, name, content) => {
   try {
     const userDir = path.join(app.getPath("userData"), "campaign_data");
     if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
-    fs.writeFileSync(path.join(userDir, name), content, "utf8");
+    fs.writeFileSync(path.join(userDir, name), gameTextCRLF(name, content), "utf8");
     fs.writeFileSync(path.join(userDir, ".version_stamp"), app.getVersion(), "utf8");
     if (!app.isPackaged) {
       try {
         const buildDir = path.join(__dirname, "build");
-        fs.writeFileSync(path.join(buildDir, name), content, "utf8");
+        fs.writeFileSync(path.join(buildDir, name), gameTextCRLF(name, content), "utf8");
       } catch {}
     }
     return true;
@@ -6590,7 +6604,7 @@ ipcMain.handle("save-user-file", async (_event, name, content) => {
     const filePath = path.join(app.getPath("userData"), name);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(filePath, content, "utf8");
+    fs.writeFileSync(filePath, gameTextCRLF(filePath, content), "utf8");
     return true;
   } catch { return false; }
 });
@@ -9480,11 +9494,10 @@ ipcMain.handle("write-active-mod-file", async (_event, relPath, content) => {
   try {
     // Ensure parent dir exists (it should, but be defensive)
     fs.mkdirSync(path.dirname(full), { recursive: true });
-    // RTW:R game text files MUST be CRLF — normalise at this single write
-    // chokepoint so a renderer-side patcher can never ship LF (which silently
-    // breaks the game's parser, e.g. "Expected faction list starting with playable").
-    if (/\.txt$/i.test(normalised)) content = content.replace(/\r\n?|\n/g, "\r\n");
-    fs.writeFileSync(full, content, "utf8");
+    // RTW:R game text files MUST be CRLF — force it here so a renderer-side
+    // patcher can never ship LF (which silently breaks the game's parser, e.g.
+    // "Expected faction list starting with playable"). See gameTextCRLF.
+    fs.writeFileSync(full, gameTextCRLF(normalised, content), "utf8");
     console.log(`[write-active-mod-file] wrote ${normalised} (${content.length} bytes)${_modExportDir ? " (exported)" : ""}`);
     return { ok: true, path: full };
   } catch (e) {

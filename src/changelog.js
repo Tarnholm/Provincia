@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.936",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**All text-file exports are now guaranteed CRLF — hardened end to end.** RTW:R silently misparses LF game files (the \"Expected faction list starting with playable\" / \"Expected start date of campaign\" errors that stop a campaign loading), and a few export paths could still slip through. Two ways were possible: the `descr_strat` / `descr_regions` / faction-status patchers *preserved the source file's line endings* (so an LF source re-exported as LF), and the `descr_namelists` writer plus the generic save-file IPC handlers didn't normalise at all. Now: (1) every patcher forces CRLF regardless of the source, and (2) a single `gameTextCRLF` chokepoint in the main process forces CRLF on every `.txt` write — the active-mod writer, save-as, save-file, the user-file backup and the namelists writer all route through it (binary/JSON writes are untouched). It is no longer possible for any current or future export path to ship a game file with LF endings." },
+    ],
+  },
+  {
     version: "0.9.935",
     date: "2026-06-05",
     items: [
