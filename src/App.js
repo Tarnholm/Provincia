@@ -3254,6 +3254,16 @@ function App() {
     return modIconsDir;
   }, [mapCampaign, campaignLabels, vanillaIconsDir, modIconsDir]);
 
+  // Active mod DATA dir for asset resolution (unit cards, etc.): the vanilla
+  // Slot 1 resolves from the game install's data dir (derived from the icons
+  // dir, …/data/ui/faction_icons → …/data); a mod slot uses its own data dir.
+  const activeDataDir = useMemo(() => {
+    if (mapCampaign === "classic" && !campaignLabels[mapCampaign] && vanillaIconsDir) {
+      return vanillaIconsDir.replace(/[\/\\]ui[\/\\]faction_icons[\/\\]?$/i, "");
+    }
+    return modDataDir;
+  }, [mapCampaign, campaignLabels, vanillaIconsDir, modDataDir]);
+
   // Faction display NAMES per slot: the vanilla Slot 1 uses the game's own
   // names (Thrace=Thrace, Dacia=Dacia) — the mod/Alexander-merged dictionary
   // shifts them. A mod slot uses that mod's names. Re-applies on slot switch.
@@ -18407,12 +18417,12 @@ function App() {
                         if (ownerId) {
                           const dictMap = unitOwnership?.__dictionary || {};
                           const triples = normalised.map((u) => [ownerId, u.unit, dictMap[u.unit]]).filter(([, n]) => n);
-                          prefetchUnitIcons(modDataDir, triples, () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, triples, () => setIconCacheVersion((v) => v + 1));
                         }
                         return normalised.map((u) => ({
                           ...u,
                           faction: ownerId,
-                          icon: ownerId ? getCachedUnitIcon(ownerId, u.unit) : null,
+                          icon: ownerId ? getCachedUnitIcon(activeDataDir, ownerId, u.unit) : null,
                         }));
                       })()}
                       settlementTier={(() => {
@@ -18552,12 +18562,12 @@ function App() {
                         ).toLowerCase();
                         const dictMap = unitOwnership?.__dictionary || {};
                         if (ownerId) {
-                          prefetchUnitIcons(modDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
                         }
                         return [...byUnit.values()].map(e => ({
                           unit: e.unit,
                           faction: ownerId,
-                          icon: ownerId ? getCachedUnitIcon(ownerId, e.unit) : null,
+                          icon: ownerId ? getCachedUnitIcon(activeDataDir, ownerId, e.unit) : null,
                           aors: [...e.aors], only: [...e.only], except: [...e.except],
                         }));
                       })()}
@@ -18878,7 +18888,7 @@ function App() {
                         if (result.length === 0) return null;
                         if (ownerId) {
                           const dictMap = unitOwnership?.__dictionary || {};
-                          prefetchUnitIcons(modDataDir, result.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, result.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
                         }
                         // Sort: currently-available first, then upgrade-only.
                         result.sort((a, b) => {
@@ -18918,7 +18928,7 @@ function App() {
                         return result.map((name) => ({
                           unit: name,
                           faction: ownerId,
-                          icon: ownerId ? getCachedUnitIcon(ownerId, name) : null,
+                          icon: ownerId ? getCachedUnitIcon(activeDataDir, ownerId, name) : null,
                           gatedBy: gatedByMap[name] ? [...gatedByMap[name]] : [],
                           hrGates: hrGatesMap[name] ? [...hrGatesMap[name]] : [],
                           available: availableSet.has(name),
@@ -18958,11 +18968,11 @@ function App() {
                         const names = [...union].sort((a, b) => a.localeCompare(b));
                         if (names.length === 0) return null;
                         const dictMap = unitOwnership?.__dictionary || {};
-                        prefetchUnitIcons(modDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
+                        prefetchUnitIcons(activeDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
                         return names.map((name) => ({
                           unit: name,
                           faction: ownerId,
-                          icon: getCachedUnitIcon(ownerId, name),
+                          icon: getCachedUnitIcon(activeDataDir, ownerId, name),
                           gatedBy: [],
                           hrGates: [],
                           available: true,
@@ -19221,7 +19231,7 @@ function App() {
                               const bg2 = u2.commanderUuid ? 0 : 1;
                               return bg1 - bg2;
                             });
-                            prefetchUnitIcons(modDataDir, sortedUnits.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
+                            prefetchUnitIcons(activeDataDir, sortedUnits.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
                             // 0.9.651: surface (x, y) for the field-army edit
                             // selector / pendingArmyUnits keying. _pos came from
                             // cmdPos and survived mergeByTile; split it back
@@ -19257,7 +19267,7 @@ function App() {
                                   soldiers: typeof u.soldiers === "number" ? u.soldiers : null,
                                   max: typeof u.maxSoldiers === "number" ? u.maxSoldiers : null,
                                   faction: e.faction,
-                                  icon: e.faction ? getCachedUnitIcon(e.faction, u.name) : null,
+                                  icon: e.faction ? getCachedUnitIcon(activeDataDir, e.faction, u.name) : null,
                                   commanderUuid: u.commanderUuid || null,
                                 };
                               }),
@@ -19281,7 +19291,7 @@ function App() {
                             // ADDED via the recruitable panel that the original
                             // buildEntry prefetch never saw — so edited armies don't
                             // show blank cards (0.9.881). Same dictMap as buildEntry.
-                            prefetchUnitIcons(modDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
+                            prefetchUnitIcons(activeDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
                             return {
                               ...army,
                               units: (pending.units || []).map((u) => ({
@@ -19290,7 +19300,7 @@ function App() {
                                 armour: u.armour || 0,
                                 weapon: u.weapon != null ? u.weapon : (u.weapon_lvl || 0),
                                 faction: army.faction,
-                                icon: army.faction ? getCachedUnitIcon(army.faction, u.unit) : null,
+                                icon: army.faction ? getCachedUnitIcon(activeDataDir, army.faction, u.unit) : null,
                                 // 0.9.856: preserve the bodyguard-swap tags so a
                                 // general's face card survives editing (was dropped
                                 // → reverted to the plain bodyguard icon).
@@ -19327,7 +19337,7 @@ function App() {
                           const fac = (a.faction || "").toLowerCase();
                           for (const u of a.units || []) if (fac) triples.push([fac, u.name, dictMap[u.name]]);
                         }
-                        if (triples.length) prefetchUnitIcons(modDataDir, triples, () => setIconCacheVersion((v) => v + 1));
+                        if (triples.length) prefetchUnitIcons(activeDataDir, triples, () => setIconCacheVersion((v) => v + 1));
                         const own = [];
                         const others = [];
                         for (const a of armies) {
@@ -19356,7 +19366,7 @@ function App() {
                               unit: u.name, xp: u.exp || 0,
                               armour: u.armour || 0, weapon: u.weapon || 0,
                               faction: fac || null,
-                              icon: fac ? getCachedUnitIcon(fac, u.name) : null,
+                              icon: fac ? getCachedUnitIcon(activeDataDir, fac, u.name) : null,
                               commanderName: ui === 0 && cmdFirstName ? cmdFirstName : null,
                               // 0.9.778: tag surname too so the non-live resolver
                               // keys statsCache by the FULL name (matches the
@@ -19380,7 +19390,7 @@ function App() {
                           // Prefetch icons for the STAGED units — including ones ADDED
                           // via the recruitable panel the original prefetch never saw —
                           // so edited armies don't show blank cards (0.9.881).
-                          prefetchUnitIcons(modDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
                           return {
                             ...army,
                             units: (pending.units || []).map((u) => ({
@@ -19389,7 +19399,7 @@ function App() {
                               armour: u.armour || 0,
                               weapon: u.weapon != null ? u.weapon : (u.weapon_lvl || 0),
                               faction: army.faction || null,
-                              icon: army.faction ? getCachedUnitIcon(army.faction, u.unit) : null,
+                              icon: army.faction ? getCachedUnitIcon(activeDataDir, army.faction, u.unit) : null,
                               // 0.9.856: preserve the bodyguard-swap tags from the
                               // staged unit so the general's face card survives
                               // add/remove/duplicate/reorder. Previously these were

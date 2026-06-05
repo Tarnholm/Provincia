@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.928",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Unit cards match the slot now** — vanilla Slot 1 pulls its unit cards from the game install, and an imported mod uses that mod's cards. The card cache is keyed per data folder so the two never mix." },
+    ],
+  },
+  {
     version: "0.9.927",
     date: "2026-06-05",
     items: [

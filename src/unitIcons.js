@@ -28,7 +28,7 @@ function pixelsToBlobUrl({ width, height, pixels }) {
 
 export function loadUnitIcon(modDataDir, faction, unitName, dictionary) {
   if (!faction || !unitName) return Promise.resolve(null);
-  const key = `${faction}|${unitName}`;
+  const key = `${modDataDir || ""}|${faction}|${unitName}`; // dir-aware: vanilla & mod cards don't collide
   if (cache.has(key)) {
     const v = cache.get(key);
     return Promise.resolve(v === "none" ? null : v);
@@ -61,9 +61,9 @@ export function loadUnitIcon(modDataDir, faction, unitName, dictionary) {
   return p;
 }
 
-export function getCachedUnitIcon(faction, unitName) {
+export function getCachedUnitIcon(modDataDir, faction, unitName) {
   if (!faction || !unitName) return null;
-  const v = cache.get(`${faction}|${unitName}`);
+  const v = cache.get(`${modDataDir || ""}|${faction}|${unitName}`);
   return v === "none" || !v ? null : v;
 }
 
@@ -71,7 +71,7 @@ export function prefetchUnitIcons(modDataDir, triples, onLoaded) {
   for (const triple of triples) {
     const [faction, unitName, dictionary] = triple;
     if (!faction || !unitName) continue;
-    const key = `${faction}|${unitName}`;
+    const key = `${modDataDir || ""}|${faction}|${unitName}`;
     if (cache.has(key) || inflight.has(key)) continue;
     loadUnitIcon(modDataDir, faction, unitName, dictionary).then(() => { if (onLoaded) onLoaded(); });
   }
