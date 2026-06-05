@@ -74,12 +74,18 @@ const ONBOARDING_PAGES = [
    [data-ui-highlight] anchor; the region cards ring specific RegionInfo
    widgets (each carries a data-widget id) so they don't light the whole
    right column. ─────────────────────────────────────────────────────── */
+// Each target carries its OWN nudge sub-key `k` so it can be positioned (and
+// dev-dragged) independently of the others on the same card. E.g. the lock
+// ("region-lock") is separate from the settlement-details panel ("region-info").
 const HIGHLIGHT_SELECTORS = {
-  campaigns: ['[data-onboard-slot]'], // ring ONLY the empty Slot 2 (the import target), not the whole slot group
-  factions: ['[data-ui-highlight="factions"]', '#ws-province-search'], // faction panel + the province search box
-  "region-info": ['[data-widget="region.info"]', '[data-ui-highlight="region-info"]'], // settlement details + lock
-  "region-diplo": ['[data-widget="region.diplomacy"]', '[data-widget="region.characters"]', '[data-widget="region.garrison"]'],
-  "region-family": ['[data-widget="region.characters"]'],
+  campaigns: [{ k: "campaigns", sel: '[data-onboard-slot]' }], // ONLY the empty Slot 2 (import target)
+  factions: [{ k: "factions", sel: '[data-ui-highlight="factions"]' }, { k: "province-search", sel: '#ws-province-search' }],
+  "region-info": [{ k: "region-info", sel: '[data-widget="region.info"]' }, { k: "region-lock", sel: '[data-ui-highlight="region-info"]' }],
+  "region-diplo": [{ k: "region-diplo", sel: '[data-widget="region.diplomacy"]' }, { k: "region-diplo", sel: '[data-widget="region.characters"]' }, { k: "region-diplo", sel: '[data-widget="region.garrison"]' }],
+  "region-family": [{ k: "region-family", sel: '[data-widget="region.characters"]' }],
+  // The Shortcuts & Dev Mode card points at TWO controls — the "?" help button
+  // and the DEV pill — each its own independently-positionable ring.
+  shortcuts: [{ k: "shortcuts", sel: '[data-ui-highlight="shortcuts"]' }, { k: "dev", sel: '[data-onboard-dev]' }],
 };
 
 /* Deterministic card corner per highlight key: [justifyContent, alignItems].
@@ -96,6 +102,7 @@ const UNION_KEYS = new Set(["region-diplo"]);
 const RING_NUDGE = {
   shortcuts: { x: -2, y: 1 },
   live: { x: -2, y: 0 },
+  overlays: { x: -2, y: 0 },
 };
 
 const CARD_PLACEMENT = {
@@ -312,14 +319,14 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
     const key = p.highlight;
     if (!key) { setSpotRects([]); return; }
     let raf = 0, timer = 0, cancelled = false;
-    const selectors = HIGHLIGHT_SELECTORS[key] || [`[data-ui-highlight="${key}"]`];
-    const same = (a, b) => a.length === b.length && a.every((r, i) => r.top === b[i].top && r.left === b[i].left && r.width === b[i].width && r.height === b[i].height);
+    const selectors = HIGHLIGHT_SELECTORS[key] || [{ k: key, sel: `[data-ui-highlight="${key}"]` }];
+    const same = (a, b) => a.length === b.length && a.every((r, i) => r.top === b[i].top && r.left === b[i].left && r.width === b[i].width && r.height === b[i].height && r.nkey === b[i].nkey);
     const measure = () => {
       if (cancelled) return;
       const rects = [];
-      selectors.forEach((sel) => document.querySelectorAll(sel).forEach((el) => {
+      selectors.forEach(({ k, sel }) => document.querySelectorAll(sel).forEach((el) => {
         const r = el.getBoundingClientRect();
-        if (r.width > 1 && r.height > 1) rects.push({ top: r.top, left: r.left, width: r.width, height: r.height });
+        if (r.width > 1 && r.height > 1) rects.push({ top: r.top, left: r.left, width: r.width, height: r.height, nkey: k });
       }));
       // Only re-render when the rects actually move (avoids a 60fps churn).
       setSpotRects((prev) => (same(prev, rects) ? prev : rects));
@@ -352,25 +359,28 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
               left: Math.min(...spotRects.map((r) => r.left)),
               width: Math.max(...spotRects.map((r) => r.left + r.width)) - Math.min(...spotRects.map((r) => r.left)),
               height: Math.max(...spotRects.map((r) => r.top + r.height)) - Math.min(...spotRects.map((r) => r.top)),
+              nkey: p.highlight,
             }]
           : spotRects
-        ).map((r, i) => (
+        ).map((r, i) => {
+          const nk = r.nkey || p.highlight; // each element nudges independently
+          return (
           <div
-            key={i}
+            key={nk + ":" + i}
             aria-hidden
             onMouseDown={devTuning ? (e) => {
               e.preventDefault();
-              const cur = mn(p.highlight);
-              dragRef.current = { key: p.highlight, sx: e.clientX, sy: e.clientY, ox: cur.x, oy: cur.y };
+              const cur = mn(nk);
+              dragRef.current = { key: nk, sx: e.clientX, sy: e.clientY, ox: cur.x, oy: cur.y };
             } : undefined}
-            title={devTuning ? "Drag to position this ring (dev). Final px logged to console." : undefined}
+            title={devTuning ? `Drag to position the "${nk}" ring (dev). Final px logged to console.` : undefined}
             style={{
               position: "fixed",
               // 2px optical up-shift: glyphs/controls sit slightly high in their
               // box, so a box-centred ring reads a touch low without it.
-              // RING_NUDGE adds a per-highlight tweak; manualNudge is the dev drag.
-              top: r.top - 5 + (RING_NUDGE[p.highlight]?.y || 0) + mn(p.highlight).y,
-              left: r.left - 3 + (RING_NUDGE[p.highlight]?.x || 0) + mn(p.highlight).x,
+              // RING_NUDGE adds a per-element tweak; manualNudge is the dev drag.
+              top: r.top - 5 + (RING_NUDGE[nk]?.y || 0) + mn(nk).y,
+              left: r.left - 3 + (RING_NUDGE[nk]?.x || 0) + mn(nk).x,
               width: r.width + 6, height: r.height + 6,
               border: "2px solid #e8c873", borderRadius: 8,
               boxShadow: "0 0 12px 2px rgba(232,200,115,0.65)",
@@ -380,18 +390,19 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
               animation: "ws-pulse 1.8s ease-in-out infinite",
             }}
           >
-            {devTuning && i === 0 && (
+            {devTuning && (
               <div style={{
                 position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)",
                 marginBottom: 4, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
                 background: "rgba(0,0,0,0.8)", color: "#e8c873", fontSize: 10, fontFamily: "monospace",
                 pointerEvents: "none",
               }}>
-                drag · x:{Math.round((RING_NUDGE[p.highlight]?.x || 0) + mn(p.highlight).x)} y:{Math.round((RING_NUDGE[p.highlight]?.y || 0) + mn(p.highlight).y)}
+                {nk} · x:{Math.round((RING_NUDGE[nk]?.x || 0) + mn(nk).x)} y:{Math.round((RING_NUDGE[nk]?.y || 0) + mn(nk).y)}
               </div>
             )}
           </div>
-        )),
+          );
+        }),
         document.body
       )}
       <div className="ws-card ws-onboarding">

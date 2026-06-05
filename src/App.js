@@ -12950,7 +12950,7 @@ function App() {
               `.dev-btn--active`. */}
           <button
             key={`dev-btn-${devMode ? "on" : "off"}`}
-            data-ui-highlight={welcomeHighlight === "shortcuts" ? "shortcuts" : undefined}
+            data-onboard-dev="1"
             className={`dev-btn${devMode ? " dev-btn--active" : ""}`}
             onClick={() => setDevMode(prev => {
               const next = !prev;

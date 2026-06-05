@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.945",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "Onboarding highlight rings are now independent per control — the lock, the DEV pill and the province search each get their own ring (and, in dev tuning mode, drag independently with their own logged coordinates) instead of being lumped with the panel beside them. Nudged the Overlays ring into place." },
+    ],
+  },
+  {
     version: "0.9.944",
     date: "2026-06-05",
     items: [
