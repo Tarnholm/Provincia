@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.943",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "Centred the Region Details lock-icon highlight ring on the lock (the glyph sits right-of-centre in its button, so the ring is now shifted to match)." },
+    ],
+  },
+  {
     version: "0.9.942",
     date: "2026-06-05",
     items: [

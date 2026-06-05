@@ -94,7 +94,7 @@ const UNION_KEYS = new Set(["region-diplo"]);
 // odd control whose box centre reads off (e.g. the lock glyph sits right in
 // its zoom-button box).
 const RING_NUDGE = {
-  "region-info": { x: 0, y: 0 },
+  "region-info": { x: 7, y: 0 }, // lock glyph sits right-of-centre in its button → shift ring RIGHT to centre on it
   shortcuts: { x: -2, y: 1 },
   live: { x: -2, y: 0 },
 };
