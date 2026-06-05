@@ -103,6 +103,8 @@ const RING_NUDGE = {
   shortcuts: { x: -2, y: 1 },
   live: { x: -2, y: 0 },
   overlays: { x: -2, y: 0 },
+  "region-lock": { x: -1, y: 0 },
+  dev: { x: -1, y: 1 },
 };
 
 const CARD_PLACEMENT = {

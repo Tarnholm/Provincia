@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.946",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "Final onboarding highlight-ring alignment for the lock and DEV pill." },
+    ],
+  },
+  {
     version: "0.9.945",
     date: "2026-06-05",
     items: [
