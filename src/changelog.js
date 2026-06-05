@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.930",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Rebel/unowned regions paint as rebels, not their rebel-spawn faction.** The map ownership colour now comes from descr_strat only — it no longer falls back to the descr_regions rebel type, which on vanilla is a real faction (so e.g. Arabia stopped showing in Parthia's colour). Applies to every mod and vanilla." },
+      { type: "fix", text: "**Vanilla faction names stay correct** — the global mod's name dictionary no longer overwrites Slot 1's vanilla names (Thrace was reverting to “Unused Thrace”)." },
+    ],
+  },
+  {
     version: "0.9.929",
     date: "2026-06-05",
     items: [

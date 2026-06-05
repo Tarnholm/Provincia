@@ -3558,8 +3558,12 @@ function App() {
           }
           if (api.getFactionDisplayNames) {
             api.getFactionDisplayNames(dir, mapCampaign).then(map => {
-              setFactionDisplayNames(map || {});
-              console.log("[faction] loaded display names, entries:", Object.keys(map || {}).length);
+              // Don't clobber the vanilla Slot 1's own names — those are owned by
+              // the dedicated vanilla-names effect (this charactersInit uses the
+              // GLOBAL mod dir, so it'd overwrite Thrace→"Unused Thrace" etc.).
+              const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
+              if (!isVanillaSlot) setFactionDisplayNames(map || {});
+              console.log("[faction] loaded display names, entries:", Object.keys(map || {}).length, isVanillaSlot ? "(skipped — vanilla slot)" : "");
             });
           }
           if (api.getFactionCultures) {
@@ -7436,8 +7440,14 @@ function App() {
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
           (r, pr, pg, pb, px, py) => {
             const rgbKey = `${pr},${pg},${pb}`;
-            const owner = rgbToOwner[rgbKey] || r.faction;
-            const baseCol = fcMap[owner] || fcMap[owner?.toLowerCase()] || [pr, pg, pb];
+            // Owner comes from descr_strat ONLY (factionRegionsMap + live save
+            // override). We do NOT fall back to r.faction — that's the
+            // descr_regions rebel-SPAWN type, which on vanilla is a real faction
+            // (e.g. Arabia's rebel-type "parthia") and would paint every rebel
+            // region in that faction's colour. Unowned ⇒ rebels/slave.
+            const owner = rgbToOwner[rgbKey];
+            const ownerCol = owner && (fcMap[owner] || fcMap[owner.toLowerCase()] || (factionColors[owner.toLowerCase()] && factionColors[owner.toLowerCase()].primary));
+            const baseCol = ownerCol || (factionColors.slave && factionColors.slave.primary) || (factionColors.rebels && factionColors.rebels.primary) || [pr, pg, pb];
             if (devFlatColors) return baseCol;
             const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
             return [Math.max(0,Math.min(255,baseCol[0]+v)), Math.max(0,Math.min(255,baseCol[1]+v)), Math.max(0,Math.min(255,baseCol[2]+v))];
