@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.942",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Your imported mod now survives app updates.** Updating the app was wiping Slot 2 (and any imported slot) back to empty — startup was clearing the entire imported-data folder whenever the app version changed. It no longer does: an imported slot keeps its mod across updates, while a slot you never imported into still picks up refreshed built-in data automatically. The mod you load in onboarding stays put." },
+    ],
+  },
+  {
     version: "0.9.941",
     date: "2026-06-05",
     items: [

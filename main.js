@@ -6198,24 +6198,19 @@ ipcMain.handle("read-file-binary", async (_event, filePath) => {
   } catch { return null; }
 });
 
-// On startup: clear stale campaign_data cache when the app version changes.
-// This ensures new bundled data takes effect after an update, while preserving
-// user-imported data within the same version.
-(function clearStaleCampaignCache() {
-  const userDir = path.join(app.getPath("userData"), "campaign_data");
-  const stampFile = path.join(userDir, ".version_stamp");
-  const appVersion = app.getVersion();
+// On startup we DELIBERATELY KEEP userData/campaign_data across app-version
+// changes. It holds the user's IMPORTED slot data (e.g. the mod they put in
+// Slot 2 during onboarding), which MUST survive updates. A previous version
+// wiped this whole folder on every version change, so each auto-update emptied
+// the imported slot. Bundled data is read from build/ only AFTER userData (see
+// the read-campaign-file IPC), so a NON-imported slot still picks up refreshed
+// bundled data automatically, while an imported slot correctly keeps the user's
+// data. We only refresh the version stamp (nothing is deleted here).
+(function stampCampaignDataVersion() {
   try {
-    if (fs.existsSync(stampFile)) {
-      const cached = fs.readFileSync(stampFile, "utf8").trim();
-      if (cached === appVersion) return; // same version, keep cache
-    }
-    // Version changed or no stamp — clear the cache
-    if (fs.existsSync(userDir)) {
-      for (const f of fs.readdirSync(userDir)) {
-        try { fs.unlinkSync(path.join(userDir, f)); } catch {}
-      }
-    }
+    const userDir = path.join(app.getPath("userData"), "campaign_data");
+    if (!fs.existsSync(userDir)) return;
+    fs.writeFileSync(path.join(userDir, ".version_stamp"), app.getVersion(), "utf8");
   } catch {}
 })();
 
