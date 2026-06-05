@@ -2296,7 +2296,7 @@ function App() {
                 const result = await api.revertBuildingIcon(r.destPath || null, r.backupPath || null);
                 console.log(`[icon-replace] revert IPC result: ${JSON.stringify(result)}`);
               }
-              try { invalidateBuildingIcon(r.culture, r.levelName); } catch {}
+              try { invalidateBuildingIcon(modDataDir, r.culture, r.levelName); } catch {}
               try { await loadBuildingIcon(modDataDir || null, r.culture, r.levelName, r.chainName); } catch {}
               setIconCacheVersion((v) => v + 1);
             } catch (e) {
@@ -6543,6 +6543,14 @@ function App() {
           }
         }
       } catch (e) { console.warn("[homelands] live load failed:", e?.message); }
+      // On the bundled vanilla Slot 1, do NOT fall back to the bundled homelands
+      // JSON — that's the MOD's AOR mapping and would cross-contaminate vanilla
+      // (vanilla has no AOR alias blocks, so its homelands are simply empty).
+      const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
+      if (isVanillaSlot) {
+        if (!cancelled) { console.log("[homelands] vanilla slot — no bundled (mod) fallback"); setHomelandsData({}); }
+        return;
+      }
       try {
         const r = await fetch((import.meta.env.BASE_URL || "./") + "/homelands.json");
         const d = await r.json();
@@ -6553,7 +6561,7 @@ function App() {
       } catch { if (!cancelled) setHomelandsData({}); }
     })();
     return () => { cancelled = true; };
-  }, [modDataDir]);
+  }, [modDataDir, mapCampaign, campaignLabels]);
 
   // Load actual settlement population data
   useEffect(() => {
@@ -6894,7 +6902,7 @@ function App() {
         // Mod/game icon takes priority. No Roman fallback — if the culture's
         // icon isn't found, show no icon at all (user explicitly doesn't want
         // misleading Roman stand-ins).
-        const modIconUrl = culture ? getCachedBuildingIcon(culture, b.level) : null;
+        const modIconUrl = culture ? getCachedBuildingIcon(modDataDir, culture, b.level) : null;
         const iconCandidates = modIconUrl ? [modIconUrl] : null;
 
         // Tier (1-based) = 1 + index of this level within the chain's level
@@ -6968,7 +6976,7 @@ function App() {
             else if (gameDisplayNames[targetLevelName]) tLabel = gameDisplayNames[targetLevelName];
           }
           if (!tLabel) tLabel = targetLevelName.replace(/_/g, " ");
-          const tIcon = getCachedBuildingIcon(culture, targetLevelName);
+          const tIcon = getCachedBuildingIcon(modDataDir, culture, targetLevelName);
           queuedUpgrades.push({
             type: chainName,
             level: targetLevelName,

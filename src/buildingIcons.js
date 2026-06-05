@@ -34,7 +34,7 @@ function pixelsToBlobUrl({ width, height, pixels }) {
 // when the promise settles.
 export function loadBuildingIcon(modDataDir, culture, levelName, chainName) {
   if (!culture || !levelName) return Promise.resolve(null);
-  const key = `${culture}|${levelName}`;
+  const key = `${modDataDir || ""}|${culture}|${levelName}`; // dir-aware: vanilla & mod icons don't collide
   if (cache.has(key)) {
     const v = cache.get(key);
     return Promise.resolve(v === "none" ? null : v);
@@ -82,18 +82,18 @@ export function loadBuildingIcon(modDataDir, culture, levelName, chainName) {
   return p;
 }
 
-export function getCachedBuildingIcon(culture, levelName) {
+export function getCachedBuildingIcon(modDataDir, culture, levelName) {
   if (!culture || !levelName) return null;
-  const v = cache.get(`${culture}|${levelName}`);
+  const v = cache.get(`${modDataDir || ""}|${culture}|${levelName}`);
   return v === "none" || !v ? null : v;
 }
 
 // Invalidate a single cache slot so the next loadBuildingIcon() refetches
 // from main.js — used after a dev-mode icon replacement so the new TGA
 // shows up immediately. Revokes the prior blob URL so we don't leak.
-export function invalidateBuildingIcon(culture, levelName) {
+export function invalidateBuildingIcon(modDataDir, culture, levelName) {
   if (!culture || !levelName) return;
-  const key = `${culture}|${levelName}`;
+  const key = `${modDataDir || ""}|${culture}|${levelName}`;
   const v = cache.get(key);
   if (v && v !== "none") {
     try { URL.revokeObjectURL(v); } catch {}
@@ -107,7 +107,7 @@ export function prefetchBuildingIcons(modDataDir, triples, onLoaded) {
   for (const t of triples) {
     const [culture, level, chainName] = t;
     if (!culture || !level) continue;
-    const key = `${culture}|${level}`;
+    const key = `${modDataDir || ""}|${culture}|${level}`;
     if (cache.has(key) || inflight.has(key)) continue;
     loadBuildingIcon(modDataDir, culture, level, chainName).then(() => {
       if (onLoaded) onLoaded();

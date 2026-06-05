@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.933",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**More vanilla/mod cross-contamination cleaned up:** the Homelands map mode no longer shows the mod's data on the vanilla slot, and building icons are cached per data-folder so vanilla and mod building art never mix." },
+    ],
+  },
+  {
     version: "0.9.932",
     date: "2026-06-05",
     items: [
