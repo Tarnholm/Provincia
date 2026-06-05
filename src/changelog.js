@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.947",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Playable Nations editor no longer traps you at a reduced count.** The cap on how many nations you could make playable was taken from the *current* playable count, so if you shrank the list and saved, that smaller number (e.g. 69) became a permanent ceiling you couldn't grow back past. The cap is now simply the total number of factions — make as many or as few playable as you like, in any direction." },
+    ],
+  },
+  {
     version: "0.9.946",
     date: "2026-06-05",
     items: [

@@ -21318,9 +21318,13 @@ function App() {
         </div>
       )}
       {playableEditorOpen && factionStatusData && stagedPlayable && (() => {
-        const limit = factionStatusData.playable.length; // menu max = what the mod ships
-        const over = stagedPlayable.size - limit;
         const all = [...factionStatusData.playable, ...factionStatusData.unlockable, ...factionStatusData.nonplayable];
+        // Cap = TOTAL faction count (any faction may be made playable). It must
+        // NOT be the current playable count: deriving the cap from playable.length
+        // ratcheted it DOWN whenever a user shrank the list and saved, trapping
+        // them at the reduced number (e.g. stuck at 69, unable to add back).
+        const limit = all.length;
+        const over = stagedPlayable.size - limit; // ≤0 in practice — you can't stage more factions than exist
         const q = playableSearch.trim().toLowerCase();
         const orderIdx = (f) => {
           if (!smFactionsOrder) return -1;
@@ -21342,7 +21346,7 @@ function App() {
                 <button onClick={() => setPlayableEditorOpen(false)} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>
               </div>
               <div style={{ fontSize: "0.74rem", color: "#9aa" }}>
-Highlighted nations appear in the campaign-select menu. Click any nation to toggle it on/off. The menu holds at most <b>{limit}</b> (what this mod ships) — go over and you'll need to switch one off before saving.
+Highlighted nations appear in the campaign-select menu. Click any nation to toggle it on/off — make as many or as few playable as you like (up to all <b>{limit}</b> factions).
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <input value={playableSearch} onChange={(e) => setPlayableSearch(e.target.value)} placeholder="Filter nations…" style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 8px", fontSize: "0.78rem" }} />
