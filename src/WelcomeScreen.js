@@ -94,7 +94,6 @@ const UNION_KEYS = new Set(["region-diplo"]);
 // odd control whose box centre reads off (e.g. the lock glyph sits right in
 // its zoom-button box).
 const RING_NUDGE = {
-  "region-info": { x: 7, y: 0 }, // lock glyph sits right-of-centre in its button → shift ring RIGHT to centre on it
   shortcuts: { x: -2, y: 1 },
   live: { x: -2, y: 0 },
 };
@@ -262,6 +261,43 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
   // first-timers, who must go through the guided import.
   const allowSkip = (() => { try { return sessionStorage.getItem("devOnboardingTest") === "1"; } catch { return false; } })();
 
+  // ── Manual ring positioning (dev tuning only) ─────────────────────────────
+  // When onboarding is launched via the dev "Reset to first-launch" button
+  // (devOnboardingTest flag set), each highlight ring becomes DRAGGABLE. Drag a
+  // ring to position it; the chosen per-highlight offset persists to localStorage
+  // and is logged to the console as `[ring-nudge] <key>: ... set RING_NUDGE[...]`
+  // so the final pixel values can be baked in as the shipped defaults. Real
+  // first-run users never get this (flag absent → rings stay click-through).
+  const devTuning = allowSkip;
+  const [manualNudge, setManualNudge] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ringNudgeManual") || "{}"); } catch { return {}; }
+  });
+  const dragRef = useRef(null);
+  useEffect(() => {
+    if (!devTuning) return;
+    const onMove = (e) => {
+      const d = dragRef.current; if (!d) return;
+      setManualNudge((m) => ({ ...m, [d.key]: { x: d.ox + (e.clientX - d.sx), y: d.oy + (e.clientY - d.sy) } }));
+    };
+    const onUp = () => {
+      const d = dragRef.current; if (!d) return;
+      dragRef.current = null;
+      setManualNudge((m) => {
+        try { localStorage.setItem("ringNudgeManual", JSON.stringify(m)); } catch {}
+        const cur = m[d.key] || { x: 0, y: 0 };
+        const base = RING_NUDGE[d.key] || { x: 0, y: 0 };
+        const tx = Math.round((base.x || 0) + cur.x), ty = Math.round((base.y || 0) + cur.y);
+        // eslint-disable-next-line no-console
+        console.log(`[ring-nudge] ${d.key}: total x=${tx} y=${ty}  →  set RING_NUDGE["${d.key}"] = { x: ${tx}, y: ${ty} }`);
+        return m;
+      });
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+  }, [devTuning]);
+  const mn = (key) => manualNudge[key] || { x: 0, y: 0 };
+
   // Notify parent which UI element to highlight for the current page
   useEffect(() => {
     if (onHighlight) onHighlight(p.highlight || null);
@@ -322,20 +358,39 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
           <div
             key={i}
             aria-hidden
+            onMouseDown={devTuning ? (e) => {
+              e.preventDefault();
+              const cur = mn(p.highlight);
+              dragRef.current = { key: p.highlight, sx: e.clientX, sy: e.clientY, ox: cur.x, oy: cur.y };
+            } : undefined}
+            title={devTuning ? "Drag to position this ring (dev). Final px logged to console." : undefined}
             style={{
               position: "fixed",
               // 2px optical up-shift: glyphs/controls sit slightly high in their
               // box, so a box-centred ring reads a touch low without it.
-              // RING_NUDGE adds a per-highlight tweak for the odd off-centre box.
-              top: r.top - 5 + (RING_NUDGE[p.highlight]?.y || 0),
-              left: r.left - 3 + (RING_NUDGE[p.highlight]?.x || 0),
+              // RING_NUDGE adds a per-highlight tweak; manualNudge is the dev drag.
+              top: r.top - 5 + (RING_NUDGE[p.highlight]?.y || 0) + mn(p.highlight).y,
+              left: r.left - 3 + (RING_NUDGE[p.highlight]?.x || 0) + mn(p.highlight).x,
               width: r.width + 6, height: r.height + 6,
               border: "2px solid #e8c873", borderRadius: 8,
               boxShadow: "0 0 12px 2px rgba(232,200,115,0.65)",
-              pointerEvents: "none", zIndex: 10011,
+              pointerEvents: devTuning ? "auto" : "none",
+              cursor: devTuning ? "move" : undefined,
+              zIndex: 10011,
               animation: "ws-pulse 1.8s ease-in-out infinite",
             }}
-          />
+          >
+            {devTuning && i === 0 && (
+              <div style={{
+                position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)",
+                marginBottom: 4, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
+                background: "rgba(0,0,0,0.8)", color: "#e8c873", fontSize: 10, fontFamily: "monospace",
+                pointerEvents: "none",
+              }}>
+                drag · x:{Math.round((RING_NUDGE[p.highlight]?.x || 0) + mn(p.highlight).x)} y:{Math.round((RING_NUDGE[p.highlight]?.y || 0) + mn(p.highlight).y)}
+              </div>
+            )}
+          </div>
         )),
         document.body
       )}

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.944",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "Reverted the over-shot lock-icon ring nudge. Dev: onboarding highlight rings are now drag-to-position when launched via “Reset to first-launch” (the chosen pixel offset is logged to the console so it can be baked in as the default)." },
+    ],
+  },
+  {
     version: "0.9.943",
     date: "2026-06-05",
     items: [
