@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.939",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "Onboarding highlight-ring alignment: centred the ring on the Region Details lock icon and nudged the Shortcuts & Dev Mode ring into place." },
+    ],
+  },
+  {
     version: "0.9.938",
     date: "2026-06-05",
     items: [
