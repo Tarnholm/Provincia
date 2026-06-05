@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.950",
+    date: "2026-06-05",
+    items: [
+      { type: "feature", text: "**Reload mod — pick up your live edits without re-importing.** When you import a mod, Provincia parses its files once and then reads that cached copy, so edits to the mod's files (descr_strat, regions, EDB, etc.) didn't show. New **🔄 Reload** button (dev pill, next to Import) re-reads the active mod folder from disk and refreshes everything — regions, factions, buildings, resources, characters. It also now **auto-reloads the mod on startup**, so a restart shows your latest edits too (no manual re-pick of the folder)." },
+    ],
+  },
+  {
     version: "0.9.949",
     date: "2026-06-05",
     items: [

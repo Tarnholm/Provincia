@@ -1954,6 +1954,12 @@ function App() {
   const [hoveredCity, setHoveredCity] = useState(null); // { city, region, x, y, tier, screenX, screenY }
   const [factionColors, setFactionColors] = useState({}); // { faction: { primary: [r,g,b], secondary: [r,g,b] } }
   const [showFileImport, setShowFileImport] = useState(false);
+  // In-place "Reload mod" — re-imports the active slot's source folder so live
+  // edits to the mod files show without a manual Import dialog. {reason} set by
+  // the Reload button or the startup auto-reload; consumed in the import modal.
+  const [reloadModReq, setReloadModReq] = useState(null);
+  const reloadModRunningRef = useRef(false);
+  const didStartupReloadRef = useRef(false);
   const [fileImportDone, setFileImportDone] = useState(false);
   const [importPicker, setImportPicker] = useState(null); // { suffix, campaigns, camp } — shown when multiple campaigns found
   // Title-bar campaign button → right-click import. Holds the slot key
@@ -3143,6 +3149,22 @@ function App() {
       }).catch(() => {});
     }
   }, []);
+  // Startup auto-reload: re-read the active mod from disk so a RESTART picks up
+  // the latest edits to the mod files (slot data is otherwise served frozen from
+  // the import cache). Runs once per launch, only when a mod was previously
+  // imported and we're past first-run onboarding. (User-chosen, v0.9.950.)
+  useEffect(() => {
+    if (didStartupReloadRef.current || showWelcome) return;
+    if (!(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.scanFolder)) return;
+    let hasImport = false;
+    for (const suffix of ["imperial", "classic"]) {
+      try { const raw = localStorage.getItem("lastImport_" + suffix); if (raw && JSON.parse(raw).folder) { hasImport = true; break; } } catch {}
+    }
+    if (!hasImport) return;
+    didStartupReloadRef.current = true;
+    const t = setTimeout(() => setReloadModReq({ reason: "startup" }), 1200); // let the cached load settle first
+    return () => clearTimeout(t);
+  }, [showWelcome]);
   // Live-mode parse progress — populated by `save-progress` IPC events.
   // `liveLoading` flips on at click and off when the snapshot lands.
   // `liveLoadingStage` shows the current step ("Parsing characters & armies").
@@ -12429,6 +12451,18 @@ function App() {
                   position: "relative",
                 }}
               ><MapBtnBadge k="devpill.import" />Import</button>
+              <button
+                className="dev-btn"
+                onClick={() => setReloadModReq({ reason: "button" })}
+                title="Reload the active mod from disk — re-reads your latest edits to the mod's files (regions, factions, descr_strat, buildings, resources, characters…) without re-picking the folder. Runs automatically on startup too."
+                style={{
+                  ...btnStyle(false),
+                  background: "rgba(60,60,60,0.7)",
+                  color: "#8ec96a",
+                  border: "1px solid #6fae4f",
+                  minWidth: 80,
+                }}
+              >🔄 Reload</button>
               {/* Embedded Settlement Processor (Scripts) — opens the bundled
                   Suite window (Pipeline / Editor / Master / Compare). Electron
                   only; the IPC bridge is absent in browser builds. */}
@@ -20476,7 +20510,7 @@ function App() {
       {/* ── File Import Modal ──────────────────────────────────────── */}
       {/* Available to ALL users (not dev-gated): importing a mod's data folder
           to VIEW it is the core first-run action. Editing stays dev-gated. */}
-      {showFileImport && (() => {
+      {(showFileImport || reloadModReq) && (() => {
         const isElectron = !!(window.electronAPI && window.electronAPI.isElectron);
         // Restore the last-import green status text from localStorage on
         // mount so users see "Done — Rome: ..." persisted across launches
@@ -21011,6 +21045,47 @@ function App() {
           if (suffix === "smfactions") return "Shared (descr_sm_factions.txt)";
           return suffix;
         };
+        // ── In-place mod reload ──────────────────────────────────────────────
+        // Re-import the active slot's source folder so the latest mod edits show
+        // (the slot data is otherwise frozen at import time). Reuses the working
+        // importCampaignFiles (in scope) via a one-shot deferred call; no hoist.
+        if (reloadModReq && !reloadModRunningRef.current) {
+          reloadModRunningRef.current = true;
+          setTimeout(async () => {
+            try {
+              if (!(isElectron && window.electronAPI?.scanFolder)) return; // nothing to reload in web build
+              const activeSuffix = (CAMPAIGNS[mapCampaign] && CAMPAIGNS[mapCampaign].suffix) || mapCampaign;
+              let last = null, lastSuffix = null;
+              for (const suffix of [activeSuffix, "imperial", "classic"]) {
+                const raw = localStorage.getItem("lastImport_" + suffix);
+                if (raw) { const li = JSON.parse(raw); if (li && li.folder) { last = li; lastSuffix = suffix; break; } }
+              }
+              if (!last) {
+                if (reloadModReq.reason === "button") pushToast("No imported mod to reload — use Import first.", "warning", 6000);
+              } else {
+                const scan = await window.electronAPI.scanFolder(last.folder);
+                if (!scan || !scan.campaigns || !scan.campaigns.length) {
+                  pushToast(`Mod folder not found / empty: ${last.folder}`, "warning", 8000);
+                } else {
+                  const camp = (CAMPAIGNS && CAMPAIGNS[mapCampaign]) || { suffix: lastSuffix, key: mapCampaign };
+                  const matching = scan.campaigns.find((c) => c.name === last.campaign) || scan.campaigns[0];
+                  await importCampaignFiles(matching, camp);
+                  if (reloadModCharacters) reloadModCharacters();
+                  pushToast(`Mod reloaded from ${last.folder}`, "info", 4000);
+                }
+              }
+            } catch (e) { pushToast(`Reload failed: ${e && e.message ? e.message : e}`, "error", 8000); }
+            finally { reloadModRunningRef.current = false; setReloadModReq(null); setShowFileImport(false); }
+          }, 0);
+        }
+        // While auto-reloading (not the manual importer), show a slim status overlay.
+        if (reloadModReq && !showFileImport) {
+          return (
+            <div style={{ position: "fixed", inset: 0, zIndex: 10020, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ background: "#1a1a1a", border: "1px solid #e8a030", borderRadius: 10, padding: "16px 26px", color: "#eee", fontSize: "0.92rem", fontWeight: 600 }}>🔄 Reloading mod from disk…</div>
+            </div>
+          );
+        }
         return (
           <div style={overlayStyle} onClick={(e) => { if (e.target === e.currentTarget) setShowFileImport(false); }}>
             <div style={modalStyle}>
