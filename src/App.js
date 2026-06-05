@@ -1657,7 +1657,9 @@ function App() {
   // time from getModeExtra so it always reflects the current mode/data.
   const [hoverPos, setHoverPos] = useState(null);
   const [showTileInspect, setShowTileInspect] = useState(() => {
-    try { return localStorage.getItem("showTileInspect") !== "0"; } catch { return true; }
+    // 0 overlays by default (v0.9.940) — tile-inspect was the lone overlay still
+    // defaulting ON, so a first-run user saw "OVERLAYS 1". Off unless toggled on.
+    try { return localStorage.getItem("showTileInspect") === "1"; } catch { return false; }
   });
   useEffect(() => { try { localStorage.setItem("showTileInspect", showTileInspect ? "1" : "0"); } catch {} }, [showTileInspect]);
   const [lockedRegionInfo, setLockedRegionInfo] = useState(null);

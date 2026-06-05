@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.940",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**No overlays on by default.** A first-run user saw the OVERLAYS button showing “1” — the tile-inspect overlay was the lone one still defaulting ON (it was missed by the earlier zero-overlays change). It now defaults off like every other overlay, so a fresh install starts with zero overlays active. Toggle any on from the green OVERLAYS menu." },
+    ],
+  },
+  {
     version: "0.9.939",
     date: "2026-06-05",
     items: [
