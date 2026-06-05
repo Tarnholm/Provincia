@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.941",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "More onboarding highlight-ring alignment: re-centred the Region Details lock-icon ring and nudged the Live-mode ring into place." },
+    ],
+  },
+  {
     version: "0.9.940",
     date: "2026-06-05",
     items: [
