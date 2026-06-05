@@ -65,10 +65,101 @@ function findNextChainPreamble(buf, fromOff, maxScan) {
   return -1;
 }
 
-function readQueueAtDefaultSet(buf, defaultSetOff) {
+// ---------------------------------------------------------------------------
+// Alexander / RR expansion decode (engine-gated; see readQueueAtDefaultSet).
+//
+// Block layout (block-relative, verified Macedon T1/T2 cribs 2026-06-05):
+//   construction item: signature `47 bd 6f 87 10 41 40 d0` at blk+25,
+//     type tag u32=2 at blk+37, target cost u32 at blk+41, turns-elapsed u8 at
+//     blk+53, accumulated build points u8 at blk+57.  (Building IDENTITY and
+//     turns-remaining are NOT stored inline — surfacing the build queue needs a
+//     UI change, so it is deliberately not emitted here yet.)
+//   recruit item: ASCII pstr16 unit name + `ff 00 ?? 01` cost marker.
+//   block ends at the next chain preamble [u32 size=0x0b][u32 self_ptr=i+4]
+//     [u16 nameLen][ascii name] (size is 0x0b here, not the RIS 0x0c).
+const ALEX_BLOCK_SCAN = 512;
+
+// Next-chain preamble for the Alexander layout: like findNextChainPreamble but
+// accepts size 0x0b (RR) as well as 0x0c, and validates the ASCII chain name so
+// a stray 0x0b inside the queue body can't be mistaken for the boundary.
+function findNextChainPreambleAlex(buf, fromOff, maxScan) {
+  const end = Math.min(fromOff + maxScan, buf.length - 12);
+  for (let i = fromOff; i < end; i++) {
+    const sz = buf.readUInt32LE(i);
+    if (sz !== 0x0b && sz !== 0x0c) continue;
+    if (buf.readUInt32LE(i + 4) !== i + 4) continue;
+    const nameLen = buf.readUInt16LE(i + 8);
+    if (nameLen < 4 || nameLen > 64) continue;
+    const nameEnd = i + 10 + nameLen;
+    if (nameEnd > buf.length || buf[nameEnd - 1] !== 0) continue;
+    let ok = true;
+    for (let k = i + 10; k < nameEnd - 1; k++) {
+      const c = buf[k];
+      if (!((c >= 0x61 && c <= 0x7a) || c === 0x5f)) { ok = false; break; }
+    }
+    if (!ok) continue;
+    return i;
+  }
+  return -1;
+}
+
+function readQueueAtDefaultSetAlexander(buf, defaultSetOff) {
+  const body = defaultSetOff + DEFAULT_SET.length;
+  const preambleOff = findNextChainPreambleAlex(buf, body + 12, ALEX_BLOCK_SCAN);
+  const blockEnd = preambleOff >= 0
+    ? preambleOff
+    : Math.min(body + ALEX_BLOCK_SCAN, buf.length);
+
+  const recruiting = [];
+  // Recruit entries sit between the (optional) building entry and the next
+  // chain header: a pstr16 ASCII unit name (stored length includes the NUL)
+  // confirmed by an `ff 00 ?? 01` recruit-cost marker a few bytes later.
+  for (let o = body; o + 2 < blockEnd; o++) {
+    const len = buf.readUInt16LE(o);
+    if (len < 4 || len > 32) continue;
+    const nameEnd = o + 2 + len;
+    if (nameEnd > blockEnd || buf[nameEnd - 1] !== 0) continue;
+    let ok = true, s = "";
+    for (let k = 0; k < len - 1; k++) {
+      const c = buf[o + 2 + k];
+      if (c < 0x20 || c > 0x7e) { ok = false; break; }
+      s += String.fromCharCode(c);
+    }
+    if (!ok || !/^[a-z]/.test(s) || !/[ _]/.test(s)) continue;
+    let isRecruit = false;
+    for (let q = nameEnd; q < nameEnd + 16 && q + 4 < blockEnd; q++) {
+      if (buf[q] === 0xff && buf[q + 1] === 0x00 && buf[q + 3] === 0x01) { isRecruit = true; break; }
+    }
+    if (!isRecruit) continue;
+    recruiting.push({ unit: s });
+    o = nameEnd; // skip past this entry
+  }
+
+  if (recruiting.length === 0) return null;
+  return { type: "alex", recruiting };
+}
+
+// Global per-save engine detector. The Alexander/RR engine stamps a serialised
+// object-version magic `10 41 40 d0` (used by its construction-item signature
+// and recruit entries) that the RIS imperial / vanilla Rome engine never writes.
+// Verified across 64 saves: present 5–7× in every Alexander save (even idle),
+// 0× in every RIS/Rome save. indexOf is a single native scan (run once per save).
+const ALEX_OBJ_MAGIC = Buffer.from([0x10, 0x41, 0x40, 0xd0]);
+function detectEngine(buf) {
+  return buf.indexOf(ALEX_OBJ_MAGIC) !== -1 ? "alex" : "ris";
+}
+
+function readQueueAtDefaultSet(buf, defaultSetOff, engine) {
   const bodyStart = defaultSetOff + DEFAULT_SET.length;
   if (bodyStart + 12 > buf.length) return null;
   if (buf.readUInt32LE(bodyStart + 8) !== CHAIN_MAGIC) return null;
+  // Engine gate. The Alexander/RR expansion serialises the default_set block
+  // with a different layout (construction-item signature + ASCII recruit names)
+  // than RIS imperial / vanilla Rome. Engine is detected once per save (see
+  // detectEngine) and passed in; standalone callers fall back to detecting it.
+  // (Cracked 2026-06-05; see rtw-sav-parser findings-construction-recruit-queue-w2.)
+  if (engine === undefined) engine = detectEngine(buf);
+  if (engine === "alex") return readQueueAtDefaultSetAlexander(buf, defaultSetOff);
   const chainUuid = buf.readUInt32LE(bodyStart + 4);
   // Tightly bound the queue search using the next chain's preamble.
   const preambleOff = findNextChainPreamble(buf, bodyStart + 40, QUEUE_SCAN_TO);
@@ -157,13 +248,15 @@ function parseQueuesForSettlements(buf, settlementMarkers) {
   const byCity = new Map();
   const positions = findAllDefaultSets(buf);
   if (positions.length === 0 || settlementMarkers.length === 0) return byCity;
+  // Detect the engine once; every default_set in a save shares one layout.
+  const engine = detectEngine(buf);
 
   // For each default_set position, decode its queue (if any). The body's
   // upper bound is conservatively the next default_set position (since
   // default_set is unique per settlement region).
   for (let p = 0; p < positions.length; p++) {
     const dsOff = positions[p];
-    const q = readQueueAtDefaultSet(buf, dsOff);
+    const q = readQueueAtDefaultSet(buf, dsOff, engine);
     if (!q) continue;
     // Find which settlement owns this default_set.
     // settlement S_i owns chains in [prev.blockEnd, S_i.offset).
@@ -179,7 +272,12 @@ function parseQueuesForSettlements(buf, settlementMarkers) {
     if (!owner) continue;
     if (!byCity.has(owner)) byCity.set(owner, { recruiting: [], building: [] });
     const bucket = byCity.get(owner);
-    if (q.type === "building") bucket.building.push({
+    if (q.type === "alex") {
+      // Alexander/RR: recruit names decode cleanly; build queue deferred (no
+      // inline chainId / turns-remaining — needs a UI change before surfacing).
+      if (q.recruiting && q.recruiting.length) bucket.recruiting.push(...q.recruiting);
+    }
+    else if (q.type === "building") bucket.building.push({
       chainId: q.chainId,
       turns: q.turns,                 // back-compat: == turnsTotal
       turnsTotal: q.turnsTotal,
@@ -197,4 +295,5 @@ module.exports = {
   readQueueAtDefaultSet,
   findAllDefaultSets,
   parseQueuesForSettlements,
+  detectEngine,
 };

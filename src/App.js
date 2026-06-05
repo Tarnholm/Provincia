@@ -5639,6 +5639,7 @@ function App() {
       if (data && data.queuedBuildingsByCity) setQueuedBuildingsByCity(data.queuedBuildingsByCity);
       if (data && data.recruitingByCity) setRecruitingByCity(data.recruitingByCity);
       if (data && data.buildingQueueByCity) setBuildingQueueByCity(data.buildingQueueByCity);
+      if (data && data.queueStats) console.log(`[queue] engine=${data.queueStats.engine} recruitCities=${data.queueStats.recruitCities} buildingCities=${data.queueStats.buildingCities}${data.queueStats.engine === "alex" ? " (Alexander/RR: recruit decoded, build queue deferred)" : ""}`);
       if (data && data.initialOwnerByCity) setInitialOwnerByCity(data.initialOwnerByCity);
       if (data && data.initialCreatorByCity) setInitialCreatorByCity(data.initialCreatorByCity);
       if (data && data.currentOwnerByCity) setCurrentOwnerByCity(data.currentOwnerByCity);
@@ -5759,6 +5760,7 @@ function App() {
         if (d.queuedBuildingsByCity) setQueuedBuildingsByCity(d.queuedBuildingsByCity);
         if (d.recruitingByCity) setRecruitingByCity(d.recruitingByCity);
         if (d.buildingQueueByCity) setBuildingQueueByCity(d.buildingQueueByCity);
+        if (d.queueStats) console.log(`[queue] engine=${d.queueStats.engine} recruitCities=${d.queueStats.recruitCities} buildingCities=${d.queueStats.buildingCities}${d.queueStats.engine === "alex" ? " (Alexander/RR: recruit decoded, build queue deferred)" : ""}`);
         if (d.initialOwnerByCity) setInitialOwnerByCity(d.initialOwnerByCity);
         if (d.initialCreatorByCity) setInitialCreatorByCity(d.initialCreatorByCity);
         if (d.currentOwnerByCity) setCurrentOwnerByCity(d.currentOwnerByCity);

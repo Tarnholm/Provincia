@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.935",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Recruitment queues now decode on Alexander / base-game (RR Alexander-engine) saves.** The save's construction/recruitment queue parser was reverse-engineered from RIS-imperial saves only, so on the Alexander expansion engine it silently found *zero* queues (the chain layout, recruit encoding and chain-record sizes all differ). The parser is now engine-aware: it detects the engine once per save (via an Alexander-only serialization marker — verified across 64 saves with 100% separation) and decodes the Alexander recruitment queue (queued unit names) accordingly. RIS imperial / vanilla-Rome saves are completely unchanged — a per-save regression check across the entire corpus shows byte-identical queue results. **Build queue on Alexander is decoded but not yet surfaced** (it carries no in-record building id or turns-remaining, so it needs a small UI change first) — coming next." },
+    ],
+  },
+  {
     version: "0.9.934",
     date: "2026-06-05",
     items: [
