@@ -3254,6 +3254,21 @@ function App() {
     return modIconsDir;
   }, [mapCampaign, campaignLabels, vanillaIconsDir, modIconsDir]);
 
+  // Faction display NAMES per slot: the vanilla Slot 1 uses the game's own
+  // names (Thrace=Thrace, Dacia=Dacia) — the mod/Alexander-merged dictionary
+  // shifts them. A mod slot uses that mod's names. Re-applies on slot switch.
+  useEffect(() => {
+    const api = window.electronAPI;
+    const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
+    if (isVanillaSlot) {
+      if (api?.getVanillaFactionDisplayNames) {
+        api.getVanillaFactionDisplayNames().then((m) => { if (m && Object.keys(m).length) setFactionDisplayNames(m); }).catch(() => {});
+      }
+    } else if (modDataDir && api?.getFactionDisplayNames) {
+      api.getFactionDisplayNames(modDataDir, mapCampaign).then((m) => setFactionDisplayNames(m || {})).catch(() => {});
+    }
+  }, [mapCampaign, campaignLabels, modDataDir]);
+
   // Faction display-name → internal-id map, loaded from the mod's text files
   // (campaign_descriptions.txt). Lets us match "The House of Claudii" in a
   // save filename to the internal `romans_julii` faction key.
@@ -11373,6 +11388,7 @@ function App() {
         <input
           type="text"
           ref={searchInputRef}
+          id="ws-province-search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="legend-search-input"

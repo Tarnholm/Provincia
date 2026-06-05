@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.927",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Vanilla faction names are correct now** — Slot 1 reads them from the game's own text (Thrace = Thrace, Dacia = Dacia, Britannia, the Greek Cities…) instead of the mod/Alexander-merged dictionary that was shifting them." },
+      { type: "fix", text: "**The Factions card now also rings the province search box** (it's targeted directly by id, so it no longer slips through)." },
+    ],
+  },
+  {
     version: "0.9.926",
     date: "2026-06-05",
     items: [

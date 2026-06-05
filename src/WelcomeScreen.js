@@ -75,6 +75,7 @@ const ONBOARDING_PAGES = [
    widgets (each carries a data-widget id) so they don't light the whole
    right column. ─────────────────────────────────────────────────────── */
 const HIGHLIGHT_SELECTORS = {
+  factions: ['[data-ui-highlight="factions"]', '#ws-province-search'], // faction panel + the province search box
   "region-info": ['[data-widget="region.info"]', '[data-ui-highlight="region-info"]'], // settlement details + lock
   "region-diplo": ['[data-widget="region.diplomacy"]', '[data-widget="region.characters"]', '[data-widget="region.garrison"]'],
   "region-family": ['[data-widget="region.characters"]'],

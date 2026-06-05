@@ -2775,6 +2775,35 @@ ipcMain.handle("read-vanilla-sm-factions", async () => {
   } catch { return null; }
 });
 
+// IPC: vanilla faction display names ({THRACE} Thrace, …) read from ONLY the
+// vanilla text/expanded*.txt — NOT merged with BI/Alexander, whose overrides
+// shift the names (Thrace→Dacia etc.) on the vanilla Slot 1.
+ipcMain.handle("get-vanilla-faction-display-names", async () => {
+  const dd = getVanillaDataDir();
+  if (!dd) return {};
+  const map = {};
+  for (const fname of ["expanded.txt", "expanded_bi.txt"]) { // bi last → its faction names win
+    const src = path.join(dd, "text", fname);
+    if (!fs.existsSync(src)) continue;
+    try {
+      const buf = fs.readFileSync(src);
+      const text = (buf[0] === 0xff && buf[1] === 0xfe) ? buf.toString("utf16le") : buf.toString("utf8");
+      for (const line of text.split(/\r?\n/)) {
+        const m = line.match(/^\{([A-Z][A-Z0-9_]*)\}\s*(.+?)\s*$/);
+        if (!m) continue;
+        const key = m[1];
+        if (key.includes("_DESCR") || key.startsWith("EMT_") || key.startsWith("SMW_") ||
+            key.endsWith("_LABEL") || key.endsWith("_ORDER") || key.endsWith("_UNREST") ||
+            key.endsWith("_TITLE") || key.endsWith("_BODY") || key.endsWith("_MESSAGE")) continue;
+        const display = m[2].trim();
+        if (!display || display.length > 60) continue;
+        map[key.toLowerCase()] = display;
+      }
+    } catch {}
+  }
+  return map;
+});
+
 // IPC: resolve a building-chain icon for the currently-loaded mod.
 // Given a culture (e.g., "greek", "roman") and a level name (e.g., "odeon",
 // "stone_wall"), searches the mod's data/ui/<culture>/buildings/ folder for
