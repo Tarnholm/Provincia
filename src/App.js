@@ -1448,6 +1448,10 @@ function patchFactionStatus(originalText, playable, nonplayable) {
 
 // Patch descr_strat.txt with updated resources, population and/or ownership
 function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles, mapHeight, ownerChanges) {
+  // RTW:R requires the original line endings (descr_strat is CRLF) — writing
+  // LF silently breaks the game's parser ("Expected faction list starting with
+  // playable" / "Expected start date of campaign"). Preserve the source EOL.
+  const eol = originalText.includes("\r\n") ? "\r\n" : "\n";
   const lines = originalText.split(/\r?\n/);
   const out = [];
   const patchResources = dirtyFiles.has("resources");
@@ -1556,7 +1560,7 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
   const final = ownerChanges && Object.keys(ownerChanges).length > 0
     ? applyOwnershipMoves(out, ownerChanges)
     : out;
-  return final.join("\n");
+  return final.join(eol);
 }
 
 // Extract population data from buildings parse result
@@ -12634,6 +12638,12 @@ function App() {
               <button
                 onClick={() => {
                   const download = (name, content) => {
+                    // RTW:R game files MUST be CRLF — normalise EVERY .txt export at
+                    // this single chokepoint so no patcher can ever ship LF (writing
+                    // LF silently breaks the game's descr_strat parser).
+                    if (typeof content === "string" && /\.txt$/i.test(name)) {
+                      content = content.replace(/\r\n?|\n/g, "\r\n");
+                    }
                     const blob = new Blob([content], { type: "text/plain" });
                     const a = document.createElement("a");
                     a.href = URL.createObjectURL(blob);
@@ -12769,7 +12779,7 @@ function App() {
                       if (vc.take_regions != null) vcLines.push("take_regions " + vc.take_regions);
                       vcLines.push("");
                     }
-                    download("descr_win_conditions.txt", vcLines.join("\n"));
+                    download("descr_win_conditions.txt", vcLines.join("\r\n")); // RTW:R requires CRLF
                   }
                   if (dirty.size === 0) {
                     alert("No changes to export.");
@@ -21875,7 +21885,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     }
                     const camp = CAMPAIGNS[mapCampaign];
                     const relPath = (camp?.stratPath || "world/maps/campaign/imperial_campaign/descr_strat.txt").replace("descr_strat.txt", "descr_win_conditions.txt");
-                    const res = await api.writeActiveModFile(relPath, vcLines.join("\n"));
+                    const res = await api.writeActiveModFile(relPath, vcLines.join("\r\n")); // RTW:R requires CRLF
                     if (res?.ok) okCount++; else { failCount++; errors.push(`descr_win_conditions: ${res?.error || "?"}`); }
                   } catch (e) { failCount++; errors.push(`descr_win_conditions: ${e.message}`); }
                 }

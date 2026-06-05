@@ -3290,7 +3290,7 @@ ipcMain.handle("update-character-traits", async (_event, firstName, faction, tra
       lines.splice(charLineIdx + 1, 0, "\t" + newLine);
     }
     // Write back. Preserve line endings as found in the file.
-    const usesCRLF = text.includes("\r\n");
+    const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     const out = lines.join(usesCRLF ? "\r\n" : "\n");
     fs.writeFileSync(modOut(dsPath), out, "utf8");
     console.log(`[trait-edit] wrote ${traits.length} traits for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2}${_modExportDir ? " (exported)" : ""}`);
@@ -3330,7 +3330,7 @@ ipcMain.handle("update-character-position", async (_event, faction, oldX, oldY, 
     }
     if (hitIdx < 0) return { ok: false, error: `no character at (${oldX},${oldY}) in faction "${faction}"` };
     lines[hitIdx] = lines[hitIdx].replace(/\bx\s+-?\d+\s*,\s*y\s+-?\d+/i, `x ${newX}, y ${newY}`);
-    const usesCRLF = text.includes("\r\n");
+    const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
     if (!_modExportDir) { try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-move] post-write re-parse failed:", e && e.message); } }
     console.log(`[char-move] ${faction} character (${oldX},${oldY}) → (${newX},${newY}) in ${path.basename(dsPath)}:${hitIdx + 1}`);
@@ -3388,7 +3388,7 @@ ipcMain.handle("update-character-fields", async (_event, firstName, faction, fie
     }
     if (!applied.length) return { ok: false, error: "no recognised fields to apply" };
     lines[charLineIdx] = line;
-    const usesCRLF = text.includes("\r\n");
+    const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
     if (!_modExportDir) { try { loadModCharacterData(activeModDataDir); } catch (e) { console.warn("[char-fields] post-write re-parse failed:", e && e.message); } }
     console.log(`[char-fields] ${firstName} (${faction || "?"}): ${applied.join(", ")} in ${path.basename(dsPath)}:${charLineIdx + 1}`);
@@ -3490,7 +3490,7 @@ ipcMain.handle("relocate-garrison", async (_event, faction, region, newX, newY) 
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = fs.readFileSync(dsPath, "utf8");
-    const usesCRLF = text.includes("\r\n");
+    const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const wantFac = String(faction || "").toLowerCase();
     // Global scan: track the enclosing faction; find the settlement by region
@@ -3570,7 +3570,7 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = fs.readFileSync(dsPath, "utf8");
-    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const wantFac = String(faction || "").toLowerCase();
     // Locate the character's faction section.
@@ -3612,7 +3612,7 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
         const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
         if (!names.tokenToDisplay.has(newFirst)) {
           const nt = fs.readFileSync(namesPath, "utf16le");
-          const ntEol = nt.includes("\r\n") ? "\r\n" : "\n";
+          const ntEol = "\r\n"; // RTW:R names.txt (UTF-16LE) is CRLF
           const ntLines = nt.split(/\r?\n/);
           const tokenOf = (l) => { const m = l.match(/^﻿?\{([^}]*)\}/); return m ? m[1].toLowerCase() : null; };
           const tokLc = newFirst.toLowerCase();
@@ -3624,7 +3624,7 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
           minted = true;
           if (fs.existsSync(lookupPath)) {
             const lk = fs.readFileSync(lookupPath, "utf8");
-            const lkEol = lk.includes("\r\n") ? "\r\n" : "\n";
+            const lkEol = "\r\n"; // RTW:R always CRLF
             const lkLines = lk.split(/\r?\n/);
             if (!lkLines.some((l) => l.trim().toLowerCase() === tokLc)) {
               let li = lkLines.findIndex((l) => l.trim() && l.trim().toLowerCase() > tokLc);
@@ -3659,7 +3659,7 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = fs.readFileSync(dsPath, "utf8");
-    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const byRegion = locator && locator.region != null;
     const byCoord = locator && typeof locator.x === "number" && typeof locator.y === "number";
@@ -3964,7 +3964,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     const namesPath = path.join(activeModDataDir, "text", "names.txt");
     const lookupPath = path.join(activeModDataDir, "descr_names_lookup.txt");
     const dsRaw = fs.readFileSync(dsPath, "utf8");
-    const eol = dsRaw.includes("\r\n") ? "\r\n" : "\n";
+    const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
     const parsed = descrGen.parseDescrStrat(dsRaw);
     const res = descrGen.composeAddGeneral(parsed, names, selection);
@@ -3976,7 +3976,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     if (res.namesAppend.length) {
       if (!_modExportDir) fs.copyFileSync(namesPath, namesPath + "." + stamp + ".bak");
       const nt = fs.readFileSync(namesPath, "utf16le");
-      const ntEol = nt.includes("\r\n") ? "\r\n" : "\n";
+      const ntEol = "\r\n"; // RTW:R always CRLF
       const ntLines = nt.split(/\r?\n/);
       // names.txt is sorted by token and the {ZZZZZ} entry is an end-marker —
       // appending AFTER it means the engine never reads the new names. Insert
@@ -3994,7 +3994,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     if (res.lookupAppend.length) {
       if (!_modExportDir) fs.copyFileSync(lookupPath, lookupPath + "." + stamp + ".bak");
       const lk = fs.readFileSync(lookupPath, "utf8");
-      const lkEol = lk.includes("\r\n") ? "\r\n" : "\n";
+      const lkEol = "\r\n"; // RTW:R always CRLF
       const lkLines = lk.split(/\r?\n/);
       // descr_names_lookup.txt is alphabetically sorted (and ends with ZZZZZ).
       // Insert each token in sorted position so the engine's lookup finds it.
@@ -4140,7 +4140,7 @@ ipcMain.handle("update-character-ancillaries", async (_event, firstName, faction
       }
       lines.splice(insertAt, 0, "\t" + newLine);
     }
-    const usesCRLF = text.includes("\r\n");
+    const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     const out = lines.join(usesCRLF ? "\r\n" : "\n");
     fs.writeFileSync(modOut(dsPath), out, "utf8");
     const reportLine = ancLineIdx >= 0 ? ancLineIdx + 1 : charLineIdx + 2;
@@ -4283,7 +4283,7 @@ ipcMain.handle("update-region-buildings", async (_event, regionName, buildings) 
           newLines.push(`${indent}}`);
         }
         lines.splice(insertAt, 0, ...newLines);
-        const usesCRLF = text.includes("\r\n");
+        const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
         const out = lines.join(usesCRLF ? "\r\n" : "\n");
         fs.writeFileSync(modOut(dsPath), out, "utf8");
         console.log(`[building-edit] wrote ${buildings.length} buildings for region "${regionName}" to ${path.basename(dsPath)}:${insertAt + 1} (replaced ${buildingRanges.length} existing blocks)${_modExportDir ? " (exported)" : ""}`);
@@ -4716,7 +4716,7 @@ ipcMain.handle("update-core-attitudes", async (_event, edits) => {
     const dsPath = findActiveDescrStratPath();
     if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
     const text = fs.readFileSync(dsPath, "utf8");
-    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const dip = descrGen.parseDiplomacy(text);
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -9480,6 +9480,10 @@ ipcMain.handle("write-active-mod-file", async (_event, relPath, content) => {
   try {
     // Ensure parent dir exists (it should, but be defensive)
     fs.mkdirSync(path.dirname(full), { recursive: true });
+    // RTW:R game text files MUST be CRLF — normalise at this single write
+    // chokepoint so a renderer-side patcher can never ship LF (which silently
+    // breaks the game's parser, e.g. "Expected faction list starting with playable").
+    if (/\.txt$/i.test(normalised)) content = content.replace(/\r\n?|\n/g, "\r\n");
     fs.writeFileSync(full, content, "utf8");
     console.log(`[write-active-mod-file] wrote ${normalised} (${content.length} bytes)${_modExportDir ? " (exported)" : ""}`);
     return { ok: true, path: full };

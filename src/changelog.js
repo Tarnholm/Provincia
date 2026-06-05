@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.934",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Critical: exported descr_strat (and all game files) now write CRLF line endings.** A patcher was writing the descr_strat export as LF-only, which silently broke the game's parser (\"Expected faction list starting with playable\" / \"Expected start date of campaign\") and stopped the campaign from starting. Every text export — descr_strat, descr_regions, descr_win_conditions, names.txt, descr_sm_factions and the in-place character/building/trait edits — is now forced to CRLF at the write boundary, so an export can never ship LF again." },
+    ],
+  },
+  {
     version: "0.9.933",
     date: "2026-06-05",
     items: [
