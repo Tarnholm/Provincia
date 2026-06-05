@@ -71,13 +71,18 @@ function findNextChainPreamble(buf, fromOff, maxScan) {
 // Block layout (block-relative, verified Macedon T1/T2 cribs 2026-06-05):
 //   construction item: signature `47 bd 6f 87 10 41 40 d0` at blk+25,
 //     type tag u32=2 at blk+37, target cost u32 at blk+41, turns-elapsed u8 at
-//     blk+53, accumulated build points u8 at blk+57.  (Building IDENTITY and
-//     turns-remaining are NOT stored inline — surfacing the build queue needs a
-//     UI change, so it is deliberately not emitted here yet.)
+//     blk+53, accumulated build POINTS u8 at blk+57. Build POINTS accrue to 100
+//     at completion, so turns are DERIVABLE from the save (no EDB needed):
+//     turnsTotal = round(100*elapsed/points), turnsRemaining = total − elapsed
+//     (cross-turn verified Pella T1→T5, 2026-06-05). The building's IDENTITY is
+//     NOT recoverable (no chain handle; positional is always core_building), so
+//     we surface PROGRESS only, not which building.
 //   recruit item: ASCII pstr16 unit name + `ff 00 ?? 01` cost marker.
 //   block ends at the next chain preamble [u32 size=0x0b][u32 self_ptr=i+4]
 //     [u16 nameLen][ascii name] (size is 0x0b here, not the RIS 0x0c).
 const ALEX_BLOCK_SCAN = 512;
+// Alexander construction-item signature (full form, an actively-building item).
+const ALEX_SIG = Buffer.from([0x47, 0xbd, 0x6f, 0x87, 0x10, 0x41, 0x40, 0xd0]);
 
 // Next-chain preamble for the Alexander layout: like findNextChainPreamble but
 // accepts size 0x0b (RR) as well as 0x0c, and validates the ASCII chain name so
@@ -135,8 +140,30 @@ function readQueueAtDefaultSetAlexander(buf, defaultSetOff) {
     o = nameEnd; // skip past this entry
   }
 
-  if (recruiting.length === 0) return null;
-  return { type: "alex", recruiting };
+  // Build queue: the full-form construction item in the default_set block.
+  // Progress only (no building name — identity isn't stored). turns-remaining is
+  // derived from build-points (→100 at completion); null until ≥1 turn elapsed.
+  const building = [];
+  const sigOff = buf.indexOf(ALEX_SIG, body);
+  if (sigOff >= 25 && sigOff < blockEnd && buf.readUInt32LE(sigOff - 25 + 37) === 2) {
+    const blk = sigOff - 25;
+    const turnsElapsed = buf[blk + 53];
+    const points = buf[blk + 57];
+    const turnsTotal = points > 0 ? Math.round((100 * turnsElapsed) / points) : null;
+    const turnsRemaining = turnsTotal != null ? Math.max(0, turnsTotal - turnsElapsed) : null;
+    building.push({
+      // No chainId/chainName: Alexander doesn't store the queued building's
+      // identity (see header note) — UI shows generic "Construction" + progress.
+      targetCost: buf.readUInt32LE(blk + 41),
+      turnsElapsed, points,
+      turnsTotal, turns: turnsTotal, turnsRemaining,
+      progressPct: Math.max(0, Math.min(100, points)),
+      count: 1,
+    });
+  }
+
+  if (recruiting.length === 0 && building.length === 0) return null;
+  return { type: "alex", recruiting, building };
 }
 
 // Global per-save engine detector. The Alexander/RR engine stamps a serialised
@@ -273,9 +300,10 @@ function parseQueuesForSettlements(buf, settlementMarkers) {
     if (!byCity.has(owner)) byCity.set(owner, { recruiting: [], building: [] });
     const bucket = byCity.get(owner);
     if (q.type === "alex") {
-      // Alexander/RR: recruit names decode cleanly; build queue deferred (no
-      // inline chainId / turns-remaining — needs a UI change before surfacing).
+      // Alexander/RR: recruit names + build PROGRESS (no building name — identity
+      // isn't stored; turns-remaining derived from build-points).
       if (q.recruiting && q.recruiting.length) bucket.recruiting.push(...q.recruiting);
+      if (q.building && q.building.length) bucket.building.push(...q.building);
     }
     else if (q.type === "building") bucket.building.push({
       chainId: q.chainId,

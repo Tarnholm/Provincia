@@ -2436,9 +2436,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               const tot = Number.isFinite(q.turnsTotal) ? q.turnsTotal : q.turns;
               const show = rem != null ? rem : tot;
               const valid = Number.isFinite(show) && show > 0 && show < 1000;
+              // RIS imperial entries carry a numeric chainId; Alexander/RR entries
+              // don't (the save stores no building identity) — show "Construction"
+              // with progress % instead of a chain number.
+              const label = (q.chainId != null) ? `chain #${q.chainId}`
+                : (Number.isFinite(q.progressPct) ? `Construction (${Math.round(q.progressPct)}%)` : "Construction");
               return (
                 <span key={i} style={{ color: "#cde" }}>
-                  {i > 0 ? ", " : ""}chain #{q.chainId}
+                  {i > 0 ? ", " : ""}{label}
                   {valid ? ` — ${show} turn${show === 1 ? "" : "s"} left` : ""}
                 </span>
               );

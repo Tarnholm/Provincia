@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.948",
+    date: "2026-06-05",
+    items: [
+      { type: "feature", text: "**Construction queue now shows on Alexander / base-game (RR Alexander-engine) saves.** A settlement that's building something now shows it in the Building panel with live progress and turns-remaining (e.g. \"Construction (75%) — 1 turn left\"), derived straight from the save. It shows progress rather than the building's name because the Alexander engine doesn't store which building is queued (RIS imperial still shows its chain id as before). Recruitment queues on these saves already worked." },
+    ],
+  },
+  {
     version: "0.9.947",
     date: "2026-06-05",
     items: [
