@@ -3465,10 +3465,16 @@ function App() {
   // Derive the mod's data directory from modIconsDir and initialize the
   // character/unit parsers in the main process. Idempotent — safe to re-call.
   useEffect(() => {
-    if (!modIconsDir) return;
+    // Slot-aware data source: the bundled-vanilla Slot 1 initialises the
+    // character/unit/culture/ownership parsers from the GAME INSTALL, so every
+    // panel matches vanilla — not the globally-imported mod. A mod slot uses
+    // that mod's dir. Re-runs on slot switch so each slot shows the right data.
+    const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
+    const baseIconsDir = (isVanillaSlot && vanillaIconsDir) ? vanillaIconsDir : modIconsDir;
+    if (!baseIconsDir) return;
     const api = window.electronAPI;
     if (!api?.charactersInit) return;
-    const normalized = modIconsDir.replace(/\\/g, "/");
+    const normalized = baseIconsDir.replace(/\\/g, "/");
     const candidates = [];
     const dataIdx = normalized.toLowerCase().lastIndexOf("/data/");
     if (dataIdx !== -1) candidates.push(normalized.slice(0, dataIdx + "/data".length));
@@ -3579,7 +3585,7 @@ function App() {
         }
       }).catch(() => {});
     }
-  }, [modIconsDir]);
+  }, [modIconsDir, mapCampaign, campaignLabels, vanillaIconsDir]);
 
   // Load culture-aware building display names AND faction→culture map from
   // the game/mod. Must run independently of modIconsDir so users playing
@@ -3632,7 +3638,10 @@ function App() {
         if (map && Object.keys(map).length > 0) setFactionCultures(map);
       }).catch(() => {});
     }
-    if (api?.getFactionDisplayNames) {
+    // Skip the merged (BI/Alex) name dict on the vanilla Slot 1 — its own
+    // names come from the dedicated vanilla-names effect (else Thrace reverts).
+    const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
+    if (api?.getFactionDisplayNames && !isVanillaSlot) {
       api.getFactionDisplayNames(modDataDir || null, mapCampaign).then((map) => {
         if (map && Object.keys(map).length > 0) setFactionDisplayNames(map);
       }).catch(() => {});
@@ -3640,7 +3649,7 @@ function App() {
     // Re-fetching means we just consumed the latest disk state — clear
     // the stale flag so the badge stops nagging until the next disk edit.
     setModDataStale(false);
-  }, [modDataDir, mapCampaign, modReloadTick]);
+  }, [modDataDir, mapCampaign, modReloadTick, campaignLabels]);
 
   // Poll mod-file mtimes every 4 seconds. If any tracked file's mtime
   // exceeds what we last saw, surface the "Reload mod data" badge so

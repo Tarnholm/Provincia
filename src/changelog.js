@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.931",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Each slot now shows ITS OWN data in every panel.** The character/recruitment/culture/ownership/family-tree parsers initialise from the active slot's source — the game install for the bundled vanilla Slot 1, and the imported mod's folder for a mod slot. So vanilla, RIS and other mods each show the right units, characters and recruitment, not whichever mod was imported last." },
+    ],
+  },
+  {
     version: "0.9.930",
     date: "2026-06-05",
     items: [
