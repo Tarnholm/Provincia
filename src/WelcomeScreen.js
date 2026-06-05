@@ -75,6 +75,7 @@ const ONBOARDING_PAGES = [
    widgets (each carries a data-widget id) so they don't light the whole
    right column. ─────────────────────────────────────────────────────── */
 const HIGHLIGHT_SELECTORS = {
+  campaigns: ['[data-onboard-slot]'], // ring ONLY the empty Slot 2 (the import target), not the whole slot group
   factions: ['[data-ui-highlight="factions"]', '#ws-province-search'], // faction panel + the province search box
   "region-info": ['[data-widget="region.info"]', '[data-ui-highlight="region-info"]'], // settlement details + lock
   "region-diplo": ['[data-widget="region.diplomacy"]', '[data-widget="region.characters"]', '[data-widget="region.garrison"]'],
@@ -89,8 +90,16 @@ const HIGHLIGHT_SELECTORS = {
 // several overlapping rings (e.g. the Diplomacy/Characters/Armies panels).
 const UNION_KEYS = new Set(["region-diplo"]);
 
+// Per-highlight ring nudge (px) on top of the global optical offset, for the
+// odd control whose box centre reads off (e.g. the lock glyph sits right in
+// its zoom-button box).
+const RING_NUDGE = {
+  "region-info": { x: -6, y: 0 },
+};
+
 const CARD_PLACEMENT = {
-  campaigns: ["flex-end", "flex-end"],
+  // Slots live top-left in the title bar → card sits just under them.
+  campaigns: ["flex-start", "flex-start"],
   "map-modes": ["flex-end", "flex-end"],
   overlays: ["flex-end", "flex-end"],
   live: ["flex-end", "flex-end"],
@@ -191,6 +200,7 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
   }, [currentVersion, newEntries, onDone, onHighlight]);
 
   const handleOnboardingDone = useCallback(() => {
+    try { sessionStorage.removeItem("onboardingPage"); } catch {}
     if (onHighlight) onHighlight(null);
     if (FORCE_TEST_MODE || newEntries.length > 0) {
       setPhase("whatsnew");
@@ -226,7 +236,22 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
 
 /* ── Onboarding walkthrough ──────────────────────────────────────── */
 function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, modImported }) {
-  const [page, setPage] = useState(0);
+  // Persist the page across reloads: importing a mod into Slot 2 can reload the
+  // app, and without this the walkthrough would snap back to card 1. Resume the
+  // card the user was on instead. Cleared when onboarding finishes.
+  const [page, setPageRaw] = useState(() => {
+    try {
+      const s = parseInt(sessionStorage.getItem("onboardingPage") || "0", 10);
+      return Number.isFinite(s) ? Math.max(0, Math.min(pages.length - 1, s)) : 0;
+    } catch { return 0; }
+  });
+  const setPage = useCallback((v) => {
+    setPageRaw((prev) => {
+      const next = typeof v === "function" ? v(prev) : v;
+      try { sessionStorage.setItem("onboardingPage", String(next)); } catch {}
+      return next;
+    });
+  }, []);
   const [spotRects, setSpotRects] = useState([]); // live bounding boxes of highlighted UI element(s)
   const isLast = page === pages.length - 1;
   const p = pages[page];
@@ -299,7 +324,9 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
               position: "fixed",
               // 2px optical up-shift: glyphs/controls sit slightly high in their
               // box, so a box-centred ring reads a touch low without it.
-              top: r.top - 5, left: r.left - 3,
+              // RING_NUDGE adds a per-highlight tweak for the odd off-centre box.
+              top: r.top - 5 + (RING_NUDGE[p.highlight]?.y || 0),
+              left: r.left - 3 + (RING_NUDGE[p.highlight]?.x || 0),
               width: r.width + 6, height: r.height + 6,
               border: "2px solid #e8c873", borderRadius: 8,
               boxShadow: "0 0 12px 2px rgba(232,200,115,0.65)",

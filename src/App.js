@@ -15157,7 +15157,15 @@ function App() {
               return (
                 <button
                   key={camp.key}
-                  onClick={() => setMapCampaign(camp.key)}
+                  // Onboarding rings ONLY the empty mod slot (Slot 2) as the import target.
+                  data-onboard-slot={camp.key === DEFAULT_CAMPAIGNS.imperial.key ? "1" : undefined}
+                  onClick={() => {
+                    // During onboarding, left-clicking the still-empty Slot 2 would
+                    // switch to a blank slot and derail the guided import. Block it —
+                    // the user must RIGHT-CLICK to import (which the card instructs).
+                    if (showWelcome && camp.key === DEFAULT_CAMPAIGNS.imperial.key && !campaignLabels[DEFAULT_CAMPAIGNS.imperial.key]) return;
+                    setMapCampaign(camp.key);
+                  }}
                   onContextMenu={(e) => {
                     // Right-click → import new files into THIS slot. Opens the
                     // import modal pre-targeted to this campaign (dev-only, like
@@ -17478,14 +17486,14 @@ function App() {
             <Movable id="bottom.search" title="Search" designMode={designMode}
               colBox={{ left: MAP_PADDING, width: canvasSize.width, x0: 0, span: 0.572, top: MAP_TOP + canvasSize.height + 6, vHeight: Math.max(80, (typeof window !== "undefined" ? window.innerHeight : 1080) - (MAP_TOP + canvasSize.height + 6) - MAP_PADDING), y0: 0.7009, vSpan: 0.2941, topPx: 0, heightPx: 25 }}
               defaultPct={{ x: 0.0047, y: 0.7009, w: 0.2076, h: 0.0400 }}
-              zIndex={2}>
+              zIndex={welcomeHighlight === "factions" ? 10001 : 2}>
               {/* Search widget is just the input — no surrounding panel
                   chrome (no cream background, no extra padding). The input is
                   a FIXED 30px-tall control top-aligned in the widget, so when
                   bottom.search's allocated box is tall the input stays slim
                   (the extra space below stays empty instead of stretching the
                   input into a giant bar). */}
-              <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+              <div data-ui-highlight="factions" className={welcomeHighlight === "factions" ? "ws-ui-glow" : undefined} style={{ width: "100%", height: "100%", position: "relative", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
                 <input
                   type="text"
                   ref={searchInputRef}
@@ -21128,7 +21136,10 @@ function App() {
                   );
                 })()}
                 {fileImportDone && (
-                  <button onClick={() => { setShowFileImport(false); window.location.reload(); }} style={{
+                  // During onboarding, do NOT reload — the slot was already loaded
+                  // in place and the walkthrough auto-advances; a reload would snap
+                  // the user back to the first welcome card.
+                  <button onClick={() => { setShowFileImport(false); if (!showWelcome) window.location.reload(); }} style={{
                     padding: "6px 16px", borderRadius: 6, border: "1px solid #e8a030",
                     background: "#e8a030", color: "#1a1a1a", fontWeight: 700, cursor: "pointer",
                   }}>Done</button>

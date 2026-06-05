@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.938",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Onboarding walkthrough polish (first-run intro).** Several fixes to the guided intro: the “Two Slots” card now sits directly under the slot tabs (was floating bottom-right, far from what it points at) and the highlight ring is now drawn around **Slot 2 specifically** instead of the whole slot group. Importing your mod into Slot 2 no longer reloads the app back to the first card — it loads in place and the walkthrough advances; the current card also survives any reload now. Left-clicking the empty Slot 2 during the intro is blocked (you must right-click to import, as the card says). On the “Factions & Search” card the province search bar is now included in the highlight, and the lock-icon ring on the “Region Details” card is nudged into place." },
+    ],
+  },
+  {
     version: "0.9.937",
     date: "2026-06-05",
     items: [
