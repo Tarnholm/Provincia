@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.937",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Uninstalling now removes the app's saved data too.** Previously a Windows uninstall left the Provincia data folder (`%APPDATA%\\provincia` — onboarding state, window layout, cached campaign data, logs) behind, so a reinstall didn't behave like a clean first-time install. The uninstaller now clears that folder. (The auto-updater's download cache under `%LOCALAPPDATA%\\provincia-updater` is managed separately and can be deleted manually if you want to reclaim the space.)" },
+    ],
+  },
+  {
     version: "0.9.936",
     date: "2026-06-05",
     items: [

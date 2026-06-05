@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.936",
+  "version": "0.9.937",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -141,7 +141,7 @@
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "public/icon.ico",
       "uninstallerIcon": "public/icon.ico",
-      "deleteAppDataOnUninstall": false,
+      "deleteAppDataOnUninstall": true,
       "createDesktopShortcut": true,
       "shortcutName": "Provincia",
       "guid": "com.tarnholm.interactive-map"
