@@ -3981,7 +3981,21 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
     const parsed = descrGen.parseDescrStrat(dsRaw);
-    const res = descrGen.composeAddGeneral(parsed, names, selection);
+    // Faction's descr_namelists pools (men/women) so composeAddGeneral can name
+    // the general + family from VALID unused namelist entries instead of minting
+    // suffixed tokens the game rejects ("Unknown name 'ApollodorosA'!").
+    let pools = {};
+    try {
+      const smP = path.join(activeModDataDir, "descr_sm_factions.txt");
+      const nlP = path.join(activeModDataDir, "descr_namelists.txt");
+      if (fs.existsSync(smP) && fs.existsSync(nlP)) {
+        const facNl = descrGen.parseSmFactionNamelists(fs.readFileSync(smP, "utf8"))[selection.factionName] || {};
+        const nlPools = descrGen.parseNamelistPools(fs.readFileSync(nlP, "utf8"));
+        pools = { men: nlPools[facNl.men] || [], women: nlPools[facNl.women] || [] };
+        console.log(`[addgen] name pools for ${selection.factionName}: ${pools.men.length} men (${facNl.men}), ${pools.women.length} women (${facNl.women})`);
+      }
+    } catch (pe) { console.warn("[addgen] pool load failed (will fall back to minting):", pe && pe.message); }
+    const res = descrGen.composeAddGeneral(parsed, names, selection, pools);
     // In export mode we don't back up the live files (we're not changing
     // them); the timestamped .bak is skipped and backupStamp returns null.
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.949",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Add-a-General now produces valid characters that don't crash the campaign.** Three bugs fixed: (1) the bodyguard was hardcoded to the Roman unit — it now uses the faction's own bodyguard (read from an existing general's first army unit, e.g. Bosporan → bosporan epilektoi cavalry). (2) Names were synthesised by suffixing an existing name (e.g. ApollodorosA), which isn't in the faction's namelist so the game rejected it (\"Unknown name\") — names now come from the faction's descr_namelists pool (resolving inherited pools like macedonian/thracian), skipping any name already used anywhere in descr_strat. (3) The same applies to auto-generated wives/children. Net: added generals load cleanly with the right bodyguard and valid, unique names." },
+    ],
+  },
+  {
     version: "0.9.948",
     date: "2026-06-05",
     items: [

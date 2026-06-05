@@ -67,6 +67,7 @@ function parseDescrStrat(text) {
       firstCharLine: -1, firstFamilyDefLine: -1,
     };
     let lastComment = null;
+    let awaitingBodyguard = false; // true right after a named-character line → next `unit` is its bodyguard
     for (let i = start; i < end; i++) {
       const line = lines[i];
       const rawT = line.trim();
@@ -95,11 +96,17 @@ function parseDescrStrat(text) {
           leader: tag === "leader", heir: tag === "heir", settlementHint: lastComment };
         fac.characters.push(ch);
         lastComment = null;
+        awaitingBodyguard = true; // the first `unit` after this character's `army` is the bodyguard
         fac.usedFirstTokens.add(firstTok);
         if (famTok) { fac.usedFamilyTokens.add(famTok); fac.usedFullKeys.add(firstTok + " " + famTok); }
         else fac.usedFullKeys.add(firstTok);
         continue;
       }
+      // Non-general character agents (admiral / spy / diplomat / …) still occupy
+      // a NAME that must stay unique — mark it used so the namer can't reuse e.g.
+      // an admiral's name and collide (the Akas-the-admiral bug).
+      { const am = t.match(/^character\s*,?\s*([^,]+?)\s*,\s*(admiral|spy|diplomat|assassin|merchant|princess|witch|heretic|inquisitor|priest)\b/i);
+        if (am) { const an = am[1].trim().split(/\s+/)[0]; fac.usedFirstTokens.add(an); continue; } }
       // character_record <Name...>, <gender>, age N, alive|dead, ...
       m = t.match(/^character_record\s+([^,]+?)\s*,\s*(male|female)\s*,.*?\bage\s+(\d+)\s*,\s*(alive|dead)/i);
       if (m) {
@@ -132,11 +139,14 @@ function parseDescrStrat(text) {
         }
         continue;
       }
-      // Capture the faction's general/bodyguard unit(s). The unit name is the
-      // full string between `unit` and `exp` (e.g. "pergamene general's
-      // bodyguard") — truncating at "general" produces a non-existent unit that
-      // RTW rejects. Keep only names containing "general" (the bodyguard units).
-      { const gm = t.match(/^unit\s+(.+?)\s+exp\b/i); if (gm && /\bgeneral\b/i.test(gm[1])) { const u = gm[1].trim(); if (!fac.generalUnit) fac.generalUnit = u; if (!fac.generalUnits.includes(u)) fac.generalUnits.push(u); } }
+      // Capture the faction's bodyguard unit = the FIRST `unit` in each existing
+      // general's army (regardless of its name). The old heuristic "name contains
+      // 'general'" missed factions whose bodyguard isn't called that — e.g. RIS
+      // bosporan uses "bosporan epilektoi cavalry" — and fell back to "roman
+      // general" (the bug). fac.generalUnit = the leader's bodyguard (first found).
+      { const gm = t.match(/^unit\s+(.+?)\s+exp\b/i);
+        if (gm && awaitingBodyguard) { const u = gm[1].trim(); awaitingBodyguard = false;
+          if (!fac.generalUnit) fac.generalUnit = u; if (!fac.generalUnits.includes(u)) fac.generalUnits.push(u); } }
       // settlement region name
       const rm = t.match(/^region\s+(.+)$/i); if (rm) fac.settlements.push({ region: rm[1].trim() });
       // sub_faction marker (rebels)
@@ -207,12 +217,33 @@ function parseSmFactionNamelists(text) {
 }
 
 // Parse descr_namelists.txt → { namelistName: [token, ...] } (e.g. greek_men → [...]).
+// Pools can declare `"inherit": "<other_pool>"` (e.g. bosporan_women inherits
+// macedonian_women + thracian_women) — we RESOLVE those so the returned list is
+// the pool's full effective name set, not just its own ~3 names (without this,
+// small pools exhaust and the namer falls back to minting invalid suffixed names).
 function parseNamelistPools(text) {
   const out = {};
   if (!text) return out;
-  const re = /"(\w+)"\s*:\s*\{\s*"names"\s*:\s*\[([\s\S]*?)\]/g;
+  const raw = {}; // pool -> { own: [tokens], inherits: [poolName] }   (pool bodies are brace-free)
+  const blockRe = /"(\w+)"\s*:\s*\{([^{}]*)\}/g;
   let m;
-  while ((m = re.exec(text))) out[m[1]] = (m[2].match(/"([^"]+)"/g) || []).map((s) => s.slice(1, -1));
+  while ((m = blockRe.exec(text))) {
+    const name = m[1], body = m[2];
+    const nm = body.match(/"names"\s*:\s*\[([\s\S]*?)\]/);
+    const own = nm ? (nm[1].match(/"([^"]+)"/g) || []).map((s) => s.slice(1, -1)) : [];
+    const inherits = [];
+    const ir = /"inherit"\s*:\s*"(\w+)"/g; let im;
+    while ((im = ir.exec(body))) inherits.push(im[1]);
+    raw[name] = { own, inherits };
+  }
+  const resolve = (name, seen) => {
+    if (!raw[name] || seen.has(name)) return [];
+    seen.add(name);
+    let all = raw[name].own.slice();
+    for (const inh of raw[name].inherits) all = all.concat(resolve(inh, seen));
+    return all;
+  };
+  for (const name in raw) out[name] = [...new Set(resolve(name, new Set()))];
   return out;
 }
 
@@ -225,7 +256,7 @@ function parseNamelistPools(text) {
 function insertNamelistTokens(raw, poolName, tokens, eol = "\r\n") {
   if (!raw || !poolName || !Array.isArray(tokens) || !tokens.length) return null;
   const esc = poolName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(`("${esc}"\\s*:\\s*\\{\\s*"names"\\s*:\\s*\\[)([\\s\\S]*?)\\]`, "m");
+  const re = new RegExp(`("${esc}"\\s*:\\s*\\{[^}]*?"names"\\s*:\\s*\\[)([\\s\\S]*?)\\]`, "m");
   const m = re.exec(raw);
   if (!m) return null;
   const existing = new Set((m[2].match(/"([^"]+)"/g) || []).map((s) => s.slice(1, -1)));
@@ -318,21 +349,56 @@ function resolveFreeToken(display, names, used, opts = {}) {
 //   children: [ { firstDisplay, gender: "son"|"daughter", age } ],
 // }
 // Returns { lines: newLinesArray, namesAppend: [{token,display}], lookupAppend: [token], summary }.
-function composeAddGeneral(parsed, names, selection) {
+function composeAddGeneral(parsed, names, selection, pools) {
   const fac = parsed.factions.find((f) => f.name === selection.factionName);
   if (!fac) throw new Error(`faction not found: ${selection.factionName}`);
+  // fac.generalUnit is now the faction's real bodyguard (first army unit of an
+  // existing general). The "roman general" fallback only fires if the faction
+  // genuinely has no generals to learn from.
   const generalUnit = selection.generalUnit || fac.generalUnit || "roman general";
-  const used = new Set([...fac.usedFirstTokens, ...fac.usedFamilyTokens, ...fac.usedFullKeys]);
+  // Names must be unique GLOBALLY in descr_strat (a duplicate name — even across
+  // factions, e.g. two "Pairisades" or reusing an admiral's name — breaks the
+  // engine's name lookup / relative wiring). So seed `used` from EVERY faction's
+  // names, not just this faction's.
+  const used = new Set();
+  for (const f of parsed.factions) {
+    for (const t of f.usedFirstTokens) used.add(t);
+    for (const t of f.usedFamilyTokens) used.add(t);
+    for (const k of f.usedFullKeys) used.add(k);
+  }
   const namesAppend = [], lookupAppend = [];
+  // Free first-name pool from the faction's descr_namelists groups (men/women),
+  // skipping names already used in descr_strat. These are ALREADY valid namelist
+  // entries, so using them needs NO mint/namelist-write and can't be rejected by
+  // the game — unlike the old suffix-minting (ApollodorosA) which produced names
+  // absent from the namelist and crashed the campaign.
+  pools = pools || {};
+  const freeFromPool = (arr) => (arr || []).filter((t) => !isFamilyToken(t) && !used.has(t));
+  const freeMen = freeFromPool(pools.men);
+  const freeWomen = freeFromPool(pools.women);
+  // display -> pool token, for honouring a user pick that's a valid pool name.
+  const poolByDisplay = new Map();
+  for (const t of [...(pools.men || []), ...(pools.women || [])]) {
+    const d = names.tokenToDisplay.get(t) || t.replace(/_/g, " ");
+    if (!poolByDisplay.has(d)) poolByDisplay.set(d, t);
+  }
   const take = (display, opts = {}) => {
+    // 1) the requested display maps to a free EXISTING token (no mint needed).
+    const variants = (names.displayToTokens.get(display) || []).filter((t) => opts.family ? isFamilyToken(t) : !isFamilyToken(t));
+    for (const v of variants) if (!used.has(v)) { used.add(v); return v; }
+    // 2) the requested display IS a valid (unused) namelist-pool name.
+    if (!opts.family) { const pt = poolByDisplay.get(display); if (pt && !used.has(pt)) { used.add(pt); return pt; } }
+    // 3) substitute a free pool name (valid out of the box) rather than minting a
+    //    suffixed token the namelist doesn't contain.
+    if (!opts.family) {
+      const pick = (opts.female ? freeWomen : freeMen).find((t) => !used.has(t));
+      if (pick) { used.add(pick); return pick; }
+    }
+    // 4) last resort (pool exhausted / surname): mint + register in the namelist.
     const r = resolveFreeToken(display, names, used, opts);
     if (!r) throw new Error(`no free token for "${display}"`);
     used.add(r.token);
     if (r.mint) {
-      // 0.9.869: tag gender so the writer can register a minted token in the
-      // RIGHT culture namelist (men vs women) in descr_namelists.txt — RTW
-      // validates every descr_strat character name against the faction's
-      // namelist, so a minted token missing from it breaks campaign start.
       const gender = opts.female ? "female" : (opts.family ? null : "male");
       namesAppend.push({ token: r.token, display: r.display, gender });
       lookupAppend.push(r.token);
