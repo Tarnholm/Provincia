@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.929",
+    date: "2026-06-05",
+    items: [
+      { type: "fix", text: "**Fixed a startup crash** (“Cannot access 'et' before initialization”) introduced by the per-slot data wiring — a variable was used before it was declared." },
+    ],
+  },
+  {
     version: "0.9.928",
     date: "2026-06-05",
     items: [

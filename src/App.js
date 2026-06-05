@@ -3238,6 +3238,9 @@ function App() {
       }
     });
   }, [modIconsDir]);
+  // Mod data dir — declared BEFORE activeDataDir / the vanilla-names effect that
+  // reference it (moved up here to avoid a TDZ crash).
+  const [modDataDir, setModDataDir] = useState(null);
   // Vanilla faction-icons dir, read LIVE from the detected RTW install (not
   // bundled). Used as the icon source for the bundled vanilla Slot 1.
   const [vanillaIconsDir, setVanillaIconsDir] = useState(null);
@@ -3284,7 +3287,6 @@ function App() {
   // save filename to the internal `romans_julii` faction key.
   const factionDisplayMapRef = useRef({});
 
-  const [modDataDir, setModDataDir] = useState(null);
   // Keep the bundle-edit guard's ref in sync: a mod is "loaded" once its data
   // dir or icons dir is known (either implies charactersInit ran / will run and
   // activeModDataDir is set in main, so writes can land).
