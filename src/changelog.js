@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.932",
+    date: "2026-06-05",
+    items: [
+      { type: "change", text: "**Overlays now start with none active** (existing installs are reset once — turn any back on from the green OVERLAYS menu)." },
+      { type: "improvement", text: "**Onboarding spotlight rings** track the UI continuously (no lag), are nudged to sit centred on small controls, and the Diplomacy/Characters/Armies card draws a single ring around its panels instead of overlapping ones." },
+    ],
+  },
+  {
     version: "0.9.931",
     date: "2026-06-05",
     items: [

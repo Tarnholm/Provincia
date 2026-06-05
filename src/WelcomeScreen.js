@@ -85,6 +85,10 @@ const HIGHLIGHT_SELECTORS = {
    Keeps the card clear of the UI it points at, set once on page change (no
    re-positioning jump). Top-left controls → card bottom-right; right-column
    region panels → card left; etc. */
+// Highlights whose multiple targets read better as ONE bounding ring than as
+// several overlapping rings (e.g. the Diplomacy/Characters/Armies panels).
+const UNION_KEYS = new Set(["region-diplo"]);
+
 const CARD_PLACEMENT = {
   campaigns: ["flex-end", "flex-end"],
   "map-modes": ["flex-end", "flex-end"],
@@ -246,6 +250,7 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
     if (!key) { setSpotRects([]); return; }
     let raf = 0, timer = 0, cancelled = false;
     const selectors = HIGHLIGHT_SELECTORS[key] || [`[data-ui-highlight="${key}"]`];
+    const same = (a, b) => a.length === b.length && a.every((r, i) => r.top === b[i].top && r.left === b[i].left && r.width === b[i].width && r.height === b[i].height);
     const measure = () => {
       if (cancelled) return;
       const rects = [];
@@ -253,12 +258,12 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
         const r = el.getBoundingClientRect();
         if (r.width > 1 && r.height > 1) rects.push({ top: r.top, left: r.left, width: r.width, height: r.height });
       }));
-      setSpotRects(rects);
+      // Only re-render when the rects actually move (avoids a 60fps churn).
+      setSpotRects((prev) => (same(prev, rects) ? prev : rects));
+      raf = requestAnimationFrame(measure); // track continuously so rings never lag the UI
     };
     raf = requestAnimationFrame(measure);
-    timer = setInterval(measure, 400); // re-measure: targets may mount / reflow after the card appears
-    window.addEventListener("resize", measure);
-    return () => { cancelled = true; cancelAnimationFrame(raf); clearInterval(timer); window.removeEventListener("resize", measure); };
+    return () => { cancelled = true; cancelAnimationFrame(raf); if (timer) clearInterval(timer); };
   }, [page, p.highlight]);
 
   // Auto-advance off an import-gated card the moment a mod is imported.
@@ -278,13 +283,23 @@ function Onboarding({ pages, currentVersion, onFinish, onHighlight, mapCenterX, 
           are truly viewport-relative (a transformed ancestor of the overlay
           would otherwise shift them — that's why the lock ring was off-centre). */}
       {typeof document !== "undefined" && createPortal(
-        spotRects.map((r, i) => (
+        (UNION_KEYS.has(p.highlight) && spotRects.length > 1
+          ? [{
+              top: Math.min(...spotRects.map((r) => r.top)),
+              left: Math.min(...spotRects.map((r) => r.left)),
+              width: Math.max(...spotRects.map((r) => r.left + r.width)) - Math.min(...spotRects.map((r) => r.left)),
+              height: Math.max(...spotRects.map((r) => r.top + r.height)) - Math.min(...spotRects.map((r) => r.top)),
+            }]
+          : spotRects
+        ).map((r, i) => (
           <div
             key={i}
             aria-hidden
             style={{
               position: "fixed",
-              top: r.top - 3, left: r.left - 3,
+              // 2px optical up-shift: glyphs/controls sit slightly high in their
+              // box, so a box-centred ring reads a touch low without it.
+              top: r.top - 5, left: r.left - 3,
               width: r.width + 6, height: r.height + 6,
               border: "2px solid #e8c873", borderRadius: 8,
               boxShadow: "0 0 12px 2px rgba(232,200,115,0.65)",

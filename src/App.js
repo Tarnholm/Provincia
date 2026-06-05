@@ -1907,6 +1907,17 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem("showArmies", showArmies ? "1" : "0"); } catch {}
   }, [showArmies]);
+  // One-time migration: the Armies overlay used to default ON; the default is
+  // now "no overlays". Turn it off once for existing installs so everyone starts
+  // with zero overlays active (re-toggle from the OVERLAYS menu if you want it).
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("overlaysZeroDefault_v931")) {
+        localStorage.setItem("overlaysZeroDefault_v931", "1");
+        setShowArmies(false);
+      }
+    } catch {}
+  }, []);
   // Diplomatic-web overlay — toggleable SVG layer over the map that
   // draws colored lines between every pair of faction capitals based on
   // their current diplomatic stance. Data joins `factionDiplomacy` (per-
