@@ -2108,6 +2108,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 const statsStr = hasStats
                   ? ` · ${c._statsEstimated ? "~" : ""}Command ${c.command ?? "?"} / Influence ${c.influence ?? "?"} / Management ${c.management ?? "?"} / Loyalty ${c.loyalty ?? "?"}${c._statsEstimated ? " (estimated)" : ""}`
                   : "";
+                // Moves-left indicator (live saves). mpRemaining = f32 at the
+                // character's coord/state record +58. Only field generals
+                // commanding an army carry it (governors/family-in-residence are
+                // null). 1 tile ≈ 7.4 MP, so "out of moves" ⇔ below that. The save
+                // stores REMAINING only (no per-type max) — we never claim a
+                // definitive moved/not-moved, just whether a move is still possible.
+                const mp = typeof c.mpRemaining === "number" ? c.mpRemaining : null;
+                const canMove = mp != null && mp >= 7.4;
+                const mpStr = mp != null
+                  ? `\nMovement: ${canMove ? "has moves left" : "out of moves"} this turn (${mp.toFixed(1)} MP remaining; 1 tile ≈ 7.4 MP — the save stores remaining MP only, not the per-type max)`
+                  : "";
                 return (
                   <div key={i}
                     onContextMenu={(e) => {
@@ -2116,7 +2127,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         onShowInfo({ type: "character", character: c, label: fullName });
                       }
                     }}
-                    title={`${fullName} · age ${c.age != null ? c.age : "?"}${statsStr}${status}\nRight-click to view traits`}
+                    title={`${fullName} · age ${c.age != null ? c.age : "?"}${statsStr}${status}${mpStr}\nRight-click to view traits`}
                     style={{ padding: "1px 0", color: c.isDead ? "#c88" : "#eee", display: "flex", alignItems: "center", gap: 3, overflow: "hidden", cursor: onShowInfo ? "context-menu" : "default" }}
                   >
                     {/* 0.9.833: leader/heir crown (and gender mark) sits in a
@@ -2124,6 +2135,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         in the column whether or not a character has a marker. */}
                     <span style={{ width: 12, flexShrink: 0, textAlign: "center" }}>{sym}</span>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName}</span>
+                    {/* Moves-left dot (live save, field generals only): green =
+                        a move is still possible this turn, amber = out of moves.
+                        Exact MP in the row tooltip. */}
+                    {mp != null && (
+                      <span style={{ marginLeft: "auto", flexShrink: 0, color: canMove ? "#7fd17f" : "#d59a6a", fontSize: "0.7rem", lineHeight: 1 }}>●</span>
+                    )}
                   </div>
                 );
               })}

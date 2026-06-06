@@ -1713,6 +1713,14 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       influence: typeof c.influence === "number" ? c.influence : null,
       management: typeof c.management === "number" ? c.management : null,
       loyalty: typeof c.loyalty === "number" ? c.loyalty : null,
+      // Movement points remaining this turn — f32 at the character's coord/state
+      // record +58 (decoded session 101, re-confirmed 2026-06-06 via the
+      // stride-354 record decomposition; triple-validated on a controlled 1-tile
+      // move: 248.0→239.2). Only field generals commanding an army carry a coord
+      // record → governors/family-in-residence are null. The save stores REMAINING
+      // only (no per-type max), so the renderer shows MP remaining, flagging
+      // "out of moves" when below the ~7.4 cost of one tile. (live-save only)
+      mpRemaining: typeof c.mpRemaining === "number" ? c.mpRemaining : null,
     });
   }
   // Augment with v2 characters that the v1 parser missed. The UI's

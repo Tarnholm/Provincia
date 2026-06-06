@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.953",
+    date: "2026-06-06",
+    items: [
+      { type: "feature", text: "**Moves-left indicator on generals.** In the region panel's Characters list, each field general now shows a small dot from the loaded save: **green = a move is still possible this turn, amber = out of moves**. Hover for the exact movement points remaining (1 tile ≈ 7.4 MP). Decoded from the character's movement-points field in the save; only field generals commanding an army carry it (governors and family-in-residence don't move, so they have no dot). The save records remaining MP only — not the per-type maximum — so we flag whether a move is still possible rather than a definitive moved/not-moved." },
+    ],
+  },
+  {
     version: "0.9.952",
     date: "2026-06-06",
     items: [
