@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.957",
+    date: "2026-06-06",
+    items: [
+      { type: "fix", text: "**Hotfix: gray screen on 0.9.955/956.** The new wonders and agent-census code referenced two values before they were defined, which crashed the page as soon as it rendered. Reordered so each is defined before use — the app loads normally again and all the 0.9.955 features (🏛 Wonders, agent census, move-order arrows) work." },
+    ],
+  },
+  {
     version: "0.9.956",
     date: "2026-06-06",
     items: [

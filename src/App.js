@@ -2692,28 +2692,12 @@ function App() {
       if (city) (out[city] = out[city] || []).push(w);
     }
     return Object.keys(out).length ? out : null;
-  }, [saveLandmarks, cityPixels, regions, imgSize, liveCharPositionsVersion]);
-  // Per-faction assassin/spy census from the live save. Agents carry the
-  // `AgentTraining` trait (the agent-defining marker, cracked 2026-06-06,
-  // findings-assassination-2026-06-06.md); the skill trait splits assassin vs
-  // spy. Requiring AgentTraining avoids counting governors a mod sprinkled with
-  // a lone NaturalAssassinSkill. { faction: { assassins, spies } }.
-  const agentCensusByFaction = useMemo(() => {
-    if (!saveCharactersByRegion) return null;
-    const out = {};
-    for (const arr of Object.values(saveCharactersByRegion)) {
-      if (!Array.isArray(arr)) continue;
-      for (const c of arr) {
-        if (!c || !c.faction || !Array.isArray(c.traits)) continue;
-        const names = new Set(c.traits.map((t) => t.name));
-        if (!names.has("AgentTraining")) continue;
-        const slot = out[c.faction] || (out[c.faction] = { assassins: 0, spies: 0 });
-        if (names.has("NaturalAssassinSkill") || names.has("GoodAssassin")) slot.assassins++;
-        else if (names.has("NaturalSpySkill") || names.has("GoodSpy")) slot.spies++;
-      }
-    }
-    return Object.keys(out).length ? out : null;
-  }, [saveCharactersByRegion]);
+    // NOTE: deps intentionally exclude liveCharPositionsVersion — it's declared
+    // far below this point and referencing it here would be a temporal-dead-zone
+    // crash. cityPixels/imgSize already retrigger this memo when the map loads.
+  }, [saveLandmarks, cityPixels, regions, imgSize]);
+  // (agentCensusByFaction memo is defined below, after saveCharactersByRegion is
+  // declared — see it near the trade-network state.)
   // 2026-05-31: on-demand trade network (computeTradeNetwork via crack-trade-network IPC),
   // computed once per save-file change. { settlements: { name: { faction, landPartners, seaPartners, ... } }, ... }.
   const [tradeNetwork, setTradeNetwork] = useState(null);
@@ -2785,6 +2769,28 @@ function App() {
   const [modFamiliesByFaction, setModFamiliesByFaction] = useState(null);
   const [liveSaveFile, setLiveSaveFile] = useState(null); // filename of the .sav file currently reflected in saveBuildingsData/saveArmiesData
   const [saveCharactersByRegion, setSaveCharactersByRegion] = useState(null); // { region: [character, ...] }
+  // Per-faction assassin/spy census from the live save. Agents carry the
+  // `AgentTraining` trait (the agent-defining marker, cracked 2026-06-06,
+  // findings-assassination-2026-06-06.md); the skill trait splits assassin vs
+  // spy. Requiring AgentTraining avoids counting governors a mod sprinkled with
+  // a lone NaturalAssassinSkill. { faction: { assassins, spies } }. Declared HERE
+  // (not up by wonderByCity) because it depends on saveCharactersByRegion above.
+  const agentCensusByFaction = useMemo(() => {
+    if (!saveCharactersByRegion) return null;
+    const out = {};
+    for (const arr of Object.values(saveCharactersByRegion)) {
+      if (!Array.isArray(arr)) continue;
+      for (const c of arr) {
+        if (!c || !c.faction || !Array.isArray(c.traits)) continue;
+        const names = new Set(c.traits.map((t) => t.name));
+        if (!names.has("AgentTraining")) continue;
+        const slot = out[c.faction] || (out[c.faction] = { assassins: 0, spies: 0 });
+        if (names.has("NaturalAssassinSkill") || names.has("GoodAssassin")) slot.assassins++;
+        else if (names.has("NaturalSpySkill") || names.has("GoodSpy")) slot.spies++;
+      }
+    }
+    return Object.keys(out).length ? out : null;
+  }, [saveCharactersByRegion]);
   const [saveScriptedByFaction, setSaveScriptedByFaction] = useState(null); // { faction: [char with x,y, traits, ...] } from v2 parser
   const [saveCurrentYear, setSaveCurrentYear] = useState(null); // current in-game year from save header
   const [saveCurrentTurn, setSaveCurrentTurn] = useState(null); // current turn number from save header
