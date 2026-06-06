@@ -45,16 +45,24 @@ function yearForTurnsElapsed(turnsElapsed) {
 // signature isn't found / fails the year self-consistency check.
 function parseTurn(buf) {
   if (!buf || buf.length < 64) return null;
+  // Scan ALL "txt" hits and keep the LAST self-consistent date record. The save
+  // can carry several "...descr_strat.txt" path strings; the LIVE campaign date
+  // sits after the last one (cross-validated 28/28 corpus, 2026-06-06).
   let p = 0;
+  let best = null;
   while ((p = buf.indexOf(TXT_SIG, p)) !== -1) {
-    const m = p + TXT_SIG.length; // first byte after "txt"
-    // m+0 = variant byte (0xd6 / 0xa6 / …), then the marker 0x44 0x00 0x00 0x01
+    const m = p + TXT_SIG.length; // first byte after "txt" = record start
+    // Record layout after the string (findings-calendar-season-2026-06-06):
+    //   +0 u16 variant tag (0xa644 / 0x456c / 0x2659 / … — NOT load-bearing)
+    //   +2 u16 0x0000   +4 u8 flag(0/1)   +5 u32 turnsElapsed   +9 i32 currentYear
+    // The OLD code keyed on byte +1 == 0x44, but +1 is the variant's HIGH byte —
+    // only 0xa644-variant saves have 0x44 there, so ~20% of saves (0x456c/0x2659)
+    // NO-LOCATEd. We now require only the structural +2/+3 == 0x0000 guard and rely
+    // on the year↔turn self-consistency law to reject coincidental hits.
     if (
-      m + 5 + 8 <= buf.length &&
-      buf[m + 1] === 0x44 &&
+      m + 13 <= buf.length &&
       buf[m + 2] === 0x00 &&
-      buf[m + 3] === 0x00 &&
-      buf[m + 4] === 0x01
+      buf[m + 3] === 0x00
     ) {
       const tOff = m + 5;
       const turnsElapsed = buf.readInt32LE(tOff);
@@ -67,7 +75,7 @@ function parseTurn(buf) {
         year <= 300 &&
         year === yearForTurnsElapsed(turnsElapsed)
       ) {
-        return {
+        best = {
           turn: turnsElapsed + 1,             // 1-based turn (matches save filenames)
           turnsElapsed,                        // engine's 0-based counter
           year,                                // current campaign year (BC negative)
@@ -78,7 +86,7 @@ function parseTurn(buf) {
     }
     p += 1;
   }
-  return null;
+  return best;
 }
 
 module.exports = { parseTurn, yearForTurnsElapsed, EPOCH_YEAR, TURNS_PER_YEAR };

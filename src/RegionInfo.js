@@ -1620,13 +1620,17 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             { label: "Capital",         v: o.capitalBonus,              sign: +1 },
             { label: "Tax admin",       v: o.taxAdminLine,              sign: +1 },
             { label: "Campaign start",  v: o.startTransientBonus,       sign: +1 },
+            // SQUALOR — from the SETTLEMENT_MECHANICS_STATS ledger (marker−1544,
+            // cracked 2026-06-06), stored already-signed (≤0). 0 on turn-1 saves
+            // (deferred-compute) → filtered out by the <0.05 magnitude gate below.
+            { label: "Squalor",         v: orderFields.squalor,         sign: +1 },
           ];
           const parts = [];
           for (const it of items) {
             if (typeof it.v !== "number" || Math.abs(it.v) < 0.05) continue;
-            // `tax` carries its own sign; the rest are stored as magnitudes and
-            // the slot identity (penalty vs bonus) supplies the sign.
-            const signed = it.label === "Tax" ? it.v : it.sign * Math.abs(it.v);
+            // `tax` and `squalor` carry their own sign; the rest are stored as
+            // magnitudes and the slot identity (penalty vs bonus) supplies the sign.
+            const signed = (it.label === "Tax" || it.label === "Squalor") ? it.v : it.sign * Math.abs(it.v);
             parts.push({ label: it.label, signed });
           }
           if (parts.length === 0) return null;
@@ -2119,6 +2123,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 const mpStr = mp != null
                   ? `\nMovement: ${canMove ? "has moves left" : "out of moves"} this turn (${mp.toFixed(1)} MP remaining; 1 tile ≈ 7.4 MP — the save stores remaining MP only, not the per-type max)`
                   : "";
+                // Pending move order (CHARACTER_ACTION_DETAILS, cracked 2026-06-06).
+                // Live only when the save holds a valid on-map destination tile !=
+                // the general's current tile. moveActive = the player's own active
+                // short move; otherwise it's an AI strategic march.
+                const moving = typeof c.moveDestX === "number" && typeof c.moveDestY === "number";
+                const moveStr = moving
+                  ? `\nOrder: on the march → tile (${c.moveDestX}, ${c.moveDestY})${c.moveActive ? " — moving now" : " — strategic march"}`
+                  : "";
                 return (
                   <div key={i}
                     onContextMenu={(e) => {
@@ -2127,7 +2139,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         onShowInfo({ type: "character", character: c, label: fullName });
                       }
                     }}
-                    title={`${fullName} · age ${c.age != null ? c.age : "?"}${statsStr}${status}${mpStr}\nRight-click to view traits`}
+                    title={`${fullName} · age ${c.age != null ? c.age : "?"}${statsStr}${status}${mpStr}${moveStr}\nRight-click to view traits`}
                     style={{ padding: "1px 0", color: c.isDead ? "#c88" : "#eee", display: "flex", alignItems: "center", gap: 3, overflow: "hidden", cursor: onShowInfo ? "context-menu" : "default" }}
                   >
                     {/* 0.9.833: leader/heir crown (and gender mark) sits in a
@@ -2135,11 +2147,18 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                         in the column whether or not a character has a marker. */}
                     <span style={{ width: 12, flexShrink: 0, textAlign: "center" }}>{sym}</span>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName}</span>
+                    {/* Move-order arrow (live save): the general has a pending
+                        destination this turn. Brighter amber = the player's own
+                        active move; dim = AI strategic march. Destination tile in
+                        the row tooltip. */}
+                    {moving && (
+                      <span style={{ marginLeft: "auto", flexShrink: 0, color: c.moveActive ? "#ffcf6a" : "#9a8a6a", fontSize: "0.72rem", lineHeight: 1 }}>➜</span>
+                    )}
                     {/* Moves-left dot (live save, field generals only): green =
                         a move is still possible this turn, amber = out of moves.
                         Exact MP in the row tooltip. */}
                     {mp != null && (
-                      <span style={{ marginLeft: "auto", flexShrink: 0, color: canMove ? "#7fd17f" : "#d59a6a", fontSize: "0.7rem", lineHeight: 1 }}>●</span>
+                      <span style={{ marginLeft: moving ? 3 : "auto", flexShrink: 0, color: canMove ? "#7fd17f" : "#d59a6a", fontSize: "0.7rem", lineHeight: 1 }}>●</span>
                     )}
                   </div>
                 );

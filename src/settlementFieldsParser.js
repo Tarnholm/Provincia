@@ -120,6 +120,17 @@ function settlementFieldsAt(buf, markerOffset) {
     // (Cracked 2026-06-06, findings-novel-cracks-2026-06-06.md.) The id→name map
     // is per-campaign — derive it by correlating ids with temple religions.
     dominantReligionId: (() => { const v = u32(buf, o - 886); return (v == null || v > 255) ? null : (v & 0xff); })(),
+    // SETTLEMENT_MECHANICS_STATS ledger (16.16 fixed-point block at marker
+    // −1564..−1516, read as i32/65536). SQUALOR lives at marker−1544 as a
+    // penalty (≤0, typ −50..0), monotonic in population across the corpus.
+    // OVERTURNS the prior "squalor is derived, not stored" assumption — it IS
+    // serialized, but as a deferred-compute cache: EXACTLY 0 on turn-1 saves
+    // (the one-turn compute lag, same signature as the s9 health bonus and the
+    // dominant-religion field), nonzero from turn 2. Cracked 2026-06-06
+    // (findings-settlement-mechanics-stats-2026-06-06.md). Returns ≤0, or null
+    // when out of range. Callers should render "—" on turn-1 (squalor==0) per
+    // the no-fabricated-defaults rule rather than implying zero squalor.
+    squalor: (() => { const v = i32(buf, o - 1544); return (v == null || v / 65536 > 0 || v / 65536 < -1000) ? null : v / 65536; })(),
     orderBreakdown,  // raw f32 line-items (18 slots); see order{} for named sources
     order,           // named CONFIRMED order-breakdown sources (subset of orderBreakdown)
   };

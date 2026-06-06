@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.954",
+    date: "2026-06-06",
+    items: [
+      { type: "feature", text: "**Squalor in the public-order breakdown.** Newly cracked a per-settlement stat the engine was thought not to store: when a save is loaded, the region panel's order breakdown now includes a **Squalor** line (a penalty that grows with city size). Like the health and religion fields, it's a one-turn deferred value, so it reads 0 on Turn 1 and fills in from Turn 2." },
+      { type: "feature", text: "**General move orders — see who's on the march.** Cracked the per-character move-order field. In the region panel's Characters list, a general with a pending destination now shows a **➜ arrow** (bright amber = your own active move this turn, dim = an AI strategic march); hover for the destination tile. Field generals only — governors and family-in-residence don't carry an order." },
+      { type: "fix", text: "**Reliable campaign date/season on every save.** The year/season reader keyed on a byte that only matched ~80% of save layouts, so some saves showed no date. Re-cracked and validated against the whole save corpus (every turn from 1 to 78 now resolves exactly) — the calendar is now correct on all saves." },
+    ],
+  },
+  {
     version: "0.9.953",
     date: "2026-06-06",
     items: [

@@ -1721,6 +1721,13 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       // only (no per-type max), so the renderer shows MP remaining, flagging
       // "out of moves" when below the ~7.4 cost of one tile. (live-save only)
       mpRemaining: typeof c.mpRemaining === "number" ? c.mpRemaining : null,
+      // Pending MOVE ORDER destination tile (CHARACTER_ACTION_DETAILS, cracked
+      // 2026-06-06). Live only when the dest is a valid on-map tile != current
+      // (idle chars carry stale junk). moveActive = the player's own active
+      // short move (flag 0x100); 0x300/0x400 = AI strategic march. (live-save only)
+      moveDestX: typeof c.moveDestX === "number" ? c.moveDestX : null,
+      moveDestY: typeof c.moveDestY === "number" ? c.moveDestY : null,
+      moveActive: !!c.moveActive,
     });
   }
   // Augment with v2 characters that the v1 parser missed. The UI's

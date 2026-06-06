@@ -82,6 +82,14 @@ function findCharacterRecords(buf, nameLookup, traitNames, surnamesFilter) {
   }
   if (uuidSet.size > 0) {
     const posIdx = buildPositionIndex(buf, uuidSet);
+    const actionIdx = buildActionIndex(buf, uuidSet);
+    // Observed map bounds (max tile seen across all character positions) — used
+    // to gate move-order destinations as on-map. Generous 1.1× headroom so a
+    // dest just past the eastmost/southmost character still counts.
+    let maxX = 0, maxY = 0;
+    for (const p of posIdx.values()) { if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y; }
+    const BX = maxX > 0 ? Math.round(maxX * 1.1) : 2047;
+    const BY = maxY > 0 ? Math.round(maxY * 1.1) : 2047;
     for (const c of records) {
       const p = posIdx.get(c.secondaryUuid);
       if (p) {
@@ -100,6 +108,24 @@ function findCharacterRecords(buf, nameLookup, traitNames, surnamesFilter) {
         c.tileY = null;
         c.mpRemaining = null;
         c.maxMP = null;
+      }
+      // Pending move order (CHARACTER_ACTION_DETAILS). Live only when the dest
+      // is a valid on-map tile differing from the current tile (idle chars carry
+      // stale junk in the dest fields).
+      const a = actionIdx.get(c.secondaryUuid);
+      if (a && a.destX >= 1 && a.destX <= BX && a.destY >= 1 && a.destY <= BY &&
+          (c.tileX == null || a.destX !== c.tileX || a.destY !== c.tileY)) {
+        c.moveDestX = a.destX;
+        c.moveDestY = a.destY;
+        c.moveFlag = a.flag;
+        // 0x100 = the player's own active short move (most reliable "on the
+        // march now"); 0x300/0x400 = AI strategic march / scripted rally.
+        c.moveActive = a.flag === 0x100;
+      } else {
+        c.moveDestX = null;
+        c.moveDestY = null;
+        c.moveFlag = null;
+        c.moveActive = false;
       }
     }
   }
@@ -566,6 +592,33 @@ function buildPositionIndex(buf, uuidSet) {
     const mp = buf.readFloatLE(i + 58);
     if (!isFinite(mp) || mp < 0 || mp > 1000) continue;
     if (!idx.has(u)) idx.set(u, { offset: i, x, y, mpRemaining: mp });
+  }
+  return idx;
+}
+
+// CHARACTER_ACTION_DETAILS — per-character pending MOVE ORDER (destination tile).
+// One record per character, keyed by secondaryUuid (the same key as the coord
+// record). Cracked 2026-06-06 (findings-char-action-details-2026-06-06.md):
+//   detector: [u32 sec][u32][1e 00 00 00]   (the 0x1e struct/version tag at +8)
+//   +48 u32 destX·256  (destX = >>8)   +56 u32 destY·256 (destY = >>8)
+//   +60 u32 order-state flag: 0x100 = active short move (player, moving now),
+//       0x300 = AI strategic march, 0x200/0x400 = scripted/other.
+// The destination fields hold stale/garbage on idle characters, so a move order
+// is only "live" when the decoded dest is a VALID ON-MAP tile (within ~1.1× the
+// observed map bounds) AND differs from the character's current tile. This is a
+// PARTIAL crack: there is no action-TYPE enum (the corpus is move-only), so we
+// surface a movement DESTINATION only, never an action label.
+function buildActionIndex(buf, uuidSet) {
+  const idx = new Map();
+  for (let i = 100; i + 64 < buf.length; i++) {
+    const sec = buf.readUInt32LE(i);
+    if (!uuidSet.has(sec)) continue;
+    if (buf.readUInt32LE(i + 8) !== 0x1e) continue;
+    if (idx.has(sec)) continue;
+    const destX = buf.readUInt32LE(i + 48) >>> 8;
+    const destY = buf.readUInt32LE(i + 56) >>> 8;
+    const flag = buf.readUInt32LE(i + 60);
+    idx.set(sec, { destX, destY, flag });
   }
   return idx;
 }
