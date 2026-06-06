@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.955",
+    date: "2026-06-06",
+    items: [
+      { type: "feature", text: "**The 7 Wonders of the World on the map.** Cracked the landmark records: when a save is loaded, a region that holds one of the Seven Wonders (Pyramids, Pharos, Colossus, Temple of Artemis, Statue of Zeus, Hanging Gardens, Mausoleum) now shows a **🏛 Wonder** banner in its panel. The wonder's bonus goes to whoever owns that settlement — shown right alongside the region's owner." },
+      { type: "feature", text: "**Assassin / spy counts per faction.** Cracked agent detection from the save (the agent-training trait, split by skill). The Diplomacy & Treasury widget now shows the owning faction's active **agents** (e.g. \"3 assassins · 12 spies\"). Note: the save doesn't store an agent's target, so only counts are shown — never a claimed victim." },
+    ],
+  },
+  {
     version: "0.9.954",
     date: "2026-06-06",
     items: [

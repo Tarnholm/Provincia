@@ -2622,6 +2622,9 @@ function App() {
   // 2026-05-31: per-settlement runtime fields incl. the CONFIRMED public-order
   // breakdown slots (src/settlementFieldsParser.js). { city: { order, orderBreakdown, ... } }.
   const [saveSettlementFields, setSaveSettlementFields] = useState(null);
+  // The 7 Wonders from the live save (LANDMARK_MANAGER, cracked 2026-06-06):
+  // [{ token, name, x, y }] at fixed world tiles; resolved to region/owner below.
+  const [saveLandmarks, setSaveLandmarks] = useState(null);
   // Map the save's dominant-religion id (settlementFields.dominantReligionId,
   // cracked 2026-06-06) → a religion NAME, by correlating ids with each
   // settlement's static rel_* tag religion (majority vote). Per-save; lets
@@ -2645,6 +2648,72 @@ function App() {
     for (const [id, counts] of Object.entries(tally)) map[id] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
     return Object.keys(map).length ? map : null;
   }, [saveSettlementFields, regions]);
+  // The 7 Wonders (saveLandmarks) resolved to the SETTLEMENT (city) whose region
+  // contains each one — keyed by city so RegionInfo can show "this region holds
+  // <Wonder>". Reuses the same world-coord tile→region lookup armiesToRender uses
+  // (cityPixels in WORLD/bottom-up space + a direct region-pixel sample + a small
+  // neighbourhood scan). The wonder's owner is implicit: it's the owner of the
+  // region the panel is already showing.
+  const wonderByCity = useMemo(() => {
+    if (!saveLandmarks || saveLandmarks.length === 0 || !cityPixels || cityPixels.length === 0 || !regions) return null;
+    const H = imgSize.height, W = imgSize.width;
+    if (!H || !W) return null;
+    const pxData = pixelDataRef.current;
+    const cityByXy = new Map(); // WORLD coords (bottom-up) → rgbKey, matching tileToRegion
+    for (const cp of cityPixels) cityByXy.set(`${cp.x},${(H - 1) - cp.y}`, cp.rgbKey);
+    const sampleAt = (x, y) => {
+      if (!pxData || x < 0 || y < 0 || x >= W || y >= H) return null;
+      const tgaY = (H - 1) - y, idx = (tgaY * W + x) * 4;
+      const r = pxData[idx], g = pxData[idx + 1], b = pxData[idx + 2];
+      if (r === 0 && g === 0 && b === 0) return null; // city pixel → cityByXy path
+      return regions[`${r},${g},${b}`] || null;
+    };
+    const resolve = (x, y) => {
+      const c = cityByXy.get(`${x},${y}`);
+      if (c) return regions[c] || null;
+      for (const dy of [-1, 0, 1]) for (const dx of [-1, 0, 1]) {
+        if (!dx && !dy) continue;
+        const nc = cityByXy.get(`${x + dx},${y + dy}`);
+        if (nc) return regions[nc] || null;
+      }
+      const d = sampleAt(x, y);
+      if (d) return d;
+      // widen a few tiles — a wonder can sit just off a region-pixel boundary
+      for (let r = 2; r <= 10; r++) for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r], [r, r], [-r, -r], [r, -r], [-r, r]]) {
+        const nb = sampleAt(x + dx, y + dy);
+        if (nb) return nb;
+      }
+      return null;
+    };
+    const out = {};
+    for (const w of saveLandmarks) {
+      const entry = resolve(w.x, w.y);
+      const city = entry && entry.city;
+      if (city) (out[city] = out[city] || []).push(w);
+    }
+    return Object.keys(out).length ? out : null;
+  }, [saveLandmarks, cityPixels, regions, imgSize, liveCharPositionsVersion]);
+  // Per-faction assassin/spy census from the live save. Agents carry the
+  // `AgentTraining` trait (the agent-defining marker, cracked 2026-06-06,
+  // findings-assassination-2026-06-06.md); the skill trait splits assassin vs
+  // spy. Requiring AgentTraining avoids counting governors a mod sprinkled with
+  // a lone NaturalAssassinSkill. { faction: { assassins, spies } }.
+  const agentCensusByFaction = useMemo(() => {
+    if (!saveCharactersByRegion) return null;
+    const out = {};
+    for (const arr of Object.values(saveCharactersByRegion)) {
+      if (!Array.isArray(arr)) continue;
+      for (const c of arr) {
+        if (!c || !c.faction || !Array.isArray(c.traits)) continue;
+        const names = new Set(c.traits.map((t) => t.name));
+        if (!names.has("AgentTraining")) continue;
+        const slot = out[c.faction] || (out[c.faction] = { assassins: 0, spies: 0 });
+        if (names.has("NaturalAssassinSkill") || names.has("GoodAssassin")) slot.assassins++;
+        else if (names.has("NaturalSpySkill") || names.has("GoodSpy")) slot.spies++;
+      }
+    }
+    return Object.keys(out).length ? out : null;
+  }, [saveCharactersByRegion]);
   // 2026-05-31: on-demand trade network (computeTradeNetwork via crack-trade-network IPC),
   // computed once per save-file change. { settlements: { name: { faction, landPartners, seaPartners, ... } }, ... }.
   const [tradeNetwork, setTradeNetwork] = useState(null);
@@ -5615,6 +5684,7 @@ function App() {
       if (data && data.incomeByCity) setSaveIncomeByCity(data.incomeByCity);
       if (data && data.sizeByCity) setSaveSizeByCity(data.sizeByCity);
       if (data && data.settlementFields) setSaveSettlementFields(data.settlementFields);
+      if (data && Array.isArray(data.landmarks)) setSaveLandmarks(data.landmarks);
       if (data && data.treasuryByFaction) setSaveTreasuryRecords(data.treasuryByFaction);
       if (data && data.saveHeader) setSaveHeader(data.saveHeader);
       if (data && data.factionDiscovered) setFactionDiscovered(data.factionDiscovered);
@@ -5738,6 +5808,7 @@ function App() {
         if (d.incomeByCity) setSaveIncomeByCity(d.incomeByCity);
         if (d.sizeByCity) setSaveSizeByCity(d.sizeByCity);
         if (d.settlementFields) setSaveSettlementFields(d.settlementFields);
+        if (Array.isArray(d.landmarks)) setSaveLandmarks(d.landmarks);
         // Merge save-derived siege turns on the INITIAL load too (the
         // snapshot handler did this, but the first live load skipped it).
         try {
@@ -5884,6 +5955,7 @@ function App() {
       setSaveCharactersByRegion(null);
       setSaveUnitsByRegion(null);
       setSaveSettlementFields(null);
+      setSaveLandmarks(null);
       setTradeNetwork(null);
       setBuiltBuildingsByCity(null);
       setQueuedBuildingsByCity(null);
@@ -19875,6 +19947,19 @@ function App() {
                           || null;
                       })()}
                       factionTreasuries={factionTreasuries}
+                      agentCensus={(() => {
+                        // Owning faction's live assassin/spy count (AgentTraining
+                        // trait census, cracked 2026-06-06). Shown next to the
+                        // faction's treasury in the Diplomacy & Treasury widget.
+                        try {
+                          if (!agentCensusByFaction) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          const owner = (currentOwnerByCity && currentOwnerByCity[r.city])
+                            || (initialOwnerByCity && initialOwnerByCity[r.city]) || null;
+                          return owner ? (agentCensusByFaction[owner] || null) : null;
+                        } catch { return null; }
+                      })()}
                       factionRecordOwners={factionRecordOwners}
                       factionDiplomacy={factionDiplomacy}
                       allFactionDiplomacy={allFactionDiplomacy}
@@ -20002,6 +20087,18 @@ function App() {
                           if (!sf || sf.dominantReligionId == null) return null;
                           const name = religionIdToName[sf.dominantReligionId] || null;
                           return name ? { id: sf.dominantReligionId, name } : null;
+                        } catch { return null; }
+                      })()}
+                      liveWonders={(() => {
+                        // The 7 Wonders located in THIS settlement's region (live
+                        // save, LANDMARK_MANAGER cracked 2026-06-06). [{token,name,
+                        // x,y}] or null. The wonder's owner is the region's owner,
+                        // already shown in the panel — so this is faction-agnostic.
+                        try {
+                          if (!wonderByCity) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          return wonderByCity[r.city] || null;
                         } catch { return null; }
                       })()}
                       siegeInfo={(() => {

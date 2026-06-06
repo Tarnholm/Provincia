@@ -528,7 +528,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, liveWonders, agentCensus, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -1900,6 +1900,19 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             </div>
           );
         })()}
+        {Array.isArray(liveWonders) && liveWonders.length > 0 && (
+          // One of the 7 Wonders of the ancient world sits in this region (live
+          // save, LANDMARK_MANAGER cracked 2026-06-06). It confers its bonus to
+          // whoever owns this settlement (the panel's current owner).
+          <div style={{ marginBottom: 2, padding: "2px 6px", borderRadius: 4, background: "rgba(212,175,90,0.14)", border: "1px solid rgba(212,175,90,0.4)" }}
+            title="A Wonder of the Ancient World located in this region (decoded from the save). Its bonus goes to the faction that owns this settlement.">
+            <span style={{ color: "#e9c878" }}>🏛 </span>
+            <strong style={{ color: "#e9c878" }}>Wonder:</strong>{" "}
+            {liveWonders.map((w, i) => (
+              <span key={w.token || i} style={{ color: "#f0dca8" }}>{i > 0 ? ", " : ""}{w.name}</span>
+            ))}
+          </div>
+        )}
         {(() => {
           // Ethnicities chart sits right under Pop Level (its original spot).
           // Trimmed marginTop / removed minHeight so the Resources + Tags
@@ -2270,6 +2283,14 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   {sec("🛡 Protected by", factionState.startProtectedBy, "#a0c8e8", 0)}
                   <div style={{ marginTop: 4, color: "#9aa" }}>Everyone else: <span style={{ color: "#ddd" }}>200 (Neutral)</span></div>
                   {factionState.treasury != null && <div style={{ marginTop: 6, color: "#bbb" }}>Treasury: <span style={{ color: "#ddd" }}>{factionState.treasury}</span></div>}
+                  {agentCensus && (agentCensus.assassins > 0 || agentCensus.spies > 0) && (
+                    <div style={{ marginTop: 4, color: "#bbb" }}
+                      title="Active agents this faction fields, decoded from the save (characters bearing the agent-training trait, split by skill). The save does not store an agent's assassination target, so only counts are shown.">
+                      Agents: {agentCensus.assassins > 0 && <span style={{ color: "#e6a0a0" }}>{agentCensus.assassins} assassin{agentCensus.assassins === 1 ? "" : "s"}</span>}
+                      {agentCensus.assassins > 0 && agentCensus.spies > 0 && <span style={{ color: "#888" }}> · </span>}
+                      {agentCensus.spies > 0 && <span style={{ color: "#a0c0e0" }}>{agentCensus.spies} sp{agentCensus.spies === 1 ? "y" : "ies"}</span>}
+                    </div>
+                  )}
                   {!any && <div style={{ color: "#888" }}>No declared stances — every faction starts at 200 (Neutral).</div>}
                 </>;
               })()}

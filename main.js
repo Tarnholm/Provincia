@@ -204,6 +204,7 @@ const { resolveCurrentOwners, findSettlementGovernors } = require("./src/saveOwn
 const { findAllSettlementMarkers } = require("./src/buildingParser.js");
 const { parseSieges } = require("./src/siegeParser.js");
 const { parseSettlementFields } = require("./src/settlementFieldsParser.js");
+const { parseLandmarks } = require("./src/landmarkParser.js");
 // Live-watch surfacing of already-cracked save data (UI batch 2, 2026-05-31):
 //  - event LOG (end-of-turn scroll) → "last turn" diff (src/eventLogParser.js)
 //  - event SCHEDULE (disaster / scripted-event table) → list + map markers
@@ -9021,6 +9022,12 @@ async function reparseLatestSave() {
       const sfMarkers = findAllSettlementMarkers(saveBuf);
       newData.settlementFields = parseSettlementFields(saveBuf, sfMarkers);
     } catch (e) { console.warn("[save-watch] settlement-fields parse failed:", e.message); newData.settlementFields = {}; }
+    // The 7 Wonders (LANDMARK_MANAGER, src/landmarkParser.js, cracked 2026-06-06).
+    // Static fixed-position records; the renderer resolves each to its region/owner
+    // via tileToRegion. Cheap (one indexOf + 7 reads), parsed per snapshot.
+    try {
+      newData.landmarks = parseLandmarks(saveBuf);
+    } catch (e) { console.warn("[save-watch] landmark parse failed:", e.message); newData.landmarks = []; }
     // UI batch 2: event log + last-turn diff, disaster schedule, scouting
     // summary. `lastSaveData` here is still the PREVIOUS snapshot (it's not
     // reassigned to newData until after the send below), so its `.eventLog`
