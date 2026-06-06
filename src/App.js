@@ -21067,7 +21067,10 @@ function App() {
                 if (!scan || !scan.campaigns || !scan.campaigns.length) {
                   pushToast(`Mod folder not found / empty: ${last.folder}`, "warning", 8000);
                 } else {
-                  const camp = (CAMPAIGNS && CAMPAIGNS[mapCampaign]) || { suffix: lastSuffix, key: mapCampaign };
+                  // Use the modal's camp objects (they carry `.out` = the output
+                  // JSON filenames applyFiles writes); CAMPAIGNS[…] has no `.out`,
+                  // which made applyFiles throw "reading 'factions'".
+                  const camp = campaigns.find((c) => c.key === mapCampaign) || campaigns.find((c) => c.suffix === lastSuffix) || campaigns[1];
                   const matching = scan.campaigns.find((c) => c.name === last.campaign) || scan.campaigns[0];
                   await importCampaignFiles(matching, camp);
                   if (reloadModCharacters) reloadModCharacters();
@@ -21200,7 +21203,7 @@ function App() {
                           return;
                         }
                         // Find the matching campaign and re-trigger import on it.
-                        const camp = (CAMPAIGNS && CAMPAIGNS[mapCampaign]) || { suffix: "large", key: mapCampaign };
+                        const camp = campaigns.find((c) => c.key === mapCampaign) || campaigns[1]; // camp objects carry `.out` (output JSON names); CAMPAIGNS[…] does not
                         const matching = scan.campaigns.find(c => c.name === last.campaign) || scan.campaigns[0];
                         await importCampaignFiles(matching, camp);
                       }}

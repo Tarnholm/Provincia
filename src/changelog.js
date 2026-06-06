@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.951",
+    date: "2026-06-06",
+    items: [
+      { type: "fix", text: "Fixed “Reload failed: Cannot read properties of undefined (reading 'factions')” — the Reload-mod path (and the older Re-import-from-last-folder button) passed a campaign object missing its output-file map, so the parser threw. Both now use the correct campaign definition, so 🔄 Reload and the startup auto-reload work." },
+    ],
+  },
+  {
     version: "0.9.950",
     date: "2026-06-05",
     items: [
