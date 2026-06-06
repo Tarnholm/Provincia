@@ -131,6 +131,12 @@ function settlementFieldsAt(buf, markerOffset) {
     // when out of range. Callers should render "—" on turn-1 (squalor==0) per
     // the no-fabricated-defaults rule rather than implying zero squalor.
     squalor: (() => { const v = i32(buf, o - 1544); return (v == null || v / 65536 > 0 || v / 65536 < -1000) ? null : v / 65536; })(),
+    // TAX RATE the settlement is set to: u8 @ marker−2269. Cracked 2026-06-06 from
+    // a user controlled pair (save_Gades high vs normal taxes — a 10-byte whole-file
+    // diff; this byte flipped 2→1). Enum: 1=normal, 2=high (3=very_high, 0=low/auto
+    // — inferred; the pair confirmed normal/high). Confirmed for the player's own
+    // settlement; AI/unmanaged settlements often read 0. (findings-tax-rate-CRACKED-2026-06-06.md)
+    taxRate: (() => { const v = (o - 2269 >= 0 && o - 2269 < buf.length) ? buf[o - 2269] : null; return (v == null || v > 3) ? null : v; })(),
     orderBreakdown,  // raw f32 line-items (18 slots); see order{} for named sources
     order,           // named CONFIRMED order-breakdown sources (subset of orderBreakdown)
   };

@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.958",
+    date: "2026-06-06",
+    items: [
+      { type: "feature", text: "**📊 Economy Audit panel** (dev pill). One-glance, per-faction table read from the loaded save: each settlement's **tax level · public order % · income · growth · missing-governor flag**. Flags settlements with negative growth (red) and those with no family member stationed in the region (⚠). Focuses the selected faction (click one on the map) or the detected player faction. PO% and tax are live from any save; income is the realised value and growth fills in after you end a turn." },
+      { type: "feature", text: "**Tax rate is now read from the save** (newly cracked). The Economy Audit shows the tax level set on each settlement (low/normal/high/very-high) — so you can verify your tax pass at a glance." },
+      { type: "improvement", text: "**Faction Wealth CSV: the `net` column is renamed `projected_income`** — it’s the game’s projected next-turn income (now confirmed: it reproduces the in-game number exactly), available for every faction from a single save." },
+    ],
+  },
+  {
     version: "0.9.957",
     date: "2026-06-06",
     items: [
