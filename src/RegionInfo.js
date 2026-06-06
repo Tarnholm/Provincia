@@ -528,7 +528,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -1859,6 +1859,13 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           if (rels.length === 0) return null;
           rels.sort((a, b) => b.level - a.level);
           const total = rels.reduce((s, r) => s + r.level, 0) || 1;
+          // Live populace religion from the save (settlementMarker−886). This is
+          // the DYNAMIC creed of the people — it converts toward the owner faction
+          // over turns, independent of the temple/rel_ tags above. When it differs
+          // from the static dominant religion, the settlement is mid-conversion.
+          const liveName = liveReligion && liveReligion.name ? String(liveReligion.name).toLowerCase() : null;
+          const staticDominant = rels[0] ? String(rels[0].name).toLowerCase() : null;
+          const converting = liveName && staticDominant && liveName !== staticDominant;
           return (
             <div style={{ marginBottom: 2 }}>
               <strong>Religion:</strong>{" "}
@@ -1872,6 +1879,20 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   </span>
                 );
               })}
+              {liveName && (
+                <span title="Live populace religion from the save — converts toward the owner faction over turns (independent of temples)">
+                  {" · "}
+                  <span style={{ color: "#9fd3ff", fontSize: "0.72rem" }}>Populace:</span>{" "}
+                  <span style={{ textTransform: "capitalize", color: converting ? "#ffd27f" : "#9fd3ff", fontSize: "0.72rem" }}>
+                    {liveName.replace(/_/g, " ")}
+                  </span>
+                  {converting && (
+                    <span style={{ color: "#ffd27f", fontSize: "0.68rem" }} title="Populace creed differs from the regional dominant religion — actively converting">
+                      {" "}(converting)
+                    </span>
+                  )}
+                </span>
+              )}
             </div>
           );
         })()}

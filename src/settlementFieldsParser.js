@@ -113,6 +113,13 @@ function settlementFieldsAt(buf, markerOffset) {
     publicOrder: f32(buf, o - 30),
     prevPublicOrder: f32(buf, o - 1190),
     governorUuid: (gov === 0 || gov === -1 || gov === (0xffffffff | 0)) ? 0 : (gov >>> 0),
+    // marker-886 u8 (stored as u32, upper 3 bytes 0): the settlement's DOMINANT
+    // POPULACE RELIGION id — a small enum (0..~52). DYNAMIC: converts toward the
+    // owner faction's religion over turns (independent of the temple building);
+    // it's the value the s12 religious-unrest penalty is computed against.
+    // (Cracked 2026-06-06, findings-novel-cracks-2026-06-06.md.) The id→name map
+    // is per-campaign — derive it by correlating ids with temple religions.
+    dominantReligionId: (() => { const v = u32(buf, o - 886); return (v == null || v > 255) ? null : (v & 0xff); })(),
     orderBreakdown,  // raw f32 line-items (18 slots); see order{} for named sources
     order,           // named CONFIRMED order-breakdown sources (subset of orderBreakdown)
   };

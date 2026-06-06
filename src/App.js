@@ -2622,6 +2622,29 @@ function App() {
   // 2026-05-31: per-settlement runtime fields incl. the CONFIRMED public-order
   // breakdown slots (src/settlementFieldsParser.js). { city: { order, orderBreakdown, ... } }.
   const [saveSettlementFields, setSaveSettlementFields] = useState(null);
+  // Map the save's dominant-religion id (settlementFields.dominantReligionId,
+  // cracked 2026-06-06) → a religion NAME, by correlating ids with each
+  // settlement's static rel_* tag religion (majority vote). Per-save; lets
+  // RegionInfo name the LIVE populace religion + flag conversion-toward-ruler.
+  const religionIdToName = useMemo(() => {
+    if (!saveSettlementFields || !regions) return null;
+    const cityRel = {};
+    for (const r of Object.values(regions)) {
+      if (!r || !r.city || !r.tags) continue;
+      let best = null, lvl = -1;
+      for (const m of String(r.tags).matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) { const L = +m[2]; if (L > lvl) { lvl = L; best = m[1]; } }
+      if (best) cityRel[r.city] = best;
+    }
+    const tally = {};
+    for (const [city, f] of Object.entries(saveSettlementFields)) {
+      const id = f && f.dominantReligionId, rel = cityRel[city];
+      if (id == null || !rel) continue;
+      (tally[id] = tally[id] || {})[rel] = ((tally[id] || {})[rel] || 0) + 1;
+    }
+    const map = {};
+    for (const [id, counts] of Object.entries(tally)) map[id] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    return Object.keys(map).length ? map : null;
+  }, [saveSettlementFields, regions]);
   // 2026-05-31: on-demand trade network (computeTradeNetwork via crack-trade-network IPC),
   // computed once per save-file change. { settlements: { name: { faction, landPartners, seaPartners, ... } }, ... }.
   const [tradeNetwork, setTradeNetwork] = useState(null);
@@ -19964,6 +19987,21 @@ function App() {
                             if (owner && owner !== playerFaction) return null;
                           }
                           return sf;
+                        } catch { return null; }
+                      })()}
+                      liveReligion={(() => {
+                        // LIVE populace religion from the save (dominantReligionId
+                        // @marker-886, cracked 2026-06-06) — faction-agnostic, so
+                        // NOT player-gated like orderFields. {id, name} (name via
+                        // the temple/tag correlation map; null name → show nothing).
+                        try {
+                          if (!saveSettlementFields || !religionIdToName) return null;
+                          const r = lockedRegionInfo || regionInfo;
+                          if (!r || !r.city) return null;
+                          const sf = saveSettlementFields[r.city];
+                          if (!sf || sf.dominantReligionId == null) return null;
+                          const name = religionIdToName[sf.dominantReligionId] || null;
+                          return name ? { id: sf.dominantReligionId, name } : null;
                         } catch { return null; }
                       })()}
                       siegeInfo={(() => {

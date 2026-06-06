@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.952",
+    date: "2026-06-06",
+    items: [
+      { type: "feature", text: "**Live populace religion in the region panel.** Cracked a new save field: each settlement stores its people's *dominant creed* (separate from the temple/rel_ tags). When a save is loaded, the Religion row now shows **· Populace: <creed>** — and flags **(converting)** when the populace religion differs from the region's static dominant religion (i.e. the settlement is actively converting toward its owner faction). The temple chart shows what's built; this shows what the people actually believe." },
+    ],
+  },
+  {
     version: "0.9.951",
     date: "2026-06-06",
     items: [
