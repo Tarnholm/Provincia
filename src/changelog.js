@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.956",
+    date: "2026-06-06",
+    items: [
+      { type: "fix", text: "**Hotfix: app would not launch after 0.9.955.** The new wonders parser file was left out of the package's file list, so the app crashed on startup trying to load it. Added it to the build manifest — the app launches again, with the 🏛 Wonders and agent-census features from 0.9.955 working." },
+    ],
+  },
+  {
     version: "0.9.955",
     date: "2026-06-06",
     items: [
