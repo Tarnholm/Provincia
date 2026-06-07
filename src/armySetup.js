@@ -149,12 +149,25 @@ function analyzeFaction(modDataDir, faction, saveBuf, floor) {
   if (!f) return { error: `faction '${faction}' not found in descr_strat` };
   const unitStats = parseUnitStatsLocal(modDataDir, cache);
 
+  // Upgrade capability: RIS weapon/armour upgrades come ONLY from the smith chain.
+  // No smith in any of the faction's settlements ⇒ NO legitimate weapon/armour
+  // upgrades, so any unit with weapon_lvl>0 / armour>0 is an illegal starting
+  // upgrade the faction can't reproduce. (Weapons also need iron/coal, armour
+  // flax/livestock/copper — but no-smith already rules both out.)
+  const hasSmith = f.settlements.some(s => (s.buildings || []).some(b => /smith|blacksmith/.test(b)));
+  const canWeapon = hasSmith, canArmour = hasSmith;
+
   // Per-character army + balance; per-settlement recruit pool.
   let armyUpkeep = 0;
   const characters = f.characters.map((c) => {
     const bal = balanceOf(c.army, unitStats);
     armyUpkeep += bal.upkeep;
-    return { name: c.name, role: c.role, age: c.age, x: c.x, y: c.y, army: c.army.map(u => ({ ...u, upkeep: (unitStats[u.unit.toLowerCase()] || {}).upkeep ?? null })), upkeep: bal.upkeep, balance: bal.tally, flags: bal.flags };
+    const illegalUpgrades = c.army
+      .filter(u => (u.weapon_lvl > 0 && !canWeapon) || (u.armour > 0 && !canArmour))
+      .map(u => ({ unit: u.unit, weapon_lvl: u.weapon_lvl, armour: u.armour }));
+    const flags = [...bal.flags];
+    if (illegalUpgrades.length) flags.push(`${illegalUpgrades.length} unit(s) with weapon/armour upgrades the town can't make (no smith)`);
+    return { name: c.name, role: c.role, age: c.age, x: c.x, y: c.y, army: c.army.map(u => ({ ...u, upkeep: (unitStats[u.unit.toLowerCase()] || {}).upkeep ?? null })), upkeep: bal.upkeep, balance: bal.tally, flags, illegalUpgrades };
   });
   const settlements = f.settlements.map((s) => ({
     region: s.region, level: s.level,
@@ -170,12 +183,46 @@ function analyzeFaction(modDataDir, faction, saveBuf, floor) {
   return {
     faction, denari: f.denari, armyUpkeep,
     characters, settlements, floor: FLOOR,
-    taxBrackets: TAX_BRACKETS,
+    taxBrackets: TAX_BRACKETS, hasSmith, canWeapon, canArmour,
     summary: {
       settlements: settlements.length, totalArmyUnits: characters.reduce((s, c) => s + c.army.length, 0),
       flags: [...new Set(characters.flatMap(c => c.flags))],
+      illegalUpgradeUnits: characters.reduce((s, c) => s + c.illegalUpgrades.length, 0),
     },
   };
+}
+
+// Zero out illegitimate weapon/armour upgrades on one character's army (CRLF-safe).
+// opts.weapon / opts.armour control which to zero (default both). Returns { ok, text, fixed }.
+function applyUpgradeFix(text, faction, characterName, opts) {
+  const doW = !opts || opts.weapon !== false;
+  const doA = !opts || opts.armour !== false;
+  if (!text) return { ok: false, error: "no descr_strat text" };
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(/\r?\n/);
+  const fac = String(faction).toLowerCase();
+  const cname = String(characterName).trim().toLowerCase();
+  let fs0 = -1;
+  for (let i = 0; i < lines.length; i++) { const m = lines[i].match(/^faction\s+([a-z_0-9]+)\s*,/i); if (m && m[1].toLowerCase() === fac) { fs0 = i; break; } }
+  if (fs0 < 0) return { ok: false, error: `faction '${faction}' not found` };
+  let fe = lines.length;
+  for (let i = fs0 + 1; i < lines.length; i++) { if (/^faction\s+[a-z_0-9]+\s*,/i.test(lines[i])) { fe = i; break; } }
+  let ci = -1;
+  for (let i = fs0; i < fe; i++) { if (/^character,/.test(lines[i]) && (lines[i].split(",")[1] || "").trim().toLowerCase() === cname) { ci = i; break; } }
+  if (ci < 0) return { ok: false, error: `character '${characterName}' not found` };
+  let inArmy = false, fixed = 0;
+  for (let i = ci + 1; i < fe; i++) {
+    const ln = lines[i];
+    if (/^character,|^character_record\b/.test(ln)) break;
+    if (/^army\b/.test(ln)) { inArmy = true; continue; }
+    if (!inArmy) continue;
+    if (!/^\s*unit\s+/.test(ln)) continue;
+    let nl = ln;
+    if (doW) nl = nl.replace(/(weapon_lvl\s+)\d+/, "$10");
+    if (doA) nl = nl.replace(/(armour\s+)\d+/, "$10");
+    if (nl !== ln) { lines[i] = nl; fixed++; }
+  }
+  return { ok: true, text: lines.join(eol), fixed };
 }
 
 // Swap ONE unit in a character's army in descr_strat text. Surgical + CRLF-safe:
@@ -245,7 +292,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
-  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap,
+  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,
 };

@@ -6356,6 +6356,23 @@ ipcMain.handle("apply-army-swap", async (_event, modDataDir, faction, character,
   }
 });
 
+// IPC: zero illegitimate weapon/armour upgrades on a character's army (CRLF-safe, backup).
+ipcMain.handle("apply-upgrade-fix", async (_event, modDataDir, faction, character, opts) => {
+  try {
+    if (!modDataDir || !faction || !character) return { error: "missing args" };
+    const as = require("./src/armySetup.js");
+    const p = as.findDescrStrat(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
+    const text = fs.readFileSync(p, "latin1");
+    const r = as.applyUpgradeFix(text, faction, character, opts);
+    if (!r.ok) return { error: r.error };
+    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[upgrade-fix] backup failed: ${e && e.message}`); }
+    fs.writeFileSync(p, r.text, "latin1");
+    _writeLog(`[upgrade-fix] ${faction}/${character}: zeroed ${r.fixed} unit upgrade line(s)`);
+    return { ok: true, fixed: r.fixed };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: army-setup analysis for one faction (2026-06-07) — descr_strat army +
 // upkeep + balance, recruitable pool (full RIS gating), retraining availability.
 // Budget (virtual tax) is computed in the renderer from saveEconomy. Returns the

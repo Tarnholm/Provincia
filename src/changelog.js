@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.964",
+    date: "2026-06-07",
+    items: [
+      { type: "fix", text: "**Army Setup budget now uses the projected income you enter.** The auto-estimate mis-attributed factions on some turn-1 saves (it could read a totally different faction's economy), so it wrongly green-lit a swap that actually put Gades at −536, past the −500 floor. Now there's a **projected-income field** — type the number the game shows for the faction at its current tax; the headroom and the swap suggestions are checked against that, and any swap that would breach the floor is flagged amber with an extra confirm. (The auto-estimate is still shown, clearly labelled as a rough, verify-in-game value.)" },
+      { type: "feature", text: "**Flags illegitimate weapon/armour upgrades + one-click fix.** Army Setup now detects units carrying weapon/armour upgrades the town can't actually produce (e.g. a faction with no smith) and shows a **Fix bad upgrades** button per general that zeroes those weapon/armour levels in descr_strat (CRLF-safe, backup saved). Unit lines show their upgrade in red when it's not reproducible." },
+    ],
+  },
+  {
     version: "0.9.963",
     date: "2026-06-07",
     items: [

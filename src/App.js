@@ -9553,6 +9553,10 @@ function App() {
   const [armySetupEconomy, setArmySetupEconomy] = useState(null);
   // Current campaign's faction roster (descr_strat faction lines) for the picker.
   const [armySetupFactions, setArmySetupFactions] = useState(null);
+  // User-entered projected income (the number the game shows at the current tax).
+  // The auto financial-overview attribution is unreliable at turn 1, so this is
+  // the source of truth for the budget headroom (matches the user's workflow).
+  const [armyProjIncome, setArmyProjIncome] = useState("");
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -22412,6 +22416,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x));
         const fetchFor = async (ff) => {
           if (!ff || !modDataDir) return;
+          setArmyProjIncome(""); // clear the entered budget when switching faction
           setArmySetupBusy(true); setArmySetupData(null);
           try { const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor); setArmySetupData(r || { error: "no result" }); }
           catch (e) { setArmySetupData({ error: e?.message || String(e) }); }
@@ -22501,41 +22506,68 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(207,143,106,0.10)", border: "1px solid rgba(207,143,106,0.35)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <strong style={{ color: "#e7b88f" }}>Budget</strong>
-                      <span style={{ fontSize: "0.78rem", color: "#bbb" }}>floor (max deficit):</span>
+                      <span style={{ fontSize: "0.78rem", color: "#bbb" }}>projected income (from game):</span>
+                      <input type="number" value={armyProjIncome} step={50} placeholder={budget ? String(budget.byBracket.high) : "e.g. -437"}
+                        onChange={(ev) => setArmyProjIncome(ev.target.value)}
+                        title="Enter the projected income the game shows for this faction at its current tax. The auto-estimate is unreliable on some saves, so this is what the budget uses."
+                        style={{ width: 90, background: "rgba(0,0,0,0.4)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px" }} />
+                      <span style={{ fontSize: "0.78rem", color: "#bbb" }}>floor:</span>
                       <input type="number" value={armyBudgetFloor} step={50}
                         onChange={(ev) => { const v = parseInt(ev.target.value, 10); if (Number.isFinite(v)) setArmyBudgetFloor(v); }}
                         style={{ width: 80, background: "rgba(0,0,0,0.4)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px" }} />
                       <span style={{ fontSize: "0.72rem", color: "#8aa" }}>treasury {d.denari ?? "—"} · army upkeep {d.armyUpkeep}</span>
                     </div>
-                    {budget ? (
-                      <div style={{ marginTop: 6, fontSize: "0.82rem" }}>
-                        <span style={{ color: "#bbb" }}>Projected net (current tax {TAX_LBL[budget.cur]}):</span>{" "}
-                        {["low", "normal", "high", "very_high"].map((b) => (
-                          <span key={b} style={{ marginRight: 10 }}>
-                            <span style={{ color: "#9aa" }}>{TAX_LBL[b]}</span>{" "}
-                            <span style={{ color: budget.byBracket[b] < armyBudgetFloor ? "#e8705f" : budget.byBracket[b] < 0 ? "#e8b85a" : "#7fd17f", fontVariantNumeric: "tabular-nums", fontWeight: b === "high" ? 700 : 400 }}>{budget.byBracket[b]}</span>
-                          </span>
-                        ))}
-                        <div style={{ marginTop: 4, color: budget.headroomHigh >= 0 ? "#7fd17f" : "#e8705f" }}>
-                          At <b>High</b> tax: headroom to floor = <b>{budget.headroomHigh}</b> upkeep {budget.headroomHigh >= 0 ? "(room to add)" : "(over budget — trim)"}
+                    {(() => {
+                      const proj = parseInt(armyProjIncome, 10);
+                      const hasProj = Number.isFinite(proj);
+                      const head = hasProj ? proj - armyBudgetFloor : null;
+                      return (
+                        <div style={{ marginTop: 6, fontSize: "0.82rem" }}>
+                          {hasProj ? (
+                            <div style={{ color: head >= 0 ? "#7fd17f" : "#e8705f" }}>
+                              Headroom to floor = <b>{head}</b> upkeep {head >= 0 ? "(room to add ~that much)" : "(over budget by " + (-head) + " — trim)"}
+                            </div>
+                          ) : (
+                            <div style={{ color: "#e8b85a" }}>Enter the game's projected income above to budget swaps (the auto-estimate is unreliable on some saves).</div>
+                          )}
+                          {budget && (
+                            <div style={{ marginTop: 3, fontSize: "0.7rem", color: "#889" }}>
+                              auto estimate (verify in game — can be wrong): net {["low","normal","high","very_high"].map(b => `${TAX_LBL[b]} ${budget.byBracket[b]}`).join(" · ")}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ) : (
-                      <div style={{ marginTop: 6, fontSize: "0.78rem", color: "#9aa", fontStyle: "italic" }}>
-                        No live economy for {facLabel} in the loaded save — load this faction's save (budget = projected income at each tax bracket). The army/pool below come from the mod and don't need a save.
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                   {/* Per-character army + balance */}
                   {d.characters.map((c, ci) => {
-                    const heavy = (d.settlements[0]?.pool || []).filter(u => (u.cls === "heavy" || u.cls === "spearmen") && u.category === "infantry").sort((a, b) => (a.upkeep || 0) - (b.upkeep || 0));
+                    const badUp = (c.illegalUpgrades && c.illegalUpgrades.length) || 0;
                     return (
                       <div key={ci} style={{ marginBottom: 8 }}>
-                        <div style={{ color: "#dcc", fontWeight: 600 }}>{c.role} {c.name} <span style={{ color: "#8aa", fontWeight: 400, fontSize: "0.74rem" }}>· {c.army.length} units · upkeep {c.upkeep} {c.flags.length ? <span style={{ color: "#e8b85a" }}>· ⚠ {c.flags.join("; ")}</span> : null}</span></div>
+                        <div style={{ color: "#dcc", fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span>{c.role} {c.name} <span style={{ color: "#8aa", fontWeight: 400, fontSize: "0.74rem" }}>· {c.army.length} units · upkeep {c.upkeep} {c.flags.length ? <span style={{ color: "#e8b85a" }}>· ⚠ {c.flags.join("; ")}</span> : null}</span></span>
+                          {badUp > 0 && (
+                            <button
+                              onClick={async () => {
+                                if (!modDataDir) { alert("No mod loaded."); return; }
+                                if (!confirm(`Remove illegitimate weapon/armour upgrades from ${c.name}'s army?\n\n${badUp} unit(s) carry upgrades this town can't make (no smith). This sets their weapon_lvl / armour to 0 in descr_strat.txt (backup saved first).`)) return;
+                                try {
+                                  const r = await window.electronAPI.applyUpgradeFix(modDataDir, d.faction, c.name, { weapon: !d.canWeapon, armour: !d.canArmour });
+                                  if (r && r.ok) { pushToast(`Fixed ${r.fixed} upgrade line(s) on ${c.name}`, "info", 6000); fetchFor(d.faction); }
+                                  else alert("Fix failed: " + (r?.error || "unknown"));
+                                } catch (e) { alert(e?.message || String(e)); }
+                              }}
+                              title="Zero the weapon/armour upgrades this faction can't produce (no smith)"
+                              style={{ background: "#8a6a3a", color: "#fff", border: "1px solid #a07a3a", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                              Fix {badUp} bad upgrade{badUp === 1 ? "" : "s"}
+                            </button>
+                          )}
+                        </div>
                         <div style={{ fontSize: "0.76rem", color: "#cbd", paddingLeft: 8 }}>
-                          {c.army.map((u, ui) => (
-                            <span key={ui}>{ui > 0 ? ", " : ""}{u.unit}{u.upkeep != null ? <span style={{ color: "#889" }}> ({u.upkeep})</span> : null}</span>
-                          ))}
+                          {c.army.map((u, ui) => {
+                            const bad = (u.weapon_lvl > 0 && !d.canWeapon) || (u.armour > 0 && !d.canArmour);
+                            return (<span key={ui}>{ui > 0 ? ", " : ""}<span style={{ color: bad ? "#e8a07a" : undefined }}>{u.unit}{(u.weapon_lvl > 0 || u.armour > 0) ? <span style={{ color: bad ? "#e87060" : "#7a9" }}> [{u.weapon_lvl > 0 ? "wpn" + u.weapon_lvl : ""}{u.weapon_lvl > 0 && u.armour > 0 ? " " : ""}{u.armour > 0 ? "arm" + u.armour : ""}]</span> : null}</span>{u.upkeep != null ? <span style={{ color: "#889" }}> ({u.upkeep})</span> : null}</span>);
+                          })}
                         </div>
                       </div>
                     );
@@ -22559,9 +22591,12 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   ))}
                   {/* Swap suggestions */}
                   {(() => {
-                    if (!budget) return null;
                     const pool = (d.settlements[0]?.pool || []);
                     const line = pool.filter(u => (u.cls === "heavy" || u.cls === "spearmen") && u.category === "infantry").sort((a, b) => (a.upkeep || 0) - (b.upkeep || 0));
+                    // budget from the ENTERED projected income (not the unreliable auto value)
+                    const proj = parseInt(armyProjIncome, 10);
+                    const hasProj = Number.isFinite(proj);
+                    const headroom = hasProj ? proj - armyBudgetFloor : null;
                     // find a skirmisher-heavy character + suggest swapping one skirmisher for a heavier line unit within headroom
                     const sugg = [];
                     for (const c of d.characters) {
@@ -22569,12 +22604,16 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       const sk = c.army.find(u => { const p = pool.find(x => x.unit.toLowerCase() === u.unit.toLowerCase()); return p && (p.cls === "missile" || p.cls === "skirmish"); });
                       if (!sk) continue;
                       const skUp = (pool.find(x => x.unit.toLowerCase() === sk.unit.toLowerCase()) || {}).upkeep || 0;
-                      // prefer a line unit NOT already in this army (diversity), else the cheapest in-budget one
+                      // prefer a line unit NOT already in this army (diversity), then one that fits the headroom
                       const have = new Set(c.army.map(u => u.unit.toLowerCase()));
-                      const fits = line.filter(u => (u.upkeep - skUp) <= budget.headroomHigh);
+                      const fits = headroom == null ? line : line.filter(u => (u.upkeep - skUp) <= headroom);
                       const cand = fits.find(u => !have.has(u.unit.toLowerCase())) || fits[0];
-                      if (cand) sugg.push({ character: c.name, oldUnit: sk.unit, newUnit: cand.unit,
-                        text: `In ${c.name}'s army: swap 1× ${sk.unit} (${skUp}) → ${cand.unit} (${cand.upkeep}, ${cand.cls}) — Δ${cand.upkeep - skUp} upkeep, still within the floor.` });
+                      if (!cand) continue;
+                      const delta = cand.upkeep - skUp;
+                      const resultNet = hasProj ? proj - delta : null;
+                      const ok = headroom == null || delta <= headroom;
+                      sugg.push({ character: c.name, oldUnit: sk.unit, newUnit: cand.unit, ok,
+                        text: `In ${c.name}'s army: swap 1× ${sk.unit} (${skUp}) → ${cand.unit} (${cand.upkeep}, ${cand.cls}) — Δ${delta >= 0 ? "+" : ""}${delta} upkeep` + (resultNet != null ? ` → net ${resultNet}${resultNet < armyBudgetFloor ? " (OVER floor!)" : ""}` : " (enter projected income to budget-check)") });
                     }
                     if (!sugg.length) return null;
                     return (
@@ -22583,19 +22622,20 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <div style={{ margin: "6px 0 0", display: "flex", flexDirection: "column", gap: 6 }}>
                           {sugg.map((s, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.8rem" }}>
-                              <span style={{ flex: 1 }}>{s.text}</span>
+                              <span style={{ flex: 1, color: s.ok ? "#dfe" : "#e8a07a" }}>{s.text}</span>
                               <button
                                 onClick={async () => {
                                   if (!modDataDir) { alert("No mod loaded."); return; }
-                                  if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}\n\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod / restart the game to see it.`)) return;
+                                  const warn = s.ok ? "" : "\n\n⚠ This swap goes OVER your budget floor — apply anyway?";
+                                  if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}${warn}\n\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod / restart the game to see it.`)) return;
                                   try {
                                     const r = await window.electronAPI.applyArmySwap(modDataDir, d.faction, s.character, s.oldUnit, s.newUnit);
                                     if (r && r.ok) { pushToast(`Applied: ${s.oldUnit} → ${s.newUnit} (line ${r.changedLine})`, "info", 6000); fetchFor(d.faction); }
                                     else alert("Swap failed: " + (r?.error || "unknown"));
                                   } catch (e) { alert(e?.message || String(e)); }
                                 }}
-                                title="Write this swap to the campaign descr_strat.txt (backup taken first)"
-                                style={{ flexShrink: 0, background: "#5a9b88", color: "#fff", border: "1px solid #5a9b88", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontSize: "0.76rem", fontWeight: 600 }}>
+                                title={s.ok ? "Write this swap to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor"}
+                                style={{ flexShrink: 0, background: s.ok ? "#5a9b88" : "#8a6a3a", color: "#fff", border: "1px solid " + (s.ok ? "#5a9b88" : "#a07a3a"), borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontSize: "0.76rem", fontWeight: 600 }}>
                                 Apply
                               </button>
                             </div>
