@@ -9543,6 +9543,17 @@ function App() {
   // Per-faction settlement economy audit overlay (tax · PO% · income · growth ·
   // governor-gap). Computed inline at render from existing save state.
   const [showSettlementAudit, setShowSettlementAudit] = useState(false);
+  // Army Setup overlay (2026-06-07): virtual-tax budget vs editable floor +
+  // current army/upkeep/balance + recruitable pool + swap suggestions.
+  const [showArmySetup, setShowArmySetup] = useState(false);
+  const [armySetupData, setArmySetupData] = useState(null); // result of getArmySetup IPC
+  const [armySetupBusy, setArmySetupBusy] = useState(false);
+  // Editable, persisted max-deficit floor (default -500) for the army budget.
+  const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
+    const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
+    return Number.isFinite(v) ? v : -500;
+  });
+  useEffect(() => { localStorage.setItem("armyBudgetFloor", String(armyBudgetFloor)); }, [armyBudgetFloor]);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
 
   // (UI batch 2 save-insights state was hoisted up near the other early useState
@@ -12579,6 +12590,21 @@ function App() {
                   minWidth: 72,
                 }}
               >📊 Audit</button>
+              <button
+                className="dev-btn"
+                onClick={async () => {
+                  const fac = selectedFaction || playerFaction;
+                  if (!fac || !modDataDir) { setShowArmySetup(true); setArmySetupData({ error: !fac ? "Select a faction on the map first." : "No mod loaded." }); return; }
+                  setShowArmySetup(true); setArmySetupBusy(true); setArmySetupData(null);
+                  try {
+                    const r = await window.electronAPI.getArmySetup(fac, modDataDir, armyBudgetFloor);
+                    setArmySetupData(r || { error: "no result" });
+                  } catch (e) { setArmySetupData({ error: e?.message || String(e) }); }
+                  finally { setArmySetupBusy(false); }
+                }}
+                title="Army Setup — virtual-tax budget vs your editable floor, current army + balance, recruitable pool, and swap suggestions for the selected (or player) faction."
+                style={{ ...btnStyle(false), background: "rgba(60,60,60,0.7)", color: "#cf8f6a", border: "1px solid #b9743f", minWidth: 72 }}
+              >⚔ Army</button>
               {/* Embedded Settlement Processor (Scripts) — opens the bundled
                   Suite window (Pipeline / Editor / Master / Compare). Electron
                   only; the IPC bridge is absent in browser builds. */}
@@ -22359,6 +22385,145 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           modDataDir={modDataDir}
         />
       )}
+      {showArmySetup && (() => {
+        // Army Setup overlay — virtual-tax budget vs editable floor, current army
+        // + balance, recruitable pool, swap suggestions. Army/pool/balance come
+        // from the getArmySetup IPC (descr_strat); budget is projected here from
+        // the loaded saveEconomy (the renderer's faction attribution).
+        const d = armySetupData;
+        const fac = d && d.faction;
+        const facLabel = (factionDisplayNames && fac && factionDisplayNames[fac]) || fac || "—";
+        const MULT = (d && d.taxBrackets) || { low: 0.80, normal: 1.00, high: 1.20, very_high: 1.50 };
+        const close = () => setShowArmySetup(false);
+        // Budget projection from saveEconomy.byFaction[faction].
+        let budget = null;
+        try {
+          const e = saveEconomy && saveEconomy.byFaction && fac ? saveEconomy.byFaction[fac] : null;
+          if (e && e.net != null && e.income && typeof e.income.taxes === "number") {
+            // current bracket = dominant taxRate over the faction's settlements
+            let cur = "normal";
+            try {
+              const counts = {};
+              const TB = { 0: "low", 1: "normal", 2: "high", 3: "very_high" };
+              for (const [city, sf] of Object.entries(saveSettlementFields || {})) {
+                const owner = (currentOwnerByCity && currentOwnerByCity[city]) || null;
+                if (owner !== fac) continue;
+                const b = TB[sf && sf.taxRate]; if (b) counts[b] = (counts[b] || 0) + 1;
+              }
+              const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+              if (top) cur = top[0];
+            } catch {}
+            const net = e.net, tax = e.income.taxes;
+            const proj = (b) => Math.round(net + tax * (MULT[b] / MULT[cur] - 1));
+            const byBracket = { low: proj("low"), normal: proj("normal"), high: proj("high"), very_high: proj("very_high") };
+            budget = { net, tax, cur, byBracket, headroomHigh: byBracket.high - armyBudgetFloor };
+          }
+        } catch {}
+        const TAX_LBL = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
+        return createPortal(
+          <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9991, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div onClick={e => e.stopPropagation()} className="popover-pop-in" style={{ background: "rgba(26,22,18,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "12px 0", width: "min(860px, 96vw)", maxHeight: "86vh", boxShadow: "0 12px 40px rgba(0,0,0,0.6)", color: "#f4f4f4", display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 16px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontWeight: 700, fontSize: "1rem", color: "#cf8f6a" }}>⚔ Army Setup — {facLabel}</span>
+                <button onClick={close} style={{ background: "none", border: "none", color: "#bbb", fontSize: "1.1rem", cursor: "pointer" }}>✕</button>
+              </div>
+              <div style={{ overflow: "auto", padding: "8px 16px" }}>
+                {armySetupBusy && <div style={{ color: "#9aa", fontStyle: "italic" }}>Analyzing…</div>}
+                {d && d.error && <div style={{ color: "#e89060" }}>{d.error}</div>}
+                {d && !d.error && (<>
+                  {/* Budget */}
+                  <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(207,143,106,0.10)", border: "1px solid rgba(207,143,106,0.35)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <strong style={{ color: "#e7b88f" }}>Budget</strong>
+                      <span style={{ fontSize: "0.78rem", color: "#bbb" }}>floor (max deficit):</span>
+                      <input type="number" value={armyBudgetFloor} step={50}
+                        onChange={(ev) => { const v = parseInt(ev.target.value, 10); if (Number.isFinite(v)) setArmyBudgetFloor(v); }}
+                        style={{ width: 80, background: "rgba(0,0,0,0.4)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px" }} />
+                      <span style={{ fontSize: "0.72rem", color: "#8aa" }}>treasury {d.denari ?? "—"} · army upkeep {d.armyUpkeep}</span>
+                    </div>
+                    {budget ? (
+                      <div style={{ marginTop: 6, fontSize: "0.82rem" }}>
+                        <span style={{ color: "#bbb" }}>Projected net (current tax {TAX_LBL[budget.cur]}):</span>{" "}
+                        {["low", "normal", "high", "very_high"].map((b) => (
+                          <span key={b} style={{ marginRight: 10 }}>
+                            <span style={{ color: "#9aa" }}>{TAX_LBL[b]}</span>{" "}
+                            <span style={{ color: budget.byBracket[b] < armyBudgetFloor ? "#e8705f" : budget.byBracket[b] < 0 ? "#e8b85a" : "#7fd17f", fontVariantNumeric: "tabular-nums", fontWeight: b === "high" ? 700 : 400 }}>{budget.byBracket[b]}</span>
+                          </span>
+                        ))}
+                        <div style={{ marginTop: 4, color: budget.headroomHigh >= 0 ? "#7fd17f" : "#e8705f" }}>
+                          At <b>High</b> tax: headroom to floor = <b>{budget.headroomHigh}</b> upkeep {budget.headroomHigh >= 0 ? "(room to add)" : "(over budget — trim)"}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 6, fontSize: "0.78rem", color: "#9aa", fontStyle: "italic" }}>
+                        No live economy for {facLabel} in the loaded save — load this faction's save (budget = projected income at each tax bracket). The army/pool below come from the mod and don't need a save.
+                      </div>
+                    )}
+                  </div>
+                  {/* Per-character army + balance */}
+                  {d.characters.map((c, ci) => {
+                    const heavy = (d.settlements[0]?.pool || []).filter(u => (u.cls === "heavy" || u.cls === "spearmen") && u.category === "infantry").sort((a, b) => (a.upkeep || 0) - (b.upkeep || 0));
+                    return (
+                      <div key={ci} style={{ marginBottom: 8 }}>
+                        <div style={{ color: "#dcc", fontWeight: 600 }}>{c.role} {c.name} <span style={{ color: "#8aa", fontWeight: 400, fontSize: "0.74rem" }}>· {c.army.length} units · upkeep {c.upkeep} {c.flags.length ? <span style={{ color: "#e8b85a" }}>· ⚠ {c.flags.join("; ")}</span> : null}</span></div>
+                        <div style={{ fontSize: "0.76rem", color: "#cbd", paddingLeft: 8 }}>
+                          {c.army.map((u, ui) => (
+                            <span key={ui}>{ui > 0 ? ", " : ""}{u.unit}{u.upkeep != null ? <span style={{ color: "#889" }}> ({u.upkeep})</span> : null}</span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Recruitable pool */}
+                  {d.settlements.map((s, si) => (
+                    <div key={si} style={{ marginTop: 8 }}>
+                      <div style={{ color: "#9cc", fontWeight: 600, fontSize: "0.82rem" }}>Recruitable at {s.region} <span style={{ color: "#889", fontWeight: 400 }}>({s.pool.length} units{s.hasSmith ? " · has smith" : " · no smith → no weapon/armour retrain"})</span></div>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 2 }}>
+                        <tbody>
+                          {s.pool.filter(u => !/general/.test(u.unit)).map((u, ui) => (
+                            <tr key={ui} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                              <td style={{ padding: "1px 6px", color: "#dde" }}>{u.unit}</td>
+                              <td style={{ color: "#9aa", width: 110 }}>{u.category}/{u.cls}</td>
+                              <td style={{ color: "#cbb", width: 70, textAlign: "right" }}>{u.upkeep}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                  {/* Swap suggestions */}
+                  {(() => {
+                    if (!budget) return null;
+                    const pool = (d.settlements[0]?.pool || []);
+                    const line = pool.filter(u => (u.cls === "heavy" || u.cls === "spearmen") && u.category === "infantry").sort((a, b) => (a.upkeep || 0) - (b.upkeep || 0));
+                    // find a skirmisher-heavy character + suggest swapping one skirmisher for a heavier line unit within headroom
+                    const sugg = [];
+                    for (const c of d.characters) {
+                      if (!c.flags.some(f => /skirmisher-heavy|no heavy/.test(f))) continue;
+                      const sk = c.army.find(u => { const p = pool.find(x => x.unit.toLowerCase() === u.unit.toLowerCase()); return p && (p.cls === "missile" || p.cls === "skirmish"); });
+                      if (!sk) continue;
+                      const skUp = (pool.find(x => x.unit.toLowerCase() === sk.unit.toLowerCase()) || {}).upkeep || 0;
+                      const cand = line.find(u => (u.upkeep - skUp) <= budget.headroomHigh);
+                      if (cand) sugg.push(`In ${c.name}'s army: swap 1× ${sk.unit} (${skUp}) → ${cand.unit} (${cand.upkeep}, ${cand.cls}) — Δ${cand.upkeep - skUp} upkeep, still within the floor.`);
+                    }
+                    if (!sugg.length) return null;
+                    return (
+                      <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(120,170,90,0.10)", border: "1px solid rgba(120,170,90,0.35)" }}>
+                        <strong style={{ color: "#a7d77f" }}>Swap suggestions</strong>
+                        <ul style={{ margin: "4px 0 0", paddingLeft: 18, fontSize: "0.8rem" }}>
+                          {sugg.map((s, i) => <li key={i} style={{ marginBottom: 2 }}>{s}</li>)}
+                        </ul>
+                        <div style={{ marginTop: 4, fontSize: "0.7rem", color: "#8aa" }}>Apply swaps via the Scripts/descr_strat editor (auto-apply coming next).</div>
+                      </div>
+                    );
+                  })()}
+                </>)}
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
       {showSettlementAudit && (() => {
         // Economy Audit — per-settlement tax · PO% · income · growth · governor-gap
         // for the focused faction (selectedFaction, else detected playerFaction),

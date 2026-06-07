@@ -90,6 +90,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // estimatedNextTurn } }, playerFaction, turn } or { error }. The REAL stored in-game
   // numbers. Computed on demand per save-file change (cracks the save).
   getSaveEconomy: (savePath, modDataDir) => ipcRenderer.invoke("get-save-economy", savePath, modDataDir),
+  // Army-setup analysis for one faction: descr_strat army + upkeep + balance,
+  // recruitable pool (full RIS gating), retraining. { faction, denari, armyUpkeep,
+  // characters, settlements, summary } or { error }.
+  getArmySetup: (faction, modDataDir, floor) => ipcRenderer.invoke("get-army-setup", faction, modDataDir, floor),
   // Per-faction fog-of-war / explored map (corrected 1020×700 grid). Returns
   // { faction, width:1020, height:700, grid: Uint8Array(714000), coverage, exploredCount }
   // or { error }. Record→faction matched robustly by settlement coverage.

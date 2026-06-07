@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.959",
+    date: "2026-06-07",
+    items: [
+      { type: "feature", text: "**⚔ Army Setup panel** (dev pill) — the faction army-setup workflow, in Provincia. For the selected (or player) faction it shows: **budget** = projected net income at each tax bracket (Low/Normal/High/V.High) via the cracked virtual-tax multipliers, against an **editable max-deficit floor** (default −500, persisted) with the upkeep headroom at High tax; the **current army** per general with per-unit upkeep + balance flags (skirmisher-heavy / no line / no cavalry); the **recruitable pool** for each settlement computed with the *full* RIS gating (faction + military tier + region AOR + homeland lines — so it never wrongly excludes a unit); whether the town can retrain weapon/armour (smith + resources); and **swap suggestions** to rebalance within budget." },
+      { type: "improvement", text: "**Editable army budget floor.** The −500 max-deficit is now a setting you can change in the Army Setup panel (persisted) — drives the headroom math." },
+    ],
+  },
+  {
     version: "0.9.958",
     date: "2026-06-06",
     items: [

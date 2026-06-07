@@ -6325,6 +6325,24 @@ ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
   }
 });
 
+// IPC: army-setup analysis for one faction (2026-06-07) — descr_strat army +
+// upkeep + balance, recruitable pool (full RIS gating), retraining availability.
+// Budget (virtual tax) is computed in the renderer from saveEconomy. Returns the
+// armySetup.analyzeFaction object.
+ipcMain.handle("get-army-setup", async (_event, faction, modDataDir, floor) => {
+  try {
+    if (!faction || !modDataDir) return { error: "faction + modDataDir required" };
+    const as = require("./src/armySetup.js");
+    const r = as.analyzeFaction(modDataDir, faction, null, typeof floor === "number" ? floor : -500);
+    if (r && !r.error) _writeLog(`[army-setup] ${faction}: armyUpkeep=${r.armyUpkeep} units=${r.summary?.totalArmyUnits} pool=${(r.settlements||[]).map(s=>s.pool.length).join("/")} flags=[${(r.summary?.flags||[]).join("; ")}]`);
+    else _writeLog(`[army-setup] ${faction}: ${r && r.error}`);
+    return r;
+  } catch (e) {
+    _writeLog(`[army-setup] failed: ${e && e.message}`);
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: per-faction fog-of-war / explored map (2026-06-04). Returns the chosen
 // faction's ever-explored tile grid (the corrected 1020×700 model — see
 // findings-faction-knowledge-entities-2026-06-04.md). Record→faction is
