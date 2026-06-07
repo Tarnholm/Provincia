@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.971",
+    date: "2026-06-07",
+    items: [
+      { type: "feature", text: "**Virtual tax-setter — set every faction's taxes right from ONE save.** Army Setup now reads a turn-2+ save and, for each settlement, recommends the *highest tax bracket that keeps population growth ≥ 0* (RTW's flat per-bracket growth modifier: Low +0.5% · Normal 0 · High −0.5% · V.High −1.0%). The new 🏛 **Tax plan** table shows each settlement's current population, current growth, current tax, the bracket to **set it to**, and the resulting growth — so you no longer have to open and save each faction to dial in taxes. The played faction's tax bytes are exact; AI factions' current bracket is best-effort (marked “?”) but the *recommended* bracket is computed from that faction's real growth. Includes an estimated faction net at the recommended taxes (verify in game)." },
+    ],
+  },
+  {
     version: "0.9.970",
     date: "2026-06-07",
     items: [

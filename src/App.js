@@ -9559,6 +9559,9 @@ function App() {
   const [armyProjIncome, setArmyProjIncome] = useState("");
   // Faction-picker search filter for the Army Setup panel.
   const [armyFacSearch, setArmyFacSearch] = useState("");
+  // Virtual tax-setter (2026-06-07): optimal per-settlement tax plan for ALL
+  // factions from one turn-2+ save. { player, turnReady, byFaction, counts } or null.
+  const [armyTaxPlan, setArmyTaxPlan] = useState(null);
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -22433,8 +22436,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
             const res = await window.electronAPI.selectSaveFile?.(liveSaveDir);
             if (!res) return;
             if (res.error) { alert(res.error); return; }
-            // ONE save → EVERY faction's projected income (cracked positional map).
-            const all = await window.electronAPI.getAllFactionBudgets(res.path, modDataDir);
+            // ONE save → EVERY faction's projected income (cracked positional map)
+            // + the virtual tax-setter plan (optimal bracket per settlement).
+            const [all, plan] = await Promise.all([
+              window.electronAPI.getAllFactionBudgets(res.path, modDataDir),
+              window.electronAPI.getOptimalTaxes(res.path, modDataDir),
+            ]);
+            if (plan && plan.byFaction) setArmyTaxPlan(plan);
             if (all && all.byFaction) {
               all.savedFile = res.file;
               setArmySetupEconomy(all);
@@ -22442,7 +22450,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               const cur = armySetupData && armySetupData.faction;
               const e = cur && all.byFaction[cur];
               if (e && typeof e.net === "number") setArmyProjIncome(String(e.net));
-              pushToast(`Budgets loaded for ${Object.keys(all.byFaction).length} factions from ${res.file} (player ${all.player}, ${(all.confidence * 100).toFixed(0)}% confidence). Pick any faction — its budget auto-fills.`, "info", 8000);
+              const tw = (plan && plan.turnReady) ? "" : " ⚠ turn-1 save: no growth data, tax plan unavailable — use a turn-2+ save.";
+              pushToast(`Budgets loaded for ${Object.keys(all.byFaction).length} factions from ${res.file} (player ${all.player}, ${(all.confidence * 100).toFixed(0)}% confidence). Pick any faction — its budget + tax plan auto-fill.${tw}`, tw ? "warn" : "info", 8000);
             } else {
               alert("Could not read budgets from that save: " + (all?.error || "unknown"));
             }
@@ -22565,6 +22574,66 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       );
                     })()}
                   </div>
+                  {/* Virtual tax plan — optimal per-settlement bracket for this faction */}
+                  {(() => {
+                    const plan = armyTaxPlan && armyTaxPlan.byFaction && fac ? armyTaxPlan.byFaction[fac] : null;
+                    const BR = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
+                    const BR_COL = { low: "#9fd3ff", normal: "#cfcf8f", high: "#e8b85a", very_high: "#e8806a" };
+                    if (!armyTaxPlan) return null;
+                    if (armyTaxPlan && !armyTaxPlan.turnReady) return (
+                      <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(232,184,90,0.10)", border: "1px solid rgba(232,184,90,0.35)", fontSize: "0.78rem", color: "#e8c88a" }}>
+                        Tax plan needs growth data — the loaded save is turn 1 (growth not yet computed). Load a <b>turn-2 or later</b> save.
+                      </div>
+                    );
+                    if (!plan || !plan.settlements || !plan.settlements.length) return null;
+                    const isPlayer = plan.isPlayer;
+                    return (
+                      <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,155,136,0.10)", border: "1px solid rgba(90,155,136,0.35)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                          <strong style={{ color: "#8fd3b8" }}>🏛 Tax plan</strong>
+                          <span style={{ fontSize: "0.72rem", color: "#8aa" }}>highest bracket keeping growth ≥ 0 (RTW: Low +0.5% · Normal 0 · High −0.5% · V.High −1.0% growth)</span>
+                          {isPlayer
+                            ? <span style={{ fontSize: "0.7rem", color: "#7fd17f" }} title="This is the loaded save's player faction — its per-settlement tax bytes are reliable.">✓ player save — reliable</span>
+                            : <span style={{ fontSize: "0.7rem", color: "#e8b85a" }} title="Non-player factions: the per-settlement tax byte can read unset (assumed Normal), so the current bracket is best-effort. The recommended bracket is still computed from this faction's actual growth.">⚠ AI faction — current bracket best-effort</span>}
+                          {plan.estNetAtOptimal != null && (
+                            <button onClick={() => setArmyProjIncome(String(plan.estNetAtOptimal))}
+                              title="Fill the budget's projected-income box with the ESTIMATED net once these recommended taxes are applied (estimate — verify in game)."
+                              style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                              use est. net @ optimal: {plan.estNetAtOptimal}
+                            </button>
+                          )}
+                        </div>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
+                          <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
+                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th>
+                            <th style={{ fontWeight: 600 }}>Pop</th>
+                            <th style={{ fontWeight: 600 }}>Growth now</th>
+                            <th style={{ fontWeight: 600 }}>Current tax</th>
+                            <th style={{ fontWeight: 600 }}>→ Set to</th>
+                            <th style={{ fontWeight: 600 }}>Growth @ set</th>
+                          </tr></thead>
+                          <tbody>
+                            {plan.settlements.map((s, si) => {
+                              const change = s.currentBracket && s.currentBracket !== s.optimalBracket;
+                              return (
+                                <tr key={si} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                                  <td style={{ padding: "1px 6px", color: "#dde" }}>{s.name}</td>
+                                  <td style={{ color: "#9aa" }}>{s.population}</td>
+                                  <td style={{ color: s.growthPct < 0 ? "#e8806a" : "#9aa" }}>{s.growthPct >= 0 ? "+" : ""}{s.growthPct}%</td>
+                                  <td style={{ color: s.currentBracket ? BR_COL[s.currentBracket] : "#778" }}>{s.currentBracket ? BR[s.currentBracket] : "—"}{!s.bracketReliable && s.currentBracket ? "?" : ""}</td>
+                                  <td style={{ color: BR_COL[s.optimalBracket], fontWeight: change ? 700 : 400 }}>{change ? "➜ " : ""}{BR[s.optimalBracket]}</td>
+                                  <td style={{ color: s.growthAtOptimal < 0 ? "#e8806a" : "#7fd17f" }}>{s.growthAtOptimal >= 0 ? "+" : ""}{s.growthAtOptimal}%</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                        <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
+                          Set each settlement's tax to the "Set to" bracket in-game. {plan.estNetAtOptimal != null && <>Est. net at these taxes ≈ <b style={{ color: plan.estNetAtOptimal >= armyBudgetFloor ? "#7fd17f" : "#e8806a" }}>{plan.estNetAtOptimal}</b> (estimate — verify in game).</>} Tax bytes marked “?” are AI defaults the engine may auto-manage.
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {/* Per-character army + balance */}
                   {d.characters.map((c, ci) => {
                     const badUp = (c.illegalUpgrades && c.illegalUpgrades.length) || 0;

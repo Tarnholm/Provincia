@@ -268,6 +268,125 @@ function attributeAllBudgets(saveBuf, modDataDir) {
   return { byFaction, player: P >= 0 ? facs[P] : facs[0], confidence: n ? ok / n : 0, matched: ok, total: n, noData };
 }
 
+// ── VIRTUAL TAX-SETTER ──────────────────────────────────────────────────────
+// RTW's tax rate applies a FLAT population-growth modifier (a hard-coded game
+// mechanic, NOT a Gades-only fit): Low +0.5%, Normal 0%, High −0.5%, Very High
+// −1.0%. So a settlement's TAX-NEUTRAL ("base") growth = observed growth% minus
+// the modifier of its current bracket; the optimal bracket is the HIGHEST one
+// whose resulting growth stays ≥ 0 (the user's rule: "taxes as high as I can
+// without going into negative growth; if negative at normal, set low").
+const TAX_GROWTH_MOD = { low: 0.5, normal: 0.0, high: -0.5, very_high: -1.0 };
+
+// Pick the optimal bracket given the tax-neutral base growth %.
+function optimalBracketForBase(basePct) {
+  // highest bracket whose growth (base + mod) is still ≥ 0; else floor at low
+  for (let i = BRACKET_ORDER.length - 1; i >= 0; i--) {
+    const b = BRACKET_ORDER[i];
+    if (basePct + TAX_GROWTH_MOD[b] >= 0) return b;
+  }
+  return "low";
+}
+
+// Compute the optimal per-settlement tax plan for EVERY faction from ONE turn-2+
+// save (growth is 0 on turn-1 saves — the one-turn compute lag — so this needs a
+// turn-2-or-later save). For each settlement we read committed/projected pop →
+// growth%, its current tax bracket (per-settlement byte; reliable for the
+// player's own settlements, often 0/unset for AI), derive the base growth, and
+// recommend the highest non-negative-growth bracket.
+//
+// Also produces an ESTIMATED net-at-optimal per faction: faction tax income
+// (from the econ block via attributeAllBudgets) is distributed across the
+// faction's settlements ∝ population×bracketMult, then re-scaled to the optimal
+// bracket and re-summed. Labelled estimate — exact only for the player faction
+// whose taxes are already the ones in the save.
+//
+//   saveBuf   = the save Buffer
+//   modDataDir= mod data dir (for descr_strat faction order / budgets)
+//   cracked   = crackSave(buf, modDataDir) result (for ownerByCity)
+// Returns { player, turnReady, byFaction:{ faction:{ settlements:[{name,region,
+//   population,growthPct,currentBracket,baseGrowthPct,optimalBracket,
+//   growthAtOptimal,bracketReliable}], currentNet, estNetAtOptimal, taxIncome,
+//   reliableSettlements, totalSettlements } }, counts }.
+function optimalTaxPlan(saveBuf, modDataDir, cracked) {
+  const { findAllSettlementMarkers } = require("./buildingParser.js");
+  const { settlementFieldsAt } = require("./settlementFieldsParser.js");
+  const owner = (cracked && (cracked.ownerByCity || cracked._ownerByCity)) || {};
+  const budgets = attributeAllBudgets(saveBuf, modDataDir);
+  const byFacBudget = (budgets && budgets.byFaction) || {};
+  const player = budgets && budgets.player;
+
+  const markers = findAllSettlementMarkers(saveBuf) || [];
+  const byFaction = {};
+  let anyGrowth = false;
+  const counts = { low: 0, normal: 0, high: 0, very_high: 0 };
+
+  for (const m of markers) {
+    if (!m || m.offset == null || !m.name) continue;
+    const fac = (owner[m.name] || "").toLowerCase();
+    if (!fac) continue;
+    const f = settlementFieldsAt(saveBuf, m.offset);
+    const pop = f.committedPopulation;
+    const growth = f.populationGrowth; // projected − committed (population units)
+    if (pop == null || !pop || growth == null) continue;
+    const growthPct = (growth / pop) * 100;
+    if (growth !== 0) anyGrowth = true;
+    const curBracket = TAX_BYTE_TO_BRACKET[f.taxRate] || null;
+    // Player's own settlements: byte reliable. Otherwise it may be 0/unset; we
+    // still use it but flag low confidence so the UI can warn.
+    const bracketReliable = curBracket != null && fac === (player || "").toLowerCase();
+    const effBracket = curBracket || "normal"; // best-effort if AI byte unset
+    const basePct = growthPct - TAX_GROWTH_MOD[effBracket];
+    const optimalBracket = optimalBracketForBase(basePct);
+    counts[optimalBracket] = (counts[optimalBracket] || 0) + 1;
+    (byFaction[fac] = byFaction[fac] || { settlements: [] }).settlements.push({
+      name: m.name, region: null, population: pop,
+      growthPct: Math.round(growthPct * 100) / 100,
+      currentBracket: curBracket, bracketReliable,
+      baseGrowthPct: Math.round(basePct * 100) / 100,
+      optimalBracket,
+      growthAtOptimal: Math.round((basePct + TAX_GROWTH_MOD[optimalBracket]) * 100) / 100,
+    });
+  }
+
+  // Per-faction budget + estimated net-at-optimal.
+  for (const fac of Object.keys(byFaction)) {
+    const rec = byFacBudget[fac] || {};
+    const taxIncome = rec.income && rec.income.taxes != null ? rec.income.taxes : null;
+    const currentNet = rec.net != null ? rec.net : null;
+    const sts = byFaction[fac].settlements;
+    let estNetAtOptimal = null;
+    if (taxIncome != null && currentNet != null && sts.length) {
+      // distribute the faction's tax income ∝ pop×mult(current), then re-scale to
+      // optimal and sum the delta. mult(current) uses the best-effort bracket.
+      const w = sts.map(s => (s.population || 0) * (TAX_BRACKETS[s.currentBracket || "normal"] || 1));
+      const wSum = w.reduce((a, b) => a + b, 0);
+      let delta = 0;
+      if (wSum > 0) {
+        for (let i = 0; i < sts.length; i++) {
+          const taxShare = taxIncome * (w[i] / wSum);
+          const curMult = TAX_BRACKETS[sts[i].currentBracket || "normal"] || 1;
+          const optMult = TAX_BRACKETS[sts[i].optimalBracket] || 1;
+          delta += taxShare * (optMult / curMult - 1);
+        }
+      }
+      estNetAtOptimal = Math.round(currentNet + delta);
+    }
+    const reliableSettlements = sts.filter(s => s.bracketReliable).length;
+    byFaction[fac] = {
+      settlements: sts,
+      currentNet, taxIncome, estNetAtOptimal,
+      reliableSettlements, totalSettlements: sts.length,
+      isPlayer: fac === (player || "").toLowerCase(),
+    };
+  }
+
+  return {
+    player, turnReady: anyGrowth, taxGrowthMod: TAX_GROWTH_MOD,
+    byFaction, counts,
+    budgetConfidence: budgets && budgets.confidence,
+  };
+}
+
 // Zero out illegitimate weapon/armour upgrades on one character's army (CRLF-safe).
 // opts.weapon / opts.armour control which to zero (default both). Returns { ok, text, fixed }.
 function applyUpgradeFix(text, faction, characterName, opts) {
@@ -369,6 +488,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
   findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, attributeAllBudgets,
+  optimalTaxPlan, optimalBracketForBase, TAX_GROWTH_MOD,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,
 };

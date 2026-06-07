@@ -6358,6 +6358,30 @@ ipcMain.handle("get-all-faction-budgets", async (_event, savePath, modDataDir) =
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: VIRTUAL TAX-SETTER (2026-06-07) — from ONE turn-2+ save, compute the
+// optimal tax bracket per settlement for EVERY faction (highest bracket keeping
+// population growth ≥ 0, using RTW's hard-coded flat per-bracket growth modifier:
+// low +0.5 / normal 0 / high −0.5 / very_high −1.0), plus an estimated net at
+// those taxes. Player settlements use the reliable per-settlement tax byte; AI
+// ones can read unset. Returns armySetup.optimalTaxPlan().
+ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir) => {
+  try {
+    if (!savePath || !modDataDir) return { error: "savePath + modDataDir required" };
+    const buf = fs.readFileSync(savePath);
+    const as = require("./src/armySetup.js");
+    const { crackSave } = require("./src/saveCracker.js");
+    const cracked = crackSave(buf, modDataDir);
+    const r = as.optimalTaxPlan(buf, modDataDir, cracked);
+    if (r && r.byFaction) {
+      const nf = Object.keys(r.byFaction).length;
+      const ns = Object.values(r.byFaction).reduce((s, f) => s + (f.totalSettlements || 0), 0);
+      _writeLog(`[opt-tax] ${path.basename(savePath)} player=${r.player} turnReady=${r.turnReady} factions=${nf} settlements=${ns} dist=low ${r.counts.low}/norm ${r.counts.normal}/high ${r.counts.high}/vhigh ${r.counts.very_high}`);
+      if (!r.turnReady) _writeLog(`[opt-tax] WARNING: no growth in save (turn-1?) — optimal-tax plan needs a turn-2+ save`);
+    }
+    return r;
+  } catch (e) { _writeLog(`[opt-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: list the current campaign's factions (descr_strat faction lines).
 ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   try {
