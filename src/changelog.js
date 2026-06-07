@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.977",
+    date: "2026-06-08",
+    items: [
+      { type: "feature", text: "**Tax plan is now provably exact — load an all‑Normal turn‑2 save.** Validated against hand-tuned brackets on two whole factions: **Carthage 41/41 and Julii 26/26 — 100%.** The trick: at Normal tax the stored growth IS the base growth, so the optimal-bracket math (highest tax keeping growth ≥ 0, −0.5%/bracket) reproduces your choices exactly. The panel now detects an all‑Normal turn‑2 save and badges the plan **✓ EXACT (validated 67/67)**; for other saves it tells you to load one. (The earlier wrong numbers were entirely from using a *different mod build's* save — the Gades save — for Carthage.)" },
+      { type: "improvement", text: "**\"Small towns → Low\" turned out to be the plain rule, not a special case** — those towns genuinely have negative base growth at Normal in this build, so Low is correct by the standard \"highest tax without negative growth.\" No heuristic needed. Budget at optimal taxes validated to ~93% (Julii model 4123 vs actual 3868); the editable box covers the rest." },
+    ],
+  },
+  {
     version: "0.9.976",
     date: "2026-06-08",
     items: [

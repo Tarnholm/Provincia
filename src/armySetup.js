@@ -458,9 +458,14 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint, economyBudgets
       estNetAtOptimal = Math.round(currentNet + delta);
     }
     const reliableSettlements = sts.filter(s => s.bracketReliable).length;
+    // EXACT-PLAN flag: when every settlement is at NORMAL tax, the stored growth
+    // IS the base growth (normal modifier = 0), so the optimal-bracket plan is
+    // exact (validated 67/67 across Carthage+Julii, 2026-06-08). This is the
+    // recommended calibration save: an all-Normal turn-2 save of the faction.
+    const allNormal = sts.length > 0 && sts.every(s => s.currentBracket === "normal");
     byFaction[fac] = {
       settlements: sts,
-      currentNet, taxIncome, estNetAtOptimal,
+      currentNet, taxIncome, estNetAtOptimal, allNormal,
       reliableSettlements, totalSettlements: sts.length,
       isPlayer: fac === (player || "").toLowerCase(),
     };

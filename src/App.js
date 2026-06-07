@@ -22533,7 +22533,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               <div style={{ padding: "6px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <button onClick={loadSaveForBudget}
-                    title="Load your saves: a TURN-1 save = the budget/economy, a TURN-2 save = growth (the tax plan). Load both — Provincia auto-detects which is which. Turn-2 is used ONLY for growth because the AI inflates the turn-2 economy."
+                    title="BEST: load an all-NORMAL turn-2 save of the faction you're setting up (start it, leave all taxes Normal, end one turn, save). That gives the EXACT tax plan (validated 67/67) + budget. Provincia auto-detects turn-1 vs turn-2; an all-Normal turn-2 save is marked EXACT."
                     style={{ background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.78rem" }}>
                     📂 Load save…
                   </button>
@@ -22630,9 +22630,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                           <strong style={{ color: "#8fd3b8" }}>🏛 Tax plan</strong>
                           <span style={{ fontSize: "0.72rem", color: "#8aa" }}>highest bracket keeping growth ≥ 0 (RTW: Low +0.5% · Normal 0 · High −0.5% · V.High −1.0% growth)</span>
-                          {isPlayer
-                            ? <span style={{ fontSize: "0.7rem", color: "#7fd17f" }} title="This is the loaded save's player faction — its per-settlement tax bytes are controlled-diff validated.">✓ player save — validated</span>
-                            : <span style={{ fontSize: "0.7rem", color: "#9fd3ff" }} title="The current tax brackets ARE read from the save (this faction's own AI setting — populated, not a guess); only the played faction's bytes are controlled-diff validated. The recommended bracket is computed from this faction's actual growth regardless.">ℹ AI faction — current tax from save</span>}
+                          {plan.allNormal
+                            ? <span style={{ fontSize: "0.7rem", color: "#7fd17f", fontWeight: 700 }} title="This is an all-Normal turn-2 save: every town is at Normal tax, so the stored growth IS the base growth and the bracket plan is EXACT — validated 67/67 against hand-tuned Carthage + Julii. This is the ideal calibration save.">✓ EXACT plan (all-Normal turn-2 — validated 67/67)</span>
+                            : isPlayer
+                            ? <span style={{ fontSize: "0.7rem", color: "#e8b85a" }} title="Player save, but taxes aren't all-Normal — the plan derives base growth from each town's current bracket (good, but for a guaranteed-exact plan use an all-NORMAL turn-2 save).">≈ player save (for EXACT, use an all-Normal turn-2 save)</span>
+                            : <span style={{ fontSize: "0.7rem", color: "#9fd3ff" }} title="AI faction — current tax read from the save (not validated). For an exact plan, load an all-Normal turn-2 save where you played this faction.">ℹ AI faction — load its own all-Normal turn-2 save for exact</span>}
                           {plan.estNetAtOptimal != null && (
                             <button onClick={() => setArmyProjIncome(String(plan.estNetAtOptimal))}
                               title="Fill the budget's projected-income box with the ESTIMATED net once these recommended taxes are applied (estimate — verify in game)."
