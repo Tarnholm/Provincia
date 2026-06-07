@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.960",
+    date: "2026-06-07",
+    items: [
+      { type: "improvement", text: "**Army Setup: faction picker + Load-save button.** The Army Setup panel now has a scrollable strip of **faction icons** (like the Playable Nations editor) — click any faction to analyze it, no need to select it on the map first. And a **📂 Load save…** button to pick the .sav used for the budget (projected income), independent of live mode; the panel shows which save the budget is read from." },
+    ],
+  },
+  {
     version: "0.9.959",
     date: "2026-06-07",
     items: [

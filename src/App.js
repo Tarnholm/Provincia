@@ -9548,6 +9548,9 @@ function App() {
   const [showArmySetup, setShowArmySetup] = useState(false);
   const [armySetupData, setArmySetupData] = useState(null); // result of getArmySetup IPC
   const [armySetupBusy, setArmySetupBusy] = useState(false);
+  // Economy loaded via the panel's own "Load save" button (overrides the global
+  // live saveEconomy for the budget). { byFaction, savedFile } or null.
+  const [armySetupEconomy, setArmySetupEconomy] = useState(null);
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -12593,9 +12596,11 @@ function App() {
               <button
                 className="dev-btn"
                 onClick={async () => {
+                  setShowArmySetup(true);
+                  if (!modDataDir) { setArmySetupData({ error: "No mod loaded." }); return; }
                   const fac = selectedFaction || playerFaction;
-                  if (!fac || !modDataDir) { setShowArmySetup(true); setArmySetupData({ error: !fac ? "Select a faction on the map first." : "No mod loaded." }); return; }
-                  setShowArmySetup(true); setArmySetupBusy(true); setArmySetupData(null);
+                  if (!fac) { setArmySetupData(null); return; } // picker prompts for a faction
+                  setArmySetupBusy(true); setArmySetupData(null);
                   try {
                     const r = await window.electronAPI.getArmySetup(fac, modDataDir, armyBudgetFloor);
                     setArmySetupData(r || { error: "no result" });
@@ -22395,10 +22400,33 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         const facLabel = (factionDisplayNames && fac && factionDisplayNames[fac]) || fac || "—";
         const MULT = (d && d.taxBrackets) || { low: 0.80, normal: 1.00, high: 1.20, very_high: 1.50 };
         const close = () => setShowArmySetup(false);
+        // Faction list for the picker (descr_sm_factions order, else display-name keys),
+        // minus the rebel/slave pseudo-factions.
+        const SKIP_FAC = new Set(["slave", "rebels", "roman_rebels_1", "roman_rebels_2"]);
+        const facList = ((smFactionsOrder && smFactionsOrder.length) ? smFactionsOrder : Object.keys(factionDisplayNames || {}))
+          .filter(x => x && !SKIP_FAC.has(x));
+        const fetchFor = async (ff) => {
+          if (!ff || !modDataDir) return;
+          setArmySetupBusy(true); setArmySetupData(null);
+          try { const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor); setArmySetupData(r || { error: "no result" }); }
+          catch (e) { setArmySetupData({ error: e?.message || String(e) }); }
+          finally { setArmySetupBusy(false); }
+        };
+        const loadSaveForBudget = async () => {
+          try {
+            const res = await window.electronAPI.selectSaveFile?.(liveSaveDir);
+            if (!res) return;
+            if (res.error) { alert(res.error); return; }
+            const econ = await window.electronAPI.getSaveEconomy(res.path, modDataDir);
+            if (econ && !econ.error) { econ.savedFile = res.file; setArmySetupEconomy(econ); }
+            else alert("Could not read economy from that save: " + (econ?.error || "unknown"));
+          } catch (e) { alert(e?.message || String(e)); }
+        };
         // Budget projection from saveEconomy.byFaction[faction].
+        const econSrc = armySetupEconomy || saveEconomy;
         let budget = null;
         try {
-          const e = saveEconomy && saveEconomy.byFaction && fac ? saveEconomy.byFaction[fac] : null;
+          const e = econSrc && econSrc.byFaction && fac ? econSrc.byFaction[fac] : null;
           if (e && e.net != null && e.income && typeof e.income.taxes === "number") {
             // current bracket = dominant taxRate over the faction's settlements
             let cur = "normal";
@@ -22427,8 +22455,32 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                 <span style={{ fontWeight: 700, fontSize: "1rem", color: "#cf8f6a" }}>⚔ Army Setup — {facLabel}</span>
                 <button onClick={close} style={{ background: "none", border: "none", color: "#bbb", fontSize: "1.1rem", cursor: "pointer" }}>✕</button>
               </div>
+              {/* Toolbar: load-save (for budget) + faction picker with icons */}
+              <div style={{ padding: "6px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={loadSaveForBudget}
+                    title="Load a .sav to read this faction's projected income (the budget). The army/pool come from the mod and don't need a save."
+                    style={{ background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.78rem" }}>
+                    📂 Load save…
+                  </button>
+                  <span style={{ fontSize: "0.72rem", color: "#8aa" }}>
+                    {armySetupEconomy ? `budget from: ${armySetupEconomy.savedFile || "loaded save"}` : (saveEconomy ? "budget from: live save" : "no save loaded — budget shows “—”")}
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 3, maxHeight: 96, overflowY: "auto", alignContent: "flex-start" }}>
+                  {facList.map((ff) => (
+                    <button key={ff} onClick={() => fetchFor(ff)} title={(factionDisplayNames && factionDisplayNames[ff]) || ff}
+                      style={{ width: 30, height: 30, padding: 1, borderRadius: 4, cursor: "pointer",
+                        background: ff === fac ? "rgba(207,143,106,0.35)" : "rgba(255,255,255,0.04)",
+                        border: ff === fac ? "1px solid #cf8f6a" : "1px solid rgba(255,255,255,0.08)" }}>
+                      <FactionIcon iconPath={`faction_icons/${ff}.tga`} alt={ff} size={"100%"} tightCrop modIconsDir={activeIconsDir} />
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div style={{ overflow: "auto", padding: "8px 16px" }}>
                 {armySetupBusy && <div style={{ color: "#9aa", fontStyle: "italic" }}>Analyzing…</div>}
+                {!d && !armySetupBusy && <div style={{ color: "#9aa", fontStyle: "italic" }}>Pick a faction above.</div>}
                 {d && d.error && <div style={{ color: "#e89060" }}>{d.error}</div>}
                 {d && !d.error && (<>
                   {/* Budget */}
