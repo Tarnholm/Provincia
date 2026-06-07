@@ -178,6 +178,47 @@ function analyzeFaction(modDataDir, faction, saveBuf, floor) {
   };
 }
 
+// Swap ONE unit in a character's army in descr_strat text. Surgical + CRLF-safe:
+// only the matched unit line's NAME token is changed; exp/armour/weapon_lvl and
+// all other lines are untouched. Returns { ok, text, error }.
+function applySwap(text, faction, characterName, oldUnit, newUnit) {
+  if (!text) return { ok: false, error: "no descr_strat text" };
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(/\r?\n/);
+  const fac = String(faction).toLowerCase();
+  const cname = String(characterName).trim().toLowerCase();
+  const oldU = String(oldUnit).trim().toLowerCase();
+  // faction block
+  let fs0 = -1;
+  for (let i = 0; i < lines.length; i++) { const m = lines[i].match(/^faction\s+([a-z_0-9]+)\s*,/i); if (m && m[1].toLowerCase() === fac) { fs0 = i; break; } }
+  if (fs0 < 0) return { ok: false, error: `faction '${faction}' not found` };
+  let fe = lines.length;
+  for (let i = fs0 + 1; i < lines.length; i++) { if (/^faction\s+[a-z_0-9]+\s*,/i.test(lines[i])) { fe = i; break; } }
+  // character within the faction block
+  let ci = -1;
+  for (let i = fs0; i < fe; i++) {
+    if (/^character,/.test(lines[i])) {
+      const nm = (lines[i].split(",")[1] || "").trim().toLowerCase();
+      if (nm === cname) { ci = i; break; }
+    }
+  }
+  if (ci < 0) return { ok: false, error: `character '${characterName}' not found in ${faction}` };
+  // its army → first matching unit line (stop at next character/record)
+  let inArmy = false;
+  for (let i = ci + 1; i < fe; i++) {
+    const ln = lines[i];
+    if (/^character,|^character_record\b/.test(ln)) break;
+    if (/^army\b/.test(ln)) { inArmy = true; continue; }
+    if (!inArmy) continue;
+    const m = ln.match(/^(\s*unit\s+)(.*?)(\s+exp\b.*)$/);
+    if (m && m[2].trim().toLowerCase() === oldU) {
+      lines[i] = m[1] + newUnit + m[3];
+      return { ok: true, text: lines.join(eol), changedLine: i + 1, before: ln.trim(), after: lines[i].trim() };
+    }
+  }
+  return { ok: false, error: `unit '${oldUnit}' not found in ${characterName}'s army` };
+}
+
 function parseUnitStatsLocal(modDataDir, cache) {
   if (cache.unitStats) return cache.unitStats;
   return (cache.unitStats = recruitPool.parseUnitStats(modDataDir));
@@ -204,7 +245,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
-  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions,
+  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,
 };

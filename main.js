@@ -6334,6 +6334,28 @@ ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: apply ONE unit swap to descr_strat (army-setup). Surgical single-line swap,
+// CRLF preserved, with a timestamped backup of the file first.
+ipcMain.handle("apply-army-swap", async (_event, modDataDir, faction, character, oldUnit, newUnit) => {
+  try {
+    if (!modDataDir || !faction || !character || !oldUnit || !newUnit) return { error: "missing args" };
+    const as = require("./src/armySetup.js");
+    const p = as.findDescrStrat(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
+    const text = fs.readFileSync(p, "latin1");
+    const r = as.applySwap(text, faction, character, oldUnit, newUnit);
+    if (!r.ok) return { error: r.error };
+    // backup before writing (single rolling .provincia-bak + a one-shot timestamp)
+    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[army-swap] backup failed: ${e && e.message}`); }
+    fs.writeFileSync(p, r.text, "latin1");
+    _writeLog(`[army-swap] ${faction}/${character}: "${oldUnit}" → "${newUnit}" @line ${r.changedLine}`);
+    return { ok: true, changedLine: r.changedLine, before: r.before, after: r.after, path: p };
+  } catch (e) {
+    _writeLog(`[army-swap] failed: ${e && e.message}`);
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: army-setup analysis for one faction (2026-06-07) — descr_strat army +
 // upkeep + balance, recruitable pool (full RIS gating), retraining availability.
 // Budget (virtual tax) is computed in the renderer from saveEconomy. Returns the

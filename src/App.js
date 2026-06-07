@@ -22569,17 +22569,39 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       const sk = c.army.find(u => { const p = pool.find(x => x.unit.toLowerCase() === u.unit.toLowerCase()); return p && (p.cls === "missile" || p.cls === "skirmish"); });
                       if (!sk) continue;
                       const skUp = (pool.find(x => x.unit.toLowerCase() === sk.unit.toLowerCase()) || {}).upkeep || 0;
-                      const cand = line.find(u => (u.upkeep - skUp) <= budget.headroomHigh);
-                      if (cand) sugg.push(`In ${c.name}'s army: swap 1× ${sk.unit} (${skUp}) → ${cand.unit} (${cand.upkeep}, ${cand.cls}) — Δ${cand.upkeep - skUp} upkeep, still within the floor.`);
+                      // prefer a line unit NOT already in this army (diversity), else the cheapest in-budget one
+                      const have = new Set(c.army.map(u => u.unit.toLowerCase()));
+                      const fits = line.filter(u => (u.upkeep - skUp) <= budget.headroomHigh);
+                      const cand = fits.find(u => !have.has(u.unit.toLowerCase())) || fits[0];
+                      if (cand) sugg.push({ character: c.name, oldUnit: sk.unit, newUnit: cand.unit,
+                        text: `In ${c.name}'s army: swap 1× ${sk.unit} (${skUp}) → ${cand.unit} (${cand.upkeep}, ${cand.cls}) — Δ${cand.upkeep - skUp} upkeep, still within the floor.` });
                     }
                     if (!sugg.length) return null;
                     return (
                       <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(120,170,90,0.10)", border: "1px solid rgba(120,170,90,0.35)" }}>
                         <strong style={{ color: "#a7d77f" }}>Swap suggestions</strong>
-                        <ul style={{ margin: "4px 0 0", paddingLeft: 18, fontSize: "0.8rem" }}>
-                          {sugg.map((s, i) => <li key={i} style={{ marginBottom: 2 }}>{s}</li>)}
-                        </ul>
-                        <div style={{ marginTop: 4, fontSize: "0.7rem", color: "#8aa" }}>Apply swaps via the Scripts/descr_strat editor (auto-apply coming next).</div>
+                        <div style={{ margin: "6px 0 0", display: "flex", flexDirection: "column", gap: 6 }}>
+                          {sugg.map((s, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.8rem" }}>
+                              <span style={{ flex: 1 }}>{s.text}</span>
+                              <button
+                                onClick={async () => {
+                                  if (!modDataDir) { alert("No mod loaded."); return; }
+                                  if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}\n\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod / restart the game to see it.`)) return;
+                                  try {
+                                    const r = await window.electronAPI.applyArmySwap(modDataDir, d.faction, s.character, s.oldUnit, s.newUnit);
+                                    if (r && r.ok) { pushToast(`Applied: ${s.oldUnit} → ${s.newUnit} (line ${r.changedLine})`, "info", 6000); fetchFor(d.faction); }
+                                    else alert("Swap failed: " + (r?.error || "unknown"));
+                                  } catch (e) { alert(e?.message || String(e)); }
+                                }}
+                                title="Write this swap to the campaign descr_strat.txt (backup taken first)"
+                                style={{ flexShrink: 0, background: "#5a9b88", color: "#fff", border: "1px solid #5a9b88", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontSize: "0.76rem", fontWeight: 600 }}>
+                                Apply
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#8aa" }}>Apply writes one unit line to descr_strat (CRLF-safe, backup saved). Reload the mod (🔄) or restart the game to see it.</div>
                       </div>
                     );
                   })()}

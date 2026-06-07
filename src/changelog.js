@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.963",
+    date: "2026-06-07",
+    items: [
+      { type: "feature", text: "**Army Setup: Apply button for swap suggestions.** Each swap suggestion now has an **Apply** button that writes the change straight into the campaign `descr_strat.txt` — a surgical single-line edit (only that unit's name changes; exp/armour/weapon level untouched), CRLF-safe, with a backup (`descr_strat.txt.provincia-bak`) saved first. After applying it re-analyzes the faction so you see the new balance/upkeep. Reload the mod (🔄) or restart the game to pick it up. Suggestions now also prefer a unit you don't already field, for variety." },
+    ],
+  },
+  {
     version: "0.9.962",
     date: "2026-06-07",
     items: [

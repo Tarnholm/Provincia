@@ -95,6 +95,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // characters, settlements, summary } or { error }.
   getArmySetup: (faction, modDataDir, floor) => ipcRenderer.invoke("get-army-setup", faction, modDataDir, floor),
   getCampaignFactions: (modDataDir) => ipcRenderer.invoke("get-campaign-factions", modDataDir),
+  applyArmySwap: (modDataDir, faction, character, oldUnit, newUnit) => ipcRenderer.invoke("apply-army-swap", modDataDir, faction, character, oldUnit, newUnit),
   // Per-faction fog-of-war / explored map (corrected 1020×700 grid). Returns
   // { faction, width:1020, height:700, grid: Uint8Array(714000), coverage, exploredCount }
   // or { error }. Record→faction matched robustly by settlement coverage.
