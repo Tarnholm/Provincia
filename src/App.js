@@ -22472,21 +22472,21 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     {armySetupEconomy ? `budget from: ${armySetupEconomy.savedFile || "loaded save"}` : (saveEconomy ? "budget from: live save" : "no save loaded — budget shows “—”")}
                   </span>
                 </div>
-                <div style={{ maxHeight: 168, overflowY: "auto", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: 6, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 6, alignContent: "start" }}>
+                <div style={{ maxHeight: 200, overflow: "auto", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: 8, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: 8, alignContent: "start" }}>
                   {facList.length === 0 && <span style={{ color: "#889", fontSize: "0.74rem", gridColumn: "1 / -1" }}>Loading campaign factions…</span>}
                   {facList.map((ff) => {
                     const on = ff === fac;
                     return (
                       <button key={ff} onClick={() => fetchFor(ff)}
                         title={`${((factionDisplayNames && factionDisplayNames[ff]) || ff).replace(/_/g, " ")} — click to analyze`}
-                        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 3px 4px", borderRadius: 8, cursor: "pointer",
-                          border: on ? "2px solid #cf8f6a" : "2px solid transparent",
-                          background: on ? "rgba(207,143,106,0.16)" : "rgba(255,255,255,0.03)",
-                          opacity: on ? 1 : 0.7, transition: "opacity .12s, background .12s, border-color .12s" }}>
-                        <div style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <FactionIcon iconPath={`faction_icons/${ff}.tga`} alt={ff} size={38} tightCrop modIconsDir={activeIconsDir} />
+                        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 4px 6px", borderRadius: 8, cursor: "pointer",
+                          border: on ? "2px solid #e8c873" : "2px solid transparent",
+                          background: on ? "rgba(232,200,115,0.14)" : "rgba(255,255,255,0.03)",
+                          opacity: on ? 1 : 0.85, transition: "opacity .12s, background .12s, border-color .12s" }}>
+                        <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <FactionIcon iconPath={`faction_icons/${ff}.tga`} alt={ff} size={40} tightCrop modIconsDir={activeIconsDir} />
                         </div>
-                        <span style={{ fontSize: "0.62rem", textAlign: "center", textTransform: "capitalize", color: on ? "#f0d6b8" : "#9aa", lineHeight: 1.12, maxWidth: "100%", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{((factionDisplayNames && factionDisplayNames[ff]) || ff).replace(/_/g, " ")}</span>
+                        <span style={{ fontSize: "0.66rem", textAlign: "center", textTransform: "capitalize", color: on ? "#f2e3b8" : "#9aa", lineHeight: 1.15, maxWidth: "100%", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{((factionDisplayNames && factionDisplayNames[ff]) || ff).replace(/_/g, " ")}</span>
                       </button>
                     );
                   })}

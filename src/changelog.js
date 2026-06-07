@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.962",
+    date: "2026-06-07",
+    items: [
+      { type: "fix", text: "**Army Setup faction picker now matches the Playable Nations picker exactly** — same tile size, icon size, spacing and highlight, so the two look consistent." },
+    ],
+  },
+  {
     version: "0.9.961",
     date: "2026-06-07",
     items: [
