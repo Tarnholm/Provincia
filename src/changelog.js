@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.976",
+    date: "2026-06-08",
+    items: [
+      { type: "fix", text: "**The faction you played now shows its EXACT budget** (read straight from the save at the taxes you set) instead of a rescaled estimate — load your Carthage save and Carthage reads its real **2667**. Honest limit, proven against your own saves: the auto tax-plan can only see each settlement's growth at ONE tax setting (the AI's), so it can't predict the exact highest-tax-without-negative-growth the way you do in-game — it tends to over-recommend. So **AI factions now show a clearly-flagged rough estimate**, and the accurate way to budget a faction is to play it, set taxes, save, and load THAT save (its player budget is exact). The per-settlement growth column is still a useful guide for which towns can take more tax." },
+    ],
+  },
+  {
     version: "0.9.975",
     date: "2026-06-08",
     items: [

@@ -22432,10 +22432,17 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         // accurate when sourced from turn-1 (budgetTurn1); if only a turn-2 save is
         // loaded it falls back to the AI-inflated turn-2 economy (flagged in the UI).
         const budgetTurn1 = !!armyEconomyFile; // a turn-1 economy save is loaded
+        // The economy save's PLAYER faction = YOUR exact economy at YOUR taxes
+        // (recs[0], validated). Use it verbatim — do NOT rescale to "optimal", since
+        // the auto tax-plan can't reliably predict per-bracket growth (confirmed
+        // against the user's save_Carthage: 2667 is exact). Non-player factions get
+        // the rough optimal-tax estimate (clearly flagged).
+        const econPlayer = (armySetupEconomy && armySetupEconomy.player) || null;
         const budgetNetFor = (ff) => {
+          const e = armySetupEconomy && armySetupEconomy.byFaction && armySetupEconomy.byFaction[ff];
+          if (ff && ff === econPlayer && e && typeof e.net === "number") return e.net; // YOUR exact number
           const pf = armyTaxPlan && armyTaxPlan.byFaction && armyTaxPlan.byFaction[ff];
           if (pf && typeof pf.estNetAtOptimal === "number") return pf.estNetAtOptimal;
-          const e = armySetupEconomy && armySetupEconomy.byFaction && armySetupEconomy.byFaction[ff];
           return e && typeof e.net === "number" ? e.net : null;
         };
         const fetchFor = async (ff) => {
@@ -22579,8 +22586,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       {(() => {
                         const me = armySetupEconomy && armySetupEconomy.byFaction && fac ? armySetupEconomy.byFaction[fac] : null;
                         if (!me || me.net == null) return null;
-                        if (budgetTurn1) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="Budget sourced from your TURN-1 save (the neutral starting economy), rebased to the recommended taxes — the same number for every faction, undisturbed by the AI's turn-2 build-up.">✓ budget from turn-1 economy (rebased to optimal taxes)</span>;
-                        return <span style={{ fontSize: "0.72rem", color: "#e88a5a" }} title={`No turn-1 save loaded, so this budget comes from the TURN-2 save — for AI factions that's the AI's inflated economy (very-high taxes + a turn of build-up), e.g. Carthage ~21651 here vs ~2667 when you play it. Load a TURN-1 save for accurate budgets.`}>⚠ turn-2 economy (AI-inflated) — load a turn-1 save</span>;
+                        if (fac === econPlayer) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="This save's PLAYER faction — this is YOUR exact economy at the taxes you set (net read straight from the save). The accurate way to budget a faction: load a save where you played it.">✓ YOUR exact economy at your taxes ({me.net})</span>;
+                        return <span style={{ fontSize: "0.72rem", color: "#e88a5a" }} title={`This is an AI faction in the loaded save — the app can't predict the exact taxes/growth you'd run (only YOU can, in-game). The number is a rough optimal-tax estimate and tends HIGH (the auto tax-plan over-recommends). For its real budget, play it, set taxes, save, and load THAT save. (Estimate here: ${(armyTaxPlan&&armyTaxPlan.byFaction&&armyTaxPlan.byFaction[fac]&&armyTaxPlan.byFaction[fac].estNetAtOptimal) ?? me.net}.)`}>≈ AI faction — rough estimate (tends high); load its own save for the exact number</span>;
                       })()}
                     </div>
                     {(() => {
