@@ -9557,6 +9557,8 @@ function App() {
   // The auto financial-overview attribution is unreliable at turn 1, so this is
   // the source of truth for the budget headroom (matches the user's workflow).
   const [armyProjIncome, setArmyProjIncome] = useState("");
+  // Faction-picker search filter for the Army Setup panel.
+  const [armyFacSearch, setArmyFacSearch] = useState("");
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -22413,7 +22415,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         // Faction list for the picker = the CURRENT campaign's roster (descr_strat
         // faction lines), minus rebel/slave pseudo-factions.
         const SKIP_FAC = new Set(["slave", "rebels", "roman_rebels_1", "roman_rebels_2", "roman_senate"]);
-        const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x));
+        const facQ = armyFacSearch.trim().toLowerCase();
+        const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x))
+          .filter(x => !facQ || x.replace(/_/g, " ").toLowerCase().includes(facQ) || ((factionDisplayNames && factionDisplayNames[x]) || "").toLowerCase().includes(facQ));
         const fetchFor = async (ff) => {
           if (!ff || !modDataDir) return;
           setArmyProjIncome(""); // clear the entered budget when switching faction
@@ -22474,8 +22478,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     📂 Load save…
                   </button>
                   <span style={{ fontSize: "0.72rem", color: "#8aa" }}>
-                    {armySetupEconomy ? `budget from: ${armySetupEconomy.savedFile || "loaded save"}` : (saveEconomy ? "budget from: live save" : "no save loaded — budget shows “—”")}
+                    {armySetupEconomy ? `budget from: ${armySetupEconomy.savedFile || "loaded save"}` : (saveEconomy ? "budget from: live save" : "no save loaded")}
                   </span>
+                  <input value={armyFacSearch} onChange={(e) => setArmyFacSearch(e.target.value)} placeholder="Search factions…"
+                    style={{ marginLeft: "auto", width: 180, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 8px", fontSize: "0.78rem" }} />
                 </div>
                 <div style={{ maxHeight: 200, overflow: "auto", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: 8, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: 8, alignContent: "start" }}>
                   {facList.length === 0 && <span style={{ color: "#889", fontSize: "0.74rem", gridColumn: "1 / -1" }}>Loading campaign factions…</span>}
@@ -22614,6 +22620,27 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       const ok = headroom == null || delta <= headroom;
                       sugg.push({ character: c.name, oldUnit: sk.unit, newUnit: cand.unit, ok,
                         text: `In ${c.name}'s army: swap 1× ${sk.unit} (${skUp}) → ${cand.unit} (${cand.upkeep}, ${cand.cls}) — Δ${delta >= 0 ? "+" : ""}${delta} upkeep` + (resultNet != null ? ` → net ${resultNet}${resultNet < armyBudgetFloor ? " (OVER floor!)" : ""}` : " (enter projected income to budget-check)") });
+                    }
+                    // OVER-BUDGET TRIM: if the entered net is below the floor, suggest a
+                    // same-role downgrade to claw back the deficit (keeps the composition;
+                    // never downgrades infantry to a skirmisher, so it won't re-unbalance).
+                    if (hasProj && proj < armyBudgetFloor) {
+                      const need = armyBudgetFloor - proj; // upkeep we must shed
+                      for (const c of d.characters) {
+                        let best = null;
+                        for (const u of c.army) {
+                          if (/general/.test(u.unit)) continue;
+                          const uu = pool.find(x => x.unit.toLowerCase() === u.unit.toLowerCase());
+                          if (!uu || uu.upkeep == null) continue;
+                          const cheaper = pool.filter(v => v.category === uu.category && v.unit.toLowerCase() !== u.unit.toLowerCase()
+                            && v.upkeep != null && (uu.upkeep - v.upkeep) >= need
+                            && (uu.category === "cavalry" || (v.cls !== "missile" && v.cls !== "skirmish")))
+                            .sort((a, b) => (uu.upkeep - a.upkeep) - (uu.upkeep - b.upkeep)); // smallest sufficient saving first
+                          if (cheaper.length) { const v = cheaper[0]; const save = uu.upkeep - v.upkeep; if (!best || save < best.save) best = { character: c.name, oldUnit: u.unit, newUnit: v.unit, save, net: proj + save }; }
+                        }
+                        if (best) sugg.push({ character: best.character, oldUnit: best.oldUnit, newUnit: best.newUnit, ok: true, trim: true,
+                          text: `TRIM ${best.character}: swap ${best.oldUnit} → ${best.newUnit} — save ${best.save} upkeep → net ${best.net} (back within the floor)` });
+                      }
                     }
                     if (!sugg.length) return null;
                     return (

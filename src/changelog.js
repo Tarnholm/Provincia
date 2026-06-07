@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.965",
+    date: "2026-06-07",
+    items: [
+      { type: "feature", text: "**Army Setup: faction search box.** Type to filter the faction picker (by name) so you can jump to a faction fast." },
+      { type: "feature", text: "**Over-budget trim suggestions.** When the projected income you entered is below the floor, Army Setup now suggests a **same-role downgrade** to claw back the deficit while keeping the army's balance — e.g. for Gades at −536 it proposes *caetrati cavalry → numidian cavalry* (save 114 → −422). One-click Apply, like the other swaps. (It never downgrades infantry to a skirmisher, so it won't re-create a skirmisher glut.)" },
+    ],
+  },
+  {
     version: "0.9.964",
     date: "2026-06-07",
     items: [
