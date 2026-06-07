@@ -320,6 +320,16 @@ function attributeAllBudgets(saveBuf, modDataDir, playerHint) {
 // without going into negative growth; if negative at normal, set low").
 const TAX_GROWTH_MOD = { low: 0.5, normal: 0.0, high: -0.5, very_high: -1.0 };
 
+// Tax → PUBLIC-ORDER penalty on the marker−30 order total (the value Provincia's
+// Economy Audit shows as "PO%"). Cracked 2026-06-07 from the controlled tax set
+// (Gades save_low/medium/high/"very high"): order total was 285/255/235/215 at
+// low/normal/high/very_high — i.e. RELATIVE to low: 0 / −30 / −50 / −70 (the
+// bigger first step is losing the low-tax happiness bonus). Lets us project a
+// settlement's order at a target bracket: order(target) = order(now) −
+// TAX_ORDER_DELTA[now] + TAX_ORDER_DELTA[target]. (Calibrated from Gades; the RTW
+// tax-happiness modifier is global so it should hold across settlements.)
+const TAX_ORDER_DELTA = { low: 0, normal: -30, high: -50, very_high: -70 };
+
 // Pick the optimal bracket given the tax-neutral base growth %.
 function optimalBracketForBase(basePct) {
   // highest bracket whose growth (base + mod) is still ≥ 0; else floor at low
@@ -374,20 +384,28 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint) {
     const growthPct = (growth / pop) * 100;
     if (growth !== 0) anyGrowth = true;
     const curBracket = TAX_BYTE_TO_BRACKET[f.taxRate] || null;
-    // Player's own settlements: byte reliable. Otherwise it may be 0/unset; we
-    // still use it but flag low confidence so the UI can warn.
-    const bracketReliable = curBracket != null && fac === (player || "").toLowerCase();
-    const effBracket = curBracket || "normal"; // best-effort if AI byte unset
+    // The per-settlement tax byte is POPULATED for AI factions too (cracked
+    // 2026-06-07 — the AI uses a bimodal low/very_high policy), so currentBracket
+    // is the faction's REAL stored setting, not a guess. Only the PLAYER's byte is
+    // controlled-diff-validated (gades save set), so bracketValidated marks that;
+    // AI brackets are the save's value but unvalidated.
+    const bracketValidated = curBracket != null && fac === (player || "").toLowerCase();
+    const effBracket = curBracket || "normal"; // assume normal only if truly null
     const basePct = growthPct - TAX_GROWTH_MOD[effBracket];
     const optimalBracket = optimalBracketForBase(basePct);
     counts[optimalBracket] = (counts[optimalBracket] || 0) + 1;
+    // project public order (marker−30, the Economy-Audit "PO%") at the optimal tax
+    const orderNow = (typeof f.publicOrder === "number" && isFinite(f.publicOrder) && Math.abs(f.publicOrder) < 100000) ? Math.round(f.publicOrder) : null;
+    const orderAtOptimal = (orderNow != null && curBracket)
+      ? Math.round(orderNow - TAX_ORDER_DELTA[curBracket] + TAX_ORDER_DELTA[optimalBracket]) : null;
     (byFaction[fac] = byFaction[fac] || { settlements: [] }).settlements.push({
       name: m.name, region: null, population: pop,
       growthPct: Math.round(growthPct * 100) / 100,
-      currentBracket: curBracket, bracketReliable,
+      currentBracket: curBracket, bracketReliable: bracketValidated, bracketValidated,
       baseGrowthPct: Math.round(basePct * 100) / 100,
       optimalBracket,
       growthAtOptimal: Math.round((basePct + TAX_GROWTH_MOD[optimalBracket]) * 100) / 100,
+      orderNow, orderAtOptimal,
     });
   }
 
@@ -532,7 +550,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
   findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, attributeAllBudgets,
-  optimalTaxPlan, optimalBracketForBase, TAX_GROWTH_MOD,
+  optimalTaxPlan, optimalBracketForBase, TAX_GROWTH_MOD, TAX_ORDER_DELTA,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,
 };

@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.973",
+    date: "2026-06-07",
+    items: [
+      { type: "feature", text: "**Tax plan now projects each settlement's public order at the recommended tax** (new \"Order now→@set\" column). Cracked from your controlled tax saves: each tax bracket up costs ~20 public order (low→normal ~30), so the plan shows e.g. *195→125* when a town jumps low→very_high — watch the low ones for unrest. (The absolute riot threshold isn't pinned yet, so it shows the number rather than asserting \"angry\".)" },
+      { type: "fix", text: "**AI factions' current tax brackets are real, not guesses.** The per-settlement tax byte turns out to be stored for AI factions too (they use a bimodal low/very-high policy), so the tax plan reads each faction's actual current tax from the save instead of assuming \"normal\". Current-tax values are marked **\\*** for AI (read from save, validated only for the faction you're playing); the badge now reads **ℹ AI faction — current tax from save**." },
+    ],
+  },
+  {
     version: "0.9.972",
     date: "2026-06-07",
     items: [

@@ -22610,8 +22610,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           <strong style={{ color: "#8fd3b8" }}>🏛 Tax plan</strong>
                           <span style={{ fontSize: "0.72rem", color: "#8aa" }}>highest bracket keeping growth ≥ 0 (RTW: Low +0.5% · Normal 0 · High −0.5% · V.High −1.0% growth)</span>
                           {isPlayer
-                            ? <span style={{ fontSize: "0.7rem", color: "#7fd17f" }} title="This is the loaded save's player faction — its per-settlement tax bytes are reliable.">✓ player save — reliable</span>
-                            : <span style={{ fontSize: "0.7rem", color: "#e8b85a" }} title="Non-player factions: the per-settlement tax byte can read unset (assumed Normal), so the current bracket is best-effort. The recommended bracket is still computed from this faction's actual growth.">⚠ AI faction — current bracket best-effort</span>}
+                            ? <span style={{ fontSize: "0.7rem", color: "#7fd17f" }} title="This is the loaded save's player faction — its per-settlement tax bytes are controlled-diff validated.">✓ player save — validated</span>
+                            : <span style={{ fontSize: "0.7rem", color: "#9fd3ff" }} title="The current tax brackets ARE read from the save (this faction's own AI setting — populated, not a guess); only the played faction's bytes are controlled-diff validated. The recommended bracket is computed from this faction's actual growth regardless.">ℹ AI faction — current tax from save</span>}
                           {plan.estNetAtOptimal != null && (
                             <button onClick={() => setArmyProjIncome(String(plan.estNetAtOptimal))}
                               title="Fill the budget's projected-income box with the ESTIMATED net once these recommended taxes are applied (estimate — verify in game)."
@@ -22628,25 +22628,28 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             <th style={{ fontWeight: 600 }}>Current tax</th>
                             <th style={{ fontWeight: 600 }}>→ Set to</th>
                             <th style={{ fontWeight: 600 }}>Growth @ set</th>
+                            <th style={{ fontWeight: 600 }}>Order now→@set</th>
                           </tr></thead>
                           <tbody>
                             {plan.settlements.map((s, si) => {
                               const change = s.currentBracket && s.currentBracket !== s.optimalBracket;
+                              const orderDrop = s.orderNow != null && s.orderAtOptimal != null && s.orderAtOptimal < s.orderNow;
                               return (
                                 <tr key={si} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                                   <td style={{ padding: "1px 6px", color: "#dde" }}>{s.name}</td>
                                   <td style={{ color: "#9aa" }}>{s.population}</td>
                                   <td style={{ color: s.growthPct < 0 ? "#e8806a" : "#9aa" }}>{s.growthPct >= 0 ? "+" : ""}{s.growthPct}%</td>
-                                  <td style={{ color: s.currentBracket ? BR_COL[s.currentBracket] : "#778" }}>{s.currentBracket ? BR[s.currentBracket] : "—"}{!s.bracketReliable && s.currentBracket ? "?" : ""}</td>
+                                  <td style={{ color: s.currentBracket ? BR_COL[s.currentBracket] : "#778" }} title={s.currentBracket ? (s.bracketValidated ? "Your own setting (validated)" : "Read from the save (this faction's current setting)") : "no tax byte"}>{s.currentBracket ? BR[s.currentBracket] : "—"}{s.currentBracket && !s.bracketValidated ? "*" : ""}</td>
                                   <td style={{ color: BR_COL[s.optimalBracket], fontWeight: change ? 700 : 400 }}>{change ? "➜ " : ""}{BR[s.optimalBracket]}</td>
                                   <td style={{ color: s.growthAtOptimal < 0 ? "#e8806a" : "#7fd17f" }}>{s.growthAtOptimal >= 0 ? "+" : ""}{s.growthAtOptimal}%</td>
+                                  <td style={{ color: s.orderAtOptimal == null ? "#778" : (orderDrop ? "#e8b85a" : "#9aa") }} title="Public order (Economy-Audit scale) now → at the recommended tax (each bracket up ≈ −20 order; low→normal ≈ −30). Watch low values for unrest.">{s.orderNow == null ? "—" : `${s.orderNow}${s.orderAtOptimal != null && s.orderAtOptimal !== s.orderNow ? `→${s.orderAtOptimal}` : ""}`}</td>
                                 </tr>
                               );
                             })}
                           </tbody>
                         </table>
                         <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
-                          Set each settlement's tax to the "Set to" bracket in-game. {plan.estNetAtOptimal != null && <>Est. net at these taxes ≈ <b style={{ color: plan.estNetAtOptimal >= armyBudgetFloor ? "#7fd17f" : "#e8806a" }}>{plan.estNetAtOptimal}</b> (estimate — verify in game).</>} Tax bytes marked “?” are AI defaults the engine may auto-manage.
+                          Set each settlement's tax to the "Set to" bracket in-game. {plan.estNetAtOptimal != null && <>Est. net at these taxes ≈ <b style={{ color: plan.estNetAtOptimal >= armyBudgetFloor ? "#7fd17f" : "#e8806a" }}>{plan.estNetAtOptimal}</b> (estimate — verify in game).</>} Current tax marked <b>*</b> = read from the save (this faction's own setting), validated only for the played faction. Order is the marker−30 value (same as Economy Audit); higher tax lowers it (watch for unrest).
                         </div>
                       </div>
                     );
