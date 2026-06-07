@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.967",
+    date: "2026-06-07",
+    items: [
+      { type: "feature", text: "**Army Setup auto-fills the budget from the save's player faction.** When you Load a save, Provincia now reads the *played* faction's real projected income straight from the save (the player's economy record) and fills the projected-income box automatically — verified exact on Gades (−536). It cross-checks the army upkeep so it never auto-fills a different faction's number; if the save's player doesn't match the faction you're viewing, it warns instead. So for the faction you're working on: load its save → budget + trim suggestions appear with no typing. (Other factions in the same save still need their number, since a turn-1 save doesn't reliably link every faction to its economy.)" },
+    ],
+  },
+  {
     version: "0.9.966",
     date: "2026-06-07",
     items: [

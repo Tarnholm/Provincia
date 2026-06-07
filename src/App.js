@@ -22433,7 +22433,18 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
             if (res.error) { alert(res.error); return; }
             const econ = await window.electronAPI.getSaveEconomy(res.path, modDataDir);
             if (econ && !econ.error) { econ.savedFile = res.file; setArmySetupEconomy(econ); }
-            else alert("Could not read economy from that save: " + (econ?.error || "unknown"));
+            // AUTO-FILL the projected income from the SAVE'S PLAYER faction (recs[0]).
+            // Reliable for the played faction; verify it matches the picked faction
+            // by army-upkeep so we never auto-fill a different faction's number.
+            try {
+              const pb = await window.electronAPI.getSavePlayerBudget(res.path);
+              if (pb && !pb.error && typeof pb.net === "number") {
+                const au = armySetupData && armySetupData.armyUpkeep;
+                const match = au == null || pb.army_upkeep == null || Math.abs(pb.army_upkeep - au) <= Math.max(200, au * 0.25);
+                if (match) { setArmyProjIncome(String(pb.net)); pushToast(`Budget auto-filled from save: projected income ${pb.net}`, "info", 6000); }
+                else pushToast(`This save's player budget (${pb.net}) doesn't match ${facLabel}'s army — load ${facLabel}'s own save, or enter the number manually.`, "warning", 9000);
+              }
+            } catch { /* non-fatal — manual entry still works */ }
           } catch (e) { alert(e?.message || String(e)); }
         };
         // Budget projection from saveEconomy.byFaction[faction].

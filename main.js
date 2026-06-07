@@ -6325,6 +6325,25 @@ ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
   }
 });
 
+// IPC: the SAVE'S PLAYER faction budget — read from recs[0], the player's econ
+// record (the save is centered on the player; verified recs[0]==player net=-536
+// on the Gades save). This is the one faction whose projected income we can read
+// reliably from a turn-1 save (general faction attribution is ambiguous).
+ipcMain.handle("get-save-player-budget", async (_event, savePath) => {
+  try {
+    if (!savePath) return { error: "no save path" };
+    const buf = fs.readFileSync(savePath);
+    const x = require("./src/saveCrackerExtras.js");
+    const eco = require("./src/economyParser.js");
+    const recs = x.parseFactionTreasuries(buf);
+    if (!Array.isArray(recs) || !recs.length) return { error: "no faction records" };
+    const b = eco.readFinancialBlock(buf, recs[0].offset);
+    const d = b && eco.decodeFinancialBlock(b);
+    if (!d || d.net == null) return { error: "could not decode player econ block" };
+    return { net: d.net, taxes: d.income && d.income.taxes, income: d.income && d.income.total, army_upkeep: d.expenditure && d.expenditure.army_upkeep, treasury: recs[0].treasury };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: list the current campaign's factions (descr_strat faction lines).
 ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   try {
