@@ -42,8 +42,21 @@
 //     f11 = expenditure.wages       (CONFIRMED: Julii 6350; generals/admirals/agents)
 //     f12 = expenditure.army_upkeep (CONFIRMED: Julii 26594)
 //     f22 = expenditure.other       (CONFIRMED: Julii 2242)
-//     f13-f21 = always 0 across the corpus (reserved, incl. Recruitment &
-//               Construction — 0 in this corpus; not individually pinned).
+//     f13-f21 = 0 in the JULII crib save only (it neither recruited nor built that
+//               turn). The 2026-06-07 turn-2 census (239 RIS factions,
+//               findings-econ-slots-and-tax-mult-2026-06-07.md) OVERTURNS "always 0":
+//                 f13 = RECRUITMENT  (215/239 nonzero, 700..80714; AI turn-1 army
+//                       rush, e.g. Carthage 32450) — strongly pinned.
+//                 f14 = CONSTRUCTION (39/239, round 1000/2000 building costs).
+//                 f19 = DIPLOMACY expenditure — smoking gun: lysiad pays 805 (f19)
+//                       and seleucid receives 805 (f8 income), a clean tribute pair.
+//                 f15 (102/239, minor factions only), f16 (5/239) = stored but
+//                       label UNPINNED (need per-faction in-game cribs; no fabrication).
+//               Decode still sums the WHOLE expenditure half so totals/net stay
+//               correct; these surface via `unattributed` until labelled. Truly
+//               always-zero now: f6 f7 f10 f17 f18 f20 f21.
+//     (INCOME f4 [2/239], f5 [11/239 tiny], f8 [DIPLOMACY income, 805 seleucid] are
+//      the matching newly-seen income slots — see the same findings doc.)
 //
 //   income.total = f0+f1+f2+f3+f9   (Julii 33485 — matches in-game EXACTLY)
 //   expenditure.total = f11+f12+f22 (Julii 35186 — matches in-game EXACTLY)
