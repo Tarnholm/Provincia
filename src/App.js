@@ -9562,6 +9562,12 @@ function App() {
   // Virtual tax-setter (2026-06-07): optimal per-settlement tax plan for ALL
   // factions from one turn-2+ save. { player, turnReady, byFaction, counts } or null.
   const [armyTaxPlan, setArmyTaxPlan] = useState(null);
+  // Two-save model (2026-06-08 USER RULE): turn-2 save = GROWTH only; turn-1 save =
+  // BUDGET/economy (the AI inflates the turn-2 economy). Track both paths/files.
+  const [armyGrowthPath, setArmyGrowthPath] = useState(null);
+  const [armyGrowthFile, setArmyGrowthFile] = useState(null);
+  const [armyEconomyPath, setArmyEconomyPath] = useState(null);
+  const [armyEconomyFile, setArmyEconomyFile] = useState(null);
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -22421,9 +22427,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         const facQ = armyFacSearch.trim().toLowerCase();
         const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x))
           .filter(x => !facQ || x.replace(/_/g, " ").toLowerCase().includes(facQ) || ((factionDisplayNames && factionDisplayNames[x]) || "").toLowerCase().includes(facQ));
-        // The BUDGET we want is the TURN-1 projected income WITH OPTIMAL TAXES set
-        // (the user's setup moment): prefer the tax-plan's estNetAtOptimal; fall
-        // back to the current-tax net only when no plan/optimal value is available.
+        // BUDGET auto-fill = turn-1 income at optimal taxes (estNetAtOptimal, now
+        // computed from the TURN-1 economy save when one is loaded). The budget is
+        // accurate when sourced from turn-1 (budgetTurn1); if only a turn-2 save is
+        // loaded it falls back to the AI-inflated turn-2 economy (flagged in the UI).
+        const budgetTurn1 = !!armyEconomyFile; // a turn-1 economy save is loaded
         const budgetNetFor = (ff) => {
           const pf = armyTaxPlan && armyTaxPlan.byFaction && armyTaxPlan.byFaction[ff];
           if (pf && typeof pf.estNetAtOptimal === "number") return pf.estNetAtOptimal;
@@ -22440,36 +22448,45 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           catch (e) { setArmySetupData({ error: e?.message || String(e) }); }
           finally { setArmySetupBusy(false); }
         };
+        // Two-save model (USER RULE 2026-06-08): the TURN-2 save gives GROWTH only;
+        // the TURN-1 save gives the BUDGET/economy (the AI inflates the turn-2
+        // economy with very-high taxes + a turn of build-up). One "Load save" button
+        // auto-detects which a save is (growth present ⇒ turn-2) and slots it; load
+        // BOTH for an accurate plan. Budgets come from the turn-1 save; growth + the
+        // optimal-tax brackets from the turn-2 save; estNetAtOptimal rebases the
+        // turn-1 net onto the recommended taxes.
+        const refreshArmyData = async (gp, gf, ep, ef) => {
+          // budgets from turn-1 economy save if we have one, else from the growth save
+          const budgetPath = ep || gp;
+          if (budgetPath) {
+            const all = await window.electronAPI.getAllFactionBudgets(budgetPath, modDataDir);
+            if (all && all.byFaction) { all.savedFile = ef || gf; all.isTurn1 = !!ep; setArmySetupEconomy(all); }
+          }
+          // growth plan from the turn-2 save, with the turn-1 economy as budget source
+          if (gp) {
+            const plan = await window.electronAPI.getOptimalTaxes(gp, modDataDir, undefined, ep || undefined);
+            if (plan && plan.byFaction) setArmyTaxPlan(plan);
+            // auto-fill the viewed faction's budget at optimal taxes
+            const cur = armySetupData && armySetupData.faction;
+            if (cur && plan && plan.byFaction && plan.byFaction[cur] && typeof plan.byFaction[cur].estNetAtOptimal === "number") {
+              setArmyProjIncome(String(plan.byFaction[cur].estNetAtOptimal));
+            }
+          }
+        };
         const loadSaveForBudget = async () => {
           try {
             const res = await window.electronAPI.selectSaveFile?.(liveSaveDir);
             if (!res) return;
             if (res.error) { alert(res.error); return; }
-            // ONE save → EVERY faction's projected income (cracked positional map)
-            // + the virtual tax-setter plan (optimal bracket per settlement).
-            const [all, plan] = await Promise.all([
-              window.electronAPI.getAllFactionBudgets(res.path, modDataDir),
-              window.electronAPI.getOptimalTaxes(res.path, modDataDir),
-            ]);
-            if (plan && plan.byFaction) setArmyTaxPlan(plan);
-            if (all && all.byFaction) {
-              all.savedFile = res.file;
-              setArmySetupEconomy(all);
-              // auto-fill the currently-viewed faction's budget = turn-1 income at
-              // OPTIMAL taxes (tax plan), else current-tax net.
-              const cur = armySetupData && armySetupData.faction;
-              if (cur) {
-                const pf = plan && plan.byFaction && plan.byFaction[cur];
-                const e = all.byFaction[cur];
-                const bn = (pf && typeof pf.estNetAtOptimal === "number") ? pf.estNetAtOptimal : (e && typeof e.net === "number" ? e.net : null);
-                if (bn != null) setArmyProjIncome(String(bn));
-              }
-              const loc = plan && plan.playerLocated ? `player ${all.player}` : `player ${all.player} (best-effort)`;
-              const tw = (plan && plan.turnReady) ? "" : " ⚠ turn-1 save: no growth data, tax plan unavailable — use a turn-2+ save.";
-              pushToast(`Loaded ${Object.keys(all.byFaction).length} factions from ${res.file} (${loc}, ${(all.confidence * 100).toFixed(0)}% budget confidence). Pick any faction — its turn-1 budget at OPTIMAL taxes auto-fills.${tw}`, tw ? "warn" : "info", 8000);
-            } else {
-              alert("Could not read budgets from that save: " + (all?.error || "unknown"));
-            }
+            // probe: does this save carry growth? (turn-2+ ⇒ growth save, else turn-1)
+            const probe = await window.electronAPI.getOptimalTaxes(res.path, modDataDir);
+            const isGrowth = !!(probe && probe.turnReady);
+            let gp = armyGrowthPath, gf = armyGrowthFile, ep = armyEconomyPath, ef = armyEconomyFile;
+            if (isGrowth) { gp = res.path; gf = res.file; setArmyGrowthPath(res.path); setArmyGrowthFile(res.file); }
+            else { ep = res.path; ef = res.file; setArmyEconomyPath(res.path); setArmyEconomyFile(res.file); }
+            await refreshArmyData(gp, gf, ep, ef);
+            const need = !gp ? " — now load a TURN-2 save for the growth/tax plan." : (!ep ? " — now load a TURN-1 save for accurate budgets (this one's economy is the AI's inflated turn-2 numbers)." : " — both loaded; budgets are turn-1, growth is turn-2.");
+            pushToast(`Loaded ${res.file} as the ${isGrowth ? "GROWTH (turn-2)" : "ECONOMY (turn-1)"} save${need}`, (!gp || !ep) ? "warn" : "info", 8000);
           } catch (e) { alert(e?.message || String(e)); }
         };
         // Budget projection from saveEconomy.byFaction[faction].
@@ -22509,12 +22526,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               <div style={{ padding: "6px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <button onClick={loadSaveForBudget}
-                    title="Load a .sav to read this faction's projected income (the budget). The army/pool come from the mod and don't need a save."
+                    title="Load your saves: a TURN-1 save = the budget/economy, a TURN-2 save = growth (the tax plan). Load both — Provincia auto-detects which is which. Turn-2 is used ONLY for growth because the AI inflates the turn-2 economy."
                     style={{ background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.78rem" }}>
                     📂 Load save…
                   </button>
-                  <span style={{ fontSize: "0.72rem", color: "#8aa" }}>
-                    {armySetupEconomy ? `budget from: ${armySetupEconomy.savedFile || "loaded save"}` : (saveEconomy ? "budget from: live save" : "no save loaded")}
+                  <span style={{ fontSize: "0.72rem", color: "#8aa", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <span style={{ color: armyEconomyFile ? "#7fd17f" : "#e8b85a" }}>💰 budget (turn 1): {armyEconomyFile || "— load a turn-1 save"}</span>
+                    <span style={{ color: armyGrowthFile ? "#7fd17f" : "#e8b85a" }}>📈 growth (turn 2): {armyGrowthFile || "— load a turn-2 save"}</span>
                   </span>
                   <input value={armyFacSearch} onChange={(e) => setArmyFacSearch(e.target.value)} placeholder="Search factions…"
                     style={{ marginLeft: "auto", width: 180, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 8px", fontSize: "0.78rem" }} />
@@ -22561,12 +22579,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       {(() => {
                         const me = armySetupEconomy && armySetupEconomy.byFaction && fac ? armySetupEconomy.byFaction[fac] : null;
                         if (!me || me.net == null) return null;
-                        const isPlayer = armySetupEconomy.player && fac === armySetupEconomy.player;
-                        const pf = armyTaxPlan && armyTaxPlan.byFaction && armyTaxPlan.byFaction[fac];
-                        const atOptimal = pf && typeof pf.estNetAtOptimal === "number";
-                        if (isPlayer) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="This faction is the loaded save's player — its per-settlement tax bytes are reliable, so the optimal-tax rebase starts from a solid baseline.">✓ player save — {atOptimal ? "optimal-tax estimate (reliable brackets)" : "current-tax net (exact)"}</span>;
-                        if (me.verifyBy === "treasury" || me.verifyBy === "army-upkeep") return <span style={{ fontSize: "0.72rem", color: "#e8b85a" }} title={`Budget located from the save (verified by ${me.verifyBy}). ${atOptimal ? "Shown at the OPTIMAL taxes from the tax plan, but this AI faction's CURRENT brackets are best-effort, so the rebase baseline is approximate — verify in game." : "At its current/AI tax."}`}>≈ {atOptimal ? "optimal-tax estimate (AI brackets best-effort)" : "AI/current tax"}</span>;
-                        return <span style={{ fontSize: "0.72rem", color: "#e87060" }} title="Couldn't verify this faction's block — double-check against the game.">⚠ unverified — check</span>;
+                        if (budgetTurn1) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="Budget sourced from your TURN-1 save (the neutral starting economy), rebased to the recommended taxes — the same number for every faction, undisturbed by the AI's turn-2 build-up.">✓ budget from turn-1 economy (rebased to optimal taxes)</span>;
+                        return <span style={{ fontSize: "0.72rem", color: "#e88a5a" }} title={`No turn-1 save loaded, so this budget comes from the TURN-2 save — for AI factions that's the AI's inflated economy (very-high taxes + a turn of build-up), e.g. Carthage ~21651 here vs ~2667 when you play it. Load a TURN-1 save for accurate budgets.`}>⚠ turn-2 economy (AI-inflated) — load a turn-1 save</span>;
                       })()}
                     </div>
                     {(() => {

@@ -366,20 +366,28 @@ function optimalBracketForBase(basePct) {
 // bracket and re-summed. Labelled estimate — exact only for the player faction
 // whose taxes are already the ones in the save.
 //
-//   saveBuf   = the save Buffer
+//   saveBuf   = the GROWTH save Buffer (turn-2+; growth is read from here ONLY)
 //   modDataDir= mod data dir (for descr_strat faction order / budgets)
-//   cracked   = crackSave(buf, modDataDir) result (for ownerByCity)
-// Returns { player, turnReady, byFaction:{ faction:{ settlements:[{name,region,
-//   population,growthPct,currentBracket,baseGrowthPct,optimalBracket,
-//   growthAtOptimal,bracketReliable}], currentNet, estNetAtOptimal, taxIncome,
-//   reliableSettlements, totalSettlements } }, counts }.
-function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint) {
+//   cracked   = crackSave(saveBuf, modDataDir) result (for ownerByCity)
+//   playerHint= optional player faction name (else auto-located)
+//   economyBudgets = optional attributeAllBudgets() result from a TURN-1 save —
+//     the BUDGET source. USER RULE (2026-06-08): the turn-2 save is used ONLY to
+//     compute growth; the budget/economy must come from turn-1 (the AI inflates the
+//     economy over turn 1 — very-high taxes + a turn of build-up — so AI-Carthage
+//     reads ~21651 at turn 2 vs ~10179 at turn 1). When omitted, budgets fall back
+//     to the growth save (clearly less accurate for AI factions).
+// Returns { player, turnReady, budgetTurn1, byFaction:{ faction:{ settlements:[...],
+//   currentNet, estNetAtOptimal, taxIncome, reliableSettlements, totalSettlements }},
+//   counts }.
+function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint, economyBudgets) {
   const { findAllSettlementMarkers } = require("./buildingParser.js");
   const { settlementFieldsAt } = require("./settlementFieldsParser.js");
   const owner = (cracked && (cracked.ownerByCity || cracked._ownerByCity)) || {};
-  const budgets = attributeAllBudgets(saveBuf, modDataDir, playerHint);
+  // Budget from the TURN-1 economy if supplied; else fall back to the growth save.
+  const budgets = economyBudgets || attributeAllBudgets(saveBuf, modDataDir, playerHint);
   const byFacBudget = (budgets && budgets.byFaction) || {};
   const player = budgets && budgets.player;
+  const budgetTurn1 = !!economyBudgets;
 
   const markers = findAllSettlementMarkers(saveBuf) || [];
   const byFaction = {};
@@ -394,7 +402,11 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint) {
     const pop = f.committedPopulation;
     const growth = f.populationGrowth; // projected − committed (population units)
     if (pop == null || !pop || growth == null) continue;
-    const growthPct = (growth / pop) * 100;
+    // RTW population growth is always a multiple of 0.5% (the per-turn growth
+    // modifiers — farming, health, tax — are all ±0.5% steps). The raw pop delta
+    // ÷ pop gives noisy values (0.49/0.51/1.52) because population is integer-
+    // rounded; snap to the nearest 0.5% so the plan reads in real game terms.
+    const growthPct = Math.round((growth / pop) * 100 * 2) / 2;
     if (growth !== 0) anyGrowth = true;
     const curBracket = TAX_BYTE_TO_BRACKET[f.taxRate] || null;
     // The per-settlement tax byte is POPULATED for AI factions too (cracked
@@ -413,11 +425,11 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint) {
       ? Math.round(orderNow - TAX_ORDER_DELTA[curBracket] + TAX_ORDER_DELTA[optimalBracket]) : null;
     (byFaction[fac] = byFaction[fac] || { settlements: [] }).settlements.push({
       name: m.name, region: null, population: pop,
-      growthPct: Math.round(growthPct * 100) / 100,
+      growthPct, // already snapped to 0.5%
       currentBracket: curBracket, bracketReliable: bracketValidated, bracketValidated,
-      baseGrowthPct: Math.round(basePct * 100) / 100,
+      baseGrowthPct: Math.round(basePct * 10) / 10, // clean 0.5 multiple
       optimalBracket,
-      growthAtOptimal: Math.round((basePct + TAX_GROWTH_MOD[optimalBracket]) * 100) / 100,
+      growthAtOptimal: Math.round((basePct + TAX_GROWTH_MOD[optimalBracket]) * 10) / 10,
       orderNow, orderAtOptimal,
     });
   }
@@ -455,7 +467,7 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint) {
   }
 
   return {
-    player, turnReady: anyGrowth, taxGrowthMod: TAX_GROWTH_MOD,
+    player, turnReady: anyGrowth, taxGrowthMod: TAX_GROWTH_MOD, budgetTurn1,
     byFaction, counts,
     playerLocated: budgets && budgets.playerLocated,
     budgetConfidence: budgets && budgets.confidence,

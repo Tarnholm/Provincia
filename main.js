@@ -6364,18 +6364,24 @@ ipcMain.handle("get-all-faction-budgets", async (_event, savePath, modDataDir, p
 // low +0.5 / normal 0 / high −0.5 / very_high −1.0), plus an estimated net at
 // those taxes. Player settlements use the reliable per-settlement tax byte; AI
 // ones can read unset. Returns armySetup.optimalTaxPlan().
-ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir, playerHint) => {
+ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir, playerHint, economyPath) => {
   try {
     if (!savePath || !modDataDir) return { error: "savePath + modDataDir required" };
     const buf = fs.readFileSync(savePath);
     const as = require("./src/armySetup.js");
     const { crackSave } = require("./src/saveCracker.js");
     const cracked = crackSave(buf, modDataDir);
-    const r = as.optimalTaxPlan(buf, modDataDir, cracked, playerHint);
+    // USER RULE: turn-2 save = growth ONLY; budget comes from a TURN-1 save.
+    let economyBudgets = null;
+    if (economyPath && economyPath !== savePath) {
+      try { economyBudgets = as.attributeAllBudgets(fs.readFileSync(economyPath), modDataDir, playerHint); }
+      catch (e) { _writeLog(`[opt-tax] economy save read failed: ${e && e.message}`); }
+    }
+    const r = as.optimalTaxPlan(buf, modDataDir, cracked, playerHint, economyBudgets);
     if (r && r.byFaction) {
       const nf = Object.keys(r.byFaction).length;
       const ns = Object.values(r.byFaction).reduce((s, f) => s + (f.totalSettlements || 0), 0);
-      _writeLog(`[opt-tax] ${path.basename(savePath)} player=${r.player} located=${r.playerLocated} turnReady=${r.turnReady} factions=${nf} settlements=${ns} dist=low ${r.counts.low}/norm ${r.counts.normal}/high ${r.counts.high}/vhigh ${r.counts.very_high}`);
+      _writeLog(`[opt-tax] growth=${path.basename(savePath)} economy=${economyPath ? path.basename(economyPath) : "(same)"} budgetTurn1=${r.budgetTurn1} player=${r.player} located=${r.playerLocated} turnReady=${r.turnReady} factions=${nf} settlements=${ns} dist=low ${r.counts.low}/norm ${r.counts.normal}/high ${r.counts.high}/vhigh ${r.counts.very_high}`);
       if (!r.turnReady) _writeLog(`[opt-tax] WARNING: no growth in save (turn-1?) — optimal-tax plan needs a turn-2+ save`);
     }
     return r;

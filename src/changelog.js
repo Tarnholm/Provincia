@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.975",
+    date: "2026-06-08",
+    items: [
+      { type: "fix", text: "**Budgets were wildly inflated for AI factions** (Carthage showed +26858 when your real number was ~2667). Cause: the budget was read from the *turn-2* save, where each faction is run by the **AI** — very-high taxes + a turn of build-up pump its economy far above what you get playing it. **New two-save model:** the turn-2 save is now used **only for growth**; the **budget comes from a turn-1 save** (the neutral starting economy). Load both — Provincia auto-detects which is which (the status row shows 💰 budget (turn 1) and 📈 growth (turn 2)). Carthage now reads ~14338 at the recommended taxes instead of 26858." },
+      { type: "fix", text: "**Growth now reads in real 0.5% steps** (0.5, 1.0, 1.5…) instead of junk like 0.53% — it was computed from the integer population delta; it's now snapped to the nearest 0.5%, which also makes the base-growth and growth-at-tax columns exact." },
+    ],
+  },
+  {
     version: "0.9.974",
     date: "2026-06-07",
     items: [
