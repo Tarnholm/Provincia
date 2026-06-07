@@ -49,6 +49,20 @@ function listCampaignFactions(modDataDir) {
   return out;
 }
 
+// A descr_strat character line may carry an OPTIONAL `sub_faction <name>` field
+// BEFORE the character's name, e.g.:
+//   character,	sub_faction athens,	Exainetos, named character, age 20, ...
+// which shifts the name one comma-field to the right. Without handling this the
+// name was misread as "sub_faction athens" (and swap/upgrade matching failed).
+// Returns { name, subFaction } — subFaction null when the field is absent.
+function parseCharacterLine(ln) {
+  const parts = ln.split(",").map((s) => s.trim());
+  let i = 1, subFaction = null;
+  const sm = parts[1] && parts[1].match(/^sub_faction\s+(\S+)/i);
+  if (sm) { subFaction = sm[1].toLowerCase(); i = 2; }
+  return { name: parts[i] || "?", subFaction };
+}
+
 // Parse ONE faction's block from descr_strat → settlements (region+buildings) +
 // characters (with armies). Reads the live (mod) descr_strat.
 function parseFaction(modDataDir, faction) {
@@ -86,11 +100,10 @@ function parseFaction(modDataDir, faction) {
     }
     const cm = ln.match(/^character,\s*([^,]+?),\s*(named character|general|spy|assassin|diplomat|merchant|admiral|princess)[^x]*?(?:age\s+(\d+))?[^x]*?(?:x\s+(\d+)\s*,\s*y\s+(\d+))?/);
     if (/^character,/.test(ln)) {
-      const parts = ln.split(",").map(s => s.trim());
-      const name = parts[1] || "?";
+      const { name, subFaction } = parseCharacterLine(ln);
       const role = /\bleader\b/.test(ln) ? "leader" : /\bheir\b/.test(ln) ? "heir" : "general";
       const ax = ln.match(/x\s+(\d+)/), ay = ln.match(/y\s+(\d+)/), aa = ln.match(/age\s+(\d+)/);
-      curChar = { name, role, age: aa ? +aa[1] : null, x: ax ? +ax[1] : null, y: ay ? +ay[1] : null, army: [] };
+      curChar = { name, subFaction, role, age: aa ? +aa[1] : null, x: ax ? +ax[1] : null, y: ay ? +ay[1] : null, army: [] };
       out.characters.push(curChar);
       inArmy = false;
       continue;
@@ -465,7 +478,7 @@ function applyUpgradeFix(text, faction, characterName, opts) {
   let fe = lines.length;
   for (let i = fs0 + 1; i < lines.length; i++) { if (/^faction\s+[a-z_0-9]+\s*,/i.test(lines[i])) { fe = i; break; } }
   let ci = -1;
-  for (let i = fs0; i < fe; i++) { if (/^character,/.test(lines[i]) && (lines[i].split(",")[1] || "").trim().toLowerCase() === cname) { ci = i; break; } }
+  for (let i = fs0; i < fe; i++) { if (/^character,/.test(lines[i]) && parseCharacterLine(lines[i]).name.toLowerCase() === cname) { ci = i; break; } }
   if (ci < 0) return { ok: false, error: `character '${characterName}' not found` };
   let inArmy = false, fixed = 0;
   for (let i = ci + 1; i < fe; i++) {
@@ -501,10 +514,7 @@ function applySwap(text, faction, characterName, oldUnit, newUnit) {
   // character within the faction block
   let ci = -1;
   for (let i = fs0; i < fe; i++) {
-    if (/^character,/.test(lines[i])) {
-      const nm = (lines[i].split(",")[1] || "").trim().toLowerCase();
-      if (nm === cname) { ci = i; break; }
-    }
+    if (/^character,/.test(lines[i]) && parseCharacterLine(lines[i]).name.toLowerCase() === cname) { ci = i; break; }
   }
   if (ci < 0) return { ok: false, error: `character '${characterName}' not found in ${faction}` };
   // its army → first matching unit line (stop at next character/record)

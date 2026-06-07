@@ -22660,7 +22660,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     return (
                       <div key={ci} style={{ marginBottom: 8 }}>
                         <div style={{ color: "#dcc", fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span>{c.role} {c.name} <span style={{ color: "#8aa", fontWeight: 400, fontSize: "0.74rem" }}>· {c.army.length} units · upkeep {c.upkeep} {c.flags.length ? <span style={{ color: "#e8b85a" }}>· ⚠ {c.flags.join("; ")}</span> : null}</span></span>
+                          <span>{c.role} {c.name}{c.subFaction ? <span style={{ color: "#b89", fontWeight: 400, fontSize: "0.72rem" }}> (sub-faction {c.subFaction})</span> : null} <span style={{ color: "#8aa", fontWeight: 400, fontSize: "0.74rem" }}>· {c.army.length} units · upkeep {c.upkeep} {c.flags.length ? <span style={{ color: "#e8b85a" }}>· ⚠ {c.flags.join("; ")}</span> : null}</span></span>
                           {badUp > 0 && (
                             <button
                               onClick={async () => {

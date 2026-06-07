@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.974",
+    date: "2026-06-07",
+    items: [
+      { type: "fix", text: "**Army Setup mis-read characters that carry a `sub_faction` tag** (e.g. Carthage's *Exainetos*, a sub-faction Athens general) — their name showed as “sub_faction athens” and swaps targeted the wrong line. descr_strat character lines can carry an optional `sub_faction <name>` field before the name; the parser now handles it, matches swaps/upgrades correctly, and shows the sub-faction as a small tag next to the general." },
+    ],
+  },
+  {
     version: "0.9.973",
     date: "2026-06-07",
     items: [
