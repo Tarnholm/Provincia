@@ -22512,11 +22512,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(207,143,106,0.10)", border: "1px solid rgba(207,143,106,0.35)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <strong style={{ color: "#e7b88f" }}>Budget</strong>
-                      <span style={{ fontSize: "0.78rem", color: "#bbb" }}>projected income (from game):</span>
-                      <input type="number" value={armyProjIncome} step={50} placeholder={budget ? String(budget.byBracket.high) : "e.g. -437"}
+                      <span style={{ fontSize: "0.78rem", color: armyProjIncome.trim() === "" ? "#e8c873" : "#bbb", fontWeight: armyProjIncome.trim() === "" ? 700 : 400 }}>projected income (type the game's number):</span>
+                      <input type="number" value={armyProjIncome} step={50} placeholder="e.g. -437"
                         onChange={(ev) => setArmyProjIncome(ev.target.value)}
-                        title="Enter the projected income the game shows for this faction at its current tax. The auto-estimate is unreliable on some saves, so this is what the budget uses."
-                        style={{ width: 90, background: "rgba(0,0,0,0.4)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px" }} />
+                        title="Enter the projected income the game shows for this faction at its current tax. The auto-estimate is unreliable on some saves, so the budget uses THIS number. With it set, the panel suggests swaps/trims to fit your floor."
+                        style={{ width: 90, background: "rgba(0,0,0,0.4)", color: "#fff", borderRadius: 4, padding: "2px 6px", border: armyProjIncome.trim() === "" ? "2px solid #e8c873" : "1px solid rgba(255,255,255,0.2)" }} />
                       <span style={{ fontSize: "0.78rem", color: "#bbb" }}>floor:</span>
                       <input type="number" value={armyBudgetFloor} step={50}
                         onChange={(ev) => { const v = parseInt(ev.target.value, 10); if (Number.isFinite(v)) setArmyBudgetFloor(v); }}

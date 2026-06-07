@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.966",
+    date: "2026-06-07",
+    items: [
+      { type: "fix", text: "**Army Setup makes the projected-income step obvious.** The budget box now highlights the projected-income field (amber) with a bold prompt until you fill it, and the placeholder no longer shows the unreliable auto-estimate. Budget swap/trim suggestions only appear once you type the game's real projected-income number — so if a faction's army is already balanced, you'll see nothing to do until you enter that number (then any over-floor deficit produces a trim suggestion)." },
+    ],
+  },
+  {
     version: "0.9.965",
     date: "2026-06-07",
     items: [
