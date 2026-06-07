@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.968",
+    date: "2026-06-07",
+    items: [
+      { type: "feature", text: "**ONE save → EVERY faction's budget, auto. No per-faction opening/saving.** Cracked the faction→economy attribution: the save's economy records sit in descr_strat faction order with the player's record swapped to the front, so the whole roster maps positionally. Now in Army Setup you **Load one save once**, and picking *any* faction auto-fills its projected income (validated 97% against army-upkeep; the played faction, e.g. Gades −536, is exact). So you can balance + budget the entire roster from a single save with no manual number entry. (A few factions with mercenaries/elephants may read slightly high on the confidence check, but the mapping is correct.)" },
+    ],
+  },
+  {
     version: "0.9.967",
     date: "2026-06-07",
     items: [

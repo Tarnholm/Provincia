@@ -192,6 +192,66 @@ function analyzeFaction(modDataDir, faction, saveBuf, floor) {
   };
 }
 
+// Attribute EVERY faction's econ block from ONE save (cracked 2026-06-07).
+// The save's faction-econ records are in descr_strat faction order, EXCEPT the
+// player's record is swapped to recs[0] (the save is centered on the player).
+// So: record[i] → descr_strat faction[i], with record[0] ↔ record[P] swapped,
+// where P = the player's descr_strat index (found as the slot now holding
+// descr_strat[0]'s record). Validated 230/239 by army-upkeep on the gades save;
+// gades (player) net = −536 exact. Returns { byFaction:{name:{net,taxes,income,
+// treasury,armyUpkeep}}, player, confidence }.
+function attributeAllBudgets(saveBuf, modDataDir) {
+  const x = require("./saveCrackerExtras.js");
+  const eco = require("./economyParser.js");
+  const recs = x.parseFactionTreasuries(saveBuf);
+  if (!Array.isArray(recs) || !recs.length) return { error: "no faction records" };
+  const R = recs.map((r) => {
+    const b = eco.readFinancialBlock(saveBuf, r.offset);
+    const d = b && eco.decodeFinancialBlock(b);
+    return {
+      treasury: r.treasury,
+      net: d ? d.net : null,
+      taxes: d && d.income ? d.income.taxes : null,
+      income: d && d.income ? d.income.total : null,
+      armyUpkeep: d && d.expenditure ? d.expenditure.army_upkeep : null,
+    };
+  });
+  // descr_strat faction order + denari + descr_strat army upkeep
+  const p = findDescrStrat(modDataDir);
+  if (!p) return { error: "descr_strat not found" };
+  const ds = fs.readFileSync(p, "latin1");
+  const us = recruitPool.parseUnitStats(modDataDir);
+  const facs = [], den = {}, auF = {};
+  { let cur = null, inArmy = false;
+    for (const ln of ds.split(/\r?\n/)) {
+      const m = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
+      if (m) { cur = m[1]; facs.push(cur); auF[cur] = 0; inArmy = false; continue; }
+      if (!cur) continue;
+      const dm = ln.match(/^denari\s+(\d+)/); if (dm) { den[cur] = +dm[1]; continue; }
+      if (/^army\b/.test(ln)) { inArmy = true; continue; }
+      if (/^character,|^character_record/.test(ln)) inArmy = false;
+      if (inArmy) { const u = ln.match(/^unit\s+(.+?)\s+exp\b/); if (u) auF[cur] += (us[u[1].trim().toLowerCase()] || {}).upkeep || 0; }
+    }
+  }
+  // locate the player index P = the record holding descr_strat[0]'s economy
+  const d0 = den[facs[0]];
+  let P = -1, bestD = Infinity;
+  if (d0 != null) for (let i = 1; i < R.length; i++) {
+    if (R[i].treasury === d0) { const dd = Math.abs((R[i].armyUpkeep || 0) - (auF[facs[0]] || 0)); if (dd < bestD) { bestD = dd; P = i; } }
+  }
+  const byFaction = {};
+  for (let i = 0; i < facs.length; i++) {
+    let rec = i;
+    if (P >= 0) { if (i === 0) rec = P; else if (i === P) rec = 0; }
+    const r = R[rec];
+    if (r) byFaction[facs[i]] = { net: r.net, treasury: r.treasury, armyUpkeep: r.armyUpkeep, armyUpkeepGT: auF[facs[i]], income: { total: r.income, taxes: r.taxes } };
+  }
+  // confidence = fraction whose block army-upkeep is near the descr_strat estimate
+  let ok = 0, n = 0;
+  for (const f of facs) { const r = byFaction[f]; if (!r || r.armyUpkeep == null) continue; n++; if (Math.abs(r.armyUpkeep - (r.armyUpkeepGT || 0)) <= Math.max(250, (r.armyUpkeepGT || 0) * 0.35)) ok++; }
+  return { byFaction, player: P >= 0 ? facs[P] : facs[0], confidence: n ? ok / n : 0, matched: ok, total: n };
+}
+
 // Zero out illegitimate weapon/armour upgrades on one character's army (CRLF-safe).
 // opts.weapon / opts.armour control which to zero (default both). Returns { ok, text, fixed }.
 function applyUpgradeFix(text, faction, characterName, opts) {
@@ -292,7 +352,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
-  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix,
+  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, attributeAllBudgets,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,
 };

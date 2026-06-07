@@ -22420,7 +22420,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           .filter(x => !facQ || x.replace(/_/g, " ").toLowerCase().includes(facQ) || ((factionDisplayNames && factionDisplayNames[x]) || "").toLowerCase().includes(facQ));
         const fetchFor = async (ff) => {
           if (!ff || !modDataDir) return;
-          setArmyProjIncome(""); // clear the entered budget when switching faction
+          // auto-fill the budget from the loaded save's all-faction map (if loaded)
+          const mapNet = armySetupEconomy && armySetupEconomy.byFaction && armySetupEconomy.byFaction[ff] && armySetupEconomy.byFaction[ff].net;
+          setArmyProjIncome(typeof mapNet === "number" ? String(mapNet) : "");
           setArmySetupBusy(true); setArmySetupData(null);
           try { const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor); setArmySetupData(r || { error: "no result" }); }
           catch (e) { setArmySetupData({ error: e?.message || String(e) }); }
@@ -22431,20 +22433,19 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
             const res = await window.electronAPI.selectSaveFile?.(liveSaveDir);
             if (!res) return;
             if (res.error) { alert(res.error); return; }
-            const econ = await window.electronAPI.getSaveEconomy(res.path, modDataDir);
-            if (econ && !econ.error) { econ.savedFile = res.file; setArmySetupEconomy(econ); }
-            // AUTO-FILL the projected income from the SAVE'S PLAYER faction (recs[0]).
-            // Reliable for the played faction; verify it matches the picked faction
-            // by army-upkeep so we never auto-fill a different faction's number.
-            try {
-              const pb = await window.electronAPI.getSavePlayerBudget(res.path);
-              if (pb && !pb.error && typeof pb.net === "number") {
-                const au = armySetupData && armySetupData.armyUpkeep;
-                const match = au == null || pb.army_upkeep == null || Math.abs(pb.army_upkeep - au) <= Math.max(200, au * 0.25);
-                if (match) { setArmyProjIncome(String(pb.net)); pushToast(`Budget auto-filled from save: projected income ${pb.net}`, "info", 6000); }
-                else pushToast(`This save's player budget (${pb.net}) doesn't match ${facLabel}'s army — load ${facLabel}'s own save, or enter the number manually.`, "warning", 9000);
-              }
-            } catch { /* non-fatal — manual entry still works */ }
+            // ONE save → EVERY faction's projected income (cracked positional map).
+            const all = await window.electronAPI.getAllFactionBudgets(res.path, modDataDir);
+            if (all && all.byFaction) {
+              all.savedFile = res.file;
+              setArmySetupEconomy(all);
+              // auto-fill the currently-viewed faction's budget from the map
+              const cur = armySetupData && armySetupData.faction;
+              const e = cur && all.byFaction[cur];
+              if (e && typeof e.net === "number") setArmyProjIncome(String(e.net));
+              pushToast(`Budgets loaded for ${Object.keys(all.byFaction).length} factions from ${res.file} (player ${all.player}, ${(all.confidence * 100).toFixed(0)}% confidence). Pick any faction — its budget auto-fills.`, "info", 8000);
+            } else {
+              alert("Could not read budgets from that save: " + (all?.error || "unknown"));
+            }
           } catch (e) { alert(e?.message || String(e)); }
         };
         // Budget projection from saveEconomy.byFaction[faction].

@@ -6344,6 +6344,20 @@ ipcMain.handle("get-save-player-budget", async (_event, savePath) => {
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: ALL factions' projected income from ONE save (cracked 2026-06-07). The
+// econ records are in descr_strat faction order with the player swapped to recs[0];
+// returns { byFaction:{name:{net,income:{taxes,total},treasury,...}}, player, confidence }.
+ipcMain.handle("get-all-faction-budgets", async (_event, savePath, modDataDir) => {
+  try {
+    if (!savePath || !modDataDir) return { error: "savePath + modDataDir required" };
+    const buf = fs.readFileSync(savePath);
+    const as = require("./src/armySetup.js");
+    const r = as.attributeAllBudgets(buf, modDataDir);
+    if (r && r.byFaction) _writeLog(`[budgets] ${path.basename(savePath)} player=${r.player} confidence=${(r.confidence * 100).toFixed(0)}% (${r.matched}/${r.total})`);
+    return r;
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: list the current campaign's factions (descr_strat faction lines).
 ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   try {

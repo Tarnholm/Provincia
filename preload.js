@@ -96,6 +96,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getArmySetup: (faction, modDataDir, floor) => ipcRenderer.invoke("get-army-setup", faction, modDataDir, floor),
   getCampaignFactions: (modDataDir) => ipcRenderer.invoke("get-campaign-factions", modDataDir),
   getSavePlayerBudget: (savePath) => ipcRenderer.invoke("get-save-player-budget", savePath),
+  getAllFactionBudgets: (savePath, modDataDir) => ipcRenderer.invoke("get-all-faction-budgets", savePath, modDataDir),
   applyArmySwap: (modDataDir, faction, character, oldUnit, newUnit) => ipcRenderer.invoke("apply-army-swap", modDataDir, faction, character, oldUnit, newUnit),
   applyUpgradeFix: (modDataDir, faction, character, opts) => ipcRenderer.invoke("apply-upgrade-fix", modDataDir, faction, character, opts),
   // Per-faction fog-of-war / explored map (corrected 1020×700 grid). Returns
