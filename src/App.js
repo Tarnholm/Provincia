@@ -22421,11 +22421,20 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         const facQ = armyFacSearch.trim().toLowerCase();
         const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x))
           .filter(x => !facQ || x.replace(/_/g, " ").toLowerCase().includes(facQ) || ((factionDisplayNames && factionDisplayNames[x]) || "").toLowerCase().includes(facQ));
+        // The BUDGET we want is the TURN-1 projected income WITH OPTIMAL TAXES set
+        // (the user's setup moment): prefer the tax-plan's estNetAtOptimal; fall
+        // back to the current-tax net only when no plan/optimal value is available.
+        const budgetNetFor = (ff) => {
+          const pf = armyTaxPlan && armyTaxPlan.byFaction && armyTaxPlan.byFaction[ff];
+          if (pf && typeof pf.estNetAtOptimal === "number") return pf.estNetAtOptimal;
+          const e = armySetupEconomy && armySetupEconomy.byFaction && armySetupEconomy.byFaction[ff];
+          return e && typeof e.net === "number" ? e.net : null;
+        };
         const fetchFor = async (ff) => {
           if (!ff || !modDataDir) return;
-          // auto-fill the budget from the loaded save's all-faction map (if loaded)
-          const mapNet = armySetupEconomy && armySetupEconomy.byFaction && armySetupEconomy.byFaction[ff] && armySetupEconomy.byFaction[ff].net;
-          setArmyProjIncome(typeof mapNet === "number" ? String(mapNet) : "");
+          // auto-fill the budget = turn-1 projected income at OPTIMAL taxes (if loaded)
+          const bn = budgetNetFor(ff);
+          setArmyProjIncome(bn != null ? String(bn) : "");
           setArmySetupBusy(true); setArmySetupData(null);
           try { const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor); setArmySetupData(r || { error: "no result" }); }
           catch (e) { setArmySetupData({ error: e?.message || String(e) }); }
@@ -22446,12 +22455,18 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
             if (all && all.byFaction) {
               all.savedFile = res.file;
               setArmySetupEconomy(all);
-              // auto-fill the currently-viewed faction's budget from the map
+              // auto-fill the currently-viewed faction's budget = turn-1 income at
+              // OPTIMAL taxes (tax plan), else current-tax net.
               const cur = armySetupData && armySetupData.faction;
-              const e = cur && all.byFaction[cur];
-              if (e && typeof e.net === "number") setArmyProjIncome(String(e.net));
+              if (cur) {
+                const pf = plan && plan.byFaction && plan.byFaction[cur];
+                const e = all.byFaction[cur];
+                const bn = (pf && typeof pf.estNetAtOptimal === "number") ? pf.estNetAtOptimal : (e && typeof e.net === "number" ? e.net : null);
+                if (bn != null) setArmyProjIncome(String(bn));
+              }
+              const loc = plan && plan.playerLocated ? `player ${all.player}` : `player ${all.player} (best-effort)`;
               const tw = (plan && plan.turnReady) ? "" : " ⚠ turn-1 save: no growth data, tax plan unavailable — use a turn-2+ save.";
-              pushToast(`Budgets loaded for ${Object.keys(all.byFaction).length} factions from ${res.file} (player ${all.player}, ${(all.confidence * 100).toFixed(0)}% confidence). Pick any faction — its budget + tax plan auto-fill.${tw}`, tw ? "warn" : "info", 8000);
+              pushToast(`Loaded ${Object.keys(all.byFaction).length} factions from ${res.file} (${loc}, ${(all.confidence * 100).toFixed(0)}% budget confidence). Pick any faction — its turn-1 budget at OPTIMAL taxes auto-fills.${tw}`, tw ? "warn" : "info", 8000);
             } else {
               alert("Could not read budgets from that save: " + (all?.error || "unknown"));
             }
@@ -22533,10 +22548,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(207,143,106,0.10)", border: "1px solid rgba(207,143,106,0.35)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <strong style={{ color: "#e7b88f" }}>Budget</strong>
-                      <span style={{ fontSize: "0.78rem", color: armyProjIncome.trim() === "" ? "#e8c873" : "#bbb", fontWeight: armyProjIncome.trim() === "" ? 700 : 400 }}>projected income (type the game's number):</span>
-                      <input type="number" value={armyProjIncome} step={50} placeholder="e.g. -437"
+                      <span style={{ fontSize: "0.78rem", color: armyProjIncome.trim() === "" ? "#e8c873" : "#bbb", fontWeight: armyProjIncome.trim() === "" ? 700 : 400 }}>turn-1 income @ optimal taxes (editable):</span>
+                      <input type="number" value={armyProjIncome} step={50} placeholder="load a turn-2 save"
                         onChange={(ev) => setArmyProjIncome(ev.target.value)}
-                        title="Enter the projected income the game shows for this faction at its current tax. The auto-estimate is unreliable on some saves, so the budget uses THIS number. With it set, the panel suggests swaps/trims to fit your floor."
+                        title="Auto-filled with this faction's TURN-1 projected income computed AT THE OPTIMAL TAXES from the tax plan (the setup moment). It's an estimate — override with the game's exact number if you like. The swap/trim suggestions budget against it."
                         style={{ width: 90, background: "rgba(0,0,0,0.4)", color: "#fff", borderRadius: 4, padding: "2px 6px", border: armyProjIncome.trim() === "" ? "2px solid #e8c873" : "1px solid rgba(255,255,255,0.2)" }} />
                       <span style={{ fontSize: "0.78rem", color: "#bbb" }}>floor:</span>
                       <input type="number" value={armyBudgetFloor} step={50}
@@ -22547,8 +22562,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         const me = armySetupEconomy && armySetupEconomy.byFaction && fac ? armySetupEconomy.byFaction[fac] : null;
                         if (!me || me.net == null) return null;
                         const isPlayer = armySetupEconomy.player && fac === armySetupEconomy.player;
-                        if (isPlayer) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="This faction is the loaded save's player, so this is YOUR hand-set tax income — exact.">✓ your taxes (save's player) — exact</span>;
-                        if (me.verifyBy === "treasury" || me.verifyBy === "army-upkeep") return <span style={{ fontSize: "0.72rem", color: "#e8b85a" }} title={`Read from the save (verified by ${me.verifyBy}), but this faction is NOT the save's player — so it's at its DEFAULT/AI tax, not your hand-set taxes. Load this faction's own save for your numbers.`}>⚠ default/AI tax — load {facLabel}'s save for your settings</span>;
+                        const pf = armyTaxPlan && armyTaxPlan.byFaction && armyTaxPlan.byFaction[fac];
+                        const atOptimal = pf && typeof pf.estNetAtOptimal === "number";
+                        if (isPlayer) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="This faction is the loaded save's player — its per-settlement tax bytes are reliable, so the optimal-tax rebase starts from a solid baseline.">✓ player save — {atOptimal ? "optimal-tax estimate (reliable brackets)" : "current-tax net (exact)"}</span>;
+                        if (me.verifyBy === "treasury" || me.verifyBy === "army-upkeep") return <span style={{ fontSize: "0.72rem", color: "#e8b85a" }} title={`Budget located from the save (verified by ${me.verifyBy}). ${atOptimal ? "Shown at the OPTIMAL taxes from the tax plan, but this AI faction's CURRENT brackets are best-effort, so the rebase baseline is approximate — verify in game." : "At its current/AI tax."}`}>≈ {atOptimal ? "optimal-tax estimate (AI brackets best-effort)" : "AI/current tax"}</span>;
                         return <span style={{ fontSize: "0.72rem", color: "#e87060" }} title="Couldn't verify this faction's block — double-check against the game.">⚠ unverified — check</span>;
                       })()}
                     </div>

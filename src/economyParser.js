@@ -359,8 +359,21 @@ function findEconHistoryStart(buf, core) {
   return -1;
 }
 
-// Read the FINAL (current-turn) 23-i32 sub-block for a faction record at `core`.
-// Returns the int32[23] array, or null if no block is present/parseable.
+// Read the per-faction econ-history 23-i32 sub-block to use for the Financial
+// Overview. Returns the int32[23] array, or null if no block is present/parseable.
+//
+// 2026-06-07 FIX (turn-2+ saves): the econ-history grows one 23-i32 sub-block per
+// turn; the LAST sub-block is the CURRENT (in-progress) turn. At a turn-START
+// autosave the engine has already booked this turn's UPKEEP (slots 11/12/22) but
+// has NOT yet computed this turn's INCOME (slots 0/1/2/3/9 = 0) for NON-player
+// factions — so the literal last block decodes to income 0 − upkeep = a large
+// bogus negative net (e.g. Carthage −37288 on "Gades Turn 2 Start"). The player's
+// own last block IS income-populated (the engine projects the player's income),
+// so this only bit AI factions. We therefore use the MOST RECENT sub-block that
+// actually carries income (the last completed/projected turn); we fall back to the
+// literal last block only if none has income (turn-1 saves have a single
+// income-populated block, so they are unaffected). Verified across all 239 records
+// on the turn-2 corpus: 218 corrected, Carthage −37288 → +21651, player unchanged.
 function readFinancialBlock(buf, core) {
   const start = findEconHistoryStart(buf, core);
   if (start < 0) return null;
@@ -370,7 +383,18 @@ function readFinancialBlock(buf, core) {
   const body = f.slice(2, f.length - 1);
   if (body.length < BLOCK_STRIDE || body.length % BLOCK_STRIDE !== 0) return null;
   const nBlocks = body.length / BLOCK_STRIDE;
-  return body.slice((nBlocks - 1) * BLOCK_STRIDE, nBlocks * BLOCK_STRIDE);
+  const blockAt = (b) => body.slice(b * BLOCK_STRIDE, (b + 1) * BLOCK_STRIDE);
+  const incomeHalf = (blk) => {
+    let s = 0;
+    for (let i = INCOME_SLOT_RANGE[0]; i <= INCOME_SLOT_RANGE[1]; i++) s += Number.isFinite(blk[i]) ? blk[i] : 0;
+    return s;
+  };
+  // most recent sub-block WITH income (skip trailing pre-income in-progress turns)
+  for (let b = nBlocks - 1; b >= 0; b--) {
+    const blk = blockAt(b);
+    if (incomeHalf(blk) > 0) return blk;
+  }
+  return blockAt(nBlocks - 1); // none had income — preserve prior behaviour
 }
 
 // Turn a raw int32[23] block into a Financial Overview breakdown object, or null

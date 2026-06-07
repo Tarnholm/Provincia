@@ -200,7 +200,7 @@ function analyzeFaction(modDataDir, faction, saveBuf, floor) {
 // descr_strat[0]'s record). Validated 230/239 by army-upkeep on the gades save;
 // gades (player) net = −536 exact. Returns { byFaction:{name:{net,taxes,income,
 // treasury,armyUpkeep}}, player, confidence }.
-function attributeAllBudgets(saveBuf, modDataDir) {
+function attributeAllBudgets(saveBuf, modDataDir, playerHint) {
   const x = require("./saveCrackerExtras.js");
   const eco = require("./economyParser.js");
   const recs = x.parseFactionTreasuries(saveBuf);
@@ -208,9 +208,25 @@ function attributeAllBudgets(saveBuf, modDataDir) {
   const R = recs.map((r) => {
     const b = eco.readFinancialBlock(saveBuf, r.offset);
     const d = b && eco.decodeFinancialBlock(b);
+    // RECURRING / PROJECTED net for BUDGETING (not the Financial-Overview actual
+    // net). The completed-turn block for an AI faction includes one-time
+    // RECRUITMENT (expenditure slot f13) and CONSTRUCTION (f14) it spent rushing a
+    // turn-1 army/buildings — e.g. Carthage T2 f13=32450 makes d.net −11799 even
+    // though its sustainable balance is +21651. Army-upkeep budgeting must use the
+    // RECURRING expenditure only (wages + army_upkeep + other22), so we recompute
+    // net = income.total − recurringExp, dropping the one-time f13/f14 (which
+    // decodeFinancialBlock folds into expenditure.total + flags as `unattributed`).
+    // This also normalises AI completed-turn blocks against the player's projected
+    // block (which has no recruitment yet). See findings — turn-2 econ blocks.
+    let net = d ? d.net : null;
+    if (d && d.income && d.expenditure && d.income.total != null) {
+      const recurringExp = (d.expenditure.wages || 0) + (d.expenditure.army_upkeep || 0) + (d.expenditure.other || 0);
+      net = Math.round(d.income.total - recurringExp);
+    }
     return {
       treasury: r.treasury,
-      net: d ? d.net : null,
+      net,
+      fullNet: d ? d.net : null, // Financial-Overview actual net (incl. one-time costs)
       taxes: d && d.income ? d.income.taxes : null,
       income: d && d.income ? d.income.total : null,
       armyUpkeep: d && d.expenditure ? d.expenditure.army_upkeep : null,
@@ -233,18 +249,44 @@ function attributeAllBudgets(saveBuf, modDataDir) {
       if (inArmy) { const u = ln.match(/^unit\s+(.+?)\s+exp\b/); if (u) auF[cur] += (us[u[1].trim().toLowerCase()] || {}).upkeep || 0; }
     }
   }
-  // locate the player index P = the record holding descr_strat[0]'s economy
+  // Locate the player index P (the save's econ records are descr_strat order with
+  // the player's record swapped into recs[0]; descr_strat[0]'s record sits at
+  // recs[P]). Priority:
+  //   1. explicit playerHint (the user/panel designating the save's player)
+  //   2. SWAP-IMPROVEMENT heuristic: pick the j whose 0↔j swap best aligns BOTH
+  //      slots' treasury to their descr_strat starting denari. The swapped-out
+  //      faction (descr_strat[0], a major faction with a large starting denari)
+  //      leaves a big-treasury fingerprint at recs[P], so this is robust at turns
+  //      1-2 even after the treasuries have moved (verified: Gades→101 imp 23.6k,
+  //      Carthage→4 imp 6k, across T1/T1End/T2). Only swap when the matched record
+  //      is a CLEARLY better descr_strat[0] than recs[0] is (so a faction-0 player
+  //      correctly yields no swap). The old exact-treasury match (R[i]==den[facs0])
+  //      is the imp==exact special case, so this subsumes it.
   const d0 = den[facs[0]];
-  let P = -1, bestD = Infinity;
-  if (d0 != null) for (let i = 1; i < R.length; i++) {
-    if (R[i].treasury === d0) { const dd = Math.abs((R[i].armyUpkeep || 0) - (auF[facs[0]] || 0)); if (dd < bestD) { bestD = dd; P = i; } }
+  let P = -1;
+  if (playerHint && facs.includes(String(playerHint).toLowerCase())) {
+    const hi = facs.indexOf(String(playerHint).toLowerCase());
+    P = hi === 0 ? -1 : hi; // hinting faction-0 means no swap
+  } else if (d0 != null) {
+    const noSwap0 = Math.abs((R[0].treasury || 0) - d0);
+    let bestJ = -1, bestImp = 0;
+    for (let j = 1; j < R.length && j < facs.length; j++) {
+      const dj = den[facs[j]]; if (dj == null) continue;
+      const noSwap = noSwap0 + Math.abs((R[j].treasury || 0) - dj);
+      const swap = Math.abs((R[j].treasury || 0) - d0) + Math.abs((R[0].treasury || 0) - dj);
+      const imp = noSwap - swap;
+      if (imp > bestImp) { bestImp = imp; bestJ = j; }
+    }
+    // accept only if the swap meaningfully improves AND recs[bestJ] is a better
+    // descr_strat[0] than recs[0] (guards the player-IS-faction-0 case → no swap).
+    if (bestJ > 0 && bestImp > 1000 && Math.abs((R[bestJ].treasury || 0) - d0) < noSwap0) P = bestJ;
   }
   const byFaction = {};
   for (let i = 0; i < facs.length; i++) {
     let rec = i;
     if (P >= 0) { if (i === 0) rec = P; else if (i === P) rec = 0; }
     const r = R[rec];
-    if (r) byFaction[facs[i]] = { net: r.net, treasury: r.treasury, armyUpkeep: r.armyUpkeep, armyUpkeepGT: auF[facs[i]], income: { total: r.income, taxes: r.taxes } };
+    if (r) byFaction[facs[i]] = { net: r.net, fullNet: r.fullNet, treasury: r.treasury, armyUpkeep: r.armyUpkeep, armyUpkeepGT: auF[facs[i]], income: { total: r.income, taxes: r.taxes } };
   }
   // Per-faction verification: a mapping is trustworthy if the block treasury
   // equals the faction's starting denari (EXACT key) OR the block army-upkeep is
@@ -265,7 +307,8 @@ function attributeAllBudgets(saveBuf, modDataDir) {
     r.verifyBy = tOk ? "treasury" : auOk ? "army-upkeep" : "none";
     if (r.verified) ok++;
   }
-  return { byFaction, player: P >= 0 ? facs[P] : facs[0], confidence: n ? ok / n : 0, matched: ok, total: n, noData };
+  const playerLocated = P >= 0 || (playerHint && facs.includes(String(playerHint).toLowerCase()));
+  return { byFaction, player: P >= 0 ? facs[P] : facs[0], playerIndex: P, playerLocated, hinted: !!playerHint, confidence: n ? ok / n : 0, matched: ok, total: n, noData };
 }
 
 // ── VIRTUAL TAX-SETTER ──────────────────────────────────────────────────────
@@ -307,11 +350,11 @@ function optimalBracketForBase(basePct) {
 //   population,growthPct,currentBracket,baseGrowthPct,optimalBracket,
 //   growthAtOptimal,bracketReliable}], currentNet, estNetAtOptimal, taxIncome,
 //   reliableSettlements, totalSettlements } }, counts }.
-function optimalTaxPlan(saveBuf, modDataDir, cracked) {
+function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint) {
   const { findAllSettlementMarkers } = require("./buildingParser.js");
   const { settlementFieldsAt } = require("./settlementFieldsParser.js");
   const owner = (cracked && (cracked.ownerByCity || cracked._ownerByCity)) || {};
-  const budgets = attributeAllBudgets(saveBuf, modDataDir);
+  const budgets = attributeAllBudgets(saveBuf, modDataDir, playerHint);
   const byFacBudget = (budgets && budgets.byFaction) || {};
   const player = budgets && budgets.player;
 
@@ -383,6 +426,7 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked) {
   return {
     player, turnReady: anyGrowth, taxGrowthMod: TAX_GROWTH_MOD,
     byFaction, counts,
+    playerLocated: budgets && budgets.playerLocated,
     budgetConfidence: budgets && budgets.confidence,
   };
 }

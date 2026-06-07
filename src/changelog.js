@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.972",
+    date: "2026-06-07",
+    items: [
+      { type: "fix", text: "**Army Setup budgets were garbage on turn-2 saves (e.g. Carthage −37288) — now fixed.** On a turn-START autosave the engine has already booked a faction's *upkeep* for the new turn but not yet its *income*, so reading that in-progress block gave income 0 − upkeep = a huge bogus deficit. The economy reader now uses the most recent turn-block that actually carries income (the completed/projected turn), which also fixes the in-game Financial Overview for every AI faction on turn-2+ saves. Carthage now reads a sane **+21651**." },
+      { type: "fix", text: "**Budget now shows each faction's TURN-1 income at the OPTIMAL taxes** (the setup moment), not the AI's current taxes. It's auto-filled from the tax plan and stays editable so you can drop in the game's exact number. One-time **recruitment & construction** spending is excluded from the budget net (it's not recurring upkeep), so a faction that splurged on a turn-1 army no longer looks bankrupt." },
+      { type: "improvement", text: "**All-faction budget attribution now works on turn-2+ saves.** The player faction is located by a swap-fingerprint heuristic (robust after treasuries have moved), so picking any faction shows the right budget from one mid-campaign save — Gades, Carthage, Ptolemaic, Seleucid all attribute correctly. The badge now says **✓ player save** (reliable brackets) or **≈ optimal-tax estimate (AI brackets best-effort)**." },
+    ],
+  },
+  {
     version: "0.9.971",
     date: "2026-06-07",
     items: [
