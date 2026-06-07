@@ -9551,6 +9551,8 @@ function App() {
   // Economy loaded via the panel's own "Load save" button (overrides the global
   // live saveEconomy for the budget). { byFaction, savedFile } or null.
   const [armySetupEconomy, setArmySetupEconomy] = useState(null);
+  // Current campaign's faction roster (descr_strat faction lines) for the picker.
+  const [armySetupFactions, setArmySetupFactions] = useState(null);
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -12598,6 +12600,8 @@ function App() {
                 onClick={async () => {
                   setShowArmySetup(true);
                   if (!modDataDir) { setArmySetupData({ error: "No mod loaded." }); return; }
+                  // load the campaign roster for the picker
+                  try { const cf = await window.electronAPI.getCampaignFactions(modDataDir); if (cf && cf.factions) setArmySetupFactions(cf.factions); } catch {}
                   const fac = selectedFaction || playerFaction;
                   if (!fac) { setArmySetupData(null); return; } // picker prompts for a faction
                   setArmySetupBusy(true); setArmySetupData(null);
@@ -21643,6 +21647,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
                 <span style={{ marginRight: "auto", fontSize: "0.68rem", color: "#667" }}>Writes descr_strat (a backup is taken first). Restart the game to see the menu change.</span>
+                <button onClick={() => setStagedPlayable(new Set())} title="Make every nation non-playable" style={{ padding: "5px 12px", background: "rgba(255,255,255,0.06)", color: "#e0a0a0", border: "1px solid rgba(200,90,90,0.4)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}>All off</button>
+                <button onClick={() => setStagedPlayable(new Set(all))} title="Make every nation playable" style={{ padding: "5px 12px", background: "rgba(255,255,255,0.06)", color: "#a0d0a0", border: "1px solid rgba(90,180,90,0.4)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}>All on</button>
                 <button onClick={() => setStagedPlayable(new Set(factionStatusData.playable))} style={{ padding: "5px 12px", background: "rgba(255,255,255,0.06)", color: "#bbb", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, cursor: "pointer", fontSize: "0.8rem" }}>Reset</button>
                 <button
                   disabled={over > 0 || !dirty}
@@ -22400,11 +22406,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         const facLabel = (factionDisplayNames && fac && factionDisplayNames[fac]) || fac || "—";
         const MULT = (d && d.taxBrackets) || { low: 0.80, normal: 1.00, high: 1.20, very_high: 1.50 };
         const close = () => setShowArmySetup(false);
-        // Faction list for the picker (descr_sm_factions order, else display-name keys),
-        // minus the rebel/slave pseudo-factions.
-        const SKIP_FAC = new Set(["slave", "rebels", "roman_rebels_1", "roman_rebels_2"]);
-        const facList = ((smFactionsOrder && smFactionsOrder.length) ? smFactionsOrder : Object.keys(factionDisplayNames || {}))
-          .filter(x => x && !SKIP_FAC.has(x));
+        // Faction list for the picker = the CURRENT campaign's roster (descr_strat
+        // faction lines), minus rebel/slave pseudo-factions.
+        const SKIP_FAC = new Set(["slave", "rebels", "roman_rebels_1", "roman_rebels_2", "roman_senate"]);
+        const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x));
         const fetchFor = async (ff) => {
           if (!ff || !modDataDir) return;
           setArmySetupBusy(true); setArmySetupData(null);
@@ -22467,15 +22472,24 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     {armySetupEconomy ? `budget from: ${armySetupEconomy.savedFile || "loaded save"}` : (saveEconomy ? "budget from: live save" : "no save loaded — budget shows “—”")}
                   </span>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 3, maxHeight: 96, overflowY: "auto", alignContent: "flex-start" }}>
-                  {facList.map((ff) => (
-                    <button key={ff} onClick={() => fetchFor(ff)} title={(factionDisplayNames && factionDisplayNames[ff]) || ff}
-                      style={{ width: 30, height: 30, padding: 1, borderRadius: 4, cursor: "pointer",
-                        background: ff === fac ? "rgba(207,143,106,0.35)" : "rgba(255,255,255,0.04)",
-                        border: ff === fac ? "1px solid #cf8f6a" : "1px solid rgba(255,255,255,0.08)" }}>
-                      <FactionIcon iconPath={`faction_icons/${ff}.tga`} alt={ff} size={"100%"} tightCrop modIconsDir={activeIconsDir} />
-                    </button>
-                  ))}
+                <div style={{ maxHeight: 168, overflowY: "auto", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: 6, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 6, alignContent: "start" }}>
+                  {facList.length === 0 && <span style={{ color: "#889", fontSize: "0.74rem", gridColumn: "1 / -1" }}>Loading campaign factions…</span>}
+                  {facList.map((ff) => {
+                    const on = ff === fac;
+                    return (
+                      <button key={ff} onClick={() => fetchFor(ff)}
+                        title={`${((factionDisplayNames && factionDisplayNames[ff]) || ff).replace(/_/g, " ")} — click to analyze`}
+                        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 3px 4px", borderRadius: 8, cursor: "pointer",
+                          border: on ? "2px solid #cf8f6a" : "2px solid transparent",
+                          background: on ? "rgba(207,143,106,0.16)" : "rgba(255,255,255,0.03)",
+                          opacity: on ? 1 : 0.7, transition: "opacity .12s, background .12s, border-color .12s" }}>
+                        <div style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <FactionIcon iconPath={`faction_icons/${ff}.tga`} alt={ff} size={38} tightCrop modIconsDir={activeIconsDir} />
+                        </div>
+                        <span style={{ fontSize: "0.62rem", textAlign: "center", textTransform: "capitalize", color: on ? "#f0d6b8" : "#9aa", lineHeight: 1.12, maxWidth: "100%", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{((factionDisplayNames && factionDisplayNames[ff]) || ff).replace(/_/g, " ")}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div style={{ overflow: "auto", padding: "8px 16px" }}>

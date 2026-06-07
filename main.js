@@ -6325,6 +6325,15 @@ ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
   }
 });
 
+// IPC: list the current campaign's factions (descr_strat faction lines).
+ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const as = require("./src/armySetup.js");
+    return { factions: as.listCampaignFactions(modDataDir) };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: army-setup analysis for one faction (2026-06-07) — descr_strat army +
 // upkeep + balance, recruitable pool (full RIS gating), retraining availability.
 // Budget (virtual tax) is computed in the renderer from saveEconomy. Returns the

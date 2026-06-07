@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.961",
+    date: "2026-06-07",
+    items: [
+      { type: "fix", text: "**Army Setup faction picker now shows the current campaign's factions only** (read from the campaign's descr_strat), not the vanilla list — and the icon tiles now match the Playable Nations picker (icon + name, single-select highlight)." },
+      { type: "feature", text: "**Playable Nations: “All off” / “All on” buttons.** One click to make every nation non-playable (or playable) before fine-tuning the list." },
+    ],
+  },
+  {
     version: "0.9.960",
     date: "2026-06-07",
     items: [

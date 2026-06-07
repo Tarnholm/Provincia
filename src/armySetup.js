@@ -35,6 +35,20 @@ function findDescrStrat(modDataDir) {
   return null;
 }
 
+// List every faction token in the campaign's descr_strat (the `faction <name>,`
+// lines) — the CURRENT campaign's roster, not the vanilla/all-mod set.
+function listCampaignFactions(modDataDir) {
+  const p = findDescrStrat(modDataDir);
+  if (!p) return [];
+  const txt = fs.readFileSync(p, "latin1");
+  const out = [];
+  for (const line of txt.split(/\r?\n/)) {
+    const m = line.match(/^faction\s+([a-z_0-9]+)\s*,/i);
+    if (m && !out.includes(m[1])) out.push(m[1]);
+  }
+  return out;
+}
+
 // Parse ONE faction's block from descr_strat → settlements (region+buildings) +
 // characters (with armies). Reads the live (mod) descr_strat.
 function parseFaction(modDataDir, faction) {
@@ -190,7 +204,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
-  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction,
+  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,
 };
