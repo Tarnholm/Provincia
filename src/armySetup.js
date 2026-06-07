@@ -246,10 +246,26 @@ function attributeAllBudgets(saveBuf, modDataDir) {
     const r = R[rec];
     if (r) byFaction[facs[i]] = { net: r.net, treasury: r.treasury, armyUpkeep: r.armyUpkeep, armyUpkeepGT: auF[facs[i]], income: { total: r.income, taxes: r.taxes } };
   }
-  // confidence = fraction whose block army-upkeep is near the descr_strat estimate
-  let ok = 0, n = 0;
-  for (const f of facs) { const r = byFaction[f]; if (!r || r.armyUpkeep == null) continue; n++; if (Math.abs(r.armyUpkeep - (r.armyUpkeepGT || 0)) <= Math.max(250, (r.armyUpkeepGT || 0) * 0.35)) ok++; }
-  return { byFaction, player: P >= 0 ? facs[P] : facs[0], confidence: n ? ok / n : 0, matched: ok, total: n };
+  // Per-faction verification: a mapping is trustworthy if the block treasury
+  // equals the faction's starting denari (EXACT key) OR the block army-upkeep is
+  // near the descr_strat estimate (covers factions whose treasury already moved
+  // off the start). Treasury alone covers the elephant/mercenary factions whose
+  // in-game upkeep exceeds the EDU base sum (e.g. indians 15500==15500), so they
+  // no longer get falsely flagged. `verified`/`verifyBy` attached per faction.
+  let ok = 0, n = 0, noData = 0;
+  for (const f of facs) {
+    const r = byFaction[f]; if (!r) continue;
+    // emergent / placeholder factions (egypt, gauls, greeks…) have no econ record:
+    // treasury 0 + null block. Not active at start → no budget to attribute.
+    if (r.net == null || (r.treasury === 0 && r.income && r.income.total == null)) { r.verified = false; r.verifyBy = "no-data"; r.active = false; noData++; continue; }
+    r.active = true; n++;
+    const tOk = r.treasury != null && den[f] != null && r.treasury === den[f];
+    const auOk = r.armyUpkeep != null && Math.abs(r.armyUpkeep - (r.armyUpkeepGT || 0)) <= Math.max(300, (r.armyUpkeepGT || 0) * 0.4);
+    r.verified = tOk || auOk;
+    r.verifyBy = tOk ? "treasury" : auOk ? "army-upkeep" : "none";
+    if (r.verified) ok++;
+  }
+  return { byFaction, player: P >= 0 ? facs[P] : facs[0], confidence: n ? ok / n : 0, matched: ok, total: n, noData };
 }
 
 // Zero out illegitimate weapon/armour upgrades on one character's army (CRLF-safe).

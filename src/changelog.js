@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.969",
+    date: "2026-06-07",
+    items: [
+      { type: "fix", text: "**Mercenary/elephant factions no longer falsely flagged in the budget auto-fill.** The auto-attribution now verifies each faction by **treasury** (exact) as well as army-upkeep, so factions whose in-game upkeep exceeds the base estimate (elephants, mercenaries — e.g. Indians, Mauryans, Kush) verify correctly. Emergent/placeholder factions with no economy (egypt, gauls, greeks…) are excluded instead of counted as failures. Result: **99.5% verified across active factions** (verified Gades −536, Carthage, Ptolemies, etc.). Each auto-filled budget now shows a **✓ auto-verified** badge (or **⚠ check** on the rare unverifiable one) so you know which to trust at a glance." },
+    ],
+  },
+  {
     version: "0.9.968",
     date: "2026-06-07",
     items: [

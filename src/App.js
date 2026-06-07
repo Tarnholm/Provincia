@@ -22534,6 +22534,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         onChange={(ev) => { const v = parseInt(ev.target.value, 10); if (Number.isFinite(v)) setArmyBudgetFloor(v); }}
                         style={{ width: 80, background: "rgba(0,0,0,0.4)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px" }} />
                       <span style={{ fontSize: "0.72rem", color: "#8aa" }}>treasury {d.denari ?? "—"} · army upkeep {d.armyUpkeep}</span>
+                      {(() => {
+                        const me = armySetupEconomy && armySetupEconomy.byFaction && fac ? armySetupEconomy.byFaction[fac] : null;
+                        if (!me || me.net == null) return null;
+                        const v = me.verifyBy;
+                        if (v === "treasury" || v === "army-upkeep") return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title={`Auto-filled from the loaded save and verified by ${v} match`}>✓ auto-verified ({v})</span>;
+                        return <span style={{ fontSize: "0.72rem", color: "#e8b85a" }} title="Auto-filled from the save but couldn't be verified — double-check this one against the game">⚠ auto (unverified — check)</span>;
+                      })()}
                     </div>
                     {(() => {
                       const proj = parseInt(armyProjIncome, 10);
