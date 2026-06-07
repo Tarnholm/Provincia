@@ -22537,9 +22537,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       {(() => {
                         const me = armySetupEconomy && armySetupEconomy.byFaction && fac ? armySetupEconomy.byFaction[fac] : null;
                         if (!me || me.net == null) return null;
-                        const v = me.verifyBy;
-                        if (v === "treasury" || v === "army-upkeep") return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title={`Auto-filled from the loaded save and verified by ${v} match`}>✓ auto-verified ({v})</span>;
-                        return <span style={{ fontSize: "0.72rem", color: "#e8b85a" }} title="Auto-filled from the save but couldn't be verified — double-check this one against the game">⚠ auto (unverified — check)</span>;
+                        const isPlayer = armySetupEconomy.player && fac === armySetupEconomy.player;
+                        if (isPlayer) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="This faction is the loaded save's player, so this is YOUR hand-set tax income — exact.">✓ your taxes (save's player) — exact</span>;
+                        if (me.verifyBy === "treasury" || me.verifyBy === "army-upkeep") return <span style={{ fontSize: "0.72rem", color: "#e8b85a" }} title={`Read from the save (verified by ${me.verifyBy}), but this faction is NOT the save's player — so it's at its DEFAULT/AI tax, not your hand-set taxes. Load this faction's own save for your numbers.`}>⚠ default/AI tax — load {facLabel}'s save for your settings</span>;
+                        return <span style={{ fontSize: "0.72rem", color: "#e87060" }} title="Couldn't verify this faction's block — double-check against the game.">⚠ unverified — check</span>;
                       })()}
                     </div>
                     {(() => {

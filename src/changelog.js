@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.970",
+    date: "2026-06-07",
+    items: [
+      { type: "improvement", text: "**Army Setup budget now says whose taxes it's showing.** Only the loaded save's *player* faction carries your hand-set taxes; every other faction is at its default/AI tax. The budget badge now reads **✓ your taxes (save's player) — exact** for the played faction, or **⚠ default/AI tax — load this faction's save for your settings** otherwise. (E.g. Carthage reads 10179 in a Gades save = default tax, but 2667 in your Carthage save = your hand-set taxes — both correct, just different states.)" },
+    ],
+  },
+  {
     version: "0.9.969",
     date: "2026-06-07",
     items: [
