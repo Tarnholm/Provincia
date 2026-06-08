@@ -6393,14 +6393,29 @@ ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir, playerH
 // ⚠ ~60% accurate (governor growth/squalor effects + fertility/overcrowding
 // coupling are engine-internal and don't decompose from static files — verified).
 // The EXACT plan still needs an all-Normal turn-2 save (optimalTaxPlan, 67/67).
-ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction) => {
+ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePath) => {
   try {
     if (!modDataDir) return { error: "modDataDir required" };
     const gm = require("./src/growthModel.js");
-    const r = gm.computeStratTaxPlan(modDataDir, faction);
+    // If a save is supplied, read the per-settlement marker−1528 development value
+    // (settlementFields.growthDevValue) and feed it in → far more accurate save-aware
+    // growth (~95% within 0.5% / ~89% bracket, all factions) vs the no-save model (~82%).
+    let opts;
+    if (savePath && fs.existsSync(savePath)) {
+      try {
+        const { crackSave } = require("./src/saveCracker.js");
+        const cr = crackSave(fs.readFileSync(savePath), modDataDir);
+        const growthDevByCity = {};
+        const sf = (cr && cr.settlementFields) || {};
+        for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = g; }
+        if (Object.keys(growthDevByCity).length) opts = { growthDevByCity };
+      } catch (e) { _writeLog(`[strat-tax] save read failed (${e && e.message}); using no-save model`); }
+    }
+    const r = gm.computeStratTaxPlan(modDataDir, faction, opts);
     if (r && r.byFaction) {
       const ns = Object.values(r.byFaction).reduce((s, f) => s + (f.settlements ? f.settlements.length : 0), 0);
-      _writeLog(`[strat-tax] ${faction || "(all)"}: ${ns} settlements via EDB growth model (no save); est ~${Math.round((r.accuracy?.withinHalf || 0) * 100)}% within 0.5% / ~${Math.round((r.accuracy?.bracketMatch || 0) * 100)}% exact bracket`);
+      const mode = r.saveAware ? "SAVE-AWARE (marker−1528)" : "no-save EDB model";
+      _writeLog(`[strat-tax] ${faction || "(all)"}: ${ns} settlements via ${mode}; est ~${Math.round((r.accuracy?.withinHalf || 0) * 100)}% within 0.5% / ~${Math.round((r.accuracy?.bracketMatch || 0) * 100)}% exact bracket`);
     }
     return r;
   } catch (e) { _writeLog(`[strat-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }

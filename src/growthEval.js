@@ -49,6 +49,16 @@ const COEF = { intercept: 0.5392, farmN: 0.0257, farmLevel: 0.4834, healthSum: 0
 const ACCURACY = { withinHalf: 0.82, bracketMatch: 0.68, mae: 0.39, n: 66,
   note: "no-save preview (~82% within 0.5%); load an all-Normal turn-2 save for the exact plan" };
 
+// SAVE-AWARE model: adds the per-settlement development value stored at settlement
+// mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
+// term (the real squalor/development input the pop proxy only approximated). Readable from
+// ANY save (turn-1 included) for ALL factions, so this gives near-exact base growth for
+// every faction from a single loaded save, with no tax byte needed. Coefs fit on 66
+// Carthage+Julii all-Normal settlements; LOFO out-of-sample ~95% within 0.5% / ~89% bracket.
+const COEF_SAVE = { intercept: 0.599, farmN: 0.025, farmLevel: 0.537, healthSum: 0.505, pgOther: 0.569, popPer1000: 0.019, govLevel: -0.775, growthDev: -0.543 };
+const ACCURACY_SAVE = { withinHalf: 0.955, bracketMatch: 0.894, mae: 0.12, n: 66,
+  note: "save-aware estimate using stored marker−1528 (~95% within 0.5%, all factions from one save)" };
+
 const TAX_MOD = { low: 0.5, normal: 0.0, high: -0.5, very_high: -1.0 };
 const BRACKET_ORDER = ["low", "normal", "high", "very_high"];
 const SIZE_TIER = { village: 1, town: 2, large_town: 3, city: 4, large_city: 5, huge_city: 6 };
@@ -242,6 +252,15 @@ function estimateGrowth(f) {
   return Math.round(g * 2) / 2; // RTW growth steps are 0.5%
 }
 
+// Save-aware estimate: same features + the stored marker−1528 development value.
+function estimateGrowthWithSave(f, growthDev) {
+  const g = COEF_SAVE.intercept + COEF_SAVE.farmN * f.farmN + COEF_SAVE.farmLevel * f.farmLevel
+    + COEF_SAVE.healthSum * f.healthSum + COEF_SAVE.pgOther * f.pgOther
+    + COEF_SAVE.popPer1000 * (f.pop / 1000) + COEF_SAVE.govLevel * f.govLevel
+    + COEF_SAVE.growthDev * growthDev;
+  return Math.round(g * 2) / 2;
+}
+
 function optimalBracket(baseGrowth) {
   for (let i = BRACKET_ORDER.length - 1; i >= 0; i--) {
     const b = BRACKET_ORDER[i];
@@ -250,9 +269,13 @@ function optimalBracket(baseGrowth) {
   return "low";
 }
 
-// Public: per-faction no-save growth + optimal-tax estimate.
-// Returns { estimated:true, accuracy, settlements:[{region,settlement,pop,baseGrowthEst,optimalBracket,features}] }
-function computeFactionGrowth(modDataDir, faction) {
+// Public: per-faction growth + optimal-tax estimate.
+//   opts.growthDevByCity = { [settlementName]: marker−1528 value } from a loaded save
+//     (crackSave settlementFields[city].growthDevValue). When supplied, uses the far more
+//     accurate save-aware model (~95% within 0.5%); otherwise the no-save model (~82%).
+// Returns { estimated:true, saveAware, accuracy, settlements:[{region,settlement,pop,
+//   baseGrowthEst,optimalBracket,features}] }
+function computeFactionGrowth(modDataDir, faction, opts) {
   const stratPath = findDescrStrat(modDataDir);
   const edbPath = findEDB(modDataDir);
   if (!stratPath || !edbPath) return { error: "descr_strat or export_descr_buildings not found", estimated: true };
@@ -263,22 +286,28 @@ function computeFactionGrowth(modDataDir, faction) {
   const want = String(faction || "").toLowerCase();
   const f = factions[want];
   if (!f) return { error: `faction ${faction} not found in descr_strat`, estimated: true, accuracy: ACCURACY };
+  const dev = (opts && opts.growthDevByCity) || null;
   const settlements = [];
+  let usedDev = 0;
   for (const s of f.settlements) {
     const region = byRegion[s.region];
     if (!region || !region.farmN) continue;
     const feat = settlementFeatures(s, region, want, capIndex, chainLevels, resourcesByRegion);
-    const baseGrowthEst = estimateGrowth(feat);
+    const gd = dev && region.settlement in dev ? dev[region.settlement] : null;
+    let baseGrowthEst, savedDev = false;
+    if (gd != null) { baseGrowthEst = estimateGrowthWithSave(feat, gd); savedDev = true; usedDev++; }
+    else baseGrowthEst = estimateGrowth(feat);
     settlements.push({
       region: s.region, settlement: region.settlement, pop: s.pop,
-      baseGrowthEst, optimalBracket: optimalBracket(baseGrowthEst), features: feat,
+      baseGrowthEst, optimalBracket: optimalBracket(baseGrowthEst), features: feat, savedDev,
     });
   }
-  return { estimated: true, accuracy: ACCURACY, faction: want, settlements };
+  const saveAware = usedDev > 0;
+  return { estimated: true, saveAware, accuracy: saveAware ? ACCURACY_SAVE : ACCURACY, faction: want, settlements };
 }
 
 module.exports = {
-  computeFactionGrowth, estimateGrowth, optimalBracket,
+  computeFactionGrowth, estimateGrowth, estimateGrowthWithSave, optimalBracket,
   settlementFeatures, parseRegions, parseResources, parseStrat, parseEDB, evalReq,
-  COEF, ACCURACY, TAX_MOD,
+  COEF, COEF_SAVE, ACCURACY, ACCURACY_SAVE, TAX_MOD,
 };

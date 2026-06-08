@@ -131,16 +131,16 @@ function optimalBracketForBase(baseGrowth) {
 // exact bracket out-of-sample, vs ~60%). The old estimateBaseGrowth path is kept only
 // as a fallback if growthEval can't load. Returns
 // { estimated:true, accuracy, byFaction:{fac:{settlements:[{region,pop,baseGrowthEst,optimalBracket}]}} }
-function computeStratTaxPlan(modDataDir, faction) {
+function computeStratTaxPlan(modDataDir, faction, opts) {
   try {
     const gv = require("./growthEval.js");
-    const r = gv.computeFactionGrowth(modDataDir, faction);
+    const r = gv.computeFactionGrowth(modDataDir, faction, opts);
     if (r && !r.error && r.settlements) {
       return {
-        estimated: true, accuracy: r.accuracy,
+        estimated: true, accuracy: r.accuracy, saveAware: !!r.saveAware,
         byFaction: { [r.faction]: { settlements: r.settlements.map(s => ({
           region: s.region, pop: s.pop, farmN: s.features && s.features.farmN,
-          baseGrowthEst: s.baseGrowthEst, optimalBracket: s.optimalBracket,
+          baseGrowthEst: s.baseGrowthEst, optimalBracket: s.optimalBracket, savedDev: !!s.savedDev,
         })) } },
       };
     }

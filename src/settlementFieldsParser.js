@@ -131,6 +131,14 @@ function settlementFieldsAt(buf, markerOffset) {
     // when out of range. Callers should render "—" on turn-1 (squalor==0) per
     // the no-fabricated-defaults rule rather than implying zero squalor.
     squalor: (() => { const v = i32(buf, o - 1544); return (v == null || v / 65536 > 0 || v / 65536 < -1000) ? null : v / 65536; })(),
+    // SETTLEMENT_MECHANICS_STATS slot marker−1528 (i32/65536). Originally tagged a
+    // "population/city-size happiness bonus", but cracked 2026-06-08 as the per-settlement
+    // development value that is the LAST hidden growth term: two byte-identical towns
+    // (same faction/FarmN/pop/buildings/governor) differ in growth iff this differs
+    // (Larinum 3 vs Perusia/Camerinum 1 → −1% growth). Feeding it into growthEval lifts
+    // the growth estimate to ~95% within 0.5% / ~89% bracket (LOFO). Populated from
+    // TURN 1 (unlike squalor), stable across turns, present for all factions. Range ~0..19.
+    growthDevValue: (() => { const v = i32(buf, o - 1528); return (v == null || v / 65536 < -50 || v / 65536 > 500) ? null : v / 65536; })(),
     // TAX RATE the settlement is set to: u8 @ marker−2269. Cracked 2026-06-06 from
     // a user controlled pair (save_Gades high vs normal taxes — a 10-byte whole-file
     // diff; this byte flipped 2→1). Enum: 1=normal, 2=high (3=very_high, 0=low/auto

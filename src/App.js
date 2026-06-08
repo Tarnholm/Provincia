@@ -22665,20 +22665,24 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,130,160,0.10)", border: "1px solid rgba(90,130,160,0.35)" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                             <strong style={{ color: "#9fd3ff" }}>🏛 Tax plan</strong>
-                            <span style={{ fontSize: "0.72rem", color: "#8aa" }}>Load an <b>all‑Normal turn‑2 save</b> above for the EXACT plan (proven 67/67), or get a rough estimate now:</span>
+                            <span style={{ fontSize: "0.72rem", color: "#8aa" }}>{(armyGrowthPath || armyEconomyPath) ? <>Estimate growth for <b>any faction</b> using your loaded save (reads the per‑settlement development value):</> : <>Load an <b>all‑Normal turn‑2 save</b> above for the EXACT plan (proven 67/67), or estimate from the mod now:</>}</span>
                             <button onClick={async () => {
                               if (!modDataDir) { alert("No mod loaded."); return; }
-                              try { const r = await window.electronAPI.getStratTaxPlan(modDataDir, fac); setArmyStratPlan(r || null); }
+                              try { const r = await window.electronAPI.getStratTaxPlan(modDataDir, fac, armyGrowthPath || armyEconomyPath || undefined); setArmyStratPlan(r || null); }
                               catch (e) { alert(e?.message || String(e)); }
                             }} style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
-                              🧮 Estimate plan from mod (no save)
+                              {(armyGrowthPath || armyEconomyPath) ? "🧮 Estimate plan (uses loaded save)" : "🧮 Estimate plan from mod (no save)"}
                             </button>
                           </div>
                           {sp && sp.settlements && (
                             <>
-                              <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,140,90,0.15)", border: "1px solid rgba(232,140,90,0.5)", fontSize: "0.72rem", color: "#e8b08a" }}>
-                                ⚠ ESTIMATE from the mod files (RIS growth model evaluated from descr_strat + EDB): ~82% of settlements within 0.5% of true growth, ~68% land on the exact bracket. RTW quantises growth to 0.5% steps, so boundary towns can be off by one bracket — for the exact plan, load an all‑Normal turn‑2 save.
-                              </div>
+                              {armyStratPlan && armyStratPlan.saveAware
+                                ? <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(90,180,120,0.15)", border: "1px solid rgba(90,180,120,0.5)", fontSize: "0.72rem", color: "#8fd3a8" }}>
+                                    ✓ SAVE‑AWARE estimate — reads the stored per‑settlement development value (marker−1528) from your loaded save and runs the full RIS growth model: <b>~95% of settlements within 0.5% of true growth, ~89% on the exact bracket</b>, for ANY faction. The few misses are towns sitting exactly on a 0.5% bracket boundary. For the player's own faction, an all‑Normal turn‑2 save is still exact (67/67).
+                                  </div>
+                                : <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,140,90,0.15)", border: "1px solid rgba(232,140,90,0.5)", fontSize: "0.72rem", color: "#e8b08a" }}>
+                                    ⚠ ESTIMATE from the mod files (RIS growth model evaluated from descr_strat + EDB): ~82% of settlements within 0.5% of true growth, ~68% land on the exact bracket. Load any save (even a turn‑1) to jump to ~95%/~89% — or an all‑Normal turn‑2 save for the exact plan.
+                                  </div>}
                               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
                                 <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Est. growth</th><th>→ Set to (rough)</th></tr></thead>
                                 <tbody>

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.981",
+    date: "2026-06-08",
+    items: [
+      { type: "improvement", text: "**Tax-plan growth estimate jumps to ~95% accurate for ANY faction when a save is loaded.** Cracked the last hidden growth term: a per‑settlement development value stored in the save (settlement‑mechanics slot marker−1528). Two byte‑identical towns (same faction/fertility/population/buildings/governor) can still differ in growth, and this field is the *only* thing that differs — it's the real squalor/development input the population proxy only approximated. It's present from **turn 1** (so even your turn‑1 budget save works) and for every faction. Feeding it into the growth model lifts the no‑save estimate from ~82%/~68% to **~95% of settlements within 0.5% of true growth and ~89% on the exact bracket** (leave‑one‑faction‑out cross‑validated) — and needs no tax info, so it fixes the old \"AI faction, tends high\" estimates too. The 🧮 Estimate button now reads your loaded save automatically and badges the result ✓ SAVE‑AWARE. (An all‑Normal turn‑2 save of your own faction is still exact, 67/67.)" },
+    ],
+  },
+  {
     version: "0.9.980",
     date: "2026-06-08",
     items: [

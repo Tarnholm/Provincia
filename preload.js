@@ -98,7 +98,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getSavePlayerBudget: (savePath) => ipcRenderer.invoke("get-save-player-budget", savePath),
   getAllFactionBudgets: (savePath, modDataDir, playerHint) => ipcRenderer.invoke("get-all-faction-budgets", savePath, modDataDir, playerHint),
   getOptimalTaxes: (savePath, modDataDir, playerHint, economyPath) => ipcRenderer.invoke("get-optimal-taxes", savePath, modDataDir, playerHint, economyPath),
-  getStratTaxPlan: (modDataDir, faction) => ipcRenderer.invoke("get-strat-tax-plan", modDataDir, faction),
+  getStratTaxPlan: (modDataDir, faction, savePath) => ipcRenderer.invoke("get-strat-tax-plan", modDataDir, faction, savePath),
   getMercenaryPools: (modDataDir) => ipcRenderer.invoke("get-mercenary-pools", modDataDir),
   applyArmySwap: (modDataDir, faction, character, oldUnit, newUnit) => ipcRenderer.invoke("apply-army-swap", modDataDir, faction, character, oldUnit, newUnit),
   applyUpgradeFix: (modDataDir, faction, character, opts) => ipcRenderer.invoke("apply-upgrade-fix", modDataDir, faction, character, opts),
