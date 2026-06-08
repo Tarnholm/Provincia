@@ -9568,6 +9568,8 @@ function App() {
   const [armyGrowthFile, setArmyGrowthFile] = useState(null);
   const [armyEconomyPath, setArmyEconomyPath] = useState(null);
   const [armyEconomyFile, setArmyEconomyFile] = useState(null);
+  // ROUGH strat-only tax plan (no save) — ~60% accurate, clearly flagged. v0.9.978.
+  const [armyStratPlan, setArmyStratPlan] = useState(null);
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -22617,7 +22619,45 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     const plan = armyTaxPlan && armyTaxPlan.byFaction && fac ? armyTaxPlan.byFaction[fac] : null;
                     const BR = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
                     const BR_COL = { low: "#9fd3ff", normal: "#cfcf8f", high: "#e8b85a", very_high: "#e8806a" };
-                    if (!armyTaxPlan) return null;
+                    // NO SAVE LOADED → offer a ROUGH strat-only estimate (~60%), clearly flagged.
+                    if (!armyTaxPlan) {
+                      const sp = armyStratPlan && armyStratPlan.byFaction && fac ? armyStratPlan.byFaction[fac] : null;
+                      return (
+                        <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,130,160,0.10)", border: "1px solid rgba(90,130,160,0.35)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <strong style={{ color: "#9fd3ff" }}>🏛 Tax plan</strong>
+                            <span style={{ fontSize: "0.72rem", color: "#8aa" }}>Load an <b>all‑Normal turn‑2 save</b> above for the EXACT plan (proven 67/67), or get a rough estimate now:</span>
+                            <button onClick={async () => {
+                              if (!modDataDir) { alert("No mod loaded."); return; }
+                              try { const r = await window.electronAPI.getStratTaxPlan(modDataDir, fac); setArmyStratPlan(r || null); }
+                              catch (e) { alert(e?.message || String(e)); }
+                            }} style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                              🧮 Rough plan from mod (no save)
+                            </button>
+                          </div>
+                          {sp && sp.settlements && (
+                            <>
+                              <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,140,90,0.15)", border: "1px solid rgba(232,140,90,0.5)", fontSize: "0.72rem", color: "#e8b08a" }}>
+                                ⚠ ROUGH ESTIMATE (~60% of brackets correct). The engine's governor‑trait & squalor effects can't be read from the mod files — for the exact plan, load an all‑Normal turn‑2 save. Treat this as a first guess only.
+                              </div>
+                              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
+                                <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Est. growth</th><th>→ Set to (rough)</th></tr></thead>
+                                <tbody>
+                                  {sp.settlements.map((s, i) => (
+                                    <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                                      <td style={{ padding: "1px 6px", color: "#dde" }}>{(s.region || "").replace(/_/g, " ")}</td>
+                                      <td style={{ color: "#9aa" }}>{s.pop}</td>
+                                      <td style={{ color: s.baseGrowthEst < 0 ? "#e8806a" : "#9aa" }}>{s.baseGrowthEst >= 0 ? "+" : ""}{s.baseGrowthEst}%</td>
+                                      <td style={{ color: BR_COL[s.optimalBracket], fontWeight: 600 }}>{BR[s.optimalBracket]}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </>
+                          )}
+                        </div>
+                      );
+                    }
                     if (armyTaxPlan && !armyTaxPlan.turnReady) return (
                       <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(232,184,90,0.10)", border: "1px solid rgba(232,184,90,0.35)", fontSize: "0.78rem", color: "#e8c88a" }}>
                         Tax plan needs growth data — the loaded save is turn 1 (growth not yet computed). Load a <b>turn-2 or later</b> save.

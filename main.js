@@ -6388,6 +6388,24 @@ ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir, playerH
   } catch (e) { _writeLog(`[opt-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: ROUGH strat-only tax plan (2026-06-08) — computes base growth → optimal
+// bracket for a faction from descr_strat + descr_regions + EDB ONLY (no save).
+// ⚠ ~60% accurate (governor growth/squalor effects + fertility/overcrowding
+// coupling are engine-internal and don't decompose from static files — verified).
+// The EXACT plan still needs an all-Normal turn-2 save (optimalTaxPlan, 67/67).
+ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const gm = require("./src/growthModel.js");
+    const r = gm.computeStratTaxPlan(modDataDir, faction);
+    if (r && r.byFaction) {
+      const ns = Object.values(r.byFaction).reduce((s, f) => s + (f.settlements ? f.settlements.length : 0), 0);
+      _writeLog(`[strat-tax] ${faction || "(all)"}: ${ns} settlements, est accuracy ~${Math.round((r.accuracy?.bracketMatch || 0) * 100)}% (rough — no save)`);
+    }
+    return r;
+  } catch (e) { _writeLog(`[strat-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: list the current campaign's factions (descr_strat faction lines).
 ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   try {

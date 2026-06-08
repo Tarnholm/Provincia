@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.978",
+    date: "2026-06-08",
+    items: [
+      { type: "feature", text: "**Rough tax plan from the mod with NO save.** When no save is loaded, the Army Setup panel can now compute a tax plan for any faction straight from descr_strat (region fertility + buildings + population) — handy as a first guess before you've made a save. It's clearly flagged as a **~60% rough estimate**: the engine's governor‑trait and squalor effects genuinely can't be read from the mod files (verified — e.g. a BadBuilder governor's `Effect Squalor` hits public order, not growth; base‑farming cancels an overcrowding penalty), so for the **exact** plan you still load an all‑Normal turn‑2 save (proven 67/67). New src/growthModel.js + get-strat-tax-plan IPC." },
+    ],
+  },
+  {
     version: "0.9.977",
     date: "2026-06-08",
     items: [
