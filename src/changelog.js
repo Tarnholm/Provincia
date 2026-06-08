@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.991",
+    date: "2026-06-08",
+    items: [
+      { type: "change", text: "Tax‑plan accuracy is now reported only as **exact‑bracket** match (the number that actually matters), dropping the softer \"within 0.5%\" figure. Save‑aware estimate ~94% exact; no‑save ~68%; and an all‑Normal turn‑2 save of your own faction is **exact**." },
+    ],
+  },
+  {
     version: "0.9.990",
     date: "2026-06-08",
     items: [
