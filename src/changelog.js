@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.990",
+    date: "2026-06-08",
+    items: [
+      { type: "improvement", text: "**Growth model now calibrated across 9 factions / 8 cultures** — added Saka (nomad), Trinovantes (Briton) and Galatians (Gaul) to the Mediterranean + eastern set. The coefficients barely moved, which is the point: the model has **converged and generalizes** across wildly different cultures (nomad/British/Gallic included). Save‑aware holds at ~99% within 0.5% / ~94% exact bracket; no‑save at ~89% / ~68%. (The new cultures also re‑confirm the no‑save ceiling is the irreducible stored‑squalor term, not the model.)" },
+    ],
+  },
+  {
     version: "0.9.989",
     date: "2026-06-08",
     items: [

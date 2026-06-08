@@ -49,8 +49,8 @@ const path = require("path");
 // Germanic, Cyrenean-Greek) — 117 all-Normal turn-2 settlements — with the EDB
 // supply-flag aliases correctly expanded. Coefficients now match the proven 0.5%/point
 // structure (health ≈ pgOther ≈ 0.5). Leave-one-faction-out: ~88% within 0.5%, ~68% bracket.
-const COEF = { intercept: 0.4161, farmN: -0.0058, farmLevel: 0.4425, healthSum: 0.5270, pgOther: 0.5022, popPer1000: -0.3694, govLevel: -0.3482, hasPort: 0.0375 };
-const ACCURACY = { withinHalf: 0.88, bracketMatch: 0.68, mae: 0.35, n: 117,
+const COEF = { intercept: 0.5294, farmN: -0.0121, farmLevel: 0.4598, healthSum: 0.5322, pgOther: 0.5029, popPer1000: -0.3632, govLevel: -0.4151, hasPort: 0.0251 };
+const ACCURACY = { withinHalf: 0.89, bracketMatch: 0.68, mae: 0.33, n: 127,
   note: "no-save preview (~88% within 0.5%, ~68% bracket); load an all-Normal turn-2 save for the exact plan" };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
@@ -62,9 +62,9 @@ const ACCURACY = { withinHalf: 0.88, bracketMatch: 0.68, mae: 0.35, n: 117,
 // Two stored development terms: marker−1528 (growthDevValue) and marker−1556
 // (growthDevValue2). Together they take the estimate to ~100% within 0.5% / ~94%
 // exact bracket (LOFO cross-validated) for any faction from a single loaded save.
-const COEF_SAVE = { intercept: 0.9210, farmN: -0.0157, farmLevel: -0.0722, healthSum: 0.5628, pgOther: 0.4987, popPer1000: -0.0130, govLevel: -0.8725, growthDev: -0.4721, growthDev2: 0.5628 };
-const ACCURACY_SAVE = { withinHalf: 0.99, bracketMatch: 0.95, mae: 0.06, n: 117,
-  note: "save-aware estimate using stored development values (marker−1528/−1556); ~99% within 0.5% / ~95% bracket across 6 factions, all factions from one save" };
+const COEF_SAVE = { intercept: 0.9428, farmN: -0.0161, farmLevel: -0.0754, healthSum: 0.5657, pgOther: 0.4991, popPer1000: -0.0109, govLevel: -0.8914, growthDev: -0.4731, growthDev2: 0.5688 };
+const ACCURACY_SAVE = { withinHalf: 0.99, bracketMatch: 0.94, mae: 0.06, n: 127,
+  note: "save-aware estimate using stored development values (marker−1528/−1556); ~99% within 0.5% / ~94% bracket across 9 factions / 8 cultures, any faction from one save" };
 
 const TAX_MOD = { low: 0.5, normal: 0.0, high: -0.5, very_high: -1.0 };
 const BRACKET_ORDER = ["low", "normal", "high", "very_high"];
