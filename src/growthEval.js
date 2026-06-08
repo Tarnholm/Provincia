@@ -287,12 +287,18 @@ function computeFactionGrowth(modDataDir, faction, opts) {
   const f = factions[want];
   if (!f) return { error: `faction ${faction} not found in descr_strat`, estimated: true, accuracy: ACCURACY };
   const dev = (opts && opts.growthDevByCity) || null;
+  const govEff = (opts && opts.govEffectByCity) || null; // { city: {growthFarm, health, ...} }
   const settlements = [];
-  let usedDev = 0;
+  let usedDev = 0, usedGov = 0;
   for (const s of f.settlements) {
     const region = byRegion[s.region];
     if (!region || !region.farmN) continue;
     const feat = settlementFeatures(s, region, want, capIndex, chainLevels, resourcesByRegion);
+    // Governor trait effects (user 2026-06-08: generals' traits DO affect growth).
+    // Farming + Fertility feed the farm catalyst; Health feeds the health catalyst —
+    // fold them into the same features growthEval already weights.
+    const ge = govEff && region.settlement in govEff ? govEff[region.settlement] : null;
+    if (ge) { feat.farmLevel += (ge.growthFarm || 0); feat.healthSum += (ge.health || 0); feat.govEffect = ge; usedGov++; }
     const gd = dev && region.settlement in dev ? dev[region.settlement] : null;
     let baseGrowthEst, savedDev = false;
     if (gd != null) { baseGrowthEst = estimateGrowthWithSave(feat, gd); savedDev = true; usedDev++; }

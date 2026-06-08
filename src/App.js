@@ -2740,17 +2740,6 @@ function App() {
   const [factionRecordOwners, setFactionRecordOwners] = useState(null);
   const [factionConfig, setFactionConfig] = useState(null);
   // 0.9.542: persist the faction-level save data so one sync survives restarts.
-  // Mercenaries map layer: lazy-load descr_mercenaries the first time the mode is
-  // picked (or modDataDir changes while it's active).
-  useEffect(() => {
-    if (colorMode !== "mercenaries" || !modDataDir) return;
-    let cancelled = false;
-    (async () => {
-      try { const r = await window.electronAPI.getMercenaryPools?.(modDataDir); if (!cancelled && r && r.byRegion) setMapMercData(r); }
-      catch (e) { console.warn("[mercenaries] load failed", e); }
-    })();
-    return () => { cancelled = true; };
-  }, [colorMode, modDataDir]);
   useEffect(() => { try { if (allFactionDiplomacy) localStorage.setItem("allFactionDiplomacy", JSON.stringify(allFactionDiplomacy)); } catch {} }, [allFactionDiplomacy]);
   useEffect(() => { try { if (diplomacyMatrix) localStorage.setItem("diplomacyMatrix", JSON.stringify(diplomacyMatrix)); } catch {} }, [diplomacyMatrix]);
   useEffect(() => { try { if (treasuryHistory) localStorage.setItem("treasuryHistory", JSON.stringify(treasuryHistory)); } catch {} }, [treasuryHistory]);
@@ -3392,6 +3381,19 @@ function App() {
   // Mod data dir — declared BEFORE activeDataDir / the vanilla-names effect that
   // reference it (moved up here to avoid a TDZ crash).
   const [modDataDir, setModDataDir] = useState(null);
+  // Mercenaries map layer: lazy-load descr_mercenaries the first time the mode is
+  // picked (or modDataDir changes while it's active). MUST be declared after the
+  // modDataDir useState above — its dep array reads modDataDir, so placing it earlier
+  // TDZ-crashes the whole app on mount (gray screen; this is what broke v0.9.979).
+  useEffect(() => {
+    if (colorMode !== "mercenaries" || !modDataDir) return;
+    let cancelled = false;
+    (async () => {
+      try { const r = await window.electronAPI.getMercenaryPools?.(modDataDir); if (!cancelled && r && r.byRegion) setMapMercData(r); }
+      catch (e) { console.warn("[mercenaries] load failed", e); }
+    })();
+    return () => { cancelled = true; };
+  }, [colorMode, modDataDir]);
   // Vanilla faction-icons dir, read LIVE from the detected RTW install (not
   // bundled). Used as the icon source for the bundled vanilla Slot 1.
   const [vanillaIconsDir, setVanillaIconsDir] = useState(null);

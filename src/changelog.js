@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.982",
+    date: "2026-06-08",
+    items: [
+      { type: "fix", text: "**Fixes the gray/blank screen on launch.** The Mercenaries map‑mode loader (added in 0.9.979) was declared above the `modDataDir` state it depends on, so its effect read `modDataDir` before initialization and threw a temporal‑dead‑zone error during the very first render — crashing the whole UI to a gray screen for everyone. Moved the loader below the declaration (the same TDZ rule that's bitten this file before). Verified the app now boots. Sorry about that — 0.9.979–0.9.981 were affected." },
+      { type: "improvement", text: "**Growth estimate now accounts for governors' traits.** Generals' traits do affect settlement growth (e.g. Fertile, GoodFarmer, Health_Conscious, GaderFarm), so the save‑aware estimate now reads each settlement's governor from the loaded save and applies their `Effect Farming`/`Effect Fertility`/`Effect Health` from the EDCT (threshold‑aware). New src/traitEffects.js." },
+    ],
+  },
+  {
     version: "0.9.981",
     date: "2026-06-08",
     items: [

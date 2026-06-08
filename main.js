@@ -6408,7 +6408,16 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
         const growthDevByCity = {};
         const sf = (cr && cr.settlementFields) || {};
         for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = g; }
-        if (Object.keys(growthDevByCity).length) opts = { growthDevByCity };
+        // governor trait growth effects (Farming/Fertility/Health) per settlement
+        let govEffectByCity = {};
+        try {
+          const te = require("./src/traitEffects.js");
+          govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir));
+        } catch (e) { _writeLog(`[strat-tax] governor-trait read failed: ${e && e.message}`); }
+        opts = {};
+        if (Object.keys(growthDevByCity).length) opts.growthDevByCity = growthDevByCity;
+        if (Object.keys(govEffectByCity).length) { opts.govEffectByCity = govEffectByCity; _writeLog(`[strat-tax] ${Object.keys(govEffectByCity).length} governors with growth-affecting traits applied`); }
+        if (!Object.keys(opts).length) opts = undefined;
       } catch (e) { _writeLog(`[strat-tax] save read failed (${e && e.message}); using no-save model`); }
     }
     const r = gm.computeStratTaxPlan(modDataDir, faction, opts);
