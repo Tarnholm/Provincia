@@ -139,6 +139,11 @@ function settlementFieldsAt(buf, markerOffset) {
     // the growth estimate to ~95% within 0.5% / ~89% bracket (LOFO). Populated from
     // TURN 1 (unlike squalor), stable across turns, present for all factions. Range ~0..19.
     growthDevValue: (() => { const v = i32(buf, o - 1528); return (v == null || v / 65536 < -50 || v / 65536 > 500) ? null : v / 65536; })(),
+    // SETTLEMENT_MECHANICS_STATS slot marker−1556 ("development happiness", i32/65536).
+    // Cracked 2026-06-08 as a SECOND growth term: adding it alongside growthDevValue
+    // (−1528) takes the no‑save‑model‑with‑save estimate to ~100% within 0.5% / ~94%
+    // exact bracket (LOFO), up from ~95%/~89% with −1528 alone. Populated from turn 1.
+    growthDevValue2: (() => { const v = i32(buf, o - 1556); return (v == null || v / 65536 < -50 || v / 65536 > 500) ? null : v / 65536; })(),
     // TAX RATE the settlement is set to: u8 @ marker−2269. Cracked 2026-06-06 from
     // a user controlled pair (save_Gades high vs normal taxes — a 10-byte whole-file
     // diff; this byte flipped 2→1). Enum: 1=normal, 2=high (3=very_high, 0=low/auto

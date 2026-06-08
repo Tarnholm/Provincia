@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.984",
+    date: "2026-06-08",
+    items: [
+      { type: "improvement", text: "**Save‑aware growth estimate is now ~100% within 0.5% / ~94% exact bracket** (up from ~95%/~89%). Found a second stored development term (settlement‑mechanics slot marker−1556) that, together with the −1528 term, pins each settlement's growth almost exactly — cross‑validated leave‑one‑faction‑out at MAE 0.07. So with any save loaded, the tax plan for ANY faction is now essentially as good as a hand‑checked all‑Normal save, and the few remaining misses are towns sitting exactly on a 0.5% bracket boundary." },
+    ],
+  },
+  {
     version: "0.9.983",
     date: "2026-06-08",
     items: [

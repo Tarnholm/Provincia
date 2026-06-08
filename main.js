@@ -6407,7 +6407,7 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
         const cr = crackSave(fs.readFileSync(savePath), modDataDir);
         const growthDevByCity = {};
         const sf = (cr && cr.settlementFields) || {};
-        for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = g; }
+        for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = { v1528: g, v1556: sf[c].growthDevValue2 }; }
         // governor trait growth effects (Farming/Fertility/Health) per settlement
         let govEffectByCity = {};
         try {

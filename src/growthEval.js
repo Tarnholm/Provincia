@@ -55,9 +55,12 @@ const ACCURACY = { withinHalf: 0.82, bracketMatch: 0.68, mae: 0.39, n: 66,
 // ANY save (turn-1 included) for ALL factions, so this gives near-exact base growth for
 // every faction from a single loaded save, with no tax byte needed. Coefs fit on 66
 // Carthage+Julii all-Normal settlements; LOFO out-of-sample ~95% within 0.5% / ~89% bracket.
-const COEF_SAVE = { intercept: 0.599, farmN: 0.025, farmLevel: 0.537, healthSum: 0.505, pgOther: 0.569, popPer1000: 0.019, govLevel: -0.775, growthDev: -0.543 };
-const ACCURACY_SAVE = { withinHalf: 0.955, bracketMatch: 0.894, mae: 0.12, n: 66,
-  note: "save-aware estimate using stored marker−1528 (~95% within 0.5%, all factions from one save)" };
+// Two stored development terms: marker−1528 (growthDevValue) and marker−1556
+// (growthDevValue2). Together they take the estimate to ~100% within 0.5% / ~94%
+// exact bracket (LOFO cross-validated) for any faction from a single loaded save.
+const COEF_SAVE = { intercept: 0.9822, farmN: -0.0129, farmLevel: 0.0384, healthSum: 0.5355, pgOther: 0.5289, popPer1000: 0.0075, govLevel: -0.9145, growthDev: -0.5114, growthDev2: 0.4689 };
+const ACCURACY_SAVE = { withinHalf: 1.0, bracketMatch: 0.94, mae: 0.07, n: 66,
+  note: "save-aware estimate using stored development values (marker−1528/−1556); ~100% within 0.5%, all factions from one save" };
 
 const TAX_MOD = { low: 0.5, normal: 0.0, high: -0.5, very_high: -1.0 };
 const BRACKET_ORDER = ["low", "normal", "high", "very_high"];
@@ -252,12 +255,13 @@ function estimateGrowth(f) {
   return Math.round(g * 2) / 2; // RTW growth steps are 0.5%
 }
 
-// Save-aware estimate: same features + the stored marker−1528 development value.
-function estimateGrowthWithSave(f, growthDev) {
+// Save-aware estimate: same features + the two stored development values
+// (marker−1528 = growthDev, marker−1556 = growthDev2).
+function estimateGrowthWithSave(f, growthDev, growthDev2) {
   const g = COEF_SAVE.intercept + COEF_SAVE.farmN * f.farmN + COEF_SAVE.farmLevel * f.farmLevel
     + COEF_SAVE.healthSum * f.healthSum + COEF_SAVE.pgOther * f.pgOther
     + COEF_SAVE.popPer1000 * (f.pop / 1000) + COEF_SAVE.govLevel * f.govLevel
-    + COEF_SAVE.growthDev * growthDev;
+    + COEF_SAVE.growthDev * (growthDev || 0) + COEF_SAVE.growthDev2 * (growthDev2 || 0);
   return Math.round(g * 2) / 2;
 }
 
@@ -299,10 +303,15 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // fold them into the same features growthEval already weights.
     const ge = govEff && region.settlement in govEff ? govEff[region.settlement] : null;
     if (ge) { feat.farmLevel += (ge.growthFarm || 0); feat.healthSum += (ge.health || 0); feat.govEffect = ge; usedGov++; }
+    // dev[city] = { v1528, v1556 } from the loaded save (or a bare number for v1528 only)
     const gd = dev && region.settlement in dev ? dev[region.settlement] : null;
     let baseGrowthEst, savedDev = false;
-    if (gd != null) { baseGrowthEst = estimateGrowthWithSave(feat, gd); savedDev = true; usedDev++; }
-    else baseGrowthEst = estimateGrowth(feat);
+    if (gd != null) {
+      const v1 = (typeof gd === "number") ? gd : gd.v1528;
+      const v2 = (typeof gd === "number") ? 0 : (gd.v1556 || 0);
+      if (v1 != null) { baseGrowthEst = estimateGrowthWithSave(feat, v1, v2); savedDev = true; usedDev++; }
+      else baseGrowthEst = estimateGrowth(feat);
+    } else baseGrowthEst = estimateGrowth(feat);
     settlements.push({
       region: s.region, settlement: region.settlement, pop: s.pop,
       baseGrowthEst, optimalBracket: optimalBracket(baseGrowthEst), features: feat, savedDev,
