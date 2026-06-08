@@ -45,9 +45,9 @@ const path = require("path");
 
 // Calibrated coefficients (free least-squares fit to Carthage+Julii all-Normal
 // turn-2 base growth; best out-of-sample LOFO performance). See header for accuracy.
-const COEF = { intercept: 0.5392, farmN: 0.0257, farmLevel: 0.4834, healthSum: 0.6277, pgOther: 0.5766, popPer1000: -0.4731, govLevel: -0.5762 };
-const ACCURACY = { withinHalf: 0.82, bracketMatch: 0.68, mae: 0.39, n: 66,
-  note: "no-save preview (~82% within 0.5%); load an all-Normal turn-2 save for the exact plan" };
+const COEF = { intercept: 0.4037, farmN: 0.0154, farmLevel: 0.5197, healthSum: 0.5770, pgOther: 0.5820, popPer1000: -0.4588, govLevel: -0.6522, hasPort: 0.3179 };
+const ACCURACY = { withinHalf: 0.82, bracketMatch: 0.71, mae: 0.39, n: 66,
+  note: "no-save preview (~82% within 0.5%, ~71% bracket); load an all-Normal turn-2 save for the exact plan" };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
@@ -245,14 +245,18 @@ function settlementFeatures(s, region, faction, capIndex, chainLevels, resources
     for (const h of cap.health) if (evalReq(h.req, ctx)) healthSum += h.bonus;
   }
   const govLevel = buildings.has("core_building") ? (buildings.get("core_building") + 1) : 0;
-  return { farmN: region.farmN, farmLevel, healthSum, pgOther, pop: s.pop, govLevel };
+  // coastal settlements get a small extra growth (sea-trade/fishing) the EDB bonuses
+  // don't fully capture — flag a port so the no-save model can credit it.
+  const hasPort = [...(region.hidden || [])].some(h => h.startsWith("base_port_level")) ? 1 : 0;
+  return { farmN: region.farmN, farmLevel, healthSum, pgOther, pop: s.pop, govLevel, hasPort };
 }
 
 // raw (unsnapped) growth — used to judge how close to a bracket boundary we are
 function rawGrowth(f) {
   return COEF.intercept + COEF.farmN * f.farmN + COEF.farmLevel * f.farmLevel
     + COEF.healthSum * f.healthSum + COEF.pgOther * f.pgOther
-    + COEF.popPer1000 * (f.pop / 1000) + COEF.govLevel * f.govLevel;
+    + COEF.popPer1000 * (f.pop / 1000) + COEF.govLevel * f.govLevel
+    + COEF.hasPort * (f.hasPort || 0);
 }
 function estimateGrowth(f) { return Math.round(rawGrowth(f) * 2) / 2; } // RTW growth steps are 0.5%
 

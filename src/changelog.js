@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.986",
+    date: "2026-06-08",
+    items: [
+      { type: "improvement", text: "**No‑save tax plan is more accurate (~71% exact bracket, was ~68%).** Added a coastal/port signal: settlements with a sea port get a small extra growth (sea‑trade/fishing) the building rules don't fully capture, which the model now credits. Validated leave‑one‑faction‑out on the player‑path data (the case that matters for the no‑save preview); it also improves average error. Other candidate signals (size tier, building count, homeland, terrain score, and refitting on AI factions) were tested and rejected — they either didn't help the player path or hurt it — so only the port signal made the cut. The save‑aware estimate (~94%/~100%, with a save loaded) is unchanged." },
+    ],
+  },
+  {
     version: "0.9.985",
     date: "2026-06-08",
     items: [
