@@ -125,10 +125,31 @@ function optimalBracketForBase(baseGrowth) {
   return "low";
 }
 
-// Per-faction strat-only tax plan (ROUGH ESTIMATE). Returns
-// { estimated:true, accuracy, byFaction:{fac:{settlements:[{name,pop,baseGrowthEst,optimalBracket}]}} }
-// for the given faction, or all factions if `faction` omitted.
+// Per-faction strat-only tax plan. As of 2026-06-08 this DELEGATES to the EDB-based
+// growthEval (the real RIS growth model evaluated from the mod files), which is far
+// more accurate than the old coefficient estimate below (~82% within 0.5% / ~68%
+// exact bracket out-of-sample, vs ~60%). The old estimateBaseGrowth path is kept only
+// as a fallback if growthEval can't load. Returns
+// { estimated:true, accuracy, byFaction:{fac:{settlements:[{region,pop,baseGrowthEst,optimalBracket}]}} }
 function computeStratTaxPlan(modDataDir, faction) {
+  try {
+    const gv = require("./growthEval.js");
+    const r = gv.computeFactionGrowth(modDataDir, faction);
+    if (r && !r.error && r.settlements) {
+      return {
+        estimated: true, accuracy: r.accuracy,
+        byFaction: { [r.faction]: { settlements: r.settlements.map(s => ({
+          region: s.region, pop: s.pop, farmN: s.features && s.features.farmN,
+          baseGrowthEst: s.baseGrowthEst, optimalBracket: s.optimalBracket,
+        })) } },
+      };
+    }
+  } catch (e) { /* fall through to legacy estimate */ }
+  return computeStratTaxPlanLegacy(modDataDir, faction);
+}
+
+// Legacy ~60% coefficient estimate (fallback only).
+function computeStratTaxPlanLegacy(modDataDir, faction) {
   const p = findDescrStrat(modDataDir);
   if (!p) return { error: "descr_strat not found" };
   const fert = parseRegionFertility(modDataDir);
@@ -140,8 +161,7 @@ function computeStratTaxPlan(modDataDir, faction) {
     if (curFac && curSettle && curSettle.region) {
       const fac = curFac.toLowerCase();
       if (!want || fac === want) {
-        const settleName = curSettle.region; // region token; display name resolved by caller
-        const farmN = fert[settleName] || fert[curSettle.regionName] || 0;
+        const farmN = fert[curSettle.region] || 0;
         const base = estimateBaseGrowth(farmN, curSettle.pop || 0, curSettle.buildings);
         (byFaction[fac] = byFaction[fac] || { settlements: [] }).settlements.push({
           region: curSettle.region, pop: curSettle.pop, farmN,

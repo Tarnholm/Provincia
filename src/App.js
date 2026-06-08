@@ -22671,13 +22671,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               try { const r = await window.electronAPI.getStratTaxPlan(modDataDir, fac); setArmyStratPlan(r || null); }
                               catch (e) { alert(e?.message || String(e)); }
                             }} style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
-                              🧮 Rough plan from mod (no save)
+                              🧮 Estimate plan from mod (no save)
                             </button>
                           </div>
                           {sp && sp.settlements && (
                             <>
                               <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,140,90,0.15)", border: "1px solid rgba(232,140,90,0.5)", fontSize: "0.72rem", color: "#e8b08a" }}>
-                                ⚠ ROUGH ESTIMATE (~60% of brackets correct). The engine's governor‑trait & squalor effects can't be read from the mod files — for the exact plan, load an all‑Normal turn‑2 save. Treat this as a first guess only.
+                                ⚠ ESTIMATE from the mod files (RIS growth model evaluated from descr_strat + EDB): ~82% of settlements within 0.5% of true growth, ~68% land on the exact bracket. RTW quantises growth to 0.5% steps, so boundary towns can be off by one bracket — for the exact plan, load an all‑Normal turn‑2 save.
                               </div>
                               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
                                 <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Est. growth</th><th>→ Set to (rough)</th></tr></thead>

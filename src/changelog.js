@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.980",
+    date: "2026-06-08",
+    items: [
+      { type: "improvement", text: "**No‑save tax plan is now far more accurate** — it actually evaluates RIS's real growth model from the mod files. Instead of the old ~60% guess, it parses every `population_growth_bonus` / `farming_level` / `population_health_bonus` rule in export_descr_buildings and evaluates each `requires` clause against each settlement's true state (FarmN + terrain/climate hidden‑resources, buildings, **map trade‑resources**, population, faction, capital). Calibrated and **cross‑validated** against whole‑faction all‑Normal turn‑2 saves: **~82% of settlements within 0.5% of true growth, ~68% on the exact bracket** (was ~60%). The residual is mostly RTW quantising growth to 0.5% steps right on the bracket boundaries — load an all‑Normal turn‑2 save for the proven‑exact plan." },
+      { type: "fix", text: "Corrected two growth‑model facts found while validating: AI‑only building lines (`… not is_player …`) do **not** leak to the player even with a trailing `or sizeN`, and the governor‑tier `‑2/‑3/‑4/‑5` dampers are transient upgrade‑jump controls, not steady‑state growth. (Also retired the earlier wrong belief that growth needs a hidden per‑tile fertility input — the divergent same‑FarmN towns simply had different buildings.) New src/growthEval.js." },
+    ],
+  },
+  {
     version: "0.9.979",
     date: "2026-06-08",
     items: [

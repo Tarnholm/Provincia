@@ -6400,7 +6400,7 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction) => {
     const r = gm.computeStratTaxPlan(modDataDir, faction);
     if (r && r.byFaction) {
       const ns = Object.values(r.byFaction).reduce((s, f) => s + (f.settlements ? f.settlements.length : 0), 0);
-      _writeLog(`[strat-tax] ${faction || "(all)"}: ${ns} settlements, est accuracy ~${Math.round((r.accuracy?.bracketMatch || 0) * 100)}% (rough — no save)`);
+      _writeLog(`[strat-tax] ${faction || "(all)"}: ${ns} settlements via EDB growth model (no save); est ~${Math.round((r.accuracy?.withinHalf || 0) * 100)}% within 0.5% / ~${Math.round((r.accuracy?.bracketMatch || 0) * 100)}% exact bracket`);
     }
     return r;
   } catch (e) { _writeLog(`[strat-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
