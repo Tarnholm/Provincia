@@ -1342,6 +1342,10 @@ function applyOwnershipMoves(lines, ownerChanges) {
   }
   for (const { settlement, targetFactionId } of moves) {
     const target = blocks.find(b => b.factionId === targetFactionId);
+    // APPEND to the BOTTOM, never prepend: RIS descr_strat has no explicit `capital`
+    // line, so the engine treats a faction's FIRST settlement as its capital. Inserting
+    // at index 0 would make the transferred settlement the new capital (this is what
+    // happened when Metapontum was given to Rome by a manual edit). Keep .push().
     if (target) target.settlements.push(settlement);
     else console.warn(`patchDescrStrat: target faction "${targetFactionId}" not found in descr_strat for region "${settlement.regionName}"; ownership change dropped.`);
   }
