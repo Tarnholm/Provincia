@@ -6406,6 +6406,18 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction) => {
   } catch (e) { _writeLog(`[strat-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: mercenary pools from descr_mercenaries.txt (2026-06-08) — for the
+// Mercenaries map layer. Returns { pools, byRegion:{region:{pools,units}}, poolNames }.
+ipcMain.handle("get-mercenary-pools", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const mp = require("./src/mercenaryParser.js");
+    const r = mp.parseMercenaries(modDataDir);
+    if (r && r.pools) _writeLog(`[mercenaries] ${r.pools.length} pools, ${Object.keys(r.byRegion).length} regions covered`);
+    return r;
+  } catch (e) { _writeLog(`[mercenaries] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: list the current campaign's factions (descr_strat faction lines).
 ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   try {

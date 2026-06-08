@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.979",
+    date: "2026-06-08",
+    items: [
+      { type: "feature", text: "**New 🗺 Mercenaries map mode** (Military group). Reads the campaign's `descr_mercenaries.txt` and paints every region by its mercenary pool, so you can see at a glance where each pool sits. Click/hover a region to list the mercenaries hireable there — unit name, max count, and cost — including regions covered by multiple overlapping pools (merged). Pure config read; no save needed." },
+    ],
+  },
+  {
     version: "0.9.978",
     date: "2026-06-08",
     items: [

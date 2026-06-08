@@ -1172,7 +1172,7 @@ function splitAorsByLayer(tags, cityName) {
   return { primary, secondary, all };
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "happiness", "income", "public_order"]);
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "happiness", "income", "public_order", "mercenaries"]);
 
 // Per-tile geography palette. Decoded from RTW's map_ground_types.tga whose
 // pixels carry one of ~14 fixed RGB values. The map_ground_types raw colors
@@ -2564,6 +2564,9 @@ function App() {
 
   // Dev "hidden_resource" map mode: which hidden resource to highlight (search box reuses legendSearch)
   const [selectedHiddenResource, setSelectedHiddenResource] = useState(null);
+  // Mercenaries map layer (2026-06-08): parsed descr_mercenaries pools. Loaded
+  // lazily the first time the Mercenaries map mode is selected.
+  const [mapMercData, setMapMercData] = useState(null);
   // Dev-mode inline "Add new HR" input: null = closed, "" or string = open
   const [newHrDraft, setNewHrDraft] = useState(null);
   const [newHrError, setNewHrError] = useState(null);
@@ -2737,6 +2740,17 @@ function App() {
   const [factionRecordOwners, setFactionRecordOwners] = useState(null);
   const [factionConfig, setFactionConfig] = useState(null);
   // 0.9.542: persist the faction-level save data so one sync survives restarts.
+  // Mercenaries map layer: lazy-load descr_mercenaries the first time the mode is
+  // picked (or modDataDir changes while it's active).
+  useEffect(() => {
+    if (colorMode !== "mercenaries" || !modDataDir) return;
+    let cancelled = false;
+    (async () => {
+      try { const r = await window.electronAPI.getMercenaryPools?.(modDataDir); if (!cancelled && r && r.byRegion) setMapMercData(r); }
+      catch (e) { console.warn("[mercenaries] load failed", e); }
+    })();
+    return () => { cancelled = true; };
+  }, [colorMode, modDataDir]);
   useEffect(() => { try { if (allFactionDiplomacy) localStorage.setItem("allFactionDiplomacy", JSON.stringify(allFactionDiplomacy)); } catch {} }, [allFactionDiplomacy]);
   useEffect(() => { try { if (diplomacyMatrix) localStorage.setItem("diplomacyMatrix", JSON.stringify(diplomacyMatrix)); } catch {} }, [diplomacyMatrix]);
   useEffect(() => { try { if (treasuryHistory) localStorage.setItem("treasuryHistory", JSON.stringify(treasuryHistory)); } catch {} }, [treasuryHistory]);
@@ -8338,7 +8352,25 @@ function App() {
         if (colorMode === "hidden_resource" && selectedHiddenResource) {
           for (const r of Object.values(regions)) hrMatch.set(r, hasTag(r.tags, selectedHiddenResource));
         }
+        // Mercenaries: a stable distinct colour per pool (hash → HSL), so adjacent
+        // pools read differently. Regions with no pool render muted gray.
+        const mercPoolColor = (pool) => {
+          if (!pool) return [70, 72, 80];
+          let h = 0; for (let i = 0; i < pool.length; i++) h = (h * 31 + pool.charCodeAt(i)) >>> 0;
+          const hue = h % 360, sat = 0.55 + ((h >> 9) % 30) / 100, lit = 0.45 + ((h >> 17) % 20) / 100;
+          const c = (1 - Math.abs(2 * lit - 1)) * sat, x = c * (1 - Math.abs(((hue / 60) % 2) - 1)), m = lit - c / 2;
+          let r2, g2, b2;
+          if (hue < 60) [r2, g2, b2] = [c, x, 0]; else if (hue < 120) [r2, g2, b2] = [x, c, 0];
+          else if (hue < 180) [r2, g2, b2] = [0, c, x]; else if (hue < 240) [r2, g2, b2] = [0, x, c];
+          else if (hue < 300) [r2, g2, b2] = [x, 0, c]; else [r2, g2, b2] = [c, 0, x];
+          return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255)];
+        };
         const getBase = (r) => {
+          if (colorMode === "mercenaries") {
+            const e = mapMercData && mapMercData.byRegion ? mapMercData.byRegion[r.region] : null;
+            if (!e || !e.units || !e.units.length) return [62, 64, 72]; // no mercenaries here
+            return mercPoolColor(e.pools && e.pools[0]);
+          }
           if (colorMode === "terrain") { const t = getTagValue(r.tags, TERRAIN_TAGS); return (t && TERRAIN_COLORS[t]) || [100,100,100]; }
           if (colorMode === "climate") { const c = getTagValue(r.tags, CLIMATE_TAGS); return (c && CLIMATE_COLORS[c]) || [100,100,100]; }
           if (colorMode === "port_level") {
@@ -8419,7 +8451,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -12151,6 +12183,7 @@ function App() {
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
         { key: "aor", label: "AOR", badge: "devmode.aor", dev: true },
+        { key: "mercenaries", label: "Mercenaries", badge: "devmode.mercenaries", dev: true },
       ]},
       { id: "geography", title: "Geography", members: [
         { key: "geography", label: "Geography", badge: "mode.geography" },
@@ -13484,6 +13517,12 @@ function App() {
   // Compute the mode-specific value string for a hovered/locked region
   function getModeExtra(info) {
     if (!info) return null;
+    if (colorMode === "mercenaries") {
+      const e = mapMercData && mapMercData.byRegion ? mapMercData.byRegion[info.region] : null;
+      if (!e || !e.units || !e.units.length) return { label: "Mercenaries", value: "— none available here" };
+      const list = e.units.map((u) => `${u.name}${u.max > 1 ? ` ×${u.max}` : ""} (${u.cost})`).join(", ");
+      return { label: `Mercenaries · ${e.units.length} unit${e.units.length === 1 ? "" : "s"} · pool ${e.pools.join(" + ")}`, value: list };
+    }
     if (colorMode === "population") {
       const pop = populationData[info.region] || populationData[info.region?.split("-")[0]] || populationData[info.city];
       return pop != null ? { label: "Population", value: pop.toLocaleString() } : null;
