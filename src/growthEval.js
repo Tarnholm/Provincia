@@ -248,21 +248,32 @@ function settlementFeatures(s, region, faction, capIndex, chainLevels, resources
   return { farmN: region.farmN, farmLevel, healthSum, pgOther, pop: s.pop, govLevel };
 }
 
-function estimateGrowth(f) {
-  const g = COEF.intercept + COEF.farmN * f.farmN + COEF.farmLevel * f.farmLevel
+// raw (unsnapped) growth — used to judge how close to a bracket boundary we are
+function rawGrowth(f) {
+  return COEF.intercept + COEF.farmN * f.farmN + COEF.farmLevel * f.farmLevel
     + COEF.healthSum * f.healthSum + COEF.pgOther * f.pgOther
     + COEF.popPer1000 * (f.pop / 1000) + COEF.govLevel * f.govLevel;
-  return Math.round(g * 2) / 2; // RTW growth steps are 0.5%
 }
+function estimateGrowth(f) { return Math.round(rawGrowth(f) * 2) / 2; } // RTW growth steps are 0.5%
 
 // Save-aware estimate: same features + the two stored development values
 // (marker−1528 = growthDev, marker−1556 = growthDev2).
-function estimateGrowthWithSave(f, growthDev, growthDev2) {
-  const g = COEF_SAVE.intercept + COEF_SAVE.farmN * f.farmN + COEF_SAVE.farmLevel * f.farmLevel
+function rawGrowthWithSave(f, growthDev, growthDev2) {
+  return COEF_SAVE.intercept + COEF_SAVE.farmN * f.farmN + COEF_SAVE.farmLevel * f.farmLevel
     + COEF_SAVE.healthSum * f.healthSum + COEF_SAVE.pgOther * f.pgOther
     + COEF_SAVE.popPer1000 * (f.pop / 1000) + COEF_SAVE.govLevel * f.govLevel
     + COEF_SAVE.growthDev * (growthDev || 0) + COEF_SAVE.growthDev2 * (growthDev2 || 0);
-  return Math.round(g * 2) / 2;
+}
+function estimateGrowthWithSave(f, growthDev, growthDev2) { return Math.round(rawGrowthWithSave(f, growthDev, growthDev2) * 2) / 2; }
+
+// Bracket-flip thresholds are at growth = 0 / +0.5 / +1.0 (where the optimal bracket
+// changes). "Borderline" = the raw growth sits within the model's error margin of one
+// of those, so the recommended bracket is the least certain there — flag it so the
+// user knows to verify in-game rather than trust it blindly.
+function bracketConfidence(raw, margin) {
+  let nearest = Infinity;
+  for (const t of [0, 0.5, 1.0]) nearest = Math.min(nearest, Math.abs(raw - t));
+  return { borderline: nearest < margin, distToBoundary: Math.round(nearest * 100) / 100 };
 }
 
 function optimalBracket(baseGrowth) {
@@ -305,16 +316,22 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     if (ge) { feat.farmLevel += (ge.growthFarm || 0); feat.healthSum += (ge.health || 0); feat.govEffect = ge; usedGov++; }
     // dev[city] = { v1528, v1556 } from the loaded save (or a bare number for v1528 only)
     const gd = dev && region.settlement in dev ? dev[region.settlement] : null;
-    let baseGrowthEst, savedDev = false;
+    let baseGrowthEst, raw, savedDev = false;
     if (gd != null) {
       const v1 = (typeof gd === "number") ? gd : gd.v1528;
       const v2 = (typeof gd === "number") ? 0 : (gd.v1556 || 0);
-      if (v1 != null) { baseGrowthEst = estimateGrowthWithSave(feat, v1, v2); savedDev = true; usedDev++; }
-      else baseGrowthEst = estimateGrowth(feat);
-    } else baseGrowthEst = estimateGrowth(feat);
+      if (v1 != null) { raw = rawGrowthWithSave(feat, v1, v2); savedDev = true; usedDev++; }
+      else raw = rawGrowth(feat);
+    } else raw = rawGrowth(feat);
+    baseGrowthEst = Math.round(raw * 2) / 2;
+    // confidence: only flag the ROUGH no-save estimate (margin 0.4 catches ~81% of its
+    // bracket misses — a useful "verify this one" cue). The save-aware estimate is ~97%
+    // accurate, so flagging it (margin 0 → never) would just be trust-eroding noise.
+    const conf = bracketConfidence(raw, savedDev ? 0 : 0.4);
     settlements.push({
       region: s.region, settlement: region.settlement, pop: s.pop,
       baseGrowthEst, optimalBracket: optimalBracket(baseGrowthEst), features: feat, savedDev,
+      borderline: conf.borderline, distToBoundary: conf.distToBoundary,
     });
   }
   const saveAware = usedDev > 0;
@@ -322,7 +339,7 @@ function computeFactionGrowth(modDataDir, faction, opts) {
 }
 
 module.exports = {
-  computeFactionGrowth, estimateGrowth, estimateGrowthWithSave, optimalBracket,
+  computeFactionGrowth, estimateGrowth, estimateGrowthWithSave, rawGrowth, rawGrowthWithSave, bracketConfidence, optimalBracket,
   settlementFeatures, parseRegions, parseResources, parseStrat, parseEDB, evalReq,
   COEF, COEF_SAVE, ACCURACY, ACCURACY_SAVE, TAX_MOD,
 };

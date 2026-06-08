@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.985",
+    date: "2026-06-08",
+    items: [
+      { type: "improvement", text: "**No‑save tax plan now flags its uncertain calls.** A ⚠ marks settlements whose estimated growth sits near a bracket boundary — the recommendations most likely to be off by one bracket. Validated: this catches ~81% of the no‑save model's actual bracket misses, so you know which rows to verify in‑game (or set one bracket lower) rather than trusting all of them equally. The flag only appears on the rough no‑save estimate; the save‑aware estimate (~97% accurate) isn't flagged, to avoid needless noise." },
+      { type: "improvement", text: "Confirmed by cross‑culture testing that the save‑aware growth model generalizes — applied unchanged to 388 AI settlements across 43 factions it lands ~97% of brackets (seleucid, ptolemaic, indian, nubian, hellenistic, …). Refitting on that pooled data was tested and rejected (it degraded the player‑faction accuracy), so the coefficients are unchanged. Added a regression test for governor‑trait growth effects." },
+    ],
+  },
+  {
     version: "0.9.984",
     date: "2026-06-08",
     items: [
