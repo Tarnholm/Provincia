@@ -94,4 +94,30 @@ function parseMercenaries(modDataDir) {
   return { pools, byRegion, poolNames: pools.map((p) => p.name), file: p };
 }
 
-module.exports = { parseMercenaries, findDescrMercenaries, parseUnitLine };
+// Add a region to a pool's `regions` line (idempotent, EOL-preserving). Returns
+// { ok, text, changedLine, before, after } or { ok:false, error, already }.
+function addRegionToPool(text, poolName, region) {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(/\r?\n/);
+  const want = String(poolName).trim().toLowerCase();
+  const reg = String(region).trim();
+  if (!reg) return { ok: false, error: "no region given" };
+  let cur = null;
+  for (let i = 0; i < lines.length; i++) {
+    const pm = lines[i].match(/^pool\s+(.+?)\s*$/i);
+    if (pm) { cur = pm[1].trim().toLowerCase(); continue; }
+    if (cur === want) {
+      const rm = lines[i].match(/^(\s*regions\b[ \t]*)(.*?)([ \t]*)$/i);
+      if (rm) {
+        const existing = rm[2].split(/\s+/).filter(Boolean);
+        if (existing.some((r) => r.toLowerCase() === reg.toLowerCase())) return { ok: false, already: true, error: `${reg} is already in pool '${poolName}'` };
+        const after = existing.concat(reg).join(" ");
+        lines[i] = rm[1] + after;
+        return { ok: true, text: lines.join(eol), changedLine: i + 1, before: rm[2].trim(), after };
+      }
+    }
+  }
+  return { ok: false, error: `pool '${poolName}' (or its regions line) not found` };
+}
+
+module.exports = { parseMercenaries, findDescrMercenaries, parseUnitLine, addRegionToPool };

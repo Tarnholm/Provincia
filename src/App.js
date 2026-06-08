@@ -13700,6 +13700,18 @@ function App() {
         ? pools.filter(p => !lq || p.name.replace(/_/g, " ").toLowerCase().includes(lq)).slice().sort((a, b) => a.name.localeCompare(b.name))
         : [];
       const activeCount = mercPoolFilter ? mercPoolFilter.size : allNames.length;
+      // "Add region to pool" — uses the currently selected (clicked) or hovered region.
+      const selRegion = (lockedRegionInfo && lockedRegionInfo.region) || (regionInfo && regionInfo.region) || null;
+      const addRegionToPool = async (poolName) => {
+        if (!selRegion || !modDataDir) return;
+        try {
+          const res = await window.electronAPI.addRegionToMercPool?.(modDataDir, poolName, selRegion);
+          if (!res || res.error) { pushToast(res?.error || "add failed", res?.already ? "info" : "warn"); return; }
+          const fresh = await window.electronAPI.getMercenaryPools?.(modDataDir);
+          if (fresh && fresh.byRegion) setMapMercData(fresh);
+          pushToast(`Added ${selRegion.replace(/_/g, " ")} to pool "${poolName}" (descr_mercenaries.txt)`, "info");
+        } catch (e) { pushToast(e?.message || String(e), "warn"); }
+      };
       return (
         <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #b06ad0" }}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#cf9ee8", ...collapseToggle }} onClick={onCollapseClick}>
@@ -13715,21 +13727,29 @@ function App() {
               </div>
               <input type="text" value={legendSearch} onChange={(e) => setLegendSearch(e.target.value)} className="legend-search-input" placeholder="Search pools…"
                 style={{ width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4, borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.74rem", outline: "none" }} />
+              <div style={{ marginBottom: 4, padding: "3px 6px", borderRadius: 5, background: "rgba(176,106,208,0.10)", border: "1px solid rgba(176,106,208,0.3)", fontSize: "0.66rem", color: selRegion ? "#cf9ee8" : "#888" }}>
+                {selRegion ? <>To add <b>{selRegion.replace(/_/g, " ")}</b> to a pool, click <b style={{ color: "#7fd17f" }}>＋</b> on that pool below.</> : <>Hover/click a region on the map, then ＋ a pool to add it.</>}
+              </div>
               {shown.map((p) => {
                 const on = enabled(p.name);
                 const sw = on ? mercPoolColorFor(p.name) : [80, 80, 88];
+                const inPool = selRegion && (p.regions || []).some(rg => rg.toLowerCase() === selRegion.toLowerCase());
                 return (
                   <div key={p.name} onClick={() => toggle(p.name)}
                     style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 4px", borderRadius: 4, cursor: "pointer", opacity: on ? 1 : 0.5, transition: "opacity 0.12s" }}>
                     <div style={{ width: 11, height: 11, borderRadius: 2, flexShrink: 0, background: `rgb(${sw[0]},${sw[1]},${sw[2]})`, outline: on ? "1px solid rgba(255,255,255,0.35)" : "none" }} />
                     <span style={{ flex: 1, fontSize: "0.72rem", fontWeight: on ? 600 : 400, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.replace(/_/g, " ")}</span>
                     <span style={{ fontSize: "0.6rem", color: "#777", flexShrink: 0 }}>{(p.regions ? p.regions.length : 0)}r · {(p.units ? p.units.length : 0)}u</span>
+                    {selRegion && (inPool
+                      ? <span title={`${selRegion.replace(/_/g, " ")} is already in this pool`} style={{ fontSize: "0.6rem", color: "#7fd17f", flexShrink: 0, padding: "0 3px" }}>✓</span>
+                      : <span onClick={(e) => { e.stopPropagation(); addRegionToPool(p.name); }} title={`Add ${selRegion.replace(/_/g, " ")} to this pool (writes descr_mercenaries.txt)`}
+                          style={{ fontSize: "0.72rem", lineHeight: 1, color: "#7fd17f", flexShrink: 0, padding: "0 4px", borderRadius: 3, border: "1px solid rgba(127,209,127,0.4)", cursor: "pointer" }}>＋</span>)}
                     <span onClick={(e) => { e.stopPropagation(); solo(p.name); }} title="Show only this pool"
                       style={{ fontSize: "0.6rem", color: "#cf9ee8", flexShrink: 0, padding: "0 3px", borderRadius: 3, border: "1px solid rgba(207,158,232,0.3)", cursor: "pointer" }}>only</span>
                   </div>
                 );
               })}
-              <div style={{ marginTop: 6, fontSize: "0.62rem", color: "#888" }}>Darker‑gray regions have mercs but their pool is hidden; flat gray = none. Overlaps colour by the first shown pool.</div>
+              <div style={{ marginTop: 6, fontSize: "0.62rem", color: "#888" }}>Darker‑gray regions have mercs but their pool is hidden; flat gray = none. Overlaps colour by the first shown pool. ＋ adds the selected region to a pool.</div>
             </>
           )}
         </div>

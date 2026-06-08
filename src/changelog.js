@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.989",
+    date: "2026-06-08",
+    items: [
+      { type: "feature", text: "**Mercenaries map mode: add a region to a pool, in‑app.** Hover or click a region, then hit the green ＋ next to any pool in the Mercenary Pools panel to add that region to it — it writes the region into the pool's line in `descr_mercenaries.txt` (CRLF‑safe, with a .provincia‑bak backup) and the map refreshes immediately. Pools the region is already in show a ✓ instead. Makes filling gaps / fixing misplaced pools much faster than hand‑editing." },
+    ],
+  },
+  {
     version: "0.9.988",
     date: "2026-06-08",
     items: [

@@ -6442,6 +6442,23 @@ ipcMain.handle("get-mercenary-pools", async (_event, modDataDir) => {
   } catch (e) { _writeLog(`[mercenaries] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: add a region to a mercenary pool (edits descr_mercenaries.txt, CRLF-safe, backup).
+ipcMain.handle("add-region-to-merc-pool", async (_event, modDataDir, poolName, region) => {
+  try {
+    if (!modDataDir || !poolName || !region) return { error: "missing args" };
+    const mp = require("./src/mercenaryParser.js");
+    const p = mp.findDescrMercenaries(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_mercenaries.txt not found" };
+    const text = fs.readFileSync(p, "latin1");
+    const r = mp.addRegionToPool(text, poolName, region);
+    if (!r.ok) return { error: r.error, already: !!r.already };
+    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[merc-add] backup failed: ${e && e.message}`); }
+    fs.writeFileSync(p, r.text, "latin1");
+    _writeLog(`[merc-add] added region "${region}" to pool "${poolName}" @line ${r.changedLine} ("${r.before}" → "${r.after}")`);
+    return { ok: true, changedLine: r.changedLine, before: r.before, after: r.after, path: p };
+  } catch (e) { _writeLog(`[merc-add] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: list the current campaign's factions (descr_strat faction lines).
 ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   try {

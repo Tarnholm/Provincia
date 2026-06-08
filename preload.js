@@ -100,6 +100,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getOptimalTaxes: (savePath, modDataDir, playerHint, economyPath) => ipcRenderer.invoke("get-optimal-taxes", savePath, modDataDir, playerHint, economyPath),
   getStratTaxPlan: (modDataDir, faction, savePath) => ipcRenderer.invoke("get-strat-tax-plan", modDataDir, faction, savePath),
   getMercenaryPools: (modDataDir) => ipcRenderer.invoke("get-mercenary-pools", modDataDir),
+  addRegionToMercPool: (modDataDir, poolName, region) => ipcRenderer.invoke("add-region-to-merc-pool", modDataDir, poolName, region),
   applyArmySwap: (modDataDir, faction, character, oldUnit, newUnit) => ipcRenderer.invoke("apply-army-swap", modDataDir, faction, character, oldUnit, newUnit),
   applyUpgradeFix: (modDataDir, faction, character, opts) => ipcRenderer.invoke("apply-upgrade-fix", modDataDir, faction, character, opts),
   // Per-faction fog-of-war / explored map (corrected 1020×700 grid). Returns
