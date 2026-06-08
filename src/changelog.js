@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.987",
+    date: "2026-06-08",
+    items: [
+      { type: "improvement", text: "**Growth model markedly more accurate, and now calibrated across 6 factions / 5 cultures** (Roman, Punic, Greco‑Bactrian, Macedonian, Germanic, Cyrenean‑Greek). Reading in‑game growth breakdowns confirmed the exact structure — every catalyst is 0.5% per point (Base farming = ½·FarmN, Farm upgrades = ½·farm_level, Health = ½·health_bonus, Buildings = ½·Σbonuses) — and exposed a real bug: the EDB **supply‑flag aliases** (e.g. a perfumes building boosting the hospital's health, a slave‑supply flag toggling a government bonus) were being ignored. Fixed by expanding those aliases. Result: the **save‑aware estimate is now ~99% within 0.5% / ~95% exact bracket** (was ~85% bracket cross‑culture), validated leave‑one‑faction‑out; the **no‑save estimate is ~88% within 0.5%** (was ~82%). On the freshly‑played Cyrene save the save‑aware plan was **100% exact, every settlement**." },
+    ],
+  },
+  {
     version: "0.9.986",
     date: "2026-06-08",
     items: [

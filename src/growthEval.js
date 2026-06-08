@@ -45,9 +45,13 @@ const path = require("path");
 
 // Calibrated coefficients (free least-squares fit to Carthage+Julii all-Normal
 // turn-2 base growth; best out-of-sample LOFO performance). See header for accuracy.
-const COEF = { intercept: 0.4037, farmN: 0.0154, farmLevel: 0.5197, healthSum: 0.5770, pgOther: 0.5820, popPer1000: -0.4588, govLevel: -0.6522, hasPort: 0.3179 };
-const ACCURACY = { withinHalf: 0.82, bracketMatch: 0.71, mae: 0.39, n: 66,
-  note: "no-save preview (~82% within 0.5%, ~71% bracket); load an all-Normal turn-2 save for the exact plan" };
+// Calibrated on 6 factions / 5 cultures (Roman, Punic, Greco-Bactrian, Macedonian,
+// Germanic, Cyrenean-Greek) — 117 all-Normal turn-2 settlements — with the EDB
+// supply-flag aliases correctly expanded. Coefficients now match the proven 0.5%/point
+// structure (health ≈ pgOther ≈ 0.5). Leave-one-faction-out: ~88% within 0.5%, ~68% bracket.
+const COEF = { intercept: 0.4161, farmN: -0.0058, farmLevel: 0.4425, healthSum: 0.5270, pgOther: 0.5022, popPer1000: -0.3694, govLevel: -0.3482, hasPort: 0.0375 };
+const ACCURACY = { withinHalf: 0.88, bracketMatch: 0.68, mae: 0.35, n: 117,
+  note: "no-save preview (~88% within 0.5%, ~68% bracket); load an all-Normal turn-2 save for the exact plan" };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
@@ -58,9 +62,9 @@ const ACCURACY = { withinHalf: 0.82, bracketMatch: 0.71, mae: 0.39, n: 66,
 // Two stored development terms: marker−1528 (growthDevValue) and marker−1556
 // (growthDevValue2). Together they take the estimate to ~100% within 0.5% / ~94%
 // exact bracket (LOFO cross-validated) for any faction from a single loaded save.
-const COEF_SAVE = { intercept: 0.9822, farmN: -0.0129, farmLevel: 0.0384, healthSum: 0.5355, pgOther: 0.5289, popPer1000: 0.0075, govLevel: -0.9145, growthDev: -0.5114, growthDev2: 0.4689 };
-const ACCURACY_SAVE = { withinHalf: 1.0, bracketMatch: 0.94, mae: 0.07, n: 66,
-  note: "save-aware estimate using stored development values (marker−1528/−1556); ~100% within 0.5%, all factions from one save" };
+const COEF_SAVE = { intercept: 0.9210, farmN: -0.0157, farmLevel: -0.0722, healthSum: 0.5628, pgOther: 0.4987, popPer1000: -0.0130, govLevel: -0.8725, growthDev: -0.4721, growthDev2: 0.5628 };
+const ACCURACY_SAVE = { withinHalf: 0.99, bracketMatch: 0.95, mae: 0.06, n: 117,
+  note: "save-aware estimate using stored development values (marker−1528/−1556); ~99% within 0.5% / ~95% bracket across 6 factions, all factions from one save" };
 
 const TAX_MOD = { low: 0.5, normal: 0.0, high: -0.5, very_high: -1.0 };
 const BRACKET_ORDER = ["low", "normal", "high", "very_high"];
@@ -148,6 +152,11 @@ function parseEDB(edbPath) {
   const lines = fs.readFileSync(edbPath, "latin1").split(/\r?\n/);
   const capIndex = {}, chainLevels = {};
   let curBuilding = null, levelsList = [], curLevel = null;
+  // EDB `alias NAME { requires <clause> }` blocks. RIS gates many bonuses on supply
+  // aliases (e.g. perfumes_building_supply = "resource perfumes or perfumes_supply_built
+  // factionwide"). Expanding these is what fixes the health/buildings undercount.
+  const aliases = {};
+  let curAlias = null;
   const add = (kind, obj) => {
     if (!curBuilding || !curLevel) return;
     const key = curBuilding + ":" + curLevel;
@@ -155,6 +164,9 @@ function parseEDB(edbPath) {
   };
   for (const raw of lines) {
     const ln = raw.replace(/;.*$/, "");
+    const am = ln.match(/^alias\s+(\w+)/);
+    if (am) { curAlias = am[1]; continue; }
+    if (curAlias) { const rq = ln.match(/^\s*requires\s+(.+)/); if (rq) { aliases[curAlias] = rq[1].trim(); curAlias = null; } else if (/^\s*\}/.test(ln)) curAlias = null; continue; }
     const bm = ln.match(/^building\s+(\w+)/);
     if (bm) { curBuilding = bm[1]; levelsList = []; curLevel = null; continue; }
     const lm = ln.match(/^\s*levels\s+(.+)$/);
@@ -168,7 +180,7 @@ function parseEDB(edbPath) {
     if ((m = ln.match(/^\s*farming_level\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("farming", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*population_health_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { bonus: +m[1], req: (m[2] || "").trim() }); continue; }
   }
-  return { capIndex, chainLevels };
+  return { capIndex, chainLevels, aliases };
 }
 
 // ---- requires evaluator (player perspective, campaign start) ----
@@ -212,12 +224,16 @@ function evalAtom(t, ctx) {
   if ((m = t.match(/^building_present\s+(\S+)/))) return ctx.buildings.has(m[1]);
   if ((m = t.match(/^size(\d+)/))) return ctx.sizeTier >= +m[1];
   if (t === "homeland") return ctx.homeland;
+  // EDB supply aliases (perfumes_building_supply etc.) → expand & evaluate. At a
+  // campaign start the `*_supply_built factionwide` half is false (no supply building
+  // yet), so these reduce to `resource X`, which we can read from the region.
+  if (ctx.aliases && ctx.aliases[t] != null) return evalReq(ctx.aliases[t], ctx);
   if (t === "nobuilding" || t === "no_other_farm" || t.endsWith("_chain") || t.endsWith("_tier_5") || t.endsWith("_farming")) return true;
   return false; // unknown faction-supply flags → false
 }
 
 // ---- per-settlement feature extraction + growth estimate ----
-function settlementFeatures(s, region, faction, capIndex, chainLevels, resourcesByRegion) {
+function settlementFeatures(s, region, faction, capIndex, chainLevels, resourcesByRegion, aliases) {
   const buildings = new Map();
   for (const b of s.buildings) {
     const order = chainLevels[b.chain] || null;
@@ -225,7 +241,7 @@ function settlementFeatures(s, region, faction, capIndex, chainLevels, resources
     buildings.set(b.chain, idx < 0 ? 0 : idx);
   }
   const ctx = {
-    hidden: region.hidden || new Set(), buildings, chainLevels,
+    hidden: region.hidden || new Set(), buildings, chainLevels, aliases: aliases || {},
     capital: s.capital, faction, homeland: [...(region.hidden || [])].some(h => h.startsWith("homeland")),
     sizeTier: SIZE_TIER[s.level] || 1, resources: resourcesByRegion[s.region] || new Set(),
   };
@@ -300,7 +316,7 @@ function computeFactionGrowth(modDataDir, faction, opts) {
   if (!stratPath || !edbPath) return { error: "descr_strat or export_descr_buildings not found", estimated: true };
   const { byRegion } = parseRegions(modDataDir);
   const resourcesByRegion = parseResources(stratPath);
-  const { capIndex, chainLevels } = parseEDB(edbPath);
+  const { capIndex, chainLevels, aliases } = parseEDB(edbPath);
   const factions = parseStrat(stratPath);
   const want = String(faction || "").toLowerCase();
   const f = factions[want];
@@ -312,7 +328,7 @@ function computeFactionGrowth(modDataDir, faction, opts) {
   for (const s of f.settlements) {
     const region = byRegion[s.region];
     if (!region || !region.farmN) continue;
-    const feat = settlementFeatures(s, region, want, capIndex, chainLevels, resourcesByRegion);
+    const feat = settlementFeatures(s, region, want, capIndex, chainLevels, resourcesByRegion, aliases);
     // Governor trait effects (user 2026-06-08: generals' traits DO affect growth).
     // Farming + Fertility feed the farm catalyst; Health feeds the health catalyst —
     // fold them into the same features growthEval already weights.
