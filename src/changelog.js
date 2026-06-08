@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.988",
+    date: "2026-06-08",
+    items: [
+      { type: "feature", text: "**Growth breakdown on hover.** Hovering a settlement's growth in the tax plan now shows the same component split as the in‑game Settlement Details scroll — Base farming / Farm upgrades / Health / Buildings / Squalor — so you can see *why* each number lands where it does (every catalyst is ½% per point). Validated against the in‑game scroll: base/farm/health match exactly, buildings/squalor within rounding." },
+    ],
+  },
+  {
     version: "0.9.987",
     date: "2026-06-08",
     items: [

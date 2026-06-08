@@ -348,10 +348,21 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // bracket misses — a useful "verify this one" cue). The save-aware estimate is ~97%
     // accurate, so flagging it (margin 0 → never) would just be trust-eroding noise.
     const conf = bracketConfidence(raw, savedDev ? 0 : 0.4);
+    // Per-component breakdown (matches the in-game Settlement Details growth scroll),
+    // each catalyst at the confirmed 0.5%/point. Squalor is taken as the residual so
+    // the lines always sum to the shown total (exact when this is a save-backed estimate).
+    const r2 = x => Math.round(x * 2) / 2;
+    const damper = feat.govLevel >= 2 ? feat.govLevel : 0; // villa−2/palace−3/proconsuls−4/imperial−5
+    const cBase = r2(0.5 * feat.farmN);
+    const cFarm = r2(0.5 * feat.farmLevel);
+    const cHealth = r2(0.5 * feat.healthSum);
+    const cBuildings = r2(0.5 * (feat.pgOther - feat.farmN - damper));
+    const cSqualor = Math.max(0, r2((cBase + cFarm + cHealth + cBuildings) - baseGrowthEst)); // ≥0 penalty magnitude
     settlements.push({
       region: s.region, settlement: region.settlement, pop: s.pop,
       baseGrowthEst, optimalBracket: optimalBracket(baseGrowthEst), features: feat, savedDev,
       borderline: conf.borderline, distToBoundary: conf.distToBoundary,
+      components: { base: cBase, farm: cFarm, health: cHealth, buildings: cBuildings, squalor: cSqualor },
     });
   }
   const saveAware = usedDev > 0;

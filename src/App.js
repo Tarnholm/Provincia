@@ -22764,7 +22764,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                     <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                                       <td style={{ padding: "1px 6px", color: "#dde" }}>{(s.region || "").replace(/_/g, " ")}</td>
                                       <td style={{ color: "#9aa" }}>{s.pop}</td>
-                                      <td style={{ color: s.baseGrowthEst < 0 ? "#e8806a" : "#9aa" }}>{s.baseGrowthEst >= 0 ? "+" : ""}{s.baseGrowthEst}%</td>
+                                      <td style={{ color: s.baseGrowthEst < 0 ? "#e8806a" : "#9aa", cursor: s.components ? "help" : "default" }}
+                                        title={s.components ? `Growth breakdown (matches the in‑game scroll):\nBase farming  ${s.components.base >= 0 ? "+" : ""}${s.components.base}%\nFarm upgrades ${s.components.farm >= 0 ? "+" : ""}${s.components.farm}%\nHealth        ${s.components.health >= 0 ? "+" : ""}${s.components.health}%\nBuildings     ${s.components.buildings >= 0 ? "+" : ""}${s.components.buildings}%\nSqualor       −${s.components.squalor}%\n= ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}%` : undefined}>
+                                        {s.baseGrowthEst >= 0 ? "+" : ""}{s.baseGrowthEst}%</td>
                                       <td style={{ color: BR_COL[s.optimalBracket], fontWeight: 600 }}>
                                         {BR[s.optimalBracket]}
                                         {s.borderline && <span title={`Borderline — estimated growth is only ${s.distToBoundary ?? "<0.2"}% from a bracket boundary, so this one could flip. Verify in‑game or set one bracket lower to be safe.`} style={{ color: "#e8b85a", marginLeft: 4, cursor: "help" }}>⚠</span>}
