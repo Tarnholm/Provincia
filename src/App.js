@@ -176,6 +176,20 @@ const _MAP_BTN_LETTERS = (() => {
 })();
 function letterFor(key) { return _MAP_BTN_LETTERS[key] || "?"; }
 
+// Stable distinct colour per mercenary pool (hash → HSL → RGB). Module-scope &
+// pure so the map (getBase) and the pool-filter legend use the exact same swatch.
+function mercPoolColorFor(pool) {
+  if (!pool) return [70, 72, 80];
+  let h = 0; for (let i = 0; i < pool.length; i++) h = (h * 31 + pool.charCodeAt(i)) >>> 0;
+  const hue = h % 360, sat = 0.55 + ((h >> 9) % 30) / 100, lit = 0.45 + ((h >> 17) % 20) / 100;
+  const c = (1 - Math.abs(2 * lit - 1)) * sat, x = c * (1 - Math.abs(((hue / 60) % 2) - 1)), m = lit - c / 2;
+  let r2, g2, b2;
+  if (hue < 60) [r2, g2, b2] = [c, x, 0]; else if (hue < 120) [r2, g2, b2] = [x, c, 0];
+  else if (hue < 180) [r2, g2, b2] = [0, c, x]; else if (hue < 240) [r2, g2, b2] = [0, x, c];
+  else if (hue < 300) [r2, g2, b2] = [x, 0, c]; else [r2, g2, b2] = [c, 0, x];
+  return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255)];
+}
+
 // Tiny high-contrast letter pill stamped in the top-left corner of a button.
 // pointerEvents:none so it never intercepts clicks; absolutely positioned so it
 // doesn't affect button layout. The host button must be position:relative (the
@@ -2571,6 +2585,10 @@ function App() {
   // Mercenaries map layer (2026-06-08): parsed descr_mercenaries pools. Loaded
   // lazily the first time the Mercenaries map mode is selected.
   const [mapMercData, setMapMercData] = useState(null);
+  // Mercenaries pool filter: null = show ALL pools; else a Set of ENABLED pool names
+  // (lets the user isolate pools one-by-one to spot gaps/overlaps). Regions in a
+  // multi-pool overlap colour by their first enabled pool.
+  const [mercPoolFilter, setMercPoolFilter] = useState(null);
   // Dev-mode inline "Add new HR" input: null = closed, "" or string = open
   const [newHrDraft, setNewHrDraft] = useState(null);
   const [newHrError, setNewHrError] = useState(null);
@@ -3398,6 +3416,9 @@ function App() {
     })();
     return () => { cancelled = true; };
   }, [colorMode, modDataDir]);
+  // Mercenary pool names differ per mod, so clear the cached pools + any pool
+  // filter when the mod changes (a stale filter Set would hide every region).
+  useEffect(() => { setMapMercData(null); setMercPoolFilter(null); }, [modDataDir]);
   // Vanilla faction-icons dir, read LIVE from the detected RTW install (not
   // bundled). Used as the icon source for the bundled vanilla Slot 1.
   const [vanillaIconsDir, setVanillaIconsDir] = useState(null);
@@ -8358,24 +8379,16 @@ function App() {
         if (colorMode === "hidden_resource" && selectedHiddenResource) {
           for (const r of Object.values(regions)) hrMatch.set(r, hasTag(r.tags, selectedHiddenResource));
         }
-        // Mercenaries: a stable distinct colour per pool (hash → HSL), so adjacent
-        // pools read differently. Regions with no pool render muted gray.
-        const mercPoolColor = (pool) => {
-          if (!pool) return [70, 72, 80];
-          let h = 0; for (let i = 0; i < pool.length; i++) h = (h * 31 + pool.charCodeAt(i)) >>> 0;
-          const hue = h % 360, sat = 0.55 + ((h >> 9) % 30) / 100, lit = 0.45 + ((h >> 17) % 20) / 100;
-          const c = (1 - Math.abs(2 * lit - 1)) * sat, x = c * (1 - Math.abs(((hue / 60) % 2) - 1)), m = lit - c / 2;
-          let r2, g2, b2;
-          if (hue < 60) [r2, g2, b2] = [c, x, 0]; else if (hue < 120) [r2, g2, b2] = [x, c, 0];
-          else if (hue < 180) [r2, g2, b2] = [0, c, x]; else if (hue < 240) [r2, g2, b2] = [0, x, c];
-          else if (hue < 300) [r2, g2, b2] = [x, 0, c]; else [r2, g2, b2] = [c, 0, x];
-          return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255)];
-        };
         const getBase = (r) => {
           if (colorMode === "mercenaries") {
             const e = mapMercData && mapMercData.byRegion ? mapMercData.byRegion[r.region] : null;
             if (!e || !e.units || !e.units.length) return [62, 64, 72]; // no mercenaries here
-            return mercPoolColor(e.pools && e.pools[0]);
+            // pool filter: null = all pools; else only show the ENABLED pools' regions
+            const pools = mercPoolFilter
+              ? (e.pools || []).filter(p => mercPoolFilter.has(p))
+              : (e.pools || []);
+            if (!pools.length) return [34, 36, 42]; // has mercs, but all its pools are filtered out (darker than "none")
+            return mercPoolColorFor(pools[0]);
           }
           if (colorMode === "terrain") { const t = getTagValue(r.tags, TERRAIN_TAGS); return (t && TERRAIN_COLORS[t]) || [100,100,100]; }
           if (colorMode === "climate") { const c = getTagValue(r.tags, CLIMATE_TAGS); return (c && CLIMATE_COLORS[c]) || [100,100,100]; }
@@ -8457,7 +8470,7 @@ function App() {
         setColoredOffscreen(off);
       }
     });
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -13526,8 +13539,12 @@ function App() {
     if (colorMode === "mercenaries") {
       const e = mapMercData && mapMercData.byRegion ? mapMercData.byRegion[info.region] : null;
       if (!e || !e.units || !e.units.length) return { label: "Mercenaries", value: "— none available here" };
-      const list = e.units.map((u) => `${u.name}${u.max > 1 ? ` ×${u.max}` : ""} (${u.cost})`).join(", ");
-      return { label: `Mercenaries · ${e.units.length} unit${e.units.length === 1 ? "" : "s"} · pool ${e.pools.join(" + ")}`, value: list };
+      const shownPools = mercPoolFilter ? (e.pools || []).filter(p => mercPoolFilter.has(p)) : (e.pools || []);
+      if (mercPoolFilter && !shownPools.length) return { label: "Mercenaries", value: `— filtered out (this region's pool${e.pools.length === 1 ? "" : "s"}: ${e.pools.join(" + ")})` };
+      // when filtering, list only the units that come from the enabled pools
+      const units = mercPoolFilter ? (e.units || []).filter(u => shownPools.includes(u.pool)) : (e.units || []);
+      const list = units.map((u) => `${u.name}${u.max > 1 ? ` ×${u.max}` : ""} (${u.cost})`).join(", ");
+      return { label: `Mercenaries · ${units.length} unit${units.length === 1 ? "" : "s"} · pool ${shownPools.join(" + ")}`, value: list };
     }
     if (colorMode === "population") {
       const pop = populationData[info.region] || populationData[info.region?.split("-")[0]] || populationData[info.city];
@@ -13667,6 +13684,57 @@ function App() {
     const collapseArrow = legendCollapsed ? "\u25B6" : "\u25BC";
     const collapseToggle = { cursor: "pointer", userSelect: "none" };
     const onCollapseClick = () => setLegendCollapsed(p => !p);
+
+    if (colorMode === "mercenaries") {
+      const pools = (mapMercData && Array.isArray(mapMercData.pools)) ? mapMercData.pools : null;
+      const allNames = pools ? pools.map(p => p.name) : [];
+      const enabled = (name) => mercPoolFilter == null || mercPoolFilter.has(name);
+      const toggle = (name) => setMercPoolFilter(prev => {
+        const base = prev == null ? new Set(allNames) : new Set(prev);
+        if (base.has(name)) base.delete(name); else base.add(name);
+        return base.size === allNames.length ? null : base; // all on → null ("all")
+      });
+      const solo = (name) => setMercPoolFilter(allNames.length === 1 ? null : new Set([name]));
+      const lq = legendSearch.trim().toLowerCase();
+      const shown = pools
+        ? pools.filter(p => !lq || p.name.replace(/_/g, " ").toLowerCase().includes(lq)).slice().sort((a, b) => a.name.localeCompare(b.name))
+        : [];
+      const activeCount = mercPoolFilter ? mercPoolFilter.size : allNames.length;
+      return (
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #b06ad0" }}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#cf9ee8", ...collapseToggle }} onClick={onCollapseClick}>
+            Mercenary Pools <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#aaa" }}>({allNames.length}{mercPoolFilter ? ` · ${activeCount} shown` : ""})</span>
+            <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: 6 }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && !pools && <div style={{ fontSize: "0.72rem", color: "#999" }}>Loading pools…</div>}
+          {!legendCollapsed && pools && (
+            <>
+              <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                <button onClick={() => setMercPoolFilter(null)} style={{ flex: 1, padding: "2px 6px", borderRadius: 5, cursor: "pointer", border: "1px solid rgba(207,158,232,0.4)", background: mercPoolFilter == null ? "rgba(176,106,208,0.3)" : "transparent", color: "#cf9ee8", fontSize: "0.68rem" }}>All</button>
+                <button onClick={() => setMercPoolFilter(new Set())} style={{ flex: 1, padding: "2px 6px", borderRadius: 5, cursor: "pointer", border: "1px solid rgba(255,255,255,0.18)", background: (mercPoolFilter && mercPoolFilter.size === 0) ? "rgba(176,106,208,0.3)" : "transparent", color: "#aaa", fontSize: "0.68rem" }}>None</button>
+              </div>
+              <input type="text" value={legendSearch} onChange={(e) => setLegendSearch(e.target.value)} className="legend-search-input" placeholder="Search pools…"
+                style={{ width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4, borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.74rem", outline: "none" }} />
+              {shown.map((p) => {
+                const on = enabled(p.name);
+                const sw = on ? mercPoolColorFor(p.name) : [80, 80, 88];
+                return (
+                  <div key={p.name} onClick={() => toggle(p.name)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 4px", borderRadius: 4, cursor: "pointer", opacity: on ? 1 : 0.5, transition: "opacity 0.12s" }}>
+                    <div style={{ width: 11, height: 11, borderRadius: 2, flexShrink: 0, background: `rgb(${sw[0]},${sw[1]},${sw[2]})`, outline: on ? "1px solid rgba(255,255,255,0.35)" : "none" }} />
+                    <span style={{ flex: 1, fontSize: "0.72rem", fontWeight: on ? 600 : 400, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.replace(/_/g, " ")}</span>
+                    <span style={{ fontSize: "0.6rem", color: "#777", flexShrink: 0 }}>{(p.regions ? p.regions.length : 0)}r · {(p.units ? p.units.length : 0)}u</span>
+                    <span onClick={(e) => { e.stopPropagation(); solo(p.name); }} title="Show only this pool"
+                      style={{ fontSize: "0.6rem", color: "#cf9ee8", flexShrink: 0, padding: "0 3px", borderRadius: 3, border: "1px solid rgba(207,158,232,0.3)", cursor: "pointer" }}>only</span>
+                  </div>
+                );
+              })}
+              <div style={{ marginTop: 6, fontSize: "0.62rem", color: "#888" }}>Darker‑gray regions have mercs but their pool is hidden; flat gray = none. Overlaps colour by the first shown pool.</div>
+            </>
+          )}
+        </div>
+      );
+    }
 
     if (colorMode === "explored") {
       // Faction list for the picker. PREFER the resolvable list fetched from

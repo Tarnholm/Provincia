@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.983",
+    date: "2026-06-08",
+    items: [
+      { type: "feature", text: "**Mercenaries map mode: filter by pool.** A new pool list in the legend lets you toggle each `descr_mercenaries` pool on/off individually (with **All** / **None** buttons and an **only** shortcut to isolate one pool), so you can sort through gaps and misplacements — including regions that belong to several overlapping pools. Each row shows the pool's colour swatch, region count and unit count. Regions whose pools are all hidden go darker‑gray (vs flat gray for regions with no mercenaries at all); overlaps colour by the first shown pool, and the hover/click info lists only the enabled pools' units." },
+    ],
+  },
+  {
     version: "0.9.982",
     date: "2026-06-08",
     items: [
