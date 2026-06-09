@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1007",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**The early squalor onset (pop 1150) only applies to village/town tiers** — live-verified both ways in the same session: Iasonion (town, pop 1400) shows −0.5% squalor, while Ninos (large town, pop 1300) shows no squalor line at all. Large towns and up use the plain 1500-multiples curve. Fixes Ninos and Aornos-Baktria; no-save accuracy now **~96.4% exact bracket** (97.1% against same-turn populations)." },
+    ],
+  },
+  {
     version: "0.9.1006",
     date: "2026-06-10",
     items: [

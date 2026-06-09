@@ -61,7 +61,7 @@ const path = require("path");
 // (truth + 0.5×govSqualor), subtracted per-settlement at runtime (see computeFactionGrowth).
 const COEF = { intercept: 0.9564, farmN: -0.0105, farmLevel: 0.5101, healthSum: 0.4939, pgOther: 0.5037, popPer1000: -0.4177, hiPopRelief: 0.0893, govLevel: -0.7301, hasPort: -0.0426 };
 const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.96, mae: 0.12, n: 308,
-  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150 then thresholds at plain 1500-multiples, governor Estates, granary penalties, summer fish-port bonus). ~96% land on the EXACT tax bracket on the 308-settlement corpus (97% scored against same-turn populations). (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
+  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150 then thresholds at plain 1500-multiples, governor Estates, granary penalties, summer fish-port bonus). ~96.4% land on the EXACT tax bracket on the 308-settlement corpus (97.1% scored against same-turn populations). (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
@@ -369,11 +369,16 @@ const SQUALOR_DBL = { village: 1800, town: 6000, large_town: 9000, city: 17000, 
 // the corpus band scan (every town at 2400–2985 implies 1 pt, every town ≥3000 implies 2)
 // pinned the 2nd threshold at exactly 3000. This also matches the Rome-9000 → 6 pts (3.0%)
 // live read that the +350 curve missed (and we had wrongly dismissed as a hand-edit artifact).
-function squalorPts(pop) {
-  return Math.max(pop >= 1150 ? 1 : 0, Math.floor((pop || 0) / 1500));
+// LEVEL GATE (2026-06-10, two live pins pulling opposite ways): the EARLY 1150 onset
+// applies only to village/town tiers — Iasonion (town, pop 1400) reads −0.5% squalor
+// live, but Ninos (large_town, pop 1300) reads NO squalor line at all (and Aornos-
+// Baktria, large_town 1200, agrees in the corpus). large_town+ = plain floor(pop/1500).
+function squalorPts(pop, level) {
+  const early = (level === "village" || level === "town") && pop >= 1150 ? 1 : 0;
+  return Math.max(early, Math.floor((pop || 0) / 1500));
 }
 function rawGrowth(f) {
-  const squalor = 0.5 * squalorPts(f.pop || 0);
+  const squalor = 0.5 * squalorPts(f.pop || 0, f.level);
   return 0.5 * ((f.farmLevel || 0) + (f.healthSum || 0) + (f.pgOther || 0))
     - (GOVDAMP[f.govLevel] || 0) - squalor;
 }
@@ -468,7 +473,7 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // Stymbara/Torone (pop ≤1100, 0 pop-squalor, GoodBuilder governors) all read +0.5
     // over truth without the clamp; clamping fixes them corpus-wide (93.5→94.5%).
     if (govSqualorPct && !savedDev) {
-      const popSqualorPct = 0.5 * squalorPts((feat && feat.pop) || 0);
+      const popSqualorPct = 0.5 * squalorPts((feat && feat.pop) || 0, feat && feat.level);
       raw = raw + popSqualorPct - Math.max(0, popSqualorPct + govSqualorPct);
     }
     baseGrowthEst = Math.round(raw * 2) / 2;
