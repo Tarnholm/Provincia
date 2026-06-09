@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1005",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Governor squalor relief can no longer push total squalor below zero.** A squalor-relieving governor (architect follower, GoodBuilder) in a town with no population squalor was wrongly *adding* +0.5% growth. Total squalor (population + governor) now clamps at 0 — cracked from three corpus towns (Karystos/Stymbara/Torone) that all read +0.5% over their real growth. No-save accuracy: ~94% exact bracket (95% scored against same-turn populations); every settlement of the live-verified Bosporan set unchanged." },
+    ],
+  },
+  {
     version: "0.9.1004",
     date: "2026-06-09",
     items: [

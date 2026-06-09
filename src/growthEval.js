@@ -60,8 +60,8 @@ const path = require("path");
 // This is the term that was "missing" from files: +7.4% bracket (73.1→80.5%). Fit on
 // (truth + 0.5×govSqualor), subtracted per-settlement at runtime (see computeFactionGrowth).
 const COEF = { intercept: 0.9564, farmN: -0.0105, farmLevel: 0.5101, healthSum: 0.4939, pgOther: 0.5037, popPer1000: -0.4177, hiPopRelief: 0.0893, govLevel: -0.7301, hasPort: -0.0426 };
-const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.93, mae: 0.12, n: 308,
-  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150, floor((pop+350)/1500), governor Estates, granary penalties, summer fish-port bonus). ~93% land on the EXACT tax bracket on the 308-settlement corpus. (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
+const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.94, mae: 0.12, n: 308,
+  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150, floor((pop+350)/1500), governor Estates, granary penalties, summer fish-port bonus). ~94% land on the EXACT tax bracket on the 308-settlement corpus (95% scored against same-turn populations). (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
@@ -462,7 +462,15 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // estimate we leave it alone. No-save uses the descr_strat starting governors and was
     // recalibrated WITH this term (fit on truth+0.5×govSqualor, subtract per-settlement here).
     const govSqualorPct = (ge && ge.squalor && !savedDev) ? 0.5 * ge.squalor : 0;
-    if (govSqualorPct) raw -= govSqualorPct;
+    // TOTAL squalor (pop baseline + governor effect) clamps at 0 — a squalor-RELIEVING
+    // governor (GoodBuilder/architect) in a town with no pop squalor cannot push squalor
+    // negative (i.e. cannot ADD growth). Cracked from the corpus 2026-06-09: Karystos/
+    // Stymbara/Torone (pop ≤1100, 0 pop-squalor, GoodBuilder governors) all read +0.5
+    // over truth without the clamp; clamping fixes them corpus-wide (93.5→94.5%).
+    if (govSqualorPct && !savedDev) {
+      const popSqualorPct = 0.5 * Math.max(0, Math.floor((((feat && feat.pop) || 0) + 350) / 1500));
+      raw = raw + popSqualorPct - Math.max(0, popSqualorPct + govSqualorPct);
+    }
     baseGrowthEst = Math.round(raw * 2) / 2;
     // confidence: only flag the ROUGH no-save estimate (margin 0.4 catches ~81% of its
     // bracket misses — a useful "verify this one" cue). The save-aware estimate is ~97%
