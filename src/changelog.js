@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1012",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Agents' trait lines were clobbering governors' traits — live-caught at Miletos.** The descr_strat parser only reset its 'current character' on *named character* lines, so an admiral/diplomat/spy following a governor would overwrite the governor's trait list with his own (Miletos' governor lost his 26 traits — including the Superior Builder squalor relief you can see on his card — to a following admiral's `Sailor 4`). Any character line now ends the previous one. Miletos reads +0.5% → High, matching the in-game scroll with and without its governor; every previously verified governor binding is unchanged." },
+    ],
+  },
+  {
     version: "0.9.1011",
     date: "2026-06-10",
     items: [

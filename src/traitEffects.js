@@ -212,6 +212,11 @@ function govEffectByCityFromStrat(modDataDir, parsed) {
     // named character, …, x 327, y 372") were silently skipped without it. (Fixed 2026-06-09.)
     const m = t.match(/^character\s*,?\s*(?:sub_faction\s+\w+\s*,\s*)?[^,]+,\s*named character\b.*?\bx\s+(-?\d+)\s*,\s*y\s+(-?\d+)/i);
     if (m) { finalize(); pending = { x: +m[1], y: +m[2], traitList: [], anc: [] }; continue; }
+    // ANY other character line (admiral/diplomat/spy/character_record) ends the pending
+    // named character — otherwise the AGENT's `traits` line CLOBBERS the governor's
+    // (live-caught 2026-06-10: Miletos' governor TimarchosB lost his 26 traits incl
+    // GoodBuilder to a following admiral's `traits Sailor 4`, hiding −0.5% squalor relief).
+    if (/^character[,\s]|^character_record/i.test(t)) { finalize(); continue; }
     if (!pending) continue;
     if (/^traits\b/i.test(t)) {
       pending.traitList = t.replace(/^traits\s+/i, "").split(",").map(s => {
