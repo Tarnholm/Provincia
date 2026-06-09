@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1014",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Reverted v0.9.1013's terrain relocation — governors bind by exact coordinates, full stop.** The 'engine relocates impassable-seeded characters' theory was an artifact of analyzing a stale mod copy (RIS beta, 06-08) while the game ran the updated RIS (06-09), where the governor in question is seeded exactly on his city's tile. With the correct mod folder, plain exact-tile binding reproduces every live reading (Iasonion 0% Normal with Deimachos' Superior Builder, Kyrene clean, Miletos High). **If you have multiple RIS copies installed, make sure Provincia's mod folder matches the one your campaign actually runs** — a one-day-old copy was enough to send this hunt through two wrong theories." },
+    ],
+  },
+  {
     version: "0.9.1013",
     date: "2026-06-10",
     items: [
