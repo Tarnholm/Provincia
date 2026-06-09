@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1004",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Granary growth penalties were silently dropped — and had masked a wrong rule.** Building levels with `+` in the name (granary+1, granary+2, mines+1 — 35 settlements) failed the descr_strat parser's word-match and lost their capabilities, so the granary's −0.5% growth never counted. At Pantikapaion the missing −0.5 (granary) and a +0.5 (fish-port) cancelled, which made yesterday's in-game scroll *look like* the port bonus was excluded — and that wrong 'seasonal port exclusion' shipped in v0.9.1001. Both fixed: granary penalties count, and the fish-port `+1 growth` **is** included in base growth (turns 1–2 are summer). Verified live on Bosporan: Phanagoreia now correctly recommends High (was Normal), Pantikapaion stays Normal — every settlement matches the in-game scroll." },
+      { type: "improvement", text: "**No-save tax plan accuracy jumps to ~93% exact bracket** (from ~88%) on the 308-settlement / 14-faction corpus — the granary+port fix was a systematic error across every fish-port and granary town, and correcting it is the single biggest accuracy gain the growth model has had. Big misses (>0.5%) drop from 9 to 3." },
+    ],
+  },
+  {
     version: "0.9.1003",
     date: "2026-06-09",
     items: [

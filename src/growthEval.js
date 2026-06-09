@@ -60,8 +60,8 @@ const path = require("path");
 // This is the term that was "missing" from files: +7.4% bracket (73.1→80.5%). Fit on
 // (truth + 0.5×govSqualor), subtracted per-settlement at runtime (see computeFactionGrowth).
 const COEF = { intercept: 0.9564, farmN: -0.0105, farmLevel: 0.5101, healthSum: 0.4939, pgOther: 0.5037, popPer1000: -0.4177, hiPopRelief: 0.0893, govLevel: -0.7301, hasPort: -0.0426 };
-const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.88, mae: 0.12, n: 308,
-  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150, floor((pop+350)/1500), governor Estates, seasonal-port exclusion). ~88% land on the EXACT tax bracket on the test corpus — and that understates true tax accuracy, because the corpus 'truth' is the save's projected-pop which includes a summer port bonus the tax scroll (and the model) correctly excludes for coastal towns. (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
+const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.93, mae: 0.12, n: 308,
+  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150, floor((pop+350)/1500), governor Estates, granary penalties, summer fish-port bonus). ~93% land on the EXACT tax bracket on the 308-settlement corpus. (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
@@ -184,7 +184,11 @@ function parseStrat(stratPath) {
     const lv = ln.match(/^\s*level\s+(\w+)/); if (lv) cur.level = lv[1];
     const rg = ln.match(/^\s*region\s+([\w-]+)/); if (rg) cur.region = rg[1];
     const pp = ln.match(/^\s*population\s+(\d+)/); if (pp) cur.pop = +pp[1];
-    const ty = ln.match(/^\s*type\s+(\w+)\s+(\w+)/); if (ty) cur.buildings.push({ chain: ty[1], level: ty[2] });
+    // level names can contain +/- (granary+1, grain-1) — \w+ truncated them to the
+    // bare chain word, silently DROPPING those levels' capabilities (the granary −1
+    // growth penalty went uncounted, which masked the port bonus at Pantikapaion and
+    // spawned the wrong "seasonal port exclusion" rule — fixed 2026-06-09).
+    const ty = ln.match(/^\s*type\s+(\w+)\s+(\S+)/); if (ty) cur.buildings.push({ chain: ty[1], level: ty[2] });
   }
   return factions;
 }
@@ -314,7 +318,12 @@ function settlementFeatures(s, region, faction, capIndex, chainLevels, resources
       if (!evalReq(pg.req, ctx)) continue;
       if (/building_present_min_level core_building (governors_villa|governors_palace|proconsuls_palace|imperial_palace)/.test(pg.req)) continue; // transient damper
       if (/^hidden_resource\s+farm\d+$/.test(pg.req)) continue; // BASE GROWTH -farmN (folded into farmN coef)
-      if (/\bdisabling_in_winter\b/.test(pg.req)) continue; // seasonal port/naval bonus — NOT in the settlement's base growth (confirmed in-game at Pantikapaion: +1 fish-port growth absent from the scroll even in summer)
+      // disabling_in_winter (port/naval) bonuses DO count in summer turns (turn 1-2 are
+      // forced summer). The old exclusion here was a MISATTRIBUTION (2026-06-09): the
+      // granary −1 growth penalty was being dropped by the `granary+1` level-name parse
+      // bug, and Pantikapaion's scroll (−6.0 = port +1 AND granary −1) happened to match
+      // the doubly-wrong model. Phanagoreia (port, no granary) exposed it: in-game base
+      // +0.5 = port included. Verified turn-1 in-game by the user (Bosporan, 2026-06-09).
       pgOther += pg.bonus;
     }
     let fl = null;

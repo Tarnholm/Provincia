@@ -94,7 +94,7 @@ function parseFaction(modDataDir, faction) {
       if (/\{/.test(ln)) settleDepth += (ln.match(/\{/g) || []).length;
       const rg = ln.match(/^\s*region\s+(\w+)/); if (rg) curSettle.region = rg[1];
       const lv = ln.match(/^\s*level\s+(\w+)/); if (lv) curSettle.level = lv[1];
-      const bt = ln.match(/^\s*type\s+\w+\s+(\w+)/); if (bt) curSettle.buildings.push(bt[1]);
+      const bt = ln.match(/^\s*type\s+\w+\s+(\S+)/); if (bt) curSettle.buildings.push(bt[1]); // \S+: levels like granary+1
       if (/\}/.test(ln)) { settleDepth -= (ln.match(/\}/g) || []).length; if (settleDepth <= 0) { out.settlements.push(curSettle); curSettle = null; } }
       continue;
     }
