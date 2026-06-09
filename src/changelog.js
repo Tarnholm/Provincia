@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1006",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Squalor curve corrected — live-verified at Thyateira.** The first squalor point switches on at population 1150 (pinned in-game to the person), but the rest of the curve sits at plain multiples of 1500 (3000 / 4500 / 6000…), not 1150+1500k. The old curve put the second point at 2650, over-squaloring every town in the 2650–2999 band by 0.5%; a live Thyateira read (pop 2800, squalor −0.5%) plus a corpus band-scan (every town at 2400–2985 implies one point, every town at 3000+ implies two) pinned the true threshold at exactly 3000 — and the corrected curve also retro-matches the Rome-9000 reading the old one missed. Six settlements fixed in one move (Ikonion, Thyateira, Samareia, Seleukeia-Soloke, Berenike-Trogodytike, Volaterrae). No-save accuracy: **~96% exact bracket** (97% against same-turn populations), up from 87% yesterday morning." },
+    ],
+  },
+  {
     version: "0.9.1005",
     date: "2026-06-09",
     items: [

@@ -60,8 +60,8 @@ const path = require("path");
 // This is the term that was "missing" from files: +7.4% bracket (73.1→80.5%). Fit on
 // (truth + 0.5×govSqualor), subtracted per-settlement at runtime (see computeFactionGrowth).
 const COEF = { intercept: 0.9564, farmN: -0.0105, farmLevel: 0.5101, healthSum: 0.4939, pgOther: 0.5037, popPer1000: -0.4177, hiPopRelief: 0.0893, govLevel: -0.7301, hasPort: -0.0426 };
-const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.94, mae: 0.12, n: 308,
-  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150, floor((pop+350)/1500), governor Estates, granary penalties, summer fish-port bonus). ~94% land on the EXACT tax bracket on the 308-settlement corpus (95% scored against same-turn populations). (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
+const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.96, mae: 0.12, n: 308,
+  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150 then thresholds at plain 1500-multiples, governor Estates, granary penalties, summer fish-port bonus). ~96% land on the EXACT tax bracket on the 308-settlement corpus (97% scored against same-turn populations). (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
@@ -362,18 +362,18 @@ const SQUALOR_DBL = { village: 1800, town: 6000, large_town: 9000, city: 17000, 
 // The governor Effect-Squalor term is subtracted by computeFactionGrowth (it has the governor),
 // so it is NOT included here — rawGrowth is the building/pop baseline only. See
 // [[provincia-deterministic-growth-goal]] and [[rtw-growth-edb-mechanics]].
+// SQUALOR CURVE (corrected 2026-06-10, v0.9.1006): the first point switches on at pop 1150
+// (pinned in-game to the person: 1149→0%, 1150→−0.5%), but the REST of the curve sits at
+// plain multiples of 1500 (3000/4500/6000…), NOT 1150+1500k. The old floor((pop+350)/1500)
+// put the 2nd point at 2650; the user's live Thyateira read (pop 2800, squalor −0.5%) plus
+// the corpus band scan (every town at 2400–2985 implies 1 pt, every town ≥3000 implies 2)
+// pinned the 2nd threshold at exactly 3000. This also matches the Rome-9000 → 6 pts (3.0%)
+// live read that the +350 curve missed (and we had wrongly dismissed as a hand-edit artifact).
+function squalorPts(pop) {
+  return Math.max(pop >= 1150 ? 1 : 0, Math.floor((pop || 0) / 1500));
+}
 function rawGrowth(f) {
-  // SQUALOR = 0.5 × floor((pop+350)/1500). First point at pop 1150 — confirmed in-game to the person
-  // (1149→0%, 1150→−0.5%), then one point every +1500. Verified live across tiers: large_town 3000→1.0%,
-  // city 5000→1.5%, large_city 9000→3.0%.
-  //   A hand-edited lvl-1 "town" (Skopelos) read the FAST 750/pt rate (2000→1.0%, 3000→1.5%), suggesting
-  //   a per-tier rate — but the 308-settlement corpus REJECTED it: four NATURAL town-tier settlements at
-  //   pop 2000–2800 (Euesperides/Samareia/Ikonion/Thyateira) have real growth matching the 1500-rate, and
-  //   applying 750/pt over-squalored them (corpus 87.7%→87.3%). So real (grown-into-pop) towns use 1500/pt;
-  //   the fast rate is an artifact of force-editing pop. Uniform 1500-rate retained. Overcrowding doubling
-  //   exists above the tier "squalour pop" but never fires for a real start settlement, so it's not modeled.
-  const pts = Math.max(0, Math.floor(((f.pop || 0) + 350) / 1500));
-  const squalor = 0.5 * pts;
+  const squalor = 0.5 * squalorPts(f.pop || 0);
   return 0.5 * ((f.farmLevel || 0) + (f.healthSum || 0) + (f.pgOther || 0))
     - (GOVDAMP[f.govLevel] || 0) - squalor;
 }
@@ -468,7 +468,7 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // Stymbara/Torone (pop ≤1100, 0 pop-squalor, GoodBuilder governors) all read +0.5
     // over truth without the clamp; clamping fixes them corpus-wide (93.5→94.5%).
     if (govSqualorPct && !savedDev) {
-      const popSqualorPct = 0.5 * Math.max(0, Math.floor((((feat && feat.pop) || 0) + 350) / 1500));
+      const popSqualorPct = 0.5 * squalorPts((feat && feat.pop) || 0);
       raw = raw + popSqualorPct - Math.max(0, popSqualorPct + govSqualorPct);
     }
     baseGrowthEst = Math.round(raw * 2) / 2;
